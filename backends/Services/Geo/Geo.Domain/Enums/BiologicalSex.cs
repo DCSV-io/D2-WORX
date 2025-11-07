@@ -1,4 +1,4 @@
-﻿namespace Geo.Domain.Enums;
+﻿namespace D2.Geo.Domain.Enums;
 
 /// <summary>
 /// Represents the biological sex of a person.

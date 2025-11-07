@@ -1,14 +1,14 @@
 ﻿using System.Collections.Immutable;
+using D2.Geo.Domain.Enums;
+using D2.Geo.Domain.Exceptions;
+using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
-using Geo.Domain.Enums;
-using Geo.Domain.Exceptions;
-using Geo.Domain.ValueObjects;
 using Xunit;
 
 namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
-/// Unit tests for <see cref="Geo.Domain.ValueObjects.Personal"/>.
+/// Unit tests for <see cref="Personal"/>.
 /// </summary>
 public class PersonalTests
 {

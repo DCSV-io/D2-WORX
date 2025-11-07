@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
-using Geo.Domain.Entities;
+using D2.Geo.Domain.Entities;
 
-namespace Geo.Domain.ValueObjects;
+namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a collection of contact methods, including email addresses and phone numbers.

@@ -1,4 +1,4 @@
-﻿namespace Geo.Domain.Enums;
+﻿namespace D2.Geo.Domain.Enums;
 
 /// <summary>
 /// Represents common generational suffixes used in personal names.

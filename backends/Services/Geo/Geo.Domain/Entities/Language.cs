@@ -1,4 +1,4 @@
-﻿namespace Geo.Domain.Entities;
+﻿namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a language.

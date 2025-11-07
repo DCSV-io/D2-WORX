@@ -1,12 +1,12 @@
-﻿using FluentAssertions;
-using Geo.Domain.Exceptions;
-using Geo.Domain.ValueObjects;
+﻿using D2.Geo.Domain.Exceptions;
+using D2.Geo.Domain.ValueObjects;
+using FluentAssertions;
 using Xunit;
 
 namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
-/// Unit tests for <see cref="Geo.Domain.ValueObjects.Coordinates"/>.
+/// Unit tests for <see cref="Coordinates"/>.
 /// </summary>
 public class CoordinatesTests
 {

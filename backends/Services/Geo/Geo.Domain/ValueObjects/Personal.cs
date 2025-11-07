@@ -1,10 +1,10 @@
 ﻿using System.Collections.Immutable;
 using D2.Contracts.Utilities;
-using Geo.Domain.Entities;
-using Geo.Domain.Enums;
-using Geo.Domain.Exceptions;
+using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.Enums;
+using D2.Geo.Domain.Exceptions;
 
-namespace Geo.Domain.ValueObjects;
+namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents personal information about an individual.

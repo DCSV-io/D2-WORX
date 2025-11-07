@@ -1,8 +1,8 @@
 ﻿using D2.Contracts.Utilities;
-using Geo.Domain.Entities;
-using Geo.Domain.Exceptions;
+using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.Exceptions;
 
-namespace Geo.Domain.ValueObjects;
+namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents the street address [lines] of a <see cref="Location"/>.

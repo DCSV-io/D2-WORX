@@ -1,7 +1,7 @@
 ﻿using D2.Contracts.Utilities;
 using FluentAssertions;
 
-namespace Utilities.Tests;
+namespace D2.Utilities.Tests;
 
 /// <summary>
 /// Unit tests for <see cref="GuidExtensions"/>.

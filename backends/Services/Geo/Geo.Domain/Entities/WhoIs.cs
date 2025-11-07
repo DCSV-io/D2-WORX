@@ -1,11 +1,11 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using D2.Contracts.Utilities;
-using Geo.Domain.Exceptions;
+using D2.Geo.Domain.Exceptions;
 
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
-namespace Geo.Domain.Entities;
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents WHOIS, ASN and GEOIP information associated with an IP address.

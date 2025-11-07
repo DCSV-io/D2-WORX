@@ -1,4 +1,4 @@
-﻿namespace Geo.Domain.Entities;
+﻿namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a subdivision (e.g., state, province, region) of a country.

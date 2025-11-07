@@ -1,8 +1,8 @@
 ﻿using D2.Contracts.Utilities;
-using Geo.Domain.Exceptions;
-using Geo.Domain.ValueObjects;
+using D2.Geo.Domain.Exceptions;
+using D2.Geo.Domain.ValueObjects;
 
-namespace Geo.Domain.Entities;
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a collection of contact and / or location information for an individual or

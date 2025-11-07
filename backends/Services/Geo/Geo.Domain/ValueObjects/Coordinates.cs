@@ -1,8 +1,8 @@
 ﻿using System.Globalization;
-using Geo.Domain.Entities;
-using Geo.Domain.Exceptions;
+using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.Exceptions;
 
-namespace Geo.Domain.ValueObjects;
+namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents the geographic coordinates (latitude and longitude) of a <see cref="Location"/>.

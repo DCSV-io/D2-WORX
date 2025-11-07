@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using D2.Contracts.Utilities;
 
-namespace Geo.Domain.ValueObjects;
+namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a phone number with associated labels.

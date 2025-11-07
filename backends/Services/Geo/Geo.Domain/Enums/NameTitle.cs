@@ -1,4 +1,4 @@
-﻿namespace Geo.Domain.Enums;
+﻿namespace D2.Geo.Domain.Enums;
 
 /// <summary>
 /// Represents a person's name title (e.g., Mr., Mrs., Dr.).
