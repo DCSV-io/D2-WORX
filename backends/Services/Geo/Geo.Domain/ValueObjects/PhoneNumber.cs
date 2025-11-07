@@ -81,7 +81,6 @@ public record PhoneNumber
     public static PhoneNumber Create(PhoneNumber phoneNumber)
         => Create(phoneNumber.Value, phoneNumber.Labels);
 
-
     /// <summary>
     /// Factory method to create many <see cref="PhoneNumber"/> instances with validation.
     /// </summary>
@@ -142,8 +141,11 @@ public record PhoneNumber
     /// </remarks>
     public virtual bool Equals(PhoneNumber? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+            return false;
+
+        if (ReferenceEquals(this, other))
+            return true;
 
         return Value == other.Value
                && Labels.SetEquals(other.Labels);

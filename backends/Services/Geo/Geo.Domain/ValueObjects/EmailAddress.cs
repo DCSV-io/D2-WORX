@@ -136,8 +136,11 @@ public record EmailAddress
     /// </remarks>
     public virtual bool Equals(EmailAddress? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+            return false;
+
+        if (ReferenceEquals(this, other))
+            return true;
 
         return Value == other.Value
                && Labels.SetEquals(other.Labels);
