@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using D2.Contracts.Common;
 using D2.Contracts.Utilities;
 using D2.Geo.Domain.Exceptions;
 
@@ -41,6 +42,7 @@ public record WhoIs
     /// <example>
     /// 75.155.155.200
     /// </example>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public required string IPAddress { get; init; }
 
     /// <summary>
@@ -68,6 +70,7 @@ public record WhoIs
     /// <remarks>
     /// While optional, this will be used in the content-addressable hash if provided.
     /// </remarks>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public string? Fingerprint { get; init; }
 
     #endregion

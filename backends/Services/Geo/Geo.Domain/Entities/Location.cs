@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using D2.Contracts.Common;
 using D2.Contracts.Utilities;
 using D2.Geo.Domain.ValueObjects;
 
@@ -43,6 +44,7 @@ public record Location
     ///     "longitude": -118.2437
     /// }
     /// </example>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public Coordinates? Coordinates { get; init; }
 
     /// <summary>
@@ -55,6 +57,7 @@ public record Location
     ///     "line3": "Suite 400"
     /// }
     /// </example>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public StreetAddress? Address { get; init; }
 
     /// <summary>
@@ -63,6 +66,7 @@ public record Location
     /// <example>
     /// Los Angeles
     /// </example>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public string? City { get; init; }
 
     /// <summary>
@@ -71,6 +75,7 @@ public record Location
     /// <example>
     /// 90012
     /// </example>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public string? PostalCode { get; init; }
 
     #endregion

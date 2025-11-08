@@ -1,4 +1,5 @@
-﻿using D2.Contracts.Utilities;
+﻿using D2.Contracts.Common;
+using D2.Contracts.Utilities;
 using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
 
@@ -65,16 +66,19 @@ public record Contact
     /// <summary>
     /// The collection of contact methods, including email addresses and phone numbers.
     /// </summary>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public ContactMethods? ContactMethods { get; init; }
 
     /// <summary>
     /// The personal details associated with the contact.
     /// </summary>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public Personal? PersonalDetails { get; init; }
 
     /// <summary>
     /// The professional details associated with the contact.
     /// </summary>
+    [RedactData(Reason = RedactReason.PersonalInformation)]
     public Professional? ProfessionalDetails { get; init; }
 
     #endregion

@@ -1,4 +1,5 @@
-﻿using D2.Contracts.Utilities;
+﻿using D2.Contracts.Common;
+using D2.Contracts.Utilities;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;
 
@@ -10,6 +11,7 @@ namespace D2.Geo.Domain.ValueObjects;
 /// <remarks>
 /// Is a value object of the Geography "Geo" Domain, used by the <see cref="Contact"/> entity.
 /// </remarks>
+[RedactData(Reason = RedactReason.PersonalInformation)]
 public record Professional
 {
     /// <summary>
