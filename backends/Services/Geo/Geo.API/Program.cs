@@ -9,7 +9,7 @@ builder.Services.AddGrpc();
 var app = builder.Build();
 app.UseStructuredRequestLogging();
 app.MapPrometheusEndpointWithIpRestriction();
-app.MapGrpcService<GreeterService>();
+app.MapGrpcService<GeoService>();
 
 app.MapGet("/",
     () => "Communication with gRPC endpoints must be made through a gRPC client.");

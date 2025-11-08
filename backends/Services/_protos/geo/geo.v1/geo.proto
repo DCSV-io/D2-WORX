@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package d2.geo.v1;
+
+option csharp_namespace = "D2.Services.Protos.Geo.V1";
+
+// Simple ping service for testing proto generation
+service GeoService {
+  rpc GetGeo(GeoRequest) returns (GeoResponse);
+}
+
+message GeoRequest {
+  string message = 1;
+}
+
+message GeoResponse {
+  string message = 1;
+  int64 timestamp = 2;
+}
