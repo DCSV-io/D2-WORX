@@ -1,4 +1,4 @@
-﻿namespace Geo.Domain.Exceptions;
+﻿namespace D2.Geo.Domain.Exceptions;
 
 /// <summary>
 /// Exception type for validation errors in the Geography "Geo" Domain.

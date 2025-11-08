@@ -8,6 +8,7 @@
         <IsTestProject>true</IsTestProject>
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <RootNamespace>D2.Utilities.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -34,6 +35,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Common\Common.csproj" />
       <ProjectReference Include="..\Utilities\Utilities.csproj" />
     </ItemGroup>
 

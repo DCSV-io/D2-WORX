@@ -1,14 +1,14 @@
-﻿using FluentAssertions;
-using Geo.Domain.Entities;
-using Geo.Domain.Enums;
-using Geo.Domain.Exceptions;
-using Geo.Domain.ValueObjects;
+﻿using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.Enums;
+using D2.Geo.Domain.Exceptions;
+using D2.Geo.Domain.ValueObjects;
+using FluentAssertions;
 using Xunit;
 
 namespace Geo.Tests.Unit.Domain.Entities;
 
 /// <summary>
-/// Unit tests for the <see cref="Geo.Domain.Entities.Contact"/> entity.
+/// Unit tests for the <see cref="Contact"/> entity.
 /// </summary>
 public class ContactTests
 {

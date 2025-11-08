@@ -1,8 +1,9 @@
 ﻿using D2.Contracts.Utilities;
 using FluentAssertions;
+
 // ReSharper disable MoveLocalFunctionAfterJumpStatement
 
-namespace Utilities.Tests;
+namespace D2.Utilities.Tests;
 
 /// <summary>
 /// Unit tests for <see cref="EnumerableExtensions"/>.

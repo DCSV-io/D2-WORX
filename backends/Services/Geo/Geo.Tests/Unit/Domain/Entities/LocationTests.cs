@@ -1,12 +1,12 @@
-﻿using FluentAssertions;
-using Geo.Domain.Entities;
-using Geo.Domain.ValueObjects;
+﻿using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.ValueObjects;
+using FluentAssertions;
 using Xunit;
 
 namespace Geo.Tests.Unit.Domain.Entities;
 
 /// <summary>
-/// Unit tests for the <see cref="Geo.Domain.Entities.Location"/> entity.
+/// Unit tests for the <see cref="Location"/> entity.
 /// </summary>
 public class LocationTests
 {

@@ -1,6 +1,6 @@
-﻿using FluentAssertions;
-using Geo.Domain.Entities;
-using Geo.Domain.Exceptions;
+﻿using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.Exceptions;
+using FluentAssertions;
 using Xunit;
 
 namespace Geo.Tests.Unit.Domain.Entities;

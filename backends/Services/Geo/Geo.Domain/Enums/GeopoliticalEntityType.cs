@@ -1,4 +1,4 @@
-﻿namespace Geo.Domain.Enums;
+﻿namespace D2.Geo.Domain.Enums;
 
 public enum GeopoliticalEntityType
 {

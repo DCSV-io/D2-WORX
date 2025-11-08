@@ -1,6 +1,6 @@
-﻿using Geo.Domain.Enums;
+﻿using D2.Geo.Domain.Enums;
 
-namespace Geo.Domain.Entities;
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a geopolitical entity (e.g., union, confederation, commonwealth).

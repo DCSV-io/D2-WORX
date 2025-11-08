@@ -1,12 +1,12 @@
 ﻿using System.Collections.Immutable;
+using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
-using Geo.Domain.ValueObjects;
 using Xunit;
 
 namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
-/// Unit tests for <see cref="Geo.Domain.ValueObjects.PhoneNumber"/>.
+/// Unit tests for <see cref="PhoneNumber"/>.
 /// </summary>
 public class PhoneNumberTests
 {

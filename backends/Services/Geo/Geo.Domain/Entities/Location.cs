@@ -1,10 +1,11 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using D2.Contracts.Utilities;
-using Geo.Domain.ValueObjects;
+using D2.Geo.Domain.ValueObjects;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 
-namespace Geo.Domain.Entities;
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a geographical location with various address components and coordinates.
