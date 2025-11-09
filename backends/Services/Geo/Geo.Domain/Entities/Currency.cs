@@ -36,7 +36,7 @@ public record Currency
     /// <remarks>
     /// Must be unique. Always a 3-char string (numbers). Includes leading zeros where applicable.
     /// </remarks>
-    public required string ISO4217NumCode { get; init; }
+    public required string ISO4217NumericCode { get; init; }
 
     #endregion
 
