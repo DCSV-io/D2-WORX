@@ -110,7 +110,7 @@ public class GeoService : ServiceBase
                     Endonym = "Español (Estados Unidos)",
                     LanguageIso6391Code = "es",
                     CountryIso31661Alpha2Code = "US"
-                } }
+                }}
             },
             GeopoliticalEntities =
             {

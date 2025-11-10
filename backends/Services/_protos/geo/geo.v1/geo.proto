@@ -28,7 +28,7 @@ message CountryDTO {
   // Primary key.
   string iso_3166_1_alpha_2_code = 1;
 
-  // Other unique keys.
+  // Unique keys.
   string iso_3166_1_alpha_3_code = 2;
   string iso_3166_1_numeric_code = 3;
 
