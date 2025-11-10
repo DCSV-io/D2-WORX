@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using D2.Contracts.Common;
 using D2.Geo.Domain.Entities;
 
 namespace D2.Geo.Domain.ValueObjects;
@@ -9,6 +10,7 @@ namespace D2.Geo.Domain.ValueObjects;
 /// <remarks>
 /// Is a value object of the Geography "Geo" Domain, used by the <see cref="Contact"/> entity.
 /// </remarks>
+[RedactData(Reason = RedactReason.PersonalInformation)]
 public record ContactMethods
 {
     /// <summary>

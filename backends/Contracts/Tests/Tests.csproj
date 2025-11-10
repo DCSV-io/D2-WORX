@@ -8,7 +8,7 @@
         <IsTestProject>true</IsTestProject>
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-        <RootNamespace>D2.Utilities.Tests</RootNamespace>
+        <RootNamespace>D2.Contracts.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -19,6 +19,7 @@
         </PackageReference>
         <PackageReference Include="FluentAssertions" Version="8.8.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
+        <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -35,6 +36,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Common.App\Common.App.csproj" />
+      <ProjectReference Include="..\Common.Infra\Common.Infra.csproj" />
       <ProjectReference Include="..\Common\Common.csproj" />
       <ProjectReference Include="..\Utilities\Utilities.csproj" />
     </ItemGroup>

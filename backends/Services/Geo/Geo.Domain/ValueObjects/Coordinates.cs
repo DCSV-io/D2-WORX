@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using D2.Contracts.Common;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;
 
@@ -12,6 +13,7 @@ namespace D2.Geo.Domain.ValueObjects;
 ///
 /// Latitude and longitude are expressed in decimal degrees.
 /// </remarks>
+[RedactData(Reason = RedactReason.PersonalInformation)]
 public record Coordinates
 {
     /// <summary>

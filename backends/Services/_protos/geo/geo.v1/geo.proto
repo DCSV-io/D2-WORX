@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package d2.geo.v1;
+
+option csharp_namespace = "D2.Services.Protos.Geo.V1";
+
+// GeoService defines methods to retrieve geographical reference and contact data.
+service GeoService {
+  rpc GetReferenceData(GetReferenceDataRequest) returns (GetReferenceDataResponse);
+}
+
+message GetReferenceDataRequest {}
+
+message GetReferenceDataResponse {
+  string version = 1; // Semantic version of the reference data.
+  google.protobuf.Timestamp updated_at = 2; // Timestamp of the last update.
+  map<string, CountryDTO> countries = 3; // Key is iso_3166_1_alpha_2_code.
+  map<string, SubdivisionDTO> subdivisions = 4; // Key is iso_3166_2_code.
+  map<string, CurrencyDTO> currencies = 5; // Key is iso_4217_alpha_code.
+  map<string, LanguageDTO> languages = 6; // Key is iso_639_1_code.
+  map<string, LocaleDTO> locales = 7; // Key is ietf_bcp_47_tag.
+  map<string, GeopoliticalEntityDTO> geopolitical_entities = 8; // Key is short_code.
+}
+
+message CountryDTO {
+  // Primary key.
+  string iso_3166_1_alpha_2_code = 1;
+
+  // Unique keys.
+  string iso_3166_1_alpha_3_code = 2;
+  string iso_3166_1_numeric_code = 3;
+
+  // Properties.
+  string display_name = 4;
+  string official_name = 5;
+  string phone_number_prefix = 6;
+  string phone_number_format = 7;
+
+  // Foreign keys.
+  string sovereign_iso_3166_1_alpha_2_code = 8;
+  string primary_currency_iso_4217_alpha_code = 9;
+  string primary_locale_ietf_bcp_47_tag = 10;
+
+  // Navigation properties as lists of identifiers.
+  repeated string subdivision_iso_3166_2_codes = 11; // One-to-many.
+  repeated string currency_iso_4217_alpha_codes = 12; // Many-to-many.
+  repeated string locale_ietf_bcp_47_tags = 13; // One-to-many.
+  repeated string geopolitical_entity_short_codes = 14; // Many-to-many.
+}
+
+message SubdivisionDTO {
+  // Primary key.
+  string iso_3166_2_code = 1;
+
+  // Properties.
+  string short_code = 2;
+  string display_name = 3;
+  string official_name = 4;
+
+  // Foreign keys.
+  string country_iso_3166_1_alpha_2_code = 5;
+}
+
+message CurrencyDTO {
+  // Primary key.
+  string iso_4217_alpha_code = 1;
+
+  // Unique keys.
+  string iso_4217_numeric_code = 2;
+
+  // Properties.
+  string display_name = 3;
+  string official_name = 4;
+  int32 decimal_places = 5;
+  string symbol = 6;
+
+  // Navigation properties as lists of identifiers.
+  repeated string country_iso_3166_1_alpha_2_codes = 7; // Many-to-many.
+}
+
+message LanguageDTO {
+  // Primary key.
+  string iso_639_1_code = 1;
+
+  // Properties.
+  string name = 2;
+  string endonym = 3;
+}
+
+message LocaleDTO {
+  // Primary key.
+  string ietf_bcp_47_tag = 1;
+
+  // Properties.
+  string name = 2;
+  string endonym = 3;
+
+  // Foreign keys.
+  string language_iso_639_1_code = 4;
+  string country_iso_3166_1_alpha_2_code = 5;
+}
+
+message GeopoliticalEntityDTO {
+  // Primary key.
+  string short_code = 1;
+
+  // Properties.
+  string name = 2;
+  string type = 3;
+
+  // Navigation properties as lists of identifiers.
+  repeated string country_iso_3166_1_alpha_2_codes = 4; // Many-to-many.
+}
