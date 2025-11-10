@@ -108,7 +108,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geo.Infra", "backends\Servi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geo.Tests", "backends\Services\Geo\Geo.Tests\Geo.Tests.csproj", "{A8C54680-99DA-4C22-BFF0-FE0ECCE33AA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utilities.Tests", "backends\Contracts\Utilities.Tests\Utilities.Tests.csproj", "{BE6FCF87-B290-4F44-B702-E4D5F37FC02F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "backends\Contracts\Tests\Tests.csproj", "{BE6FCF87-B290-4F44-B702-E4D5F37FC02F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "backends\Contracts\Common\Common.csproj", "{6545C871-B9B8-4727-8CEB-86CD3410F536}"
 EndProject

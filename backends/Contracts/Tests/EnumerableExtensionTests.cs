@@ -3,7 +3,7 @@ using FluentAssertions;
 
 // ReSharper disable MoveLocalFunctionAfterJumpStatement
 
-namespace D2.Utilities.Tests;
+namespace D2.Contracts.Tests;
 
 /// <summary>
 /// Unit tests for <see cref="EnumerableExtensions"/>.

@@ -1,6 +1,6 @@
 ﻿using D2.Contracts.Common;
 
-namespace D2.Utilities.Tests;
+namespace D2.Contracts.Tests;
 
 /// <summary>
 /// Unit tests for the generic <see cref="D2Result{TData}"/> class.
