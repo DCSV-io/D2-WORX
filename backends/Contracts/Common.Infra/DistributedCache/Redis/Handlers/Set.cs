@@ -42,7 +42,7 @@ public class Set<TValue> : BaseHandler<
             // Serialize the value.
             var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(
                 input.Value,
-                ISerializerOptions.SR_IgnoreCycles);
+                SerializerOptions.SR_IgnoreCycles);
 
             // Connect to Redis and set the value.
             var db = r_redis.GetDatabase();

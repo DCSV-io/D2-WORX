@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace D2.Contracts.Common;
 
-public interface ISerializerOptions
+public static class SerializerOptions
 {
     public static readonly JsonSerializerOptions SR_IgnoreCycles = new()
     {

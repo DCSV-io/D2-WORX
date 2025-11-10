@@ -50,7 +50,7 @@ public class Get<TValue> : BaseHandler<
             // Deserialize the value.
             var value = JsonSerializer.Deserialize<TValue>(
                 (byte[])redisValue!,
-                ISerializerOptions.SR_IgnoreCycles);
+                SerializerOptions.SR_IgnoreCycles);
 
             // Return the result.
             return D2Result<S.GetOutput<TValue>?>.Ok(
