@@ -27,28 +27,17 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
     /// </summary>
     ///
     /// <param name="context">
-    /// The request context for the current operation.
+    /// The handler context for the current operation.
     /// </param>
-    /// <param name="logger">
-    /// The logger to use for logging messages.
-    /// </param>
-    protected BaseHandler(IRequestContext context, ILogger logger)
+    protected BaseHandler(IHandlerContext context)
     {
-        r_context = context;
-        r_logger = logger;
+        Context = context;
     }
 
     /// <summary>
-    /// The request context for the current operation.
+    /// The handler context for the current operation.
     /// </summary>
-    private readonly IRequestContext r_context;
-
-    /// <summary>
-    /// The logger to use for logging messages.
-    /// </summary>
-    private readonly ILogger r_logger;
-
-
+    protected readonly IHandlerContext Context;
 
     /// <inheritdoc />
     /// <remarks>
@@ -68,10 +57,10 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
 
         // Add metadata to the activity.
         activity?.SetTag("handler.type", typeof(THandler).FullName ?? typeof(THandler).Name);
-        activity?.SetTag("trace.id", r_context.TraceId);
-        activity?.SetTag("user.id", r_context.UserId);
-        activity?.SetTag("agent.org.id", r_context.AgentOrgId);
-        activity?.SetTag("target.org.id", r_context.TargetOrgId);
+        activity?.SetTag("trace.id", Context.Request.TraceId);
+        activity?.SetTag("user.id", Context.Request.UserId);
+        activity?.SetTag("agent.org.id", Context.Request.AgentOrgId);
+        activity?.SetTag("target.org.id", Context.Request.TargetOrgId);
 
         // Start the stopwatch to measure elapsed time.
         var sw = Stopwatch.StartNew();
@@ -83,19 +72,19 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         try
         {
             // Log that we are now executing the handler.
-            r_logger.LogInformation(
+            Context.Logger.LogInformation(
                 "Executing handler {HandlerName}. TraceId: {TraceId}.",
                 typeof(THandler).Name,
-                r_context.TraceId);
+                Context.Request.TraceId);
 
             // Log the input as debug if enabled.
             if (options.LogInput)
             {
-                r_logger.LogDebug(
+                Context.Logger.LogDebug(
                     "Handler {HandlerName} received input: {@Input}. TraceId: {TraceId}.",
                     typeof(THandler).Name,
                     input,
-                    r_context.TraceId);
+                    Context.Request.TraceId);
             }
 
             // Execute the handler's logic.
@@ -108,11 +97,11 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
             // Log the output as debug if enabled.
             if (options.LogOutput)
             {
-                r_logger.LogDebug(
+                Context.Logger.LogDebug(
                     "Handler {HandlerName} produced result: {@Output}. TraceId: {TraceId}.",
                     typeof(THandler).Name,
                     result,
-                    r_context.TraceId);
+                    Context.Request.TraceId);
             }
 
             // Add result metadata to the activity.
@@ -134,13 +123,13 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
                         : LogLevel.Critical;
 
             // Log the completion of the handler execution.
-            r_logger.Log(
+            Context.Logger.Log(
                 level,
                 "Executed handler {HandlerName} {Status} in {ElapsedMilliseconds}ms. TraceId: {TraceId}.",
                 typeof(THandler).Name,
                 result.Success ? "successfully" : "unsuccessfully",
                 elapsedMs,
-                r_context.TraceId);
+                Context.Request.TraceId);
 
             // Return the result.
             return result;
@@ -153,7 +142,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
 
             // Create an unhandled exception result.
             var errorResult = D2Result<TOutput?>.UnhandledException(
-                traceId: r_context.TraceId);
+                traceId: Context.Request.TraceId);
 
             // Add exception metadata to the activity.
             activity?.SetTag("handler.success", errorResult.Success);
@@ -164,18 +153,32 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
             activity?.AddException(ex);
 
             // Log the unhandled exception.
-            r_logger.LogError(
+            Context.Logger.LogError(
                 ex,
                 "Handler {HandlerName} encountered an unhandled exception after {ElapsedMilliseconds}ms. TraceId: {TraceId}.",
                 typeof(THandler).Name,
                 elapsedMs,
-                r_context.TraceId);
+                Context.Request.TraceId);
 
             // Return the error result.
             return errorResult;
         }
     }
 
+    /// <summary>
+    /// Executes the core logic of the handler.
+    /// </summary>
+    ///
+    /// <param name="input">
+    /// The input to be processed by the handler.
+    /// </param>
+    /// <param name="ct">
+    /// A cancellation token to cancel the operation.
+    /// </param>
+    ///
+    /// <returns>
+    /// A <see cref="ValueTask{D2Result}"/> containing the result of the handler's execution.
+    /// </returns>
     protected abstract ValueTask<D2Result<TOutput?>> ExecuteAsync(
         TInput input,
         CancellationToken ct = default);
@@ -210,7 +213,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
 
         // If valid, return OK.
         if (validationResult.IsValid)
-            return D2Result.Ok(r_context.TraceId);
+            return D2Result.Ok(Context.Request.TraceId);
 
         // Group errors by property name and select into a 2D list.
         var errors = validationResult.Errors
@@ -224,7 +227,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         // Return validation failed result with errors.
         return D2Result.ValidationFailed(
             inputErrors: errors,
-            traceId: r_context.TraceId);
+            traceId: Context.Request.TraceId);
     }
 
     /// <summary>
