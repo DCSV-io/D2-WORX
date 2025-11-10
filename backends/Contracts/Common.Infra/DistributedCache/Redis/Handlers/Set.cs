@@ -1,8 +1,8 @@
 ﻿using D2.Contracts.Common;
 using D2.Contracts.Common.App;
-using S = D2.Contracts.Common.App.ICacheService;
+using S = D2.Contracts.Common.App.IDistributedCacheService;
 
-namespace Common.Infra.Cache.Redis.Handlers;
+namespace Common.Infra.DistributedCache.Redis.Handlers;
 
 /// <inheritdoc cref="S.ISetHandler{TValue}"/>
 public class Set<TValue> : BaseHandler<

@@ -1,22 +1,22 @@
-﻿using Common.Infra.Cache.Redis.Handlers;
-using Common.Infra.Common;
+﻿using Common.Infra.Common;
+using Common.Infra.DistributedCache.Redis.Handlers;
 using D2.Contracts.Common.App;
-using S = D2.Contracts.Common.App.ICacheService;
+using S = D2.Contracts.Common.App.IDistributedCacheService;
 
-namespace Common.Infra.Cache.Redis;
+namespace Common.Infra.DistributedCache.Redis;
 
-/// <inheritdoc cref="S" />
+/// <inheritdoc cref="IDistributedCacheService" />
 /// <remarks>
 /// This caching service uses Redis.
 /// </remarks>
-public class RedisCacheService : BaseService, S
+public class RedisDistributedCacheService : BaseService, S
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="RedisCacheService"/> class.
+    /// Initializes a new instance of the <see cref="RedisDistributedCacheService"/> class.
     /// </summary>
     ///
     /// <inheritdoc/>
-    public RedisCacheService(IHandlerContext context) : base(context) { }
+    public RedisDistributedCacheService(IHandlerContext context) : base(context) { }
 
     /// <inheritdoc/>
     public S.IGetHandler<TValue> Get<TValue>()

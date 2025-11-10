@@ -1,9 +1,9 @@
 ﻿namespace D2.Contracts.Common.App;
 
 /// <summary>
-/// Defines a contract for a caching service.
+/// Defines a contract for a distributed caching service.
 /// </summary>
-public interface ICacheService
+public interface IDistributedCacheService
 {
     #region Get
 

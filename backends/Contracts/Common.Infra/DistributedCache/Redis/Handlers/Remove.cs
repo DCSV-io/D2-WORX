@@ -1,10 +1,10 @@
 ﻿using D2.Contracts.Common;
 using D2.Contracts.Common.App;
-using H = D2.Contracts.Common.App.ICacheService.IRemoveHandler;
-using I = D2.Contracts.Common.App.ICacheService.RemoveInput;
-using O = D2.Contracts.Common.App.ICacheService.RemoveOutput;
+using H = D2.Contracts.Common.App.IDistributedCacheService.IRemoveHandler;
+using I = D2.Contracts.Common.App.IDistributedCacheService.RemoveInput;
+using O = D2.Contracts.Common.App.IDistributedCacheService.RemoveOutput;
 
-namespace Common.Infra.Cache.Redis.Handlers;
+namespace Common.Infra.DistributedCache.Redis.Handlers;
 
 /// <inheritdoc cref="H"/>
 public class Remove : BaseHandler<H, I, O>, H

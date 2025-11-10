@@ -1,10 +1,10 @@
 ﻿using D2.Contracts.Common;
 using D2.Contracts.Common.App;
-using H = D2.Contracts.Common.App.ICacheService.IExistsHandler;
-using I = D2.Contracts.Common.App.ICacheService.ExistsInput;
-using O = D2.Contracts.Common.App.ICacheService.ExistsOutput;
+using H = D2.Contracts.Common.App.IDistributedCacheService.IExistsHandler;
+using I = D2.Contracts.Common.App.IDistributedCacheService.ExistsInput;
+using O = D2.Contracts.Common.App.IDistributedCacheService.ExistsOutput;
 
-namespace Common.Infra.Cache.Redis.Handlers;
+namespace Common.Infra.DistributedCache.Redis.Handlers;
 
 /// <inheritdoc cref="H"/>
 public class Exists : BaseHandler<H, I, O>, H
