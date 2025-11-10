@@ -1,6 +1,6 @@
 ﻿using D2.Contracts.Common;
 using D2.Contracts.Common.App;
-using S = D2.Contracts.Common.App.IDistributedCacheService;
+using S = D2.Contracts.Common.App.ICommonCacheService;
 
 namespace Common.Infra.DistributedCache.Redis.Handlers;
 

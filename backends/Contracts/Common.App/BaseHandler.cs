@@ -39,6 +39,11 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
     /// </summary>
     protected readonly IHandlerContext Context;
 
+    /// <summary>
+    /// The trace ID associated with the current request.
+    /// </summary>
+    protected string? TraceId => Context.Request.TraceId;
+
     /// <inheritdoc />
     /// <remarks>
     /// This method wraps the execution of the handler with logging, timing, and exception

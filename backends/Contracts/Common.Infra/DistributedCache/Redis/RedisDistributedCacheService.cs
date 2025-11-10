@@ -7,7 +7,7 @@ namespace Common.Infra.DistributedCache.Redis;
 
 /// <inheritdoc cref="IDistributedCacheService" />
 /// <remarks>
-/// This caching service uses Redis.
+/// This distributed caching service uses Redis.
 /// </remarks>
 public class RedisDistributedCacheService : BaseService, S
 {

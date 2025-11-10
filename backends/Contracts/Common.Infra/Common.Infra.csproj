@@ -10,4 +10,8 @@
       <ProjectReference Include="..\Common.App\Common.App.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.0-rc.2.25502.107" />
+    </ItemGroup>
+
 </Project>
