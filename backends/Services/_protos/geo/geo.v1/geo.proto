@@ -6,7 +6,7 @@ package d2.geo.v1;
 
 option csharp_namespace = "D2.Services.Protos.Geo.V1";
 
-// Simple ping service for testing proto generation
+// GeoService defines methods to retrieve geographical reference and contact data.
 service GeoService {
   rpc GetReferenceData(GetReferenceDataRequest) returns (GetReferenceDataResponse);
 }
