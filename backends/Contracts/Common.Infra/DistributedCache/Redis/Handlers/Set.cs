@@ -17,11 +17,10 @@ public class Set<TValue> : BaseHandler<
     public Set(IHandlerContext context) : base(context) { }
 
     /// <inheritdoc/>
-    protected override async ValueTask<D2Result<S.SetOutput?>> ExecuteAsync(
+    protected override ValueTask<D2Result<S.SetOutput?>> ExecuteAsync(
         S.SetInput<TValue> input,
         CancellationToken ct = default)
     {
-        // TODO: Implement.
-        return default;
+        throw new NotImplementedException();
     }
 }

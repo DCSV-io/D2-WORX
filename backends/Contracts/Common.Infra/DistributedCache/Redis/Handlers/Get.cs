@@ -17,11 +17,10 @@ public class Get<TValue> : BaseHandler<
     public Get(IHandlerContext context) : base(context) { }
 
     /// <inheritdoc/>
-    protected override async ValueTask<D2Result<S.GetOutput<TValue>?>> ExecuteAsync(
+    protected override ValueTask<D2Result<S.GetOutput<TValue>?>> ExecuteAsync(
         S.GetInput input,
         CancellationToken ct = default)
     {
-        // TODO: Implement.
-        return default;
+        throw new NotImplementedException();
     }
 }

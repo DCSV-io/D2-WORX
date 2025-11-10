@@ -17,11 +17,10 @@ public class Remove : BaseHandler<H, I, O>, H
     public Remove(IHandlerContext context) : base(context) { }
 
     /// <inheritdoc/>
-    protected override async ValueTask<D2Result<O?>> ExecuteAsync(
+    protected override ValueTask<D2Result<O?>> ExecuteAsync(
         I input,
         CancellationToken ct = default)
     {
-        // TODO: Implement.
-        return default;
+        throw new NotImplementedException();
     }
 }

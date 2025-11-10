@@ -21,7 +21,6 @@ public class Exists : BaseHandler<H, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        // TODO: Implement.
-        return default;
+        throw new NotImplementedException();
     }
 }
