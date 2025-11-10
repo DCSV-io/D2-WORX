@@ -34,4 +34,19 @@ public class ErrorCodes
     /// Indicates that an unhandled exception has occurred.
     /// </summary>
     public const string UNHANDLED_EXCEPTION = nameof(UNHANDLED_EXCEPTION);
+
+    /// <summary>
+    /// Indicates that the data could not be serialized.
+    /// </summary>
+    public const string COULD_NOT_BE_SERIALIZED = nameof(COULD_NOT_BE_SERIALIZED);
+
+    /// <summary>
+    /// Indicates that the data could not be deserialized.
+    /// </summary>
+    public const string COULD_NOT_BE_DESERIALIZED = nameof(COULD_NOT_BE_DESERIALIZED);
+
+    /// <summary>
+    /// Indicates that the service is currently unavailable.
+    /// </summary>
+    public const string SERVICE_UNAVAILABLE = nameof(SERVICE_UNAVAILABLE);
 }
