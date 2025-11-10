@@ -16,9 +16,14 @@ public class DefaultMemoryCacheService : BaseService, S
     /// Initializes a new instance of the <see cref="DefaultMemoryCacheService"/> class.
     /// </summary>
     ///
+    /// <param name="memoryCache">
+    /// The memory cache instance to use.
+    /// </param>
+    ///
     /// <inheritdoc/>
     public DefaultMemoryCacheService(
         IMemoryCache memoryCache,
+        // ReSharper disable once InvalidXmlDocComment
         IHandlerContext context) : base(context)
     {
         r_memoryCache = memoryCache;

@@ -1,4 +1,5 @@
-﻿using Common.Infra.MemoryCache.Default.Handlers;
+﻿using Common.Infra.MemoryCache.Default;
+using Common.Infra.MemoryCache.Default.Handlers;
 using D2.Contracts.Common.App;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Caching.Memory;
 namespace D2.Contracts.Tests;
 
 /// <summary>
-/// Tests for <see cref="IMemoryCacheService"/>.
+/// Tests for <see cref="DefaultMemoryCacheService"/>.
 /// </summary>
 public class DefaultMemoryCacheTests
 {
