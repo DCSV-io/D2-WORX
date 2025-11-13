@@ -1,6 +1,7 @@
-﻿using Common.Infra.MemoryCache.Default;
-using Common.Infra.MemoryCache.Default.Handlers;
-using D2.Contracts.Common.App;
+﻿using D2.Contracts.Interfaces;
+using D2.Contracts.MemoryCache.Default;
+using D2.Contracts.Handler;
+using D2.Contracts.MemoryCache.Default.Handlers;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -11,7 +12,8 @@ namespace D2.Contracts.Tests;
 /// </summary>
 public class DefaultMemoryCacheTests
 {
-    private readonly IMemoryCache r_cache = new MemoryCache(new MemoryCacheOptions());
+    private readonly IMemoryCache r_cache
+        = new Microsoft.Extensions.Caching.Memory.MemoryCache(new MemoryCacheOptions());
     private readonly IHandlerContext r_context = TestHelpers.CreateHandlerContext();
 
     [Fact]

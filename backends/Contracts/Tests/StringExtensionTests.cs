@@ -1,4 +1,4 @@
-﻿using D2.Contracts.Utilities;
+﻿using D2.Contracts.Utilities.Extensions;
 using FluentAssertions;
 
 namespace D2.Contracts.Tests;

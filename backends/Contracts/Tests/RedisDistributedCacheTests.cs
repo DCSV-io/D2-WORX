@@ -1,36 +1,37 @@
-﻿using Common.Infra.DistributedCache.Redis;
-using Common.Infra.DistributedCache.Redis.Handlers;
-using D2.Contracts.Common.App;
+﻿using D2.Contracts.DistributedCache.Redis.Handlers;
+using D2.Contracts.Interfaces;
+using D2.Contracts.Handler;
 using FluentAssertions;
 using StackExchange.Redis;
 using Testcontainers.Redis;
+
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 
 namespace D2.Contracts.Tests;
 
 /// <summary>
-/// Tests for <see cref="RedisDistributedCacheService"/>.
+/// Tests for <see cref="DistributedCache.Redis.RedisDistributedCacheService"/>.
 /// </summary>
 public class RedisDistributedCacheTests : IAsyncLifetime
 {
-    private RedisContainer _rContainer = null!;
+    private RedisContainer _container = null!;
     private IConnectionMultiplexer _redis = null!;
     private IHandlerContext _context = null!;
 
     public async ValueTask InitializeAsync()
     {
-        _rContainer = new RedisBuilder().Build();
-        await _rContainer.StartAsync();
+        _container = new RedisBuilder().Build();
+        await _container.StartAsync();
 
         _redis = await ConnectionMultiplexer.ConnectAsync(
-            _rContainer.GetConnectionString());
+            _container.GetConnectionString());
         _context = TestHelpers.CreateHandlerContext();
     }
 
     public async ValueTask DisposeAsync()
     {
         _redis.Dispose();
-        await _rContainer.DisposeAsync();
+        await _container.DisposeAsync();
     }
 
     [Fact]

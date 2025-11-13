@@ -1,6 +1,7 @@
 ﻿using System.Collections.Immutable;
-using D2.Contracts.Common;
-using D2.Contracts.Utilities;
+using D2.Contracts.Utilities.Attributes;
+using D2.Contracts.Utilities.Enums;
+using D2.Contracts.Utilities.Extensions;
 
 namespace D2.Geo.Domain.ValueObjects;
 

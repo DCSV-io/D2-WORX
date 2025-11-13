@@ -1,6 +1,4 @@
-﻿using Common.Infra.Handler;
-using D2.Contracts.Common;
-using D2.Contracts.Common.App;
+﻿using D2.Contracts.Handler;
 using Microsoft.Extensions.Logging;
 using Moq;
 

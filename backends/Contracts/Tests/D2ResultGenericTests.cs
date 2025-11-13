@@ -1,4 +1,4 @@
-﻿using D2.Contracts.Common;
+﻿using D2.Contracts.Result;
 
 namespace D2.Contracts.Tests;
 

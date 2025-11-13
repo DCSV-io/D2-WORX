@@ -1,5 +1,5 @@
 using System.Net;
-using D2.Contracts.Utilities;
+using D2.Contracts.Utilities.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
