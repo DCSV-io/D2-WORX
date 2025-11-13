@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>D2.Contracts.Interfaces</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\Services\_protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
+      <ProjectReference Include="..\Handler\Handler.csproj" />
+    </ItemGroup>
+
+</Project>

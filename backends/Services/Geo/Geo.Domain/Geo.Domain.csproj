@@ -8,7 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\Contracts\Common\Common.csproj" />
       <ProjectReference Include="..\..\..\Contracts\Utilities\Utilities.csproj" />
     </ItemGroup>
 
