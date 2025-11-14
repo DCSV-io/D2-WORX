@@ -94,6 +94,7 @@ sql/
 ClientBin/
 [Ss]tyle[Cc]op.*
 ![Ss]tyle[Cc]op.targets
+![Ss]tyle[Cc]op.json
 ~$*
 *~
 *.dbmdl
