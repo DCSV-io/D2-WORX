@@ -1,28 +1,40 @@
-﻿using D2.Contracts.Handler;
-using D2.Contracts.Result;
-using Microsoft.Extensions.Caching.Memory;
-using S = D2.Contracts.Interfaces.ICommonCacheService;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Set.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.MemoryCache.Default.Handlers;
+
+using D2.Contracts.Handler;
+using D2.Contracts.Result;
+using Microsoft.Extensions.Caching.Memory;
+using S = D2.Contracts.Interfaces.CommonCacheService.ICommonCacheService;
 
 /// <inheritdoc cref="S.ISetHandler{TValue}"/>
 public class Set<TValue> : BaseHandler<
         S.ISetHandler<TValue>, S.SetInput<TValue>, S.SetOutput>,
     S.ISetHandler<TValue>
 {
+    private readonly IMemoryCache r_memoryCache;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Set{TValue}"/> class.
     /// </summary>
     ///
-    /// <inheritdoc/>
+    /// <param name="memoryCache">
+    /// The memory cache instance to use.
+    /// </param>
+    /// <param name="context">
+    /// The handler context.
+    /// </param>
     public Set(
         IMemoryCache memoryCache,
-        IHandlerContext context) : base(context)
+        IHandlerContext context)
+        : base(context)
     {
         r_memoryCache = memoryCache;
     }
-
-    private readonly IMemoryCache r_memoryCache;
 
     /// <inheritdoc/>
     protected override ValueTask<D2Result<S.SetOutput?>> ExecuteAsync(
@@ -30,9 +42,13 @@ public class Set<TValue> : BaseHandler<
         CancellationToken ct = default)
     {
         if (input.Expiration.HasValue)
+        {
             r_memoryCache.Set(input.Key, input.Value, input.Expiration.Value);
+        }
         else
+        {
             r_memoryCache.Set(input.Key, input.Value);
+        }
 
         return ValueTask.FromResult(D2Result<S.SetOutput?>.Ok(new S.SetOutput(), traceId: TraceId));
     }

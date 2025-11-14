@@ -1,4 +1,10 @@
-﻿namespace D2.Contracts.Handler;
+﻿// -----------------------------------------------------------------------
+// <copyright file="BaseService.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Handler;
 
 /// <summary>
 /// Base class for services that require access to the handler context.

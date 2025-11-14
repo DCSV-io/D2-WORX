@@ -1,9 +1,15 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ContactMethods.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Geo.Domain.Entities;
-
-namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a collection of contact methods, including email addresses and phone numbers.
@@ -15,16 +21,27 @@ namespace D2.Geo.Domain.ValueObjects;
 public record ContactMethods
 {
     /// <summary>
-    /// The email addresses and their associated labels.
+    /// Gets the email addresses and their associated labels.
     /// </summary>
     public required ImmutableList<EmailAddress> Emails { get; init; }
 
     /// <summary>
-    /// The phone numbers and their associated labels.
+    /// Gets the phone numbers and their associated labels.
     /// </summary>
     public required ImmutableList<PhoneNumber> PhoneNumbers { get; init; }
 
     #region Functionality
+
+    /// <summary>
+    /// Gets the primary email address, which is the first email in the list or null if none exists.
+    /// </summary>
+    public EmailAddress? PrimaryEmail => Emails.FirstOrDefault();
+
+    /// <summary>
+    /// Gets the primary phone number, which is the first phone number in the list or null if none
+    /// exists.
+    /// </summary>
+    public PhoneNumber? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault();
 
     /// <summary>
     /// Factory method to create a new <see cref="ContactMethods"/> instance with validation.
@@ -56,7 +73,7 @@ public record ContactMethods
         return new ContactMethods
         {
             Emails = EmailAddress.CreateMany(emails),
-            PhoneNumbers = PhoneNumber.CreateMany(phoneNumbers)
+            PhoneNumbers = PhoneNumber.CreateMany(phoneNumbers),
         };
     }
 
@@ -86,20 +103,9 @@ public record ContactMethods
         return new ContactMethods
         {
             Emails = EmailAddress.CreateMany(contactMethods.Emails),
-            PhoneNumbers = PhoneNumber.CreateMany(contactMethods.PhoneNumbers)
+            PhoneNumbers = PhoneNumber.CreateMany(contactMethods.PhoneNumbers),
         };
     }
-
-    /// <summary>
-    /// Gets the primary email address, which is the first email in the list or null if none exists.
-    /// </summary>
-    public EmailAddress? PrimaryEmail => Emails.FirstOrDefault();
-
-    /// <summary>
-    /// Gets the primary phone number, which is the first phone number in the list or null if none
-    /// exists.
-    /// </summary>
-    public PhoneNumber? PrimaryPhoneNumber => PhoneNumbers.FirstOrDefault();
 
     #endregion
 
@@ -113,8 +119,15 @@ public record ContactMethods
     /// </remarks>
     public virtual bool Equals(ContactMethods? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
 
         return Emails.SequenceEqual(other.Emails)
                && PhoneNumbers.SequenceEqual(other.PhoneNumbers);
@@ -128,13 +141,17 @@ public record ContactMethods
     /// </remarks>
     public override int GetHashCode()
     {
-        var hashCode = new HashCode();
+        var hashCode = default(HashCode);
 
         foreach (var email in Emails)
+        {
             hashCode.Add(email);
+        }
 
         foreach (var phone in PhoneNumbers)
+        {
             hashCode.Add(phone);
+        }
 
         return hashCode.ToHashCode();
     }

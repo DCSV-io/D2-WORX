@@ -1,13 +1,17 @@
-﻿using System.Security.Cryptography;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Location.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Entities;
+
+using System.Security.Cryptography;
 using System.Text;
 using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Contracts.Utilities.Extensions;
 using D2.Geo.Domain.ValueObjects;
-
-// ReSharper disable UnusedAutoPropertyAccessor.Global
-
-namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a geographical location with various address components and coordinates.
@@ -28,7 +32,7 @@ public record Location
     #region Identity
 
     /// <summary>
-    /// A content-addressable 32-byte SHA-256 hash of the location's content.
+    /// Gets a content-addressable 32-byte SHA-256 hash of the location's content.
     /// </summary>
     public required byte[] HashId { get; init; }
 
@@ -37,44 +41,44 @@ public record Location
     #region Content Addressible Properties
 
     /// <summary>
-    /// The geographical coordinates (latitude and longitude) of the location.
+    /// Gets the geographical coordinates (latitude and longitude) of the location.
     /// </summary>
     /// <example>
     /// {
     ///     "latitude": 34.0522,
     ///     "longitude": -118.2437
-    /// }
+    /// }.
     /// </example>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public Coordinates? Coordinates { get; init; }
 
     /// <summary>
-    /// The street address (lines) of the location.
+    /// Gets the street address (lines) of the location.
     /// </summary>
     /// <example>
     /// {
     ///     "line1": "123 Main St",
     ///     "line2": "Building B",
     ///     "line3": "Suite 400"
-    /// }
+    /// }.
     /// </example>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public StreetAddress? Address { get; init; }
 
     /// <summary>
-    /// The city.
+    /// Gets the city.
     /// </summary>
     /// <example>
-    /// Los Angeles
+    /// Los Angeles.
     /// </example>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public string? City { get; init; }
 
     /// <summary>
-    /// The postal code (or ZIP code) of the location.
+    /// Gets the postal code (or ZIP code) of the location.
     /// </summary>
     /// <example>
-    /// 90012
+    /// 90012.
     /// </example>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public string? PostalCode { get; init; }
@@ -84,18 +88,18 @@ public record Location
     #region Foreign Keys (Content Addressable)
 
     /// <summary>
-    /// The ISO 3166-2 code of the subdivision / region.
+    /// Gets the ISO 3166-2 code of the subdivision / region.
     /// </summary>
     /// <example>
-    /// US-CA
+    /// US-CA.
     /// </example>
     public string? SubdivisionISO31662Code { get; init; }
 
     /// <summary>
-    /// The ISO 3166-1 alpha-2 code of the country.
+    /// Gets the ISO 3166-1 alpha-2 code of the country.
     /// </summary>
     /// <example>
-    /// US
+    /// US.
     /// </example>
     public string? CountryISO31661Alpha2Code { get; init; }
 
@@ -104,12 +108,12 @@ public record Location
     #region Navigation Properties
 
     /// <summary>
-    /// Navigation property to the subdivision / region of the location.
+    /// Gets navigation property to the subdivision / region of the location.
     /// </summary>
     public Subdivision? Subdivision { get; init; }
 
     /// <summary>
-    /// Navigation property to the country of the location.
+    /// Gets navigation property to the country of the location.
     /// </summary>
     public Country? Country { get; init; }
 
@@ -167,7 +171,7 @@ public record Location
             cityClean,
             postalCodeClean,
             subdivisionCodeClean,
-            countryCodeClean
+            countryCodeClean,
         };
         var input = hashInputArr.GetNormalizedStrForHashing();
         var inputBytes = Encoding.UTF8.GetBytes(input);
@@ -182,7 +186,7 @@ public record Location
             City = cityClean,
             PostalCode = postalCodeClean,
             SubdivisionISO31662Code = subdivisionCodeClean,
-            CountryISO31661Alpha2Code = countryCodeClean
+            CountryISO31661Alpha2Code = countryCodeClean,
         };
     }
 

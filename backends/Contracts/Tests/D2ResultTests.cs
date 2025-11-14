@@ -1,12 +1,21 @@
-﻿using D2.Contracts.Result;
+﻿// -----------------------------------------------------------------------
+// <copyright file="D2ResultTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Tests;
+
+using D2.Contracts.Result;
 
 /// <summary>
 /// Unit tests for the non-generic <see cref="D2Result"/> class.
 /// </summary>
 public class D2ResultTests
 {
+    /// <summary>
+    /// Tests that the Ok factory method creates a successful result with default values.
+    /// </summary>
     [Fact]
     public void Ok_CreatesSuccessResult()
     {
@@ -23,6 +32,9 @@ public class D2ResultTests
         Assert.Null(result.TraceId);
     }
 
+    /// <summary>
+    /// Tests that the Ok factory method includes a trace ID when provided.
+    /// </summary>
     [Fact]
     public void Ok_WithTraceId_IncludesTraceId()
     {
@@ -37,6 +49,9 @@ public class D2ResultTests
         Assert.Equal(trace_id, result.TraceId);
     }
 
+    /// <summary>
+    /// Tests that the Fail factory method creates a failure result with messages.
+    /// </summary>
     [Fact]
     public void Fail_WithMessages_CreatesFailureResult()
     {
@@ -54,6 +69,9 @@ public class D2ResultTests
         Assert.Null(result.ErrorCode);
     }
 
+    /// <summary>
+    /// Tests that the Fail factory method uses the provided status code.
+    /// </summary>
     [Fact]
     public void Fail_WithCustomStatusCode_UsesProvidedStatusCode()
     {
@@ -68,6 +86,9 @@ public class D2ResultTests
         Assert.Equal(status_code, result.StatusCode);
     }
 
+    /// <summary>
+    /// Tests that the Fail factory method includes an error code when provided.
+    /// </summary>
     [Fact]
     public void Fail_WithErrorCode_IncludesErrorCode()
     {
@@ -82,6 +103,9 @@ public class D2ResultTests
         Assert.Equal(error_code, result.ErrorCode);
     }
 
+    /// <summary>
+    /// Tests that the Fail factory method includes input errors when provided.
+    /// </summary>
     [Fact]
     public void Fail_WithInputErrors_IncludesInputErrors()
     {
@@ -89,7 +113,7 @@ public class D2ResultTests
         var inputErrors = new List<List<string>>
         {
             new() { "Field1", "Error message 1" },
-            new() { "Field2", "Error message 2" }
+            new() { "Field2", "Error message 2" },
         };
 
         // Act
@@ -100,6 +124,9 @@ public class D2ResultTests
         Assert.Equal(inputErrors, result.InputErrors);
     }
 
+    /// <summary>
+    /// Tests that the ValidationFailed factory method creates a validation failure result.
+    /// </summary>
     [Fact]
     public void ValidationFailed_CreatesValidationFailureResult()
     {
@@ -107,7 +134,7 @@ public class D2ResultTests
         var inputErrors = new List<List<string>>
         {
             new() { "Username", "Username is required" },
-            new() { "Email", "Invalid email format" }
+            new() { "Email", "Invalid email format" },
         };
         const string trace_id = "trace-456";
 
@@ -123,6 +150,9 @@ public class D2ResultTests
         Assert.Equal(trace_id, result.TraceId);
     }
 
+    /// <summary>
+    /// Tests that the constructor defaults to OK status code when success is true.
+    /// </summary>
     [Fact]
     public void Constructor_WithSuccessTrue_DefaultsToOkStatusCode()
     {
@@ -133,6 +163,9 @@ public class D2ResultTests
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
     }
 
+    /// <summary>
+    /// Tests that the constructor defaults to BadRequest status code when success is false.
+    /// </summary>
     [Fact]
     public void Constructor_WithSuccessFalse_DefaultsToBadRequestStatusCode()
     {
@@ -143,6 +176,10 @@ public class D2ResultTests
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
     }
 
+    /// <summary>
+    /// Tests that the ErrorCodes class contains the expected common error codes.
+    /// </summary>
+    /// <param name="errorCode">The error code to verify exists.</param>
     [Theory]
     [InlineData("NOT_FOUND")]
     [InlineData("FORBIDDEN")]

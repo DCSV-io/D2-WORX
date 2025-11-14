@@ -1,28 +1,40 @@
-﻿using D2.Contracts.Handler;
-using D2.Contracts.Result;
-using Microsoft.Extensions.Caching.Memory;
-using H = D2.Contracts.Interfaces.ICommonCacheService.IRemoveHandler;
-using I = D2.Contracts.Interfaces.ICommonCacheService.RemoveInput;
-using O = D2.Contracts.Interfaces.ICommonCacheService.RemoveOutput;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Remove.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.MemoryCache.Default.Handlers;
+
+using D2.Contracts.Handler;
+using D2.Contracts.Result;
+using Microsoft.Extensions.Caching.Memory;
+using H = D2.Contracts.Interfaces.CommonCacheService.ICommonCacheService.IRemoveHandler;
+using I = D2.Contracts.Interfaces.CommonCacheService.ICommonCacheService.RemoveInput;
+using O = D2.Contracts.Interfaces.CommonCacheService.ICommonCacheService.RemoveOutput;
 
 /// <inheritdoc cref="H"/>
 public class Remove : BaseHandler<H, I, O>, H
 {
+    private readonly IMemoryCache r_memoryCache;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Remove"/> class.
     /// </summary>
     ///
-    /// <inheritdoc/>
+    /// <param name="memoryCache">
+    /// The memory cache instance to use.
+    /// </param>
+    /// <param name="context">
+    /// The handler context.
+    /// </param>
     public Remove(
         IMemoryCache memoryCache,
-        IHandlerContext context) : base(context)
+        IHandlerContext context)
+        : base(context)
     {
         r_memoryCache = memoryCache;
     }
-
-    private readonly IMemoryCache r_memoryCache;
 
     /// <inheritdoc/>
     protected override ValueTask<D2Result<O?>> ExecuteAsync(

@@ -1,4 +1,10 @@
-﻿namespace D2.Geo.Domain.Exceptions;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GeoDomainException.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Exceptions;
 
 /// <summary>
 /// Base exception type for all Geography "Geo" Domain exceptions.
@@ -13,7 +19,10 @@ public abstract class GeoDomainException : Exception
     /// <param name="message">
     /// The message that describes the error.
     /// </param>
-    protected GeoDomainException(string message) : base(message) { }
+    protected GeoDomainException(string message)
+        : base(message)
+    {
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeoDomainException"/> class with a specified
@@ -28,5 +37,7 @@ public abstract class GeoDomainException : Exception
     /// The exception that is the cause of the current exception.
     /// </param>
     protected GeoDomainException(string message, Exception innerException)
-        : base(message, innerException) { }
+        : base(message, innerException)
+    {
+    }
 }

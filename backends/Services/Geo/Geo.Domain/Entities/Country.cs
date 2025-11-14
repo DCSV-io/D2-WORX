@@ -1,4 +1,10 @@
-﻿namespace D2.Geo.Domain.Entities;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Country.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a country or nation state.
@@ -13,10 +19,10 @@ public record Country
     #region Identity - Primary Key
 
     /// <summary>
-    /// The ISO 3166-1 alpha-2 code of the country.
+    /// Gets the ISO 3166-1 alpha-2 code of the country.
     /// </summary>
     /// <example>
-    /// US
+    /// US.
     /// </example>
     /// <remarks>
     /// Must be unique. Always a 2-char string (letters).
@@ -28,10 +34,10 @@ public record Country
     #region Identity - Unique
 
     /// <summary>
-    /// The ISO 3166-1 alpha-3 code of the country.
+    /// Gets the ISO 3166-1 alpha-3 code of the country.
     /// </summary>
     /// <example>
-    /// USA
+    /// USA.
     /// </example>
     /// <remarks>
     /// Must be unique. Always a 3-char string (letters).
@@ -39,10 +45,10 @@ public record Country
     public required string ISO31661Alpha3Code { get; init; }
 
     /// <summary>
-    /// The ISO 3166-1 numeric-3 code of the country.
+    /// Gets the ISO 3166-1 numeric-3 code of the country.
     /// </summary>
     /// <example>
-    /// 840
+    /// 840.
     /// </example>
     /// <remarks>
     /// Must be unique. Always a 3-char string (numbers).
@@ -54,26 +60,26 @@ public record Country
     #region Properties
 
     /// <summary>
-    /// The display name of the country.
+    /// Gets the display name of the country.
     /// </summary>
     /// <example>
-    /// United States
+    /// United States.
     /// </example>
     public required string DisplayName { get; init; }
 
     /// <summary>
-    /// The official name of the country.
+    /// Gets the official name of the country.
     /// </summary>
     /// <example>
-    /// United States of America
+    /// United States of America.
     /// </example>
     public required string OfficialName { get; init; }
 
     /// <summary>
-    /// The phone number prefix of the country.
+    /// Gets the phone number prefix of the country.
     /// </summary>
     /// <example>
-    /// 1
+    /// 1.
     /// </example>
     /// <remarks>
     /// Does not include the "+".
@@ -81,10 +87,10 @@ public record Country
     public required string PhoneNumberPrefix { get; init; }
 
     /// <summary>
-    /// The phone number format of the country.
+    /// Gets the phone number format of the country.
     /// </summary>
     /// <example>
-    /// (###) ###-####
+    /// (###) ###-####.
     /// </example>
     /// <remarks>
     /// Used to display phone numbers in a localized format.
@@ -96,27 +102,27 @@ public record Country
     #region Foreign Keys
 
     /// <summary>
-    /// The ISO 3166-1 alpha-2 code of the sovereign country that this country is a territory of,
+    /// Gets the ISO 3166-1 alpha-2 code of the sovereign country that this country is a territory of,
     /// if applicable.
     /// </summary>
     /// <example>
-    /// "US" (for Puerto Rico)
+    /// "US" (for Puerto Rico).
     /// </example>
     public string? SovereignISO31661Alpha2Code { get; init; }
 
     /// <summary>
-    /// The ISO 4217 alpha code of the primary currency used in this country.
+    /// Gets the ISO 4217 alpha code of the primary currency used in this country.
     /// </summary>
     /// <example>
-    /// "USD" (for United States Dollar in the United States)
+    /// "USD" (for United States Dollar in the United States).
     /// </example>
     public string? PrimaryCurrencyISO4217AlphaCode { get; init; }
 
     /// <summary>
-    /// The IETF BCP 47 tag of the primary locale used in this country.
+    /// Gets the IETF BCP 47 tag of the primary locale used in this country.
     /// </summary>
     /// <example>
-    /// "en-US" (for American English in the United States)
+    /// "en-US" (for American English in the United States).
     /// </example>
     public string? PrimaryLocaleIETFBCP47Tag { get; init; }
 
@@ -125,16 +131,16 @@ public record Country
     #region Navigation Collections
 
     /// <summary>
-    /// Navigation property to the sovereign country that this country is a territory of, if
+    /// Gets navigation property to the sovereign country that this country is a territory of, if
     /// applicable.
     /// </summary>
     /// <example>
-    /// United States (for Puerto Rico)
+    /// United States (for Puerto Rico).
     /// </example>
     public Country? SovereignCountry { get; init; }
 
     /// <summary>
-    /// A collection of subdivisions that belong to this country.
+    /// Gets a collection of subdivisions that belong to this country.
     /// </summary>
     /// <example>
     /// States in the United States.
@@ -142,7 +148,7 @@ public record Country
     public required ICollection<Subdivision> Subdivisions { get; init; } = [];
 
     /// <summary>
-    /// The primary currency used in this country.
+    /// Gets the primary currency used in this country.
     /// </summary>
     /// <example>
     /// United States Dollar (USD) in the United States.
@@ -150,7 +156,7 @@ public record Country
     public Currency? PrimaryCurrency { get; init; }
 
     /// <summary>
-    /// A collection of currencies that are used in this country.
+    /// Gets a collection of currencies that are used in this country.
     /// </summary>
     /// <remarks>
     /// All accepted currencies including the primary currency should be included in this
@@ -159,7 +165,7 @@ public record Country
     public required ICollection<Currency> Currencies { get; init; } = [];
 
     /// <summary>
-    /// The primary locale used in this country.
+    /// Gets the primary locale used in this country.
     /// </summary>
     /// <example>
     /// American English (en_US) in the United States.
@@ -167,7 +173,7 @@ public record Country
     public Locale? PrimaryLocale { get; init; }
 
     /// <summary>
-    /// A collection of locales that are present in this country.
+    /// Gets a collection of locales that are present in this country.
     /// </summary>
     /// <example>
     /// American English (en_US) in the United States.
@@ -180,7 +186,7 @@ public record Country
     public required ICollection<Locale> Locales { get; init; } = [];
 
     /// <summary>
-    /// A collection of geopolitical entities to which this country belongs.
+    /// Gets a collection of geopolitical entities to which this country belongs.
     /// </summary>
     /// <example>
     /// North America OR USMCA OR NATO.

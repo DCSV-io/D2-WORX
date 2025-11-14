@@ -1,13 +1,19 @@
-﻿using D2.Contracts.DistributedCache.Redis.Handlers;
-using D2.Contracts.Interfaces;
-using D2.Contracts.Handler;
-using FluentAssertions;
-using StackExchange.Redis;
-using Testcontainers.Redis;
-
-// ReSharper disable UnusedAutoPropertyAccessor.Local
+﻿// -----------------------------------------------------------------------
+// <copyright file="RedisDistributedCacheTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Tests;
+
+using D2.Contracts.DistributedCache.Redis.Handlers;
+using D2.Contracts.Handler;
+using D2.Contracts.Interfaces.CommonCacheService;
+using D2.Contracts.Interfaces.DistributedCacheService;
+using FluentAssertions;
+using JetBrains.Annotations;
+using StackExchange.Redis;
+using Testcontainers.Redis;
 
 /// <summary>
 /// Tests for <see cref="DistributedCache.Redis.RedisDistributedCacheService"/>.
@@ -18,6 +24,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     private IConnectionMultiplexer _redis = null!;
     private IHandlerContext _context = null!;
 
+    /// <inheritdoc/>
     public async ValueTask InitializeAsync()
     {
         _container = new RedisBuilder().Build();
@@ -28,12 +35,20 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         _context = TestHelpers.CreateHandlerContext();
     }
 
+    /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         _redis.Dispose();
         await _container.DisposeAsync();
     }
 
+    /// <summary>
+    /// Tests that getting a missing key returns NotFound.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Get_WhenKeyMissing_ReturnsNotFound()
     {
@@ -46,6 +61,13 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         result.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    /// <summary>
+    /// Tests that getting an existing key returns the correct value.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Get_WhenKeyExists_ReturnsValue()
     {
@@ -63,6 +85,13 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         result.Data!.Value.Should().Be("test-value");
     }
 
+    /// <summary>
+    /// Tests that setting a value stores it in the cache.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Set_WithValidInput_StoresValueInCache()
     {
@@ -78,6 +107,13 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         cached.HasValue.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that setting a value with expiration expires after the specified duration.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Set_WithExpiration_ExpiresAfterDuration()
     {
@@ -94,6 +130,13 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         cached.HasValue.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that removing an existing key deletes it from the cache.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Remove_WithExistingKey_DeletesKeyFromCache()
     {
@@ -109,6 +152,13 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         cached.HasValue.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that checking existence of an existing key returns true.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Exists_WhenKeyExists_ReturnsTrue()
     {
@@ -124,6 +174,13 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         result.Data!.Exists.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that checking existence of a missing key returns false.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Exists_WhenKeyMissing_ReturnsFalse()
     {
@@ -136,6 +193,13 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         result.Data!.Exists.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that setting and getting a complex object serializes and deserializes correctly.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
     [Fact]
     public async Task Set_WithComplexObject_SerializesAndDeserializesCorrectly()
     {
@@ -155,9 +219,21 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         result.Data!.Value.Should().BeEquivalentTo(testObject);
     }
 
+    /// <summary>
+    /// Test data class for complex object caching tests.
+    /// </summary>
     private record TestData
     {
+        /// <summary>
+        /// Gets the identifier.
+        /// </summary>
+        [UsedImplicitly]
         public int Id { get; init; }
+
+        /// <summary>
+        /// Gets the name.
+        /// </summary>
+        [UsedImplicitly]
         public string Name { get; init; } = string.Empty;
     }
 }

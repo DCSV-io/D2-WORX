@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using D2.Contracts.ServiceDefaults;
 using Geo.API.Services;
 using Serilog;
@@ -11,7 +17,8 @@ app.UseStructuredRequestLogging();
 app.MapPrometheusEndpointWithIpRestriction();
 app.MapGrpcService<GeoService>();
 
-app.MapGet("/",
+app.MapGet(
+    "/",
     () => "Communication with gRPC endpoints must be made through a gRPC client.");
 
 app.MapDefaultEndpoints();

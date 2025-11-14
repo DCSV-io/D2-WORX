@@ -1,4 +1,10 @@
-﻿namespace D2.Geo.Domain.Entities;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Currency.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a currency.
@@ -13,10 +19,10 @@ public record Currency
     #region Identity - Primary Key
 
     /// <summary>
-    /// The ISO 4217 alpha code of the currency.
+    /// Gets the ISO 4217 alpha code of the currency.
     /// </summary>
     /// <example>
-    /// USD
+    /// USD.
     /// </example>
     /// <remarks>
     /// Must be unique. Always a 3-char string (letters).
@@ -28,10 +34,10 @@ public record Currency
     #region Identity - Unique
 
     /// <summary>
-    /// The ISO 4217 numeric code of the currency.
+    /// Gets the ISO 4217 numeric code of the currency.
     /// </summary>
     /// <example>
-    /// 840
+    /// 840.
     /// </example>
     /// <remarks>
     /// Must be unique. Always a 3-char string (numbers). Includes leading zeros where applicable.
@@ -43,10 +49,10 @@ public record Currency
     #region Properties
 
     /// <summary>
-    /// The display name of the currency.
+    /// Gets the display name of the currency.
     /// </summary>
     /// <example>
-    /// U.S. dollar
+    /// U.S. dollar.
     /// </example>
     /// <remarks>
     /// A short, human-readable name for the currency.
@@ -54,18 +60,18 @@ public record Currency
     public required string DisplayName { get; init; }
 
     /// <summary>
-    /// The official name of the currency.
+    /// Gets the official name of the currency.
     /// </summary>
     /// <example>
-    /// United States dollar
+    /// United States dollar.
     /// </example>
     public required string OfficialName { get; init; }
 
     /// <summary>
-    /// The number of decimal places generally displayed for amounts in this currency.
+    /// Gets the number of decimal places generally displayed for amounts in this currency.
     /// </summary>
     /// <example>
-    /// 2
+    /// 2.
     /// </example>
     /// <remarks>
     /// Common values are 0 (e.g., JPY), 2 (e.g ., USD), or 3 (e.g., BHD).
@@ -73,10 +79,10 @@ public record Currency
     public required int DecimalPlaces { get; init; }
 
     /// <summary>
-    /// The symbol used to represent the currency.
+    /// Gets the symbol used to represent the currency.
     /// </summary>
     /// <example>
-    /// $
+    /// $.
     /// </example>
     /// <remarks>
     /// This may be a single character (e.g., $) or multiple characters (e.g., F.CFA).

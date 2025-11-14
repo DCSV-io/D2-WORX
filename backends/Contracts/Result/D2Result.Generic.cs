@@ -1,6 +1,12 @@
-﻿using System.Net;
+﻿// -----------------------------------------------------------------------
+// <copyright file="D2Result.Generic.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Result;
+
+using System.Net;
 
 /// <summary>
 /// Represents the result of an operation, including success status, messages, errors, and
@@ -44,63 +50,22 @@ public class D2Result<TData> : D2Result
         List<List<string>>? inputErrors = null,
         HttpStatusCode? statusCode = null,
         string? errorCode = null,
-        string? traceId = null
-    ) : base(
+        string? traceId = null)
+        : base(
         success,
         messages,
         inputErrors,
         statusCode,
         errorCode,
-        traceId
-    )
+        traceId)
     {
         Data = data;
     }
 
     /// <summary>
-    /// The resulting data of the operation.
+    /// Gets the resulting data of the operation.
     /// </summary>
     public TData? Data { get; }
-
-    #region Functionality
-
-    /// <summary>
-    /// Checks if the operation was successful and retrieves the result data.
-    /// </summary>
-    ///
-    /// <param name="data">
-    /// The resulting data of the operation, if successful; otherwise, null.
-    /// </param>
-    ///
-    /// <returns>
-    /// True if the operation was successful; otherwise, false.
-    /// </returns>
-    public bool CheckSuccess(
-        out TData? data)
-    {
-        data = Data;
-        return Success;
-    }
-
-    /// <summary>
-    /// Checks if the operation failed and retrieves the result data.
-    /// </summary>
-    ///
-    /// <param name="data">
-    /// The resulting data of the operation, if failed; otherwise, null.
-    /// </param>
-    ///
-    /// <returns>
-    /// True if the operation failed; otherwise, false.
-    /// </returns>
-    public bool CheckFailure(
-        out TData? data)
-    {
-        data = Data;
-        return Failed;
-    }
-
-    #endregion
 
     #region Factory Methods
 
@@ -117,10 +82,6 @@ public class D2Result<TData> : D2Result
     /// <param name="traceId">
     /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
     /// </param>
-    ///
-    /// <typeparam name="TData">
-    /// The type of the result data returned by the operation.
-    /// </typeparam>
     ///
     /// <returns>
     /// A successful <see cref="D2Result{TResult}"/> instance containing the result data.
@@ -156,14 +117,10 @@ public class D2Result<TData> : D2Result
     /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
     /// </param>
     ///
-    /// <typeparam name="TData">
-    /// The type of the result data returned by the operation.
-    /// </typeparam>
-    ///
     /// <returns>
     /// A failed <see cref="D2Result{TResult}"/> instance containing error details.
     /// </returns>
-    public new static D2Result<TData> Fail(
+    public static new D2Result<TData> Fail(
         List<string>? messages = null,
         HttpStatusCode? statusCode = null,
         List<List<string>>? inputErrors = null,
@@ -327,7 +284,7 @@ public class D2Result<TData> : D2Result
     /// <returns>
     /// A validation failed <see cref="D2Result{TResult}"/> instance containing error details.
     /// </returns>
-    public new static D2Result<TData> ValidationFailed(
+    public static new D2Result<TData> ValidationFailed(
         List<string>? messages = null,
         List<List<string>>? inputErrors = null,
         string? traceId = null)
@@ -397,6 +354,46 @@ public class D2Result<TData> : D2Result
             statusCode: HttpStatusCode.InternalServerError,
             errorCode: ErrorCodes.UNHANDLED_EXCEPTION,
             traceId: traceId);
+    }
+
+    #endregion
+
+    #region Functionality
+
+    /// <summary>
+    /// Checks if the operation was successful and retrieves the result data.
+    /// </summary>
+    ///
+    /// <param name="data">
+    /// The resulting data of the operation, if successful; otherwise, null.
+    /// </param>
+    ///
+    /// <returns>
+    /// True if the operation was successful; otherwise, false.
+    /// </returns>
+    public bool CheckSuccess(
+        out TData? data)
+    {
+        data = Data;
+        return Success;
+    }
+
+    /// <summary>
+    /// Checks if the operation failed and retrieves the result data.
+    /// </summary>
+    ///
+    /// <param name="data">
+    /// The resulting data of the operation, if failed; otherwise, null.
+    /// </param>
+    ///
+    /// <returns>
+    /// True if the operation failed; otherwise, false.
+    /// </returns>
+    public bool CheckFailure(
+        out TData? data)
+    {
+        data = Data;
+        return Failed;
     }
 
     #endregion

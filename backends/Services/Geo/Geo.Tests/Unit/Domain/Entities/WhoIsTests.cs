@@ -1,9 +1,15 @@
-﻿using D2.Geo.Domain.Entities;
+﻿// -----------------------------------------------------------------------
+// <copyright file="WhoIsTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.Entities;
+
+using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.Entities;
 
 /// <summary>
 /// Unit tests for the <see cref="WhoIs"/> entity.
@@ -12,6 +18,9 @@ public class WhoIsTests
 {
     #region Valid Creation - Minimal
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with only an IP address.
+    /// </summary>
     [Fact]
     public void Create_WithIPAddressOnly_Success()
     {
@@ -32,6 +41,9 @@ public class WhoIsTests
         whois.ASN.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with an IP address, year, and month.
+    /// </summary>
     [Fact]
     public void Create_WithYearAndMonth_Success()
     {
@@ -49,6 +61,9 @@ public class WhoIsTests
         whois.Month.Should().Be(6);
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with an IP address and fingerprint.
+    /// </summary>
     [Fact]
     public void Create_WithFingerprint_Success()
     {
@@ -67,6 +82,9 @@ public class WhoIsTests
 
     #region Valid Creation - With Properties
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with ASN-related properties.
+    /// </summary>
     [Fact]
     public void Create_WithASNProperties_Success()
     {
@@ -92,6 +110,9 @@ public class WhoIsTests
         whois.ASType.Should().Be("ISP");
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with network flags.
+    /// </summary>
     [Fact]
     public void Create_WithNetworkFlags_Success()
     {
@@ -113,6 +134,9 @@ public class WhoIsTests
         whois.IsProxy.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with a location hash ID.
+    /// </summary>
     [Fact]
     public void Create_WithLocationHashId_Success()
     {
@@ -131,6 +155,13 @@ public class WhoIsTests
 
     #region IP Address Validation
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with valid IPv4 addresses.
+    /// </summary>
+    ///
+    /// <param name="ipAddress">
+    /// The valid IPv4 address to test.
+    /// </param>
     [Theory]
     [InlineData("192.168.1.1")]
     [InlineData("10.0.0.1")]
@@ -146,6 +177,16 @@ public class WhoIsTests
         whois.IPAddress.Should().Be(ipAddress);
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with valid IPv6 addresses.
+    /// </summary>
+    ///
+    /// <param name="input">
+    /// The valid IPv6 address to test.
+    /// </param>
+    /// <param name="expected">
+    /// The expected normalized IPv6 address.
+    /// </param>
     [Theory]
     [InlineData("2001:0db8:85a3:0000:0000:8a2e:0370:7334", "2001:0db8:85a3:0000:0000:8a2e:0370:7334")]
     [InlineData("2001:db8::1", "2001:db8::1")]
@@ -160,6 +201,13 @@ public class WhoIsTests
         whois.IPAddress.Should().Be(expected);
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with null or empty IP addresses.
+    /// </summary>
+    ///
+    /// <param name="ipAddress">
+    /// The null or empty IP address to test.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -174,6 +222,13 @@ public class WhoIsTests
         act.Should().Throw<GeoValidationException>();
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with invalid IP addresses.
+    /// </summary>
+    ///
+    /// <param name="ipAddress">
+    /// The invalid IP address to test.
+    /// </param>
     [Theory]
     [InlineData("not-an-ip")]
     [InlineData("999.999.999.999")]
@@ -192,6 +247,9 @@ public class WhoIsTests
 
     #region IP Address Normalization
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with a clean IPv4 address.
+    /// </summary>
     [Fact]
     public void Create_WithCleanIPv4_NoChanges()
     {
@@ -205,6 +263,9 @@ public class WhoIsTests
         whois.IPAddress.Should().Be(clean_ip);
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with a dirty IPv4 address.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyIPv4_CleansAndLowercases()
     {
@@ -218,6 +279,9 @@ public class WhoIsTests
         whois.IPAddress.Should().Be("192.168.1.1");
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with an uppercase IPv6 address.
+    /// </summary>
     [Fact]
     public void Create_WithUppercaseIPv6_Lowercases()
     {
@@ -235,6 +299,13 @@ public class WhoIsTests
 
     #region Year Validation
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with valid year values.
+    /// </summary>
+    ///
+    /// <param name="year">
+    /// The valid year to test.
+    /// </param>
     [Theory]
     [InlineData(1)]
     [InlineData(2000)]
@@ -252,6 +323,13 @@ public class WhoIsTests
         whois.Year.Should().Be(year);
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with invalid year values.
+    /// </summary>
+    ///
+    /// <param name="year">
+    /// The invalid year to test.
+    /// </param>
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -272,6 +350,13 @@ public class WhoIsTests
 
     #region Month Validation
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with valid month values.
+    /// </summary>
+    ///
+    /// <param name="month">
+    /// The valid month to test.
+    /// </param>
     [Theory]
     [InlineData(1)]
     [InlineData(6)]
@@ -288,6 +373,13 @@ public class WhoIsTests
         whois.Month.Should().Be(month);
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with invalid month values.
+    /// </summary>
+    ///
+    /// <param name="month">
+    /// The invalid month to test.
+    /// </param>
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -309,6 +401,9 @@ public class WhoIsTests
 
     #region String Cleanup
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with dirty ASName and ASDomain values.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyASName_CleansWhitespace()
     {
@@ -323,6 +418,9 @@ public class WhoIsTests
         whois.ASName.Should().Be("TELUS Communications Inc.");
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with dirty ASDomain value.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyASDomain_CleansWhitespace()
     {
@@ -337,6 +435,13 @@ public class WhoIsTests
         whois.ASDomain.Should().Be("telus.com");
     }
 
+    /// <summary>
+    /// Tests creating a WhoIs instance with whitespace-only ASName.
+    /// </summary>
+    ///
+    /// <param name="asName">
+    /// The ASName value containing only whitespace to test.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -357,6 +462,10 @@ public class WhoIsTests
 
     #region Content-Addressable - Same Input = Same Hash
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with the same IP, year, and month generates the same
+    /// hash.
+    /// </summary>
     [Fact]
     public void Create_WithSameIPYearMonth_GeneratesSameHash()
     {
@@ -373,6 +482,10 @@ public class WhoIsTests
         whois1.HashId.Should().BeEquivalentTo(whois2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with the same IP, year, month, and fingerprint
+    /// generates the same hash.
+    /// </summary>
     [Fact]
     public void Create_WithSameIPYearMonthAndFingerprint_GeneratesSameHash()
     {
@@ -390,6 +503,10 @@ public class WhoIsTests
         whois1.HashId.Should().BeEquivalentTo(whois2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with the same IP but different surrounding whitespace
+    /// generates the same hash.
+    /// </summary>
     [Fact]
     public void Create_WithSameIPDifferentWhitespace_GeneratesSameHash()
     {
@@ -409,6 +526,9 @@ public class WhoIsTests
 
     #region Content-Addressable - Different Input = Different Hash
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with different IPs generates different hashes.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentIP_GeneratesDifferentHash()
     {
@@ -424,6 +544,9 @@ public class WhoIsTests
         whois1.HashId.Should().NotBeEquivalentTo(whois2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with different years generates different hashes.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentYear_GeneratesDifferentHash()
     {
@@ -438,6 +561,9 @@ public class WhoIsTests
         whois1.HashId.Should().NotBeEquivalentTo(whois2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with different months generates different hashes.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentMonth_GeneratesDifferentHash()
     {
@@ -452,6 +578,9 @@ public class WhoIsTests
         whois1.HashId.Should().NotBeEquivalentTo(whois2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with different fingerprints generates different hashes.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentFingerprint_GeneratesDifferentHash()
     {
@@ -468,6 +597,10 @@ public class WhoIsTests
         whois1.HashId.Should().NotBeEquivalentTo(whois2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with a fingerprint versus null generates different
+    /// hashes.
+    /// </summary>
     [Fact]
     public void Create_WithFingerprintVsNull_GeneratesDifferentHash()
     {
@@ -487,6 +620,10 @@ public class WhoIsTests
 
     #region Temporal Versioning
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with the same IP but different months creates distinct
+    /// records.
+    /// </summary>
     [Fact]
     public void Create_SameIPDifferentMonths_CreatesDistinctRecords()
     {
@@ -504,6 +641,10 @@ public class WhoIsTests
         january.HashId.Should().NotBeEquivalentTo(march.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with the same IP but different years creates distinct
+    /// records.
+    /// </summary>
     [Fact]
     public void Create_SameIPDifferentYears_CreatesDistinctRecords()
     {
@@ -522,6 +663,10 @@ public class WhoIsTests
 
     #region Device Differentiation
 
+    /// <summary>
+    /// Tests that creating WhoIs instances with the same IP but different fingerprints creates
+    /// distinct records.
+    /// </summary>
     [Fact]
     public void Create_SameIPDifferentFingerprints_CreatesDistinctRecords()
     {
@@ -542,6 +687,9 @@ public class WhoIsTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests creating a WhoIs instance from an existing WhoIs instance.
+    /// </summary>
     [Fact]
     public void Create_WithExistingWhoIs_CreatesNewInstanceWithSameHash()
     {
@@ -574,6 +722,9 @@ public class WhoIsTests
 
     #region Hash Determinism
 
+    /// <summary>
+    /// Tests that multiple calls to Create with the same inputs produce consistent hashes.
+    /// </summary>
     [Fact]
     public void Create_CalledMultipleTimes_GeneratesConsistentHash()
     {
@@ -597,6 +748,9 @@ public class WhoIsTests
 
     #region ComputeHashAndNormalizeIp Tests
 
+    /// <summary>
+    /// Tests ComputeHashAndNormalizeIp with valid inputs.
+    /// </summary>
     [Fact]
     public void ComputeHashAndNormalizeIp_WithValidInputs_ReturnsHashAndNormalizedIP()
     {
@@ -613,6 +767,9 @@ public class WhoIsTests
         normalizedIp.Should().Be("192.168.1.1");
     }
 
+    /// <summary>
+    /// Tests ComputeHashAndNormalizeIp with the same inputs returns the same hash.
+    /// </summary>
     [Fact]
     public void ComputeHashAndNormalizeIp_WithSameInputs_ReturnsSameHash()
     {
@@ -633,11 +790,23 @@ public class WhoIsTests
 
     #region NormalizeAndValidateIPAddress Tests
 
+    /// <summary>
+    /// Tests NormalizeAndValidateIPAddress with valid IP addresses.
+    /// </summary>
+    ///
+    /// <param name="input">
+    /// The input IP address to test.
+    /// </param>
+    /// <param name="expected">
+    /// The expected normalized IP address.
+    /// </param>
     [Theory]
     [InlineData("192.168.1.1", "192.168.1.1")]
     [InlineData("  192.168.1.1  ", "192.168.1.1")]
     [InlineData("2001:0DB8::1", "2001:0db8::1")]
-    public void NormalizeAndValidateIPAddress_WithValidIP_ReturnsNormalized(string input, string expected)
+    public void NormalizeAndValidateIPAddress_WithValidIP_ReturnsNormalized(
+        string input,
+        string expected)
     {
         // Act
         var normalized = WhoIs.NormalizeAndValidateIPAddress(input);
@@ -646,11 +815,19 @@ public class WhoIsTests
         normalized.Should().Be(expected);
     }
 
+    /// <summary>
+    /// Tests NormalizeAndValidateIPAddress with invalid IP addresses.
+    /// </summary>
+    ///
+    /// <param name="ipAddress">
+    /// The invalid IP address to test.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public void NormalizeAndValidateIPAddress_WithInvalidIP_ThrowsGeoValidationException(string? ipAddress)
+    public void NormalizeAndValidateIPAddress_WithInvalidIP_ThrowsGeoValidationException(
+        string? ipAddress)
     {
         // Act
         var act = () => WhoIs.NormalizeAndValidateIPAddress(ipAddress!);

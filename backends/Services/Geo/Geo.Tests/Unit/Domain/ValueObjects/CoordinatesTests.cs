@@ -1,9 +1,15 @@
-﻿using D2.Geo.Domain.Exceptions;
+﻿// -----------------------------------------------------------------------
+// <copyright file="CoordinatesTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.ValueObjects;
+
+using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
 /// Unit tests for <see cref="Coordinates"/>.
@@ -12,6 +18,9 @@ public class CoordinatesTests
 {
     #region Valid Input - Creates Instance
 
+    /// <summary>
+    /// Tests that creating Coordinates with valid latitude and longitude succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithValidCoordinates_Success()
     {
@@ -28,6 +37,16 @@ public class CoordinatesTests
         coords.Longitude.Should().Be(-118.2437m);
     }
 
+    /// <summary>
+    /// Tests that creating Coordinates with boundary values succeeds.
+    /// </summary>
+    ///
+    /// <param name="lat">
+    /// The latitude value.
+    /// </param>
+    /// <param name="lon">
+    /// The longitude value.
+    /// </param>
     [Theory]
     [InlineData(0, 0)]
     [InlineData(90, 180)]
@@ -48,6 +67,9 @@ public class CoordinatesTests
 
     #region Precision - 5 Decimal Places
 
+    /// <summary>
+    /// Tests that creating Coordinates quantizes latitude and longitude to 5 decimal places.
+    /// </summary>
     [Fact]
     public void Create_QuantizesTo5DecimalPlaces()
     {
@@ -63,6 +85,16 @@ public class CoordinatesTests
         coords.Longitude.Should().Be(-118.24375m);
     }
 
+    /// <summary>
+    /// Tests that latitude is quantized correctly based on input values.
+    /// </summary>
+    ///
+    /// <param name="input">
+    /// The input latitude value.
+    /// </param>
+    /// <param name="expected">
+    /// The expected quantized latitude value.
+    /// </param>
     [Theory]
     [InlineData(34.123456, 34.12346)]
     [InlineData(34.123454, 34.12345)]
@@ -81,6 +113,13 @@ public class CoordinatesTests
 
     #region Latitude Out of Range - Throws
 
+    /// <summary>
+    /// Tests that creating Coordinates with latitude out of range throws GeoValidationException.
+    /// </summary>
+    ///
+    /// <param name="lat">
+    /// The latitude value.
+    /// </param>
     [Theory]
     [InlineData(90.1)]
     [InlineData(91)]
@@ -95,6 +134,12 @@ public class CoordinatesTests
         act.Should().Throw<GeoValidationException>();
     }
 
+    /// <summary>
+    /// Tests that creating Coordinates with latitude out of range throws GeoValidationException.
+    /// </summary>
+    /// <param name="lat">
+    /// The latitude value.
+    /// </param>
     [Theory]
     [InlineData(-90.1)]
     [InlineData(-91)]
@@ -113,6 +158,12 @@ public class CoordinatesTests
 
     #region Longitude Out of Range - Throws
 
+    /// <summary>
+    /// Tests that creating Coordinates with longitude out of range throws GeoValidationException.
+    /// </summary>
+    /// <param name="lon">
+    /// The longitude value.
+    /// </param>
     [Theory]
     [InlineData(180.1)]
     [InlineData(181)]
@@ -127,6 +178,13 @@ public class CoordinatesTests
         act.Should().Throw<GeoValidationException>();
     }
 
+    /// <summary>
+    /// Tests that creating Coordinates with longitude out of range throws GeoValidationException.
+    /// </summary>
+    ///
+    /// <param name="lon">
+    /// The longitude value.
+    /// </param>
     [Theory]
     [InlineData(-180.1)]
     [InlineData(-181)]

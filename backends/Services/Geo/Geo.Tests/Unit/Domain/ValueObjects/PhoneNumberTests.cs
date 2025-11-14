@@ -1,9 +1,15 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="PhoneNumberTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
 /// Unit tests for <see cref="PhoneNumber"/>.
@@ -12,6 +18,9 @@ public class PhoneNumberTests
 {
     #region Valid Creation
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with only a value succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithValueOnly_Success()
     {
@@ -27,6 +36,9 @@ public class PhoneNumberTests
         phoneNumber.Labels.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with a value and labels succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithValueAndLabels_Success()
     {
@@ -43,6 +55,9 @@ public class PhoneNumberTests
         phoneNumber.Labels.Should().BeEquivalentTo("mobile", "primary");
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with null labels returns an empty HashSet.
+    /// </summary>
     [Fact]
     public void Create_WithNullLabels_ReturnsEmptyHashSet()
     {
@@ -61,8 +76,18 @@ public class PhoneNumberTests
 
     #region Phone Validation - E.164 Format
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with various valid formats succeeds and strips to digits only.
+    /// </summary>
+    ///
+    /// <param name="input">
+    /// The input phone number string.
+    /// </param>
+    /// <param name="expected">
+    /// The expected cleaned phone number string.
+    /// </param>
     [Theory]
-    [InlineData("1234567", "1234567")]              // 7 digits (min)
+    [InlineData("1234567", "1234567")] // 7 digits (min)
     [InlineData("123456789012345", "123456789012345")] // 15 digits (max)
     [InlineData("+1 (555) 123-4567", "15551234567")] // US format
     [InlineData("555-123-4567", "5551234567")]
@@ -78,6 +103,13 @@ public class PhoneNumberTests
         phoneNumber.Value.Should().Be(expected);
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with null or empty input throws ArgumentException.
+    /// </summary>
+    ///
+    /// <param name="phone">
+    /// The input phone number string.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -91,6 +123,13 @@ public class PhoneNumberTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with no digits throws ArgumentException.
+    /// </summary>
+    ///
+    /// <param name="phone">
+    /// The input phone number string.
+    /// </param>
     [Theory]
     [InlineData("abc")]
     [InlineData("---")]
@@ -104,8 +143,15 @@ public class PhoneNumberTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with invalid length throws ArgumentException.
+    /// </summary>
+    ///
+    /// <param name="phone">
+    /// The input phone number string.
+    /// </param>
     [Theory]
-    [InlineData("123456")]           // 6 digits (too short)
+    [InlineData("123456")] // 6 digits (too short)
     [InlineData("1234567890123456")] // 16 digits (too long)
     public void Create_WithInvalidLength_ThrowsArgumentException(string phone)
     {
@@ -120,6 +166,9 @@ public class PhoneNumberTests
 
     #region Clean Phone - No Changes
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with a clean phone number makes no changes.
+    /// </summary>
     [Fact]
     public void Create_WithCleanPhone_NoChanges()
     {
@@ -137,6 +186,9 @@ public class PhoneNumberTests
 
     #region Dirty Phone - Cleanup
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with a dirty phone number strips non-digit characters.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyPhone_StripsNonDigits()
     {
@@ -150,6 +202,16 @@ public class PhoneNumberTests
         phoneNumber.Value.Should().Be("15551234567");
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with various dirty phone numbers cleans them correctly.
+    /// </summary>
+    ///
+    /// <param name="input">
+    /// The input dirty phone number string.
+    /// </param>
+    /// <param name="expected">
+    /// The expected cleaned phone number string.
+    /// </param>
     [Theory]
     [InlineData("+1-555-123-4567", "15551234567")]
     [InlineData("(555) 123-4567", "5551234567")]
@@ -168,6 +230,9 @@ public class PhoneNumberTests
 
     #region Labels - HashSet Behavior
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with empty labels returns an empty HashSet.
+    /// </summary>
     [Fact]
     public void Create_WithEmptyLabels_ReturnsEmptyHashSet()
     {
@@ -182,6 +247,9 @@ public class PhoneNumberTests
         phoneNumber.Labels.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with valid labels returns an ImmutableHashSet.
+    /// </summary>
     [Fact]
     public void Create_WithValidLabels_ReturnsImmutableHashSet()
     {
@@ -197,6 +265,9 @@ public class PhoneNumberTests
         phoneNumber.Labels.Should().BeEquivalentTo(["mobile", "primary"]);
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with duplicate labels removes duplicates.
+    /// </summary>
     [Fact]
     public void Create_WithDuplicateLabels_RemovesDuplicates()
     {
@@ -212,6 +283,9 @@ public class PhoneNumberTests
         phoneNumber.Labels.Should().BeEquivalentTo(["mobile", "primary"]);
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with dirty labels trims whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyLabels_CleansLabels()
     {
@@ -226,6 +300,10 @@ public class PhoneNumberTests
         phoneNumber.Labels.Should().BeEquivalentTo(["mobile", "primary"]);
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber with labels containing only whitespace removes those
+    /// entries.
+    /// </summary>
     [Fact]
     public void Create_WithLabelsContainingWhitespace_RemovesWhitespaceEntries()
     {
@@ -245,6 +323,9 @@ public class PhoneNumberTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests that creating PhoneNumber from an existing PhoneNumber creates a new instance.
+    /// </summary>
     [Fact]
     public void Create_WithExistingPhoneNumber_CreatesNewInstance()
     {
@@ -261,6 +342,10 @@ public class PhoneNumberTests
         copy.Should().Be(original); // Value equality
     }
 
+    /// <summary>
+    /// Tests that creating PhoneNumber from an invalid existing PhoneNumber throws
+    /// ArgumentException.
+    /// </summary>
     [Fact]
     public void Create_WithInvalidExistingPhoneNumber_ThrowsArgumentException()
     {
@@ -268,7 +353,7 @@ public class PhoneNumberTests
         var invalid = new PhoneNumber
         {
             Value = "123", // Too short
-            Labels = []
+            Labels = [],
         };
 
         // Act
@@ -282,6 +367,9 @@ public class PhoneNumberTests
 
     #region CreateMany Tests
 
+    /// <summary>
+    /// Tests that creating many PhoneNumbers with null input returns an empty list.
+    /// </summary>
     [Fact]
     public void CreateMany_WithNullInput_ReturnsEmptyList()
     {
@@ -293,6 +381,9 @@ public class PhoneNumberTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating many PhoneNumbers with empty input returns an empty list.
+    /// </summary>
     [Fact]
     public void CreateMany_WithEmptyInput_ReturnsEmptyList()
     {
@@ -306,6 +397,9 @@ public class PhoneNumberTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating many PhoneNumbers with valid tuples returns an ImmutableList.
+    /// </summary>
     [Fact]
     public void CreateMany_WithValidTuples_ReturnsImmutableList()
     {
@@ -313,7 +407,7 @@ public class PhoneNumberTests
         var phones = new[]
         {
             ("5551234567", (IEnumerable<string>?)["mobile"]),
-            ("5559876543", (IEnumerable<string>?)["work"])
+            ("5559876543", (IEnumerable<string>?)["work"]),
         };
 
         // Act
@@ -326,6 +420,10 @@ public class PhoneNumberTests
         result[1].Value.Should().Be("5559876543");
     }
 
+    /// <summary>
+    /// Tests that creating many PhoneNumbers with existing PhoneNumber instances returns an
+    /// ImmutableList.
+    /// </summary>
     [Fact]
     public void CreateMany_WithPhoneNumbers_ReturnsImmutableList()
     {
@@ -333,7 +431,7 @@ public class PhoneNumberTests
         var phones = new[]
         {
             PhoneNumber.Create("5551234567", ["mobile"]),
-            PhoneNumber.Create("5559876543", ["work"])
+            PhoneNumber.Create("5559876543", ["work"]),
         };
 
         // Act
@@ -348,6 +446,9 @@ public class PhoneNumberTests
 
     #region Value Equality
 
+    /// <summary>
+    /// Tests that two PhoneNumber instances with the same values are equal.
+    /// </summary>
     [Fact]
     public void PhoneNumber_WithSameValues_AreEqual()
     {
@@ -360,6 +461,9 @@ public class PhoneNumberTests
         (phone1 == phone2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two PhoneNumber instances with different values are not equal.
+    /// </summary>
     [Fact]
     public void PhoneNumber_WithDifferentValue_AreNotEqual()
     {
@@ -372,6 +476,9 @@ public class PhoneNumberTests
         (phone1 != phone2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two PhoneNumber instances with different labels are not equal.
+    /// </summary>
     [Fact]
     public void PhoneNumber_WithDifferentLabels_AreNotEqual()
     {
@@ -383,6 +490,9 @@ public class PhoneNumberTests
         phone1.Should().NotBe(phone2);
     }
 
+    /// <summary>
+    /// Tests that two PhoneNumber instances with the same labels in different orders are equal.
+    /// </summary>
     [Fact]
     public void PhoneNumber_LabelsOrderDoesNotMatter_AreEqual()
     {

@@ -1,9 +1,15 @@
-﻿using D2.Geo.Domain.Exceptions;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ProfessionalTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.ValueObjects;
+
+using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
 /// Unit tests for <see cref="Professional"/>.
@@ -12,6 +18,9 @@ public class ProfessionalTests
 {
     #region Valid Creation
 
+    /// <summary>
+    /// Tests that creating Professional with only company name succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithCompanyNameOnly_Success()
     {
@@ -29,6 +38,9 @@ public class ProfessionalTests
         professional.CompanyWebsite.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating Professional with all fields succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithAllFields_Success()
     {
@@ -49,6 +61,9 @@ public class ProfessionalTests
         professional.CompanyWebsite.Should().Be(website);
     }
 
+    /// <summary>
+    /// Tests that creating Professional with company name and job title succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithJobTitleOnly_Success()
     {
@@ -70,6 +85,13 @@ public class ProfessionalTests
 
     #region CompanyName Validation - Required
 
+    /// <summary>
+    /// Tests that creating Professional with invalid company name throws GeoValidationException.
+    /// </summary>
+    ///
+    /// <param name="companyName">
+    /// The invalid company name to test.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -90,6 +112,9 @@ public class ProfessionalTests
 
     #region Clean Strings - No Changes
 
+    /// <summary>
+    /// Tests that creating Professional with clean company name makes no changes.
+    /// </summary>
     [Fact]
     public void Create_WithCleanCompanyName_NoChanges()
     {
@@ -103,6 +128,9 @@ public class ProfessionalTests
         professional.CompanyName.Should().Be(clean_company_name);
     }
 
+    /// <summary>
+    /// Tests that creating Professional with clean job title makes no changes.
+    /// </summary>
     [Fact]
     public void Create_WithAllCleanFields_NoChanges()
     {
@@ -124,6 +152,9 @@ public class ProfessionalTests
 
     #region Dirty Strings - Cleanup
 
+    /// <summary>
+    /// Tests that creating Professional with dirty company name cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyCompanyName_CleansWhitespace()
     {
@@ -137,6 +168,9 @@ public class ProfessionalTests
         professional.CompanyName.Should().Be("ACME, LLC");
     }
 
+    /// <summary>
+    /// Tests that creating Professional with dirty job title cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyJobTitle_CleansWhitespace()
     {
@@ -151,6 +185,9 @@ public class ProfessionalTests
         professional.JobTitle.Should().Be("Software Engineer");
     }
 
+    /// <summary>
+    /// Tests that creating Professional with dirty department cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyDepartment_CleansWhitespace()
     {
@@ -165,6 +202,9 @@ public class ProfessionalTests
         professional.Department.Should().Be("Research and Development");
     }
 
+    /// <summary>
+    /// Tests that creating Professional with all dirty fields cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithAllDirtyFields_CleansAll()
     {
@@ -186,6 +226,13 @@ public class ProfessionalTests
 
     #region Whitespace-Only Fields Become Null
 
+    /// <summary>
+    /// Tests that creating Professional with whitespace-only job title sets it to null.
+    /// </summary>
+    ///
+    /// <param name="jobTitle">
+    /// The whitespace-only job title to test.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -203,6 +250,13 @@ public class ProfessionalTests
         professional.JobTitle.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating Professional with whitespace-only department sets it to null.
+    /// </summary>
+    ///
+    /// <param name="department">
+    /// The whitespace-only department to test.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -224,6 +278,9 @@ public class ProfessionalTests
 
     #region Uri Validation
 
+    /// <summary>
+    /// Tests that creating Professional with valid URI preserves it.
+    /// </summary>
     [Fact]
     public void Create_WithValidUri_PreservesUri()
     {
@@ -239,6 +296,9 @@ public class ProfessionalTests
         professional.CompanyWebsite!.AbsoluteUri.Should().Be("https://www.acme.com/");
     }
 
+    /// <summary>
+    /// Tests that creating Professional with null URI sets CompanyWebsite to null.
+    /// </summary>
     [Fact]
     public void Create_WithNullUri_Success()
     {
@@ -256,6 +316,10 @@ public class ProfessionalTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests that creating Professional from existing instance creates a new instance with same
+    /// values.
+    /// </summary>
     [Fact]
     public void Create_WithExistingProfessional_CreatesNewInstance()
     {
@@ -278,13 +342,17 @@ public class ProfessionalTests
         copy.Should().Be(original); // Value equality
     }
 
+    /// <summary>
+    /// Tests that creating Professional from invalid existing instance throws
+    /// GeoValidationException.
+    /// </summary>
     [Fact]
     public void Create_WithInvalidExistingProfessional_ThrowsGeoValidationException()
     {
         // Arrange - Create invalid professional by bypassing factory
         var invalid = new Professional
         {
-            CompanyName = "   " // Invalid - whitespace only
+            CompanyName = "   ", // Invalid - whitespace only
         };
 
         // Act
@@ -298,6 +366,9 @@ public class ProfessionalTests
 
     #region Value Equality
 
+    /// <summary>
+    /// Tests that two Professional instances with the same values are equal.
+    /// </summary>
     [Fact]
     public void Professional_WithSameValues_AreEqual()
     {
@@ -310,6 +381,9 @@ public class ProfessionalTests
         (professional1 == professional2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two Professional instances with different company names are not equal.
+    /// </summary>
     [Fact]
     public void Professional_WithDifferentCompanyName_AreNotEqual()
     {
@@ -322,6 +396,9 @@ public class ProfessionalTests
         (professional1 != professional2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two Professional instances with different job titles are not equal.
+    /// </summary>
     [Fact]
     public void Professional_WithDifferentJobTitle_AreNotEqual()
     {

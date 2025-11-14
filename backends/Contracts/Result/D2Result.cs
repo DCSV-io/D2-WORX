@@ -1,6 +1,12 @@
-﻿using System.Net;
+﻿// -----------------------------------------------------------------------
+// <copyright file="D2Result.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Result;
+
+using System.Net;
 
 /// <summary>
 /// Represents the result of an operation, including success status, messages, errors, and related
@@ -37,8 +43,7 @@ public class D2Result
         List<List<string>>? inputErrors = null,
         HttpStatusCode? statusCode = null,
         string? errorCode = null,
-        string? traceId = null
-    )
+        string? traceId = null)
     {
         Success = success;
         Messages = messages ?? [];
@@ -49,22 +54,22 @@ public class D2Result
     }
 
     /// <summary>
-    /// Indicates whether the operation was successful.
+    /// Gets a value indicating whether indicates whether the operation was successful.
     /// </summary>
     public bool Success { get; }
 
     /// <summary>
-    /// Indicates whether the operation failed.
+    /// Gets a value indicating whether indicates whether the operation failed.
     /// </summary>
     public bool Failed => !Success;
 
     /// <summary>
-    /// A list of messages related to the operation.
+    /// Gets a list of messages related to the operation.
     /// </summary>
     public List<string> Messages { get; }
 
     /// <summary>
-    /// A two-dimensional list representing input errors, where each inner list contains the name
+    /// Gets a two-dimensional list representing input errors, where each inner list contains the name
     /// of the field and each proceeding string is an error message related to that field.
     /// </summary>
     /// <remarks>
@@ -75,17 +80,17 @@ public class D2Result
     public List<List<string>> InputErrors { get; }
 
     /// <summary>
-    /// The <see cref="HttpStatusCode"/> representing the outcome of the operation.
+    /// Gets the <see cref="HttpStatusCode"/> representing the outcome of the operation.
     /// </summary>
     public HttpStatusCode StatusCode { get; }
 
     /// <summary>
-    /// A standardized error code representing a known failure condition, if applicable.
+    /// Gets a standardized error code representing a known failure condition, if applicable.
     /// </summary>
     public string? ErrorCode { get; }
 
     /// <summary>
-    /// The trace identifier to correlate logs and diagnostics for the operation, if available.
+    /// Gets the trace identifier to correlate logs and diagnostics for the operation, if available.
     /// </summary>
     public string? TraceId { get; }
 
@@ -116,7 +121,7 @@ public class D2Result
     /// </param>
     /// <param name="inputErrors">
     /// A two-dimensional list representing input errors, where each inner list contains the name
-    /// of the field and each proceeding string is an error message related to that field. Optional
+    /// of the field and each proceeding string is an error message related to that field. Optional.
     /// </param>
     /// <param name="errorCode">
     /// A standardized error code representing a known failure condition. Optional.

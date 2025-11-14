@@ -1,4 +1,10 @@
-﻿namespace D2.Contracts.Handler;
+﻿// -----------------------------------------------------------------------
+// <copyright file="OrgType.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Handler;
 
 /// <summary>
 /// Represents the type of organization.
@@ -31,5 +37,5 @@ public enum OrgType
     /// A customer client organization represents an external client or subsidiary associated
     /// with a customer organization.
     /// </summary>
-    CustomerClient
+    CustomerClient,
 }

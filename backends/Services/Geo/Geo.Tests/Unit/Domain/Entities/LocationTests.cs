@@ -1,9 +1,15 @@
-﻿using D2.Geo.Domain.Entities;
+﻿// -----------------------------------------------------------------------
+// <copyright file="LocationTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.Entities;
+
+using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.Entities;
 
 /// <summary>
 /// Unit tests for the <see cref="Location"/> entity.
@@ -12,6 +18,9 @@ public class LocationTests
 {
     #region Valid Creation - Minimal
 
+    /// <summary>
+    /// Tests creating a Location with no parameters.
+    /// </summary>
     [Fact]
     public void Create_WithNoParameters_Success()
     {
@@ -34,6 +43,9 @@ public class LocationTests
 
     #region Valid Creation - Individual Properties
 
+    /// <summary>
+    /// Tests creating a Location with only coordinates.
+    /// </summary>
     [Fact]
     public void Create_WithCoordinatesOnly_Success()
     {
@@ -51,6 +63,9 @@ public class LocationTests
         location.City.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests creating a Location with only an address.
+    /// </summary>
     [Fact]
     public void Create_WithAddressOnly_Success()
     {
@@ -67,6 +82,9 @@ public class LocationTests
         location.Address.Should().Be(address);
     }
 
+    /// <summary>
+    /// Tests creating a Location with only a city.
+    /// </summary>
     [Fact]
     public void Create_WithCityOnly_Success()
     {
@@ -80,6 +98,9 @@ public class LocationTests
         location.City.Should().Be("Los Angeles");
     }
 
+    /// <summary>
+    /// Tests creating a Location with only a postal code.
+    /// </summary>
     [Fact]
     public void Create_WithPostalCodeOnly_Success()
     {
@@ -93,6 +114,9 @@ public class LocationTests
         location.PostalCode.Should().Be("90012");
     }
 
+    /// <summary>
+    /// Tests creating a Location with only a subdivision code.
+    /// </summary>
     [Fact]
     public void Create_WithSubdivisionCodeOnly_Success()
     {
@@ -106,6 +130,9 @@ public class LocationTests
         location.SubdivisionISO31662Code.Should().Be("US-CA");
     }
 
+    /// <summary>
+    /// Tests creating a Location with only a country code.
+    /// </summary>
     [Fact]
     public void Create_WithCountryCodeOnly_Success()
     {
@@ -123,6 +150,9 @@ public class LocationTests
 
     #region Valid Creation - Full Location
 
+    /// <summary>
+    /// Tests creating a Location with all properties set.
+    /// </summary>
     [Fact]
     public void Create_WithAllProperties_Success()
     {
@@ -158,6 +188,9 @@ public class LocationTests
 
     #region String Cleanup - City
 
+    /// <summary>
+    /// Tests creating a Location with a clean city name.
+    /// </summary>
     [Fact]
     public void Create_WithCleanCity_NoChanges()
     {
@@ -171,6 +204,9 @@ public class LocationTests
         location.City.Should().Be(clean_city);
     }
 
+    /// <summary>
+    /// Tests creating a Location with a dirty city name containing extra whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyCity_CleansWhitespace()
     {
@@ -184,6 +220,13 @@ public class LocationTests
         location.City.Should().Be("Los Angeles");
     }
 
+    /// <summary>
+    /// Tests creating a Location with a city name that is only whitespace.
+    /// </summary>
+    ///
+    /// <param name="city">
+    /// The whitespace-only city name.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -202,6 +245,9 @@ public class LocationTests
 
     #region String Cleanup - PostalCode (Uppercase)
 
+    /// <summary>
+    /// Tests creating a Location with a clean postal code.
+    /// </summary>
     [Fact]
     public void Create_WithCleanPostalCode_NoChanges()
     {
@@ -215,6 +261,10 @@ public class LocationTests
         location.PostalCode.Should().Be(clean_postal);
     }
 
+    /// <summary>
+    /// Tests creating a Location with a dirty postal code containing extra whitespace and
+    /// lowercase letters.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyPostalCode_CleansAndUppercases()
     {
@@ -228,6 +278,13 @@ public class LocationTests
         location.PostalCode.Should().Be("K1A 0B1");
     }
 
+    /// <summary>
+    /// Tests creating a Location with a postal code that is only whitespace.
+    /// </summary>
+    ///
+    /// <param name="postalCode">
+    /// The whitespace-only postal code.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -245,6 +302,9 @@ public class LocationTests
 
     #region String Cleanup - SubdivisionCode (Uppercase)
 
+    /// <summary>
+    /// Tests creating a Location with a clean subdivision code.
+    /// </summary>
     [Fact]
     public void Create_WithCleanSubdivisionCode_NoChanges()
     {
@@ -258,6 +318,10 @@ public class LocationTests
         location.SubdivisionISO31662Code.Should().Be(clean_subdivision);
     }
 
+    /// <summary>
+    /// Tests creating a Location with a dirty subdivision code containing extra whitespace and
+    /// lowercase letters.
+    /// </summary>
     [Fact]
     public void Create_WithDirtySubdivisionCode_CleansAndUppercases()
     {
@@ -271,6 +335,13 @@ public class LocationTests
         location.SubdivisionISO31662Code.Should().Be("US-CA");
     }
 
+    /// <summary>
+    /// Tests creating a Location with a subdivision code that is only whitespace.
+    /// </summary>
+    ///
+    /// <param name="subdivisionCode">
+    /// The whitespace-only subdivision code.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -288,6 +359,9 @@ public class LocationTests
 
     #region String Cleanup - CountryCode (Uppercase)
 
+    /// <summary>
+    /// Tests creating a Location with a clean country code.
+    /// </summary>
     [Fact]
     public void Create_WithCleanCountryCode_NoChanges()
     {
@@ -301,6 +375,10 @@ public class LocationTests
         location.CountryISO31661Alpha2Code.Should().Be(clean_country);
     }
 
+    /// <summary>
+    /// Tests creating a Location with a dirty country code containing extra whitespace and
+    /// lowercase letters.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyCountryCode_CleansAndUppercases()
     {
@@ -314,6 +392,13 @@ public class LocationTests
         location.CountryISO31661Alpha2Code.Should().Be("US");
     }
 
+    /// <summary>
+    /// Tests creating a Location with a country code that is only whitespace.
+    /// </summary>
+    ///
+    /// <param name="countryCode">
+    /// The whitespace-only country code.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -331,6 +416,9 @@ public class LocationTests
 
     #region Content-Addressable - Same Input = Same Hash
 
+    /// <summary>
+    /// Tests that creating two Locations with the same content generates the same hash.
+    /// </summary>
     [Fact]
     public void Create_WithSameContent_GeneratesSameHash()
     {
@@ -350,6 +438,10 @@ public class LocationTests
         location1.HashId.Should().BeEquivalentTo(location2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating two Locations with the same content but different whitespace
+    /// generates the same hash.
+    /// </summary>
     [Fact]
     public void Create_WithSameContentDifferentWhitespace_GeneratesSameHash()
     {
@@ -365,6 +457,10 @@ public class LocationTests
         location1.HashId.Should().BeEquivalentTo(location2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating two Locations with the same content but different casing
+    /// generates the same hash.
+    /// </summary>
     [Fact]
     public void Create_WithSameContentDifferentCase_GeneratesSameHash()
     {
@@ -384,6 +480,9 @@ public class LocationTests
 
     #region Content-Addressable - Different Input = Different Hash
 
+    /// <summary>
+    /// Tests that creating two Locations with different cities generates different hashes.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentCity_GeneratesDifferentHash()
     {
@@ -400,6 +499,9 @@ public class LocationTests
         location1.Should().NotBe(location2);
     }
 
+    /// <summary>
+    /// Tests that creating two Locations with different coordinates generates different hashes.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentCoordinates_GeneratesDifferentHash()
     {
@@ -415,6 +517,9 @@ public class LocationTests
         location1.HashId.Should().NotBeEquivalentTo(location2.HashId);
     }
 
+    /// <summary>
+    /// Tests that creating two Locations with different addresses generates different hashes.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentAddress_GeneratesDifferentHash()
     {
@@ -434,6 +539,9 @@ public class LocationTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests creating a Location from an existing Location instance.
+    /// </summary>
     [Fact]
     public void Create_WithExistingLocation_CreatesNewInstanceWithSameHash()
     {
@@ -466,6 +574,9 @@ public class LocationTests
 
     #region Hash Determinism
 
+    /// <summary>
+    /// Tests that creating the same Location multiple times generates a consistent hash.
+    /// </summary>
     [Fact]
     public void Create_CalledMultipleTimes_GeneratesConsistentHash()
     {

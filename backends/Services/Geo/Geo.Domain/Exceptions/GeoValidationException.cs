@@ -1,30 +1,16 @@
-﻿namespace D2.Geo.Domain.Exceptions;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GeoValidationException.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Exceptions;
 
 /// <summary>
 /// Exception type for validation errors in the Geography "Geo" Domain.
 /// </summary>
 public class GeoValidationException : GeoDomainException
 {
-    /// <summary>
-    /// The name of the object type where the validation error occurred.
-    /// </summary>
-    public string ObjectTypeName { get; }
-
-    /// <summary>
-    /// The name of the property that failed validation.
-    /// </summary>
-    public string PropertyName { get; }
-
-    /// <summary>
-    /// The invalid value that caused the validation failure.
-    /// </summary>
-    public object? InvalidValue { get; }
-
-    /// <summary>
-    /// The reason why the value is considered invalid.
-    /// </summary>
-    public string Reason { get; }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="GeoValidationException"/> class.
     /// </summary>
@@ -54,4 +40,24 @@ public class GeoValidationException : GeoDomainException
         InvalidValue = invalidValue;
         Reason = reason;
     }
+
+    /// <summary>
+    /// Gets the name of the object type where the validation error occurred.
+    /// </summary>
+    public string ObjectTypeName { get; }
+
+    /// <summary>
+    /// Gets the name of the property that failed validation.
+    /// </summary>
+    public string PropertyName { get; }
+
+    /// <summary>
+    /// Gets the invalid value that caused the validation failure.
+    /// </summary>
+    public object? InvalidValue { get; }
+
+    /// <summary>
+    /// Gets the reason why the value is considered invalid.
+    /// </summary>
+    public string Reason { get; }
 }

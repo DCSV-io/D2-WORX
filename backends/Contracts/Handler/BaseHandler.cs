@@ -1,9 +1,15 @@
-﻿using System.Diagnostics;
+﻿// -----------------------------------------------------------------------
+// <copyright file="BaseHandler.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Handler;
+
+using System.Diagnostics;
 using D2.Contracts.Result;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
-
-namespace D2.Contracts.Handler;
 
 /// <summary>
 /// A base implementation of the <see cref="IHandler{TInput, TOutput}"/> interface that provides
@@ -36,12 +42,12 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
     }
 
     /// <summary>
-    /// The handler context for the current operation.
+    /// Gets the handler context for the current operation.
     /// </summary>
-    protected readonly IHandlerContext Context;
+    protected IHandlerContext Context { get; }
 
     /// <summary>
-    /// The trace ID associated with the current request.
+    /// Gets the trace ID associated with the current request.
     /// </summary>
     protected string? TraceId => Context.Request.TraceId;
 
@@ -190,7 +196,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         CancellationToken ct = default);
 
     /// <summary>
-    /// Validates the input using a configurable <see cref="options"/>.
+    /// Validates the input using configurable <paramref name="options"/>.
     /// </summary>
     ///
     /// <param name="options">
@@ -204,7 +210,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
     /// </param>
     ///
     /// <returns>
-    /// A <see cref="AbstractValidator{T}"/> representing the result of the validation.
+    /// A <see cref="ValueTask{D2Result}"/> containing the result of the validation.
     /// </returns>
     protected async ValueTask<D2Result> ValidateInput(
         Action<AbstractValidator<TInput>>? options,
@@ -219,7 +225,9 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
 
         // If valid, return OK.
         if (validationResult.IsValid)
+        {
             return D2Result.Ok(Context.Request.TraceId);
+        }
 
         // Group errors by property name and select into a 2D list.
         var errors = validationResult.Errors
@@ -252,19 +260,4 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         public ConfigurableValidator(Action<AbstractValidator<TInput>>? configure = null)
             => configure?.Invoke(this);
     }
-}
-
-/// <summary>
-/// Static class containing the activity source for the base handler.
-/// </summary>
-/// <remarks>
-/// "BHASW" stands for "Base Handler Activity Source Wrapper".
-/// </remarks>
-internal static class BHASW
-{
-    /// <summary>
-    /// The activity source for tracing handler operations.
-    /// </summary>
-    internal static readonly ActivitySource SR_ActivitySource
-        = new("D2.Contracts.App.BaseHandler");
 }

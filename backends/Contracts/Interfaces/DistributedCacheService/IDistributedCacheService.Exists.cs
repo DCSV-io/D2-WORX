@@ -1,0 +1,45 @@
+﻿// -----------------------------------------------------------------------
+// <copyright file="IDistributedCacheService.Exists.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Interfaces.DistributedCacheService;
+
+using D2.Contracts.Handler;
+
+/// <inheritdoc cref="IDistributedCacheService"/>
+public partial interface IDistributedCacheService
+{
+    /// <summary>
+    /// Handler for checking if a key exists in the cache.
+    /// </summary>
+    public interface IExistsHandler : IHandler<ExistsInput, ExistsOutput>;
+
+    /// <summary>
+    /// Gets a handler for checking if a key exists in the cache.
+    /// </summary>
+    ///
+    /// <returns>
+    /// An instance of <see cref="IExistsHandler"/> for checking key existence.
+    /// </returns>
+    public IExistsHandler Exists();
+
+    /// <summary>
+    /// Input for checking if a key exists in the cache.
+    /// </summary>
+    ///
+    /// <param name="Key">
+    /// The key to check for existence in the cache.
+    /// </param>
+    public record ExistsInput(string Key);
+
+    /// <summary>
+    /// Output for checking if a key exists in the cache.
+    /// </summary>
+    ///
+    /// <param name="Exists">
+    /// Indicates whether the key exists in the cache.
+    /// </param>
+    public record ExistsOutput(bool Exists);
+}

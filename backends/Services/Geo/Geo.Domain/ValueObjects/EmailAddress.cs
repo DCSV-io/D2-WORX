@@ -1,9 +1,15 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="EmailAddress.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Contracts.Utilities.Extensions;
-
-namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents an email address with associated labels.
@@ -16,22 +22,22 @@ namespace D2.Geo.Domain.ValueObjects;
 public record EmailAddress
 {
     /// <summary>
-    /// The email address value.
+    /// Gets the email address value.
     /// </summary>
     /// <example>
-    /// some.guy@gmail.com
+    /// some.guy@gmail.com.
     /// </example>
     public required string Value { get; init; }
 
     /// <summary>
-    /// The labels associated with the email address.
+    /// Gets the labels associated with the email address.
     /// </summary>
     /// <remarks>
     /// Used to help differentiate multiple email addresses used by a single
     /// <see cref="ContactMethods"/> object.
     /// </remarks>
     /// <example>
-    /// ["work", "personal"]
+    /// ["work", "personal"].
     /// </example>
     public required ImmutableHashSet<string> Labels { get; init; }
 
@@ -60,7 +66,7 @@ public record EmailAddress
         return new EmailAddress
         {
             Value = value.CleanAndValidateEmail(),
-            Labels = labels?.Clean(x => x.CleanStr())?.ToImmutableHashSet() ?? []
+            Labels = labels?.Clean(x => x.CleanStr())?.ToImmutableHashSet() ?? [],
         };
     }
 
@@ -98,10 +104,10 @@ public record EmailAddress
     /// Thrown if any of the emails are null, empty, whitespace, or not in a valid format.
     /// </exception>
     public static ImmutableList<EmailAddress> CreateMany(
-        IEnumerable<(string value, IEnumerable<string>? labels)>? emails)
+        IEnumerable<(string Value, IEnumerable<string>? Labels)>? emails)
     {
         return emails?
-            .Select(em => Create(em.value, em.labels))
+            .Select(em => Create(em.Value, em.Labels))
             .ToImmutableList() ?? [];
     }
 
@@ -140,10 +146,14 @@ public record EmailAddress
     public virtual bool Equals(EmailAddress? other)
     {
         if (other is null)
+        {
             return false;
+        }
 
         if (ReferenceEquals(this, other))
+        {
             return true;
+        }
 
         return Value == other.Value
                && Labels.SetEquals(other.Labels);
@@ -156,11 +166,13 @@ public record EmailAddress
     /// </remarks>
     public override int GetHashCode()
     {
-        var hashCode = new HashCode();
+        var hashCode = default(HashCode);
         hashCode.Add(Value);
 
         foreach (var label in Labels.OrderBy(l => l))
+        {
             hashCode.Add(label);
+        }
 
         return hashCode.ToHashCode();
     }

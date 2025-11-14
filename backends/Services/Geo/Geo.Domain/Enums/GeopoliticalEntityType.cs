@@ -1,8 +1,18 @@
-﻿namespace D2.Geo.Domain.Enums;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GeopoliticalEntityType.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
+namespace D2.Geo.Domain.Enums;
+
+/// <summary>
+/// Represents different types of geopolitical entities and agreements.
+/// </summary>
 public enum GeopoliticalEntityType
 {
     #region General Geopolitical Regions
+
     /// <summary>
     /// A continent.
     /// </summary>
@@ -26,9 +36,11 @@ public enum GeopoliticalEntityType
     /// Middle East, Latin America, Caribbean.
     /// </example>
     GeopoliticalRegion,
+
     #endregion
 
     #region Economic Agreements / Unions
+
     /// <summary>
     /// Agreements that reduce or eliminate tariffs, import quotas, and
     /// preferences on goods and services traded between member countries.
@@ -41,7 +53,7 @@ public enum GeopoliticalEntityType
 
     /// <summary>
     /// Agreements where member countries remove trade barriers among themselves
-    /// and adopt a common external tariff toward non-member countries
+    /// and adopt a common external tariff toward non-member countries.
     /// </summary>
     /// <example>
     /// European Union Customs Union (EUCU),
@@ -107,9 +119,11 @@ public enum GeopoliticalEntityType
     /// Nile Basin Initiative.
     /// </example>
     ResourceSharingAgreement,
+
     #endregion
 
     #region Political Agreements / Unions
+
     /// <summary>
     /// Integration where member states have a common political structure,
     /// possibly leading toward a unified government.
@@ -158,12 +172,14 @@ public enum GeopoliticalEntityType
     /// Agreements encouraging democratic governance and political reform.
     /// </summary>
     /// <example>
-    /// European Neighbourhood Policy (ENP).
+    /// European Neighborhood Policy (ENP).
     /// </example>
     DemocracyPromotionAgreement,
+
     #endregion
 
     #region Military Agreements / Unions
+
     /// <summary>
     /// Agreements where member states pledge mutual defense and strategic
     /// military cooperation.
@@ -216,5 +232,6 @@ public enum GeopoliticalEntityType
     /// Molotov-Ribbentrop Pact.
     /// </example>
     NonAggressionPact,
+
     #endregion
 }
