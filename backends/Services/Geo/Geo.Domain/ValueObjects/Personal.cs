@@ -1,12 +1,18 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Personal.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Contracts.Utilities.Extensions;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Enums;
 using D2.Geo.Domain.Exceptions;
-
-namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents personal information about an individual.
@@ -20,58 +26,58 @@ public record Personal
     #region Name
 
     /// <summary>
-    /// The person's title.
+    /// Gets the person's title.
     /// </summary>
     /// <example>
-    /// "Mr.", "Ms.", "Dr.", "Prof."
+    /// "Mr.", "Ms.", "Dr.", "Prof.".
     /// </example>
     public NameTitle? Title { get; init; }
 
     /// <summary>
-    /// The person's first name, given name or only name.
+    /// Gets the person's first name, given name or only name.
     /// </summary>
     /// <example>
-    /// John
+    /// John.
     /// </example>
     public required string FirstName { get; init; }
 
     /// <summary>
-    /// The person's preferred name or nickname, if different from their first name.
+    /// Gets the person's preferred name or nickname, if different from their first name.
     /// </summary>
     /// <example>
-    /// Johnny
+    /// Johnny.
     /// </example>
     public string? PreferredName { get; init; }
 
     /// <summary>
-    /// The person's middle name(s) or initial(s).
+    /// Gets the person's middle name(s) or initial(s).
     /// </summary>
     /// <example>
-    /// Michael
+    /// Michael.
     /// </example>
     public string? MiddleName { get; init; }
 
     /// <summary>
-    /// The person's last name or family name (surname).
+    /// Gets the person's last name or family name (surname).
     /// </summary>
     /// <example>
-    /// Doe
+    /// Doe.
     /// </example>
     public string? LastName { get; init; }
 
     /// <summary>
-    /// The person's generational suffix, if any.
+    /// Gets the person's generational suffix, if any.
     /// </summary>
     /// <example>
-    /// "Jr.", "Sr.", "III"
+    /// "Jr.", "Sr.", "III".
     /// </example>
     public GenerationalSuffix? GenerationalSuffix { get; init; }
 
     /// <summary>
-    /// The person's professional credentials.
+    /// Gets the person's professional credentials.
     /// </summary>
     /// <example>
-    /// ["PhD", "CISSP", "Ret.", "OBE"]
+    /// ["PhD", "CISSP", "Ret.", "OBE"].
     /// </example>
     public ImmutableList<string> ProfessionalCredentials { get; init; } = [];
 
@@ -80,18 +86,18 @@ public record Personal
     #region Additional Info
 
     /// <summary>
-    /// The person's date of birth.
+    /// Gets the person's date of birth.
     /// </summary>
     /// <example>
-    /// 1990-05-15
+    /// 1990-05-15.
     /// </example>
     public DateOnly? DateOfBirth { get; init; }
 
     /// <summary>
-    /// The person's biological sex.
+    /// Gets the person's biological sex.
     /// </summary>
     /// <example>
-    /// Male
+    /// Male.
     /// </example>
     public BiologicalSex? BiologicalSex { get; init; }
 
@@ -150,11 +156,13 @@ public record Personal
         BiologicalSex? biologicalSex = null)
     {
         if (firstName.Falsey())
+        {
             throw new GeoValidationException(
                 nameof(Personal),
                 nameof(FirstName),
                 firstName,
                 "is required.");
+        }
 
         return new Personal
         {
@@ -168,7 +176,7 @@ public record Personal
                 .Clean(x => x.CleanStr())?
                 .ToImmutableList() ?? [],
             DateOfBirth = dateOfBirth,
-            BiologicalSex = biologicalSex
+            BiologicalSex = biologicalSex,
         };
     }
 
@@ -211,8 +219,15 @@ public record Personal
     /// </remarks>
     public virtual bool Equals(Personal? other)
     {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
+        if (other is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
 
         return FirstName == other.FirstName
                && Title == other.Title
@@ -233,7 +248,7 @@ public record Personal
     /// </remarks>
     public override int GetHashCode()
     {
-        var hash = new HashCode();
+        var hash = default(HashCode);
         hash.Add(FirstName);
         hash.Add(Title);
         hash.Add(PreferredName);
@@ -242,7 +257,9 @@ public record Personal
         hash.Add(GenerationalSuffix);
 
         foreach (var credential in ProfessionalCredentials)
+        {
             hash.Add(credential);
+        }
 
         hash.Add(DateOfBirth);
         hash.Add(BiologicalSex);

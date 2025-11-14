@@ -1,8 +1,14 @@
-﻿using D2.Contracts.Handler;
-using Microsoft.Extensions.Logging;
-using Moq;
+﻿// -----------------------------------------------------------------------
+// <copyright file="TestHelpers.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Tests;
+
+using D2.Contracts.Handler;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 /// <summary>
 /// Helper methods for tests.

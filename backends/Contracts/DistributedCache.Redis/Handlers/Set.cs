@@ -1,19 +1,27 @@
-﻿using System.Net;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Set.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.DistributedCache.Redis.Handlers;
+
+using System.Net;
 using System.Text.Json;
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
 using D2.Contracts.Utilities.Serialization;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using S = D2.Contracts.Interfaces.ICommonCacheService;
-
-namespace D2.Contracts.DistributedCache.Redis.Handlers;
+using S = D2.Contracts.Interfaces.CommonCacheService.ICommonCacheService;
 
 /// <inheritdoc cref="S.ISetHandler{TValue}"/>
 public class Set<TValue> : BaseHandler<
         S.ISetHandler<TValue>, S.SetInput<TValue>, S.SetOutput>,
     S.ISetHandler<TValue>
 {
+    private readonly IConnectionMultiplexer r_redis;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Set{TValue}"/> class.
     /// </summary>
@@ -21,17 +29,16 @@ public class Set<TValue> : BaseHandler<
     /// <param name="redis">
     /// The Redis connection multiplexer.
     /// </param>
-    ///
-    /// <inheritdoc/>
+    /// <param name="context">
+    /// The handler context.
+    /// </param>
     public Set(
         IConnectionMultiplexer redis,
-        // ReSharper disable once InvalidXmlDocComment
-        IHandlerContext context) : base(context)
+        IHandlerContext context)
+        : base(context)
     {
         r_redis = redis;
     }
-
-    private readonly IConnectionMultiplexer r_redis;
 
     /// <inheritdoc/>
     protected override async ValueTask<D2Result<S.SetOutput?>> ExecuteAsync(

@@ -1,9 +1,15 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ContactMethodsTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
 /// Unit tests for <see cref="ContactMethods"/>.
@@ -12,6 +18,9 @@ public class ContactMethodsTests
 {
     #region Valid Creation
 
+    /// <summary>
+    /// Tests creating ContactMethods with no parameters returns empty lists.
+    /// </summary>
     [Fact]
     public void Create_WithNoParameters_ReturnsEmptyLists()
     {
@@ -26,6 +35,9 @@ public class ContactMethodsTests
         contactMethods.PrimaryPhoneNumber.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods with only emails.
+    /// </summary>
     [Fact]
     public void Create_WithEmailsOnly_Success()
     {
@@ -42,6 +54,9 @@ public class ContactMethodsTests
         contactMethods.PhoneNumbers.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods with only phone numbers.
+    /// </summary>
     [Fact]
     public void Create_WithPhoneNumbersOnly_Success()
     {
@@ -58,6 +73,9 @@ public class ContactMethodsTests
         contactMethods.PhoneNumbers.Should().HaveCount(1);
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods with both emails and phone numbers.
+    /// </summary>
     [Fact]
     public void Create_WithBothEmailsAndPhones_Success()
     {
@@ -76,6 +94,9 @@ public class ContactMethodsTests
         contactMethods.PhoneNumbers.Should().HaveCount(1);
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods with multiple emails and phone numbers.
+    /// </summary>
     [Fact]
     public void Create_WithMultipleEmailsAndPhones_Success()
     {
@@ -99,6 +120,9 @@ public class ContactMethodsTests
 
     #region Primary Contact Methods
 
+    /// <summary>
+    /// Tests retrieving the primary email when no emails are present.
+    /// </summary>
     [Fact]
     public void PrimaryEmail_WithNoEmails_ReturnsNull()
     {
@@ -109,6 +133,9 @@ public class ContactMethodsTests
         contactMethods.PrimaryEmail.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests retrieving the primary email when one email is present.
+    /// </summary>
     [Fact]
     public void PrimaryEmail_WithOneEmail_ReturnsThatEmail()
     {
@@ -121,6 +148,9 @@ public class ContactMethodsTests
         contactMethods.PrimaryEmail.Should().Be(email);
     }
 
+    /// <summary>
+    /// Tests retrieving the primary email when multiple emails are present.
+    /// </summary>
     [Fact]
     public void PrimaryEmail_WithMultipleEmails_ReturnsFirstEmail()
     {
@@ -134,6 +164,9 @@ public class ContactMethodsTests
         contactMethods.PrimaryEmail.Should().Be(firstEmail);
     }
 
+    /// <summary>
+    /// Tests retrieving the primary phone number when no phones are present.
+    /// </summary>
     [Fact]
     public void PrimaryPhoneNumber_WithNoPhones_ReturnsNull()
     {
@@ -144,6 +177,9 @@ public class ContactMethodsTests
         contactMethods.PrimaryPhoneNumber.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests retrieving the primary phone number when one phone is present.
+    /// </summary>
     [Fact]
     public void PrimaryPhoneNumber_WithOnePhone_ReturnsThatPhone()
     {
@@ -156,6 +192,9 @@ public class ContactMethodsTests
         contactMethods.PrimaryPhoneNumber.Should().Be(phone);
     }
 
+    /// <summary>
+    /// Tests retrieving the primary phone number when multiple phones are present.
+    /// </summary>
     [Fact]
     public void PrimaryPhoneNumber_WithMultiplePhones_ReturnsFirstPhone()
     {
@@ -173,6 +212,9 @@ public class ContactMethodsTests
 
     #region Null Parameters
 
+    /// <summary>
+    /// Tests creating ContactMethods with null emails returns empty email list.
+    /// </summary>
     [Fact]
     public void Create_WithNullEmails_ReturnsEmptyEmailsList()
     {
@@ -184,6 +226,9 @@ public class ContactMethodsTests
         contactMethods.Emails.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods with null phone numbers returns empty phone list.
+    /// </summary>
     [Fact]
     public void Create_WithNullPhones_ReturnsEmptyPhonesList()
     {
@@ -195,6 +240,10 @@ public class ContactMethodsTests
         contactMethods.PhoneNumbers.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods with both emails and phone numbers as null returns empty
+    /// lists.
+    /// </summary>
     [Fact]
     public void Create_WithBothNull_ReturnsEmptyLists()
     {
@@ -210,6 +259,9 @@ public class ContactMethodsTests
 
     #region Validation Through CreateMany
 
+    /// <summary>
+    /// Tests creating ContactMethods with an invalid email throws ArgumentException.
+    /// </summary>
     [Fact]
     public void Create_WithInvalidEmail_ThrowsArgumentException()
     {
@@ -224,6 +276,9 @@ public class ContactMethodsTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods with an invalid phone number throws ArgumentException.
+    /// </summary>
     [Fact]
     public void Create_WithInvalidPhone_ThrowsArgumentException()
     {
@@ -242,6 +297,9 @@ public class ContactMethodsTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests creating ContactMethods from an existing ContactMethods instance.
+    /// </summary>
     [Fact]
     public void Create_WithExistingContactMethods_CreatesNewInstance()
     {
@@ -262,6 +320,9 @@ public class ContactMethodsTests
         copy.Should().Be(original); // Value equality
     }
 
+    /// <summary>
+    /// Tests creating ContactMethods from an existing ContactMethods instance with no contacts.
+    /// </summary>
     [Fact]
     public void Create_WithExistingContactMethodsWithNoContacts_Success()
     {
@@ -282,6 +343,9 @@ public class ContactMethodsTests
 
     #region Value Equality
 
+    /// <summary>
+    /// Tests value equality of ContactMethods with same email and phone values.
+    /// </summary>
     [Fact]
     public void ContactMethods_WithSameValues_AreEqual()
     {
@@ -299,6 +363,9 @@ public class ContactMethodsTests
         (contactMethods1 == contactMethods2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests value inequality of ContactMethods with different email values.
+    /// </summary>
     [Fact]
     public void ContactMethods_WithDifferentEmails_AreNotEqual()
     {
@@ -316,6 +383,9 @@ public class ContactMethodsTests
         (contactMethods1 != contactMethods2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests value inequality of ContactMethods with different phone values.
+    /// </summary>
     [Fact]
     public void ContactMethods_WithDifferentPhones_AreNotEqual()
     {
@@ -332,6 +402,9 @@ public class ContactMethodsTests
         contactMethods1.Should().NotBe(contactMethods2);
     }
 
+    /// <summary>
+    /// Tests value inequality of ContactMethods with same emails/phones but in different order.
+    /// </summary>
     [Fact]
     public void ContactMethods_WithDifferentOrderEmails_AreNotEqual()
     {
@@ -349,6 +422,9 @@ public class ContactMethodsTests
         contactMethods1.Should().NotBe(contactMethods2);
     }
 
+    /// <summary>
+    /// Tests value inequality of ContactMethods with same phones but in different order.
+    /// </summary>
     [Fact]
     public void ContactMethods_WithDifferentOrderPhones_AreNotEqual()
     {
@@ -366,6 +442,9 @@ public class ContactMethodsTests
         contactMethods1.Should().NotBe(contactMethods2);
     }
 
+    /// <summary>
+    /// Tests value equality of ContactMethods when both have empty email and phone lists.
+    /// </summary>
     [Fact]
     public void ContactMethods_BothEmpty_AreEqual()
     {

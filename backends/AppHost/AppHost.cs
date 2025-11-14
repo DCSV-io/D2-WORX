@@ -1,3 +1,9 @@
+// -----------------------------------------------------------------------
+// <copyright file="AppHost.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using AppHost;
 using Microsoft.Extensions.Configuration;
 
@@ -49,15 +55,7 @@ var minioInit = builder.AddContainer("d2-minio-init", "minio/mc", "RELEASE.2025-
     .WithEntrypoint("/bin/sh")
     .WithArgs(
         "-c",
-        "mc alias set myminio http://d2-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && " +
-        "mc mb --ignore-existing myminio/loki-logs && " +
-        "mc mb --ignore-existing myminio/tempo-traces && " +
-        "mc mb --ignore-existing myminio/mimir-blocks && " +
-        "mc mb --ignore-existing myminio/mimir-ruler && " +
-        "mc mb --ignore-existing myminio/minio-uploads && " +
-        "mc admin prometheus generate myminio > /minio-token/prometheus-config.yaml && " +
-        "echo 'MinIO buckets and Prometheus token initialized successfully'"
-    )
+        "mc alias set myminio http://d2-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && mc mb --ignore-existing myminio/loki-logs && mc mb --ignore-existing myminio/tempo-traces && mc mb --ignore-existing myminio/mimir-blocks && mc mb --ignore-existing myminio/mimir-ruler && mc mb --ignore-existing myminio/minio-uploads && mc admin prometheus generate myminio > /minio-token/prometheus-config.yaml && echo 'MinIO buckets and Prometheus token initialized successfully'")
     .WithLifetime(ContainerLifetime.Session);
 
 /******************************************
@@ -113,8 +111,7 @@ var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "
     .WithBindMount("/var/lib/docker", "/var/lib/docker", isReadOnly: true)
     .WithArgs(
         "--housekeeping_interval=10s",
-        "--docker_only=true"
-    )
+        "--docker_only=true")
     .WithLifetime(ContainerLifetime.Persistent);
 
 // Grafana Alloy - Unified Agent for Metrics, Logs and Traces.
@@ -138,8 +135,7 @@ var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1
         "run",
         "/etc/alloy/config.alloy",
         "--server.http.listen-addr=0.0.0.0:12345",
-        "--stability.level=generally-available"
-    )
+        "--stability.level=generally-available")
     .WaitFor(cAdvisor)
     .WaitFor(mimir)
     .WaitFor(loki)
@@ -151,9 +147,12 @@ var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1
 var grafana = builder.AddContainer("d2-grafana", "grafana/grafana", "12.2.0")
     .WithIconName("ChartPerson")
     .WithHttpEndpoint(port: 3000, targetPort: 3000, name: "grafana")
-    .WithBindMount("../../observability/grafana/provisioning", "/etc/grafana/provisioning",
+    .WithBindMount(
+        "../../observability/grafana/provisioning",
+        "/etc/grafana/provisioning",
         isReadOnly: true)
     .WithVolume("d2-grafana-data", "/var/grafana")
+
     // Security - Require authentication.
     .WithEnvironment("GF_SECURITY_ADMIN_USER", otelUser)
     .WithEnvironment("GF_SECURITY_ADMIN_PASSWORD", otelPassword)
@@ -162,14 +161,17 @@ var grafana = builder.AddContainer("d2-grafana", "grafana/grafana", "12.2.0")
     .WithEnvironment("GF_USERS_ALLOW_SIGN_UP", "false")
     .WithEnvironment("GF_USERS_ALLOW_ORG_CREATE", "false")
     .WithEnvironment("GF_SNAPSHOTS_EXTERNAL_ENABLED", "false")
+
     // Security - Defaults for DEV ONLY - should be true, strict and true for PROD.
     .WithEnvironment("GF_SECURITY_COOKIE_SECURE", "false")
     .WithEnvironment("GF_SECURITY_COOKIE_SAMESITE", "lax")
     .WithEnvironment("GF_SECURITY_STRICT_TRANSPORT_SECURITY", "false")
+
     // Features.
     .WithEnvironment("GF_FEATURE_TOGGLES_ENABLE", "traceqlEditor")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithExternalHttpEndpoints()
+
     // Wait for dependencies so that provisioning works.
     .WaitFor(tempo)
     .WaitFor(loki)
@@ -292,14 +294,14 @@ var geoService = builder.AddProject<Projects.Geo_API>("d2-geo")
 // REST API - Gateway.
 var restGateway = builder.AddProject<Projects.REST>("d2-rest")
     .WithIconName("Globe")
-    // Services that the REST API depends on.
-    .WaitFor(geoService)
+    .WaitFor(geoService) // Services that the REST API depends on.
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithOtelRefs();
 
 // SvelteKit - Frontend.
-var svelte = builder.AddViteApp("d2-sveltekit",
+var svelte = builder.AddViteApp(
+        "d2-sveltekit",
         workingDirectory: "../../frontends/sveltekit",
         packageManager: "pnpm")
     .WaitFor(restGateway)
@@ -309,57 +311,3 @@ var svelte = builder.AddViteApp("d2-sveltekit",
     .WithExternalHttpEndpoints();
 
 builder.Build().Run();
-
-namespace AppHost
-{
-    /// <summary>
-    /// Extends the ResourceBuilder.
-    /// </summary>
-    internal static class ServiceExtensions
-    {
-        /// <summary>
-        /// Adds references and wait conditions for the default infrastructure services.
-        /// </summary>
-        /// <param name="builder">The resource builder for the resource.</param>
-        /// <param name="db">The resource builder for the PostgreSQL database.</param>
-        /// <param name="cache">The resource builder for the Redis cache.</param>
-        /// <param name="broker">The resource builder for the RabbitMQ message broker.</param>
-        /// <param name="keycloak">The resource builder for keycloak.</param>
-        /// <typeparam name="TProject">A type that represents the project reference.</typeparam>
-        /// <returns>A reference to the <see cref="IResourceBuilder{T}"/>.</returns>
-        public static IResourceBuilder<TProject> DefaultInfraRefs<TProject>(
-            this IResourceBuilder<TProject> builder,
-            IResourceBuilder<PostgresServerResource> db,
-            IResourceBuilder<RedisResource> cache,
-            IResourceBuilder<RabbitMQServerResource> broker,
-            IResourceBuilder<KeycloakResource> keycloak)
-            where TProject : IResourceWithEnvironment, IResourceWithWaitSupport
-        {
-            builder.WithReference(db);
-            builder.WaitFor(db);
-            builder.WithReference(cache);
-            builder.WaitFor(cache);
-            builder.WithReference(broker);
-            builder.WaitFor(broker);
-            builder.WithReference(keycloak);
-            builder.WaitFor(keycloak);
-            return builder;
-        }
-
-        /// <summary>
-        /// Adds observability environment variables for traces and logs.
-        /// </summary>
-        /// <param name="builder">The resource builder for the resource.</param>
-        /// <typeparam name="TProject">A type that represents the project reference.</typeparam>
-        /// <returns>A reference to the <see cref="IResourceBuilder{T}"/>.</returns>
-        public static IResourceBuilder<TProject> WithOtelRefs<TProject>(
-            this IResourceBuilder<TProject> builder)
-            where TProject : IResourceWithEnvironment, IResourceWithWaitSupport
-        {
-            builder.WithEnvironment("OTEL_SERVICE_NAME", builder.Resource.Name);
-            builder.WithEnvironment("TRACES_URI", "http://localhost:4318/v1/traces");
-            builder.WithEnvironment("LOGS_URI", "http://localhost:3100");
-            return builder;
-        }
-    }
-}

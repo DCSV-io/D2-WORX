@@ -1,4 +1,10 @@
-﻿namespace D2.Geo.Domain.Entities;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Language.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a language.
@@ -13,10 +19,10 @@ public record Language
     #region Identity - Primary Key
 
     /// <summary>
-    /// The ISO 639-1 code of the language.
+    /// Gets the ISO 639-1 code of the language.
     /// </summary>
     /// <example>
-    /// es
+    /// es.
     /// </example>
     /// <remarks>
     /// Must be unique. Always a 2-char string (letters).
@@ -28,10 +34,10 @@ public record Language
     #region Properties
 
     /// <summary>
-    /// The display name of the language.
+    /// Gets the display name of the language.
     /// </summary>
     /// <example>
-    /// Spanish
+    /// Spanish.
     /// </example>
     /// <remarks>
     /// This is the name of the language in English.
@@ -39,10 +45,10 @@ public record Language
     public required string Name { get; init; }
 
     /// <summary>
-    /// The endonym of the language.
+    /// Gets the endonym of the language.
     /// </summary>
     /// <example>
-    /// Español
+    /// Español.
     /// </example>
     /// <remarks>
     /// This is the name of the language in the language itself.

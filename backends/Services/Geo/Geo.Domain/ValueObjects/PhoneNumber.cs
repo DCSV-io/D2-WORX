@@ -1,9 +1,15 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="PhoneNumber.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Contracts.Utilities.Extensions;
-
-namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a phone number with associated labels.
@@ -16,22 +22,22 @@ namespace D2.Geo.Domain.ValueObjects;
 public record PhoneNumber
 {
     /// <summary>
-    /// The phone number value (in E.164 format - digits only).
+    /// Gets the phone number value (in E.164 format - digits only).
     /// </summary>
     /// <example>
-    /// 13213214321
+    /// 13213214321.
     /// </example>
     public required string Value { get; init; }
 
     /// <summary>
-    /// The labels associated with the phone number.
+    /// Gets the labels associated with the phone number.
     /// </summary>
     /// <remarks>
     /// Used to help differentiate multiple phone numbers used by a single
     /// <see cref="ContactMethods"/> object.
     /// </remarks>
     /// <example>
-    /// ["mobile", "work"]
+    /// ["mobile", "work"].
     /// </example>
     public required ImmutableHashSet<string> Labels { get; init; }
 
@@ -61,7 +67,7 @@ public record PhoneNumber
         return new PhoneNumber
         {
             Value = value.CleanAndValidatePhoneNumber(),
-            Labels = labels?.Clean(x => x.CleanStr())?.ToImmutableHashSet() ?? []
+            Labels = labels?.Clean(x => x.CleanStr())?.ToImmutableHashSet() ?? [],
         };
     }
 
@@ -102,10 +108,10 @@ public record PhoneNumber
     /// or in an invalid format.
     /// </exception>
     public static ImmutableList<PhoneNumber> CreateMany(
-        IEnumerable<(string value, IEnumerable<string>? labels)>? phoneNumbers)
+        IEnumerable<(string Value, IEnumerable<string>? Labels)>? phoneNumbers)
     {
         return phoneNumbers?
-            .Select(pn => Create(pn.value, pn.labels))
+            .Select(pn => Create(pn.Value, pn.Labels))
             .ToImmutableList() ?? [];
     }
 
@@ -145,10 +151,14 @@ public record PhoneNumber
     public virtual bool Equals(PhoneNumber? other)
     {
         if (other is null)
+        {
             return false;
+        }
 
         if (ReferenceEquals(this, other))
+        {
             return true;
+        }
 
         return Value == other.Value
                && Labels.SetEquals(other.Labels);
@@ -161,11 +171,13 @@ public record PhoneNumber
     /// </remarks>
     public override int GetHashCode()
     {
-        var hashCode = new HashCode();
+        var hashCode = default(HashCode);
         hashCode.Add(Value);
 
         foreach (var label in Labels.OrderBy(l => l))
+        {
             hashCode.Add(label);
+        }
 
         return hashCode.ToHashCode();
     }

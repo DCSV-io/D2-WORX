@@ -1,9 +1,13 @@
-﻿using D2.Contracts.Utilities.Extensions;
-using FluentAssertions;
-
-// ReSharper disable MoveLocalFunctionAfterJumpStatement
+﻿// -----------------------------------------------------------------------
+// <copyright file="EnumerableExtensionsTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Tests;
+
+using D2.Contracts.Utilities.Extensions;
+using FluentAssertions;
 
 /// <summary>
 /// Unit tests for <see cref="EnumerableExtensions"/>.
@@ -12,6 +16,9 @@ public class EnumerableExtensionsTests
 {
     #region Truthy Tests
 
+    /// <summary>
+    /// Tests that Truthy returns true when the enumerable contains multiple elements.
+    /// </summary>
     [Fact]
     public void Truthy_WithNonEmptyEnumerable_ReturnsTrue()
     {
@@ -25,6 +32,9 @@ public class EnumerableExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that Truthy returns true when the enumerable contains a single element.
+    /// </summary>
     [Fact]
     public void Truthy_WithSingleElement_ReturnsTrue()
     {
@@ -38,6 +48,9 @@ public class EnumerableExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that Truthy returns false when the enumerable is empty.
+    /// </summary>
     [Fact]
     public void Truthy_WithEmptyEnumerable_ReturnsFalse()
     {
@@ -51,6 +64,9 @@ public class EnumerableExtensionsTests
         result.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that Truthy returns false when the enumerable is null.
+    /// </summary>
     [Fact]
     public void Truthy_WithNull_ReturnsFalse()
     {
@@ -68,6 +84,9 @@ public class EnumerableExtensionsTests
 
     #region Falsey Tests
 
+    /// <summary>
+    /// Tests that Falsey returns true when the enumerable is empty.
+    /// </summary>
     [Fact]
     public void Falsey_WithEmptyEnumerable_ReturnsTrue()
     {
@@ -81,6 +100,9 @@ public class EnumerableExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that Falsey returns true when the enumerable is null.
+    /// </summary>
     [Fact]
     public void Falsey_WithNull_ReturnsTrue()
     {
@@ -94,6 +116,9 @@ public class EnumerableExtensionsTests
         result.Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that Falsey returns false when the enumerable contains elements.
+    /// </summary>
     [Fact]
     public void Falsey_WithNonEmptyEnumerable_ReturnsFalse()
     {
@@ -111,6 +136,9 @@ public class EnumerableExtensionsTests
 
     #region Clean Tests - ReturnNull Behavior
 
+    /// <summary>
+    /// Tests that Clean applies the cleaner function to all elements and returns a cleaned enumerable.
+    /// </summary>
     [Fact]
     public void Clean_WithValidElements_ReturnsCleanedEnumerable()
     {
@@ -126,6 +154,9 @@ public class EnumerableExtensionsTests
         result.Should().BeEquivalentTo("hello", "world", "test");
     }
 
+    /// <summary>
+    /// Tests that Clean removes null elements by default after cleaning.
+    /// </summary>
     [Fact]
     public void Clean_WithNullElements_RemovesNullsByDefault()
     {
@@ -141,6 +172,9 @@ public class EnumerableExtensionsTests
         result.Should().BeEquivalentTo("hello", "world");
     }
 
+    /// <summary>
+    /// Tests that Clean returns null when the input enumerable is null with default behavior.
+    /// </summary>
     [Fact]
     public void Clean_WithNullInput_ReturnsNullByDefault()
     {
@@ -155,6 +189,9 @@ public class EnumerableExtensionsTests
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that Clean returns null when the input enumerable is empty with default behavior.
+    /// </summary>
     [Fact]
     public void Clean_WithEmptyInput_ReturnsNullByDefault()
     {
@@ -169,6 +206,9 @@ public class EnumerableExtensionsTests
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that Clean returns null when all elements are null after cleaning.
+    /// </summary>
     [Fact]
     public void Clean_WithAllNullElements_ReturnsNull()
     {
@@ -187,6 +227,9 @@ public class EnumerableExtensionsTests
 
     #region Clean Tests - ReturnEmpty Behavior
 
+    /// <summary>
+    /// Tests that Clean returns an empty enumerable when input is null and behavior is ReturnEmpty.
+    /// </summary>
     [Fact]
     public void Clean_WithNullInput_ReturnsEmpty_WhenBehaviorIsReturnEmpty()
     {
@@ -205,6 +248,9 @@ public class EnumerableExtensionsTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that Clean returns an empty enumerable when input is empty and behavior is ReturnEmpty.
+    /// </summary>
     [Fact]
     public void Clean_WithEmptyInput_ReturnsEmpty_WhenBehaviorIsReturnEmpty()
     {
@@ -223,6 +269,9 @@ public class EnumerableExtensionsTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that Clean returns an empty enumerable when all elements are null and behavior is ReturnEmpty.
+    /// </summary>
     [Fact]
     public void Clean_WithAllNullElements_ReturnsEmpty_WhenBehaviorIsReturnEmpty()
     {
@@ -245,6 +294,9 @@ public class EnumerableExtensionsTests
 
     #region Clean Tests - Throw Behavior
 
+    /// <summary>
+    /// Tests that Clean throws an ArgumentException when input is null and behavior is Throw.
+    /// </summary>
     [Fact]
     public void Clean_WithNullInput_Throws_WhenBehaviorIsThrow()
     {
@@ -261,6 +313,9 @@ public class EnumerableExtensionsTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that Clean throws an ArgumentException when input is empty and behavior is Throw.
+    /// </summary>
     [Fact]
     public void Clean_WithEmptyInput_Throws_WhenBehaviorIsThrow()
     {
@@ -277,6 +332,9 @@ public class EnumerableExtensionsTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that Clean throws an ArgumentException when all elements are null and behavior is Throw.
+    /// </summary>
     [Fact]
     public void Clean_WithAllNullElements_Throws_WhenBehaviorIsThrow()
     {
@@ -293,6 +351,9 @@ public class EnumerableExtensionsTests
         act.Should().Throw<ArgumentException>();
     }
 
+    /// <summary>
+    /// Tests that Clean throws a NullReferenceException when a null value is encountered and value null behavior is ThrowOnNull.
+    /// </summary>
     [Fact]
     public void Clean_WithNullValue_Throws_WhenValueNullBehaviorIsThrowOnNull()
     {
@@ -314,6 +375,9 @@ public class EnumerableExtensionsTests
 
     #region Clean Tests - Complex Scenarios
 
+    /// <summary>
+    /// Tests that Clean correctly applies a custom transformation function to all elements.
+    /// </summary>
     [Fact]
     public void Clean_WithCustomCleaner_AppliesCleanerCorrectly()
     {
@@ -329,6 +393,9 @@ public class EnumerableExtensionsTests
         result.Should().BeEquivalentTo([2, 4, 6, 8, 10]);
     }
 
+    /// <summary>
+    /// Tests that Clean can filter elements by returning null from the cleaner function.
+    /// </summary>
     [Fact]
     public void Clean_WithFilteringCleaner_FiltersElements()
     {
@@ -344,11 +411,14 @@ public class EnumerableExtensionsTests
         result.Should().BeEquivalentTo(new int?[] { 2, 4 });
     }
 
+    /// <summary>
+    /// Tests that Clean correctly handles null values when cleaning reference types.
+    /// </summary>
     [Fact]
     public void Clean_WithReferenceTypes_HandlesNullsCorrectly()
     {
         // Arrange
-        string[] enumerable = ["  keep  ", "", "  also  ", "   "];
+        string[] enumerable = ["  keep  ", string.Empty, "  also  ", "   "];
         string? Cleaner(string s)
         {
             var trimmed = s.Trim();

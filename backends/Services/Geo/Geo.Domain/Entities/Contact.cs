@@ -1,10 +1,16 @@
-﻿using D2.Contracts.Utilities.Attributes;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Contact.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Entities;
+
+using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Contracts.Utilities.Extensions;
 using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
-
-namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a collection of contact and / or location information for an individual or
@@ -26,7 +32,7 @@ public record Contact
     #region Identity
 
     /// <summary>
-    /// The globally unique identifier for the contact.
+    /// Gets the globally unique identifier for the contact.
     /// </summary>
     public required Guid Id { get; init; }
 
@@ -35,7 +41,7 @@ public record Contact
     #region General Properties
 
     /// <summary>
-    /// The date and time when the contact was created.
+    /// Gets the date and time when the contact was created.
     /// </summary>
     /// <remarks>
     /// Should always be stored as UTC.
@@ -47,16 +53,16 @@ public record Contact
     #region Metadata Properties
 
     /// <summary>
-    /// A key representing the context or purpose of the contact. Can assist the application in
+    /// Gets a key representing the context or purpose of the contact. Can assist the application in
     /// categorizing contacts for caching, retrieval, or business logic.
     /// </summary>
     /// <example>
-    /// "auth-user" or "sales-order"
+    /// "auth-user" or "sales-order".
     /// </example>
     public required string ContextKey { get; init; }
 
     /// <summary>
-    /// A globally unique identifier linking the contact to a related entity in another domain.
+    /// Gets a globally unique identifier linking the contact to a related entity in another domain.
     /// </summary>
     public required Guid RelatedEntityId { get; init; }
 
@@ -65,19 +71,19 @@ public record Contact
     #region Nested Properties (Value Objects)
 
     /// <summary>
-    /// The collection of contact methods, including email addresses and phone numbers.
+    /// Gets the collection of contact methods, including email addresses and phone numbers.
     /// </summary>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public ContactMethods? ContactMethods { get; init; }
 
     /// <summary>
-    /// The personal details associated with the contact.
+    /// Gets the personal details associated with the contact.
     /// </summary>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public Personal? PersonalDetails { get; init; }
 
     /// <summary>
-    /// The professional details associated with the contact.
+    /// Gets the professional details associated with the contact.
     /// </summary>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public Professional? ProfessionalDetails { get; init; }
@@ -87,7 +93,7 @@ public record Contact
     #region Foreign Keys
 
     /// <summary>
-    /// Foreign key to the <see cref="Location"/> entity associated with the contact.
+    /// Gets foreign key to the <see cref="Location"/> entity associated with the contact.
     /// </summary>
     /// <example>
     /// Content-addressable SHA-256 hash ID of the location.
@@ -99,7 +105,7 @@ public record Contact
     #region Navigation Properties
 
     /// <summary>
-    /// Navigation property to the associated <see cref="Location"/> entity for the contact.
+    /// Gets navigation property to the associated <see cref="Location"/> entity for the contact.
     /// </summary>
     public Location? Location { get; init; }
 
@@ -160,18 +166,22 @@ public record Contact
         byte[]? locationHashId = null)
     {
         if (contextKey.Falsey())
+        {
             throw new GeoValidationException(
                 nameof(Contact),
                 nameof(ContextKey),
                 contextKey,
                 "is required.");
+        }
 
         if (relatedEntityId.Falsey())
+        {
             throw new GeoValidationException(
                 nameof(Contact),
                 nameof(RelatedEntityId),
                 relatedEntityId,
                 "is required.");
+        }
 
         return new Contact
         {
@@ -188,7 +198,7 @@ public record Contact
             ProfessionalDetails = professionalDetails is not null
                 ? Professional.Create(professionalDetails)
                 : null,
-            LocationHashId = locationHashId
+            LocationHashId = locationHashId,
         };
     }
 

@@ -1,9 +1,15 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="EmailAddressTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
 /// Unit tests for <see cref="EmailAddress"/>.
@@ -12,6 +18,9 @@ public class EmailAddressTests
 {
     #region Valid Creation
 
+    /// <summary>
+    /// Tests that creating EmailAddress with only value succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithValueOnly_Success()
     {
@@ -27,6 +36,9 @@ public class EmailAddressTests
         emailAddress.Labels.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with value and labels succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithValueAndLabels_Success()
     {
@@ -43,6 +55,9 @@ public class EmailAddressTests
         emailAddress.Labels.Should().BeEquivalentTo("work", "primary");
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with null labels returns an empty HashSet.
+    /// </summary>
     [Fact]
     public void Create_WithNullLabels_ReturnsEmptyHashSet()
     {
@@ -61,6 +76,13 @@ public class EmailAddressTests
 
     #region Email Validation
 
+    /// <summary>
+    /// Tests that creating EmailAddress with valid email formats succeeds.
+    /// </summary>
+    ///
+    /// <param name="email">
+    /// The valid email address to test.
+    /// </param>
     [Theory]
     [InlineData("test@example.com")]
     [InlineData("user.name@example.com")]
@@ -75,6 +97,13 @@ public class EmailAddressTests
         emailAddress.Value.Should().Be(email.ToLowerInvariant());
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with invalid email formats throws ArgumentException.
+    /// </summary>
+    ///
+    /// <param name="email">
+    /// The invalid email address to test.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -97,6 +126,9 @@ public class EmailAddressTests
 
     #region Clean Email - No Changes
 
+    /// <summary>
+    /// Tests that creating EmailAddress with a clean email returns it unchanged.
+    /// </summary>
     [Fact]
     public void Create_WithCleanEmail_NoChanges()
     {
@@ -114,6 +146,9 @@ public class EmailAddressTests
 
     #region Dirty Email - Cleanup
 
+    /// <summary>
+    /// Tests that creating EmailAddress with a dirty email cleans and lowercases it.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyEmail_CleansAndLowercases()
     {
@@ -127,6 +162,16 @@ public class EmailAddressTests
         emailAddress.Value.Should().Be("test@example.com");
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with various dirty emails cleans them correctly.
+    /// </summary>
+    ///
+    /// <param name="input">
+    /// The dirty email input.
+    /// </param>
+    /// <param name="expected">
+    /// The expected cleaned email.
+    /// </param>
     [Theory]
     [InlineData("TEST@EXAMPLE.COM", "test@example.com")]
     [InlineData("  test@example.com  ", "test@example.com")]
@@ -144,6 +189,9 @@ public class EmailAddressTests
 
     #region Labels - HashSet Behavior
 
+    /// <summary>
+    /// Tests that creating EmailAddress with empty labels returns an empty HashSet.
+    /// </summary>
     [Fact]
     public void Create_WithEmptyLabels_ReturnsEmptyHashSet()
     {
@@ -158,6 +206,9 @@ public class EmailAddressTests
         emailAddress.Labels.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with valid labels returns an ImmutableHashSet.
+    /// </summary>
     [Fact]
     public void Create_WithValidLabels_ReturnsImmutableHashSet()
     {
@@ -173,6 +224,9 @@ public class EmailAddressTests
         emailAddress.Labels.Should().BeEquivalentTo("work", "primary");
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with duplicate labels removes duplicates.
+    /// </summary>
     [Fact]
     public void Create_WithDuplicateLabels_RemovesDuplicates()
     {
@@ -188,6 +242,9 @@ public class EmailAddressTests
         emailAddress.Labels.Should().BeEquivalentTo("work", "primary");
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with dirty labels cleans them.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyLabels_CleansLabels()
     {
@@ -202,6 +259,10 @@ public class EmailAddressTests
         emailAddress.Labels.Should().BeEquivalentTo("work", "primary");
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress with labels containing only whitespace removes those
+    /// entries.
+    /// </summary>
     [Fact]
     public void Create_WithLabelsContainingWhitespace_RemovesWhitespaceEntries()
     {
@@ -221,6 +282,9 @@ public class EmailAddressTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests that creating EmailAddress from an existing instance returns a new instance.
+    /// </summary>
     [Fact]
     public void Create_WithExistingEmailAddress_CreatesNewInstance()
     {
@@ -237,6 +301,10 @@ public class EmailAddressTests
         copy.Should().Be(original); // Value equality
     }
 
+    /// <summary>
+    /// Tests that creating EmailAddress from an existing instance with invalid email
+    /// throws ArgumentException.
+    /// </summary>
     [Fact]
     public void Create_WithInvalidExistingEmailAddress_ThrowsArgumentException()
     {
@@ -244,7 +312,7 @@ public class EmailAddressTests
         var invalid = new EmailAddress
         {
             Value = "invalid-email",
-            Labels = []
+            Labels = [],
         };
 
         // Act
@@ -258,6 +326,9 @@ public class EmailAddressTests
 
     #region CreateMany Tests
 
+    /// <summary>
+    /// Tests that creating many EmailAddresses with null input returns an empty list.
+    /// </summary>
     [Fact]
     public void CreateMany_WithNullInput_ReturnsEmptyList()
     {
@@ -269,6 +340,9 @@ public class EmailAddressTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating many EmailAddresses with empty input returns an empty list.
+    /// </summary>
     [Fact]
     public void CreateMany_WithEmptyInput_ReturnsEmptyList()
     {
@@ -282,6 +356,9 @@ public class EmailAddressTests
         result.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating many EmailAddresses with valid tuples returns an ImmutableList.
+    /// </summary>
     [Fact]
     public void CreateMany_WithValidTuples_ReturnsImmutableList()
     {
@@ -289,7 +366,7 @@ public class EmailAddressTests
         var emails = new[]
         {
             ("test1@example.com", (IEnumerable<string>?)["work"]),
-            ("test2@example.com", (IEnumerable<string>?)["personal"])
+            ("test2@example.com", (IEnumerable<string>?)["personal"]),
         };
 
         // Act
@@ -302,6 +379,9 @@ public class EmailAddressTests
         result[1].Value.Should().Be("test2@example.com");
     }
 
+    /// <summary>
+    /// Tests that creating many EmailAddresses from existing instances returns an ImmutableList.
+    /// </summary>
     [Fact]
     public void CreateMany_WithEmailAddresses_ReturnsImmutableList()
     {
@@ -309,7 +389,7 @@ public class EmailAddressTests
         var emails = new[]
         {
             EmailAddress.Create("test1@example.com", ["work"]),
-            EmailAddress.Create("test2@example.com", ["personal"])
+            EmailAddress.Create("test2@example.com", ["personal"]),
         };
 
         // Act
@@ -324,6 +404,9 @@ public class EmailAddressTests
 
     #region Value Equality
 
+    /// <summary>
+    /// Tests that two EmailAddress instances with the same values are equal.
+    /// </summary>
     [Fact]
     public void EmailAddress_WithSameValues_AreEqual()
     {
@@ -336,6 +419,9 @@ public class EmailAddressTests
         (email1 == email2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two EmailAddress instances with different values are not equal.
+    /// </summary>
     [Fact]
     public void EmailAddress_WithDifferentValue_AreNotEqual()
     {
@@ -348,6 +434,9 @@ public class EmailAddressTests
         (email1 != email2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two EmailAddress instances with different labels are not equal.
+    /// </summary>
     [Fact]
     public void EmailAddress_WithDifferentLabels_AreNotEqual()
     {
@@ -359,6 +448,9 @@ public class EmailAddressTests
         email1.Should().NotBe(email2);
     }
 
+    /// <summary>
+    /// Tests that two EmailAddress instances with the same labels in different order are equal.
+    /// </summary>
     [Fact]
     public void EmailAddress_LabelsOrderDoesNotMatter_AreEqual()
     {

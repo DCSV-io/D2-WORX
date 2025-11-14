@@ -1,11 +1,17 @@
-﻿using D2.Contracts.Interfaces;
-using D2.Contracts.MemoryCache.Default;
+﻿// -----------------------------------------------------------------------
+// <copyright file="DefaultMemoryCacheTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Tests;
+
 using D2.Contracts.Handler;
+using D2.Contracts.Interfaces.CommonCacheService;
+using D2.Contracts.MemoryCache.Default;
 using D2.Contracts.MemoryCache.Default.Handlers;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
-
-namespace D2.Contracts.Tests;
 
 /// <summary>
 /// Tests for <see cref="DefaultMemoryCacheService"/>.
@@ -13,9 +19,17 @@ namespace D2.Contracts.Tests;
 public class DefaultMemoryCacheTests
 {
     private readonly IMemoryCache r_cache
-        = new Microsoft.Extensions.Caching.Memory.MemoryCache(new MemoryCacheOptions());
+        = new MemoryCache(new MemoryCacheOptions());
+
     private readonly IHandlerContext r_context = TestHelpers.CreateHandlerContext();
 
+    /// <summary>
+    /// Tests that Get returns a NotFound result when the requested key does not exist in the cache.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
     [Fact]
     public async Task Get_WhenKeyMissing_ReturnsNotFound()
     {
@@ -28,6 +42,13 @@ public class DefaultMemoryCacheTests
         result.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    /// <summary>
+    /// Tests that Get returns the cached value when the requested key exists in the cache.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
     [Fact]
     public async Task Get_WhenKeyExists_ReturnsValue()
     {
@@ -42,6 +63,13 @@ public class DefaultMemoryCacheTests
         result.Data!.Value.Should().Be("test-value");
     }
 
+    /// <summary>
+    /// Tests that Set successfully stores a value in the cache with valid input.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
     [Fact]
     public async Task Set_WithValidInput_StoresValueInCache()
     {
@@ -55,6 +83,13 @@ public class DefaultMemoryCacheTests
         cached.Should().Be("value");
     }
 
+    /// <summary>
+    /// Tests that Set with an expiration time removes the value from cache after the specified duration.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
     [Fact]
     public async Task Set_WithExpiration_ExpiresAfterDuration()
     {
@@ -69,6 +104,13 @@ public class DefaultMemoryCacheTests
         r_cache.TryGetValue<string>("key", out _).Should().BeFalse();
     }
 
+    /// <summary>
+    /// Tests that Remove successfully deletes an existing key from the cache.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
     [Fact]
     public async Task Remove_WithExistingKey_DeletesKeyFromCache()
     {

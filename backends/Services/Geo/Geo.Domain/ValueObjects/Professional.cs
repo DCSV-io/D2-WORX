@@ -1,10 +1,16 @@
-﻿using D2.Contracts.Utilities.Attributes;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Professional.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.ValueObjects;
+
+using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Contracts.Utilities.Extensions;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;
-
-namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a business or professional entity.
@@ -16,34 +22,34 @@ namespace D2.Geo.Domain.ValueObjects;
 public record Professional
 {
     /// <summary>
-    /// The company's name.
+    /// Gets the company's name.
     /// </summary>
     /// <example>
-    /// ACME, LLC
+    /// ACME, LLC.
     /// </example>
     public required string CompanyName { get; init; }
 
     /// <summary>
-    /// The related person's job title or position at the company, if applicable.
+    /// Gets the related person's job title or position at the company, if applicable.
     /// </summary>
     /// <example>
-    /// Software Engineer
+    /// Software Engineer.
     /// </example>
     public string? JobTitle { get; init; }
 
     /// <summary>
-    /// A department within the company.
+    /// Gets a department within the company.
     /// </summary>
     /// <example>
-    /// Research and Development
+    /// Research and Development.
     /// </example>
     public string? Department { get; init; }
 
     /// <summary>
-    /// The company's website URL.
+    /// Gets the company's website URL.
     /// </summary>
     /// <example>
-    /// https://www.acme.com
+    /// https://www.acme.com.
     /// </example>
     public Uri? CompanyWebsite { get; init; }
 
@@ -80,18 +86,20 @@ public record Professional
         Uri? companyWebsite = null)
     {
         if (companyName.Falsey())
+        {
             throw new GeoValidationException(
                 nameof(Professional),
                 nameof(CompanyName),
                 companyName,
                 "is required.");
+        }
 
         return new Professional
         {
             CompanyName = companyName.CleanStr()!,
             JobTitle = jobTitle?.CleanStr(),
             Department = department?.CleanStr(),
-            CompanyWebsite = companyWebsite
+            CompanyWebsite = companyWebsite,
         };
     }
 

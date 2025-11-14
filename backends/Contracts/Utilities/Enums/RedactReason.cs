@@ -1,4 +1,10 @@
-﻿namespace D2.Contracts.Utilities.Enums;
+﻿// -----------------------------------------------------------------------
+// <copyright file="RedactReason.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Utilities.Enums;
 
 /// <summary>
 /// Reasons for redacting data from logs or telemetry.
@@ -33,5 +39,5 @@ public enum RedactReason
     /// <summary>
     /// Other reasons not specified above.
     /// </summary>
-    Other
+    Other,
 }

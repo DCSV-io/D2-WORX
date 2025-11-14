@@ -1,5 +1,10 @@
+// -----------------------------------------------------------------------
+// <copyright file="Program.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
 using D2.Contracts.ServiceDefaults;
-using D2.Services.Auth.API.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,9 +14,9 @@ builder.Services.AddGrpc();
 var app = builder.Build();
 app.UseStructuredRequestLogging();
 app.MapPrometheusEndpointWithIpRestriction();
-app.MapGrpcService<GreeterService>();
 
-app.MapGet("/",
+app.MapGet(
+    "/",
     () => "Communication with gRPC endpoints must be made through a gRPC client.");
 
 app.MapDefaultEndpoints();

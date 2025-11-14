@@ -1,8 +1,14 @@
-﻿using D2.Contracts.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
-using StackExchange.Redis;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Extensions.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.DistributedCache.Redis;
+
+using D2.Contracts.Interfaces.DistributedCacheService;
+using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 /// <summary>
 /// Provides extension methods related to the <see cref="RedisDistributedCacheService"/> and
@@ -17,14 +23,14 @@ public static class Extensions
     /// </summary>
     ///
     /// <param name="services">
-    /// The service collection.
+    /// The service collection to add the services to.
     /// </param>
     /// <param name="redisConnectionString">
     /// The connection string for Redis.
     /// </param>
     ///
     /// <returns>
-    /// The service collection.
+    /// The service collection with the added services.
     /// </returns>
     public static IServiceCollection AddRedisCaching(
         this IServiceCollection services,

@@ -1,4 +1,10 @@
-﻿namespace D2.Geo.Domain.Entities;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Locale.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a locale.
@@ -13,10 +19,10 @@ public record Locale
     #region Identity - Primary Key
 
     /// <summary>
-    /// The IETF BCP 47 tag of the locale.
+    /// Gets the IETF BCP 47 tag of the locale.
     /// </summary>
     /// <example>
-    /// es-US
+    /// es-US.
     /// </example>
     /// <remarks>
     /// Must be unique. Follows the IETF BCP 47 standard for language tags.
@@ -28,10 +34,10 @@ public record Locale
     #region Properties
 
     /// <summary>
-    /// The display name of the locale.
+    /// Gets the display name of the locale.
     /// </summary>
     /// <example>
-    /// Spanish (United States)
+    /// Spanish (United States).
     /// </example>
     /// <remarks>
     /// This is the name of the locale in English.
@@ -39,10 +45,10 @@ public record Locale
     public required string Name { get; init; }
 
     /// <summary>
-    /// The endonym of the locale.
+    /// Gets the endonym of the locale.
     /// </summary>
     /// <example>
-    /// Español (Estados Unidos)
+    /// Español (Estados Unidos).
     /// </example>
     /// <remarks>
     /// This is the name of the locale in the language itself.
@@ -54,18 +60,18 @@ public record Locale
     #region Foreign Keys
 
     /// <summary>
-    /// The ISO 639-1 code of the language associated with the locale.
+    /// Gets the ISO 639-1 code of the language associated with the locale.
     /// </summary>
     /// <example>
-    /// es
+    /// es.
     /// </example>
     public required string LanguageISO6391Code { get; init; }
 
     /// <summary>
-    /// The ISO 3166-1 alpha-2 code of the country associated with the locale.
+    /// Gets the ISO 3166-1 alpha-2 code of the country associated with the locale.
     /// </summary>
     /// <example>
-    /// US
+    /// US.
     /// </example>
     public required string CountryISO31661Alpha2Code { get; init; }
 
@@ -74,12 +80,12 @@ public record Locale
     #region Navigation Properties
 
     /// <summary>
-    /// Navigation property to the language associated with the locale.
+    /// Gets navigation property to the language associated with the locale.
     /// </summary>
     public Language? Language { get; init; }
 
     /// <summary>
-    /// Navigation property to the country associated with the locale.
+    /// Gets navigation property to the country associated with the locale.
     /// </summary>
     public Country? Country { get; init; }
 

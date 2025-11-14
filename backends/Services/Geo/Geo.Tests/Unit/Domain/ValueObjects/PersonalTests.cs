@@ -1,11 +1,17 @@
-﻿using System.Collections.Immutable;
+﻿// -----------------------------------------------------------------------
+// <copyright file="PersonalTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.ValueObjects;
+
+using System.Collections.Immutable;
 using D2.Geo.Domain.Enums;
 using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
 /// Unit tests for <see cref="Personal"/>.
@@ -14,6 +20,9 @@ public class PersonalTests
 {
     #region Valid Creation
 
+    /// <summary>
+    /// Tests that creating Personal with only the required first name succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithFirstNameOnly_Success()
     {
@@ -36,6 +45,9 @@ public class PersonalTests
         personal.BiologicalSex.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating Personal with all fields populated succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithAllFields_Success()
     {
@@ -75,6 +87,9 @@ public class PersonalTests
         personal.BiologicalSex.Should().Be(BiologicalSex.Male);
     }
 
+    /// <summary>
+    /// Tests that creating Personal with some optional fields populated succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithPartialFields_Success()
     {
@@ -96,6 +111,13 @@ public class PersonalTests
 
     #region FirstName Validation - Required
 
+    /// <summary>
+    /// Tests that creating Personal with invalid first name throws GeoValidationException.
+    /// </summary>
+    ///
+    /// <param name="firstName">
+    /// The invalid first name value.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -116,6 +138,9 @@ public class PersonalTests
 
     #region Clean Strings - No Changes
 
+    /// <summary>
+    /// Tests that creating Personal with clean first name preserves the value.
+    /// </summary>
     [Fact]
     public void Create_WithCleanFirstName_NoChanges()
     {
@@ -129,6 +154,9 @@ public class PersonalTests
         personal.FirstName.Should().Be(clean_first_name);
     }
 
+    /// <summary>
+    /// Tests that creating Personal with clean preferred name preserves the value.
+    /// </summary>
     [Fact]
     public void Create_WithAllCleanNameFields_NoChanges()
     {
@@ -156,6 +184,9 @@ public class PersonalTests
 
     #region Dirty Strings - Cleanup
 
+    /// <summary>
+    /// Tests that creating Personal with dirty first name cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyFirstName_CleansWhitespace()
     {
@@ -169,6 +200,9 @@ public class PersonalTests
         personal.FirstName.Should().Be("John");
     }
 
+    /// <summary>
+    /// Tests that creating Personal with dirty preferred name cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyPreferredName_CleansWhitespace()
     {
@@ -183,6 +217,9 @@ public class PersonalTests
         personal.PreferredName.Should().Be("Johnny");
     }
 
+    /// <summary>
+    /// Tests that creating Personal with dirty middle name cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyMiddleName_CleansWhitespace()
     {
@@ -197,6 +234,9 @@ public class PersonalTests
         personal.MiddleName.Should().Be("Michael");
     }
 
+    /// <summary>
+    /// Tests that creating Personal with dirty last name cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyLastName_CleansWhitespace()
     {
@@ -211,6 +251,9 @@ public class PersonalTests
         personal.LastName.Should().Be("Doe");
     }
 
+    /// <summary>
+    /// Tests that creating Personal with all dirty name fields cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithAllDirtyNameFields_CleansAll()
     {
@@ -238,6 +281,13 @@ public class PersonalTests
 
     #region Whitespace-Only Fields Become Null
 
+    /// <summary>
+    /// Tests that creating Personal with whitespace-only preferred name sets it to null.
+    /// </summary>
+    ///
+    /// <param name="preferredName">
+    /// The whitespace-only preferred name value.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -255,6 +305,13 @@ public class PersonalTests
         personal.PreferredName.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating Personal with whitespace-only middle name sets it to null.
+    /// </summary>
+    ///
+    /// <param name="middleName">
+    /// The whitespace-only middle name value.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -272,6 +329,13 @@ public class PersonalTests
         personal.MiddleName.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating Personal with whitespace-only last name sets it to null.
+    /// </summary>
+    ///
+    /// <param name="lastName">
+    /// The whitespace-only last name value.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -293,6 +357,9 @@ public class PersonalTests
 
     #region Professional Credentials
 
+    /// <summary>
+    /// Tests that creating Personal with null professional credentials returns an empty list.
+    /// </summary>
     [Fact]
     public void Create_WithNullCredentials_ReturnsEmptyList()
     {
@@ -307,6 +374,9 @@ public class PersonalTests
         personal.ProfessionalCredentials.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating Personal with empty professional credentials returns an empty list.
+    /// </summary>
     [Fact]
     public void Create_WithEmptyCredentials_ReturnsEmptyList()
     {
@@ -321,6 +391,9 @@ public class PersonalTests
         personal.ProfessionalCredentials.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Tests that creating Personal with valid professional credentials returns an immutable list.
+    /// </summary>
     [Fact]
     public void Create_WithValidCredentials_ReturnsImmutableList()
     {
@@ -336,6 +409,9 @@ public class PersonalTests
         personal.ProfessionalCredentials.Should().BeEquivalentTo("PhD", "CISSP", "MBA");
     }
 
+    /// <summary>
+    /// Tests that creating Personal with dirty professional credentials cleans whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyCredentials_CleansCredentials()
     {
@@ -350,6 +426,10 @@ public class PersonalTests
         personal.ProfessionalCredentials.Should().BeEquivalentTo("PhD", "CISSP", "MBA");
     }
 
+    /// <summary>
+    /// Tests that creating Personal with professional credentials containing whitespace-only
+    /// entries removes those entries.
+    /// </summary>
     [Fact]
     public void Create_WithCredentialsContainingWhitespace_RemovesWhitespaceEntries()
     {
@@ -368,6 +448,13 @@ public class PersonalTests
 
     #region Enums
 
+    /// <summary>
+    /// Tests that creating Personal with valid title preserves the value.
+    /// </summary>
+    ///
+    /// <param name="title">
+    /// The valid title value.
+    /// </param>
     [Theory]
     [InlineData(NameTitle.Mr)]
     [InlineData(NameTitle.Ms)]
@@ -385,6 +472,13 @@ public class PersonalTests
         personal.Title.Should().Be(title);
     }
 
+    /// <summary>
+    /// Tests that creating Personal with valid generational suffix preserves the value.
+    /// </summary>
+    ///
+    /// <param name="suffix">
+    /// The valid generational suffix value.
+    /// </param>
     [Theory]
     [InlineData(GenerationalSuffix.Jr)]
     [InlineData(GenerationalSuffix.Sr)]
@@ -401,6 +495,13 @@ public class PersonalTests
         personal.GenerationalSuffix.Should().Be(suffix);
     }
 
+    /// <summary>
+    /// Tests that creating Personal with valid biological sex preserves the value.
+    /// </summary>
+    ///
+    /// <param name="sex">
+    /// The valid biological sex value.
+    /// </param>
     [Theory]
     [InlineData(BiologicalSex.Male)]
     [InlineData(BiologicalSex.Female)]
@@ -422,6 +523,9 @@ public class PersonalTests
 
     #region DateOnly
 
+    /// <summary>
+    /// Tests that creating Personal with valid date of birth preserves the value.
+    /// </summary>
     [Fact]
     public void Create_WithValidDateOfBirth_PreservesDate()
     {
@@ -436,6 +540,9 @@ public class PersonalTests
         personal.DateOfBirth.Should().Be(new DateOnly(1990, 5, 15));
     }
 
+    /// <summary>
+    /// Tests that creating Personal with null date of birth sets it to null.
+    /// </summary>
     [Fact]
     public void Create_WithNullDateOfBirth_Success()
     {
@@ -453,6 +560,9 @@ public class PersonalTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests that creating Personal from an existing instance creates a new instance.
+    /// </summary>
     [Fact]
     public void Create_WithExistingPersonal_CreatesNewInstance()
     {
@@ -485,13 +595,17 @@ public class PersonalTests
         copy.Should().Be(original); // Value equality
     }
 
+    /// <summary>
+    /// Tests that creating Personal from an invalid existing instance throws
+    /// GeoValidationException.
+    /// </summary>
     [Fact]
     public void Create_WithInvalidExistingPersonal_ThrowsGeoValidationException()
     {
         // Arrange - Create invalid personal by bypassing factory
         var invalid = new Personal
         {
-            FirstName = "   " // Invalid - whitespace only
+            FirstName = "   ", // Invalid - whitespace only
         };
 
         // Act
@@ -505,6 +619,9 @@ public class PersonalTests
 
     #region Value Equality
 
+    /// <summary>
+    /// Tests that two Personal instances with the same values are equal.
+    /// </summary>
     [Fact]
     public void Personal_WithSameValues_AreEqual()
     {
@@ -517,6 +634,9 @@ public class PersonalTests
         (personal1 == personal2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two Personal instances with different first names are not equal.
+    /// </summary>
     [Fact]
     public void Personal_WithDifferentFirstName_AreNotEqual()
     {
@@ -529,6 +649,9 @@ public class PersonalTests
         (personal1 != personal2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two Personal instances with different last names are not equal.
+    /// </summary>
     [Fact]
     public void Personal_WithDifferentLastName_AreNotEqual()
     {

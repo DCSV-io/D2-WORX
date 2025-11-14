@@ -1,4 +1,10 @@
-﻿namespace D2.Contracts.Handler;
+﻿// -----------------------------------------------------------------------
+// <copyright file="UserToOrgRelationship.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Handler;
 
 /// <summary>
 /// Represents the relationship type between a user and an organization during a session or request.
@@ -19,5 +25,5 @@ public enum UserToOrgRelationship
     /// <summary>
     /// This user is accessing the organization in an emulation or impersonation capacity.
     /// </summary>
-    Emulation
+    Emulation,
 }

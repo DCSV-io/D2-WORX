@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+﻿// -----------------------------------------------------------------------
+// <copyright file="IHandlerContext.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Handler;
+
+using Microsoft.Extensions.Logging;
 
 /// <summary>
 /// Defines a context for handlers, providing access to the request context and logging

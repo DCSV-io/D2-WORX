@@ -1,7 +1,19 @@
-﻿namespace IntegrationTests;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Placeholder.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
+namespace IntegrationTests;
+
+/// <summary>
+/// A placeholder class to ensure the IntegrationTests project is recognized.
+/// </summary>
 public class Placeholder
 {
+    /// <summary>
+    /// A placeholder test to ensure the IntegrationTests project is recognized.
+    /// </summary>
     [Fact]
     public void PlaceholderTest()
     {

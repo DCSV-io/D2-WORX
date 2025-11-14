@@ -1,4 +1,10 @@
-﻿namespace D2.Contracts.Result;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ErrorCodes.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Result;
 
 /// <summary>
 /// Standardized error codes used across the application.

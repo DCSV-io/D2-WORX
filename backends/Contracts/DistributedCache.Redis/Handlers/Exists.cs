@@ -1,17 +1,25 @@
-﻿using System.Net;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Exists.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.DistributedCache.Redis.Handlers;
+
+using System.Net;
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using H = D2.Contracts.Interfaces.IDistributedCacheService.IExistsHandler;
-using I = D2.Contracts.Interfaces.IDistributedCacheService.ExistsInput;
-using O = D2.Contracts.Interfaces.IDistributedCacheService.ExistsOutput;
-
-namespace D2.Contracts.DistributedCache.Redis.Handlers;
+using H = D2.Contracts.Interfaces.DistributedCacheService.IDistributedCacheService.IExistsHandler;
+using I = D2.Contracts.Interfaces.DistributedCacheService.IDistributedCacheService.ExistsInput;
+using O = D2.Contracts.Interfaces.DistributedCacheService.IDistributedCacheService.ExistsOutput;
 
 /// <inheritdoc cref="H"/>
 public class Exists : BaseHandler<H, I, O>, H
 {
+    private readonly IConnectionMultiplexer r_redis;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Exists"/> class.
     /// </summary>
@@ -19,17 +27,16 @@ public class Exists : BaseHandler<H, I, O>, H
     /// <param name="redis">
     /// The Redis connection multiplexer.
     /// </param>
-    ///
-    /// <inheritdoc/>
+    /// <param name="context">
+    /// The handler context.
+    /// </param>
     public Exists(
         IConnectionMultiplexer redis,
-        // ReSharper disable once InvalidXmlDocComment
-        IHandlerContext context) : base(context)
+        IHandlerContext context)
+        : base(context)
     {
         r_redis = redis;
     }
-
-    private readonly IConnectionMultiplexer r_redis;
 
     /// <inheritdoc/>
     protected override async ValueTask<D2Result<O?>> ExecuteAsync(

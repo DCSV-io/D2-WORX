@@ -1,0 +1,59 @@
+﻿// -----------------------------------------------------------------------
+// <copyright file="ICommonCacheService.Set.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Interfaces.CommonCacheService;
+
+using D2.Contracts.Handler;
+
+/// <inheritdoc cref="ICommonCacheService"/>
+public partial interface ICommonCacheService
+{
+    /// <summary>
+    /// Handler for setting a value in the cache.
+    /// </summary>
+    ///
+    /// <typeparam name="TValue">
+    /// The type of the value to cache.
+    /// </typeparam>
+    public interface ISetHandler<TValue> : IHandler<SetInput<TValue>, SetOutput>;
+
+    /// <summary>
+    /// Gets a handler for setting a value of type <typeparamref name="TValue"/> in the cache.
+    /// </summary>
+    ///
+    /// <typeparam name="TValue">
+    /// The type of the value to cache.
+    /// </typeparam>
+    ///
+    /// <returns>
+    /// An instance of <see cref="ISetHandler{TValue}"/> for setting the cached value.
+    /// </returns>
+    public ISetHandler<TValue> Set<TValue>();
+
+    /// <summary>
+    /// Input for setting a value in the cache.
+    /// </summary>
+    ///
+    /// <param name="Key">
+    /// The key under which to store the value.
+    /// </param>
+    /// <param name="Value">
+    /// The value to store in the cache.
+    /// </param>
+    /// <param name="Expiration">
+    /// The optional expiration time for the cached item.
+    /// </param>
+    ///
+    /// <typeparam name="TValue">
+    /// The type of the value to cache.
+    /// </typeparam>
+    public record SetInput<TValue>(string Key, TValue Value, TimeSpan? Expiration);
+
+    /// <summary>
+    /// Output for setting a value in the cache.
+    /// </summary>
+    public record SetOutput;
+}

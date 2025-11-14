@@ -1,11 +1,17 @@
-﻿using D2.Geo.Domain.Entities;
+﻿// -----------------------------------------------------------------------
+// <copyright file="ContactTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.Entities;
+
+using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Enums;
 using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.Entities;
 
 /// <summary>
 /// Unit tests for the <see cref="Contact"/> entity.
@@ -14,6 +20,9 @@ public class ContactTests
 {
     #region Valid Creation - Minimal
 
+    /// <summary>
+    /// Tests creating a Contact with only the required properties.
+    /// </summary>
     [Fact]
     public void Create_WithContextKeyAndRelatedEntityId_Success()
     {
@@ -40,6 +49,9 @@ public class ContactTests
 
     #region Valid Creation - With Optional Properties
 
+    /// <summary>
+    /// Tests creating a Contact with ContactMethods.
+    /// </summary>
     [Fact]
     public void Create_WithContactMethods_Success()
     {
@@ -62,6 +74,9 @@ public class ContactTests
         contact.ContactMethods.Emails[0].Value.Should().Be("test@example.com");
     }
 
+    /// <summary>
+    /// Tests creating a Contact with PersonalDetails.
+    /// </summary>
     [Fact]
     public void Create_WithPersonalDetails_Success()
     {
@@ -82,6 +97,9 @@ public class ContactTests
         contact.PersonalDetails.LastName.Should().Be("Doe");
     }
 
+    /// <summary>
+    /// Tests creating a Contact with ProfessionalDetails.
+    /// </summary>
     [Fact]
     public void Create_WithProfessionalDetails_Success()
     {
@@ -102,6 +120,9 @@ public class ContactTests
         contact.ProfessionalDetails.JobTitle.Should().Be("CEO");
     }
 
+    /// <summary>
+    /// Tests creating a Contact with LocationHashId.
+    /// </summary>
     [Fact]
     public void Create_WithLocationHashId_Success()
     {
@@ -124,6 +145,9 @@ public class ContactTests
 
     #region Valid Creation - Full Contact
 
+    /// <summary>
+    /// Tests creating a Contact with all properties set.
+    /// </summary>
     [Fact]
     public void Create_WithAllProperties_Success()
     {
@@ -171,6 +195,13 @@ public class ContactTests
 
     #region ContextKey Validation
 
+    /// <summary>
+    /// Tests creating a Contact with null or empty ContextKey.
+    /// </summary>
+    ///
+    /// <param name="contextKey">
+    /// The context key to test.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -189,6 +220,9 @@ public class ContactTests
             .WithMessage("*ContextKey*required*");
     }
 
+    /// <summary>
+    /// Tests creating a Contact with a valid ContextKey.
+    /// </summary>
     [Fact]
     public void Create_WithValidContextKey_Success()
     {
@@ -203,6 +237,13 @@ public class ContactTests
         contact.ContextKey.Should().Be("auth-user");
     }
 
+    /// <summary>
+    /// Tests creating a Contact with various valid ContextKeys.
+    /// </summary>
+    ///
+    /// <param name="contextKey">
+    /// The context key to test.
+    /// </param>
     [Theory]
     [InlineData("auth-user")]
     [InlineData("sales-order")]
@@ -224,6 +265,9 @@ public class ContactTests
 
     #region RelatedEntityId Validation
 
+    /// <summary>
+    /// Tests creating a Contact with an empty RelatedEntityId.
+    /// </summary>
     [Fact]
     public void Create_WithEmptyGuidRelatedEntityId_ThrowsGeoValidationException()
     {
@@ -239,6 +283,9 @@ public class ContactTests
             .WithMessage("*RelatedEntityId*required*");
     }
 
+    /// <summary>
+    /// Tests creating a Contact with a valid RelatedEntityId.
+    /// </summary>
     [Fact]
     public void Create_WithValidRelatedEntityId_Success()
     {
@@ -258,6 +305,9 @@ public class ContactTests
 
     #region Guid Generation
 
+    /// <summary>
+    /// Tests that each created Contact has a unique Guid ID.
+    /// </summary>
     [Fact]
     public void Create_GeneratesUniqueGuids()
     {
@@ -278,6 +328,9 @@ public class ContactTests
 
     #region CreatedAt
 
+    /// <summary>
+    /// Tests that CreatedAt is set to the current UTC time upon creation.
+    /// </summary>
     [Fact]
     public void Create_SetsCreatedAtToUtcNow()
     {
@@ -300,6 +353,9 @@ public class ContactTests
 
     #region Nested Value Object Validation Through Create
 
+    /// <summary>
+    /// Tests that ContactMethods are validated when creating a Contact.
+    /// </summary>
     [Fact]
     public void Create_WithContactMethodsValidatesNested_Success()
     {
@@ -317,6 +373,9 @@ public class ContactTests
         contact.ContactMethods!.Emails.Should().HaveCount(1);
     }
 
+    /// <summary>
+    /// Tests that PersonalDetails are validated when creating a Contact.
+    /// </summary>
     [Fact]
     public void Create_WithPersonalDetailsValidatesNested_Success()
     {
@@ -333,6 +392,9 @@ public class ContactTests
         contact.PersonalDetails!.FirstName.Should().Be("John");
     }
 
+    /// <summary>
+    /// Tests that ProfessionalDetails are validated when creating a Contact.
+    /// </summary>
     [Fact]
     public void Create_WithProfessionalDetailsValidatesNested_Success()
     {
@@ -353,6 +415,9 @@ public class ContactTests
 
     #region Create Overload Tests
 
+    /// <summary>
+    /// Tests creating a Contact by copying an existing Contact.
+    /// </summary>
     [Fact]
     public void Create_WithExistingContact_CreatesNewInstanceWithNewId()
     {
@@ -383,6 +448,9 @@ public class ContactTests
 
     #region Loose Coupling Pattern
 
+    /// <summary>
+    /// Tests that Contact can be created with different ContextKeys for flexible domain usage.
+    /// </summary>
     [Fact]
     public void Create_WithDifferentContextKeys_AllowsFlexibleDomainUsage()
     {

@@ -1,17 +1,26 @@
-﻿using D2.Geo.Domain.Exceptions;
+﻿// -----------------------------------------------------------------------
+// <copyright file="StreetAddressTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace Geo.Tests.Unit.Domain.ValueObjects;
+
+using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
 using FluentAssertions;
 using Xunit;
-
-namespace Geo.Tests.Unit.Domain.ValueObjects;
 
 /// <summary>
 /// Unit tests for <see cref="StreetAddress"/>.
 /// </summary>
 public class StreetAddressTests
 {
-     #region Valid Creation
+    #region Valid Creation
 
+    /// <summary>
+    /// Tests that creating StreetAddress with only Line1 succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithLine1Only_Success()
     {
@@ -28,6 +37,9 @@ public class StreetAddressTests
         address.Line3.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with Line1 and Line2 succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithLine1AndLine2_Success()
     {
@@ -45,6 +57,9 @@ public class StreetAddressTests
         address.Line3.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with all three lines succeeds.
+    /// </summary>
     [Fact]
     public void Create_WithAllThreeLines_Success()
     {
@@ -67,6 +82,9 @@ public class StreetAddressTests
 
     #region Clean Strings - No Changes
 
+    /// <summary>
+    /// Tests that creating StreetAddress with clean Line1 makes no changes.
+    /// </summary>
     [Fact]
     public void Create_WithCleanLine1_NoChanges()
     {
@@ -80,6 +98,9 @@ public class StreetAddressTests
         address.Line1.Should().Be(clean_line1);
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with clean Line2 makes no changes.
+    /// </summary>
     [Fact]
     public void Create_WithAllCleanLines_NoChanges()
     {
@@ -101,6 +122,9 @@ public class StreetAddressTests
 
     #region Dirty Strings - Cleanup
 
+    /// <summary>
+    /// Tests that creating StreetAddress with dirty Line1 cleans up whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyLine1_CleansWhitespace()
     {
@@ -114,6 +138,9 @@ public class StreetAddressTests
         address.Line1.Should().Be("123 Main St");
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with dirty Line2 cleans up whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyLine2_CleansWhitespace()
     {
@@ -128,6 +155,9 @@ public class StreetAddressTests
         address.Line2.Should().Be("Building B");
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with dirty Line3 cleans up whitespace.
+    /// </summary>
     [Fact]
     public void Create_WithDirtyLine3_CleansWhitespace()
     {
@@ -143,6 +173,9 @@ public class StreetAddressTests
         address.Line3.Should().Be("Suite 400");
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with tabs and newlines normalizes them to spaces.
+    /// </summary>
     [Fact]
     public void Create_WithTabsAndNewlines_NormalizesToSpaces()
     {
@@ -156,6 +189,9 @@ public class StreetAddressTests
         address.Line1.Should().Be("123 Main St");
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with all dirty lines cleans them up.
+    /// </summary>
     [Fact]
     public void Create_WithAllDirtyLines_CleansAll()
     {
@@ -177,6 +213,13 @@ public class StreetAddressTests
 
     #region Line1 Validation - Required
 
+    /// <summary>
+    /// Tests that creating StreetAddress with invalid Line1 throws GeoValidationException.
+    /// </summary>
+    ///
+    /// <param name="line1">
+    /// The Line1 value to test.
+    /// </param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -197,6 +240,9 @@ public class StreetAddressTests
 
     #region Line3 Requires Line2 - Business Rule
 
+    /// <summary>
+    /// Tests that creating StreetAddress with Line3 but null Line2 throws GeoValidationException.
+    /// </summary>
     [Fact]
     public void Create_WithLine3ButNullLine2_ThrowsGeoValidationException()
     {
@@ -211,6 +257,9 @@ public class StreetAddressTests
         act.Should().Throw<GeoValidationException>();
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with Line3 but empty Line2 throws GeoValidationException.
+    /// </summary>
     [Fact]
     public void Create_WithLine3ButEmptyLine2_ThrowsGeoValidationException()
     {
@@ -226,6 +275,10 @@ public class StreetAddressTests
         act.Should().Throw<GeoValidationException>();
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with Line3 but whitespace Line2 throws
+    /// GeoValidationException.
+    /// </summary>
     [Fact]
     public void Create_WithLine3ButWhitespaceLine2_ThrowsGeoValidationException()
     {
@@ -245,6 +298,13 @@ public class StreetAddressTests
 
     #region Whitespace-Only Lines Become Null
 
+    /// <summary>
+    /// Tests that creating StreetAddress with whitespace-only Line2 sets it to null.
+    /// </summary>
+    ///
+    /// <param name="line2">
+    /// The Line2 value to test.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -262,6 +322,13 @@ public class StreetAddressTests
         address.Line2.Should().BeNull();
     }
 
+    /// <summary>
+    /// Tests that creating StreetAddress with whitespace-only Line3 sets it to null.
+    /// </summary>
+    ///
+    /// <param name="line3">
+    /// The Line3 value to test.
+    /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -283,6 +350,9 @@ public class StreetAddressTests
 
     #region Value Equality
 
+    /// <summary>
+    /// Tests that two StreetAddress instances with the same values are equal.
+    /// </summary>
     [Fact]
     public void StreetAddress_WithSameValues_AreEqual()
     {
@@ -295,6 +365,9 @@ public class StreetAddressTests
         (address1 == address2).Should().BeTrue();
     }
 
+    /// <summary>
+    /// Tests that two StreetAddress instances with different values are not equal.
+    /// </summary>
     [Fact]
     public void StreetAddress_WithDifferentValues_AreNotEqual()
     {

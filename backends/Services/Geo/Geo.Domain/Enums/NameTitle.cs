@@ -1,4 +1,10 @@
-﻿namespace D2.Geo.Domain.Enums;
+﻿// -----------------------------------------------------------------------
+// <copyright file="NameTitle.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Enums;
 
 /// <summary>
 /// Represents a person's name title (e.g., Mr., Mrs., Dr.).
@@ -11,13 +17,13 @@ public enum NameTitle
     /// <summary>Miz (Ms.)</summary>
     Ms,
 
-    /// <summary>Miss (Miss)</summary>
+    /// <summary>Miss (Miss).</summary>
     Miss,
 
     /// <summary>Missus (Mrs.)</summary>
     Mrs,
 
-    /// <summary>Mx (Gender-neutral title)</summary>
+    /// <summary>Mx (Gender-neutral title).</summary>
     Mx,
 
     /// <summary>Doctor (Dr.)</summary>
@@ -26,13 +32,13 @@ public enum NameTitle
     /// <summary>Professor (Prof.)</summary>
     Prof,
 
-    /// <summary>Sir (Sir)</summary>
+    /// <summary>Sir (Sir).</summary>
     Sir,
 
-    /// <summary>Lady (Lady)</summary>
+    /// <summary>Lady (Lady).</summary>
     Lady,
 
-    /// <summary>Lord (Lord)</summary>
+    /// <summary>Lord (Lord).</summary>
     Lord,
 
     /// <summary>Right Honourable (Rt. Hon.)</summary>
@@ -50,6 +56,6 @@ public enum NameTitle
     /// <summary>Sister (Sr.)</summary>
     Sr,
 
-    /// <summary>Elder (Elder)</summary>
-    Elder
+    /// <summary>Elder (Elder).</summary>
+    Elder,
 }

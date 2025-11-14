@@ -1,6 +1,12 @@
-﻿using D2.Geo.Domain.Enums;
+﻿// -----------------------------------------------------------------------
+// <copyright file="GeopoliticalEntity.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Geo.Domain.Entities;
+
+using D2.Geo.Domain.Enums;
 
 /// <summary>
 /// Represents a geopolitical entity (e.g., union, confederation, commonwealth).
@@ -15,10 +21,10 @@ public record GeopoliticalEntity
     #region Identity - Primary Key
 
     /// <summary>
-    /// A short code identifying the geopolitical entity.
+    /// Gets a short code identifying the geopolitical entity.
     /// </summary>
     /// <example>
-    /// USMCA
+    /// USMCA.
     /// </example>
     /// <remarks>
     /// Must be unique. Not an official standard, but typically uppercase and short in length
@@ -31,18 +37,18 @@ public record GeopoliticalEntity
     #region Properties
 
     /// <summary>
-    /// The display name of the geopolitical entity.
+    /// Gets the display name of the geopolitical entity.
     /// </summary>
     /// <example>
-    /// United States-Mexico-Canada Agreement
+    /// United States-Mexico-Canada Agreement.
     /// </example>
     public required string Name { get; init; }
 
     /// <summary>
-    /// The type of geopolitical entity.
+    /// Gets the type of geopolitical entity.
     /// </summary>
     /// <example>
-    /// GeopoliticalEntityType.FreeTradeAgreement
+    /// GeopoliticalEntityType.FreeTradeAgreement.
     /// </example>
     public required GeopoliticalEntityType Type { get; init; }
 
@@ -51,7 +57,7 @@ public record GeopoliticalEntity
     #region Navigation Properties
 
     /// <summary>
-    /// A collection of countries that are members of this geopolitical entity.
+    /// Gets a collection of countries that are members of this geopolitical entity.
     /// </summary>
     /// <example>
     /// The US, Canada, and Mexico are members of the USMCA.

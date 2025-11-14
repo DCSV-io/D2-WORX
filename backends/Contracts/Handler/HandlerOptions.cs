@@ -1,4 +1,10 @@
-﻿namespace D2.Contracts.Handler;
+﻿// -----------------------------------------------------------------------
+// <copyright file="HandlerOptions.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Contracts.Handler;
 
 /// <summary>
 /// Options to customize the behavior of a handler.
@@ -25,5 +31,4 @@ public record HandlerOptions(
     bool LogInput = true,
     bool LogOutput = true,
     long WarningThresholdMs = 100,
-    long CriticalThresholdMs = 500
-);
+    long CriticalThresholdMs = 500);

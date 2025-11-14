@@ -1,13 +1,17 @@
-﻿using System.Security.Cryptography;
+﻿// -----------------------------------------------------------------------
+// <copyright file="WhoIs.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.Entities;
+
+using System.Security.Cryptography;
 using System.Text;
 using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Contracts.Utilities.Extensions;
 using D2.Geo.Domain.Exceptions;
-
-// ReSharper disable UnusedAutoPropertyAccessor.Global
-
-namespace D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents WHOIS, ASN and GEOIP information associated with an IP address.
@@ -28,7 +32,7 @@ public record WhoIs
     #region Identity
 
     /// <summary>
-    /// A content-addressable 32-byte SHA-256 hash of the IP address, year, month and browser or
+    /// Gets a content-addressable 32-byte SHA-256 hash of the IP address, year, month and browser or
     /// device fingerprint of the record.
     /// </summary>
     public required byte[] HashId { get; init; }
@@ -38,35 +42,35 @@ public record WhoIs
     #region Content Addressible Properties
 
     /// <summary>
-    /// The IP address of the record.
+    /// Gets the IP address of the record.
     /// </summary>
     /// <example>
-    /// 75.155.155.200
+    /// 75.155.155.200.
     /// </example>
     [RedactData(Reason = RedactReason.PersonalInformation)]
     public required string IPAddress { get; init; }
 
     /// <summary>
-    /// The year of the record's creation.
+    /// Gets the year of the record's creation.
     /// </summary>
     /// <example>
-    /// 2025
+    /// 2025.
     /// </example>
     public required int Year { get; init; }
 
     /// <summary>
-    /// The month of the record's creation.
+    /// Gets the month of the record's creation.
     /// </summary>
     /// <example>
-    /// 6
+    /// 6.
     /// </example>
     public required int Month { get; init; }
 
     /// <summary>
-    /// A fingerprint of the browser or device associated with the IP address.
+    /// Gets a fingerprint of the browser or device associated with the IP address.
     /// </summary>
     /// <example>
-    /// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3
+    /// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3.
     /// </example>
     /// <remarks>
     /// While optional, this will be used in the content-addressable hash if provided.
@@ -79,18 +83,18 @@ public record WhoIs
     #region Properties
 
     /// <summary>
-    /// The Autonomous System Number (ASN) associated with the IP address.
+    /// Gets the Autonomous System Number (ASN) associated with the IP address.
     /// </summary>
     /// <remarks>
     /// Often represented as a string "AS852" for example. This just stores the "number".
     /// </remarks>
     /// <example>
-    /// 852
+    /// 852.
     /// </example>
     public int? ASN { get; init; }
 
     /// <summary>
-    /// Name of the ASN organization.
+    /// Gets name of the ASN organization.
     /// </summary>
     /// <example>
     /// TELUS Communications Inc.
@@ -98,139 +102,139 @@ public record WhoIs
     public string? ASName { get; init; }
 
     /// <summary>
-    /// Organization domain of the ASN.
+    /// Gets organization domain of the ASN.
     /// </summary>
     /// <example>
-    /// telus.com
+    /// telus.com.
     /// </example>
     public string? ASDomain { get; init; }
 
     /// <summary>
-    /// ASN Type: ISP, Hosting, Education, Government or Business
+    /// Gets aSN Type: ISP, Hosting, Education, Government or Business.
     /// </summary>
     /// <example>
-    /// ISP
+    /// ISP.
     /// </example>
     public string? ASType { get; init; }
 
     /// <summary>
-    /// Name of the mobile carrier organization.
+    /// Gets name of the mobile carrier organization.
     /// </summary>
     /// <example>
-    /// TELUS
+    /// TELUS.
     /// </example>
     public string? CarrierName { get; init; }
 
     /// <summary>
-    /// Mobile Country Code (MCC) of the carrier.
+    /// Gets mobile Country Code (MCC) of the carrier.
     /// </summary>
     /// <example>
-    /// 302
+    /// 302.
     /// </example>
     public string? MCC { get; init; }
 
     /// <summary>
-    /// Mobile Network Code (MNC) of the carrier.
+    /// Gets mobile Network Code (MNC) of the carrier.
     /// </summary>
     /// <example>
-    /// 220
+    /// 220.
     /// </example>
     public string? MNC { get; init; }
 
     /// <summary>
-    /// Date when the IP address's ASN last changed.
+    /// Gets date when the IP address's ASN last changed.
     /// </summary>
     /// <example>
-    /// 2024-06-01
+    /// 2024-06-01.
     /// </example>
     public DateOnly? ASChanged { get; init; }
 
     /// <summary>
-    /// Date when the IP address's geolocation last changed.
+    /// Gets date when the IP address's geolocation last changed.
     /// </summary>
     /// <example>
-    /// 2024-06-01
+    /// 2024-06-01.
     /// </example>
     public DateOnly? GeoChanged { get; init; }
 
     /// <summary>
-    /// Indicates whether the IP address is anonymous.
+    /// Gets indicates whether the IP address is anonymous.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsAnonymous { get; init; }
 
     /// <summary>
-    /// Indicates whether the IP address is an anycast IP address.
+    /// Gets indicates whether the IP address is an anycast IP address.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsAnycast { get; init; }
 
     /// <summary>
-    /// Indicates whether the IP address is a hosting/cloud/data center IP address.
+    /// Gets indicates whether the IP address is a hosting/cloud/data center IP address.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsHosting { get; init; }
 
     /// <summary>
-    /// Indicates whether the IP address belongs to a mobile network.
+    /// Gets indicates whether the IP address belongs to a mobile network.
     /// </summary>
     /// <example>
-    /// true
+    /// true.
     /// </example>
     public bool? IsMobile { get; init; }
 
     /// <summary>
-    /// Indicates whether the IP address is part of a satellite internet connection.
+    /// Gets indicates whether the IP address is part of a satellite internet connection.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsSatellite { get; init; }
 
     /// <summary>
-    /// Indicates an open web proxy IP address.
+    /// Gets indicates an open web proxy IP address.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsProxy { get; init; }
 
     /// <summary>
-    /// Indicates location preserving anonymous relay service like iCloud private relay.
+    /// Gets indicates location preserving anonymous relay service like iCloud private relay.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsRelay { get; init; }
 
     /// <summary>
-    /// Indicates a TOR (The Onion Router) exit node IP address.
+    /// Gets indicates a TOR (The Onion Router) exit node IP address.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsTor { get; init; }
 
     /// <summary>
-    /// Indicates Virtual Private Network (VPN) service exit node IP address.
+    /// Gets indicates Virtual Private Network (VPN) service exit node IP address.
     /// </summary>
     /// <example>
-    /// false
+    /// false.
     /// </example>
     public bool? IsVPN { get; init; }
 
     /// <summary>
-    /// The name of the privacy service provider (includes VPN, Proxy, or Relay service provider
+    /// Gets the name of the privacy service provider (includes VPN, Proxy, or Relay service provider
     /// name).
     /// </summary>
     /// <example>
-    /// NordVPN
+    /// NordVPN.
     /// </example>
     public string? PrivacyName { get; init; }
 
@@ -239,7 +243,7 @@ public record WhoIs
     #region Foreign Keys
 
     /// <summary>
-    /// Foreign key to the <see cref="Location"/> entity representing the geolocation of the IP
+    /// Gets foreign key to the <see cref="Location"/> entity representing the geolocation of the IP
     /// address.
     /// </summary>
     /// <example>
@@ -252,7 +256,7 @@ public record WhoIs
     #region Navigation Properties
 
     /// <summary>
-    /// Navigation property to the <see cref="Location"/> entity representing the geolocation of
+    /// Gets navigation property to the <see cref="Location"/> entity representing the geolocation of
     /// the IP address.
     /// </summary>
     public Location? Location { get; init; }
@@ -352,12 +356,10 @@ public record WhoIs
     ///
     /// <seealso cref="ComputeHashAndNormalizeIp"/>
     public static WhoIs Create(
-        // Used for hash generation.
         string ipAddress,
         int? year = null,
         int? month = null,
         string? fingerprint = null,
-        // Properties.
         int? asn = null,
         string? asName = null,
         string? asDomain = null,
@@ -377,7 +379,6 @@ public record WhoIs
         bool? isTor = null,
         bool? isVpn = null,
         string? privacyName = null,
-        // Geolocation.
         byte[]? locationHashId = null)
     {
         var yearNotNull = year ?? DateTime.UtcNow.Year;
@@ -498,7 +499,7 @@ public record WhoIs
     ///
     /// <seealso cref="NormalizeAndValidateIPAddress"/>
     /// <seealso cref="IsValidIpAddress"/>
-    public static (byte[] hash, string normalizedIp) ComputeHashAndNormalizeIp(
+    public static (byte[] Hash, string NormalizedIp) ComputeHashAndNormalizeIp(
         string ipAddress,
         int year,
         int month,
@@ -507,18 +508,22 @@ public record WhoIs
         var normalizedIp = NormalizeAndValidateIPAddress(ipAddress);
 
         if (month is < 1 or > 12)
+        {
             throw new GeoValidationException(
                 nameof(WhoIs),
                 nameof(Month),
                 month,
                 "must be between 1 and 12.");
+        }
 
         if (year is < 1 or > 9999)
+        {
             throw new GeoValidationException(
                 nameof(WhoIs),
                 nameof(Year),
                 year,
                 "must be between 1 and 9999.");
+        }
 
         var inputBytes = Encoding.UTF8.GetBytes($"{normalizedIp}|{year}|{month}|{fingerprint.CleanStr()}");
         var hashId = SHA256.HashData(inputBytes);
@@ -544,20 +549,24 @@ public record WhoIs
     public static string NormalizeAndValidateIPAddress(string ipAddress)
     {
         if (ipAddress.Falsey())
+        {
             throw new GeoValidationException(
                 nameof(WhoIs),
                 nameof(IPAddress),
                 ipAddress,
                 "is required.");
+        }
 
         ipAddress = ipAddress.Trim().ToLowerInvariant();
 
         if (!IsValidIpAddress(ipAddress))
+        {
             throw new GeoValidationException(
                 nameof(WhoIs),
                 nameof(IPAddress),
                 ipAddress,
                 "is not a valid IPv4 or IPv6 address.");
+        }
 
         return ipAddress;
     }

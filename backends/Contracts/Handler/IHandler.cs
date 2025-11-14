@@ -1,10 +1,16 @@
-﻿using D2.Contracts.Result;
+﻿// -----------------------------------------------------------------------
+// <copyright file="IHandler.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Handler;
 
+using D2.Contracts.Result;
+
 /// <summary>
-/// Represents a handler that process an input of type <see cref="TInput"/> and produces an output
-/// of type <see cref="TOutput"/>.
+/// Represents a handler that process an input of type <typeparamref name="TInput"/>
+/// and produces an output of type <typeparamref name="TOutput"/>.
 /// </summary>
 ///
 /// <typeparam name="TInput">
@@ -36,6 +42,5 @@ public interface IHandler<in TInput, TOutput>
     public ValueTask<D2Result<TOutput?>> HandleAsync(
         TInput input,
         CancellationToken ct = default,
-        HandlerOptions? options = null
-    );
+        HandlerOptions? options = null);
 }

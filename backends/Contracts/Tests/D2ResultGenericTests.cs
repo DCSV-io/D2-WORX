@@ -1,6 +1,12 @@
-﻿using D2.Contracts.Result;
+﻿// -----------------------------------------------------------------------
+// <copyright file="D2ResultGenericTests.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 namespace D2.Contracts.Tests;
+
+using D2.Contracts.Result;
 
 /// <summary>
 /// Unit tests for the generic <see cref="D2Result{TData}"/> class.
@@ -9,6 +15,9 @@ public class D2ResultGenericTests
 {
     #region Factory Method Tests
 
+    /// <summary>
+    /// Tests that the Ok factory method creates a successful result with data.
+    /// </summary>
     [Fact]
     public void Ok_WithData_CreatesSuccessResult()
     {
@@ -27,6 +36,9 @@ public class D2ResultGenericTests
         Assert.Null(result.ErrorCode);
     }
 
+    /// <summary>
+    /// Tests that the Ok factory method creates a successful result without data.
+    /// </summary>
     [Fact]
     public void Ok_WithoutData_CreatesSuccessResultWithDefaultData()
     {
@@ -38,6 +50,9 @@ public class D2ResultGenericTests
         Assert.Null(result.Data);
     }
 
+    /// <summary>
+    /// Tests that the Ok factory method includes messages when provided.
+    /// </summary>
     [Fact]
     public void Ok_WithMessages_IncludesMessages()
     {
@@ -54,6 +69,9 @@ public class D2ResultGenericTests
         Assert.Equal(messages, result.Messages);
     }
 
+    /// <summary>
+    /// Tests that the Ok factory method includes a trace ID when provided.
+    /// </summary>
     [Fact]
     public void Ok_WithTraceId_IncludesTraceId()
     {
@@ -69,6 +87,9 @@ public class D2ResultGenericTests
         Assert.Equal(trace_id, result.TraceId);
     }
 
+    /// <summary>
+    /// Tests that the Created factory method creates a successful result with Created status.
+    /// </summary>
     [Fact]
     public void Created_CreatesSuccessResultWithCreatedStatus()
     {
@@ -84,6 +105,9 @@ public class D2ResultGenericTests
         Assert.Equal(HttpStatusCode.Created, result.StatusCode);
     }
 
+    /// <summary>
+    /// Tests that the Fail factory method creates a failure result with messages.
+    /// </summary>
     [Fact]
     public void Fail_CreatesFailureResult()
     {
@@ -101,6 +125,9 @@ public class D2ResultGenericTests
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
     }
 
+    /// <summary>
+    /// Tests that the Fail factory method uses the provided status code.
+    /// </summary>
     [Fact]
     public void Fail_WithCustomStatusCode_UsesProvidedStatusCode()
     {
@@ -115,6 +142,9 @@ public class D2ResultGenericTests
         Assert.Equal(status_code, result.StatusCode);
     }
 
+    /// <summary>
+    /// Tests that the NotFound factory method creates a NotFound result.
+    /// </summary>
     [Fact]
     public void NotFound_CreatesNotFoundResult()
     {
@@ -132,6 +162,9 @@ public class D2ResultGenericTests
         Assert.Equal(ErrorCodes.NOT_FOUND, result.ErrorCode);
     }
 
+    /// <summary>
+    /// Tests that the NotFound factory method uses the default message when none are provided.
+    /// </summary>
     [Fact]
     public void NotFound_WithoutMessages_UsesDefaultMessage()
     {
@@ -143,6 +176,9 @@ public class D2ResultGenericTests
         Assert.Contains("Resource not found.", result.Messages);
     }
 
+    /// <summary>
+    /// Tests that the Forbidden factory method creates a Forbidden result.
+    /// </summary>
     [Fact]
     public void Forbidden_CreatesForbiddenResult()
     {
@@ -158,6 +194,9 @@ public class D2ResultGenericTests
         Assert.Equal(ErrorCodes.FORBIDDEN, result.ErrorCode);
     }
 
+    /// <summary>
+    /// Tests that the Forbidden factory method uses the default message when none are provided.
+    /// </summary>
     [Fact]
     public void Forbidden_WithoutMessages_UsesDefaultMessage()
     {
@@ -168,6 +207,9 @@ public class D2ResultGenericTests
         Assert.Contains("Insufficient permissions.", result.Messages);
     }
 
+    /// <summary>
+    /// Tests that the Unauthorized factory method creates an Unauthorized result.
+    /// </summary>
     [Fact]
     public void Unauthorized_CreatesUnauthorizedResult()
     {
@@ -181,14 +223,17 @@ public class D2ResultGenericTests
         Assert.Contains("You must be signed in to perform this action.", result.Messages);
     }
 
+    /// <summary>
+    /// Tests that the ValidationFailed factory method creates a validation failure result.
+    /// </summary>
     [Fact]
     public void ValidationFailed_CreatesValidationFailureResult()
     {
         // Arrange
         var inputErrors = new List<List<string>>
         {
-            new() {"Email", "Invalid email format"},
-            new() {"Password", "Password too weak"}
+            new() { "Email", "Invalid email format" },
+            new() { "Password", "Password too weak" },
         };
 
         // Act
@@ -202,6 +247,9 @@ public class D2ResultGenericTests
         Assert.Contains("One or more validation errors occurred.", result.Messages);
     }
 
+    /// <summary>
+    /// Tests that the ValidationFailed factory method uses provided messages when given.
+    /// </summary>
     [Fact]
     public void ValidationFailed_WithCustomMessages_UsesProvidedMessages()
     {
@@ -209,7 +257,7 @@ public class D2ResultGenericTests
         List<string> messages = ["Custom validation message"];
         var inputErrors = new List<List<string>>
         {
-            new() {"Field", "Error"}
+            new() { "Field", "Error" },
         };
 
         // Act
@@ -219,6 +267,9 @@ public class D2ResultGenericTests
         Assert.Equal(messages, result.Messages);
     }
 
+    /// <summary>
+    /// Tests that the Conflict factory method creates a Conflict result.
+    /// </summary>
     [Fact]
     public void Conflict_CreatesConflictResult()
     {
@@ -234,6 +285,9 @@ public class D2ResultGenericTests
         Assert.Equal(ErrorCodes.CONFLICT, result.ErrorCode);
     }
 
+    /// <summary>
+    /// Tests that the Conflict factory method uses the default message when none are provided.
+    /// </summary>
     [Fact]
     public void Conflict_WithoutMessages_UsesDefaultMessage()
     {
@@ -244,6 +298,9 @@ public class D2ResultGenericTests
         Assert.Contains("Conflict occurred while processing the request.", result.Messages);
     }
 
+    /// <summary>
+    /// Tests that the UnhandledException factory method creates an InternalServerError result.
+    /// </summary>
     [Fact]
     public void UnhandledException_CreatesInternalServerErrorResult()
     {
@@ -264,6 +321,9 @@ public class D2ResultGenericTests
 
     #region CheckSuccess/CheckFailure Tests
 
+    /// <summary>
+    /// Tests that CheckSuccess returns true and outputs data when the result is successful.
+    /// </summary>
     [Fact]
     public void CheckSuccess_WhenSuccess_ReturnsTrueWithData()
     {
@@ -279,6 +339,9 @@ public class D2ResultGenericTests
         Assert.Equal(data, outData);
     }
 
+    /// <summary>
+    /// Tests that CheckSuccess returns false and outputs null when the result is a failure.
+    /// </summary>
     [Fact]
     public void CheckSuccess_WhenFailure_ReturnsFalseWithNullData()
     {
@@ -293,6 +356,9 @@ public class D2ResultGenericTests
         Assert.Null(outData);
     }
 
+    /// <summary>
+    /// Tests that CheckFailure returns true and outputs null when the result is a failure.
+    /// </summary>
     [Fact]
     public void CheckFailure_WhenFailure_ReturnsTrueWithNullData()
     {
@@ -307,6 +373,9 @@ public class D2ResultGenericTests
         Assert.Equal(0, outData);
     }
 
+    /// <summary>
+    /// Tests that CheckFailure returns false and outputs data when the result is successful.
+    /// </summary>
     [Fact]
     public void CheckFailure_WhenSuccess_ReturnsFalseWithData()
     {
@@ -326,6 +395,9 @@ public class D2ResultGenericTests
 
     #region BubbleFail Tests
 
+    /// <summary>
+    /// Tests that BubbleFail correctly preserves all error details from the original result.
+    /// </summary>
     [Fact]
     public void BubbleFail_PreservesAllErrorDetails()
     {
@@ -333,7 +405,7 @@ public class D2ResultGenericTests
         List<string> originalMessages = ["Original error"];
         var originalInputErrors = new List<List<string>>
         {
-            new() { "Field", "Validation error" }
+            new() { "Field", "Validation error" },
         };
         const HttpStatusCode original_status_code = HttpStatusCode.BadRequest;
         const string original_error_code = "ORIGINAL_ERROR";
@@ -360,6 +432,9 @@ public class D2ResultGenericTests
         Assert.Equal(original_trace_id, bubbled.TraceId);
     }
 
+    /// <summary>
+    /// Tests that BubbleFail preserves validation errors from the original result.
+    /// </summary>
     [Fact]
     public void BubbleFail_WithValidationFailure_PreservesValidationErrors()
     {
@@ -367,7 +442,7 @@ public class D2ResultGenericTests
         var inputErrors = new List<List<string>>
         {
             new() { "Email", "Required" },
-            new() { "Password", "Too short" }
+            new() { "Password", "Too short" },
         };
         var original = D2Result.ValidationFailed(inputErrors: inputErrors, traceId: "trace-123");
 
@@ -384,6 +459,9 @@ public class D2ResultGenericTests
 
     #region Complex Type Tests
 
+    /// <summary>
+    /// Tests that the Ok factory method preserves complex data types.
+    /// </summary>
     [Fact]
     public void Ok_WithComplexType_PreservesComplexData()
     {
@@ -392,7 +470,7 @@ public class D2ResultGenericTests
         {
             Id = 123,
             Name = "Test",
-            Values = [1, 2, 3]
+            Values = [1, 2, 3],
         };
 
         // Act
@@ -405,6 +483,9 @@ public class D2ResultGenericTests
         Assert.Equal(data.Values, result.Data?.Values);
     }
 
+    /// <summary>
+    /// Tests that CheckSuccess works correctly with complex data types.
+    /// </summary>
     [Fact]
     public void CheckSuccess_WithComplexType_ReturnsComplexData()
     {
@@ -426,10 +507,24 @@ public class D2ResultGenericTests
 
     #region Helper Classes
 
+    /// <summary>
+    /// A test data transfer object (DTO) for complex type testing.
+    /// </summary>
     private class TestDto
     {
+        /// <summary>
+        /// Gets the identifier.
+        /// </summary>
         public int Id { get; init; }
+
+        /// <summary>
+        /// Gets the name.
+        /// </summary>
         public string Name { get; init; } = string.Empty;
+
+        /// <summary>
+        /// Gets the list of values.
+        /// </summary>
         public List<int> Values { get; init; } = [];
     }
 

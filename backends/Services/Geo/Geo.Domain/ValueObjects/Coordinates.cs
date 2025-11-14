@@ -1,10 +1,16 @@
-﻿using System.Globalization;
+﻿// -----------------------------------------------------------------------
+// <copyright file="Coordinates.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Domain.ValueObjects;
+
+using System.Globalization;
 using D2.Contracts.Utilities.Attributes;
 using D2.Contracts.Utilities.Enums;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;
-
-namespace D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents the geographic coordinates (latitude and longitude) of a <see cref="Location"/>.
@@ -18,18 +24,18 @@ namespace D2.Geo.Domain.ValueObjects;
 public record Coordinates
 {
     /// <summary>
-    /// Latitude in decimal degrees.
+    /// Gets latitude in decimal degrees.
     /// </summary>
     /// <example>
-    /// 48.42841
+    /// 48.42841.
     /// </example>
     public required decimal Latitude { get; init; }
 
     /// <summary>
-    /// Longitude in decimal degrees.
+    /// Gets longitude in decimal degrees.
     /// </summary>
     /// <example>
-    /// -123.36564
+    /// -123.36564.
     /// </example>
     public required decimal Longitude { get; init; }
 
@@ -58,18 +64,22 @@ public record Coordinates
         decimal longitude)
     {
         if (latitude is < -90 or > 90)
+        {
             throw new GeoValidationException(
                 nameof(Coordinates),
                 nameof(Latitude),
                 latitude,
                 "must be between -90 and 90.");
+        }
 
         if (longitude is < -180 or > 180)
+        {
             throw new GeoValidationException(
                 nameof(Coordinates),
                 nameof(Longitude),
                 longitude,
                 "must be between -180 and 180.");
+        }
 
         var quantizedLat = Math.Round(latitude, 5);
         var quantizedLon = Math.Round(longitude, 5);
@@ -77,7 +87,7 @@ public record Coordinates
         return new Coordinates
         {
             Latitude = quantizedLat,
-            Longitude = quantizedLon
+            Longitude = quantizedLon,
         };
     }
 
