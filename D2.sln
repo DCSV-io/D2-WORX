@@ -31,6 +31,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		CONTRIBUTING.md = CONTRIBUTING.md
 		LICENSE.md = LICENSE.md
 		README.md = README.md
+		stylecop.json = stylecop.json
+		Directory.Build.props = Directory.Build.props
+		D2.sln.DotSettings = D2.sln.DotSettings
+		D2.sln.DotSettings.user = D2.sln.DotSettings.user
+		.dockerignore = .dockerignore
+		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Observability", "Observability", "{B46DEAC7-AC68-4CBB-B3C3-D9985C17BB3D}"
