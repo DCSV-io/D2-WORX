@@ -127,16 +127,22 @@ graph TB
 
 **Contracts:**
 
-| Component                                                                                     | Description                                    |
-|-----------------------------------------------------------------------------------------------|------------------------------------------------|
-| [DistributedCache.Redis](backends/Contracts/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md) | Redis distributed caching implementation       |
-| [Handler](backends/Contracts/Handler/HANDLER.md)                                              | Base handler patterns with logging and tracing |
-| [Interfaces](backends/Contracts/Interfaces/INTERFACES.md)                                     | Shared contract interfaces                     |
-| [MemoryCache.Default](backends/Contracts/MemoryCache.Default/MEMORYCACHE_DEFAULT.md)          | In-memory caching implementation               |
-| [Result](backends/Contracts/Result/RESULT.md)                                                 | D2Result pattern for consistent error handling |
-| [ServiceDefaults](backends/Contracts/ServiceDefaults/SERVICE_DEFAULT.md)                      | Shared service configuration and telemetry     |
-| [Tests](backends/Contracts/Tests/TESTS.md)                                                    | Shared testing infrastructure and base classes |
-| [Utilities](backends/Contracts/Utilities/UTILITIES.md)                                        | Shared utility extensions and helpers          |
+| Component                                                                   | Description                                    |
+|-----------------------------------------------------------------------------|------------------------------------------------|
+| [Handler](backends/Contracts/Handler/HANDLER.md)                            | Base handler patterns with logging and tracing |
+| [Interfaces](backends/Contracts/Interfaces/INTERFACES.md)                   | Shared contract interfaces                     |
+| [Result](backends/Contracts/Result/RESULT.md)                               | D2Result pattern for consistent error handling |
+| [ServiceDefaults](backends/Contracts/ServiceDefaults/SERVICE_DEFAULT.md)    | Shared service configuration and telemetry     |
+| [Tests](backends/Contracts/Tests/TESTS.md)                                  | Shared testing infrastructure and base classes |
+| [Utilities](backends/Contracts/Utilities/UTILITIES.md)                      | Shared utility extensions and helpers          |
+
+**Contracts (Common Implementations):**
+
+| Component                                                                                                 | Description                                       |
+|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------|
+| [DistributedCache.Redis](backends/Contracts/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md)             | Redis distributed caching implementation          |
+| [GeoRefDataService.Default](backends/Contracts/GeoRefDataService.Default/GEOREFDATASERVICE_DEFAULT.md)    | Multi-tier georeference data caching              |
+| [MemoryCache.Default](backends/Contracts/MemoryCache.Default/MEMORYCACHE_DEFAULT.md)                      | In-memory caching implementation                  |
 
 **Services:**
 
