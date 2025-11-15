@@ -21,19 +21,6 @@ public partial interface ICommonCacheService
     public interface ISetHandler<TValue> : IHandler<SetInput<TValue>, SetOutput>;
 
     /// <summary>
-    /// Gets a handler for setting a value of type <typeparamref name="TValue"/> in the cache.
-    /// </summary>
-    ///
-    /// <typeparam name="TValue">
-    /// The type of the value to cache.
-    /// </typeparam>
-    ///
-    /// <returns>
-    /// An instance of <see cref="ISetHandler{TValue}"/> for setting the cached value.
-    /// </returns>
-    public ISetHandler<TValue> Set<TValue>();
-
-    /// <summary>
     /// Input for setting a value in the cache.
     /// </summary>
     ///

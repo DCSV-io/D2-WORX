@@ -58,9 +58,11 @@ public class Get<TValue> : BaseHandler<
             }
 
             // Deserialize the value.
-            var value = JsonSerializer.Deserialize<TValue>(
-                (byte[])redisValue!,
-                SerializerOptions.SR_IgnoreCycles);
+            var value = typeof(TValue).IsAssignableTo(typeof(Google.Protobuf.IMessage))
+                ? ParseProtobuf((byte[])redisValue!)
+                : JsonSerializer.Deserialize<TValue>(
+                    (byte[])redisValue!,
+                    SerializerOptions.SR_IgnoreCycles);
 
             // Return the result.
             return D2Result<S.GetOutput<TValue>?>.Ok(
@@ -99,5 +101,45 @@ public class Get<TValue> : BaseHandler<
         }
 
         // Let the base handler catch any other exceptions.
+    }
+
+    /// <summary>
+    /// Parses a Protobuf message from a byte array.
+    /// </summary>
+    ///
+    /// <param name="bytes">
+    /// The byte array containing the Protobuf message.
+    /// </param>
+    ///
+    /// <returns>
+    /// The parsed Protobuf message.
+    /// </returns>
+    private static TValue ParseProtobuf(byte[] bytes)
+    {
+        var parserProperty = typeof(TValue).GetProperty(
+            "Parser",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+
+        if (parserProperty == null)
+        {
+            throw new InvalidOperationException(
+                $"Type '{typeof(TValue).FullName}' does not have a public static 'Parser' property. Ensure that TValue is a generated protobuf message type.");
+        }
+
+        var parser = parserProperty.GetValue(null);
+        if (parser == null)
+        {
+            throw new InvalidOperationException(
+                $"The 'Parser' property on type '{typeof(TValue).FullName}' is null. Ensure that TValue is a valid protobuf message type.");
+        }
+
+        var parseFromMethod = parser.GetType().GetMethod("ParseFrom", [typeof(byte[])]);
+        if (parseFromMethod == null)
+        {
+            throw new InvalidOperationException(
+                $"The 'Parser' object on type '{typeof(TValue).FullName}' does not have a 'ParseFrom(byte[])' method. Ensure that TValue is a valid protobuf message type.");
+        }
+
+        return (TValue)parseFromMethod.Invoke(parser, [bytes])!;
     }
 }

@@ -6,33 +6,42 @@
 
 namespace D2.Contracts.MemoryCache.Default;
 
+// ReSharper disable AccessToStaticMemberViaDerivedType
 using D2.Contracts.Interfaces.MemoryCacheService;
-using Microsoft.Extensions.Caching.Memory;
+using D2.Contracts.MemoryCache.Default.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Provides extension methods related to the <see cref="DefaultMemoryCacheService"/> and
-/// <see cref="IServiceCollection"/>.
+/// Extension methods for adding default in-memory caching services.
 /// </summary>
 public static class Extensions
 {
     /// <summary>
-    /// Adds a singleton service for the <see cref="DefaultMemoryCacheService"/> and a transient
-    /// service for the <paramref name="services"/>/> (<see cref="IMemoryCache"/>).
+    /// Adds default in-memory caching services to the service collection.
     /// </summary>
     ///
     /// <param name="services">
     /// The service collection to add the services to.
     /// </param>
-    ///
-    /// <returns>
-    /// The service collection with the added services.
-    /// </returns>
-    public static IServiceCollection AddDefaultMemoryCaching(
-        this IServiceCollection services)
+    extension(IServiceCollection services)
     {
-        services.AddMemoryCache();
-        services.AddTransient<IMemoryCacheService, DefaultMemoryCacheService>();
-        return services;
+        /// <summary>
+        /// Adds default in-memory caching services to the service collection.
+        /// </summary>
+        ///
+        /// <returns>
+        /// The updated service collection.
+        /// </returns>
+        public IServiceCollection AddDefaultMemoryCaching()
+        {
+            services.AddMemoryCache();
+
+            // The handlers for in-memory cache operations.
+            services.AddTransient(typeof(IMemoryCacheService.IGetHandler<>), typeof(Get<>));
+            services.AddTransient(typeof(IMemoryCacheService.ISetHandler<>), typeof(Set<>));
+            services.AddTransient<IMemoryCacheService.IRemoveHandler, Remove>();
+
+            return services;
+        }
     }
 }

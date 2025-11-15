@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests;
+namespace D2.Contracts.Tests.Unit;
 
 using D2.Contracts.Result;
 

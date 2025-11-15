@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests;
+namespace D2.Contracts.Tests.Integration;
 
 using D2.Contracts.DistributedCache.Redis.Handlers;
 using D2.Contracts.Handler;
@@ -16,7 +16,7 @@ using StackExchange.Redis;
 using Testcontainers.Redis;
 
 /// <summary>
-/// Tests for <see cref="DistributedCache.Redis.RedisDistributedCacheService"/>.
+/// Integration tests for the Redis distributed cache service.
 /// </summary>
 public class RedisDistributedCacheTests : IAsyncLifetime
 {

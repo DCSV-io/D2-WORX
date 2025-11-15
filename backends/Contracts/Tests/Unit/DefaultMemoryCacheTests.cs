@@ -4,22 +4,21 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests;
+namespace D2.Contracts.Tests.Unit;
 
 using D2.Contracts.Handler;
 using D2.Contracts.Interfaces.CommonCacheService;
-using D2.Contracts.MemoryCache.Default;
 using D2.Contracts.MemoryCache.Default.Handlers;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 
 /// <summary>
-/// Tests for <see cref="DefaultMemoryCacheService"/>.
+/// Tests for the default in-memory cache handlers.
 /// </summary>
 public class DefaultMemoryCacheTests
 {
     private readonly IMemoryCache r_cache
-        = new MemoryCache(new MemoryCacheOptions());
+        = new Microsoft.Extensions.Caching.Memory.MemoryCache(new MemoryCacheOptions());
 
     private readonly IHandlerContext r_context = TestHelpers.CreateHandlerContext();
 

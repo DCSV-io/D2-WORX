@@ -17,15 +17,6 @@ public partial interface IDistributedCacheService
     public interface IExistsHandler : IHandler<ExistsInput, ExistsOutput>;
 
     /// <summary>
-    /// Gets a handler for checking if a key exists in the cache.
-    /// </summary>
-    ///
-    /// <returns>
-    /// An instance of <see cref="IExistsHandler"/> for checking key existence.
-    /// </returns>
-    public IExistsHandler Exists();
-
-    /// <summary>
     /// Input for checking if a key exists in the cache.
     /// </summary>
     ///
