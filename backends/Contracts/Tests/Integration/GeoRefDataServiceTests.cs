@@ -64,6 +64,13 @@ public class GeoRefDataServiceTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _container.DisposeAsync();
+
+        // Clean up test file
+        var filePath = Path.Combine(Path.GetTempPath(), Constants.GEO_REF_DATA_FILE_NAME);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
     }
 
     /// <summary>

@@ -20,7 +20,7 @@ using I = D2.Contracts.Interfaces.GeoRefDataService.IGeoRefDataService.GetFromDi
 using O = D2.Contracts.Interfaces.GeoRefDataService.IGeoRefDataService.GetFromDiskOutput;
 
 /// <summary>
-/// Handler for getting georeference data from memory cache.
+/// Handler for getting georeference data from disk.
 /// </summary>
 public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
 {

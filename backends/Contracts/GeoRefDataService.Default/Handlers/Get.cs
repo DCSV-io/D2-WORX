@@ -23,7 +23,7 @@ public class Get : BaseHandler<Get, I, O>, H
     private readonly IGeoRefDataService.IGetFromMemHandler r_getFromMem;
     private readonly IGeoRefDataService.IGetFromDistHandler r_getFromDist;
     private readonly IGeoRefDataService.ISetInMemHandler r_setInMem;
-    private readonly IGeoRefDataService.ISetOnDiskHandler r_setInDist;
+    private readonly IGeoRefDataService.ISetOnDiskHandler r_setOnDisk;
     private readonly IGeoRefDataService.IGetFromDiskHandler r_getFromDisk;
     private readonly IGeoRefDataService.IReqUpdateHandler r_requestUpdate;
 
@@ -64,7 +64,7 @@ public class Get : BaseHandler<Get, I, O>, H
     {
         r_getFromMem = getFromMem;
         r_setInMem = setInMem;
-        r_setInDist = setOnDisk;
+        r_setOnDisk = setOnDisk;
         r_getFromDist = getFromDist;
         r_getFromDisk = getFromDisk;
         r_requestUpdate = requestUpdate;
@@ -89,13 +89,11 @@ public class Get : BaseHandler<Get, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        // Retry logic parameters.
+        // Retry logic: 6 attempts with exponential backoff delays (1s, 2s, 4s, 8s, 16s).
+        // Total time: ~31 seconds.
         const int max_attempts = 6;
-        var attempts = 0;
-        var delayBetweenAttempts = TimeSpan.FromSeconds(10);
 
-        // Retry getting the data until successful or max attempts reached.
-        while (attempts < max_attempts)
+        for (var attempt = 1; attempt <= max_attempts; attempt++)
         {
             var result = await GetAttempt(ct);
             if (result.Success)
@@ -103,11 +101,14 @@ public class Get : BaseHandler<Get, I, O>, H
                 return result;
             }
 
-            attempts++;
-            await Task.Delay(delayBetweenAttempts, ct);
+            // Delay before next attempt (except after last attempt).
+            if (attempt < max_attempts)
+            {
+                var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt - 1));
+                await Task.Delay(delay, ct);
+            }
         }
 
-        // If all attempts failed, return NotFound.
         return D2Result<O?>.NotFound(traceId: TraceId);
     }
 
@@ -163,8 +164,14 @@ public class Get : BaseHandler<Get, I, O>, H
         {
             var data = diskOutput!.Data;
 
-            // If successful, store it locally.
-            await SetInMemoryAndOnDiskAsync(data, ct);
+            // If successful, store it in memory cache.
+            var setInMemR = await r_setInMem.HandleAsync(new(data), ct);
+            if (setInMemR.Failed)
+            {
+                Context.Logger.LogError(
+                    "Failed to set data in memory cache. TraceId: {TraceId}",
+                    TraceId);
+            }
 
             // Then return the data.
             return D2Result<O?>.Ok(new O(data), traceId: TraceId);
@@ -196,11 +203,11 @@ public class Get : BaseHandler<Get, I, O>, H
                 TraceId);
         }
 
-        var setOnDiskR = await r_setInDist.HandleAsync(new(data), ct);
+        var setOnDiskR = await r_setOnDisk.HandleAsync(new(data), ct);
         if (setOnDiskR.Failed)
         {
             Context.Logger.LogError(
-                "Failed to set data in distributed cache. TraceId: {TraceId}",
+                "Failed to set data on disk. TraceId: {TraceId}",
                 TraceId);
         }
     }

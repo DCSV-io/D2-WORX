@@ -116,13 +116,30 @@ public class Get<TValue> : BaseHandler<
     /// </returns>
     private static TValue ParseProtobuf(byte[] bytes)
     {
-        var parser = typeof(TValue).GetProperty(
-                "Parser",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!
-            .GetValue(null)!;
+        var parserProperty = typeof(TValue).GetProperty(
+            "Parser",
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
-        return (TValue)parser.GetType()
-            .GetMethod("ParseFrom", [typeof(byte[])])!
-            .Invoke(parser, [bytes])!;
+        if (parserProperty == null)
+        {
+            throw new InvalidOperationException(
+                $"Type '{typeof(TValue).FullName}' does not have a public static 'Parser' property. Ensure that TValue is a generated protobuf message type.");
+        }
+
+        var parser = parserProperty.GetValue(null);
+        if (parser == null)
+        {
+            throw new InvalidOperationException(
+                $"The 'Parser' property on type '{typeof(TValue).FullName}' is null. Ensure that TValue is a valid protobuf message type.");
+        }
+
+        var parseFromMethod = parser.GetType().GetMethod("ParseFrom", [typeof(byte[])]);
+        if (parseFromMethod == null)
+        {
+            throw new InvalidOperationException(
+                $"The 'Parser' object on type '{typeof(TValue).FullName}' does not have a 'ParseFrom(byte[])' method. Ensure that TValue is a valid protobuf message type.");
+        }
+
+        return (TValue)parseFromMethod.Invoke(parser, [bytes])!;
     }
 }
