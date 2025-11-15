@@ -21,19 +21,6 @@ public partial interface ICommonCacheService
     public interface IGetHandler<TValue> : IHandler<GetInput, GetOutput<TValue>>;
 
     /// <summary>
-    /// Gets a handler for retrieving a value of type <typeparamref name="TValue"/> from the cache.
-    /// </summary>
-    ///
-    /// <typeparam name="TValue">
-    /// The type of the cached value.
-    /// </typeparam>
-    ///
-    /// <returns>
-    /// An instance of <see cref="IGetHandler{TValue}"/> for retrieving the cached value.
-    /// </returns>
-    public IGetHandler<TValue> Get<TValue>();
-
-    /// <summary>
     /// Input for getting a value from the cache.
     /// </summary>
     ///

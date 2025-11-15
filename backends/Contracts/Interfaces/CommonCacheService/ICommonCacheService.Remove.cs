@@ -17,15 +17,6 @@ public partial interface ICommonCacheService
     public interface IRemoveHandler : IHandler<RemoveInput, RemoveOutput>;
 
     /// <summary>
-    /// Gets a handler for removing a value from the cache.
-    /// </summary>
-    ///
-    /// <returns>
-    /// An instance of <see cref="IRemoveHandler"/> for removing the cached value.
-    /// </returns>
-    public IRemoveHandler Remove();
-
-    /// <summary>
     /// Input for removing a value from the cache.
     /// </summary>
     ///
