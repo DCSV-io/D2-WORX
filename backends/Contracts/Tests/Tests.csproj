@@ -39,6 +39,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DistributedCache.Redis\DistributedCache.Redis.csproj" />
+      <ProjectReference Include="..\GeoRefDataService.Default\GeoRefDataService.Default.csproj" />
       <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
       <ProjectReference Include="..\MemoryCache.Default\MemoryCache.Default.csproj" />
       <ProjectReference Include="..\Result\Result.csproj" />
