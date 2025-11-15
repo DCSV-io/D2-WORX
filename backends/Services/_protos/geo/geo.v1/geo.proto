@@ -8,7 +8,17 @@ option csharp_namespace = "D2.Services.Protos.Geo.V1";
 
 // GeoService defines methods to retrieve geographical reference and contact data.
 service GeoService {
-  rpc GetReferenceData(GetReferenceDataRequest) returns (GetReferenceDataResponse);
+  rpc GetReferenceData(GetReferenceDataRequest)
+      returns (GetReferenceDataResponse);
+
+  rpc RequestReferenceDataUpdate(RequestReferenceDataUpdateRequest)
+      returns (RequestReferenceDataUpdateResponse);
+}
+
+message RequestReferenceDataUpdateRequest {}
+
+message RequestReferenceDataUpdateResponse {
+  bool accepted = 1;
 }
 
 message GetReferenceDataRequest {}
