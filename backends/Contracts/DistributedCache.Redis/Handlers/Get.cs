@@ -58,9 +58,11 @@ public class Get<TValue> : BaseHandler<
             }
 
             // Deserialize the value.
-            var value = JsonSerializer.Deserialize<TValue>(
-                (byte[])redisValue!,
-                SerializerOptions.SR_IgnoreCycles);
+            var value = typeof(TValue).IsAssignableTo(typeof(Google.Protobuf.IMessage))
+                ? ParseProtobuf((byte[])redisValue!)
+                : JsonSerializer.Deserialize<TValue>(
+                    (byte[])redisValue!,
+                    SerializerOptions.SR_IgnoreCycles);
 
             // Return the result.
             return D2Result<S.GetOutput<TValue>?>.Ok(
@@ -99,5 +101,28 @@ public class Get<TValue> : BaseHandler<
         }
 
         // Let the base handler catch any other exceptions.
+    }
+
+    /// <summary>
+    /// Parses a Protobuf message from a byte array.
+    /// </summary>
+    ///
+    /// <param name="bytes">
+    /// The byte array containing the Protobuf message.
+    /// </param>
+    ///
+    /// <returns>
+    /// The parsed Protobuf message.
+    /// </returns>
+    private static TValue ParseProtobuf(byte[] bytes)
+    {
+        var parser = typeof(TValue).GetProperty(
+                "Parser",
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!
+            .GetValue(null)!;
+
+        return (TValue)parser.GetType()
+            .GetMethod("ParseFrom", [typeof(byte[])])!
+            .Invoke(parser, [bytes])!;
     }
 }

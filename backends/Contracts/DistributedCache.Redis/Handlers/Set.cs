@@ -11,6 +11,7 @@ using System.Text.Json;
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
 using D2.Contracts.Utilities.Serialization;
+using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using S = D2.Contracts.Interfaces.CommonCacheService.ICommonCacheService;
@@ -48,13 +49,15 @@ public class Set<TValue> : BaseHandler<
         try
         {
             // Serialize the value.
-            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(
-                input.Value,
-                SerializerOptions.SR_IgnoreCycles);
+            var bytes = input.Value is IMessage message
+                ? message.ToByteArray()
+                : JsonSerializer.SerializeToUtf8Bytes(
+                    input.Value,
+                    SerializerOptions.SR_IgnoreCycles);
 
             // Connect to Redis and set the value.
             var db = r_redis.GetDatabase();
-            await db.StringSetAsync(input.Key, jsonBytes, input.Expiration);
+            await db.StringSetAsync(input.Key, bytes, input.Expiration);
 
             // Return success.
             return D2Result<S.SetOutput?>.Ok(
