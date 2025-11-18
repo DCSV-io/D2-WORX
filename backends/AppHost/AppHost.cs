@@ -7,6 +7,7 @@
 using AppHost;
 using Microsoft.Extensions.Configuration;
 
+// ReSharper disable UnusedVariable
 var builder = DistributedApplication.CreateBuilder(args);
 
 // Add user secrets.
@@ -302,10 +303,9 @@ var restGateway = builder.AddProject<Projects.REST>("d2-rest")
 // SvelteKit - Frontend.
 var svelte = builder.AddViteApp(
         "d2-sveltekit",
-        workingDirectory: "../../frontends/sveltekit",
-        packageManager: "pnpm")
+        "../../frontends/sveltekit")
     .WaitFor(restGateway)
-    .WithPnpmPackageInstallation()
+    .WithPnpm()
     .WithArgs("--host", "0.0.0.0", "--port", "5173")
     .WithIconName("DesktopCursor")
     .WithExternalHttpEndpoints();
