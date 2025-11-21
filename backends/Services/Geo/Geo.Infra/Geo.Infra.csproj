@@ -6,4 +6,15 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Folder Include="Repository\Entities\" />
+      <Folder Include="Repository\Handlers\C\" />
+      <Folder Include="Repository\Handlers\D\" />
+      <Folder Include="Repository\Handlers\U\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
+    </ItemGroup>
+
 </Project>

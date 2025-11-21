@@ -8,7 +8,6 @@ namespace D2.Contracts.Interfaces.DistributedCacheService;
 
 using D2.Contracts.Handler;
 
-/// <inheritdoc cref="IDistributedCacheService"/>
 public partial interface IDistributedCacheService
 {
     /// <summary>

@@ -8,7 +8,6 @@ namespace D2.Contracts.Interfaces.CommonCacheService;
 
 using D2.Contracts.Handler;
 
-/// <inheritdoc cref="ICommonCacheService"/>
 public partial interface ICommonCacheService
 {
     /// <summary>
