@@ -4,17 +4,24 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>D2.Geo.Infra</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Repository\Entities\" />
       <Folder Include="Repository\Handlers\C\" />
       <Folder Include="Repository\Handlers\D\" />
       <Folder Include="Repository\Handlers\U\" />
+      <Folder Include="Repository\Migrations\" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
+      <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-rc.2" />
     </ItemGroup>
 
 </Project>

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Geo.Infra;
+namespace D2.Geo.Infra;
 
 /// <summary>
 /// Extension methods for adding Geo infrastructure services.

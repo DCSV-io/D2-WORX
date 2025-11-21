@@ -28,7 +28,7 @@ public record GeopoliticalEntity
     /// </example>
     /// <remarks>
     /// Must be unique. Not an official standard, but typically uppercase and short in length
-    /// (2-8 characters).
+    /// (2-64 characters).
     /// </remarks>
     public required string ShortCode { get; init; }
 

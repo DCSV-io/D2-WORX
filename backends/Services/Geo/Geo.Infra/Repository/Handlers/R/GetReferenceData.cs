@@ -4,13 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Geo.Infra.Repository.Handlers.R;
+namespace D2.Geo.Infra.Repository.Handlers.R;
 
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
-using H = Geo.App.Interfaces.Repository.R.IGeoReadRepo.IGetReferenceDataHandler;
-using I = Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataInput;
-using O = Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataOutput;
+using H = global::Geo.App.Interfaces.Repository.R.IGeoReadRepo.IGetReferenceDataHandler;
+using I = global::Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataInput;
+using O = global::Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataOutput;
 
 /// <summary>
 /// Handler for getting all geographic reference data.

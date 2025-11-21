@@ -140,6 +140,14 @@ public record Country
     public Country? SovereignCountry { get; init; }
 
     /// <summary>
+    /// Gets a collection of territories (other countries) that belong to this country.
+    /// </summary>
+    /// <example>
+    /// Puerto Rico in the United States.
+    /// </example>
+    public required ICollection<Country> Territories { get; init; } = [];
+
+    /// <summary>
     /// Gets a collection of subdivisions that belong to this country.
     /// </summary>
     /// <example>
