@@ -153,10 +153,14 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(g => g.ShortCode, ct);
 
+        var version = await r_db.ReferenceDataVersions
+            .AsNoTracking()
+            .FirstAsync(ct);
+
         var response = new GetReferenceDataResponse
         {
-            Version = "1.0.0", // TODO: Determine versioning strategy
-            UpdatedAt = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.UtcNow),
+            Version = version.Version,
+            UpdatedAt = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(version.UpdatedAt),
             Countries = { countries },
             Subdivisions = { subdivisions },
             Currencies = { currencies },

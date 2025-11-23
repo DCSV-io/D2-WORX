@@ -7,6 +7,7 @@
 namespace D2.Geo.Infra.Repository;
 
 using D2.Geo.Domain.Entities;
+using D2.Geo.Infra.Repository.Entities;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,7 @@ public class GeoDbContext : DbContext
     /// <param name="options">
     /// The options to be used by a <see cref="DbContext"/>.
     /// </param>
+    [MustDisposeResource(false)]
     public GeoDbContext(DbContextOptions<GeoDbContext> options)
         : base(options)
     {
@@ -57,6 +59,11 @@ public class GeoDbContext : DbContext
     /// Gets or sets the Locales DbSet.
     /// </summary>
     public DbSet<Locale> Locales { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the ReferenceDataVersions DbSet.
+    /// </summary>
+    public DbSet<ReferenceDataVersion> ReferenceDataVersions { get; set; } = null!;
 
     /// <summary>
     /// Configures the model that was discovered by convention from the entity types.
