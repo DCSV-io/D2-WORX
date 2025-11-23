@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Geo.App.Interfaces.Repository.R;
+namespace D2.Geo.App.Interfaces.Repository.R;
 
 using D2.Contracts.Handler;
 using D2.Services.Protos.Geo.V1;
