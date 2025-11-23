@@ -136,3 +136,6 @@ _NCrunch*
 
 # Just a dumb folder for DeCAF stuff so I can reference it in the same dir.
 /old/
+
+# Script I made to open all IDEs at once
+open_all.bat
