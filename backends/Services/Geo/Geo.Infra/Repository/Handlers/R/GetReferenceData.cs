@@ -58,7 +58,8 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        var countries = await r_db.Countries
+        // Run all queries in parallel.
+        var countriesTask = r_db.Countries
             .AsNoTracking()
             .Include(c => c.Subdivisions)
             .Include(c => c.Currencies)
@@ -83,7 +84,7 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(c => c.Iso31661Alpha2Code, ct);
 
-        var subdivisions = await r_db.Subdivisions
+        var subdivisionsTask = r_db.Subdivisions
             .AsNoTracking()
             .Select(s => new SubdivisionDTO
             {
@@ -95,7 +96,7 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(s => s.Iso31662Code, ct);
 
-        var currencies = await r_db.Currencies
+        var currenciesTask = r_db.Currencies
             .AsNoTracking()
             .Select(c => new CurrencyDTO
             {
@@ -108,18 +109,7 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(c => c.Iso4217AlphaCode, ct);
 
-        foreach (var country in countries.Values)
-        {
-            foreach (var currencyCode in country.CurrencyIso4217AlphaCodes)
-            {
-                if (currencies.TryGetValue(currencyCode, out var currency))
-                {
-                    currency.CountryIso31661Alpha2Codes.Add(country.Iso31661Alpha2Code);
-                }
-            }
-        }
-
-        var languages = await r_db.Languages
+        var languagesTask = r_db.Languages
             .AsNoTracking()
             .Select(l => new LanguageDTO
             {
@@ -129,7 +119,7 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(l => l.Iso6391Code, ct);
 
-        var locales = await r_db.Locales
+        var localesTask = r_db.Locales
             .AsNoTracking()
             .Select(l => new LocaleDTO
             {
@@ -141,7 +131,7 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(l => l.IetfBcp47Tag, ct);
 
-        var geopoliticalEntities = await r_db.GeopoliticalEntities
+        var geopoliticalEntitiesTask = r_db.GeopoliticalEntities
             .AsNoTracking()
             .Include(g => g.Countries)
             .Select(g => new GeopoliticalEntityDTO
@@ -153,10 +143,41 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(g => g.ShortCode, ct);
 
-        var version = await r_db.ReferenceDataVersions
+        var versionTask = r_db.ReferenceDataVersions
             .AsNoTracking()
             .FirstAsync(ct);
 
+        // Await for all queries to complete.
+        await Task.WhenAll(
+            countriesTask,
+            subdivisionsTask,
+            currenciesTask,
+            languagesTask,
+            localesTask,
+            geopoliticalEntitiesTask,
+            versionTask);
+
+        var countries = await countriesTask;
+        var currencies = await currenciesTask;
+        var subdivisions = await subdivisionsTask;
+        var languages = await languagesTask;
+        var locales = await localesTask;
+        var geopoliticalEntities = await geopoliticalEntitiesTask;
+        var version = await versionTask;
+
+        // Populate CountryIso31661Alpha2Codes in currencies.
+        foreach (var country in countries.Values)
+        {
+            foreach (var currencyCode in country.CurrencyIso4217AlphaCodes)
+            {
+                if (currencies.TryGetValue(currencyCode, out var currency))
+                {
+                    currency.CountryIso31661Alpha2Codes.Add(country.Iso31661Alpha2Code);
+                }
+            }
+        }
+
+        // Create response.
         var response = new GetReferenceDataResponse
         {
             Version = version.Version,
@@ -169,6 +190,7 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             GeopoliticalEntities = { geopoliticalEntities },
         };
 
+        // Return result.
         return D2Result<O?>.Ok(new O(response), traceId: TraceId);
     }
 }
