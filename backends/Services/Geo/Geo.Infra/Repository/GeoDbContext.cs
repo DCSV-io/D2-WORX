@@ -7,11 +7,13 @@
 namespace D2.Geo.Infra.Repository;
 
 using D2.Geo.Domain.Entities;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
 /// <summary>
 /// Represents the database context for geographic data.
 /// </summary>
+[MustDisposeResource(false)]
 public class GeoDbContext : DbContext
 {
     /// <summary>

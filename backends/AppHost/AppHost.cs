@@ -287,6 +287,7 @@ var keycloak = builder.AddKeycloak("d2-keycloak", 8080, kcUsername, kcPassword)
 //     .WithOtelRefs();
 
 // Geo - Service.
+db.AddDatabase("d2-services-geo");
 var geoService = builder.AddProject<Projects.Geo_API>("d2-geo")
     .WithIconName("Location")
     .DefaultInfraRefs(db, cache, broker, keycloak)
