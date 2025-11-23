@@ -187,7 +187,7 @@ var db = builder.AddPostgres(
         "d2-postgres",
         dbUsername,
         dbPassword,
-        5532) // Not using 5432 to avoid conflicts for local dev (when PG is installed locally).
+        54320)
     .WithIconName("DatabaseStack")
     .WithImageTag("18.0-trixie")
     .WithDataVolume("d2-postgres-data")
