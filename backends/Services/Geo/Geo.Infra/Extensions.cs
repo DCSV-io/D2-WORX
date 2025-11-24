@@ -6,8 +6,10 @@
 
 namespace D2.Geo.Infra;
 
+using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.R;
 using global::D2.Geo.App.Interfaces.Repository.R;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -31,8 +33,11 @@ public static class Extensions
         /// <returns>
         /// The updated service collection.
         /// </returns>
-        public IServiceCollection AddGeoInfra()
+        public IServiceCollection AddGeoInfra(string dbConnectionString)
         {
+            // Database context.
+            services.AddDbContext<GeoDbContext>(options => options.UseNpgsql(dbConnectionString));
+
             // Repository (read) handlers.
             services.AddTransient<IGeoReadRepo.IGetReferenceDataHandler, GetReferenceData>();
 
