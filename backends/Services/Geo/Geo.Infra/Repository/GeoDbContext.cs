@@ -88,8 +88,6 @@ public class GeoDbContext : DbContext
         modelBuilder.SeedCountryCurrencies();
         modelBuilder.SeedGeopoliticalEntities();
         modelBuilder.SeedCountryGeopoliticalEntities();
-
-        // TODO: seed locales after the first migration.
-        // modelBuilder.SeedLocales();
+        modelBuilder.SeedLocales();
     }
 }

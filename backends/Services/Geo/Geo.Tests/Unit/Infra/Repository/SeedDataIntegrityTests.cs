@@ -285,7 +285,7 @@ public class SeedDataIntegrityTests
     [InlineData(typeof(Currency), 5)]
     [InlineData(typeof(Country), 249)]
     [InlineData(typeof(GeopoliticalEntity), 53)]
-    // [InlineData(typeof(Locale), 100)] // TODO: Enable after locale seeding.
+    [InlineData(typeof(Locale), 100)]
     public void SeedData_Exists_ForEntity(Type entityType, int minimumExpected)
     {
         // Arrange
