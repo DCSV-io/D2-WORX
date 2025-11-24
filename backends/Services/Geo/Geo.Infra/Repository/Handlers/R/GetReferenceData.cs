@@ -58,32 +58,53 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        // Run all queries in parallel.
-        var countriesTask = r_db.Countries
+        // Query countries with relationships (project to anonymous type for EF compatibility).
+        var countriesRaw = await r_db.Countries
             .AsNoTracking()
-            .Include(c => c.Subdivisions)
-            .Include(c => c.Currencies)
-            .Include(c => c.Locales)
-            .Include(c => c.GeopoliticalEntities)
-            .Select(c => new CountryDTO
+            .Select(c => new
             {
-                Iso31661Alpha2Code = c.ISO31661Alpha2Code,
-                Iso31661Alpha3Code = c.ISO31661Alpha3Code,
-                Iso31661NumericCode = c.ISO31661NumericCode,
-                DisplayName = c.DisplayName,
-                OfficialName = c.OfficialName,
-                PhoneNumberPrefix = c.PhoneNumberPrefix,
-                SovereignIso31661Alpha2Code = c.SovereignISO31661Alpha2Code ?? string.Empty,
-                PrimaryCurrencyIso4217AlphaCode = c.PrimaryCurrencyISO4217AlphaCode ?? string.Empty,
-                PrimaryLocaleIetfBcp47Tag = c.PrimaryLocaleIETFBCP47Tag ?? string.Empty,
-                SubdivisionIso31662Codes = { c.Subdivisions.Select(s => s.ISO31662Code) },
-                CurrencyIso4217AlphaCodes = { c.Currencies.Select(cur => cur.ISO4217AlphaCode) },
-                LocaleIetfBcp47Tags = { c.Locales.Select(l => l.IETFBCP47Tag) },
-                GeopoliticalEntityShortCodes = { c.GeopoliticalEntities.Select(g => g.ShortCode) },
+                c.ISO31661Alpha2Code,
+                c.ISO31661Alpha3Code,
+                c.ISO31661NumericCode,
+                c.DisplayName,
+                c.OfficialName,
+                c.PhoneNumberPrefix,
+                SovereignCode = c.SovereignISO31661Alpha2Code ?? string.Empty,
+                PrimaryCurrency = c.PrimaryCurrencyISO4217AlphaCode ?? string.Empty,
+                PrimaryLocale = c.PrimaryLocaleIETFBCP47Tag ?? string.Empty,
+                Subdivisions = c.Subdivisions.Select(s => s.ISO31662Code).ToList(),
+                Currencies = c.Currencies.Select(cur => cur.ISO4217AlphaCode).ToList(),
+                Locales = c.Locales.Select(l => l.IETFBCP47Tag).ToList(),
+                GeopoliticalEntities = c.GeopoliticalEntities.Select(g => g.ShortCode).ToList(),
             })
-            .ToDictionaryAsync(c => c.Iso31661Alpha2Code, ct);
+            .ToListAsync(ct);
 
-        var subdivisionsTask = r_db.Subdivisions
+        // Map countries to DTOs.
+        var countries = countriesRaw.ToDictionary(
+            c => c.ISO31661Alpha2Code,
+            c =>
+            {
+                var dto = new CountryDTO
+                {
+                    Iso31661Alpha2Code = c.ISO31661Alpha2Code,
+                    Iso31661Alpha3Code = c.ISO31661Alpha3Code,
+                    Iso31661NumericCode = c.ISO31661NumericCode,
+                    DisplayName = c.DisplayName,
+                    OfficialName = c.OfficialName,
+                    PhoneNumberPrefix = c.PhoneNumberPrefix,
+                    SovereignIso31661Alpha2Code = c.SovereignCode,
+                    PrimaryCurrencyIso4217AlphaCode = c.PrimaryCurrency,
+                    PrimaryLocaleIetfBcp47Tag = c.PrimaryLocale,
+                };
+                dto.SubdivisionIso31662Codes.AddRange(c.Subdivisions);
+                dto.CurrencyIso4217AlphaCodes.AddRange(c.Currencies);
+                dto.LocaleIetfBcp47Tags.AddRange(c.Locales);
+                dto.GeopoliticalEntityShortCodes.AddRange(c.GeopoliticalEntities);
+                return dto;
+            });
+
+        // Query subdivisions.
+        var subdivisions = await r_db.Subdivisions
             .AsNoTracking()
             .Select(s => new SubdivisionDTO
             {
@@ -95,7 +116,8 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(s => s.Iso31662Code, ct);
 
-        var currenciesTask = r_db.Currencies
+        // Query currencies.
+        var currencies = await r_db.Currencies
             .AsNoTracking()
             .Select(c => new CurrencyDTO
             {
@@ -108,7 +130,8 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(c => c.Iso4217AlphaCode, ct);
 
-        var languagesTask = r_db.Languages
+        // Query languages.
+        var languages = await r_db.Languages
             .AsNoTracking()
             .Select(l => new LanguageDTO
             {
@@ -118,7 +141,8 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(l => l.Iso6391Code, ct);
 
-        var localesTask = r_db.Locales
+        // Query locales.
+        var locales = await r_db.Locales
             .AsNoTracking()
             .Select(l => new LocaleDTO
             {
@@ -130,39 +154,37 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
             })
             .ToDictionaryAsync(l => l.IetfBcp47Tag, ct);
 
-        var geopoliticalEntitiesTask = r_db.GeopoliticalEntities
+        // Query geopolitical entities (project to anonymous type for EF compatibility).
+        var geopoliticalEntitiesRaw = await r_db.GeopoliticalEntities
             .AsNoTracking()
-            .Include(g => g.Countries)
-            .Select(g => new GeopoliticalEntityDTO
+            .Select(g => new
             {
-                ShortCode = g.ShortCode,
-                Name = g.Name,
+                g.ShortCode,
+                g.Name,
                 Type = g.Type.ToString(),
-                CountryIso31661Alpha2Codes = { g.Countries.Select(c => c.ISO31661Alpha2Code) },
+                Countries = g.Countries.Select(c => c.ISO31661Alpha2Code).ToList(),
             })
-            .ToDictionaryAsync(g => g.ShortCode, ct);
+            .ToListAsync(ct);
 
-        var versionTask = r_db.ReferenceDataVersions
+        // Map geopolitical entities to DTOs.
+        var geopoliticalEntities = geopoliticalEntitiesRaw.ToDictionary(
+            g => g.ShortCode,
+            g =>
+            {
+                var dto = new GeopoliticalEntityDTO
+                {
+                    ShortCode = g.ShortCode,
+                    Name = g.Name,
+                    Type = g.Type,
+                };
+                dto.CountryIso31661Alpha2Codes.AddRange(g.Countries);
+                return dto;
+            });
+
+        // Query version.
+        var version = await r_db.ReferenceDataVersions
             .AsNoTracking()
             .FirstAsync(ct);
-
-        // Await for all queries to complete.
-        await Task.WhenAll(
-            countriesTask,
-            subdivisionsTask,
-            currenciesTask,
-            languagesTask,
-            localesTask,
-            geopoliticalEntitiesTask,
-            versionTask);
-
-        var countries = await countriesTask;
-        var currencies = await currenciesTask;
-        var subdivisions = await subdivisionsTask;
-        var languages = await languagesTask;
-        var locales = await localesTask;
-        var geopoliticalEntities = await geopoliticalEntitiesTask;
-        var version = await versionTask;
 
         // Populate CountryIso31661Alpha2Codes in currencies.
         foreach (var country in countries.Values)
