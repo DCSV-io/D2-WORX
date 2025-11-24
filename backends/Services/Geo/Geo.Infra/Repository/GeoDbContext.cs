@@ -89,5 +89,6 @@ public class GeoDbContext : DbContext
         modelBuilder.SeedGeopoliticalEntities();
         modelBuilder.SeedCountryGeopoliticalEntities();
         modelBuilder.SeedLocales();
+        modelBuilder.SeedSubdivisions();
     }
 }

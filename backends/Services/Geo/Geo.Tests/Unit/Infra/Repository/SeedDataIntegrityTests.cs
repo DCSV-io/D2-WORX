@@ -270,6 +270,33 @@ public class SeedDataIntegrityTests
     }
 
     /// <summary>
+    /// Verifies every subdivision references a seeded country.
+    /// </summary>
+    [Fact]
+    public void Subdivisions_ReferenceSeededCountry()
+    {
+        // Arrange
+        using var context = CreateContext();
+
+        var subdivisions = GetSeedData<Subdivision>(context);
+        var countries = GetSeedData<Country>(context);
+
+        var seededCountryCodes = countries
+            .Select(c => c["ISO31661Alpha2Code"]?.ToString())
+            .Where(c => c is not null)
+            .ToHashSet();
+
+        // Act
+        var subdivisionsWithMissingCountry = subdivisions
+            .Where(s => !seededCountryCodes.Contains(s["CountryISO31661Alpha2Code"]?.ToString()))
+            .Select(s => $"{s["ISO31662Code"]} -> {s["CountryISO31661Alpha2Code"]}")
+            .ToList();
+
+        // Assert
+        Assert.Empty(subdivisionsWithMissingCountry);
+    }
+
+    /// <summary>
     /// Verifies seed data exists for all reference data entities.
     /// </summary>
     ///
@@ -286,6 +313,7 @@ public class SeedDataIntegrityTests
     [InlineData(typeof(Country), 249)]
     [InlineData(typeof(GeopoliticalEntity), 53)]
     [InlineData(typeof(Locale), 100)]
+    [InlineData(typeof(Subdivision), 183)]
     public void SeedData_Exists_ForEntity(Type entityType, int minimumExpected)
     {
         // Arrange
