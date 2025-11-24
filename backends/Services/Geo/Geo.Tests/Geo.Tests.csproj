@@ -8,6 +8,7 @@
         <IsTestProject>true</IsTestProject>
         <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
         <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+        <RootNamespace>D2.Geo.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -28,6 +29,10 @@
     <ItemGroup>
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
       <ProjectReference Include="..\Geo.Infra\Geo.Infra.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Unit\Infra\Repository\Handlers\" />
     </ItemGroup>
 
 </Project>

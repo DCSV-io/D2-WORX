@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Geo.Tests.Unit.Infra.Repository;
+namespace D2.Geo.Tests.Unit.Infra.Repository;
 
 using D2.Geo.Domain.Entities;
 using D2.Geo.Infra.Repository;
