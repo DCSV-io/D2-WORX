@@ -18,6 +18,7 @@ using Testcontainers.Redis;
 /// <summary>
 /// Integration tests for the Redis distributed cache service.
 /// </summary>
+[MustDisposeResource(false)]
 public class RedisDistributedCacheTests : IAsyncLifetime
 {
     private RedisContainer _container = null!;

@@ -15,6 +15,7 @@ using D2.Contracts.Interfaces.GeoRefDataService;
 using D2.Contracts.MemoryCache.Default;
 using D2.Contracts.Utilities.Constants;
 using D2.Services.Protos.Geo.V1;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Testcontainers.Redis;
 
@@ -22,6 +23,7 @@ using Testcontainers.Redis;
 /// Integration tests for GeoRefDataService using Redis as the distributed cache and Default as the
 /// memory cache.
 /// </summary>
+[MustDisposeResource(false)]
 public class GeoRefDataServiceTests : IAsyncLifetime
 {
     private RedisContainer _container = null!;
@@ -35,7 +37,7 @@ public class GeoRefDataServiceTests : IAsyncLifetime
     {
         // Set up Redis container.
         _container = new RedisBuilder().Build();
-        await _container.StartAsync();
+        await _container.StartAsync(Ct);
 
         // Set up configuration.
         var configDict = new Dictionary<string, string>
