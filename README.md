@@ -146,11 +146,10 @@ graph TB
 
 **Services:**
 
-| Component                                                                      | Description                       |
-|--------------------------------------------------------------------------------|-----------------------------------|
-| [Protos.DotNet](backends/Services/_protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts  |
-| [Geo.Domain](backends/Services/Geo/Geo.Domain/GEO_DOMAIN.md)                   | Domain entities and value objects |
-| [Geo.Tests](backends/Services/Geo/Geo.Tests/GEO_TESTS.md)                      | Integration and unit tests        |
+| Component                                                                      | Description                                                                       |
+|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [Protos.DotNet](backends/Services/_protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts                                                  |
+| [Geo](backends/Services/Geo/GEO_SERVICE.md)                                    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
 
 ## Story & Background 🌙
 

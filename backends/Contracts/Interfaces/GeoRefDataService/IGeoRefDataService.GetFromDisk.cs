@@ -9,7 +9,6 @@ namespace D2.Contracts.Interfaces.GeoRefDataService;
 using D2.Contracts.Handler;
 using D2.Services.Protos.Geo.V1;
 
-/// <inheritdoc cref="IGeoRefDataService"/>
 public partial interface IGeoRefDataService
 {
     /// <summary>

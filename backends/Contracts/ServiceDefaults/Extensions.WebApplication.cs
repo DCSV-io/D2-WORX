@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-/// <inheritdoc cref="Extensions"/>
 public static partial class Extensions
 {
     /// <param name="app">

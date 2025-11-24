@@ -187,7 +187,7 @@ var db = builder.AddPostgres(
         "d2-postgres",
         dbUsername,
         dbPassword,
-        5532) // Not using 5432 to avoid conflicts for local dev (when PG is installed locally).
+        54320)
     .WithIconName("DatabaseStack")
     .WithImageTag("18.0-trixie")
     .WithDataVolume("d2-postgres-data")
@@ -287,6 +287,7 @@ var keycloak = builder.AddKeycloak("d2-keycloak", 8080, kcUsername, kcPassword)
 //     .WithOtelRefs();
 
 // Geo - Service.
+db.AddDatabase("d2-services-geo");
 var geoService = builder.AddProject<Projects.Geo_API>("d2-geo")
     .WithIconName("Location")
     .DefaultInfraRefs(db, cache, broker, keycloak)

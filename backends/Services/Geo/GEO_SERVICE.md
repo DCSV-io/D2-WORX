@@ -11,6 +11,13 @@ The **Geo** (Geography) microservice is a critical infrastructure service within
 - **Geopolitical Entities** - Supra-national organizations (NATO, EU, etc.)
 
 ---
+## Documentation
+
+| Document                                  | Description                                                                                  |
+|-------------------------------------------|----------------------------------------------------------------------------------------------|
+| [GEO_DOMAIN.md](Geo.Domain/GEO_DOMAIN.md) | Domain model: entities, value objects, enums, and validation exceptions.                     |
+| [GEO_INFRA.md](Geo.Infra/GEO_INFRA.md)    | Infrastructure layer: EF Core configuration, migrations, seed data, and repository handlers. |
+| [GEO_TESTS.md](Geo.Tests/GEO_TESTS.md)    | Unit and integration tests.                                                                  |
 
 ## Core Architectural Principles
 
@@ -448,13 +455,13 @@ Each consuming service maintains in-memory cache of relevant contacts:
 **Purpose:** Survive process restarts, disaster recovery
 
 **Implementation:**
-- Periodic snapshots of memory cache to disk (JSON files)
+- Protobuf binary serialization for compact storage
 - Load from disk on startup if available
 - Fall back to Geo service if disk cache missing/corrupted
 
 **Storage:**
-- Service-local directory: `/var/cache/{service-name}/geo/`
-- Separate files per ContextKey: `contacts-user.json`, `contacts-order.json`
+- Service-local directory configured via `LocalFilesPath`
+- Single file for all reference data: `geo-ref-data.bin`
 
 **Benefits:**
 - Survives pod/container restarts
@@ -596,12 +603,14 @@ Specialized endpoints for cache warming:
 - No persistence needed
 
 **Local Disk (Reference Data Only)**
-- ONLY for small, static reference data:
-  - countries.json (~250 records)
-  - currencies.json (~180 records)
-  - languages.json (~200 records)
-  - subdivisions.json (~5K records)
-- Total < 5MB
+- ONLY for small, static reference data stored as protobuf binary:
+    - Countries (249 records)
+    - Subdivisions (183 records across 8 countries)
+    - Currencies (5 major currencies)
+    - Languages (6 languages)
+    - Locales (100+ records)
+    - Geopolitical Entities (53 entities)
+- Total < 1MB
 - Loaded once on service startup
 - Fallback if both Redis and Geo unavailable
 - **Never used for transactional data (Contacts, WHOIS, Locations)**
@@ -626,14 +635,14 @@ Specialized endpoints for cache warming:
 
 ### Data Type Caching Strategies
 
-#### Reference Data (Countries, Currencies, Languages)
+#### Reference Data (Countries, Currencies, Languages, etc.)
 **Storage:**
 - Redis: unlimited TTL (effectively permanent)
-- Local disk: JSON files as fallback
+- Local disk: protobuf binary as fallback
 - Local memory: loaded on startup, never evicted
 
 **Rationale:**
-- Small datasets (< 5MB total)
+- Small datasets (< 1MB total)
 - Changes rarely (months/years)
 - Same across all services
 - Critical for operation (need fallback)
@@ -641,7 +650,7 @@ Specialized endpoints for cache warming:
 **Read Path:**
 ```
 1. Check local memory (loaded at startup)
-2. If empty → load from disk JSON
+2. If empty → load from disk (protobuf binary)
 3. If disk missing → fetch from Redis
 4. If Redis missing → call Geo service
 ```
@@ -672,13 +681,13 @@ Specialized endpoints for cache warming:
 
 1. Compute hash from IP address + fingerprint
 2. Check local memory cache (hot items only)
-   - If found → return immediately (sub-microsecond)
+    - If found → return immediately (sub-microsecond)
 3. Check Redis directly
-   - If found → cache locally with 24h TTL, return result (sub-millisecond)
+    - If found → cache locally with 24h TTL, return result (sub-millisecond)
 4. Redis miss → call Geo service to create and populate Redis
-   - If creation fails (invalid IP, API down) → log warning, return null
+    - If creation fails (invalid IP, API down) → log warning, return null
 5. Read from Redis again (Geo just populated it)
-   - If found → cache locally, return result
+    - If found → cache locally, return result
 6. Still null → log error (race condition or Geo failure), return null
 
 **Benefits:**
@@ -693,12 +702,12 @@ Specialized endpoints for cache warming:
 **Step-by-step process:**
 
 1. Check local memory cache
-   - If found → return immediately (sub-microsecond)
+    - If found → return immediately (sub-microsecond)
 2. Check Redis
-   - If found → cache locally with 1h TTL, return result (sub-millisecond)
+    - If found → cache locally with 1h TTL, return result (sub-millisecond)
 3. Redis miss → contact doesn't exist or was evicted
-   - Log warning, return null
-   - Consuming service handles missing contact appropriately
+    - Log warning, return null
+    - Consuming service handles missing contact appropriately
 
 **Note on contacts:**
 - Unlike WHOIS (enrichment data), missing contacts may indicate an error condition
@@ -709,21 +718,21 @@ Specialized endpoints for cache warming:
 
 **Reference Data (Required):**
 
-1. Try loading from local disk JSON files first (fastest)
-   - If successful → load into memory, done
-2. Fallback to Redis if disk files missing/corrupt
-   - Fetch all countries, currencies, languages from Redis
-   - Load into memory
-   - Save to disk for next startup
+1. Try loading from local disk protobuf first (fastest)
+    - If successful → load into memory, done
+2. Fallback to Redis if disk file missing/corrupt
+    - Fetch all reference data from Redis
+    - Load into memory
+    - Save to disk for next startup
 
 **Transactional Data (Optional):**
 
 1. Determine which data this service actually needs
-   - Use service-specific ContextKey for contacts
-   - WHOIS typically not warmed (too large, access pattern is sparse)
+    - Use service-specific ContextKey for contacts
+    - WHOIS typically not warmed (too large, access pattern is sparse)
 2. Stream relevant data from Geo service
-   - Populate Redis as data arrives
-   - Populate local memory cache simultaneously
+    - Populate Redis as data arrives
+    - Populate local memory cache simultaneously
 3. Continue to serve requests during warming (non-blocking)
 
 **Strategy differences:**
@@ -734,7 +743,7 @@ Specialized endpoints for cache warming:
 
 **When Redis is Down:**
 1. Services continue with local memory cache (hot items still work)
-2. Reference data falls back to disk JSON
+2. Reference data falls back to disk protobuf
 3. New reads that aren't cached → return null, log warning
 4. Critical operations can retry with backoff or degrade features
 5. System remains partially operational
@@ -844,11 +853,12 @@ Specialized endpoints for cache warming:
 - JSONB columns serialize/deserialize correctly
 - Foreign key relationships work
 - Content-addressable hash lookups function
+- GetReferenceData returns all seeded data with relationships
 
 **Infrastructure:**
-- Test database (PostgreSQL in Docker)
-- Real EF Core context
-- Test data setup/teardown
+- Testcontainers.PostgreSql for real database instances
+- Real EF Core context with migrations applied
+- Seed data verification
 
 ### End-to-End Tests - Caching
 
@@ -865,8 +875,7 @@ Specialized endpoints for cache warming:
 - WHOIS fingerprint differentiation (same IP, different devices)
 
 **Infrastructure:**
-- Test Geo service (can simulate failures)
-- Real Redis instance
+- Testcontainers.Redis for real Redis instances
 - Real cache implementations (memory + disk)
 - Fault injection (simulate downtime)
 - Metrics collection for hit/miss rates
@@ -1043,7 +1052,7 @@ The Geo microservice provides critical geographic and contact infrastructure for
 
 **Graceful degradation** - Services continue operating with reduced functionality during outages
 
-**Reference data separation** - Small static data cached on disk, large transactional data in Redis only
+**Reference data separation** - Small static data cached on disk as protobuf, large transactional data in Redis only
 
 **Validation boundaries** - Domain enforces rules, application handles errors
 

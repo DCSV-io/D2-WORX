@@ -18,7 +18,6 @@ using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
 
-/// <inheritdoc cref="Extensions"/>
 public static partial class Extensions
 {
     /// <summary>

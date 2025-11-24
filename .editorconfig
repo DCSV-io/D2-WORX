@@ -20,3 +20,6 @@ dotnet_diagnostic.SA1309.severity = none
 
 # SA1124: Do not use regions
 dotnet_diagnostic.SA1124.severity = none
+
+# SA1601: Partial elements should be documented
+dotnet_diagnostic.SA1601.severity = none

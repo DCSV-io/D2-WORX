@@ -54,10 +54,11 @@ message CountryDTO {
   string primary_locale_ietf_bcp_47_tag = 10;
 
   // Navigation properties as lists of identifiers.
-  repeated string subdivision_iso_3166_2_codes = 11; // One-to-many.
-  repeated string currency_iso_4217_alpha_codes = 12; // Many-to-many.
-  repeated string locale_ietf_bcp_47_tags = 13; // One-to-many.
-  repeated string geopolitical_entity_short_codes = 14; // Many-to-many.
+  repeated string territory_iso_3166_1_alpha_2_codes = 11; // One-to-many.
+  repeated string subdivision_iso_3166_2_codes = 12; // One-to-many.
+  repeated string currency_iso_4217_alpha_codes = 13; // Many-to-many.
+  repeated string locale_ietf_bcp_47_tags = 14; // One-to-many.
+  repeated string geopolitical_entity_short_codes = 15; // Many-to-many.
 }
 
 message SubdivisionDTO {

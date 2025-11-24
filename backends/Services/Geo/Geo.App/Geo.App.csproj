@@ -4,6 +4,25 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>D2.Geo.App</RootNamespace>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\Contracts\Handler\Handler.csproj" />
+      <ProjectReference Include="..\..\..\Contracts\Interfaces\Interfaces.csproj" />
+      <ProjectReference Include="..\..\_protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Handlers\CQRS\C\" />
+      <Folder Include="Handlers\CQRS\Q\" />
+      <Folder Include="Handlers\CQRS\U\" />
+      <Folder Include="Interfaces\CQRS\C\" />
+      <Folder Include="Interfaces\CQRS\Q\" />
+      <Folder Include="Interfaces\CQRS\U\" />
+      <Folder Include="Interfaces\Repository\C\" />
+      <Folder Include="Interfaces\Repository\D\" />
+      <Folder Include="Interfaces\Repository\U\" />
+    </ItemGroup>
 
 </Project>

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Geo.Tests.Unit.Domain.Entities;
+namespace D2.Geo.Tests.Unit.Domain.Entities;
 
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;

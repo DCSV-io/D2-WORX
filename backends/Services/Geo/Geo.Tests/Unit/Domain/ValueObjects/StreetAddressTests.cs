@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace Geo.Tests.Unit.Domain.ValueObjects;
+namespace D2.Geo.Tests.Unit.Domain.ValueObjects;
 
 using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
