@@ -1,5 +1,8 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿// -----------------------------------------------------------------------
+// <copyright file="20251124092436_SeedDataInit.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 #nullable disable
 
@@ -7,6 +10,9 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace D2.Geo.Infra.Repository.Migrations
 {
+    using System;
+    using Microsoft.EntityFrameworkCore.Migrations;
+
     /// <inheritdoc />
     public partial class SeedDataInit : Migration
     {
@@ -190,7 +196,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "WS", "Samoa", "WSM", "882", "Independent State of Samoa", "685", null, null, null },
                     { "YE", "Yemen", "YEM", "887", "Republic of Yemen", "967", null, null, null },
                     { "ZA", "South Africa", "ZAF", "710", "Republic of South Africa", "27", null, null, null },
-                    { "ZM", "Zambia", "ZMB", "894", "Republic of Zambia", "260", null, null, null }
+                    { "ZM", "Zambia", "ZMB", "894", "Republic of Zambia", "260", null, null, null },
                 });
 
             migrationBuilder.InsertData(
@@ -202,7 +208,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "EUR", 2, "Euro", "978", "Euro", "€" },
                     { "GBP", 2, "British Pound", "826", "Pound Sterling", "£" },
                     { "JPY", 0, "Yen", "392", "Japanese Yen", "¥" },
-                    { "USD", 2, "US Dollar", "840", "United States Dollar", "$" }
+                    { "USD", 2, "US Dollar", "840", "United States Dollar", "$" },
                 });
 
             migrationBuilder.InsertData(
@@ -268,7 +274,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "SSA", "Sub-Saharan Africa", "GeopoliticalRegion" },
                     { "UN", "United Nations", "GovernanceAndCooperationAgreement" },
                     { "USMCA", "United States-Mexico-Canada Agreement", "FreeTradeAgreement" },
-                    { "WAEMU", "West African Economic and Monetary Union", "MonetaryUnion" }
+                    { "WAEMU", "West African Economic and Monetary Union", "MonetaryUnion" },
                 });
 
             migrationBuilder.InsertData(
@@ -281,7 +287,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "es", "Español", "Spanish" },
                     { "fr", "Français", "French" },
                     { "it", "Italiano", "Italian" },
-                    { "ja", "日本語", "Japanese" }
+                    { "ja", "日本語", "Japanese" },
                 });
 
             migrationBuilder.InsertData(
@@ -343,7 +349,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "TL", "Timor-Leste", "TLS", "626", "Democratic Republic of Timor-Leste", "670", "USD", null, null },
                     { "US", "United States", "USA", "840", "United States of America", "1", "USD", null, null },
                     { "VA", "Vatican City", "VAT", "336", "Holy See", "39", "EUR", null, null },
-                    { "ZW", "Zimbabwe", "ZWE", "716", "Republic of Zimbabwe", "263", "USD", null, null }
+                    { "ZW", "Zimbabwe", "ZWE", "716", "Republic of Zimbabwe", "263", "USD", null, null },
                 });
 
             migrationBuilder.InsertData(
@@ -374,7 +380,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "RO", "EUR" },
                     { "RS", "EUR" },
                     { "SE", "EUR" },
-                    { "TR", "EUR" }
+                    { "TR", "EUR" },
                 });
 
             migrationBuilder.InsertData(
@@ -1266,7 +1272,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "ZM", "AU" },
                     { "ZM", "CW" },
                     { "ZM", "SSA" },
-                    { "ZM", "UN" }
+                    { "ZM", "UN" },
                 });
 
             migrationBuilder.InsertData(
@@ -1311,7 +1317,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "VG", "British Virgin Islands", "VGB", "092", "Virgin Islands", "1", "USD", null, "GB" },
                     { "VI", "U.S. Virgin Islands", "VIR", "850", "Virgin Islands of the United States", "1", "USD", null, "US" },
                     { "WF", "Wallis and Futuna", "WLF", "876", "Territory of the Wallis and Futuna Islands", "681", null, null, "FR" },
-                    { "YT", "Mayotte", "MYT", "175", "Department of Mayotte", "262", "EUR", null, "FR" }
+                    { "YT", "Mayotte", "MYT", "175", "Department of Mayotte", "262", "EUR", null, "FR" },
                 });
 
             migrationBuilder.InsertData(
@@ -1357,7 +1363,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "TL", "USD" },
                     { "US", "USD" },
                     { "VA", "EUR" },
-                    { "ZW", "USD" }
+                    { "ZW", "USD" },
                 });
 
             migrationBuilder.InsertData(
@@ -1669,7 +1675,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "ZW", "AF" },
                     { "ZW", "AU" },
                     { "ZW", "SSA" },
-                    { "ZW", "UN" }
+                    { "ZW", "UN" },
                 });
 
             migrationBuilder.InsertData(
@@ -1701,7 +1707,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "UM", "USD" },
                     { "VG", "USD" },
                     { "VI", "USD" },
-                    { "YT", "EUR" }
+                    { "YT", "EUR" },
                 });
 
             migrationBuilder.InsertData(
@@ -1765,7 +1771,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     { "VI", "CARIB" },
                     { "VI", "NA" },
                     { "WF", "OC" },
-                    { "YT", "AF" }
+                    { "YT", "AF" },
                 });
         }
 
@@ -10061,7 +10067,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                 type: "character varying(32)",
                 maxLength: 32,
                 nullable: false,
-                defaultValue: "");
+                defaultValue: string.Empty);
         }
     }
 }
