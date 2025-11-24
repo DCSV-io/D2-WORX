@@ -27,6 +27,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
+      <ProjectReference Include="..\Geo.Infra\Geo.Infra.csproj" />
     </ItemGroup>
 
 </Project>

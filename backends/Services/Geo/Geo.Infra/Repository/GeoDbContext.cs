@@ -8,6 +8,7 @@ namespace D2.Geo.Infra.Repository;
 
 using D2.Geo.Domain.Entities;
 using D2.Geo.Infra.Repository.Entities;
+using D2.Geo.Infra.Repository.Seeding;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 
@@ -78,5 +79,17 @@ public class GeoDbContext : DbContext
 
         // Apply all IEntityTypeConfiguration<T> from this assembly.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(GeoDbContext).Assembly);
+
+        // Seeding.
+        modelBuilder.SeedReferenceDataVersion();
+        modelBuilder.SeedLanguages();
+        modelBuilder.SeedCurrencies();
+        modelBuilder.SeedCountries();
+        modelBuilder.SeedCountryCurrencies();
+        modelBuilder.SeedGeopoliticalEntities();
+        modelBuilder.SeedCountryGeopoliticalEntities();
+
+        // TODO: seed locales after the first migration.
+        // modelBuilder.SeedLocales();
     }
 }

@@ -67,12 +67,6 @@ public class CountryConfig : IEntityTypeConfiguration<Country>
             .HasMaxLength(3)
             .IsRequired();
 
-        // Phone Number Format (Property).
-        builder.Property(x => x.PhoneNumberFormat)
-            .HasColumnName("phone_number_format")
-            .HasMaxLength(32)
-            .IsRequired();
-
         // Sovereign ISO 3166-1 Alpha-2 Code (Foreign Key, Optional + Navigation Collection).
         builder.Property(x => x.SovereignISO31661Alpha2Code)
             .HasColumnName("sovereign_iso_3166_1_alpha_2_code")

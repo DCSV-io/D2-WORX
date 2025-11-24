@@ -73,7 +73,6 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
                 DisplayName = c.DisplayName,
                 OfficialName = c.OfficialName,
                 PhoneNumberPrefix = c.PhoneNumberPrefix,
-                PhoneNumberFormat = c.PhoneNumberFormat,
                 SovereignIso31661Alpha2Code = c.SovereignISO31661Alpha2Code ?? string.Empty,
                 PrimaryCurrencyIso4217AlphaCode = c.PrimaryCurrencyISO4217AlphaCode ?? string.Empty,
                 PrimaryLocaleIetfBcp47Tag = c.PrimaryLocaleIETFBCP47Tag ?? string.Empty,

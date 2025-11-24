@@ -86,17 +86,6 @@ public record Country
     /// </remarks>
     public required string PhoneNumberPrefix { get; init; }
 
-    /// <summary>
-    /// Gets the phone number format of the country.
-    /// </summary>
-    /// <example>
-    /// (###) ###-####.
-    /// </example>
-    /// <remarks>
-    /// Used to display phone numbers in a localized format.
-    /// </remarks>
-    public required string PhoneNumberFormat { get; init; }
-
     #endregion
 
     #region Foreign Keys
@@ -145,7 +134,7 @@ public record Country
     /// <example>
     /// Puerto Rico in the United States.
     /// </example>
-    public required ICollection<Country> Territories { get; init; } = [];
+    public ICollection<Country> Territories { get; init; } = [];
 
     /// <summary>
     /// Gets a collection of subdivisions that belong to this country.
@@ -153,7 +142,7 @@ public record Country
     /// <example>
     /// States in the United States.
     /// </example>
-    public required ICollection<Subdivision> Subdivisions { get; init; } = [];
+    public ICollection<Subdivision> Subdivisions { get; init; } = [];
 
     /// <summary>
     /// Gets the primary currency used in this country.
@@ -170,7 +159,7 @@ public record Country
     /// All accepted currencies including the primary currency should be included in this
     /// collection.
     /// </remarks>
-    public required ICollection<Currency> Currencies { get; init; } = [];
+    public ICollection<Currency> Currencies { get; init; } = [];
 
     /// <summary>
     /// Gets the primary locale used in this country.
@@ -191,7 +180,7 @@ public record Country
     /// language and regional settings are used for formatting dates, times, numbers, and
     /// currencies / numerical values.
     /// </remarks>
-    public required ICollection<Locale> Locales { get; init; } = [];
+    public ICollection<Locale> Locales { get; init; } = [];
 
     /// <summary>
     /// Gets a collection of geopolitical entities to which this country belongs.
@@ -202,7 +191,7 @@ public record Country
     /// <remarks>
     /// This is a many-to-many relationship.
     /// </remarks>
-    public required ICollection<GeopoliticalEntity> GeopoliticalEntities { get; init; } = [];
+    public ICollection<GeopoliticalEntity> GeopoliticalEntities { get; init; } = [];
 
     #endregion
 }

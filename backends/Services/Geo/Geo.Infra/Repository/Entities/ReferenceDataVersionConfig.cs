@@ -41,7 +41,7 @@ public class ReferenceDataVersionConfig : IEntityTypeConfiguration<ReferenceData
         // UpdatedAt (Property).
         builder.Property(x => x.UpdatedAt)
             .HasColumnName("updated_at")
-            .HasColumnType("timestamp without time zone")
+            .HasColumnType("timestamp with time zone")
             .IsRequired();
     }
 }
