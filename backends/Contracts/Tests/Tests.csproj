@@ -13,10 +13,6 @@
 
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting.Testing" Version="13.0.0" />
-        <PackageReference Include="coverlet.collector" Version="6.0.4">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
         <PackageReference Include="FluentAssertions" Version="8.8.0" />
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
@@ -38,12 +34,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DistributedCache.Redis\DistributedCache.Redis.csproj" />
-      <ProjectReference Include="..\GeoRefDataService.Default\GeoRefDataService.Default.csproj" />
-      <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
-      <ProjectReference Include="..\MemoryCache.Default\MemoryCache.Default.csproj" />
-      <ProjectReference Include="..\Result\Result.csproj" />
-      <ProjectReference Include="..\Utilities\Utilities.csproj" />
+        <ProjectReference Include="..\DistributedCache.Redis\DistributedCache.Redis.csproj" />
+        <ProjectReference Include="..\GeoRefDataService.Default\GeoRefDataService.Default.csproj" />
+        <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
+        <ProjectReference Include="..\MemoryCache.Default\MemoryCache.Default.csproj" />
+        <ProjectReference Include="..\Result\Result.csproj" />
+        <ProjectReference Include="..\Utilities\Utilities.csproj" />
     </ItemGroup>
 
 </Project>

@@ -46,7 +46,6 @@ D²-WORX is the distributed evolution of the Decisive Commerce Application Frame
 ![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
 ![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33?logo=playwright)
 ![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?logo=vitest)
-![Coverlet](https://img.shields.io/badge/Coverlet-6.0-512BD4)
 
 #### CI/CD & Code Quality
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
