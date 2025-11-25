@@ -1,8 +1,93 @@
 # D²-WORX — Decisive Distributed Application Framework for DCSV WORX
 D²-WORX is the distributed evolution of the Decisive Commerce Application Framework (DeCAF). It is an effort to create a scalable foundation for modern SMB-focused SaaS applications, with an emphasis on strong developer experience, and future commercial deployment for WORX or other products.
 
+#### Backend Stack
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
+![C#](https://img.shields.io/badge/C%23-14-239120?logo=csharp)
+![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql)
+![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1)
+![Redis](https://img.shields.io/badge/Redis-8.2-DC382D?logo=redis)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-4.1-FF6600?logo=rabbitmq)
+![Keycloak](https://img.shields.io/badge/Keycloak-26.4-blue?logo=keycloak)
+![MinIO](https://img.shields.io/badge/MinIO-2025--09-C72E49?logo=minio)
+
+#### Infrastructure & Orchestration
+![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.0-512BD4?logo=dotnet)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker)
+
+#### Frontend Stack
+![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte)
+![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?logo=tailwind-css)
+![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs)
+![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
+
+#### Communication & Serialization
+![REST](https://img.shields.io/badge/REST-API-009688)
+![SignalR](https://img.shields.io/badge/SignalR-WebSocket-512BD4)
+![gRPC](https://img.shields.io/badge/gRPC-HTTP%2F2-244c5a?logo=grpc)
+![Protobuf](https://img.shields.io/badge/Protobuf-3-0288D1)
+
+#### Observability (LGTM Stack)
+![Loki](https://img.shields.io/badge/Loki-3.5-F46800?logo=grafana)
+![Grafana](https://img.shields.io/badge/Grafana-12.2-F46800?logo=grafana)
+![Tempo](https://img.shields.io/badge/Tempo-2.8-F46800?logo=grafana)
+![Mimir](https://img.shields.io/badge/Mimir-2.17-F46800?logo=grafana)
+![Alloy](https://img.shields.io/badge/Alloy-1.11-F46800?logo=grafana)
+
+#### Testing & Quality
+![xUnit](https://img.shields.io/badge/xUnit-3.2-512BD4)
+![Testcontainers](https://img.shields.io/badge/Testcontainers-4.9-2496ED?logo=docker)
+![FluentAssertions](https://img.shields.io/badge/FluentAssertions-8.8-5C2D91)
+![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
+![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33?logo=playwright)
+![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?logo=vitest)
+![Coverlet](https://img.shields.io/badge/Coverlet-6.0-512BD4)
+
+#### CI/CD & Code Quality
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
+![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?logo=conventionalcommits)
+![StyleCop](https://img.shields.io/badge/StyleCop-Enforced-239120)
+![XML Docs](https://img.shields.io/badge/XML_Docs-Required-512BD4)
+
+#### Documentation
+![Mermaid](https://img.shields.io/badge/Mermaid-Diagrams-FF3670?logo=mermaid)
+![Markdown](https://img.shields.io/badge/Markdown-Documentation-000000?logo=markdown)
+
+#### Architecture & License
+![Architecture](https://img.shields.io/badge/Architecture-Microservices%20%7C%20DDD%20%2B%20CQRS-blue)
+![License](https://img.shields.io/badge/License-PolyForm%20Strict-red)
+
 ## Project Status 🚨
-This project is in its **earliest stages**. The public repo documents the ongoing evolution of D² as it transitions from a modular monolith (DeCAF) into a distributed framework. Expect frequent changes and incremental progress.
+
+**Phase:** Pre-Alpha (Core Infrastructure)
+
+**✅ Completed:**
+- Geo service domain model with immutable entities and content-addressable hashing
+- Geo service infrastructure layer with EF Core configurations and multi-tier caching
+- Multi-tier caching strategy (PostgreSQL → Redis → Memory → Disk with protobuf serialization)
+- Handler-based CQRS architecture with OpenTelemetry tracing
+- Full LGTM observability stack (Loki, Grafana, Tempo, Mimir, Alloy)
+- Comprehensive testing infrastructure with Testcontainers integration
+- Complete technical documentation (domain models, architecture diagrams, service guides)
+
+**🚧 In Progress:**
+- Geo service application layer (CQRS handlers for reference data operations)
+- Geo service infrastructure layer (MassTransit + RabbitMQ messaging integration)
+
+**📋 Planned:**
+- Geo service API layer (gRPC endpoint implementation)
+- REST API Gateway (HTTP/REST to gRPC routing)
+- SignalR Gateway (WebSocket to gRPC routing)
+- Auth service implementation
+
+**🎯 Target:** Complete first vertical slice (browser → SvelteKit → REST Gateway → Geo gRPC → cache/database) for initial demonstrable release.
+
+This is a **public reference implementation** documenting D²'s evolution from DeCAF's modular monolith architecture into a distributed microservices system. Expect frequent changes and incremental progress.
 
 ## Quickstart Guide 🚀
 

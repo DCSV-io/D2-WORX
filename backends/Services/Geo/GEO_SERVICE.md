@@ -75,6 +75,75 @@ References the external entity's ID (User.Id, Order.Id, etc.) without FK constra
 
 ## Domain Model Structure
 
+```mermaid
+graph TB
+    subgraph Transactional["Transactional Aggregates"]
+        Contact["<b>Contact</b><br/>━━━━━━━<br/>Aggregate Root<br/>GUID PK"]
+        WhoIs["<b>WhoIs</b><br/>━━━━━━━<br/>Aggregate Root<br/>SHA-256 Hash PK"]
+        Location["<b>Location</b><br/>━━━━━━━<br/>Aggregate Root<br/>SHA-256 Hash PK"]
+    end
+
+    subgraph ValueObjects["Value Objects"]
+        ContactMethods[ContactMethods]
+        EmailAddress[EmailAddress]
+        PhoneNumber[PhoneNumber]
+        Personal[Personal]
+        Professional[Professional]
+        Coordinates[Coordinates<br/>lat/lng]
+        StreetAddress[StreetAddress<br/>3 lines]
+    end
+
+    subgraph RefData["Reference Data"]
+        Country["<b>Country</b><br/>━━━━━━━<br/>Aggregate Root<br/>ISO 3166-1"]
+        GeoPol["<b>GeopoliticalEntity</b><br/>━━━━━━━<br/>Aggregate Root<br/>Custom Code"]
+        Subdivision[Subdivision<br/>Child Entity<br/>ISO 3166-2]
+        Currency[Currency<br/>ISO 4217]
+        Language[Language<br/>ISO 639-1]
+        Locale[Locale<br/>IETF BCP 47]
+    end
+
+%% Contact relationships
+    Contact -->|optional FK| Location
+    Contact -.->|contains| ContactMethods
+    Contact -.->|contains| Personal
+    Contact -.->|contains| Professional
+
+%% ContactMethods breakdown
+    ContactMethods -.->|contains| EmailAddress
+    ContactMethods -.->|contains| PhoneNumber
+
+%% WhoIs relationships
+    WhoIs -->|optional FK| Location
+
+%% Location relationships
+    Location -->|FK| Country
+    Location -->|FK| Subdivision
+    Location -.->|contains| Coordinates
+    Location -.->|contains| StreetAddress
+
+%% Country aggregate relationships
+    Country -.->|owns| Subdivision
+    Country -->|FK primary| Currency
+    Country -->|FK primary| Locale
+    Country -.->|many-to-many| Currency
+    Country -.->|many-to-many| Locale
+    Country -.->|many-to-many| GeoPol
+
+%% Reference data relationships
+    Locale -->|FK| Language
+    Locale -->|FK| Country
+
+    style Contact fill:#4a5568
+    style WhoIs fill:#4a5568
+    style Location fill:#4a5568
+    style Country fill:#2c5282
+    style GeoPol fill:#2c5282
+    style Subdivision fill:#4a5568,stroke:#2c5282,stroke-width:2px
+    style Currency fill:#4a5568
+    style Language fill:#4a5568
+    style Locale fill:#4a5568
+```
+
 ### Aggregate Roots
 
 **Aggregate roots are the primary entry points for domain operations:**
