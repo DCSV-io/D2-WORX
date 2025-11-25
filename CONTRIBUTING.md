@@ -30,7 +30,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Contributor Notice ⚠️
 
-At this stage, D²-WORX is **not actively seeking external contributions**.  
+At this stage, D²-WORX is **not actively seeking external contributions**.
 This repository exists primarily as a public reference implementation during its early development.
 
 That said, if you wish to contribute, please be aware:
