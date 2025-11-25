@@ -3,7 +3,7 @@ D²-WORX is the distributed evolution of the Decisive Commerce Application Frame
 
 #### Backend Stack
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
-![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=csharp)
+![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
 ![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
 ![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1?logo=postgresql&logoColor=white)
@@ -202,6 +202,8 @@ graph TB
 - **Unified Observability**: All components emit telemetry to LGTM stack
 
 ### Backend Services and Libraries Documentation 📚
+
+**📖 Architecture Guide:** See [BACKENDS.md](backends/BACKENDS.md) for detailed explanation of the hierarchical structure, category definitions, and architectural decisions.
 
 >**Orchestration:**
 >
