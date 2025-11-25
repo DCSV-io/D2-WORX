@@ -34,10 +34,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DistributedCache.Redis\DistributedCache.Redis.csproj" />
-        <ProjectReference Include="..\GeoRefDataService.Default\GeoRefDataService.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
+        <ProjectReference Include="..\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Common\GeoRefData.Default\GeoRefData.Default.csproj" />
         <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
-        <ProjectReference Include="..\MemoryCache.Default\MemoryCache.Default.csproj" />
         <ProjectReference Include="..\Result\Result.csproj" />
         <ProjectReference Include="..\Utilities\Utilities.csproj" />
     </ItemGroup>

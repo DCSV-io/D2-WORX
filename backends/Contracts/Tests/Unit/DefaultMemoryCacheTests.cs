@@ -4,11 +4,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable AccessToStaticMemberViaDerivedType
 namespace D2.Contracts.Tests.Unit;
 
 using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.CommonCacheService;
-using D2.Contracts.MemoryCache.Default.Handlers;
+using D2.Contracts.InMemoryCache.Default.Handlers.D;
+using D2.Contracts.InMemoryCache.Default.Handlers.R;
+using D2.Contracts.InMemoryCache.Default.Handlers.U;
+using D2.Contracts.Interfaces.Caching.InMemory.Handlers.D;
+using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
+using D2.Contracts.Interfaces.Caching.InMemory.Handlers.U;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -34,7 +39,7 @@ public class DefaultMemoryCacheTests
     {
         var handler = new Get<string>(r_cache, r_context);
         var result = await handler.HandleAsync(
-            new ICommonCacheService.GetInput("missing-key"),
+            new IRead.GetInput("missing-key"),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -55,7 +60,7 @@ public class DefaultMemoryCacheTests
 
         var handler = new Get<string>(r_cache, r_context);
         var result = await handler.HandleAsync(
-            new ICommonCacheService.GetInput("test-key"),
+            new IRead.GetInput("test-key"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -74,7 +79,7 @@ public class DefaultMemoryCacheTests
     {
         var setHandler = new Set<string>(r_cache, r_context);
         var setResult = await setHandler.HandleAsync(
-            new ICommonCacheService.SetInput<string>("key", "value", null),
+            new IUpdate.SetInput<string>("key", "value", null),
             CancellationToken.None);
 
         setResult.Success.Should().BeTrue();
@@ -94,7 +99,7 @@ public class DefaultMemoryCacheTests
     {
         var handler = new Set<string>(r_cache, r_context);
         await handler.HandleAsync(
-            new ICommonCacheService.SetInput<string>(
+            new IUpdate.SetInput<string>(
                 "key", "value", TimeSpan.FromMilliseconds(100)),
             CancellationToken.None);
 
@@ -117,7 +122,7 @@ public class DefaultMemoryCacheTests
 
         var handler = new Remove(r_cache, r_context);
         await handler.HandleAsync(
-            new ICommonCacheService.RemoveInput("key"),
+            new IDelete.RemoveInput("key"),
             CancellationToken.None);
 
         r_cache.TryGetValue<string>("key", out _).Should().BeFalse();

@@ -14,15 +14,19 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Handlers\CQRS\C\" />
-      <Folder Include="Handlers\CQRS\Q\" />
-      <Folder Include="Handlers\CQRS\U\" />
-      <Folder Include="Interfaces\CQRS\C\" />
-      <Folder Include="Interfaces\CQRS\Q\" />
-      <Folder Include="Interfaces\CQRS\U\" />
-      <Folder Include="Interfaces\Repository\C\" />
-      <Folder Include="Interfaces\Repository\D\" />
-      <Folder Include="Interfaces\Repository\U\" />
+      <Folder Include="Implementations\CQRS\Handlers\C\" />
+      <Folder Include="Implementations\CQRS\Handlers\Q\" />
+      <Folder Include="Implementations\CQRS\Handlers\U\" />
+      <Folder Include="Implementations\CQRS\Handlers\X\" />
+      <Folder Include="Interfaces\CQRS\Handlers\C\" />
+      <Folder Include="Interfaces\CQRS\Handlers\Q\" />
+      <Folder Include="Interfaces\CQRS\Handlers\U\" />
+      <Folder Include="Interfaces\CQRS\Handlers\X\" />
+      <Folder Include="Interfaces\Messaging\Handlers\Pub\" />
+      <Folder Include="Interfaces\Messaging\Handlers\Sub\" />
+      <Folder Include="Interfaces\Repository\Handlers\C\" />
+      <Folder Include="Interfaces\Repository\Handlers\D\" />
+      <Folder Include="Interfaces\Repository\Handlers\U\" />
     </ItemGroup>
 
 </Project>

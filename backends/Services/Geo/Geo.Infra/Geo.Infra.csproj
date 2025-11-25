@@ -8,17 +8,24 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Folder Include="Messaging\Handlers\Pub\" />
+      <Folder Include="Messaging\Handlers\Sub\" />
+      <Folder Include="Messaging\MT\Consumers\" />
+      <Folder Include="Messaging\MT\Publishers\" />
       <Folder Include="Repository\Handlers\C\" />
       <Folder Include="Repository\Handlers\D\" />
       <Folder Include="Repository\Handlers\U\" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\Contracts\Implementations\Common\GeoRefData.Default\GeoRefData.Default.csproj" />
+      <ProjectReference Include="..\..\..\Contracts\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
       <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="MassTransit.RabbitMQ" Version="9.0.0-develop.25" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
         <PrivateAssets>all</PrivateAssets>

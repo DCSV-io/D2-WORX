@@ -4,12 +4,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable AccessToStaticMemberViaDerivedType
 namespace D2.Contracts.Tests.Integration;
 
-using D2.Contracts.DistributedCache.Redis.Handlers;
+using D2.Contracts.DistributedCache.Redis.Handlers.D;
+using D2.Contracts.DistributedCache.Redis.Handlers.R;
+using D2.Contracts.DistributedCache.Redis.Handlers.U;
 using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.CommonCacheService;
-using D2.Contracts.Interfaces.DistributedCacheService;
+using D2.Contracts.Interfaces.Caching.Distributed.Handlers.D;
+using D2.Contracts.Interfaces.Caching.Distributed.Handlers.R;
+using D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
 using FluentAssertions;
 using JetBrains.Annotations;
 using StackExchange.Redis;
@@ -40,7 +44,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         _redis.Dispose();
-        await _container.DisposeAsync();
+        await _container.DisposeAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -55,7 +59,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var handler = new Get<string>(_redis, _context);
         var result = await handler.HandleAsync(
-            new ICommonCacheService.GetInput("missing-key"),
+            new IRead.GetInput("missing-key"),
             CancellationToken.None);
 
         result.Success.Should().BeFalse();
@@ -74,12 +78,12 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var setHandler = new Set<string>(_redis, _context);
         await setHandler.HandleAsync(
-            new ICommonCacheService.SetInput<string>("test-key", "test-value", null),
+            new IUpdate.SetInput<string>("test-key", "test-value", null),
             CancellationToken.None);
 
         var getHandler = new Get<string>(_redis, _context);
         var result = await getHandler.HandleAsync(
-            new ICommonCacheService.GetInput("test-key"),
+            new IRead.GetInput("test-key"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -98,7 +102,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var setHandler = new Set<string>(_redis, _context);
         var setResult = await setHandler.HandleAsync(
-            new ICommonCacheService.SetInput<string>("key", "value", null),
+            new IUpdate.SetInput<string>("key", "value", null),
             CancellationToken.None);
 
         setResult.Success.Should().BeTrue();
@@ -120,7 +124,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var handler = new Set<string>(_redis, _context);
         await handler.HandleAsync(
-            new ICommonCacheService.SetInput<string>(
+            new IUpdate.SetInput<string>(
                 "key", "value", TimeSpan.FromMilliseconds(100)),
             CancellationToken.None);
 
@@ -146,7 +150,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
 
         var handler = new Remove(_redis, _context);
         await handler.HandleAsync(
-            new ICommonCacheService.RemoveInput("key"),
+            new IDelete.RemoveInput("key"),
             CancellationToken.None);
 
         var cached = await db.StringGetAsync("key");
@@ -168,7 +172,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
 
         var handler = new Exists(_redis, _context);
         var result = await handler.HandleAsync(
-            new IDistributedCacheService.ExistsInput("key"),
+            new IRead.ExistsInput("key"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -187,7 +191,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var handler = new Exists(_redis, _context);
         var result = await handler.HandleAsync(
-            new IDistributedCacheService.ExistsInput("missing-key"),
+            new IRead.ExistsInput("missing-key"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
@@ -208,12 +212,12 @@ public class RedisDistributedCacheTests : IAsyncLifetime
 
         var setHandler = new Set<TestData>(_redis, _context);
         await setHandler.HandleAsync(
-            new ICommonCacheService.SetInput<TestData>("complex-key", testObject, null),
+            new IUpdate.SetInput<TestData>("complex-key", testObject, null),
             CancellationToken.None);
 
         var getHandler = new Get<TestData>(_redis, _context);
         var result = await getHandler.HandleAsync(
-            new ICommonCacheService.GetInput("complex-key"),
+            new IRead.GetInput("complex-key"),
             CancellationToken.None);
 
         result.Success.Should().BeTrue();
