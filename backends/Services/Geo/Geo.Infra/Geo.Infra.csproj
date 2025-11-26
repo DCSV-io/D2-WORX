@@ -8,10 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Messaging\Handlers\Pub\" />
       <Folder Include="Messaging\Handlers\Sub\" />
       <Folder Include="Messaging\MT\Consumers\" />
-      <Folder Include="Messaging\MT\Publishers\" />
       <Folder Include="Repository\Handlers\C\" />
       <Folder Include="Repository\Handlers\D\" />
       <Folder Include="Repository\Handlers\U\" />

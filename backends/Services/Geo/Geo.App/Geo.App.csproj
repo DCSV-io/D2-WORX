@@ -22,7 +22,6 @@
       <Folder Include="Interfaces\CQRS\Handlers\Q\" />
       <Folder Include="Interfaces\CQRS\Handlers\U\" />
       <Folder Include="Interfaces\CQRS\Handlers\X\" />
-      <Folder Include="Interfaces\Messaging\Handlers\Pub\" />
       <Folder Include="Interfaces\Messaging\Handlers\Sub\" />
       <Folder Include="Interfaces\Repository\Handlers\C\" />
       <Folder Include="Interfaces\Repository\Handlers\D\" />

@@ -4,9 +4,9 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 
 ## Files
 
-| File Name                      | Description                                                                                                                                                              |
-|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Extensions.cs](Extensions.cs) | DI extension method AddGeoInfra registering GeoDbContext, MassTransit with RabbitMQ (including UpdatedConsumer from GeoRefDataService.Default), and repository handlers. |
+| File Name                      | Description                                                                                                                                                                                 |
+|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Extensions.cs](Extensions.cs) | DI extension method AddGeoInfra registering GeoDbContext, MassTransit with RabbitMQ, repository handlers, messaging publisher handlers, and UpdatedConsumer from GeoRefDataService.Default. |
 
 ---
 
@@ -16,11 +16,13 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > #### Pub (Publishers)
 >
-> No publisher handlers yet - will implement handlers for publishing GeoRefDataUpdated messages.
+> | File Name                                          | Description                                                                                          |
+> |----------------------------------------------------|------------------------------------------------------------------------------------------------------|
+> | [Update.cs](Messaging/Handlers/Pub/Update.cs)      | Handler for publishing GeoRefDataUpdated messages via UpdatePublisher when reference data changes.   |
 >
 > #### Sub (Subscribers)
 >
-> No subscriber handlers yet.
+> No subscriber handlers - shared subscribers (like Updated from GeoRefDataService.Default) are registered via consumer services.
 >
 > ### MT (MassTransit)
 >
@@ -30,7 +32,9 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > #### Publishers
 >
-> No Geo-specific publisher classes yet.
+> | File Name                                                        | Description                                                                                                     |
+> |------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+> | [UpdatePublisher.cs](Messaging/MT/Publishers/UpdatePublisher.cs) | MassTransit publisher wrapping IPublishEndpoint for GeoRefDataUpdated messages with error handling and logging. |
 
 ---
 
@@ -45,62 +49,36 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > Entity Framework Core configurations using `IEntityTypeConfiguration<T>` for explicit table/column mappings with snake_case naming.
 >
-> | File Name                                                                          | Description                                                                                                           |
-> |------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-> | [CountryConfig.cs](Repository/Entities/CountryConfig.cs)                           | Country entity configuration with ISO 3166-1 keys, FK relationships to Currency/Locale, and many-to-many navigations. |
-> | [CurrencyConfig.cs](Repository/Entities/CurrencyConfig.cs)                         | Currency entity configuration with ISO 4217 primary key and decimal places/symbol columns.                            |
-> | [GeopoliticalEntityConfig.cs](Repository/Entities/GeopoliticalEntityConfig.cs)     | GeopoliticalEntity configuration with ShortCode PK, enum-to-string Type conversion, and Country many-to-many.         |
-> | [LanguageConfig.cs](Repository/Entities/LanguageConfig.cs)                         | Language entity configuration with ISO 639-1 primary key and endonym column.                                          |
-> | [LocaleConfig.cs](Repository/Entities/LocaleConfig.cs)                             | Locale entity configuration with IETF BCP 47 tag PK and FKs to Language/Country.                                      |
-> | [ReferenceDataVersion.cs](Repository/Entities/ReferenceDataVersion.cs)             | Infrastructure entity tracking reference data version for cache invalidation.                                         |
-> | [ReferenceDataVersionConfig.cs](Repository/Entities/ReferenceDataVersionConfig.cs) | ReferenceDataVersion configuration with Version PK and timestamptz UpdatedAt column.                                  |
-> | [SubdivisionConfig.cs](Repository/Entities/SubdivisionConfig.cs)                   | Subdivision entity configuration with ISO 3166-2 PK and FK to parent Country.                                         |
+> | File Name                                                                      | Description                                                                                                             |
+> |--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+> | [CountryConfig.cs](Repository/Entities/CountryConfig.cs)                       | Country entity configuration with ISO 3166-1 keys, FK relationships to Currency/Locale, and many-to-many navigations.   |
+> | [SubdivisionConfig.cs](Repository/Entities/SubdivisionConfig.cs)               | Subdivision entity configuration with ISO 3166-2 composite key and Country FK.                                          |
+> | [CurrencyConfig.cs](Repository/Entities/CurrencyConfig.cs)                     | Currency entity configuration with ISO 4217 alpha code primary key.                                                     |
+> | [LanguageConfig.cs](Repository/Entities/LanguageConfig.cs)                     | Language entity configuration with ISO 639-1 code primary key.                                                          |
+> | [LocaleConfig.cs](Repository/Entities/LocaleConfig.cs)                         | Locale entity configuration with IETF BCP-47 tag primary key and Language/Country FKs.                                  |
+> | [GeopoliticalEntityConfig.cs](Repository/Entities/GeopoliticalEntityConfig.cs) | GeopoliticalEntity configuration with short code PK and many-to-many Country relationship.                              |
 >
 > ### Handlers
 >
-> #### C (Create)
->
-> No create handlers yet.
->
-> #### D (Delete)
->
-> No delete handlers yet.
->
 > #### R (Read)
 >
-> | File Name                                                        | Description                                                                                                                                                                     |
-> |------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-> | [GetReferenceData.cs](Repository/Handlers/R/GetReferenceData.cs) | Handler querying all reference data (countries, subdivisions, currencies, languages, locales, geopolitical entities, version) with relationship projections into protobuf DTOs. |
->
-> #### U (Update)
->
-> No update handlers yet.
+> | File Name                                                        | Description                                                                                                    |
+> |------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
+> | [GetReferenceData.cs](Repository/Handlers/R/GetReferenceData.cs) | Handler retrieving all geographic reference data (countries, subdivisions, currencies, etc.) as protobuf DTOs. |
 >
 > ### Migrations
 >
-> EF Core migrations and tooling scripts for database schema management.
->
-> | File Name                                                                              | Description                                                                                    |
-> |----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-> | [__HOW_TO.md](Repository/Migrations/__HOW_TO.md)                                       | Instructions for creating, applying, and rolling back migrations using the provided scripts.   |
-> | [_create_migration.bat](Repository/Migrations/_create_migration.bat)                   | Script to generate a new migration with prompted name, using design-time factory.              |
-> | [_manually_apply_migrations.bat](Repository/Migrations/_manually_apply_migrations.bat) | Script to apply pending migrations to a specified PostgreSQL instance with connection prompts. |
-> | [_rollback_migration.bat](Repository/Migrations/_rollback_migration.bat)               | Script to remove the last migration that hasn't been committed to source control.              |
->
-> Migration files (20251123035938_RefDataInit.cs, etc.) are generated by EF Core and not listed individually.
+> EF Core migrations for schema evolution.
 >
 > ### Seeding
 >
-> Extension methods providing comprehensive seed data for geographic reference data using ModelBuilder.
+> Seed data classes for geographic reference data initialization.
 >
-> | File Name                                                                                     | Description                                                                                    |
-> |-----------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-> | [CountryCurrencySeeding.cs](Repository/Seeding/CountryCurrencySeeding.cs)                     | Seeds country-currency many-to-many relationships (400+ mappings).                             |
-> | [CountryGeopoliticalEntitySeeding.cs](Repository/Seeding/CountryGeopoliticalEntitySeeding.cs) | Seeds country-entity many-to-many relationships (1000+ membership entries).                    |
-> | [CountrySeeding.cs](Repository/Seeding/CountrySeeding.cs)                                     | Seeds 249 countries with ISO 3166-1 codes, phone prefixes, and sovereignty relationships.      |
-> | [CurrencySeeding.cs](Repository/Seeding/CurrencySeeding.cs)                                   | Seeds 5 major currencies (USD, EUR, GBP, CAD, JPY) with ISO 4217 codes and symbols.            |
-> | [GeopoliticalEntitySeeding.cs](Repository/Seeding/GeopoliticalEntitySeeding.cs)               | Seeds 53 geopolitical entities (UN, EU, NATO, ASEAN, etc.) with organization types.            |
-> | [LanguageSeeding.cs](Repository/Seeding/LanguageSeeding.cs)                                   | Seeds 6 languages (English, Spanish, French, German, Italian, Japanese) with ISO 639-1 codes.  |
-> | [LocaleSeeding.cs](Repository/Seeding/LocaleSeeding.cs)                                       | Seeds 100+ locales with IETF BCP 47 tags linking languages to countries.                       |
-> | [ReferenceDataVersionSeeding.cs](Repository/Seeding/ReferenceDataVersionSeeding.cs)           | Seeds initial reference data version (1.0.0) for cache versioning.                             |
-> | [SubdivisionSeeding.cs](Repository/Seeding/SubdivisionSeeding.cs)                             | Seeds 183 subdivisions for 8 countries (US, CA, GB, DE, FR, JP, IT, ES) with ISO 3166-2 codes. |
+> | File Name                                                                        | Description                                                 |
+> |----------------------------------------------------------------------------------|-------------------------------------------------------------|
+> | [CountrySeedData.cs](Repository/Seeding/CountrySeeding.cs)                       | 249 countries with ISO codes, phone prefixes, and metadata. |
+> | [SubdivisionSeedData.cs](Repository/Seeding/SubdivisionSeeding.cs)               | 183 subdivisions (US states, Canadian provinces, etc.).     |
+> | [CurrencySeedData.cs](Repository/Seeding/CurrencySeeding.cs)                     | Major world currencies with ISO 4217 codes and symbols.     |
+> | [LanguageSeedData.cs](Repository/Seeding/LanguageSeeding.cs)                     | Common languages with ISO 639-1 codes.                      |
+> | [LocaleSeedData.cs](Repository/Seeding/LocaleSeeding.cs)                         | 100+ locales with IETF BCP-47 tags.                         |
+> | [GeopoliticalEntitySeedData.cs](Repository/Seeding/GeopoliticalEntitySeeding.cs) | Organizations like NATO, EU, UN with member countries.      |
