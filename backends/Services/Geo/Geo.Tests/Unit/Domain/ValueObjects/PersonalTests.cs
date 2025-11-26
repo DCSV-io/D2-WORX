@@ -664,4 +664,94 @@ public class PersonalTests
     }
 
     #endregion
+
+    #region GetHashCode
+
+    /// <summary>
+    /// Tests that GetHashCode returns the same value for equal Personal instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEqualInstances_ReturnsSameValue()
+    {
+        // Arrange
+        var personal1 = Personal.Create("John", lastName: "Doe", professionalCredentials: ["PhD"]);
+        var personal2 = Personal.Create("John", lastName: "Doe", professionalCredentials: ["PhD"]);
+
+        // Act & Assert
+        personal1.GetHashCode().Should().Be(personal2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode returns different values for different Personal instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithDifferentValues_ReturnsDifferentValue()
+    {
+        // Arrange
+        var personal1 = Personal.Create("John");
+        var personal2 = Personal.Create("Jane");
+
+        // Act & Assert
+        personal1.GetHashCode().Should().NotBe(personal2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode works correctly with empty credentials.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEmptyCredentials_ReturnsConsistentValue()
+    {
+        // Arrange
+        var personal1 = Personal.Create("John");
+        var personal2 = Personal.Create("John");
+
+        // Act & Assert
+        personal1.GetHashCode().Should().Be(personal2.GetHashCode());
+    }
+
+    #endregion
+
+    #region Equals Edge Cases
+
+    /// <summary>
+    /// Tests that Equals returns false when comparing with null.
+    /// </summary>
+    [Fact]
+    public void Equals_WithNull_ReturnsFalse()
+    {
+        // Arrange
+        var personal = Personal.Create("John");
+
+        // Act & Assert
+        personal.Equals(null).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns true when comparing with same reference.
+    /// </summary>
+    [Fact]
+    public void Equals_WithSameReference_ReturnsTrue()
+    {
+        // Arrange
+        var personal = Personal.Create("John");
+
+        // Act & Assert
+        personal.Equals(personal).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns false when ProfessionalCredentials differ.
+    /// </summary>
+    [Fact]
+    public void Equals_WithDifferentCredentials_ReturnsFalse()
+    {
+        // Arrange
+        var personal1 = Personal.Create("John", professionalCredentials: ["PhD"]);
+        var personal2 = Personal.Create("John", professionalCredentials: ["MBA"]);
+
+        // Act & Assert
+        personal1.Equals(personal2).Should().BeFalse();
+    }
+
+    #endregion
 }

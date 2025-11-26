@@ -17,6 +17,7 @@
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="Moq" Version="4.20.72" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="4.9.0" />
         <PackageReference Include="Testcontainers.Redis" Version="4.8.1" />
         <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
             <PrivateAssets>all</PrivateAssets>
@@ -34,10 +35,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DistributedCache.Redis\DistributedCache.Redis.csproj" />
-        <ProjectReference Include="..\GeoRefDataService.Default\GeoRefDataService.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
+        <ProjectReference Include="..\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Common\GeoRefData.Default\GeoRefData.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
         <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
-        <ProjectReference Include="..\MemoryCache.Default\MemoryCache.Default.csproj" />
         <ProjectReference Include="..\Result\Result.csproj" />
         <ProjectReference Include="..\Utilities\Utilities.csproj" />
     </ItemGroup>

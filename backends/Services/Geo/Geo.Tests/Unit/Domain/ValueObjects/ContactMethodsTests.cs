@@ -457,4 +457,111 @@ public class ContactMethodsTests
     }
 
     #endregion
+
+    #region GetHashCode
+
+    /// <summary>
+    /// Tests that GetHashCode returns the same value for equal ContactMethods instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEqualInstances_ReturnsSameValue()
+    {
+        // Arrange
+        var emails = ImmutableList.Create(EmailAddress.Create("test@example.com"));
+        var phones = ImmutableList.Create(PhoneNumber.Create("5551234567"));
+
+        var cm1 = ContactMethods.Create(emails, phones);
+        var cm2 = ContactMethods.Create(emails, phones);
+
+        // Act & Assert
+        cm1.GetHashCode().Should().Be(cm2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode returns different values for different ContactMethods instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithDifferentEmails_ReturnsDifferentValue()
+    {
+        // Arrange
+        var cm1 = ContactMethods.Create(ImmutableList.Create(EmailAddress.Create("test1@example.com")));
+        var cm2 = ContactMethods.Create(ImmutableList.Create(EmailAddress.Create("test2@example.com")));
+
+        // Act & Assert
+        cm1.GetHashCode().Should().NotBe(cm2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode works correctly with empty collections.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEmptyCollections_ReturnsConsistentValue()
+    {
+        // Arrange
+        var cm1 = ContactMethods.Create();
+        var cm2 = ContactMethods.Create();
+
+        // Act & Assert
+        cm1.GetHashCode().Should().Be(cm2.GetHashCode());
+    }
+
+    #endregion
+
+    #region Equals Edge Cases
+
+    /// <summary>
+    /// Tests that Equals returns false when comparing with null.
+    /// </summary>
+    [Fact]
+    public void Equals_WithNull_ReturnsFalse()
+    {
+        // Arrange
+        var contactMethods = ContactMethods.Create();
+
+        // Act & Assert
+        contactMethods.Equals(null).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns true when comparing with same reference.
+    /// </summary>
+    [Fact]
+    public void Equals_WithSameReference_ReturnsTrue()
+    {
+        // Arrange
+        var contactMethods = ContactMethods.Create();
+
+        // Act & Assert
+        contactMethods.Equals(contactMethods).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns false when emails differ.
+    /// </summary>
+    [Fact]
+    public void Equals_WithDifferentEmails_ReturnsFalse()
+    {
+        // Arrange
+        var cm1 = ContactMethods.Create(ImmutableList.Create(EmailAddress.Create("test1@example.com")));
+        var cm2 = ContactMethods.Create(ImmutableList.Create(EmailAddress.Create("test2@example.com")));
+
+        // Act & Assert
+        cm1.Equals(cm2).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns false when phone numbers differ.
+    /// </summary>
+    [Fact]
+    public void Equals_WithDifferentPhoneNumbers_ReturnsFalse()
+    {
+        // Arrange
+        var cm1 = ContactMethods.Create(phoneNumbers: ImmutableList.Create(PhoneNumber.Create("5551234567")));
+        var cm2 = ContactMethods.Create(phoneNumbers: ImmutableList.Create(PhoneNumber.Create("5559876543")));
+
+        // Act & Assert
+        cm1.Equals(cm2).Should().BeFalse();
+    }
+
+    #endregion
 }

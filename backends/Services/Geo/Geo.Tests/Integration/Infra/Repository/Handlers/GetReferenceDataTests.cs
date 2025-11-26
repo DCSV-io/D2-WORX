@@ -7,6 +7,7 @@
 namespace D2.Geo.Tests.Integration.Infra.Repository.Handlers;
 
 using D2.Contracts.Handler;
+using D2.Geo.App.Interfaces.Repository.Handlers.R;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.R;
 using FluentAssertions;
@@ -33,7 +34,7 @@ public class GetReferenceDataTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         _container = new PostgreSqlBuilder()
-            .WithImage("postgres:17")
+            .WithImage("postgres:18")
             .Build();
 
         await _container.StartAsync(Ct);
@@ -69,7 +70,7 @@ public class GetReferenceDataTests : IAsyncLifetime
     {
         // Arrange
         var handler = new GetReferenceData(_db, _context);
-        var input = new D2.Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataInput();
+        var input = new IRead.GetReferenceDataInput();
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -104,7 +105,7 @@ public class GetReferenceDataTests : IAsyncLifetime
     {
         // Arrange
         var handler = new GetReferenceData(_db, _context);
-        var input = new D2.Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataInput();
+        var input = new IRead.GetReferenceDataInput();
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -132,7 +133,7 @@ public class GetReferenceDataTests : IAsyncLifetime
     {
         // Arrange
         var handler = new GetReferenceData(_db, _context);
-        var input = new D2.Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataInput();
+        var input = new IRead.GetReferenceDataInput();
 
         // Act
         var result = await handler.HandleAsync(input, Ct);

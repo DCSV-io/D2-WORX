@@ -10,9 +10,9 @@ using D2.Contracts.Handler;
 using D2.Contracts.Result;
 using D2.Services.Protos.Geo.V1;
 using Microsoft.EntityFrameworkCore;
-using H = global::D2.Geo.App.Interfaces.Repository.R.IGeoReadRepo.IGetReferenceDataHandler;
-using I = global::D2.Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataInput;
-using O = global::D2.Geo.App.Interfaces.Repository.R.IGeoReadRepo.GetReferenceDataOutput;
+using H = global::D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.IGetReferenceDataHandler;
+using I = global::D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.GetReferenceDataInput;
+using O = global::D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.GetReferenceDataOutput;
 
 /// <summary>
 /// Handler for getting all geographic reference data.

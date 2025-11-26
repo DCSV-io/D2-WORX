@@ -3,10 +3,10 @@ D²-WORX is the distributed evolution of the Decisive Commerce Application Frame
 
 #### Backend Stack
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
-![C#](https://img.shields.io/badge/C%23-14-239120?logo=csharp)
-![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql)
-![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1)
+![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
+![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
+![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-8.2-DC382D?logo=redis)
 ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-4.1-FF6600?logo=rabbitmq)
 ![Keycloak](https://img.shields.io/badge/Keycloak-26.4-blue?logo=keycloak)
@@ -14,14 +14,14 @@ D²-WORX is the distributed evolution of the Decisive Commerce Application Frame
 
 #### Infrastructure & Orchestration
 ![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.0-512BD4?logo=dotnet)
-![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker)
+![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)
 
 #### Frontend Stack
 ![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte)
 ![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?logo=tailwind-css)
 ![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs)
 ![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
@@ -201,39 +201,63 @@ graph TB
 - **Centralized Identity**: Auth service manages Keycloak; gateways validate tokens
 - **Unified Observability**: All components emit telemetry to LGTM stack
 
-### Backend Services
+### Backend Services and Libraries Documentation 📚
 
-**Orchestration:**
+**📖 Architecture Guide:** See [BACKENDS.md](backends/BACKENDS.md) for detailed explanation of the hierarchical structure, category definitions, and architectural decisions.
 
-| Component                              | Description                                    |
-|----------------------------------------|------------------------------------------------|
-| [AppHost](backends/AppHost/APPHOST.md) | Aspire orchestration and service configuration |
-
-**Contracts:**
-
-| Component                                                                   | Description                                    |
-|-----------------------------------------------------------------------------|------------------------------------------------|
-| [Handler](backends/Contracts/Handler/HANDLER.md)                            | Base handler patterns with logging and tracing |
-| [Interfaces](backends/Contracts/Interfaces/INTERFACES.md)                   | Shared contract interfaces                     |
-| [Result](backends/Contracts/Result/RESULT.md)                               | D2Result pattern for consistent error handling |
-| [ServiceDefaults](backends/Contracts/ServiceDefaults/SERVICE_DEFAULT.md)    | Shared service configuration and telemetry     |
-| [Tests](backends/Contracts/Tests/TESTS.md)                                  | Shared testing infrastructure and base classes |
-| [Utilities](backends/Contracts/Utilities/UTILITIES.md)                      | Shared utility extensions and helpers          |
-
-**Contracts (Common Implementations):**
-
-| Component                                                                                                 | Description                                       |
-|-----------------------------------------------------------------------------------------------------------|---------------------------------------------------|
-| [DistributedCache.Redis](backends/Contracts/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md)             | Redis distributed caching implementation          |
-| [GeoRefDataService.Default](backends/Contracts/GeoRefDataService.Default/GEOREFDATASERVICE_DEFAULT.md)    | Multi-tier georeference data caching              |
-| [MemoryCache.Default](backends/Contracts/MemoryCache.Default/MEMORYCACHE_DEFAULT.md)                      | In-memory caching implementation                  |
-
-**Services:**
-
-| Component                                                                      | Description                                                                       |
-|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [Protos.DotNet](backends/Services/_protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts                                                  |
-| [Geo](backends/Services/Geo/GEO_SERVICE.md)                                    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
+>**Orchestration:**
+>
+>*Aspire-based service orchestration for local development and deployment configuration.*
+>
+>| Component                              | Description                                    |
+>|----------------------------------------|------------------------------------------------|
+>| [AppHost](backends/AppHost/APPHOST.md) | Aspire orchestration and service configuration |
+>
+>**Contracts:**
+>
+>*Core abstractions, patterns, and interfaces shared across all services. These define the "what" without implementation.*
+>
+>| Component                                                                   | Description                                    |
+>|-----------------------------------------------------------------------------|------------------------------------------------|
+>| [Handler](backends/Contracts/Handler/HANDLER.md)                            | Base handler patterns with logging and tracing |
+>| [Interfaces](backends/Contracts/Interfaces/INTERFACES.md)                   | Shared contract interfaces                     |
+>| [Messages](backends/Contracts/Messages/MESSAGES.md)                         | Domain event messages for pub-sub messaging    |
+>| [Result](backends/Contracts/Result/RESULT.md)                               | D2Result pattern for consistent error handling |
+>| [ServiceDefaults](backends/Contracts/ServiceDefaults/SERVICE_DEFAULT.md)    | Shared service configuration and telemetry     |
+>| [Tests](backends/Contracts/Tests/TESTS.md)                                  | Shared testing infrastructure and base classes |
+>| [Utilities](backends/Contracts/Utilities/UTILITIES.md)                      | Shared utility extensions and helpers          |
+>
+>**Contracts (Implementations):**
+>
+>*Reusable, drop-in implementations of contract interfaces. Services consume these via DI without reinventing common functionality like caching, transactions, or shared business logic.*
+>
+>*Caching:*
+>
+>| Component                                                                                                                         | Description                              |
+>|-----------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+>| [DistributedCache.Redis](backends/Contracts/Implementations/Caching/Distributed/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md) | Redis distributed caching implementation |
+>| [InMemoryCache.Default](backends/Contracts/Implementations/Caching/InMemory/InMemoryCache.Default/INMEMORYCACHE_DEFAULT.md)       | In-memory caching implementation         |
+>
+>*Common:*
+>
+>| Component                                                                                                | Description                          |
+>|----------------------------------------------------------------------------------------------------------|--------------------------------------|
+>| [GeoRefData.Default](backends/Contracts/Implementations/Common/GeoRefData.Default/GEOREFDATA_DEFAULT.md) | Multi-tier georeference data caching |
+>
+>*Repository:*
+>
+>| Component                                                                                                        | Description                                |
+>|------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+>| [Transactions.Pg](backends/Contracts/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md) | PostgreSQL transaction management handlers |
+>
+>**Services:**
+>
+>*Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async).*
+>
+>| Component                                                                      | Description                                                                       |
+>|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+>| [Protos.DotNet](backends/Services/_protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts                                                  |
+>| [Geo](backends/Services/Geo/GEO_SERVICE.md)                                    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
 
 ## Story & Background 🌙
 
