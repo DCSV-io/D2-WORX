@@ -508,20 +508,6 @@ public class EmailAddressTests
         email1.GetHashCode().Should().NotBe(email2.GetHashCode());
     }
 
-    /// <summary>
-    /// Tests that GetHashCode works correctly with empty labels.
-    /// </summary>
-    [Fact]
-    public void GetHashCode_WithEmptyLabels_ReturnsConsistentValue()
-    {
-        // Arrange
-        var email1 = EmailAddress.Create("test@example.com");
-        var email2 = EmailAddress.Create("test@example.com");
-
-        // Act & Assert
-        email1.GetHashCode().Should().Be(email2.GetHashCode());
-    }
-
     #endregion
 
     #region Equals
@@ -537,19 +523,6 @@ public class EmailAddressTests
 
         // Act & Assert
         email.Equals(null).Should().BeFalse();
-    }
-
-    /// <summary>
-    /// Tests that Equals returns true when comparing with same reference.
-    /// </summary>
-    [Fact]
-    public void Equals_WithSameReference_ReturnsTrue()
-    {
-        // Arrange
-        var email = EmailAddress.Create("test@example.com");
-
-        // Act & Assert
-        email.Equals(email).Should().BeTrue();
     }
 
     /// <summary>

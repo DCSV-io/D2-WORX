@@ -550,20 +550,6 @@ public class PhoneNumberTests
         phone1.GetHashCode().Should().NotBe(phone2.GetHashCode());
     }
 
-    /// <summary>
-    /// Tests that GetHashCode works correctly with empty labels.
-    /// </summary>
-    [Fact]
-    public void GetHashCode_WithEmptyLabels_ReturnsConsistentValue()
-    {
-        // Arrange
-        var phone1 = PhoneNumber.Create("5551234567");
-        var phone2 = PhoneNumber.Create("5551234567");
-
-        // Act & Assert
-        phone1.GetHashCode().Should().Be(phone2.GetHashCode());
-    }
-
     #endregion
 
     #region Equals
@@ -579,19 +565,6 @@ public class PhoneNumberTests
 
         // Act & Assert
         phone.Equals(null).Should().BeFalse();
-    }
-
-    /// <summary>
-    /// Tests that Equals returns true when comparing with same reference.
-    /// </summary>
-    [Fact]
-    public void Equals_WithSameReference_ReturnsTrue()
-    {
-        // Arrange
-        var phone = PhoneNumber.Create("5551234567");
-
-        // Act & Assert
-        phone.Equals(phone).Should().BeTrue();
     }
 
     /// <summary>

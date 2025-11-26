@@ -381,4 +381,43 @@ public class StreetAddressTests
     }
 
     #endregion
+
+    #region Create From Existing
+
+    /// <summary>
+    /// Tests that Create from existing StreetAddress produces an equal instance.
+    /// </summary>
+    [Fact]
+    public void Create_FromExistingStreetAddress_Success()
+    {
+        // Arrange
+        var original = StreetAddress.Create("123 Main St", "Building B", "Suite 400");
+
+        // Act
+        var copy = StreetAddress.Create(original);
+
+        // Assert
+        copy.Should().Be(original);
+    }
+
+    /// <summary>
+    /// Tests that Create from invalid existing StreetAddress throws GeoValidationException.
+    /// </summary>
+    [Fact]
+    public void Create_WithInvalidExistingStreetAddress_ThrowsGeoValidationException()
+    {
+        // Arrange - Create invalid address by bypassing factory
+        var invalid = new StreetAddress
+        {
+            Line1 = "   ", // Invalid - whitespace only
+        };
+
+        // Act
+        var act = () => StreetAddress.Create(invalid);
+
+        // Assert
+        act.Should().Throw<GeoValidationException>();
+    }
+
+    #endregion
 }
