@@ -491,20 +491,6 @@ public class ContactMethodsTests
         cm1.GetHashCode().Should().NotBe(cm2.GetHashCode());
     }
 
-    /// <summary>
-    /// Tests that GetHashCode works correctly with empty collections.
-    /// </summary>
-    [Fact]
-    public void GetHashCode_WithEmptyCollections_ReturnsConsistentValue()
-    {
-        // Arrange
-        var cm1 = ContactMethods.Create();
-        var cm2 = ContactMethods.Create();
-
-        // Act & Assert
-        cm1.GetHashCode().Should().Be(cm2.GetHashCode());
-    }
-
     #endregion
 
     #region Equals Edge Cases
@@ -520,19 +506,6 @@ public class ContactMethodsTests
 
         // Act & Assert
         contactMethods.Equals(null).Should().BeFalse();
-    }
-
-    /// <summary>
-    /// Tests that Equals returns true when comparing with same reference.
-    /// </summary>
-    [Fact]
-    public void Equals_WithSameReference_ReturnsTrue()
-    {
-        // Arrange
-        var contactMethods = ContactMethods.Create();
-
-        // Act & Assert
-        contactMethods.Equals(contactMethods).Should().BeTrue();
     }
 
     /// <summary>

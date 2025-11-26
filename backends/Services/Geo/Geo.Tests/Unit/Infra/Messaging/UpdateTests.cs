@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+namespace D2.Geo.Tests.Unit.Infra.Messaging;
+
 using D2.Contracts.Handler;
 using D2.Contracts.Messages.Geo;
 using D2.Contracts.Result;
@@ -14,8 +16,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-
-namespace D2.Geo.Tests.Unit.Infra.Messaging;
 
 /// <summary>
 /// Unit tests for the <see cref="Update"/> handler.
