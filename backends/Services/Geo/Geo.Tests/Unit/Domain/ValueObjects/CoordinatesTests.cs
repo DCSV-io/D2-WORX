@@ -200,4 +200,44 @@ public class CoordinatesTests
     }
 
     #endregion
+
+    #region Create From Existing
+
+    /// <summary>
+    /// Tests that Create from existing Coordinates produces an equal instance.
+    /// </summary>
+    [Fact]
+    public void Create_FromExistingCoordinates_Success()
+    {
+        // Arrange
+        var original = Coordinates.Create(34.0522m, -118.2437m);
+
+        // Act
+        var copy = Coordinates.Create(original);
+
+        // Assert
+        copy.Should().Be(original);
+    }
+
+    /// <summary>
+    /// Tests that Create from invalid existing Coordinates throws GeoValidationException.
+    /// </summary>
+    [Fact]
+    public void Create_WithInvalidExistingCoordinates_ThrowsGeoValidationException()
+    {
+        // Arrange - Create invalid coordinates by bypassing factory
+        var invalid = new Coordinates
+        {
+            Latitude = 91m, // Invalid - out of range
+            Longitude = 0m,
+        };
+
+        // Act
+        var act = () => Coordinates.Create(invalid);
+
+        // Assert
+        act.Should().Throw<GeoValidationException>();
+    }
+
+    #endregion
 }
