@@ -463,4 +463,122 @@ public class EmailAddressTests
     }
 
     #endregion
+
+    #region GetHashCode
+
+    /// <summary>
+    /// Tests that GetHashCode returns the same value for equal EmailAddress instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEqualInstances_ReturnsSameValue()
+    {
+        // Arrange
+        var email1 = EmailAddress.Create("test@example.com", ["work"]);
+        var email2 = EmailAddress.Create("test@example.com", ["work"]);
+
+        // Act & Assert
+        email1.GetHashCode().Should().Be(email2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode returns different values for different EmailAddress instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithDifferentValues_ReturnsDifferentValue()
+    {
+        // Arrange
+        var email1 = EmailAddress.Create("test1@example.com");
+        var email2 = EmailAddress.Create("test2@example.com");
+
+        // Act & Assert
+        email1.GetHashCode().Should().NotBe(email2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode returns different values for same email with different labels.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithDifferentLabels_ReturnsDifferentValue()
+    {
+        // Arrange
+        var email1 = EmailAddress.Create("test@example.com", ["work"]);
+        var email2 = EmailAddress.Create("test@example.com", ["personal"]);
+
+        // Act & Assert
+        email1.GetHashCode().Should().NotBe(email2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode works correctly with empty labels.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEmptyLabels_ReturnsConsistentValue()
+    {
+        // Arrange
+        var email1 = EmailAddress.Create("test@example.com");
+        var email2 = EmailAddress.Create("test@example.com");
+
+        // Act & Assert
+        email1.GetHashCode().Should().Be(email2.GetHashCode());
+    }
+
+    #endregion
+
+    #region Equals
+
+    /// <summary>
+    /// Tests that Equals returns false when comparing with null.
+    /// </summary>
+    [Fact]
+    public void Equals_WithNull_ReturnsFalse()
+    {
+        // Arrange
+        var email = EmailAddress.Create("test@example.com");
+
+        // Act & Assert
+        email.Equals(null).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns true when comparing with same reference.
+    /// </summary>
+    [Fact]
+    public void Equals_WithSameReference_ReturnsTrue()
+    {
+        // Arrange
+        var email = EmailAddress.Create("test@example.com");
+
+        // Act & Assert
+        email.Equals(email).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns true for instances with same value and labels.
+    /// </summary>
+    [Fact]
+    public void Equals_WithEqualValueAndLabels_ReturnsTrue()
+    {
+        // Arrange
+        var email1 = EmailAddress.Create("test@example.com", ["work", "primary"]);
+        var email2 = EmailAddress.Create("test@example.com", ["primary", "work"]); // Different order
+
+        // Act & Assert
+        email1.Equals(email2).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns false for instances with different values.
+    /// </summary>
+    [Fact]
+    public void Equals_WithDifferentValues_ReturnsFalse()
+    {
+        // Arrange
+        var email1 = EmailAddress.Create("test1@example.com");
+        var email2 = EmailAddress.Create("test2@example.com");
+
+        // Act & Assert
+        email1.Equals(email2).Should().BeFalse();
+    }
+
+    #endregion
 }

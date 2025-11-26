@@ -505,4 +505,122 @@ public class PhoneNumberTests
     }
 
     #endregion
+
+    #region GetHashCode
+
+    /// <summary>
+    /// Tests that GetHashCode returns the same value for equal PhoneNumber instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEqualInstances_ReturnsSameValue()
+    {
+        // Arrange
+        var phone1 = PhoneNumber.Create("5551234567", ["mobile"]);
+        var phone2 = PhoneNumber.Create("5551234567", ["mobile"]);
+
+        // Act & Assert
+        phone1.GetHashCode().Should().Be(phone2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode returns different values for different PhoneNumber instances.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithDifferentValues_ReturnsDifferentValue()
+    {
+        // Arrange
+        var phone1 = PhoneNumber.Create("5551234567");
+        var phone2 = PhoneNumber.Create("5559876543");
+
+        // Act & Assert
+        phone1.GetHashCode().Should().NotBe(phone2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode returns different values for same number with different labels.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithDifferentLabels_ReturnsDifferentValue()
+    {
+        // Arrange
+        var phone1 = PhoneNumber.Create("5551234567", ["mobile"]);
+        var phone2 = PhoneNumber.Create("5551234567", ["work"]);
+
+        // Act & Assert
+        phone1.GetHashCode().Should().NotBe(phone2.GetHashCode());
+    }
+
+    /// <summary>
+    /// Tests that GetHashCode works correctly with empty labels.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_WithEmptyLabels_ReturnsConsistentValue()
+    {
+        // Arrange
+        var phone1 = PhoneNumber.Create("5551234567");
+        var phone2 = PhoneNumber.Create("5551234567");
+
+        // Act & Assert
+        phone1.GetHashCode().Should().Be(phone2.GetHashCode());
+    }
+
+    #endregion
+
+    #region Equals
+
+    /// <summary>
+    /// Tests that Equals returns false when comparing with null.
+    /// </summary>
+    [Fact]
+    public void Equals_WithNull_ReturnsFalse()
+    {
+        // Arrange
+        var phone = PhoneNumber.Create("5551234567");
+
+        // Act & Assert
+        phone.Equals(null).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns true when comparing with same reference.
+    /// </summary>
+    [Fact]
+    public void Equals_WithSameReference_ReturnsTrue()
+    {
+        // Arrange
+        var phone = PhoneNumber.Create("5551234567");
+
+        // Act & Assert
+        phone.Equals(phone).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns true for instances with same value and labels.
+    /// </summary>
+    [Fact]
+    public void Equals_WithEqualValueAndLabels_ReturnsTrue()
+    {
+        // Arrange
+        var phone1 = PhoneNumber.Create("5551234567", ["mobile", "primary"]);
+        var phone2 = PhoneNumber.Create("5551234567", ["primary", "mobile"]); // Different order
+
+        // Act & Assert
+        phone1.Equals(phone2).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that Equals returns false for instances with different values.
+    /// </summary>
+    [Fact]
+    public void Equals_WithDifferentValues_ReturnsFalse()
+    {
+        // Arrange
+        var phone1 = PhoneNumber.Create("5551234567");
+        var phone2 = PhoneNumber.Create("5559876543");
+
+        // Act & Assert
+        phone1.Equals(phone2).Should().BeFalse();
+    }
+
+    #endregion
 }

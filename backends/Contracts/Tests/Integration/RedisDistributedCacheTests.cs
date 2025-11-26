@@ -4,9 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable AccessToStaticMemberViaDerivedType
+// ReSharper disable RedundantCapturedContext
+// ReSharper disable ClassNeverInstantiated.Local
+// ReSharper disable UnusedMember.Local
 namespace D2.Contracts.Tests.Integration;
 
+// ReSharper disable AccessToStaticMemberViaDerivedType
 using D2.Contracts.DistributedCache.Redis.Handlers.D;
 using D2.Contracts.DistributedCache.Redis.Handlers.R;
 using D2.Contracts.DistributedCache.Redis.Handlers.U;
@@ -14,7 +17,11 @@ using D2.Contracts.Handler;
 using D2.Contracts.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Contracts.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
+using D2.Contracts.Result;
+using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
+using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using JetBrains.Annotations;
 using StackExchange.Redis;
 using Testcontainers.Redis;
@@ -28,12 +35,15 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     private RedisContainer _container = null!;
     private IConnectionMultiplexer _redis = null!;
     private IHandlerContext _context = null!;
+    private bool _containerStopped;
+
+    private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
     {
         _container = new RedisBuilder().Build();
-        await _container.StartAsync();
+        await _container.StartAsync(Ct);
 
         _redis = await ConnectionMultiplexer.ConnectAsync(
             _container.GetConnectionString());
@@ -60,7 +70,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         var handler = new Get<string>(_redis, _context);
         var result = await handler.HandleAsync(
             new IRead.GetInput("missing-key"),
-            CancellationToken.None);
+            Ct);
 
         result.Success.Should().BeFalse();
         result.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -78,13 +88,11 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var setHandler = new Set<string>(_redis, _context);
         await setHandler.HandleAsync(
-            new IUpdate.SetInput<string>("test-key", "test-value", null),
-            CancellationToken.None);
+            new IUpdate.SetInput<string>("test-key", "test-value", null), Ct);
 
         var getHandler = new Get<string>(_redis, _context);
         var result = await getHandler.HandleAsync(
-            new IRead.GetInput("test-key"),
-            CancellationToken.None);
+            new IRead.GetInput("test-key"), Ct);
 
         result.Success.Should().BeTrue();
         result.Data!.Value.Should().Be("test-value");
@@ -102,8 +110,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var setHandler = new Set<string>(_redis, _context);
         var setResult = await setHandler.HandleAsync(
-            new IUpdate.SetInput<string>("key", "value", null),
-            CancellationToken.None);
+            new IUpdate.SetInput<string>("key", "value", null), Ct);
 
         setResult.Success.Should().BeTrue();
 
@@ -124,11 +131,9 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var handler = new Set<string>(_redis, _context);
         await handler.HandleAsync(
-            new IUpdate.SetInput<string>(
-                "key", "value", TimeSpan.FromMilliseconds(100)),
-            CancellationToken.None);
+            new IUpdate.SetInput<string>("key", "value", TimeSpan.FromMilliseconds(100)), Ct);
 
-        await Task.Delay(200, CancellationToken.None);
+        await Task.Delay(200, Ct);
 
         var db = _redis.GetDatabase();
         var cached = await db.StringGetAsync("key");
@@ -149,9 +154,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         await db.StringSetAsync("key", "value");
 
         var handler = new Remove(_redis, _context);
-        await handler.HandleAsync(
-            new IDelete.RemoveInput("key"),
-            CancellationToken.None);
+        await handler.HandleAsync(new IDelete.RemoveInput("key"), Ct);
 
         var cached = await db.StringGetAsync("key");
         cached.HasValue.Should().BeFalse();
@@ -171,9 +174,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         await db.StringSetAsync("key", "value");
 
         var handler = new Exists(_redis, _context);
-        var result = await handler.HandleAsync(
-            new IRead.ExistsInput("key"),
-            CancellationToken.None);
+        var result = await handler.HandleAsync(new IRead.ExistsInput("key"), Ct);
 
         result.Success.Should().BeTrue();
         result.Data!.Exists.Should().BeTrue();
@@ -190,9 +191,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     public async Task Exists_WhenKeyMissing_ReturnsFalse()
     {
         var handler = new Exists(_redis, _context);
-        var result = await handler.HandleAsync(
-            new IRead.ExistsInput("missing-key"),
-            CancellationToken.None);
+        var result = await handler.HandleAsync(new IRead.ExistsInput("missing-key"), Ct);
 
         result.Success.Should().BeTrue();
         result.Data!.Exists.Should().BeFalse();
@@ -213,15 +212,386 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         var setHandler = new Set<TestData>(_redis, _context);
         await setHandler.HandleAsync(
             new IUpdate.SetInput<TestData>("complex-key", testObject, null),
-            CancellationToken.None);
+            Ct);
 
         var getHandler = new Get<TestData>(_redis, _context);
-        var result = await getHandler.HandleAsync(
-            new IRead.GetInput("complex-key"),
-            CancellationToken.None);
+        var result = await getHandler.HandleAsync(new IRead.GetInput("complex-key"), Ct);
 
         result.Success.Should().BeTrue();
         result.Data!.Value.Should().BeEquivalentTo(testObject);
+    }
+
+    /// <summary>
+    /// Tests that setting a protobuf message stores it correctly using binary serialization.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Set_WithProtobufMessage_StoresAsBinaryData()
+    {
+        // Arrange
+        var protoData = TestHelpers.TestGeoRefData;
+        var handler = new Set<GetReferenceDataResponse>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IUpdate.SetInput<GetReferenceDataResponse>("proto-key", protoData, null),
+            Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+
+        var db = _redis.GetDatabase();
+        var cached = await db.StringGetAsync("proto-key");
+        cached.HasValue.Should().BeTrue();
+
+        // Verify it's binary protobuf, not JSON (protobuf won't start with '{')
+        var bytes = (byte[])cached!;
+        bytes.Should().NotBeEmpty();
+        bytes[0].Should().NotBe((byte)'{');
+    }
+
+    /// <summary>
+    /// Tests that getting a protobuf message deserializes correctly using ParseProtobuf internally.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Get_WithProtobufMessage_DeserializesCorrectly()
+    {
+        // Arrange
+        var protoData = TestHelpers.TestGeoRefData;
+
+        var setHandler = new Set<GetReferenceDataResponse>(_redis, _context);
+        await setHandler.HandleAsync(
+            new IUpdate.SetInput<GetReferenceDataResponse>("proto-get-key", protoData, null),
+            Ct);
+
+        var getHandler = new Get<GetReferenceDataResponse>(_redis, _context);
+
+        // Act
+        var result = await getHandler.HandleAsync(new IRead.GetInput("proto-get-key"), Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data.Should().NotBeNull();
+
+        var retrieved = result.Data!.Value;
+        retrieved!.Version.Should().Be(protoData.Version);
+        retrieved.Countries.Should().ContainKey("US");
+        retrieved.Countries["US"].DisplayName.Should().Be("United States");
+        retrieved.Subdivisions.Should().ContainKey("US-AL");
+        retrieved.Subdivisions["US-AL"].DisplayName.Should().Be("Alabama");
+        retrieved.Currencies.Should().ContainKey("USD");
+        retrieved.Currencies["USD"].Symbol.Should().Be("$");
+        retrieved.Languages.Should().ContainKey("en");
+        retrieved.Locales.Should().ContainKey("en-US");
+        retrieved.GeopoliticalEntities.Should().ContainKey("NATO");
+    }
+
+    /// <summary>
+    /// Tests that getting a value with corrupted JSON data returns deserialization error.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Get_WhenDataIsCorruptedJson_ReturnsDeserializationError()
+    {
+        // Arrange - store malformed JSON directly in Redis
+        var db = _redis.GetDatabase();
+        await db.StringSetAsync("corrupted-key", "{invalid json that wont parse}}}");
+
+        var handler = new Get<TestData>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IRead.GetInput("corrupted-key"),
+            Ct);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        result.ErrorCode.Should().Be(ErrorCodes.COULD_NOT_BE_DESERIALIZED);
+    }
+
+    /// <summary>
+    /// Tests that getting a protobuf type without a Parser property returns failure.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Get_WithFakeMessageWithoutParser_ReturnsFail()
+    {
+        // Arrange - store some binary data that looks like protobuf (non-printable first byte)
+        var db = _redis.GetDatabase();
+        await db.StringSetAsync("fake-proto-key", new byte[] { 0x0A, 0x01, 0x02, 0x03 });
+
+        var handler = new Get<FakeMessageWithoutParser>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(new IRead.GetInput("fake-proto-key"), Ct);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        result.ErrorCode.Should().Be(ErrorCodes.UNHANDLED_EXCEPTION);
+    }
+
+    /// <summary>
+    /// Tests that getting a protobuf type with null Parser returns failure.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Get_WithFakeMessageWithNullParser_ReturnsFail()
+    {
+        // Arrange - store some binary data that looks like protobuf (non-printable first byte)
+        var db = _redis.GetDatabase();
+        await db.StringSetAsync("null-parser-key", new byte[] { 0x0A, 0x01, 0x02, 0x03 });
+
+        var handler = new Get<FakeMessageWithNullParser>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(new IRead.GetInput("null-parser-key"), Ct);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        result.ErrorCode.Should().Be(ErrorCodes.UNHANDLED_EXCEPTION);
+    }
+
+    /// <summary>
+    /// Tests that getting a protobuf type without ParseFrom method returns failure.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Get_WithFakeMessageWithoutParseFrom_ReturnsFail()
+    {
+        // Arrange - store some binary data that looks like protobuf (non-printable first byte)
+        var db = _redis.GetDatabase();
+        await db.StringSetAsync("no-parsefrom-key", new byte[] { 0x0A, 0x01, 0x02, 0x03 });
+
+        var handler = new Get<FakeMessageWithoutParseFrom>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(new IRead.GetInput("no-parsefrom-key"), Ct);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+        result.ErrorCode.Should().Be(ErrorCodes.UNHANDLED_EXCEPTION);
+    }
+
+    /// <summary>
+    /// Tests that getting a value when Redis is unavailable returns ServiceUnavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Get_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        await EnsureContainerStoppedAsync();
+        var handler = new Get<string>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IRead.GetInput("any-key"),
+            CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    /// <summary>
+    /// Tests that setting a value when Redis is unavailable returns ServiceUnavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Set_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        await EnsureContainerStoppedAsync();
+        var handler = new Set<string>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IUpdate.SetInput<string>("any-key", "any-value", null),
+            CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    /// <summary>
+    /// Tests that checking existence when Redis is unavailable returns ServiceUnavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Exists_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        await EnsureContainerStoppedAsync();
+        var handler = new Exists(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IRead.ExistsInput("any-key"),
+            CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    /// <summary>
+    /// Tests that removing a key when Redis is unavailable returns ServiceUnavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Remove_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        await EnsureContainerStoppedAsync();
+        var handler = new Remove(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IDelete.RemoveInput("any-key"),
+            CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    /// <summary>
+    /// Ensures the Redis container is stopped for unavailability tests.
+    /// Safe to call multiple times.
+    /// </summary>
+    private async Task EnsureContainerStoppedAsync()
+    {
+        if (_containerStopped)
+        {
+            return;
+        }
+
+        await _container.StopAsync(Ct);
+        _containerStopped = true;
+    }
+
+    /// <summary>
+    /// Fake IMessage implementation without a Parser property.
+    /// </summary>
+    private class FakeMessageWithoutParser : IMessage
+    {
+        /// <inheritdoc/>
+        public MessageDescriptor Descriptor => null!;
+
+        /// <inheritdoc/>
+        public void MergeFrom(CodedInputStream input)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void WriteTo(CodedOutputStream output)
+        {
+        }
+
+        /// <inheritdoc/>
+        public int CalculateSize() => 0;
+    }
+
+    /// <summary>
+    /// Fake IMessage implementation with a null Parser property.
+    /// </summary>
+    private class FakeMessageWithNullParser : IMessage
+    {
+        /// <summary>
+        /// Gets the parser (always null for testing).
+        /// </summary>
+        public static object? Parser => null;
+
+        /// <inheritdoc/>
+        public MessageDescriptor Descriptor => null!;
+
+        /// <inheritdoc/>
+        public void MergeFrom(CodedInputStream input)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void WriteTo(CodedOutputStream output)
+        {
+        }
+
+        /// <inheritdoc/>
+        public int CalculateSize() => 0;
+    }
+
+    /// <summary>
+    /// Fake IMessage implementation with a Parser that lacks ParseFrom method.
+    /// </summary>
+    private class FakeMessageWithoutParseFrom : IMessage
+    {
+        /// <summary>
+        /// Gets the parser (missing ParseFrom method).
+        /// </summary>
+        public static FakeParser Parser => new();
+
+        /// <inheritdoc/>
+        public MessageDescriptor Descriptor => null!;
+
+        /// <inheritdoc/>
+        public void MergeFrom(CodedInputStream input)
+        {
+        }
+
+        /// <inheritdoc/>
+        public void WriteTo(CodedOutputStream output)
+        {
+        }
+
+        /// <inheritdoc/>
+        public int CalculateSize() => 0;
+
+        /// <summary>
+        /// Fake parser without ParseFrom method.
+        /// </summary>
+        public class FakeParser
+        {
+            // Intentionally missing ParseFrom(byte[]) method
+        }
     }
 
     /// <summary>

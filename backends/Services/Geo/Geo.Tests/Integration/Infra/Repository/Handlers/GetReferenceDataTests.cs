@@ -34,7 +34,7 @@ public class GetReferenceDataTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         _container = new PostgreSqlBuilder()
-            .WithImage("postgres:17")
+            .WithImage("postgres:18")
             .Build();
 
         await _container.StartAsync(Ct);

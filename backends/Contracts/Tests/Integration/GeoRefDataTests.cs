@@ -15,6 +15,9 @@ using D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
 using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
 using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
+using D2.Contracts.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
+using D2.Contracts.Messages.Geo;
+using D2.Contracts.Result;
 using D2.Contracts.Utilities.Constants;
 using D2.Services.Protos.Geo.V1;
 using JetBrains.Annotations;
@@ -204,6 +207,158 @@ public class GeoRefDataTests : IAsyncLifetime
         var result = await getHandler.HandleAsync(new(), Ct);
 
         // Assert - still succeeds from memory despite Redis cleared
+        Assert.True(result.Success);
+    }
+
+    /// <summary>
+    /// Tests that getting georeference data from disk when the file doesn't exist returns NotFound.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="ValueTask"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async ValueTask GetFromDisk_WhenFileDoesNotExist_ReturnsNotFound()
+    {
+        // Arrange - ensure no file exists
+        var filePath = Path.Combine(Path.GetTempPath(), Constants.GEO_REF_DATA_FILE_NAME);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+
+        var handler = _services.GetRequiredService<IQueries.IGetFromDiskHandler>();
+
+        // Act
+        var result = await handler.HandleAsync(new(), Ct);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
+    /// <summary>
+    /// Tests that getting georeference data from disk when the file is corrupted returns deserialization error.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="ValueTask"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async ValueTask GetFromDisk_WhenFileIsCorrupted_ReturnsDeserializationError()
+    {
+        // Arrange - write garbage bytes to the file
+        var filePath = Path.Combine(Path.GetTempPath(), Constants.GEO_REF_DATA_FILE_NAME);
+        await File.WriteAllBytesAsync(filePath, [0x00, 0xFF, 0xFE, 0x01, 0x02, 0x03], Ct);
+
+        var handler = _services.GetRequiredService<IQueries.IGetFromDiskHandler>();
+
+        // Act
+        var result = await handler.HandleAsync(new(), Ct);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(HttpStatusCode.InternalServerError, result.StatusCode);
+        Assert.Equal(ErrorCodes.COULD_NOT_BE_DESERIALIZED, result.ErrorCode);
+    }
+
+    /// <summary>
+    /// Tests that the Updated handler returns NotFound when distributed cache is empty.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="ValueTask"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async ValueTask Updated_WhenDistCacheEmpty_ReturnsNotFound()
+    {
+        // Arrange - ensure no data anywhere
+        var filePath = Path.Combine(Path.GetTempPath(), Constants.GEO_REF_DATA_FILE_NAME);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+
+        // Clear Redis
+        var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
+        await redis.GetDatabase().KeyDeleteAsync(Constants.DIST_CACHE_KEY_GEO_REF_DATA);
+
+        var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();
+        var message = new GeoRefDataUpdated("2.0.0");
+
+        // Act
+        var result = await handler.HandleAsync(message, Ct);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
+    }
+
+    /// <summary>
+    /// Tests that the Updated handler succeeds and populates caches when new version is in Redis.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="ValueTask"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async ValueTask Updated_WhenNewVersionInRedis_PopulatesCaches()
+    {
+        // Arrange - put new version data in Redis only
+        var newVersionData = new GetReferenceDataResponse
+        {
+            Version = "2.0.0",
+            Countries = { { "CA", new CountryDTO { DisplayName = "Canada" } } },
+        };
+
+        var setInDistHandler = _services.GetRequiredService<IUpdate.ISetHandler<GetReferenceDataResponse>>();
+        await setInDistHandler.HandleAsync(
+            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, newVersionData, null),
+            Ct);
+
+        var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();
+        var message = new GeoRefDataUpdated("2.0.0");
+
+        // Act
+        var result = await handler.HandleAsync(message, Ct);
+
+        // Assert - handler succeeded
+        Assert.True(result.Success);
+
+        // Assert - data now in memory cache
+        var memResult = await _services.GetRequiredService<IQueries.IGetFromMemHandler>()
+            .HandleAsync(new(), Ct);
+        Assert.True(memResult.Success);
+        Assert.Equal("2.0.0", memResult.Data!.Data.Version);
+
+        // Assert - data now on disk
+        var diskResult = await _services.GetRequiredService<IQueries.IGetFromDiskHandler>()
+            .HandleAsync(new(), Ct);
+        Assert.True(diskResult.Success);
+        Assert.Equal("2.0.0", diskResult.Data!.Data.Version);
+    }
+
+    /// <summary>
+    /// Tests that the Updated handler returns OK immediately when version is already current.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="ValueTask"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async ValueTask Updated_WhenVersionAlreadyCurrent_ReturnsOkImmediately()
+    {
+        // Arrange - put data in memory with specific version
+        var setInMemHandler = _services.GetRequiredService<ICommands.ISetInMemHandler>();
+        await setInMemHandler.HandleAsync(new(TestHelpers.TestGeoRefData), Ct);
+
+        var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();
+        var message = new GeoRefDataUpdated(TestHelpers.TestGeoRefData.Version);
+
+        // Act
+        var result = await handler.HandleAsync(message, Ct);
+
+        // Assert
         Assert.True(result.Success);
     }
 }
