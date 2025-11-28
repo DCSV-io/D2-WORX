@@ -1774,6 +1774,20 @@ public static class CountrySeeding
                     // PrimaryLocaleIETFBCP47Tag = "en-KI",
                 },
 
+                // Kosovo
+                new Country
+                {
+                    ISO31661Alpha2Code = "XK",
+                    ISO31661Alpha3Code = "XKX",
+                    ISO31661NumericCode = "383",
+                    DisplayName = "Kosovo",
+                    OfficialName = "Republic of Kosovo",
+                    PhoneNumberPrefix = "383",
+                    PrimaryCurrencyISO4217AlphaCode = "EUR",
+
+                    // PrimaryLocaleIETFBCP47Tag = "sq-XK",
+                },
+
                 // North Korea
                 new Country
                 {
