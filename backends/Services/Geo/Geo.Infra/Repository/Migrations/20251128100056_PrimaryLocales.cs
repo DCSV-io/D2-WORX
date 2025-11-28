@@ -1,9 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿// -----------------------------------------------------------------------
+// <copyright file="20251128100056_PrimaryLocales.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
 
 #nullable disable
 
 namespace D2.Geo.Infra.Repository.Migrations
 {
+    using Microsoft.EntityFrameworkCore.Migrations;
+
     /// <inheritdoc />
     public partial class PrimaryLocales : Migration
     {
