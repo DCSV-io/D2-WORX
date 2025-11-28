@@ -95,7 +95,7 @@ public class GeoRefDataTests : IAsyncLifetime
         var setInDistHandler = _services.GetRequiredService<
         IUpdate.ISetHandler<GetReferenceDataResponse>>();
         await setInDistHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, TestHelpers.TestGeoRefData, null),
+            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, TestHelpers.TestGeoRefData),
             Ct);
 
         var getHandler = _services.GetRequiredService<IComplex.IGetHandler>();
@@ -191,7 +191,7 @@ public class GeoRefDataTests : IAsyncLifetime
         var setInDistHandler = _services.GetRequiredService<
             IUpdate.ISetHandler<GetReferenceDataResponse>>();
         await setInDistHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, TestHelpers.TestGeoRefData, null),
+            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, TestHelpers.TestGeoRefData),
             Ct);
 
         var getHandler = _services.GetRequiredService<IComplex.IGetHandler>();
@@ -313,7 +313,7 @@ public class GeoRefDataTests : IAsyncLifetime
 
         var setInDistHandler = _services.GetRequiredService<IUpdate.ISetHandler<GetReferenceDataResponse>>();
         await setInDistHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, newVersionData, null),
+            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, newVersionData),
             Ct);
 
         var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();

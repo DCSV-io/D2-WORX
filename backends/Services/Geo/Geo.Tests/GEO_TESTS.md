@@ -4,6 +4,18 @@ Integration and unit tests for Geo domain entities, value objects, and infrastru
 
 ## Integration Tests
 
+### App
+
+#### CQRS
+
+| File Name                                  | Description                                                                                                                                               |
+|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [GetTests.cs](Integration/App/GetTests.cs) | Integration tests for publisher-side Get handler verifying multi-tier cache cascade, DB fetch with notification, SetInDist failure prevents notification. |
+
+### Infra
+
+#### Repository
+
 | File Name                                                                                  | Description                                                                                                                                                   |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [GetReferenceDataTests.cs](Integration/Infra/Repository/Handlers/GetReferenceDataTests.cs) | Integration tests using Testcontainers.PostgreSql to verify GetReferenceData handler returns all seeded reference data with correct counts and relationships. |
