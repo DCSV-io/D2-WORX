@@ -40,8 +40,7 @@ public static class CountrySeeding
                     OfficialName = "United States of America",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-US",
+                    PrimaryLocaleIETFBCP47Tag = "en-US",
                 },
 
                 // Canada
@@ -54,8 +53,7 @@ public static class CountrySeeding
                     OfficialName = "Canada",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "CAD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-CA",
+                    PrimaryLocaleIETFBCP47Tag = "en-CA",
                 },
 
                 // Afghanistan
@@ -128,8 +126,7 @@ public static class CountrySeeding
                     OfficialName = "American Samoa",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-AS",
+                    PrimaryLocaleIETFBCP47Tag = "en-AS",
                 },
 
                 // Andorra
@@ -171,9 +168,9 @@ public static class CountrySeeding
                     DisplayName = "Anguilla",
                     OfficialName = "Anguilla",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-AI",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-AI",
                 },
 
                 // Antarctica (Antarctic Treaty System)
@@ -199,9 +196,9 @@ public static class CountrySeeding
                     DisplayName = "Antigua and Barbuda",
                     OfficialName = "Antigua and Barbuda",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-AG",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-AG",
                 },
 
                 // Argentina
@@ -213,9 +210,9 @@ public static class CountrySeeding
                     DisplayName = "Argentina",
                     OfficialName = "Argentine Republic",
                     PhoneNumberPrefix = "54",
+                    PrimaryLocaleIETFBCP47Tag = "es-AR",
 
                     // PrimaryCurrencyISO4217AlphaCode = "ARS",
-                    // PrimaryLocaleIETFBCP47Tag = "es-AR",
                 },
 
                 // Armenia
@@ -257,9 +254,9 @@ public static class CountrySeeding
                     DisplayName = "Australia",
                     OfficialName = "Commonwealth of Australia",
                     PhoneNumberPrefix = "61",
+                    PrimaryLocaleIETFBCP47Tag = "en-AU",
 
                     // PrimaryCurrencyISO4217AlphaCode = "AUD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-AU",
                 },
 
                 // Austria
@@ -272,8 +269,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of Austria",
                     PhoneNumberPrefix = "43",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "de-AT",
+                    PrimaryLocaleIETFBCP47Tag = "de-AT",
                 },
 
                 // Azerbaijan
@@ -299,9 +295,9 @@ public static class CountrySeeding
                     DisplayName = "Bahamas",
                     OfficialName = "Commonwealth of The Bahamas",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-BS",
 
                     // PrimaryCurrencyISO4217AlphaCode = "BSD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-BS",
                 },
 
                 // Bahrain
@@ -341,9 +337,9 @@ public static class CountrySeeding
                     DisplayName = "Barbados",
                     OfficialName = "Barbados",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-BB",
 
                     // PrimaryCurrencyISO4217AlphaCode = "BBD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-BB",
                 },
 
                 // Belarus
@@ -383,9 +379,9 @@ public static class CountrySeeding
                     DisplayName = "Belize",
                     OfficialName = "Belize",
                     PhoneNumberPrefix = "501",
+                    PrimaryLocaleIETFBCP47Tag = "en-BZ",
 
                     // PrimaryCurrencyISO4217AlphaCode = "BZD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-BZ",
                 },
 
                 // Benin
@@ -397,9 +393,9 @@ public static class CountrySeeding
                     DisplayName = "Benin",
                     OfficialName = "Republic of Benin",
                     PhoneNumberPrefix = "229",
+                    PrimaryLocaleIETFBCP47Tag = "fr-BJ",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XOF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-BJ",
                 },
 
                 // Bermuda (United Kingdom)
@@ -413,9 +409,9 @@ public static class CountrySeeding
                     DisplayName = "Bermuda",
                     OfficialName = "Bermuda",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-BM",
 
                     // PrimaryCurrencyISO4217AlphaCode = "BMD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-BM",
                 },
 
                 // Bhutan
@@ -441,9 +437,9 @@ public static class CountrySeeding
                     DisplayName = "Bolivia",
                     OfficialName = "Plurinational State of Bolivia",
                     PhoneNumberPrefix = "591",
+                    PrimaryLocaleIETFBCP47Tag = "es-BO",
 
                     // PrimaryCurrencyISO4217AlphaCode = "BOB",
-                    // PrimaryLocaleIETFBCP47Tag = "es-BO",
                 },
 
                 // Bonaire, Sint Eustatius and Saba (Netherlands)
@@ -485,9 +481,9 @@ public static class CountrySeeding
                     DisplayName = "Botswana",
                     OfficialName = "Republic of Botswana",
                     PhoneNumberPrefix = "267",
+                    PrimaryLocaleIETFBCP47Tag = "en-BW",
 
                     // PrimaryCurrencyISO4217AlphaCode = "BWP",
-                    // PrimaryLocaleIETFBCP47Tag = "en-BW",
                 },
 
                 // Bouvet Island (Norway)
@@ -529,8 +525,7 @@ public static class CountrySeeding
                     OfficialName = "British Indian Ocean Territory",
                     PhoneNumberPrefix = "246",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-IO",
+                    PrimaryLocaleIETFBCP47Tag = "en-IO",
                 },
 
                 // British Virgin Islands (United Kingdom)
@@ -545,8 +540,7 @@ public static class CountrySeeding
                     OfficialName = "Virgin Islands",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-VG",
+                    PrimaryLocaleIETFBCP47Tag = "en-VG",
                 },
 
                 // Brunei
@@ -586,9 +580,9 @@ public static class CountrySeeding
                     DisplayName = "Burkina Faso",
                     OfficialName = "Burkina Faso",
                     PhoneNumberPrefix = "226",
+                    PrimaryLocaleIETFBCP47Tag = "fr-BF",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XOF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-BF",
                 },
 
                 // Burundi
@@ -600,9 +594,9 @@ public static class CountrySeeding
                     DisplayName = "Burundi",
                     OfficialName = "Republic of Burundi",
                     PhoneNumberPrefix = "257",
+                    PrimaryLocaleIETFBCP47Tag = "fr-BI",
 
                     // PrimaryCurrencyISO4217AlphaCode = "BIF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-BI",
                 },
 
                 // Cabo Verde
@@ -642,9 +636,9 @@ public static class CountrySeeding
                     DisplayName = "Cameroon",
                     OfficialName = "Republic of Cameroon",
                     PhoneNumberPrefix = "237",
+                    PrimaryLocaleIETFBCP47Tag = "fr-CM",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XAF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-CM",
                 },
 
                 // Cayman Islands (United Kingdom)
@@ -658,9 +652,9 @@ public static class CountrySeeding
                     DisplayName = "Cayman Islands",
                     OfficialName = "Cayman Islands",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-KY",
 
                     // PrimaryCurrencyISO4217AlphaCode = "KYD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-KY",
                 },
 
                 // Central African Republic
@@ -672,9 +666,9 @@ public static class CountrySeeding
                     DisplayName = "Central African Republic",
                     OfficialName = "Central African Republic",
                     PhoneNumberPrefix = "236",
+                    PrimaryLocaleIETFBCP47Tag = "fr-CF",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XAF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-CF",
                 },
 
                 // Chad
@@ -686,9 +680,9 @@ public static class CountrySeeding
                     DisplayName = "Chad",
                     OfficialName = "Republic of Chad",
                     PhoneNumberPrefix = "235",
+                    PrimaryLocaleIETFBCP47Tag = "fr-TD",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XAF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-TD",
                 },
 
                 // Chile
@@ -700,9 +694,9 @@ public static class CountrySeeding
                     DisplayName = "Chile",
                     OfficialName = "Republic of Chile",
                     PhoneNumberPrefix = "56",
+                    PrimaryLocaleIETFBCP47Tag = "es-CL",
 
                     // PrimaryCurrencyISO4217AlphaCode = "CLP",
-                    // PrimaryLocaleIETFBCP47Tag = "es-CL",
                 },
 
                 // China
@@ -744,9 +738,9 @@ public static class CountrySeeding
                     DisplayName = "Christmas Island",
                     OfficialName = "Territory of Christmas Island",
                     PhoneNumberPrefix = "61",
+                    PrimaryLocaleIETFBCP47Tag = "en-CX",
 
                     // PrimaryCurrencyISO4217AlphaCode = "AUD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-CX",
                 },
 
                 // Cocos (Keeling) Islands (Australia)
@@ -760,9 +754,9 @@ public static class CountrySeeding
                     DisplayName = "Cocos (Keeling) Islands",
                     OfficialName = "Territory of Cocos (Keeling) Islands",
                     PhoneNumberPrefix = "61",
+                    PrimaryLocaleIETFBCP47Tag = "en-CC",
 
                     // PrimaryCurrencyISO4217AlphaCode = "AUD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-CC",
                 },
 
                 // Colombia
@@ -774,9 +768,9 @@ public static class CountrySeeding
                     DisplayName = "Colombia",
                     OfficialName = "Republic of Colombia",
                     PhoneNumberPrefix = "57",
+                    PrimaryLocaleIETFBCP47Tag = "es-CO",
 
                     // PrimaryCurrencyISO4217AlphaCode = "COP",
-                    // PrimaryLocaleIETFBCP47Tag = "es-CO",
                 },
 
                 // Comoros
@@ -802,9 +796,9 @@ public static class CountrySeeding
                     DisplayName = "DR Congo",
                     OfficialName = "Democratic Republic of the Congo",
                     PhoneNumberPrefix = "243",
+                    PrimaryLocaleIETFBCP47Tag = "fr-CD",
 
                     // PrimaryCurrencyISO4217AlphaCode = "CDF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-CD",
                 },
 
                 // Congo
@@ -816,9 +810,9 @@ public static class CountrySeeding
                     DisplayName = "Congo",
                     OfficialName = "Republic of the Congo",
                     PhoneNumberPrefix = "242",
+                    PrimaryLocaleIETFBCP47Tag = "fr-CG",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XAF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-CG",
                 },
 
                 // Cook Islands (New Zealand)
@@ -832,9 +826,9 @@ public static class CountrySeeding
                     DisplayName = "Cook Islands",
                     OfficialName = "Cook Islands",
                     PhoneNumberPrefix = "682",
+                    PrimaryLocaleIETFBCP47Tag = "en-CK",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NZD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-CK",
                 },
 
                 // Costa Rica
@@ -846,9 +840,9 @@ public static class CountrySeeding
                     DisplayName = "Costa Rica",
                     OfficialName = "Republic of Costa Rica",
                     PhoneNumberPrefix = "506",
+                    PrimaryLocaleIETFBCP47Tag = "es-CR",
 
                     // PrimaryCurrencyISO4217AlphaCode = "CRC",
-                    // PrimaryLocaleIETFBCP47Tag = "es-CR",
                 },
 
                 // Côte d'Ivoire
@@ -860,9 +854,9 @@ public static class CountrySeeding
                     DisplayName = "Côte d'Ivoire",
                     OfficialName = "Republic of Côte d'Ivoire",
                     PhoneNumberPrefix = "225",
+                    PrimaryLocaleIETFBCP47Tag = "fr-CI",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XOF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-CI",
                 },
 
                 // Croatia
@@ -888,9 +882,9 @@ public static class CountrySeeding
                     DisplayName = "Cuba",
                     OfficialName = "Republic of Cuba",
                     PhoneNumberPrefix = "53",
+                    PrimaryLocaleIETFBCP47Tag = "es-CU",
 
                     // PrimaryCurrencyISO4217AlphaCode = "CUP",
-                    // PrimaryLocaleIETFBCP47Tag = "es-CU",
                 },
 
                 // Curaçao (Netherlands)
@@ -960,9 +954,9 @@ public static class CountrySeeding
                     DisplayName = "Djibouti",
                     OfficialName = "Republic of Djibouti",
                     PhoneNumberPrefix = "253",
+                    PrimaryLocaleIETFBCP47Tag = "fr-DJ",
 
                     // PrimaryCurrencyISO4217AlphaCode = "DJF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-DJ",
                 },
 
                 // Dominica
@@ -974,9 +968,9 @@ public static class CountrySeeding
                     DisplayName = "Dominica",
                     OfficialName = "Commonwealth of Dominica",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-DM",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-DM",
                 },
 
                 // Dominican Republic
@@ -988,9 +982,9 @@ public static class CountrySeeding
                     DisplayName = "Dominican Republic",
                     OfficialName = "Dominican Republic",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "es-DO",
 
                     // PrimaryCurrencyISO4217AlphaCode = "DOP",
-                    // PrimaryLocaleIETFBCP47Tag = "es-DO",
                 },
 
                 // Ecuador
@@ -1003,8 +997,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of Ecuador",
                     PhoneNumberPrefix = "593",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "es-EC",
+                    PrimaryLocaleIETFBCP47Tag = "es-EC",
                 },
 
                 // Egypt
@@ -1031,8 +1024,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of El Salvador",
                     PhoneNumberPrefix = "503",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "es-SV",
+                    PrimaryLocaleIETFBCP47Tag = "es-SV",
                 },
 
                 // Equatorial Guinea
@@ -1044,9 +1036,9 @@ public static class CountrySeeding
                     DisplayName = "Equatorial Guinea",
                     OfficialName = "Republic of Equatorial Guinea",
                     PhoneNumberPrefix = "240",
+                    PrimaryLocaleIETFBCP47Tag = "es-GQ",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XAF",
-                    // PrimaryLocaleIETFBCP47Tag = "es-GQ",
                 },
 
                 // Eritrea
@@ -1086,9 +1078,9 @@ public static class CountrySeeding
                     DisplayName = "Eswatini",
                     OfficialName = "Kingdom of Eswatini",
                     PhoneNumberPrefix = "268",
+                    PrimaryLocaleIETFBCP47Tag = "en-SZ",
 
                     // PrimaryCurrencyISO4217AlphaCode = "SZL",
-                    // PrimaryLocaleIETFBCP47Tag = "en-SZ",
                 },
 
                 // Ethiopia
@@ -1116,9 +1108,9 @@ public static class CountrySeeding
                     DisplayName = "Falkland Islands",
                     OfficialName = "Falkland Islands",
                     PhoneNumberPrefix = "500",
+                    PrimaryLocaleIETFBCP47Tag = "en-FK",
 
                     // PrimaryCurrencyISO4217AlphaCode = "FKP",
-                    // PrimaryLocaleIETFBCP47Tag = "en-FK",
                 },
 
                 // Faroe Islands (Denmark)
@@ -1146,9 +1138,9 @@ public static class CountrySeeding
                     DisplayName = "Fiji",
                     OfficialName = "Republic of Fiji",
                     PhoneNumberPrefix = "679",
+                    PrimaryLocaleIETFBCP47Tag = "en-FJ",
 
                     // PrimaryCurrencyISO4217AlphaCode = "FJD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-FJ",
                 },
 
                 // Finland
@@ -1175,8 +1167,7 @@ public static class CountrySeeding
                     OfficialName = "French Republic",
                     PhoneNumberPrefix = "33",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-FR",
+                    PrimaryLocaleIETFBCP47Tag = "fr-FR",
                 },
 
                 // French Guiana (France)
@@ -1191,8 +1182,7 @@ public static class CountrySeeding
                     OfficialName = "French Guiana",
                     PhoneNumberPrefix = "594",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-GF",
+                    PrimaryLocaleIETFBCP47Tag = "fr-GF",
                 },
 
                 // French Polynesia (France)
@@ -1206,9 +1196,9 @@ public static class CountrySeeding
                     DisplayName = "French Polynesia",
                     OfficialName = "French Polynesia",
                     PhoneNumberPrefix = "689",
+                    PrimaryLocaleIETFBCP47Tag = "fr-PF",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XPF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-PF",
                 },
 
                 // French Southern Territories (France)
@@ -1236,9 +1226,9 @@ public static class CountrySeeding
                     DisplayName = "Gabon",
                     OfficialName = "Gabonese Republic",
                     PhoneNumberPrefix = "241",
+                    PrimaryLocaleIETFBCP47Tag = "fr-GA",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XAF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-GA",
                 },
 
                 // Gambia
@@ -1250,9 +1240,9 @@ public static class CountrySeeding
                     DisplayName = "Gambia",
                     OfficialName = "Republic of The Gambia",
                     PhoneNumberPrefix = "220",
+                    PrimaryLocaleIETFBCP47Tag = "en-GM",
 
                     // PrimaryCurrencyISO4217AlphaCode = "GMD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-GM",
                 },
 
                 // Georgia
@@ -1279,8 +1269,7 @@ public static class CountrySeeding
                     OfficialName = "Federal Republic of Germany",
                     PhoneNumberPrefix = "49",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "de-DE",
+                    PrimaryLocaleIETFBCP47Tag = "de-DE",
                 },
 
                 // Ghana
@@ -1292,9 +1281,9 @@ public static class CountrySeeding
                     DisplayName = "Ghana",
                     OfficialName = "Republic of Ghana",
                     PhoneNumberPrefix = "233",
+                    PrimaryLocaleIETFBCP47Tag = "en-GH",
 
                     // PrimaryCurrencyISO4217AlphaCode = "GHS",
-                    // PrimaryLocaleIETFBCP47Tag = "en-GH",
                 },
 
                 // Gibraltar (United Kingdom)
@@ -1308,9 +1297,9 @@ public static class CountrySeeding
                     DisplayName = "Gibraltar",
                     OfficialName = "Gibraltar",
                     PhoneNumberPrefix = "350",
+                    PrimaryLocaleIETFBCP47Tag = "en-GI",
 
                     // PrimaryCurrencyISO4217AlphaCode = "GIP",
-                    // PrimaryLocaleIETFBCP47Tag = "en-GI",
                 },
 
                 // Greece
@@ -1352,9 +1341,9 @@ public static class CountrySeeding
                     DisplayName = "Grenada",
                     OfficialName = "Grenada",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-GD",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-GD",
                 },
 
                 // Guadeloupe (France)
@@ -1369,8 +1358,7 @@ public static class CountrySeeding
                     OfficialName = "Guadeloupe",
                     PhoneNumberPrefix = "590",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-GP",
+                    PrimaryLocaleIETFBCP47Tag = "fr-GP",
                 },
 
                 // Guam (United States)
@@ -1385,8 +1373,7 @@ public static class CountrySeeding
                     OfficialName = "Guam",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-GU",
+                    PrimaryLocaleIETFBCP47Tag = "en-GU",
                 },
 
                 // Guatemala
@@ -1398,9 +1385,9 @@ public static class CountrySeeding
                     DisplayName = "Guatemala",
                     OfficialName = "Republic of Guatemala",
                     PhoneNumberPrefix = "502",
+                    PrimaryLocaleIETFBCP47Tag = "es-GT",
 
                     // PrimaryCurrencyISO4217AlphaCode = "GTQ",
-                    // PrimaryLocaleIETFBCP47Tag = "es-GT",
                 },
 
                 // Guernsey (United Kingdom)
@@ -1415,8 +1402,7 @@ public static class CountrySeeding
                     OfficialName = "Bailiwick of Guernsey",
                     PhoneNumberPrefix = "44",
                     PrimaryCurrencyISO4217AlphaCode = "GBP",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-GG",
+                    PrimaryLocaleIETFBCP47Tag = "en-GG",
                 },
 
                 // Guinea
@@ -1428,9 +1414,9 @@ public static class CountrySeeding
                     DisplayName = "Guinea",
                     OfficialName = "Republic of Guinea",
                     PhoneNumberPrefix = "224",
+                    PrimaryLocaleIETFBCP47Tag = "fr-GN",
 
                     // PrimaryCurrencyISO4217AlphaCode = "GNF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-GN",
                 },
 
                 // Guinea-Bissau
@@ -1456,9 +1442,9 @@ public static class CountrySeeding
                     DisplayName = "Guyana",
                     OfficialName = "Co-operative Republic of Guyana",
                     PhoneNumberPrefix = "592",
+                    PrimaryLocaleIETFBCP47Tag = "en-GY",
 
                     // PrimaryCurrencyISO4217AlphaCode = "GYD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-GY",
                 },
 
                 // Haiti
@@ -1470,9 +1456,9 @@ public static class CountrySeeding
                     DisplayName = "Haiti",
                     OfficialName = "Republic of Haiti",
                     PhoneNumberPrefix = "509",
+                    PrimaryLocaleIETFBCP47Tag = "fr-HT",
 
                     // PrimaryCurrencyISO4217AlphaCode = "HTG",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-HT",
                 },
 
                 // Heard Island and McDonald Islands (Australia)
@@ -1498,8 +1484,7 @@ public static class CountrySeeding
                     OfficialName = "Holy See",
                     PhoneNumberPrefix = "39",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "it-VA",
+                    PrimaryLocaleIETFBCP47Tag = "it-VA",
                 },
 
                 // Honduras
@@ -1511,9 +1496,9 @@ public static class CountrySeeding
                     DisplayName = "Honduras",
                     OfficialName = "Republic of Honduras",
                     PhoneNumberPrefix = "504",
+                    PrimaryLocaleIETFBCP47Tag = "es-HN",
 
                     // PrimaryCurrencyISO4217AlphaCode = "HNL",
-                    // PrimaryLocaleIETFBCP47Tag = "es-HN",
                 },
 
                 // Hong Kong (China)
@@ -1626,8 +1611,7 @@ public static class CountrySeeding
                     OfficialName = "Ireland",
                     PhoneNumberPrefix = "353",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-IE",
+                    PrimaryLocaleIETFBCP47Tag = "en-IE",
                 },
 
                 // Isle of Man (United Kingdom)
@@ -1642,8 +1626,7 @@ public static class CountrySeeding
                     OfficialName = "Isle of Man",
                     PhoneNumberPrefix = "44",
                     PrimaryCurrencyISO4217AlphaCode = "GBP",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-IM",
+                    PrimaryLocaleIETFBCP47Tag = "en-IM",
                 },
 
                 // Israel
@@ -1670,8 +1653,7 @@ public static class CountrySeeding
                     OfficialName = "Italian Republic",
                     PhoneNumberPrefix = "39",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "it-IT",
+                    PrimaryLocaleIETFBCP47Tag = "it-IT",
                 },
 
                 // Jamaica
@@ -1683,9 +1665,9 @@ public static class CountrySeeding
                     DisplayName = "Jamaica",
                     OfficialName = "Jamaica",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-JM",
 
                     // PrimaryCurrencyISO4217AlphaCode = "JMD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-JM",
                 },
 
                 // Japan
@@ -1698,8 +1680,7 @@ public static class CountrySeeding
                     OfficialName = "Japan",
                     PhoneNumberPrefix = "81",
                     PrimaryCurrencyISO4217AlphaCode = "JPY",
-
-                    // PrimaryLocaleIETFBCP47Tag = "ja-JP",
+                    PrimaryLocaleIETFBCP47Tag = "ja-JP",
                 },
 
                 // Jersey (United Kingdom)
@@ -1714,8 +1695,7 @@ public static class CountrySeeding
                     OfficialName = "Bailiwick of Jersey",
                     PhoneNumberPrefix = "44",
                     PrimaryCurrencyISO4217AlphaCode = "GBP",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-JE",
+                    PrimaryLocaleIETFBCP47Tag = "en-JE",
                 },
 
                 // Jordan
@@ -1769,9 +1749,9 @@ public static class CountrySeeding
                     DisplayName = "Kiribati",
                     OfficialName = "Republic of Kiribati",
                     PhoneNumberPrefix = "686",
+                    PrimaryLocaleIETFBCP47Tag = "en-KI",
 
                     // PrimaryCurrencyISO4217AlphaCode = "AUD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-KI",
                 },
 
                 // Kosovo
@@ -1895,9 +1875,9 @@ public static class CountrySeeding
                     DisplayName = "Lesotho",
                     OfficialName = "Kingdom of Lesotho",
                     PhoneNumberPrefix = "266",
+                    PrimaryLocaleIETFBCP47Tag = "en-LS",
 
                     // PrimaryCurrencyISO4217AlphaCode = "LSL",
-                    // PrimaryLocaleIETFBCP47Tag = "en-LS",
                 },
 
                 // Liberia
@@ -1909,9 +1889,9 @@ public static class CountrySeeding
                     DisplayName = "Liberia",
                     OfficialName = "Republic of Liberia",
                     PhoneNumberPrefix = "231",
+                    PrimaryLocaleIETFBCP47Tag = "en-LR",
 
                     // PrimaryCurrencyISO4217AlphaCode = "LRD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-LR",
                 },
 
                 // Libya
@@ -1937,9 +1917,9 @@ public static class CountrySeeding
                     DisplayName = "Liechtenstein",
                     OfficialName = "Principality of Liechtenstein",
                     PhoneNumberPrefix = "423",
+                    PrimaryLocaleIETFBCP47Tag = "de-LI",
 
                     // PrimaryCurrencyISO4217AlphaCode = "CHF",
-                    // PrimaryLocaleIETFBCP47Tag = "de-LI",
                 },
 
                 // Lithuania
@@ -2009,9 +1989,9 @@ public static class CountrySeeding
                     DisplayName = "Malawi",
                     OfficialName = "Republic of Malawi",
                     PhoneNumberPrefix = "265",
+                    PrimaryLocaleIETFBCP47Tag = "en-MW",
 
                     // PrimaryCurrencyISO4217AlphaCode = "MWK",
-                    // PrimaryLocaleIETFBCP47Tag = "en-MW",
                 },
 
                 // Malaysia
@@ -2051,9 +2031,9 @@ public static class CountrySeeding
                     DisplayName = "Mali",
                     OfficialName = "Republic of Mali",
                     PhoneNumberPrefix = "223",
+                    PrimaryLocaleIETFBCP47Tag = "fr-ML",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XOF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-ML",
                 },
 
                 // Malta
@@ -2080,8 +2060,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of the Marshall Islands",
                     PhoneNumberPrefix = "692",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-MH",
+                    PrimaryLocaleIETFBCP47Tag = "en-MH",
                 },
 
                 // Martinique (France)
@@ -2096,8 +2075,7 @@ public static class CountrySeeding
                     OfficialName = "Martinique",
                     PhoneNumberPrefix = "596",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-MQ",
+                    PrimaryLocaleIETFBCP47Tag = "fr-MQ",
                 },
 
                 // Mauritania
@@ -2123,9 +2101,9 @@ public static class CountrySeeding
                     DisplayName = "Mauritius",
                     OfficialName = "Republic of Mauritius",
                     PhoneNumberPrefix = "230",
+                    PrimaryLocaleIETFBCP47Tag = "en-MU",
 
                     // PrimaryCurrencyISO4217AlphaCode = "MUR",
-                    // PrimaryLocaleIETFBCP47Tag = "en-MU",
                 },
 
                 // Mayotte (France)
@@ -2140,8 +2118,7 @@ public static class CountrySeeding
                     OfficialName = "Department of Mayotte",
                     PhoneNumberPrefix = "262",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-YT",
+                    PrimaryLocaleIETFBCP47Tag = "fr-YT",
                 },
 
                 // Mexico
@@ -2153,9 +2130,9 @@ public static class CountrySeeding
                     DisplayName = "Mexico",
                     OfficialName = "United Mexican States",
                     PhoneNumberPrefix = "52",
+                    PrimaryLocaleIETFBCP47Tag = "es-MX",
 
                     // PrimaryCurrencyISO4217AlphaCode = "MXN",
-                    // PrimaryLocaleIETFBCP47Tag = "es-MX",
                 },
 
                 // Micronesia
@@ -2168,8 +2145,7 @@ public static class CountrySeeding
                     OfficialName = "Federated States of Micronesia",
                     PhoneNumberPrefix = "691",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-FM",
+                    PrimaryLocaleIETFBCP47Tag = "en-FM",
                 },
 
                 // Moldova
@@ -2196,8 +2172,7 @@ public static class CountrySeeding
                     OfficialName = "Principality of Monaco",
                     PhoneNumberPrefix = "377",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-MC",
+                    PrimaryLocaleIETFBCP47Tag = "fr-MC",
                 },
 
                 // Mongolia
@@ -2239,9 +2214,9 @@ public static class CountrySeeding
                     DisplayName = "Montserrat",
                     OfficialName = "Montserrat",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-MS",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-MS",
                 },
 
                 // Morocco
@@ -2295,9 +2270,9 @@ public static class CountrySeeding
                     DisplayName = "Namibia",
                     OfficialName = "Republic of Namibia",
                     PhoneNumberPrefix = "264",
+                    PrimaryLocaleIETFBCP47Tag = "en-NA",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NAD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-NA",
                 },
 
                 // Nauru
@@ -2309,9 +2284,9 @@ public static class CountrySeeding
                     DisplayName = "Nauru",
                     OfficialName = "Republic of Nauru",
                     PhoneNumberPrefix = "674",
+                    PrimaryLocaleIETFBCP47Tag = "en-NR",
 
                     // PrimaryCurrencyISO4217AlphaCode = "AUD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-NR",
                 },
 
                 // Nepal
@@ -2353,9 +2328,9 @@ public static class CountrySeeding
                     DisplayName = "New Caledonia",
                     OfficialName = "New Caledonia",
                     PhoneNumberPrefix = "687",
+                    PrimaryLocaleIETFBCP47Tag = "fr-NC",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XPF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-NC",
                 },
 
                 // New Zealand
@@ -2367,9 +2342,9 @@ public static class CountrySeeding
                     DisplayName = "New Zealand",
                     OfficialName = "New Zealand",
                     PhoneNumberPrefix = "64",
+                    PrimaryLocaleIETFBCP47Tag = "en-NZ",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NZD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-NZ",
                 },
 
                 // Nicaragua
@@ -2381,9 +2356,9 @@ public static class CountrySeeding
                     DisplayName = "Nicaragua",
                     OfficialName = "Republic of Nicaragua",
                     PhoneNumberPrefix = "505",
+                    PrimaryLocaleIETFBCP47Tag = "es-NI",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NIO",
-                    // PrimaryLocaleIETFBCP47Tag = "es-NI",
                 },
 
                 // Niger
@@ -2395,9 +2370,9 @@ public static class CountrySeeding
                     DisplayName = "Niger",
                     OfficialName = "Republic of the Niger",
                     PhoneNumberPrefix = "227",
+                    PrimaryLocaleIETFBCP47Tag = "fr-NE",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XOF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-NE",
                 },
 
                 // Nigeria
@@ -2409,9 +2384,9 @@ public static class CountrySeeding
                     DisplayName = "Nigeria",
                     OfficialName = "Federal Republic of Nigeria",
                     PhoneNumberPrefix = "234",
+                    PrimaryLocaleIETFBCP47Tag = "en-NG",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NGN",
-                    // PrimaryLocaleIETFBCP47Tag = "en-NG",
                 },
 
                 // Niue (New Zealand)
@@ -2425,9 +2400,9 @@ public static class CountrySeeding
                     DisplayName = "Niue",
                     OfficialName = "Niue",
                     PhoneNumberPrefix = "683",
+                    PrimaryLocaleIETFBCP47Tag = "en-NU",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NZD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-NU",
                 },
 
                 // Norfolk Island (Australia)
@@ -2441,9 +2416,9 @@ public static class CountrySeeding
                     DisplayName = "Norfolk Island",
                     OfficialName = "Territory of Norfolk Island",
                     PhoneNumberPrefix = "672",
+                    PrimaryLocaleIETFBCP47Tag = "en-NF",
 
                     // PrimaryCurrencyISO4217AlphaCode = "AUD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-NF",
                 },
 
                 // North Macedonia
@@ -2472,8 +2447,7 @@ public static class CountrySeeding
                     OfficialName = "Commonwealth of the Northern Mariana Islands",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-MP",
+                    PrimaryLocaleIETFBCP47Tag = "en-MP",
                 },
 
                 // Norway
@@ -2528,8 +2502,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of Palau",
                     PhoneNumberPrefix = "680",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-PW",
+                    PrimaryLocaleIETFBCP47Tag = "en-PW",
                 },
 
                 // Palestine
@@ -2556,8 +2529,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of Panama",
                     PhoneNumberPrefix = "507",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "es-PA",
+                    PrimaryLocaleIETFBCP47Tag = "es-PA",
                 },
 
                 // Papua New Guinea
@@ -2569,9 +2541,9 @@ public static class CountrySeeding
                     DisplayName = "Papua New Guinea",
                     OfficialName = "Independent State of Papua New Guinea",
                     PhoneNumberPrefix = "675",
+                    PrimaryLocaleIETFBCP47Tag = "en-PG",
 
                     // PrimaryCurrencyISO4217AlphaCode = "PGK",
-                    // PrimaryLocaleIETFBCP47Tag = "en-PG",
                 },
 
                 // Paraguay
@@ -2583,9 +2555,9 @@ public static class CountrySeeding
                     DisplayName = "Paraguay",
                     OfficialName = "Republic of Paraguay",
                     PhoneNumberPrefix = "595",
+                    PrimaryLocaleIETFBCP47Tag = "es-PY",
 
                     // PrimaryCurrencyISO4217AlphaCode = "PYG",
-                    // PrimaryLocaleIETFBCP47Tag = "es-PY",
                 },
 
                 // Peru
@@ -2597,9 +2569,9 @@ public static class CountrySeeding
                     DisplayName = "Peru",
                     OfficialName = "Republic of Peru",
                     PhoneNumberPrefix = "51",
+                    PrimaryLocaleIETFBCP47Tag = "es-PE",
 
                     // PrimaryCurrencyISO4217AlphaCode = "PEN",
-                    // PrimaryLocaleIETFBCP47Tag = "es-PE",
                 },
 
                 // Philippines
@@ -2611,9 +2583,9 @@ public static class CountrySeeding
                     DisplayName = "Philippines",
                     OfficialName = "Republic of the Philippines",
                     PhoneNumberPrefix = "63",
+                    PrimaryLocaleIETFBCP47Tag = "en-PH",
 
                     // PrimaryCurrencyISO4217AlphaCode = "PHP",
-                    // PrimaryLocaleIETFBCP47Tag = "en-PH",
                 },
 
                 // Pitcairn Islands (United Kingdom)
@@ -2627,9 +2599,9 @@ public static class CountrySeeding
                     DisplayName = "Pitcairn Islands",
                     OfficialName = "Pitcairn, Henderson, Ducie and Oeno Islands",
                     PhoneNumberPrefix = "64",
+                    PrimaryLocaleIETFBCP47Tag = "en-PN",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NZD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-PN",
                 },
 
                 // Poland
@@ -2672,8 +2644,7 @@ public static class CountrySeeding
                     OfficialName = "Commonwealth of Puerto Rico",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "es-PR",
+                    PrimaryLocaleIETFBCP47Tag = "es-PR",
                 },
 
                 // Qatar
@@ -2702,8 +2673,7 @@ public static class CountrySeeding
                     OfficialName = "Réunion",
                     PhoneNumberPrefix = "262",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-RE",
+                    PrimaryLocaleIETFBCP47Tag = "fr-RE",
                 },
 
                 // Romania
@@ -2760,8 +2730,7 @@ public static class CountrySeeding
                     OfficialName = "Collectivity of Saint Barthélemy",
                     PhoneNumberPrefix = "590",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-BL",
+                    PrimaryLocaleIETFBCP47Tag = "fr-BL",
                 },
 
                 // Saint Helena, Ascension and Tristan da Cunha (United Kingdom)
@@ -2775,9 +2744,9 @@ public static class CountrySeeding
                     DisplayName = "Saint Helena, Ascension and Tristan da Cunha",
                     OfficialName = "Saint Helena, Ascension and Tristan da Cunha",
                     PhoneNumberPrefix = "290",
+                    PrimaryLocaleIETFBCP47Tag = "en-SH",
 
                     // PrimaryCurrencyISO4217AlphaCode = "SHP",
-                    // PrimaryLocaleIETFBCP47Tag = "en-SH",
                 },
 
                 // Saint Kitts and Nevis
@@ -2789,9 +2758,9 @@ public static class CountrySeeding
                     DisplayName = "Saint Kitts and Nevis",
                     OfficialName = "Federation of Saint Christopher and Nevis",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-KN",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-KN",
                 },
 
                 // Saint Lucia
@@ -2803,9 +2772,9 @@ public static class CountrySeeding
                     DisplayName = "Saint Lucia",
                     OfficialName = "Saint Lucia",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-LC",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-LC",
                 },
 
                 // Saint Martin (France)
@@ -2820,8 +2789,7 @@ public static class CountrySeeding
                     OfficialName = "Collectivity of Saint Martin",
                     PhoneNumberPrefix = "590",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-MF",
+                    PrimaryLocaleIETFBCP47Tag = "fr-MF",
                 },
 
                 // Saint Pierre and Miquelon (France)
@@ -2836,8 +2804,7 @@ public static class CountrySeeding
                     OfficialName = "Saint Pierre and Miquelon",
                     PhoneNumberPrefix = "508",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "fr-PM",
+                    PrimaryLocaleIETFBCP47Tag = "fr-PM",
                 },
 
                 // Saint Vincent and the Grenadines
@@ -2849,9 +2816,9 @@ public static class CountrySeeding
                     DisplayName = "Saint Vincent and the Grenadines",
                     OfficialName = "Saint Vincent and the Grenadines",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-VC",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XCD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-VC",
                 },
 
                 // Samoa
@@ -2878,8 +2845,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of San Marino",
                     PhoneNumberPrefix = "378",
                     PrimaryCurrencyISO4217AlphaCode = "EUR",
-
-                    // PrimaryLocaleIETFBCP47Tag = "it-SM",
+                    PrimaryLocaleIETFBCP47Tag = "it-SM",
                 },
 
                 // São Tomé and Príncipe
@@ -2919,9 +2885,9 @@ public static class CountrySeeding
                     DisplayName = "Senegal",
                     OfficialName = "Republic of Senegal",
                     PhoneNumberPrefix = "221",
+                    PrimaryLocaleIETFBCP47Tag = "fr-SN",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XOF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-SN",
                 },
 
                 // Serbia
@@ -2947,9 +2913,9 @@ public static class CountrySeeding
                     DisplayName = "Seychelles",
                     OfficialName = "Republic of Seychelles",
                     PhoneNumberPrefix = "248",
+                    PrimaryLocaleIETFBCP47Tag = "en-SC",
 
                     // PrimaryCurrencyISO4217AlphaCode = "SCR",
-                    // PrimaryLocaleIETFBCP47Tag = "en-SC",
                 },
 
                 // Sierra Leone
@@ -2961,9 +2927,9 @@ public static class CountrySeeding
                     DisplayName = "Sierra Leone",
                     OfficialName = "Republic of Sierra Leone",
                     PhoneNumberPrefix = "232",
+                    PrimaryLocaleIETFBCP47Tag = "en-SL",
 
                     // PrimaryCurrencyISO4217AlphaCode = "SLE",
-                    // PrimaryLocaleIETFBCP47Tag = "en-SL",
                 },
 
                 // Singapore
@@ -2975,9 +2941,9 @@ public static class CountrySeeding
                     DisplayName = "Singapore",
                     OfficialName = "Republic of Singapore",
                     PhoneNumberPrefix = "65",
+                    PrimaryLocaleIETFBCP47Tag = "en-SG",
 
                     // PrimaryCurrencyISO4217AlphaCode = "SGD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-SG",
                 },
 
                 // Sint Maarten (Netherlands)
@@ -3033,9 +2999,9 @@ public static class CountrySeeding
                     DisplayName = "Solomon Islands",
                     OfficialName = "Solomon Islands",
                     PhoneNumberPrefix = "677",
+                    PrimaryLocaleIETFBCP47Tag = "en-SB",
 
                     // PrimaryCurrencyISO4217AlphaCode = "SBD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-SB",
                 },
 
                 // Somalia
@@ -3061,8 +3027,7 @@ public static class CountrySeeding
                     DisplayName = "South Africa",
                     OfficialName = "Republic of South Africa",
                     PhoneNumberPrefix = "27",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-ZA",
+                    PrimaryLocaleIETFBCP47Tag = "en-ZA",
                 },
 
                 // South Georgia and the South Sandwich Islands (United Kingdom)
@@ -3087,9 +3052,9 @@ public static class CountrySeeding
                     DisplayName = "South Sudan",
                     OfficialName = "Republic of South Sudan",
                     PhoneNumberPrefix = "211",
+                    PrimaryLocaleIETFBCP47Tag = "en-SS",
 
                     // PrimaryCurrencyISO4217AlphaCode = "SSP",
-                    // PrimaryLocaleIETFBCP47Tag = "en-SS",
                 },
 
                 // Spain
@@ -3187,9 +3152,9 @@ public static class CountrySeeding
                     DisplayName = "Switzerland",
                     OfficialName = "Swiss Confederation",
                     PhoneNumberPrefix = "41",
+                    PrimaryLocaleIETFBCP47Tag = "de-CH",
 
                     // PrimaryCurrencyISO4217AlphaCode = "CHF",
-                    // PrimaryLocaleIETFBCP47Tag = "de-CH",
                 },
 
                 // Syria
@@ -3271,9 +3236,9 @@ public static class CountrySeeding
                     DisplayName = "Togo",
                     OfficialName = "Togolese Republic",
                     PhoneNumberPrefix = "228",
+                    PrimaryLocaleIETFBCP47Tag = "fr-TG",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XOF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-TG",
                 },
 
                 // Tokelau (New Zealand)
@@ -3287,9 +3252,9 @@ public static class CountrySeeding
                     DisplayName = "Tokelau",
                     OfficialName = "Tokelau",
                     PhoneNumberPrefix = "690",
+                    PrimaryLocaleIETFBCP47Tag = "en-TK",
 
                     // PrimaryCurrencyISO4217AlphaCode = "NZD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-TK",
                 },
 
                 // Tonga
@@ -3315,9 +3280,9 @@ public static class CountrySeeding
                     DisplayName = "Trinidad and Tobago",
                     OfficialName = "Republic of Trinidad and Tobago",
                     PhoneNumberPrefix = "1",
+                    PrimaryLocaleIETFBCP47Tag = "en-TT",
 
                     // PrimaryCurrencyISO4217AlphaCode = "TTD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-TT",
                 },
 
                 // Tunisia
@@ -3374,8 +3339,7 @@ public static class CountrySeeding
                     OfficialName = "Turks and Caicos Islands",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-TC",
+                    PrimaryLocaleIETFBCP47Tag = "en-TC",
                 },
 
                 // Tuvalu
@@ -3387,9 +3351,9 @@ public static class CountrySeeding
                     DisplayName = "Tuvalu",
                     OfficialName = "Tuvalu",
                     PhoneNumberPrefix = "688",
+                    PrimaryLocaleIETFBCP47Tag = "en-TV",
 
                     // PrimaryCurrencyISO4217AlphaCode = "AUD",
-                    // PrimaryLocaleIETFBCP47Tag = "en-TV",
                 },
 
                 // Uganda
@@ -3401,9 +3365,9 @@ public static class CountrySeeding
                     DisplayName = "Uganda",
                     OfficialName = "Republic of Uganda",
                     PhoneNumberPrefix = "256",
+                    PrimaryLocaleIETFBCP47Tag = "en-UG",
 
                     // PrimaryCurrencyISO4217AlphaCode = "UGX",
-                    // PrimaryLocaleIETFBCP47Tag = "en-UG",
                 },
 
                 // Ukraine
@@ -3444,8 +3408,7 @@ public static class CountrySeeding
                     OfficialName = "United Kingdom of Great Britain and Northern Ireland",
                     PhoneNumberPrefix = "44",
                     PrimaryCurrencyISO4217AlphaCode = "GBP",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-GB",
+                    PrimaryLocaleIETFBCP47Tag = "en-GB",
                 },
 
                 // United States Minor Outlying Islands (United States)
@@ -3460,8 +3423,7 @@ public static class CountrySeeding
                     OfficialName = "United States Minor Outlying Islands",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-UM",
+                    PrimaryLocaleIETFBCP47Tag = "en-UM",
                 },
 
                 // U.S. Virgin Islands (United States)
@@ -3476,8 +3438,7 @@ public static class CountrySeeding
                     OfficialName = "Virgin Islands of the United States",
                     PhoneNumberPrefix = "1",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-VI",
+                    PrimaryLocaleIETFBCP47Tag = "en-VI",
                 },
 
                 // Uruguay
@@ -3489,9 +3450,9 @@ public static class CountrySeeding
                     DisplayName = "Uruguay",
                     OfficialName = "Oriental Republic of Uruguay",
                     PhoneNumberPrefix = "598",
+                    PrimaryLocaleIETFBCP47Tag = "es-UY",
 
                     // PrimaryCurrencyISO4217AlphaCode = "UYU",
-                    // PrimaryLocaleIETFBCP47Tag = "es-UY",
                 },
 
                 // Uzbekistan
@@ -3531,9 +3492,9 @@ public static class CountrySeeding
                     DisplayName = "Venezuela",
                     OfficialName = "Bolivarian Republic of Venezuela",
                     PhoneNumberPrefix = "58",
+                    PrimaryLocaleIETFBCP47Tag = "es-VE",
 
                     // PrimaryCurrencyISO4217AlphaCode = "VES",
-                    // PrimaryLocaleIETFBCP47Tag = "es-VE",
                 },
 
                 // Vietnam
@@ -3561,9 +3522,9 @@ public static class CountrySeeding
                     DisplayName = "Wallis and Futuna",
                     OfficialName = "Territory of the Wallis and Futuna Islands",
                     PhoneNumberPrefix = "681",
+                    PrimaryLocaleIETFBCP47Tag = "fr-WF",
 
                     // PrimaryCurrencyISO4217AlphaCode = "XPF",
-                    // PrimaryLocaleIETFBCP47Tag = "fr-WF",
                 },
 
                 // Western Sahara
@@ -3603,9 +3564,9 @@ public static class CountrySeeding
                     DisplayName = "Zambia",
                     OfficialName = "Republic of Zambia",
                     PhoneNumberPrefix = "260",
+                    PrimaryLocaleIETFBCP47Tag = "en-ZM",
 
                     // PrimaryCurrencyISO4217AlphaCode = "ZMW",
-                    // PrimaryLocaleIETFBCP47Tag = "en-ZM",
                 },
 
                 // Zimbabwe
@@ -3618,8 +3579,7 @@ public static class CountrySeeding
                     OfficialName = "Republic of Zimbabwe",
                     PhoneNumberPrefix = "263",
                     PrimaryCurrencyISO4217AlphaCode = "USD",
-
-                    // PrimaryLocaleIETFBCP47Tag = "en-ZW",
+                    PrimaryLocaleIETFBCP47Tag = "en-ZW",
                 },
             ]);
         }
