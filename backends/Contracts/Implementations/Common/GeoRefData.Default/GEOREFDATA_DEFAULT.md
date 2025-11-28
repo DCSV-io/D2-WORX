@@ -17,6 +17,7 @@ Default implementation of geographic reference data service with multi-tier cach
 | File Name                                          | Description                                                                                           |
 |----------------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | [ReqUpdate.cs](CQRS/Handlers/C/ReqUpdate.cs)       | Handler requesting reference data update from Geo service via gRPC when all caches miss.              |
+| [SetInDist.cs](CQRS/Handlers/C/SetInDist.cs)       | Handler storing reference data in Redis distributed cache using protobuf binary serialization.        |
 | [SetInMem.cs](CQRS/Handlers/C/SetInMem.cs)         | Handler storing reference data in in-memory cache for fast subsequent access.                         |
 | [SetOnDisk.cs](CQRS/Handlers/C/SetOnDisk.cs)       | Handler persisting reference data to local file storage as protobuf binary for restart resilience.    |
 

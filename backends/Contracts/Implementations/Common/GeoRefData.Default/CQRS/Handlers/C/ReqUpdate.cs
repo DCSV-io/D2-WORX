@@ -19,6 +19,9 @@ using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.Re
 /// <summary>
 /// Handler for requesting a reference data update from the Geo service.
 /// </summary>
+/// <remarks>
+/// This implementation is meant for consumer services only.
+/// </remarks>
 public class ReqUpdate : BaseHandler<ReqUpdate, I, O>, H
 {
     private readonly GeoService.GeoServiceClient r_geoClient;

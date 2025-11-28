@@ -17,7 +17,6 @@
       <Folder Include="Implementations\CQRS\Handlers\C\" />
       <Folder Include="Implementations\CQRS\Handlers\Q\" />
       <Folder Include="Implementations\CQRS\Handlers\U\" />
-      <Folder Include="Implementations\CQRS\Handlers\X\" />
       <Folder Include="Interfaces\CQRS\Handlers\C\" />
       <Folder Include="Interfaces\CQRS\Handlers\Q\" />
       <Folder Include="Interfaces\CQRS\Handlers\U\" />
