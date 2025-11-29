@@ -41,6 +41,7 @@
         <ProjectReference Include="..\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
         <ProjectReference Include="..\Interfaces\Interfaces.csproj" />
         <ProjectReference Include="..\Result\Result.csproj" />
+        <ProjectReference Include="..\Result.Extensions\Result.Extensions.csproj" />
         <ProjectReference Include="..\Utilities\Utilities.csproj" />
     </ItemGroup>
 
