@@ -20,7 +20,7 @@ Summary:
 2. Using a command line utility, navigate to the AppHost folder (`/backends/AppHost`) and set the following secrets using the `dotnet user-secrets set <key> <value>` command:
 
    | Secret Key                  | Description             |
-        |-----------------------------|-------------------------|
+   |-----------------------------|-------------------------|
    | `Parameters:mq-username`    | RabbitMQ username       |
    | `Parameters:mq-password`    | RabbitMQ password       |
    | `Parameters:db-username`    | PostgreSQL username     |

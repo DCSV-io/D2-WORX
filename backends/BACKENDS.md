@@ -232,11 +232,11 @@ ServiceName/ -> Root folder for the service
 |   |__ Exceptions/ -> Domain-specific exceptions
 |   |__ ValueObjects/ -> Domain value objects
 |
-|       
+|
 |__ ServiceName.App/ -> Project folder for application layer
 |   |
 |   |__ Extensions.cs -> DI registration extensions
-|   |               
+|   |
 |   |__ Interfaces/ -> Interfaces to be implemented in /Implementations or Infra project
 |   |   |
 |   |   |__ CQRS/ -> Interfaces for CQRS / app-layer handler implementations
@@ -272,18 +272,18 @@ ServiceName/ -> Root folder for the service
 |   |   |       |   |__ ICreate.SomeEntity.cs -> Specific create handler interface
 |   |   |       |
 |   |   |       |__ R/ -> Read handlers
-|   |   |           U/ -> Update handlers
-|   |   |           D/ -> Delete handlers
+|   |   |       |__ U/ -> Update handlers
+|   |   |       |__ D/ -> Delete handlers
 |   |   |
 |   |   |__ Caching/ -> Interfaces for infra-layer caching implementations 
 |   |                   (if applicable - there is a default caching impl in Contracts)
-|   |           
+|   |
 |   |__ Implementations/ -> Concrete implementations
 |       |
 |       |__ CQRS/ -> Application-layer handler implementations
-|           | 
+|           |
 |           |__ Handlers/ -> Handler implementations
-|               | 
+|               |
 |               |__ C/ -> Command handlers
 |               |   |
 |               |   |__ DoSomeCommand.cs -> Command handler implementation
