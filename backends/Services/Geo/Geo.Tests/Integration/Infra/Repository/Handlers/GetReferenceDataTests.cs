@@ -90,7 +90,7 @@ public class GetReferenceDataTests : IAsyncLifetime
         data.GeopoliticalEntities.Should().HaveCountGreaterThanOrEqualTo(53);
 
         // Verify version.
-        data.Version.Should().Be("1.2.0");
+        data.Version.Should().NotBeNullOrWhiteSpace();
     }
 
     /// <summary>

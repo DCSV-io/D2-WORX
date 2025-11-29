@@ -29,5 +29,5 @@ public partial interface IRead
     /// <param name="Data">
     /// The geographic reference data retrieved.
     /// </param>
-    public record GetReferenceDataOutput(GetReferenceDataResponse Data);
+    public record GetReferenceDataOutput(GeoRefData Data);
 }

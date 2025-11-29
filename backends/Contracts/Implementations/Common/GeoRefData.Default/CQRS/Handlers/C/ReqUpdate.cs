@@ -6,12 +6,10 @@
 
 namespace D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.C;
 
-using System.Net;
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
+using D2.Contracts.Result.Extensions;
 using D2.Services.Protos.Geo.V1;
-using Grpc.Core;
-using Microsoft.Extensions.Logging;
 using H = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.IReqUpdateHandler;
 using I = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.ReqUpdateInput;
 using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.ReqUpdateOutput;
@@ -19,6 +17,9 @@ using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.Re
 /// <summary>
 /// Handler for requesting a reference data update from the Geo service.
 /// </summary>
+/// <remarks>
+/// This implementation is meant for consumer services only.
+/// </remarks>
 public class ReqUpdate : BaseHandler<ReqUpdate, I, O>, H
 {
     private readonly GeoService.GeoServiceClient r_geoClient;
@@ -59,32 +60,15 @@ public class ReqUpdate : BaseHandler<ReqUpdate, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        try
-        {
-            var response = await r_geoClient.RequestReferenceDataUpdateAsync(
-                new RequestReferenceDataUpdateRequest(),
-                cancellationToken: ct);
-
-            return response.Accepted
-                ? D2Result<O?>.Ok(new O(), traceId: TraceId)
-                : D2Result<O?>.Fail(
-                    ["Update request was not accepted."],
-                    HttpStatusCode.ServiceUnavailable,
-                    errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                    traceId: TraceId);
-        }
-        catch (RpcException ex)
-        {
-            Context.Logger.LogError(
-                ex,
-                "RpcException occurred while requesting reference data update. TraceId: {TraceId}",
+        var r = await r_geoClient.RequestReferenceDataUpdateAsync(
+                new(),
+                cancellationToken: ct)
+            .HandleAsync(
+                r => r.Result,
+                r => r.Data,
+                Context.Logger,
                 TraceId);
 
-            return D2Result<O?>.Fail(
-                ["Unable to reach Geo service."],
-                HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
-        }
+        return D2Result<O?>.Bubble(r, new(r.Data?.Version));
     }
 }

@@ -58,7 +58,7 @@ public static class CountryGeopoliticalEntitySeeding
                 "FO", "FI", "FR", "DE", "GI", "GR", "GG", "HU", "IS", "IE", "IM", "IT",
                 "JE", "LV", "LI", "LT", "LU", "MT", "MD", "MC", "ME", "NL", "MK", "NO",
                 "PL", "PT", "RO", "SM", "RS", "SK", "SI", "ES", "SJ", "SE", "CH", "UA",
-                "GB", "VA"]));
+                "GB", "VA", "XK"]));
 
             // North America (NA)
             entries.AddRange(CreateEntries("NA", [
@@ -114,7 +114,7 @@ public static class CountryGeopoliticalEntitySeeding
 
             // Balkans (BALK)
             entries.AddRange(CreateEntries("BALK", [
-                "AL", "BA", "BG", "HR", "ME", "MK", "RO", "RS", "SI"]));
+                "AL", "BA", "BG", "HR", "ME", "MK", "RO", "RS", "SI", "XK"]));
 
             // Baltic States (BALT)
             entries.AddRange(CreateEntries("BALT", ["EE", "LV", "LT"]));

@@ -110,6 +110,7 @@ Interface definitions for handler-based operations across caching, repositories,
 > |------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
 > | [ICommands.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.cs)                     | Partial interface defining command operations for geographic reference data state-changing operations. |
 > | [ICommands.ReqUpdate.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.ReqUpdate.cs) | Extends ICommands with IReqUpdateHandler for requesting reference data updates via gRPC.               |
+> | [ICommands.SetInDist.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.SetInDist.cs) | Extends ICommands with ISetInDistHandler for storing reference data in Redis distributed cache.        |
 > | [ICommands.SetInMem.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.SetInMem.cs)   | Extends ICommands with ISetInMemHandler for storing reference data in memory cache.                    |
 > | [ICommands.SetOnDisk.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.SetOnDisk.cs) | Extends ICommands with ISetOnDiskHandler for persisting reference data to disk.                        |
 >

@@ -36,7 +36,7 @@ public partial interface IUpdate
     /// <typeparam name="TValue">
     /// The type of the value to cache.
     /// </typeparam>
-    public record SetInput<TValue>(string Key, TValue Value, TimeSpan? Expiration);
+    public record SetInput<TValue>(string Key, TValue Value, TimeSpan? Expiration = null);
 
     /// <summary>
     /// Output for setting a value in the cache.

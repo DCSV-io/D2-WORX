@@ -45,13 +45,11 @@ public static class Extensions
         /// </returns>
         public IServiceCollection AddGeoRefDataConsumer(IConfiguration configuration)
         {
-            // Register gRPC client for Geo service
             services.AddGrpcClient<GeoService.GeoServiceClient>(o =>
             {
                 o.Address = new Uri(configuration["GeoService:Url"] ?? "http://geo-service");
             });
 
-            // Register all handlers
             services.AddTransient<IComplex.IGetHandler, Get>();
             services.AddTransient<ICommands.IReqUpdateHandler, ReqUpdate>();
             services.AddGeoRefDataShared();
@@ -68,8 +66,7 @@ public static class Extensions
         /// </returns>
         public IServiceCollection AddGeoRefDataProvider()
         {
-            // Register handlers except Get and ReqUpdate (Geo service implements these
-            // differently).
+            services.AddTransient<ICommands.ISetInDistHandler, SetInDist>();
             services.AddGeoRefDataShared();
 
             return services;

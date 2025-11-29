@@ -13,6 +13,9 @@ public partial interface ICommands
     /// <summary>
     /// Handler for requesting an update of geographic reference data.
     /// </summary>
+    /// <remarks>
+    /// To be used by data consumers only.
+    /// </remarks>
     public interface IReqUpdateHandler : IHandler<ReqUpdateInput, ReqUpdateOutput>;
 
     /// <summary>
@@ -23,5 +26,9 @@ public partial interface ICommands
     /// <summary>
     /// Output for requesting an update of geographic reference data.
     /// </summary>
-    public record ReqUpdateOutput;
+    ///
+    /// <param name="Version">
+    /// The version of the updated geographic reference data.
+    /// </param>
+    public record ReqUpdateOutput(string? Version);
 }

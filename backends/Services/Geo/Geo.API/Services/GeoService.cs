@@ -6,205 +6,59 @@
 
 namespace Geo.API.Services;
 
+using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
+using D2.Contracts.Result.Extensions;
 using D2.Services.Protos.Geo.V1;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using PSB = D2.Services.Protos.Geo.V1.GeoService.GeoServiceBase;
+using SB = D2.Services.Protos.Geo.V1.GeoService.GeoServiceBase;
 
 /// <summary>
 /// Provides geographical reference data services.
 /// </summary>
-public class GeoService : PSB
+public class GeoService : SB
 {
+    private readonly IComplex.IGetHandler r_get;
+
     /// <summary>
-    /// Retrieves reference data including countries, subdivisions, currencies, languages, locales,
-    /// and geopolitical entities.
+    /// Initializes a new instance of the <see cref="GeoService"/> class.
     /// </summary>
     ///
-    /// <param name="request">
-    /// The request message containing parameters for retrieving reference data.
+    /// <param name="get">
+    /// The handler for getting geographic reference data.
     /// </param>
-    /// <param name="context">
-    /// The server call context providing information about the RPC call.
-    /// </param>
-    ///
-    /// <returns>
-    /// A task representing the asynchronous operation, with a result of type
-    /// <see cref="GetReferenceDataResponse"/> containing the requested reference data.
-    /// </returns>
-    public override Task<GetReferenceDataResponse> GetReferenceData(
+    public GeoService(
+        IComplex.IGetHandler get)
+    {
+        r_get = get;
+    }
+
+    /// <inheritdoc/>
+    public override async Task<GetReferenceDataResponse> GetReferenceData(
         GetReferenceDataRequest request,
         ServerCallContext context)
     {
-        // Dummy implementation for demonstration purposes
-        var response = new GetReferenceDataResponse()
-        {
-            Version = "0.0.0",
-            UpdatedAt = Timestamp.FromDateTime(DateTime.UtcNow),
-            Countries =
-            {
-                {
-                    "US", new CountryDTO
-                    {
-                        Iso31661Alpha2Code = "US",
-                        Iso31661Alpha3Code = "USA",
-                        Iso31661NumericCode = "840",
-                        DisplayName = "United States",
-                        OfficialName = "United States of America",
-                        PhoneNumberPrefix = "1",
-                        PhoneNumberFormat = "(###) ###-####",
-                        PrimaryCurrencyIso4217AlphaCode = "USD",
-                        PrimaryLocaleIetfBcp47Tag = "en-US",
-                        SubdivisionIso31662Codes =
-                        {
-                            "US-AL",
-                            "US-AK",
-                            "US-AZ",
-                        },
-                        LocaleIetfBcp47Tags =
-                        {
-                            "en-US",
-                            "es-US",
-                        },
-                        GeopoliticalEntityShortCodes =
-                        {
-                            "NATO",
-                            "UN",
-                            "USMCA",
-                        },
-                    }
-                },
-            },
-            Subdivisions =
-            {
-                {
-                    "US-AL", new SubdivisionDTO
-                    {
-                        Iso31662Code = "US-AL",
-                        ShortCode = "AL",
-                        DisplayName = "Alabama",
-                        OfficialName = "State of Alabama",
-                        CountryIso31661Alpha2Code = "US",
-                    }
-                },
-                {
-                    "US-AK", new SubdivisionDTO
-                    {
-                        Iso31662Code = "US-AK",
-                        ShortCode = "AK",
-                        DisplayName = "Alaska",
-                        OfficialName = "State of Alaska",
-                        CountryIso31661Alpha2Code = "US",
-                    }
-                },
-                {
-                    "US-AZ", new SubdivisionDTO
-                    {
-                        Iso31662Code = "US-AZ",
-                        ShortCode = "AZ",
-                        DisplayName = "Arizona",
-                        OfficialName = "State of Arizona",
-                        CountryIso31661Alpha2Code = "US",
-                    }
-                },
-            },
-            Currencies =
-            {
-                {
-                    "USD", new CurrencyDTO
-                    {
-                        Iso4217AlphaCode = "USD",
-                        Iso4217NumericCode = "840",
-                        DisplayName = "US Dollar",
-                        OfficialName = "United States Dollar",
-                        DecimalPlaces = 2,
-                        Symbol = "$",
-                    }
-                },
-            },
-            Languages =
-            {
-                {
-                    "en", new LanguageDTO
-                    {
-                        Iso6391Code = "en",
-                        Name = "English",
-                        Endonym = "English",
-                    }
-                },
-                {
-                    "es", new LanguageDTO
-                    {
-                        Iso6391Code = "es",
-                        Name = "Spanish",
-                        Endonym = "Español",
-                    }
-                },
-            },
-            Locales =
-            {
-                {
-                    "en-US", new LocaleDTO
-                    {
-                        IetfBcp47Tag = "en-US",
-                        Name = "English (United States)",
-                        Endonym = "English (United States)",
-                        LanguageIso6391Code = "en",
-                        CountryIso31661Alpha2Code = "US",
-                    }
-                },
-                {
-                    "es-US", new LocaleDTO
-                    {
-                        IetfBcp47Tag = "es-US",
-                        Name = "Spanish (United States)",
-                        Endonym = "Español (Estados Unidos)",
-                        LanguageIso6391Code = "es",
-                        CountryIso31661Alpha2Code = "US",
-                    }
-                },
-            },
-            GeopoliticalEntities =
-            {
-                {
-                    "NATO", new GeopoliticalEntityDTO
-                    {
-                        ShortCode = "NATO",
-                        Name = "North Atlantic Treaty Organization",
-                        Type = "MilitaryAlliance",
-                        CountryIso31661Alpha2Codes =
-                        {
-                            "US",
-                        },
-                    }
-                },
-                {
-                    "UN", new GeopoliticalEntityDTO
-                    {
-                        ShortCode = "UN",
-                        Name = "United Nations",
-                        Type = "InternationalOrganization",
-                        CountryIso31661Alpha2Codes =
-                        {
-                            "US",
-                        },
-                    }
-                },
-                {
-                    "USMCA", new GeopoliticalEntityDTO
-                    {
-                        ShortCode = "USMCA",
-                        Name = "United States-Mexico-Canada Agreement",
-                        Type = "FreeTradeAgreement",
-                        CountryIso31661Alpha2Codes =
-                        {
-                            "US",
-                        },
-                    }
-                },
-            },
-        };
+        var result = await r_get.HandleAsync(new(), context.CancellationToken);
 
-        return Task.FromResult(response);
+        return new GetReferenceDataResponse
+        {
+            Result = result.ToProto(),
+            Data = result.Success ? result.Data!.Data : null,
+        };
+    }
+
+    /// <inheritdoc/>
+    public override async Task<RequestReferenceDataUpdateResponse> RequestReferenceDataUpdate(
+        RequestReferenceDataUpdateRequest request,
+        ServerCallContext context)
+    {
+        var result = await r_get.HandleAsync(new(), context.CancellationToken);
+
+        return new RequestReferenceDataUpdateResponse
+        {
+            Result = result.ToProto(),
+            Data = result.Success
+                ? new RequestReferenceDataUpdateData { Version = result.Data!.Data.Version }
+                : null,
+        };
     }
 }

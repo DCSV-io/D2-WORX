@@ -21,7 +21,7 @@ using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.Get
 /// </summary>
 public class GetFromMem : BaseHandler<GetFromMem, I, O>, H
 {
-    private readonly IRead.IGetHandler<GetReferenceDataResponse> r_memoryCacheGet;
+    private readonly IRead.IGetHandler<GeoRefData> r_memoryCacheGet;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetFromMem"/> class.
@@ -34,7 +34,7 @@ public class GetFromMem : BaseHandler<GetFromMem, I, O>, H
     /// The handler context.
     /// </param>
     public GetFromMem(
-        IRead.IGetHandler<GetReferenceDataResponse> memoryCacheGet,
+        IRead.IGetHandler<GeoRefData> memoryCacheGet,
         IHandlerContext context)
         : base(context)
     {

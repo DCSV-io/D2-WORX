@@ -160,6 +160,34 @@ public class D2Result<TData> : D2Result
             d2Result.TraceId);
 
     /// <summary>
+    /// Factory method to bubble up a <see cref="D2Result"/> into a
+    /// <see cref="D2Result{TResult}"/> with result data.
+    /// </summary>
+    ///
+    /// <param name="d2Result">
+    /// The <see cref="D2Result"/> to bubble up.
+    /// </param>
+    /// <param name="data">
+    /// The resulting data of the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A <see cref="D2Result{TResult}"/> instance containing the result data and details from the
+    /// provided <see cref="D2Result"/>.
+    /// </returns>
+    public static D2Result<TData> Bubble(
+        D2Result d2Result,
+        TData? data = default)
+        => new(
+            d2Result.Success,
+            data,
+            d2Result.Messages,
+            d2Result.InputErrors,
+            d2Result.StatusCode,
+            d2Result.ErrorCode,
+            d2Result.TraceId);
+
+    /// <summary>
     /// Factory method to create a created <see cref="D2Result{TResult}"/> instance.
     /// </summary>
     ///

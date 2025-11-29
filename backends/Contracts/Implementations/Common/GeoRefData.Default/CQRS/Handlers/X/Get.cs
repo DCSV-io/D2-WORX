@@ -19,6 +19,9 @@ using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex.Get
 /// <summary>
 /// Handler for getting georeference data.
 /// </summary>
+/// <remarks>
+/// This implementation is meant for consumer services only.
+/// </remarks>
 public class Get : BaseHandler<Get, I, O>, H
 {
     private readonly IQueries.IGetFromMemHandler r_getFromMem;
@@ -155,7 +158,7 @@ public class Get : BaseHandler<Get, I, O>, H
         {
             // If we failed to reach the Geo service, log an error.
             Context.Logger.LogError(
-                "Failed to request update of georeference data. TraceId: {TraceId}",
+                "Failed to request update of georeference data (consumer). TraceId: {TraceId}",
                 TraceId);
         }
 
@@ -170,7 +173,7 @@ public class Get : BaseHandler<Get, I, O>, H
             if (setInMemR.Failed)
             {
                 Context.Logger.LogError(
-                    "Failed to set data in memory cache. TraceId: {TraceId}",
+                    "Failed to set data in memory cache (consumer). TraceId: {TraceId}",
                     TraceId);
             }
 
@@ -193,14 +196,14 @@ public class Get : BaseHandler<Get, I, O>, H
     /// The cancellation token.
     /// </param>
     private async ValueTask SetInMemoryAndOnDiskAsync(
-        GetReferenceDataResponse data,
+        GeoRefData data,
         CancellationToken ct)
     {
         var setInMemR = await r_setInMem.HandleAsync(new(data), ct);
         if (setInMemR.Failed)
         {
             Context.Logger.LogError(
-                "Failed to set data in memory cache. TraceId: {TraceId}",
+                "Failed to set data in memory cache (consumer). TraceId: {TraceId}",
                 TraceId);
         }
 
@@ -208,7 +211,7 @@ public class Get : BaseHandler<Get, I, O>, H
         if (setOnDiskR.Failed)
         {
             Context.Logger.LogError(
-                "Failed to set data on disk. TraceId: {TraceId}",
+                "Failed to set data on disk (consumer). TraceId: {TraceId}",
                 TraceId);
         }
     }

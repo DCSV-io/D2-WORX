@@ -49,7 +49,7 @@ public class GeoRefDataUnitTests
         r_getHandler
             .Setup(x => x.HandleAsync(It.IsAny<IComplex.GetInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<IComplex.GetOutput?>.Ok(
-                new IComplex.GetOutput(new GetReferenceDataResponse { Version = "1.0.0" })));
+                new IComplex.GetOutput(new GeoRefData { Version = "1.0.0" })));
 
         r_getFromDist
             .Setup(x => x.HandleAsync(It.IsAny<IQueries.GetFromDistInput>(), It.IsAny<CancellationToken>()))
@@ -100,7 +100,7 @@ public class GeoRefDataUnitTests
         r_getHandler
             .Setup(x => x.HandleAsync(It.IsAny<IComplex.GetInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<IComplex.GetOutput?>.Ok(
-                new IComplex.GetOutput(new GetReferenceDataResponse { Version = "1.0.0" })));
+                new IComplex.GetOutput(new GeoRefData { Version = "1.0.0" })));
 
         r_getFromDist
             .Setup(x => x.HandleAsync(It.IsAny<IQueries.GetFromDistInput>(), It.IsAny<CancellationToken>()))
@@ -151,7 +151,7 @@ public class GeoRefDataUnitTests
         r_getHandler
             .Setup(x => x.HandleAsync(It.IsAny<IComplex.GetInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<IComplex.GetOutput?>.Ok(
-                new IComplex.GetOutput(new GetReferenceDataResponse { Version = "1.0.0" })));
+                new IComplex.GetOutput(new GeoRefData { Version = "1.0.0" })));
 
         r_getFromDist
             .Setup(x => x.HandleAsync(It.IsAny<IQueries.GetFromDistInput>(), It.IsAny<CancellationToken>()))

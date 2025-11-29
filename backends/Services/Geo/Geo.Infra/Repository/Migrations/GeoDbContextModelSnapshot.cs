@@ -99,7 +99,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "840",
                             OfficialName = "United States of America",
                             PhoneNumberPrefix = "1",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-US"
                         },
                         new
                         {
@@ -109,7 +110,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "124",
                             OfficialName = "Canada",
                             PhoneNumberPrefix = "1",
-                            PrimaryCurrencyISO4217AlphaCode = "CAD"
+                            PrimaryCurrencyISO4217AlphaCode = "CAD",
+                            PrimaryLocaleIETFBCP47Tag = "en-CA"
                         },
                         new
                         {
@@ -158,6 +160,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "American Samoa",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-AS",
                             SovereignISO31661Alpha2Code = "US"
                         },
                         new
@@ -187,6 +190,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "660",
                             OfficialName = "Anguilla",
                             PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-AI",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -205,7 +209,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "ATG",
                             ISO31661NumericCode = "028",
                             OfficialName = "Antigua and Barbuda",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-AG"
                         },
                         new
                         {
@@ -214,7 +219,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "ARG",
                             ISO31661NumericCode = "032",
                             OfficialName = "Argentine Republic",
-                            PhoneNumberPrefix = "54"
+                            PhoneNumberPrefix = "54",
+                            PrimaryLocaleIETFBCP47Tag = "es-AR"
                         },
                         new
                         {
@@ -242,7 +248,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "AUS",
                             ISO31661NumericCode = "036",
                             OfficialName = "Commonwealth of Australia",
-                            PhoneNumberPrefix = "61"
+                            PhoneNumberPrefix = "61",
+                            PrimaryLocaleIETFBCP47Tag = "en-AU"
                         },
                         new
                         {
@@ -252,7 +259,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "040",
                             OfficialName = "Republic of Austria",
                             PhoneNumberPrefix = "43",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "de-AT"
                         },
                         new
                         {
@@ -270,7 +278,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BHS",
                             ISO31661NumericCode = "044",
                             OfficialName = "Commonwealth of The Bahamas",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-BS"
                         },
                         new
                         {
@@ -297,7 +306,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BRB",
                             ISO31661NumericCode = "052",
                             OfficialName = "Barbados",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-BB"
                         },
                         new
                         {
@@ -325,7 +335,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BLZ",
                             ISO31661NumericCode = "084",
                             OfficialName = "Belize",
-                            PhoneNumberPrefix = "501"
+                            PhoneNumberPrefix = "501",
+                            PrimaryLocaleIETFBCP47Tag = "en-BZ"
                         },
                         new
                         {
@@ -334,7 +345,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BEN",
                             ISO31661NumericCode = "204",
                             OfficialName = "Republic of Benin",
-                            PhoneNumberPrefix = "229"
+                            PhoneNumberPrefix = "229",
+                            PrimaryLocaleIETFBCP47Tag = "fr-BJ"
                         },
                         new
                         {
@@ -344,6 +356,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "060",
                             OfficialName = "Bermuda",
                             PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-BM",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -362,7 +375,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BOL",
                             ISO31661NumericCode = "068",
                             OfficialName = "Plurinational State of Bolivia",
-                            PhoneNumberPrefix = "591"
+                            PhoneNumberPrefix = "591",
+                            PrimaryLocaleIETFBCP47Tag = "es-BO"
                         },
                         new
                         {
@@ -391,7 +405,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BWA",
                             ISO31661NumericCode = "072",
                             OfficialName = "Republic of Botswana",
-                            PhoneNumberPrefix = "267"
+                            PhoneNumberPrefix = "267",
+                            PrimaryLocaleIETFBCP47Tag = "en-BW"
                         },
                         new
                         {
@@ -421,6 +436,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "British Indian Ocean Territory",
                             PhoneNumberPrefix = "246",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-IO",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -432,6 +448,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Virgin Islands",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-VG",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -459,7 +476,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BFA",
                             ISO31661NumericCode = "854",
                             OfficialName = "Burkina Faso",
-                            PhoneNumberPrefix = "226"
+                            PhoneNumberPrefix = "226",
+                            PrimaryLocaleIETFBCP47Tag = "fr-BF"
                         },
                         new
                         {
@@ -468,7 +486,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "BDI",
                             ISO31661NumericCode = "108",
                             OfficialName = "Republic of Burundi",
-                            PhoneNumberPrefix = "257"
+                            PhoneNumberPrefix = "257",
+                            PrimaryLocaleIETFBCP47Tag = "fr-BI"
                         },
                         new
                         {
@@ -495,7 +514,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "CMR",
                             ISO31661NumericCode = "120",
                             OfficialName = "Republic of Cameroon",
-                            PhoneNumberPrefix = "237"
+                            PhoneNumberPrefix = "237",
+                            PrimaryLocaleIETFBCP47Tag = "fr-CM"
                         },
                         new
                         {
@@ -505,6 +525,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "136",
                             OfficialName = "Cayman Islands",
                             PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-KY",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -514,7 +535,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "CAF",
                             ISO31661NumericCode = "140",
                             OfficialName = "Central African Republic",
-                            PhoneNumberPrefix = "236"
+                            PhoneNumberPrefix = "236",
+                            PrimaryLocaleIETFBCP47Tag = "fr-CF"
                         },
                         new
                         {
@@ -523,7 +545,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "TCD",
                             ISO31661NumericCode = "148",
                             OfficialName = "Republic of Chad",
-                            PhoneNumberPrefix = "235"
+                            PhoneNumberPrefix = "235",
+                            PrimaryLocaleIETFBCP47Tag = "fr-TD"
                         },
                         new
                         {
@@ -532,7 +555,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "CHL",
                             ISO31661NumericCode = "152",
                             OfficialName = "Republic of Chile",
-                            PhoneNumberPrefix = "56"
+                            PhoneNumberPrefix = "56",
+                            PrimaryLocaleIETFBCP47Tag = "es-CL"
                         },
                         new
                         {
@@ -560,6 +584,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "162",
                             OfficialName = "Territory of Christmas Island",
                             PhoneNumberPrefix = "61",
+                            PrimaryLocaleIETFBCP47Tag = "en-CX",
                             SovereignISO31661Alpha2Code = "AU"
                         },
                         new
@@ -570,6 +595,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "166",
                             OfficialName = "Territory of Cocos (Keeling) Islands",
                             PhoneNumberPrefix = "61",
+                            PrimaryLocaleIETFBCP47Tag = "en-CC",
                             SovereignISO31661Alpha2Code = "AU"
                         },
                         new
@@ -579,7 +605,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "COL",
                             ISO31661NumericCode = "170",
                             OfficialName = "Republic of Colombia",
-                            PhoneNumberPrefix = "57"
+                            PhoneNumberPrefix = "57",
+                            PrimaryLocaleIETFBCP47Tag = "es-CO"
                         },
                         new
                         {
@@ -597,7 +624,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "COD",
                             ISO31661NumericCode = "180",
                             OfficialName = "Democratic Republic of the Congo",
-                            PhoneNumberPrefix = "243"
+                            PhoneNumberPrefix = "243",
+                            PrimaryLocaleIETFBCP47Tag = "fr-CD"
                         },
                         new
                         {
@@ -606,7 +634,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "COG",
                             ISO31661NumericCode = "178",
                             OfficialName = "Republic of the Congo",
-                            PhoneNumberPrefix = "242"
+                            PhoneNumberPrefix = "242",
+                            PrimaryLocaleIETFBCP47Tag = "fr-CG"
                         },
                         new
                         {
@@ -616,6 +645,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "184",
                             OfficialName = "Cook Islands",
                             PhoneNumberPrefix = "682",
+                            PrimaryLocaleIETFBCP47Tag = "en-CK",
                             SovereignISO31661Alpha2Code = "NZ"
                         },
                         new
@@ -625,7 +655,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "CRI",
                             ISO31661NumericCode = "188",
                             OfficialName = "Republic of Costa Rica",
-                            PhoneNumberPrefix = "506"
+                            PhoneNumberPrefix = "506",
+                            PrimaryLocaleIETFBCP47Tag = "es-CR"
                         },
                         new
                         {
@@ -634,7 +665,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "CIV",
                             ISO31661NumericCode = "384",
                             OfficialName = "Republic of Côte d'Ivoire",
-                            PhoneNumberPrefix = "225"
+                            PhoneNumberPrefix = "225",
+                            PrimaryLocaleIETFBCP47Tag = "fr-CI"
                         },
                         new
                         {
@@ -653,7 +685,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "CUB",
                             ISO31661NumericCode = "192",
                             OfficialName = "Republic of Cuba",
-                            PhoneNumberPrefix = "53"
+                            PhoneNumberPrefix = "53",
+                            PrimaryLocaleIETFBCP47Tag = "es-CU"
                         },
                         new
                         {
@@ -700,7 +733,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "DJI",
                             ISO31661NumericCode = "262",
                             OfficialName = "Republic of Djibouti",
-                            PhoneNumberPrefix = "253"
+                            PhoneNumberPrefix = "253",
+                            PrimaryLocaleIETFBCP47Tag = "fr-DJ"
                         },
                         new
                         {
@@ -709,7 +743,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "DMA",
                             ISO31661NumericCode = "212",
                             OfficialName = "Commonwealth of Dominica",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-DM"
                         },
                         new
                         {
@@ -718,7 +753,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "DOM",
                             ISO31661NumericCode = "214",
                             OfficialName = "Dominican Republic",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "es-DO"
                         },
                         new
                         {
@@ -728,7 +764,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "218",
                             OfficialName = "Republic of Ecuador",
                             PhoneNumberPrefix = "593",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "es-EC"
                         },
                         new
                         {
@@ -747,7 +784,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "222",
                             OfficialName = "Republic of El Salvador",
                             PhoneNumberPrefix = "503",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "es-SV"
                         },
                         new
                         {
@@ -756,7 +794,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GNQ",
                             ISO31661NumericCode = "226",
                             OfficialName = "Republic of Equatorial Guinea",
-                            PhoneNumberPrefix = "240"
+                            PhoneNumberPrefix = "240",
+                            PrimaryLocaleIETFBCP47Tag = "es-GQ"
                         },
                         new
                         {
@@ -784,7 +823,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "SWZ",
                             ISO31661NumericCode = "748",
                             OfficialName = "Kingdom of Eswatini",
-                            PhoneNumberPrefix = "268"
+                            PhoneNumberPrefix = "268",
+                            PrimaryLocaleIETFBCP47Tag = "en-SZ"
                         },
                         new
                         {
@@ -803,6 +843,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "238",
                             OfficialName = "Falkland Islands",
                             PhoneNumberPrefix = "500",
+                            PrimaryLocaleIETFBCP47Tag = "en-FK",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -822,7 +863,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "FJI",
                             ISO31661NumericCode = "242",
                             OfficialName = "Republic of Fiji",
-                            PhoneNumberPrefix = "679"
+                            PhoneNumberPrefix = "679",
+                            PrimaryLocaleIETFBCP47Tag = "en-FJ"
                         },
                         new
                         {
@@ -842,7 +884,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "250",
                             OfficialName = "French Republic",
                             PhoneNumberPrefix = "33",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-FR"
                         },
                         new
                         {
@@ -853,6 +896,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "French Guiana",
                             PhoneNumberPrefix = "594",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-GF",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -863,6 +907,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "258",
                             OfficialName = "French Polynesia",
                             PhoneNumberPrefix = "689",
+                            PrimaryLocaleIETFBCP47Tag = "fr-PF",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -883,7 +928,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GAB",
                             ISO31661NumericCode = "266",
                             OfficialName = "Gabonese Republic",
-                            PhoneNumberPrefix = "241"
+                            PhoneNumberPrefix = "241",
+                            PrimaryLocaleIETFBCP47Tag = "fr-GA"
                         },
                         new
                         {
@@ -892,7 +938,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GMB",
                             ISO31661NumericCode = "270",
                             OfficialName = "Republic of The Gambia",
-                            PhoneNumberPrefix = "220"
+                            PhoneNumberPrefix = "220",
+                            PrimaryLocaleIETFBCP47Tag = "en-GM"
                         },
                         new
                         {
@@ -911,7 +958,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "276",
                             OfficialName = "Federal Republic of Germany",
                             PhoneNumberPrefix = "49",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "de-DE"
                         },
                         new
                         {
@@ -920,7 +968,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GHA",
                             ISO31661NumericCode = "288",
                             OfficialName = "Republic of Ghana",
-                            PhoneNumberPrefix = "233"
+                            PhoneNumberPrefix = "233",
+                            PrimaryLocaleIETFBCP47Tag = "en-GH"
                         },
                         new
                         {
@@ -930,6 +979,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "292",
                             OfficialName = "Gibraltar",
                             PhoneNumberPrefix = "350",
+                            PrimaryLocaleIETFBCP47Tag = "en-GI",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -959,7 +1009,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GRD",
                             ISO31661NumericCode = "308",
                             OfficialName = "Grenada",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-GD"
                         },
                         new
                         {
@@ -970,6 +1021,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Guadeloupe",
                             PhoneNumberPrefix = "590",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-GP",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -981,6 +1033,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Guam",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-GU",
                             SovereignISO31661Alpha2Code = "US"
                         },
                         new
@@ -990,7 +1043,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GTM",
                             ISO31661NumericCode = "320",
                             OfficialName = "Republic of Guatemala",
-                            PhoneNumberPrefix = "502"
+                            PhoneNumberPrefix = "502",
+                            PrimaryLocaleIETFBCP47Tag = "es-GT"
                         },
                         new
                         {
@@ -1001,6 +1055,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Bailiwick of Guernsey",
                             PhoneNumberPrefix = "44",
                             PrimaryCurrencyISO4217AlphaCode = "GBP",
+                            PrimaryLocaleIETFBCP47Tag = "en-GG",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -1010,7 +1065,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GIN",
                             ISO31661NumericCode = "324",
                             OfficialName = "Republic of Guinea",
-                            PhoneNumberPrefix = "224"
+                            PhoneNumberPrefix = "224",
+                            PrimaryLocaleIETFBCP47Tag = "fr-GN"
                         },
                         new
                         {
@@ -1028,7 +1084,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "GUY",
                             ISO31661NumericCode = "328",
                             OfficialName = "Co-operative Republic of Guyana",
-                            PhoneNumberPrefix = "592"
+                            PhoneNumberPrefix = "592",
+                            PrimaryLocaleIETFBCP47Tag = "en-GY"
                         },
                         new
                         {
@@ -1037,7 +1094,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "HTI",
                             ISO31661NumericCode = "332",
                             OfficialName = "Republic of Haiti",
-                            PhoneNumberPrefix = "509"
+                            PhoneNumberPrefix = "509",
+                            PrimaryLocaleIETFBCP47Tag = "fr-HT"
                         },
                         new
                         {
@@ -1057,7 +1115,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "336",
                             OfficialName = "Holy See",
                             PhoneNumberPrefix = "39",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "it-VA"
                         },
                         new
                         {
@@ -1066,7 +1125,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "HND",
                             ISO31661NumericCode = "340",
                             OfficialName = "Republic of Honduras",
-                            PhoneNumberPrefix = "504"
+                            PhoneNumberPrefix = "504",
+                            PrimaryLocaleIETFBCP47Tag = "es-HN"
                         },
                         new
                         {
@@ -1140,7 +1200,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "372",
                             OfficialName = "Ireland",
                             PhoneNumberPrefix = "353",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "en-IE"
                         },
                         new
                         {
@@ -1151,6 +1212,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Isle of Man",
                             PhoneNumberPrefix = "44",
                             PrimaryCurrencyISO4217AlphaCode = "GBP",
+                            PrimaryLocaleIETFBCP47Tag = "en-IM",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -1170,7 +1232,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "380",
                             OfficialName = "Italian Republic",
                             PhoneNumberPrefix = "39",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "it-IT"
                         },
                         new
                         {
@@ -1179,7 +1242,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "JAM",
                             ISO31661NumericCode = "388",
                             OfficialName = "Jamaica",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-JM"
                         },
                         new
                         {
@@ -1189,7 +1253,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "392",
                             OfficialName = "Japan",
                             PhoneNumberPrefix = "81",
-                            PrimaryCurrencyISO4217AlphaCode = "JPY"
+                            PrimaryCurrencyISO4217AlphaCode = "JPY",
+                            PrimaryLocaleIETFBCP47Tag = "ja-JP"
                         },
                         new
                         {
@@ -1200,6 +1265,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Bailiwick of Jersey",
                             PhoneNumberPrefix = "44",
                             PrimaryCurrencyISO4217AlphaCode = "GBP",
+                            PrimaryLocaleIETFBCP47Tag = "en-JE",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -1236,7 +1302,18 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "KIR",
                             ISO31661NumericCode = "296",
                             OfficialName = "Republic of Kiribati",
-                            PhoneNumberPrefix = "686"
+                            PhoneNumberPrefix = "686",
+                            PrimaryLocaleIETFBCP47Tag = "en-KI"
+                        },
+                        new
+                        {
+                            ISO31661Alpha2Code = "XK",
+                            DisplayName = "Kosovo",
+                            ISO31661Alpha3Code = "XKX",
+                            ISO31661NumericCode = "383",
+                            OfficialName = "Republic of Kosovo",
+                            PhoneNumberPrefix = "383",
+                            PrimaryCurrencyISO4217AlphaCode = "EUR"
                         },
                         new
                         {
@@ -1309,7 +1386,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "LSO",
                             ISO31661NumericCode = "426",
                             OfficialName = "Kingdom of Lesotho",
-                            PhoneNumberPrefix = "266"
+                            PhoneNumberPrefix = "266",
+                            PrimaryLocaleIETFBCP47Tag = "en-LS"
                         },
                         new
                         {
@@ -1318,7 +1396,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "LBR",
                             ISO31661NumericCode = "430",
                             OfficialName = "Republic of Liberia",
-                            PhoneNumberPrefix = "231"
+                            PhoneNumberPrefix = "231",
+                            PrimaryLocaleIETFBCP47Tag = "en-LR"
                         },
                         new
                         {
@@ -1336,7 +1415,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "LIE",
                             ISO31661NumericCode = "438",
                             OfficialName = "Principality of Liechtenstein",
-                            PhoneNumberPrefix = "423"
+                            PhoneNumberPrefix = "423",
+                            PrimaryLocaleIETFBCP47Tag = "de-LI"
                         },
                         new
                         {
@@ -1384,7 +1464,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "MWI",
                             ISO31661NumericCode = "454",
                             OfficialName = "Republic of Malawi",
-                            PhoneNumberPrefix = "265"
+                            PhoneNumberPrefix = "265",
+                            PrimaryLocaleIETFBCP47Tag = "en-MW"
                         },
                         new
                         {
@@ -1411,7 +1492,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "MLI",
                             ISO31661NumericCode = "466",
                             OfficialName = "Republic of Mali",
-                            PhoneNumberPrefix = "223"
+                            PhoneNumberPrefix = "223",
+                            PrimaryLocaleIETFBCP47Tag = "fr-ML"
                         },
                         new
                         {
@@ -1431,7 +1513,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "584",
                             OfficialName = "Republic of the Marshall Islands",
                             PhoneNumberPrefix = "692",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-MH"
                         },
                         new
                         {
@@ -1442,6 +1525,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Martinique",
                             PhoneNumberPrefix = "596",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-MQ",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -1460,7 +1544,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "MUS",
                             ISO31661NumericCode = "480",
                             OfficialName = "Republic of Mauritius",
-                            PhoneNumberPrefix = "230"
+                            PhoneNumberPrefix = "230",
+                            PrimaryLocaleIETFBCP47Tag = "en-MU"
                         },
                         new
                         {
@@ -1471,6 +1556,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Department of Mayotte",
                             PhoneNumberPrefix = "262",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-YT",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -1480,7 +1566,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "MEX",
                             ISO31661NumericCode = "484",
                             OfficialName = "United Mexican States",
-                            PhoneNumberPrefix = "52"
+                            PhoneNumberPrefix = "52",
+                            PrimaryLocaleIETFBCP47Tag = "es-MX"
                         },
                         new
                         {
@@ -1490,7 +1577,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "583",
                             OfficialName = "Federated States of Micronesia",
                             PhoneNumberPrefix = "691",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-FM"
                         },
                         new
                         {
@@ -1509,7 +1597,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "492",
                             OfficialName = "Principality of Monaco",
                             PhoneNumberPrefix = "377",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-MC"
                         },
                         new
                         {
@@ -1538,6 +1627,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "500",
                             OfficialName = "Montserrat",
                             PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-MS",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -1574,7 +1664,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "NAM",
                             ISO31661NumericCode = "516",
                             OfficialName = "Republic of Namibia",
-                            PhoneNumberPrefix = "264"
+                            PhoneNumberPrefix = "264",
+                            PrimaryLocaleIETFBCP47Tag = "en-NA"
                         },
                         new
                         {
@@ -1583,7 +1674,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "NRU",
                             ISO31661NumericCode = "520",
                             OfficialName = "Republic of Nauru",
-                            PhoneNumberPrefix = "674"
+                            PhoneNumberPrefix = "674",
+                            PrimaryLocaleIETFBCP47Tag = "en-NR"
                         },
                         new
                         {
@@ -1612,6 +1704,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "540",
                             OfficialName = "New Caledonia",
                             PhoneNumberPrefix = "687",
+                            PrimaryLocaleIETFBCP47Tag = "fr-NC",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -1621,7 +1714,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "NZL",
                             ISO31661NumericCode = "554",
                             OfficialName = "New Zealand",
-                            PhoneNumberPrefix = "64"
+                            PhoneNumberPrefix = "64",
+                            PrimaryLocaleIETFBCP47Tag = "en-NZ"
                         },
                         new
                         {
@@ -1630,7 +1724,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "NIC",
                             ISO31661NumericCode = "558",
                             OfficialName = "Republic of Nicaragua",
-                            PhoneNumberPrefix = "505"
+                            PhoneNumberPrefix = "505",
+                            PrimaryLocaleIETFBCP47Tag = "es-NI"
                         },
                         new
                         {
@@ -1639,7 +1734,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "NER",
                             ISO31661NumericCode = "562",
                             OfficialName = "Republic of the Niger",
-                            PhoneNumberPrefix = "227"
+                            PhoneNumberPrefix = "227",
+                            PrimaryLocaleIETFBCP47Tag = "fr-NE"
                         },
                         new
                         {
@@ -1648,7 +1744,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "NGA",
                             ISO31661NumericCode = "566",
                             OfficialName = "Federal Republic of Nigeria",
-                            PhoneNumberPrefix = "234"
+                            PhoneNumberPrefix = "234",
+                            PrimaryLocaleIETFBCP47Tag = "en-NG"
                         },
                         new
                         {
@@ -1658,6 +1755,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "570",
                             OfficialName = "Niue",
                             PhoneNumberPrefix = "683",
+                            PrimaryLocaleIETFBCP47Tag = "en-NU",
                             SovereignISO31661Alpha2Code = "NZ"
                         },
                         new
@@ -1668,6 +1766,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "574",
                             OfficialName = "Territory of Norfolk Island",
                             PhoneNumberPrefix = "672",
+                            PrimaryLocaleIETFBCP47Tag = "en-NF",
                             SovereignISO31661Alpha2Code = "AU"
                         },
                         new
@@ -1688,6 +1787,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Commonwealth of the Northern Mariana Islands",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-MP",
                             SovereignISO31661Alpha2Code = "US"
                         },
                         new
@@ -1725,7 +1825,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "585",
                             OfficialName = "Republic of Palau",
                             PhoneNumberPrefix = "680",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-PW"
                         },
                         new
                         {
@@ -1744,7 +1845,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "591",
                             OfficialName = "Republic of Panama",
                             PhoneNumberPrefix = "507",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "es-PA"
                         },
                         new
                         {
@@ -1753,7 +1855,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "PNG",
                             ISO31661NumericCode = "598",
                             OfficialName = "Independent State of Papua New Guinea",
-                            PhoneNumberPrefix = "675"
+                            PhoneNumberPrefix = "675",
+                            PrimaryLocaleIETFBCP47Tag = "en-PG"
                         },
                         new
                         {
@@ -1762,7 +1865,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "PRY",
                             ISO31661NumericCode = "600",
                             OfficialName = "Republic of Paraguay",
-                            PhoneNumberPrefix = "595"
+                            PhoneNumberPrefix = "595",
+                            PrimaryLocaleIETFBCP47Tag = "es-PY"
                         },
                         new
                         {
@@ -1771,7 +1875,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "PER",
                             ISO31661NumericCode = "604",
                             OfficialName = "Republic of Peru",
-                            PhoneNumberPrefix = "51"
+                            PhoneNumberPrefix = "51",
+                            PrimaryLocaleIETFBCP47Tag = "es-PE"
                         },
                         new
                         {
@@ -1780,7 +1885,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "PHL",
                             ISO31661NumericCode = "608",
                             OfficialName = "Republic of the Philippines",
-                            PhoneNumberPrefix = "63"
+                            PhoneNumberPrefix = "63",
+                            PrimaryLocaleIETFBCP47Tag = "en-PH"
                         },
                         new
                         {
@@ -1790,6 +1896,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "612",
                             OfficialName = "Pitcairn, Henderson, Ducie and Oeno Islands",
                             PhoneNumberPrefix = "64",
+                            PrimaryLocaleIETFBCP47Tag = "en-PN",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -1820,6 +1927,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Commonwealth of Puerto Rico",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "es-PR",
                             SovereignISO31661Alpha2Code = "US"
                         },
                         new
@@ -1840,6 +1948,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Réunion",
                             PhoneNumberPrefix = "262",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-RE",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -1878,6 +1987,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Collectivity of Saint Barthélemy",
                             PhoneNumberPrefix = "590",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-BL",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -1888,6 +1998,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "654",
                             OfficialName = "Saint Helena, Ascension and Tristan da Cunha",
                             PhoneNumberPrefix = "290",
+                            PrimaryLocaleIETFBCP47Tag = "en-SH",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -1897,7 +2008,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "KNA",
                             ISO31661NumericCode = "659",
                             OfficialName = "Federation of Saint Christopher and Nevis",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-KN"
                         },
                         new
                         {
@@ -1906,7 +2018,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "LCA",
                             ISO31661NumericCode = "662",
                             OfficialName = "Saint Lucia",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-LC"
                         },
                         new
                         {
@@ -1917,6 +2030,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Collectivity of Saint Martin",
                             PhoneNumberPrefix = "590",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-MF",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -1928,6 +2042,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Saint Pierre and Miquelon",
                             PhoneNumberPrefix = "508",
                             PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "fr-PM",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -1937,7 +2052,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "VCT",
                             ISO31661NumericCode = "670",
                             OfficialName = "Saint Vincent and the Grenadines",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-VC"
                         },
                         new
                         {
@@ -1956,7 +2072,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "674",
                             OfficialName = "Republic of San Marino",
                             PhoneNumberPrefix = "378",
-                            PrimaryCurrencyISO4217AlphaCode = "EUR"
+                            PrimaryCurrencyISO4217AlphaCode = "EUR",
+                            PrimaryLocaleIETFBCP47Tag = "it-SM"
                         },
                         new
                         {
@@ -1983,7 +2100,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "SEN",
                             ISO31661NumericCode = "686",
                             OfficialName = "Republic of Senegal",
-                            PhoneNumberPrefix = "221"
+                            PhoneNumberPrefix = "221",
+                            PrimaryLocaleIETFBCP47Tag = "fr-SN"
                         },
                         new
                         {
@@ -2001,7 +2119,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "SYC",
                             ISO31661NumericCode = "690",
                             OfficialName = "Republic of Seychelles",
-                            PhoneNumberPrefix = "248"
+                            PhoneNumberPrefix = "248",
+                            PrimaryLocaleIETFBCP47Tag = "en-SC"
                         },
                         new
                         {
@@ -2010,7 +2129,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "SLE",
                             ISO31661NumericCode = "694",
                             OfficialName = "Republic of Sierra Leone",
-                            PhoneNumberPrefix = "232"
+                            PhoneNumberPrefix = "232",
+                            PrimaryLocaleIETFBCP47Tag = "en-SL"
                         },
                         new
                         {
@@ -2019,7 +2139,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "SGP",
                             ISO31661NumericCode = "702",
                             OfficialName = "Republic of Singapore",
-                            PhoneNumberPrefix = "65"
+                            PhoneNumberPrefix = "65",
+                            PrimaryLocaleIETFBCP47Tag = "en-SG"
                         },
                         new
                         {
@@ -2058,7 +2179,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "SLB",
                             ISO31661NumericCode = "090",
                             OfficialName = "Solomon Islands",
-                            PhoneNumberPrefix = "677"
+                            PhoneNumberPrefix = "677",
+                            PrimaryLocaleIETFBCP47Tag = "en-SB"
                         },
                         new
                         {
@@ -2076,7 +2198,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "ZAF",
                             ISO31661NumericCode = "710",
                             OfficialName = "Republic of South Africa",
-                            PhoneNumberPrefix = "27"
+                            PhoneNumberPrefix = "27",
+                            PrimaryLocaleIETFBCP47Tag = "en-ZA"
                         },
                         new
                         {
@@ -2095,7 +2218,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "SSD",
                             ISO31661NumericCode = "728",
                             OfficialName = "Republic of South Sudan",
-                            PhoneNumberPrefix = "211"
+                            PhoneNumberPrefix = "211",
+                            PrimaryLocaleIETFBCP47Tag = "en-SS"
                         },
                         new
                         {
@@ -2160,7 +2284,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "CHE",
                             ISO31661NumericCode = "756",
                             OfficialName = "Swiss Confederation",
-                            PhoneNumberPrefix = "41"
+                            PhoneNumberPrefix = "41",
+                            PrimaryLocaleIETFBCP47Tag = "de-CH"
                         },
                         new
                         {
@@ -2215,7 +2340,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "TGO",
                             ISO31661NumericCode = "768",
                             OfficialName = "Togolese Republic",
-                            PhoneNumberPrefix = "228"
+                            PhoneNumberPrefix = "228",
+                            PrimaryLocaleIETFBCP47Tag = "fr-TG"
                         },
                         new
                         {
@@ -2225,6 +2351,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "772",
                             OfficialName = "Tokelau",
                             PhoneNumberPrefix = "690",
+                            PrimaryLocaleIETFBCP47Tag = "en-TK",
                             SovereignISO31661Alpha2Code = "NZ"
                         },
                         new
@@ -2243,7 +2370,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "TTO",
                             ISO31661NumericCode = "780",
                             OfficialName = "Republic of Trinidad and Tobago",
-                            PhoneNumberPrefix = "1"
+                            PhoneNumberPrefix = "1",
+                            PrimaryLocaleIETFBCP47Tag = "en-TT"
                         },
                         new
                         {
@@ -2281,6 +2409,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Turks and Caicos Islands",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-TC",
                             SovereignISO31661Alpha2Code = "GB"
                         },
                         new
@@ -2290,7 +2419,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "TUV",
                             ISO31661NumericCode = "798",
                             OfficialName = "Tuvalu",
-                            PhoneNumberPrefix = "688"
+                            PhoneNumberPrefix = "688",
+                            PrimaryLocaleIETFBCP47Tag = "en-TV"
                         },
                         new
                         {
@@ -2299,7 +2429,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "UGA",
                             ISO31661NumericCode = "800",
                             OfficialName = "Republic of Uganda",
-                            PhoneNumberPrefix = "256"
+                            PhoneNumberPrefix = "256",
+                            PrimaryLocaleIETFBCP47Tag = "en-UG"
                         },
                         new
                         {
@@ -2327,7 +2458,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "826",
                             OfficialName = "United Kingdom of Great Britain and Northern Ireland",
                             PhoneNumberPrefix = "44",
-                            PrimaryCurrencyISO4217AlphaCode = "GBP"
+                            PrimaryCurrencyISO4217AlphaCode = "GBP",
+                            PrimaryLocaleIETFBCP47Tag = "en-GB"
                         },
                         new
                         {
@@ -2338,6 +2470,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "United States Minor Outlying Islands",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-UM",
                             SovereignISO31661Alpha2Code = "US"
                         },
                         new
@@ -2349,6 +2482,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Virgin Islands of the United States",
                             PhoneNumberPrefix = "1",
                             PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-VI",
                             SovereignISO31661Alpha2Code = "US"
                         },
                         new
@@ -2358,7 +2492,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "URY",
                             ISO31661NumericCode = "858",
                             OfficialName = "Oriental Republic of Uruguay",
-                            PhoneNumberPrefix = "598"
+                            PhoneNumberPrefix = "598",
+                            PrimaryLocaleIETFBCP47Tag = "es-UY"
                         },
                         new
                         {
@@ -2385,7 +2520,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "VEN",
                             ISO31661NumericCode = "862",
                             OfficialName = "Bolivarian Republic of Venezuela",
-                            PhoneNumberPrefix = "58"
+                            PhoneNumberPrefix = "58",
+                            PrimaryLocaleIETFBCP47Tag = "es-VE"
                         },
                         new
                         {
@@ -2404,6 +2540,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "876",
                             OfficialName = "Territory of the Wallis and Futuna Islands",
                             PhoneNumberPrefix = "681",
+                            PrimaryLocaleIETFBCP47Tag = "fr-WF",
                             SovereignISO31661Alpha2Code = "FR"
                         },
                         new
@@ -2431,7 +2568,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661Alpha3Code = "ZMB",
                             ISO31661NumericCode = "894",
                             OfficialName = "Republic of Zambia",
-                            PhoneNumberPrefix = "260"
+                            PhoneNumberPrefix = "260",
+                            PrimaryLocaleIETFBCP47Tag = "en-ZM"
                         },
                         new
                         {
@@ -2441,7 +2579,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             ISO31661NumericCode = "716",
                             OfficialName = "Republic of Zimbabwe",
                             PhoneNumberPrefix = "263",
-                            PrimaryCurrencyISO4217AlphaCode = "USD"
+                            PrimaryCurrencyISO4217AlphaCode = "USD",
+                            PrimaryLocaleIETFBCP47Tag = "en-ZW"
                         });
                 });
 
@@ -5651,8 +5790,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                         new
                         {
                             Id = 0,
-                            UpdatedAt = new DateTime(2025, 11, 24, 10, 0, 0, 0, DateTimeKind.Utc),
-                            Version = "1.2.0"
+                            UpdatedAt = new DateTime(2025, 11, 28, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Version = "1.4.0"
                         });
                 });
 
@@ -6934,6 +7073,11 @@ namespace D2.Geo.Infra.Repository.Migrations
                         },
                         new
                         {
+                            country_iso_3166_1_alpha_2_code = "XK",
+                            geopolitical_entity_short_code = "EU"
+                        },
+                        new
+                        {
                             country_iso_3166_1_alpha_2_code = "AI",
                             geopolitical_entity_short_code = "NA"
                         },
@@ -7640,6 +7784,11 @@ namespace D2.Geo.Infra.Repository.Migrations
                         new
                         {
                             country_iso_3166_1_alpha_2_code = "SI",
+                            geopolitical_entity_short_code = "BALK"
+                        },
+                        new
+                        {
+                            country_iso_3166_1_alpha_2_code = "XK",
                             geopolitical_entity_short_code = "BALK"
                         },
                         new

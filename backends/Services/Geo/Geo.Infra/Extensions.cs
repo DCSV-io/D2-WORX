@@ -6,7 +6,9 @@
 
 namespace D2.Geo.Infra;
 
+using D2.Contracts.DistributedCache.Redis;
 using D2.Contracts.GeoRefDataService.Default.Messaging.MT.Consumers;
+using D2.Contracts.InMemoryCache.Default;
 using D2.Contracts.Transactions.Pg;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
 using D2.Geo.Infra.Messaging.MT.Publishers;
@@ -37,6 +39,9 @@ public static class Extensions
         /// <param name="dbConnectionString">
         /// The database connection string.
         /// </param>
+        /// <param name="distributedCacheConnectionString">
+        /// The distributed cache connection string.
+        /// </param>
         /// <param name="messageQueueConnectionString">
         /// The message queue connection string.
         /// </param>
@@ -46,10 +51,17 @@ public static class Extensions
         /// </returns>
         public IServiceCollection AddGeoInfra(
             string dbConnectionString,
+            string distributedCacheConnectionString,
             string messageQueueConnectionString)
         {
             // Database context.
             services.AddDbContext<GeoDbContext>(options => options.UseNpgsql(dbConnectionString));
+
+            // Local in-memory cache.
+            services.AddDefaultMemoryCaching();
+
+            // Distributed cache.
+            services.AddRedisCaching(distributedCacheConnectionString);
 
             // Add support for transactions.
             services.AddPgTransactions();

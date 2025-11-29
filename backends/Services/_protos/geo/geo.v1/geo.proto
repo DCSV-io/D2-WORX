@@ -1,12 +1,16 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
+import "common/common.v1/d2_result.proto";
 
 package d2.geo.v1;
 
 option csharp_namespace = "D2.Services.Protos.Geo.V1";
 
-// GeoService defines methods to retrieve geographical reference and contact data.
+// ******************************
+// **** GeoService gRPC API *****
+// ******************************
+
 service GeoService {
   rpc GetReferenceData(GetReferenceDataRequest)
       returns (GetReferenceDataResponse);
@@ -15,15 +19,33 @@ service GeoService {
       returns (RequestReferenceDataUpdateResponse);
 }
 
+// **************************************
+// ***** RequestReferenceDataUpdate *****
+// **************************************
+
 message RequestReferenceDataUpdateRequest {}
 
 message RequestReferenceDataUpdateResponse {
-  bool accepted = 1;
+    d2.common.v1.D2ResultProto result = 1;
+    RequestReferenceDataUpdateData data = 2;
 }
+
+message RequestReferenceDataUpdateData {
+    string version = 1;
+}
+
+// ****************************
+// ***** GetReferenceData *****
+// ****************************
 
 message GetReferenceDataRequest {}
 
 message GetReferenceDataResponse {
+    d2.common.v1.D2ResultProto result = 1;
+    GeoRefData data = 2;
+}
+
+message GeoRefData {
   string version = 1; // Semantic version of the reference data.
   google.protobuf.Timestamp updated_at = 2; // Timestamp of the last update.
   map<string, CountryDTO> countries = 3; // Key is iso_3166_1_alpha_2_code.
