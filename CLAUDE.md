@@ -1,38 +1,29 @@
 # CLAUDE.md — D²-WORX Development Guide
 
-This file provides guidance for Claude Code when working with the D²-WORX codebase.
+This file provides guidance for Claude Code (and other AI assistants) when working with the D²-WORX codebase.
 
 ## Project Overview
 
 **D²-WORX** (Decisive Distributed Application Framework) is a microservices-based evolution of DeCAF, designed for SMB SaaS applications. It combines .NET 10 backend services with a SvelteKit frontend, orchestrated via .NET Aspire.
 
-**Status:** Pre-Alpha (Core Infrastructure)
-**License:** PolyForm Strict (reference implementation, non-commercial)
+- **Status:** Pre-Alpha (Core Infrastructure)
+- **License:** PolyForm Strict (reference implementation, non-commercial)
+- **Language:** C# 14 / .NET 10, TypeScript 5.9, Svelte 5
 
 ## Quick Reference
 
-### Essential Commands
+### Commands
 
-```bash
-# Backend (from backends/AppHost)
-dotnet run                              # Start all services via Aspire
-dotnet build                            # Build solution
-dotnet test                             # Run all tests
+> ⚠️ **DO NOT RUN** - Claude Code should not execute `dotnet run`, `pnpm dev`, or any commands that start services. Build and test commands are ONLY acceptable when explicitly requested by the user.
 
-# Frontend (from frontends/sveltekit)
-pnpm install                            # Install dependencies
-pnpm dev                                # Start dev server
-pnpm test:unit                          # Run Vitest
-pnpm test:e2e                           # Run Playwright
-pnpm check                              # Type-check
-pnpm lint                               # Prettier + ESLint
-pnpm format                             # Auto-format
-```
+### Key Reference Documents
 
-### Key URLs (when running)
-- Aspire Dashboard: `http://localhost:15888`
-- Grafana: `http://localhost:3000`
-- SvelteKit Dev: `http://localhost:5173`
+For deeper architectural context, consult these files:
+
+| Document               | Purpose                                                                      |
+|------------------------|------------------------------------------------------------------------------|
+| `README.md`            | Project overview, setup instructions, technology stack, and status           |
+| `backends/BACKENDS.md` | Complete backend architecture, TLC→2LC→3LC hierarchy, and folder conventions |
 
 ## Project Structure
 
@@ -42,21 +33,24 @@ D2-WORX/
 │   ├── AppHost/                    # Aspire orchestration
 │   ├── Contracts/                  # Shared abstractions
 │   │   ├── Handler/                # BaseHandler pattern
-│   │   ├── Interfaces/             # Contract interfaces
+│   │   ├── Interfaces/             # Contract interfaces (TLC hierarchy)
+│   │   ├── Implementations/        # Reusable implementations
+│   │   │   ├── Caching/            # Redis & In-Memory
+│   │   │   ├── Common/             # GeoRefData
+│   │   │   └── Repository/         # Transactions
 │   │   ├── Messages/               # Domain event POCOs
 │   │   ├── Result/                 # D2Result pattern
+│   │   ├── Result.Extensions/      # D2Result ↔ Proto conversions
 │   │   ├── ServiceDefaults/        # OpenTelemetry config
 │   │   ├── Tests/                  # Shared test infrastructure
-│   │   ├── Utilities/              # Extensions & helpers
-│   │   └── Implementations/        # Reusable implementations
-│   │       ├── Caching/            # Redis & In-Memory
-│   │       ├── Common/             # GeoRefData
-│   │       └── Repository/         # Transactions
+│   │   └── Utilities/              # Extensions & helpers
 │   ├── Gateways/
 │   │   └── REST/                   # HTTP/REST → gRPC gateway
 │   └── Services/
+│       ├── _protos/                # Protocol Buffers definitions
+│       │   └── _gen/Protos.DotNet/ # Generated C# code
 │       ├── Geo/                    # Geographic reference data
-│       │   ├── Geo.Domain/         # DDD entities
+│       │   ├── Geo.Domain/         # DDD entities & value objects
 │       │   ├── Geo.App/            # CQRS handlers
 │       │   ├── Geo.Infra/          # Repository, messaging, EF Core
 │       │   ├── Geo.API/            # gRPC service
@@ -75,34 +69,32 @@ D2-WORX/
 └── D2.sln                          # Solution file
 ```
 
+---
+
 ## Architecture & Patterns
 
 ### TLC→2LC→3LC Folder Convention
 
-All backend code follows a three-level categorization:
+All backend code follows a three-level categorization. See `backends/BACKENDS.md` for full details.
 
-**TLC (Top-Level):** Architectural concern
-- `CQRS` - Command/Query segregation
-- `Messaging` - Async pub-sub
-- `Repository` - Data access
-- `Caching` - Cache layers
+**TLC (Top-Level):** Architectural concern → `CQRS`, `Messaging`, `Repository`, `Caching`
 
-**2LC (Second-Level):** Implementation type
-- `Handlers` - Business logic
-- `Entities` - EF Core configs
-- `Migrations` - Database evolution
-- `MT` - MassTransit adapters
+**2LC (Second-Level):** Implementation type → `Handlers`, `Entities`, `Migrations`, `MT`
 
-**3LC (Third-Level):** Operation type
-- `C/` - Commands (writes)
-- `Q/` - Queries (reads)
-- `X/` - Complex operations
+**3LC (Third-Level):** Operation type:
+- `C/` - Commands (state-changing) / Create
+- `Q/` - Queries (read-only, no side effects)
 - `R/` - Repository reads
-- `Pub/`, `Sub/` - Publish/Subscribe
+- `U/` - Updates / Utilities
+- `D/` - Deletes
+- `X/` - Complex (multi-step operations with side effects)
+- `Pub/`, `Sub/` - Publish/Subscribe messaging
 
 ### Handler Pattern
 
-Handlers use `BaseHandler<Self, Input, Output>` with automatic logging, tracing, and error handling:
+Handlers use `BaseHandler<TSelf, TInput, TOutput>` with automatic logging, tracing, and error handling.
+
+**IHandlerContext** bundles `IRequestContext` (trace IDs, user info) and `ILogger` to reduce constructor boilerplate.
 
 ```csharp
 using H = ICommands.ISetInMemHandler;
@@ -111,10 +103,19 @@ using O = ICommands.SetInMemOutput;
 
 public class SetInMem : BaseHandler<SetInMem, I, O>, H
 {
+    private readonly IMemoryCache r_memoryCache;
+
+    public SetInMem(IMemoryCache memoryCache, IHandlerContext context)
+        : base(context)
+    {
+        r_memoryCache = memoryCache;
+    }
+
     protected override ValueTask<D2Result<O?>> ExecuteAsync(
         I input, CancellationToken ct = default)
     {
-        // Implementation
+        // Implementation - use TraceId property for logging
+        return ValueTask.FromResult(D2Result<O?>.Ok(new O(), traceId: TraceId));
     }
 }
 ```
@@ -126,28 +127,28 @@ Use result objects instead of exceptions for control flow:
 ```csharp
 // Success
 D2Result.Ok()
-D2Result<TData>.Ok(data, traceId)
+D2Result<TData>.Ok(data, traceId: TraceId)
 
 // Failures
-D2Result.Fail(messages, statusCode, errorCode)
-D2Result.ValidationFailed(inputErrors, traceId)
-D2Result.NotFound(traceId)
-D2Result.Unauthorized(traceId)
+D2Result.Fail(messages, statusCode, errorCode, traceId: TraceId)
+D2Result.ValidationFailed(inputErrors, traceId: TraceId)
+D2Result.NotFound(traceId: TraceId)
+D2Result.Unauthorized(traceId: TraceId)
 
-// Checking results
+// Checking and propagating
 if (result.CheckSuccess(out var output)) { /* use output */ }
-return result.BubbleFail<TNewData>();  // Propagate errors
+return result.BubbleFail<TNewData>();  // Propagate errors with type change
 ```
 
-### Partial Interface Extension
+### Partial Interface Extension Pattern
 
-Split interfaces across files for modularity:
+Interfaces are **partial** and split across files by operation:
 
 ```csharp
-// ICommands.cs
+// ICommands.cs - base partial interface
 public partial interface ICommands { }
 
-// ICommands.SetInMem.cs
+// ICommands.SetInMem.cs - extends with specific handler
 public partial interface ICommands
 {
     public interface ISetInMemHandler : IHandler<SetInMemInput, SetInMemOutput>;
@@ -156,11 +157,39 @@ public partial interface ICommands
 }
 ```
 
+### C# 14 Extension Members
+
+This project uses C# 14 extension member syntax (not the older `this` parameter style):
+
+```csharp
+public static class Extensions
+{
+    extension(IServiceCollection services)
+    {
+        public IServiceCollection AddMyService()
+        {
+            // Register services
+            return services;
+        }
+    }
+}
+```
+
+### Multi-Tier Caching
+
+Cache retrieval order: **Memory → Redis → Database → Disk**
+
+Cache population: When data is retrieved from a lower tier, populate all higher tiers.
+
+Update notifications: Only publish after distributed cache write succeeds.
+
+---
+
 ## Code Conventions
 
 ### C# Style
 
-**File Headers (required):**
+**File Headers (required on all .cs files):**
 ```csharp
 // -----------------------------------------------------------------------
 // <copyright file="FileName.cs" company="DCSV">
@@ -179,23 +208,38 @@ public partial interface ICommands
 public required string ISO31661Alpha2Code { get; init; }
 ```
 
-**Naming:**
-- Classes/Records/Interfaces: `PascalCase`
-- Methods/Properties: `PascalCase`
-- Private fields: `_camelCase`
-- Constants: `UPPER_CASE`
-- Local variables: `camelCase`
+**Naming Conventions:**
+
+| Element                              | Convention         | Example                    |
+|--------------------------------------|--------------------|----------------------------|
+| Classes/Records/Interfaces           | `PascalCase`       | `GetReferenceData`         |
+| Methods/Properties                   | `PascalCase`       | `HandleAsync`              |
+| Private instance fields              | `_camelCase`       | `_memoryCache`             |
+| Private readonly instance fields     | `r_camelCase`      | `r_getFromMem`             |
+| Private static fields                | `s_camelCase`      | `s_instance`               |
+| Private static readonly fields       | `sr_camelCase`     | `sr_activitySource`        |
+| Static readonly fields (non-private) | `SR_PascalCase`    | `SR_ActivitySource`        |
+| Private constants                    | `_UPPER_CASE`      | `_MAX_RETRIES`             |
+| Public/Internal constants            | `UPPER_CASE`       | `MAX_ATTEMPTS`             |
+| Local constants (in tests)           | `snake_case`       | `expected_count`           |
+| Local variables                      | `camelCase`        | `result`                   |
 
 **Entity Design:**
 - Use `record` types for immutability
 - Use `required init` for mandatory properties
 - Initialize collections as empty: `ICollection<T> { }` or `[]`
 
+**Database Conventions:**
+- Column names: `snake_case` (configured via EF Core)
+- Explicit schema control via entity type configurations
+
 ### TypeScript/Frontend Style
 
 - Strict TypeScript enabled
 - ESLint + Prettier enforced
 - Tailwind CSS v4.1 for styling
+
+---
 
 ## Testing
 
@@ -214,14 +258,17 @@ Service.Tests/
     └── Infra/Repository/
 ```
 
-**Naming:** `[Method]_[Scenario]_[ExpectedResult]`
+**Test Naming:** Descriptive names that explain the scenario, e.g.:
+- `GetHandler_WhenMemoryCacheHit_ReturnsDataWithoutCallingRedis`
+- `Updated_WhenSetInMemFails_StillSucceeds`
 
-**Integration tests with Testcontainers:**
+**Integration Tests with Testcontainers:**
 ```csharp
 [MustDisposeResource(false)]
 public class MyTests : IAsyncLifetime
 {
     private PostgreSqlContainer _container = null!;
+    protected CancellationToken Ct => TestContext.Current.CancellationToken;
 
     public async ValueTask InitializeAsync()
     {
@@ -230,6 +277,11 @@ public class MyTests : IAsyncLifetime
             .Build();
         await _container.StartAsync(Ct);
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        await _container.DisposeAsync();
+    }
 }
 ```
 
@@ -237,6 +289,8 @@ public class MyTests : IAsyncLifetime
 
 - **Unit:** Vitest for components/utilities
 - **E2E:** Playwright for user workflows
+
+---
 
 ## Git Conventions
 
@@ -249,6 +303,7 @@ public class MyTests : IAsyncLifetime
 - `infra/...` - CI/CD, deployment
 
 ### Commit Messages (Conventional Commits)
+
 ```
 feat: add CQRS handler for get operation
 fix: correct cache expiration logic
@@ -258,73 +313,79 @@ chore: bump dependency versions
 refactor: simplify caching logic
 ```
 
-**Scope notation:** `feat(geo): add primary locales`
+**With scope:** `feat(geo): add primary locales`
+
+---
 
 ## Infrastructure
 
 ### Services (via Aspire)
-- **PostgreSQL 18** - Per-service databases
-- **Redis 8.2** - Distributed cache
-- **RabbitMQ 4.1** - Async messaging (MassTransit)
-- **MinIO** - Object storage (S3-compatible)
-- **Keycloak 26.4** - Identity management
-- **LGTM Stack** - Observability (Loki, Grafana, Tempo, Mimir)
+
+| Service         | Version | Purpose                    |
+|-----------------|---------|----------------------------|
+| PostgreSQL      | 18      | Per-service databases      |
+| Redis           | 8.2     | Distributed cache          |
+| RabbitMQ        | 4.1     | Async messaging            |
+| MinIO           | Latest  | Object storage (S3)        |
+| Keycloak        | 26.4    | Identity management        |
+| LGTM Stack      | Various | Observability              |
 
 ### Communication Patterns
+
 - **Sync:** gRPC between services (HTTP/2)
 - **Async:** RabbitMQ events via MassTransit
-- **Caching:** Redis (distributed) → Memory (process) → Disk (fallback)
+- **Caching:** Memory → Redis → Database → Disk (fallback)
 
-## Key Documentation
+---
 
-- `backends/BACKENDS.md` - Backend architecture reference
-- `backends/Contracts/Handler/HANDLER.md` - Handler pattern guide
-- `backends/Contracts/Result/RESULT.md` - D2Result pattern
-- `backends/Services/Geo/GEO_SERVICE.md` - Geo service docs
-- `CONTRIBUTING.md` - Contribution guidelines
+## Additional Documentation
 
-## Development Workflow
+| Document                                    | Description                        |
+|---------------------------------------------|------------------------------------|
+| `backends/Contracts/Handler/HANDLER.md`     | Handler pattern guide              |
+| `backends/Contracts/Result/RESULT.md`       | D2Result pattern                   |
+| `backends/Contracts/Result.Extensions/`     | gRPC ↔ D2Result conversions        |
+| `backends/Services/Geo/GEO_SERVICE.md`      | Geo service architecture           |
+| `CONTRIBUTING.md`                           | Contribution guidelines            |
 
-### Adding a New Feature
-
-1. Create handler following `BaseHandler<Self, Input, Output>` pattern
-2. Use TLC→2LC→3LC folder structure
-3. Define interface in `Interfaces/` with partial extension pattern
-4. Register in `Extensions.cs` via DI
-5. Add unit tests in `Tests/Unit/`
-6. Add integration tests in `Tests/Integration/` with Testcontainers
-7. Write XML documentation on all public types
-8. Include license headers in new files
-9. Follow conventional commit format
-
-### Initial Setup
-
-1. Clone repository
-2. Set secrets in `backends/AppHost`:
-   ```bash
-   dotnet user-secrets set Parameters:db-username <value>
-   dotnet user-secrets set Parameters:db-password <value>
-   dotnet user-secrets set Parameters:mq-username <value>
-   dotnet user-secrets set Parameters:mq-password <value>
-   dotnet user-secrets set Parameters:cache-password <value>
-   dotnet user-secrets set Parameters:kc-username <value>
-   dotnet user-secrets set Parameters:kc-password <value>
-   dotnet user-secrets set Parameters:otel-username <value>
-   dotnet user-secrets set Parameters:otel-password <value>
-   dotnet user-secrets set Parameters:s3-username <value>
-   dotnet user-secrets set Parameters:s3-password <value>
-   dotnet user-secrets set Parameters:dba-email <value>
-   dotnet user-secrets set Parameters:dba-password <value>
-   ```
-3. Create `frontends/sveltekit/.env` from `.env.example`
-4. Run `dotnet run` in `backends/AppHost`
-5. Run `pnpm dev` in `frontends/sveltekit`
+---
 
 ## Notes for Claude
 
+### Behavioral Guidelines
+
+- **Read freely** - explore any files needed to understand context
+- **Ask before changing** - do not modify files without explicit user approval
+- **Avoid assumptions** - if requirements are unclear, ask for clarification
+- **Provide options** - when multiple approaches exist, present them for user decision
+- **Research first** - check related files (tests, interfaces, existing implementations) before proposing changes
+- **Think it through** - explain reasoning and tradeoffs rather than jumping to implementation
+
+### Key Principles
+
 - This is a **reference implementation** showing DeCAF → D² evolution
 - Emphasizes **strong DX**: minimal boilerplate, clear patterns, automatic instrumentation
-- All major patterns are established; follow existing conventions
-- Currently in Pre-Alpha: Geo service is the primary implementation focus
-- Use existing documentation files (*.md) as authoritative references
-- When in doubt, check similar existing implementations in codebase
+- All major patterns are established; **follow existing conventions**
+- Currently in Pre-Alpha: **Geo service is the primary implementation reference**
+
+### Before Writing Code
+
+1. **Check existing implementations** - look for similar handlers/patterns in the codebase
+2. **Read relevant documentation** - `*.md` files are authoritative references
+3. **Use existing utilities** - check `D2.Contracts.Utilities` before creating helpers
+4. **Follow naming conventions** - especially the field prefixes (`r_`, `s_`, `sr_`, `_`)
+
+### Common Mistakes to Avoid
+
+- Don't use `this` parameter style for extension methods (use C# 14 `extension` syntax)
+- Don't throw exceptions for control flow (use `D2Result`)
+- Don't forget license headers on new files
+- Don't create new patterns when existing ones apply
+- Don't use `_camelCase` for readonly fields (use `r_camelCase`)
+
+### When in Doubt
+
+- Check similar existing implementations in codebase
+- Reference the `*.md` documentation files
+- Follow the patterns established in `Geo.App` and `Geo.Infra`
+- Ask for clarification rather than guessing
