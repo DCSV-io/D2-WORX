@@ -1,92 +1,17 @@
 # D²-WORX — Decisive Distributed Application Framework for DCSV WORX
-D²-WORX is the distributed evolution of the Decisive Commerce Application Framework (DeCAF). It is an effort to create a scalable foundation for modern SMB-focused SaaS applications, with an emphasis on strong developer experience, and future commercial deployment for WORX or other products.
 
-#### Backend Stack
-![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
-![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
-![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
-![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1?logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-8.2-DC382D?logo=redis)
-![RabbitMQ](https://img.shields.io/badge/RabbitMQ-4.1-FF6600?logo=rabbitmq)
-![Keycloak](https://img.shields.io/badge/Keycloak-26.4-blue?logo=keycloak)
-![MinIO](https://img.shields.io/badge/MinIO-2025--09-C72E49?logo=minio)
+D² is the distributed evolution of the Decisive Commerce Application Framework (DeCAF). The goal of D² is to create a horizontally scalable, developer-friendly microservices framework for building enterprise-ready SaaS products / web applications.
 
-#### Infrastructure & Orchestration
-![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.0-512BD4?logo=dotnet)
-![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)
+WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and sole proprietors to manage clients, workflows, invoicing, and communication with their clients. WORX is built on top of the D² framework. A MVP has already been developed using DeCAF v3, and this repository documents the transition to D² (while it remains source available).
 
-#### Frontend Stack
-![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte)
-![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?logo=tailwind-css)
-![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs)
-![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
+## License 📜
+This project is protected by the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). See [LICENSE.md](LICENSE.md) for more information.
 
-#### Communication & Serialization
-![REST](https://img.shields.io/badge/REST-API-009688)
-![SignalR](https://img.shields.io/badge/SignalR-WebSocket-512BD4)
-![gRPC](https://img.shields.io/badge/gRPC-HTTP%2F2-244c5a?logo=grpc)
-![Protobuf](https://img.shields.io/badge/Protobuf-3-0288D1)
+Summary:
 
-#### Observability (LGTM Stack)
-![Loki](https://img.shields.io/badge/Loki-3.5-F46800?logo=grafana)
-![Grafana](https://img.shields.io/badge/Grafana-12.2-F46800?logo=grafana)
-![Tempo](https://img.shields.io/badge/Tempo-2.8-F46800?logo=grafana)
-![Mimir](https://img.shields.io/badge/Mimir-2.17-F46800?logo=grafana)
-![Alloy](https://img.shields.io/badge/Alloy-1.11-F46800?logo=grafana)
+✅ Free to view, fork, and run locally for learning and evaluation.
 
-#### Testing & Quality
-![xUnit](https://img.shields.io/badge/xUnit-3.2-512BD4)
-![Testcontainers](https://img.shields.io/badge/Testcontainers-4.9-2496ED?logo=docker)
-![FluentAssertions](https://img.shields.io/badge/FluentAssertions-8.8-5C2D91)
-![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
-![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33?logo=playwright)
-![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?logo=vitest)
-
-#### CI/CD & Code Quality
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
-![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?logo=conventionalcommits)
-![StyleCop](https://img.shields.io/badge/StyleCop-Enforced-239120)
-![XML Docs](https://img.shields.io/badge/XML_Docs-Required-512BD4)
-
-#### Documentation
-![Mermaid](https://img.shields.io/badge/Mermaid-Diagrams-FF3670?logo=mermaid)
-![Markdown](https://img.shields.io/badge/Markdown-Documentation-000000?logo=markdown)
-
-#### Architecture & License
-![Architecture](https://img.shields.io/badge/Architecture-Microservices%20%7C%20DDD%20%2B%20CQRS-blue)
-![License](https://img.shields.io/badge/License-PolyForm%20Strict-red)
-
-## Project Status 🚨
-
-**Phase:** Pre-Alpha (Core Infrastructure)
-
-**✅ Completed:**
-- Geo service domain model with immutable entities and content-addressable hashing
-- Geo service infrastructure layer with EF Core configurations and multi-tier caching
-- Multi-tier caching strategy (PostgreSQL → Redis → Memory → Disk with protobuf serialization)
-- Handler-based CQRS architecture with OpenTelemetry tracing
-- Full LGTM observability stack (Loki, Grafana, Tempo, Mimir, Alloy)
-- Comprehensive testing infrastructure with Testcontainers integration
-- Complete technical documentation (domain models, architecture diagrams, service guides)
-- Geo service infrastructure layer (MassTransit + RabbitMQ messaging integration)
-
-**🚧 In Progress:**
-- Geo service application layer (CQRS handlers for reference data operations)
-
-**📋 Planned:**
-- Geo service API layer (gRPC endpoint implementation)
-- REST API Gateway (HTTP/REST to gRPC routing)
-- SignalR Gateway (WebSocket to gRPC routing)
-- Auth service implementation
-
-**🎯 Target:** Complete first vertical slice (browser → SvelteKit → REST Gateway → Geo gRPC → cache/database) for initial demonstrable release.
-
-This is a **public reference implementation** documenting D²'s evolution from DeCAF's modular monolith architecture into a distributed microservices system. Expect frequent changes and incremental progress.
+❌ Not permitted for production or commercial use without explicit permission.
 
 ## Quickstart Guide 🚀
 
@@ -94,21 +19,21 @@ This is a **public reference implementation** documenting D²'s evolution from D
 1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.0 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.7.0+](https://nodejs.org/en/download), [PNPM 10.15.1+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
 2. Using a command line utility, navigate to the AppHost folder (`/backends/AppHost`) and set the following secrets using the `dotnet user-secrets set <key> <value>` command:
 
-    | Secret Key                  | Description             |
-     |-----------------------------|-------------------------|
-     | `Parameters:mq-username`    | RabbitMQ username       |
-     | `Parameters:mq-password`    | RabbitMQ password       |
-     | `Parameters:db-username`    | PostgreSQL username     |
-     | `Parameters:db-password`    | PostgreSQL password     |
-     | `Parameters:dba-email`      | PgAdmin4 admin email    |
-     | `Parameters:dba-password`   | PgAdmin4 admin password |
-     | `Parameters:cache-password` | Redis password          |
-     | `Parameters:kc-username`    | Keycloak username       |
-     | `Parameters:kc-password`    | Keycloak password       |
-     | `Parameters:otel-username`  | Grafana username        |
-     | `Parameters:otel-password`  | Grafana password        |
-     | `Parameters:s3-username`    | MinIO username          |
-     | `Parameters:s3-password`    | MinIO password          |
+   | Secret Key                  | Description             |
+        |-----------------------------|-------------------------|
+   | `Parameters:mq-username`    | RabbitMQ username       |
+   | `Parameters:mq-password`    | RabbitMQ password       |
+   | `Parameters:db-username`    | PostgreSQL username     |
+   | `Parameters:db-password`    | PostgreSQL password     |
+   | `Parameters:dba-email`      | PgAdmin4 admin email    |
+   | `Parameters:dba-password`   | PgAdmin4 admin password |
+   | `Parameters:cache-password` | Redis password          |
+   | `Parameters:kc-username`    | Keycloak username       |
+   | `Parameters:kc-password`    | Keycloak password       |
+   | `Parameters:otel-username`  | Grafana username        |
+   | `Parameters:otel-password`  | Grafana password        |
+   | `Parameters:s3-username`    | MinIO username          |
+   | `Parameters:s3-password`    | MinIO password          |
 
 3. To verify your entries, use the `dotnet user-secrets list` command.
 4. Edit any `appsettings.*.json` files as needed.
@@ -118,14 +43,57 @@ This is a **public reference implementation** documenting D²'s evolution from D
     - Aspire dashboard: `http://localhost:15888`
     - Grafana dashboard: `http://localhost:3000`
 
+## Project Status 🚨
+
+**Phase:** Pre-Alpha (Core Infrastructure)
+
+**✅ Completed:**
+- General / high-level systems design and architecture
+- Aspire-based local development and orchestration
+- Initial infrastructure concerns (dependencies) setup and configuration
+- Full LGTM observability stack (Loki, Grafana, Tempo, Mimir, Alloy) with dashboards
+- Standard result / errors-as-values pattern implementation (D2Result)
+- Standard handler pattern (via IHandler, IHandlerContext, BaseHandler)
+- Standard extension methods and utilities libraries
+- Geography ("Geo") service architecture and design
+  - Highly available and fault-tolerant geographic reference data retrieval service(s)
+- Geo service domain model layer with immutable entities and content-addressable identities
+- Multi-tier caching strategy implementation (PostgreSQL → Redis → Memory → Disk with protobuf serialization)
+- Comprehensive unit and integration test coverage using Testcontainers
+- Automated testing / validation via GitHub Actions
+- [Relatively] thorough technical documentation
+- Geo infrastructure layer
+  - Caching provider registration
+  - EF Core + PostgreSQL repository pattern
+  - MassTransit + RabbitMQ messaging integration
+- Geo service application layer
+  - CQRS handlers for geographic reference data retrieval and update requests
+- Geo service gRPC API layer
+- gRPC request/response standardization with implementation of Result.Extensions
+
+**🚧 In Progress:**
+- REST API Gateway (HTTP/REST to gRPC routing)
+- Manual E2E testing to validate initial vertical slice with OTEL coverage
+
+**📋 Planned:**
+- SignalR Gateway (WebSocket to gRPC routing)
+- Auth service implementation
+- OTEL alerting and notification integration
+- Much, much more...
+
+**NOTE:** this is a **public reference implementation** documenting D²'s evolution from DeCAF's modular monolith architecture into a distributed microservices system. Expect frequent changes and incremental progress.
+
 ## Philosophy 🤔
-**Distributed, Scalable**: built around bounded contexts and event-driven communication to support horizontal scalability.
+D² was designed from the ground up to maximize developer experience while providing the scalability and modularity of a distributed microservices architecture. Key principles include:
+- **Developer Productivity**: prioritize DX with clear patterns, conventions, and abstractions that reduce boilerplate and cognitive load
+- **Consistency**: standardized result handling, error propagation, and telemetry across all services
+- **Autonomy**: each service owns its data and logic, minimizing coupling and enabling independent deployment
+- **Observability**: built-in tracing, metrics, and logging with a unified telemetry stack for easy monitoring and debugging
+- **Scalability**: designed for horizontal scaling with stateless services, local and distributed caching, and message-based communication
+- **Extensibility**: modular architecture allowing easy addition of new services and features without impacting existing functionality
+- **Resilience**: fault-tolerant design with retries and graceful degradation strategies ...even at the implementation level, where applicable, errors are treated as values rather than exceptions
 
-**Developer-focused**: prioritizes maintainability and DX. Write minimum code with maximum power and intent.
-
-**Pragmatic**: Balances modern patterns with real-world constraints for SMB SaaS.
-
-## Architecture 🏗️
+## Architecture Diagram 🏗️
 
 ```mermaid
 graph TB
@@ -193,17 +161,11 @@ graph TB
     AUTH -.->|Telemetry| LGTM
 ```
 
-**Key Architectural Patterns:**
-- **API Gateway**: REST/SignalR gateways handle external traffic and route to services via gRPC
-- **Service Autonomy**: Each service owns its PostgreSQL database
-- **Inter-Service Communication**: Services use gRPC for synchronous operations, RabbitMQ for async events
-- **Shared Infrastructure**: Redis for distributed caching, MinIO for object storage
-- **Centralized Identity**: Auth service manages Keycloak; gateways validate tokens
-- **Unified Observability**: All components emit telemetry to LGTM stack
+## Additional Documentation 📚
 
-### Backend Services and Libraries Documentation 📚
+### Back-End Services
 
-**📖 Architecture Guide:** See [BACKENDS.md](backends/BACKENDS.md) for detailed explanation of the hierarchical structure, category definitions, and architectural decisions.
+See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierarchical structure, category definitions, and architectural decisions used in D²'s back end services.
 
 >**Orchestration:**
 >
@@ -260,6 +222,9 @@ graph TB
 >| [Protos.DotNet](backends/Services/_protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts                                                  |
 >| [Geo](backends/Services/Geo/GEO_SERVICE.md)                                    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
 
+### Front-End Services
+Coming soon...
+
 ## Story & Background 🌙
 
 ### DCSV
@@ -280,14 +245,67 @@ WORX (pronounced "works") is a SaaS product [@Tr-st-n](http://github.com/tr-st-n
 
 While WORX itself will be a commercial product, this repository exists (for now, publicly) as a **reference implementation of D²**. It shows how the framework builds on DeCAF and adapts it into a distributed system while maintaining the same empowering DX.
 
-## License 📜
-This project is protected by the [PolyForm Strict License 1.0.0](https://polyformproject.org/licenses/strict/1.0.0). See [LICENSE.md](LICENSE.md) for more information.
+## Technology Stack 🛠️
 
-Summary:
+#### Backend Stack
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
+![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
+![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
+![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1?logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-8.2-DC382D?logo=redis)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-4.1-FF6600?logo=rabbitmq)
+![Keycloak](https://img.shields.io/badge/Keycloak-26.4-blue?logo=keycloak)
+![MinIO](https://img.shields.io/badge/MinIO-2025--09-C72E49?logo=minio)
 
-✅ Free to view, fork, and run locally for learning and evaluation.
+#### Infrastructure & Orchestration
+![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.0-512BD4?logo=dotnet)
+![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)
 
-❌ Not permitted for production or commercial use without explicit permission.
+#### Frontend Stack
+![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte)
+![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?logo=tailwind-css)
+![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs)
+![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
+
+#### Communication & Serialization
+![REST](https://img.shields.io/badge/REST-API-009688)
+![SignalR](https://img.shields.io/badge/SignalR-WebSocket-512BD4)
+![gRPC](https://img.shields.io/badge/gRPC-HTTP%2F2-244c5a?logo=grpc)
+![Protobuf](https://img.shields.io/badge/Protobuf-3-0288D1)
+
+#### Observability (LGTM Stack)
+![Loki](https://img.shields.io/badge/Loki-3.5-F46800?logo=grafana)
+![Grafana](https://img.shields.io/badge/Grafana-12.2-F46800?logo=grafana)
+![Tempo](https://img.shields.io/badge/Tempo-2.8-F46800?logo=grafana)
+![Mimir](https://img.shields.io/badge/Mimir-2.17-F46800?logo=grafana)
+![Alloy](https://img.shields.io/badge/Alloy-1.11-F46800?logo=grafana)
+
+#### Testing & Quality
+![xUnit](https://img.shields.io/badge/xUnit-3.2-512BD4)
+![Testcontainers](https://img.shields.io/badge/Testcontainers-4.9-2496ED?logo=docker)
+![FluentAssertions](https://img.shields.io/badge/FluentAssertions-8.8-5C2D91)
+![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
+![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33?logo=playwright)
+![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?logo=vitest)
+
+#### CI/CD & Code Quality
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
+![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?logo=conventionalcommits)
+![StyleCop](https://img.shields.io/badge/StyleCop-Enforced-239120)
+![XML Docs](https://img.shields.io/badge/XML_Docs-Required-512BD4)
+
+#### Documentation
+![Mermaid](https://img.shields.io/badge/Mermaid-Diagrams-FF3670?logo=mermaid)
+![Markdown](https://img.shields.io/badge/Markdown-Documentation-000000?logo=markdown)
+
+#### Architecture & License
+![Architecture](https://img.shields.io/badge/Architecture-Microservices%20%7C%20DDD%20%2B%20CQRS-blue)
+![License](https://img.shields.io/badge/License-PolyForm%20Strict-red)
 
 ## Contributing 🤝
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on submitting issues and pull requests.

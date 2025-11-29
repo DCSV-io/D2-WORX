@@ -9,16 +9,22 @@ The D²-WORX backend follows a **hierarchical, three-tier categorization system*
 ## The Three-Tier Hierarchy
 
 ### TLC (Top-Level Category)
-**What:** Primary architectural concern
-**Examples:** `CQRS`, `Messaging`, `Repository`, `Caching`
+
+>**What:** Primary architectural concern
+>
+>**Examples:** `CQRS`, `Messaging`, `Repository`, `Caching`
 
 ### 2LC (Second-Level Category)
-**What:** Implementation detail or subdivision
-**Examples:** `Handlers`, `MassTransit`, `Entities`, `Migrations`
+
+>**What:** Implementation detail or subdivision
+>
+>**Examples:** `Handlers`, `MassTransit`, `Entities`, `Migrations`
 
 ### 3LC (Third-Level Category)
-**What:** Specific pattern or operation type
-**Examples:** `C` (Commands), `Q` (Queries), `Pub` (Publishers), `Sub` (Subscribers)
+
+>**What:** Specific pattern or operation type
+>
+>**Examples:** `C` (Commands), `Q` (Queries), `Pub` (Publishers), `Sub` (Subscribers)
 
 ---
 
@@ -28,151 +34,313 @@ The D²-WORX backend follows a **hierarchical, three-tier categorization system*
 
 Separates read operations (queries) from write operations (commands) with clear semantic boundaries.
 
+This kind of separation is apparent throughout the application and is a core pattern in D²-WORX 
+services.
+
+**Rationale:**
+- **C (Commands):** Clear intent that this operation modifies state.
+- **Q (Queries):** Guarantees no side effects, safe for caching/optimization.
+- **U (Utilities):** Helper operations that don't fit strict CQRS patterns.
+- **X (Complex):** Complex, multistep operations that span both concerns (e.g., Get with cache population).
+
 **Structure:**
 ```
 CQRS/
-  Handlers/
-    C/  → Commands (state-changing operations)
-    Q/  → Queries (read-only operations)
-    U/  → Utilities (neither read nor write, e.g., validation)
-    X/  → Complex (operations with side effects spanning multiple concerns)
+|
+|__ Handlers/
+    |
+    |__ C/ -> Commands (state-changing operations)
+    |__ Q/ -> Queries (read-only operations)
+    |__ U/ -> Utilities (neither read nor write, e.g., validation)
+    |__ X/ -> Complex (operations with side effects spanning multiple concerns)
 ```
-
-**Rationale:**
-- **C (Commands):** Clear intent that this operation modifies state
-- **Q (Queries):** Guarantees no side effects, safe for caching/optimization
-- **U (Utilities):** Helper operations that don't fit strict CQRS patterns
-- **X (Complex):** Real-world operations that span both concerns (e.g., Get with cache population)
 
 ### Messaging (Async Event-Driven Communication)
 
-Enables loosely-coupled service communication via pub-sub patterns using RabbitMQ/MassTransit.
+Enables loosely-coupled service communication with pub-sub patterns using RabbitMQ/MassTransit.
+
+**Rationale:**
+- **Handlers → Pub & Sub:** Business logic remains framework-agnostic.
+- **MT → Publishers & Consumers:** MassTransit-specific adapters isolated from domain logic.
+- Separates MassTransit / RabbitMQ from business logic
+- Enables use of interfaces to be defined by dependencies (App Layer / Contracts).
 
 **Structure:**
 ```
 Messaging/
-  Handlers/
-    Pub/  → Publisher handlers (send messages)
-    Sub/  → Subscriber handlers (receive messages)
-  MT/  → MassTransit infrastructure
-    Consumers/  → MassTransit IConsumer implementations
-    Publishers/  → MassTransit publisher classes (if needed)
+|
+|__ Handlers/
+|   |
+|   |__ Pub/ -> Publisher handlers (send messages)
+|   |__ Sub/ -> Subscriber handlers (receive messages)
+|
+|__ MT/ -> MassTransit infrastructure
+    |
+    |__ Consumers/ -> MassTransit IConsumer implementations
+    |__ Publishers/ -> MassTransit publisher classes (if needed)
 ```
-
-**Rationale:**
-- **Handlers/Pub & Sub:** Business logic remains framework-agnostic
-- **MT/:** MassTransit-specific adapters isolated from domain logic
-- Separation allows testing handlers without message infrastructure
 
 ### Repository (Data Access & Persistence)
 
 Encapsulates database operations following CRUD patterns with additional infrastructure concerns.
 
+**Rationale:**
+- **CRUD separation:** Clear boundaries for each operation type.
+- **Transactions at same level:** Transaction control is orthogonal to CRUD.
+- **Entities/Migrations/Seeding:** Infrastructure concerns grouped together.
+
 **Structure:**
 ```
 Repository/
-  Handlers/
-    C/  → Create operations
-    R/  → Read operations
-    U/  → Update operations
-    D/  → Delete operations
-  Entities/  → EF Core configurations
-  Migrations/  → Database schema evolution
-  Seeding/  → Initial/reference data
-  Transactions/  → Transaction control handlers
+|
+|__ Handlers/
+|   |
+|   |__ C/ -> Create operations
+|   |__ R/ -> Read operations
+|   |__ U/ -> Update operations
+|   |__ D/ -> Delete operations
+|
+|__ Entities/ -> EF Core configurations
+|__ Migrations/ -> Database schema evolution
+|__ Seeding/ -> Initial/reference data
+|__ Transactions/ -> Transaction control handlers
 ```
-
-**Rationale:**
-- **CRUD separation:** Clear boundaries for each operation type
-- **Transactions at same level:** Transaction control is orthogonal to CRUD
-- **Entities/Migrations/Seeding:** Infrastructure concerns grouped together
 
 ### Caching (Multi-Tier Cache Strategy)
 
-Provides layered caching with abstract, distributed, and in-memory implementations.
+Provides layered caching with abstract, distributed, and in-memory interfaces and implementations.
 
-**Structure:**
+**Structure (under Interfaces):**
 ```
 Caching/
-  Abstract/  → Base interfaces for cache operations
-    Handlers/
-      C/, R/, U/, D/  → CRUD-style cache operations
-  Distributed/  → Redis-backed shared cache
-    Handlers/
-      C/, R/, U/, D/
-  InMemory/  → Process-local cache
-    Handlers/
-      C/, R/, U/, D/
+|
+|__ Abstract/ -> Base interfaces for cache operations
+|   |
+|   |__ Handlers/
+|       |
+|       |__ C/ -> Create operations
+|       |__ R/ -> Read operations
+|       |__ U/ -> Update operations
+|       |__ D/ -> Delete operations
+|
+|__ Distributed/ -> Distributed cache interfaces (e.g., Redis)
+|   |
+|   |__ Handlers/
+|       |
+|       |__ C/ -> Create operations
+|       |__ R/ -> Read operations
+|       |__ U/ -> Update operations
+|       |__ D/ -> Delete operations
+|
+|__ InMemory/ -> Process-local cache interfaces
+    |
+    |__ Handlers/
+        |
+        |__ C/ -> Create operations
+        |__ R/ -> Read operations
+        |__ U/ -> Update operations
+        |__ D/ -> Delete operations
 ```
 
 **Rationale:**
-- **Abstract provides contracts:** Services code against interfaces
-- **Distributed vs InMemory:** Clear separation of cache tiers
-- **Same CRUD pattern:** Consistency with Repository layer
+- **Abstract provides contracts:** Services code against interfaces.
+- **Distributed vs InMemory:** Clear separation of cache tiers.
+- **Same CRUD pattern:** Consistency with Repository layer.
 
 ---
 
 ## Project Types & Their Structure
 
-### Contracts (Interfaces)
+### Contracts (Abstract)
 
-**Purpose:** Define "what" without "how" - pure abstractions
+**Purpose:** Define "what" without "how" - pure abstractions.
+
+**Key Principle:** Little-to-no implementation, maximum contract definition.
 
 **Structure:**
 ```
 Contracts/
-  Handler/  → Base handler abstractions
-  Interfaces/  → All interface definitions following TLC hierarchy
-  Messages/  → Pure POCO message contracts (no dependencies)
-  Result/  → D2Result pattern
-  Utilities/  → Shared helpers
+|
+|__ Handler/ -> Base handler abstractions
+|
+|__ Interfaces/ -> All interface definitions following TLC hierarchy
+|
+|__ Messages/ -> Pure POCO message contracts (no dependencies)
+|
+|__ Result/ -> D2Result pattern
+|
+|__ Result.Extensions/ -> Extension methods for D2Result
+|
+|__ Utilities/ -> Shared helpers
+|
+|__ Tests/ -> Unit and integration tests for contracts and their implementations (for now)
 ```
-
-**Key Principle:** Zero implementation, maximum contract definition
 
 ### Contracts (Implementations)
 
-**Purpose:** Reusable, drop-in implementations of contract interfaces
+**Purpose:** Reusable, drop-in implementations of contract interfaces.
+
+**Key Principle:** Services consume these via DI without reinventing common functionality.
 
 **Structure:**
 ```
-Implementations/
-  Caching/
-    Distributed/
-      DistributedCache.Redis/  → Redis implementation
-    InMemory/
-      InMemoryCache.Default/  → Memory implementation
-  Common/
-    GeoRefData.Default/  → Shared georeference logic
-  Repository/
-    Transactions/
-      Transactions.Pg/  → PostgreSQL transactions
+Implementations/ -> Common reusable implementations
+|
+|__ Caching/ -> ...for caching
+|   |
+|   |__ Distributed/ -> Shared, distributed cache implementations
+|   |   |
+|   |   |__ DistributedCache.Redis/ -> Redis implementation
+|   |
+|   |__ InMemory/ -> Local, in-memory cache implementations
+|       |
+|       |__ InMemoryCache.Default/ -> Memory implementation
+|
+|__ Common/ -> Other commonly shared, drop-in implementations
+|   |
+|   |__ GeoRefData.Default/ -> Shared georeference logic (includes disk caching)
+|
+|__ Repository/ -> Common repository implementations
+    |
+    |__ Transactions/ -> Transaction management implementations
+        |
+        |__ Transactions.Pg/ -> PostgreSQL transactions
 ```
-
-**Key Principle:** Services consume these via DI without reinventing common functionality
 
 ### Service Projects (Domain-Specific)
 
-Each service follows clean architecture with domain, application, infrastructure, and API layers.
+**Purpose:** Each service follows clean architecture with domain, application, infrastructure, and API layers.
 
-**Structure:**
-```
-ServiceName/
-  ServiceName.Domain/  → Entities, value objects, domain logic
-  ServiceName.App/
-    Interfaces/
-      CQRS/
-      Messaging/
-      Repository/
-  ServiceName.Infra/
-    CQRS/
-    Messaging/
-    Repository/
-  ServiceName.API/  → gRPC/REST endpoints
-  ServiceName.Tests/
-```
+**Key Principle:** Each service owns its data and business logic and exposes functionality via gRPC APIs with versioned contracts.
 
-**Key Principle:** Each service owns its data and business logic
+**Rationale:**
+- **Domain Layer:** Completely unaware of D²-WORX or its patterns, pure business logic and data modeling.
+- **App Layer:** Implements additional, more complex business logic using domain entities and interfaces representing infrastructure concerns via DI.
+- **Infra Layer:** Concrete implementations of infrastructure concerns (DB, messaging, caching).
+- **API Layer:** Thin gRPC layer exposing service functionality, delegating to App layer handlers. This is where everything is ultimately wired together, including DI registration.
+
+Current Service Structure:
+
+```
+ServiceName/ -> Root folder for the service
+|
+|
+|__ ServiceName.Domain/ -> Project folder for domain layer
+|   |
+|   |__ Entities/ -> Domain entities
+|   |__ Enums/ -> Domain enums
+|   |__ Exceptions/ -> Domain-specific exceptions
+|   |__ ValueObjects/ -> Domain value objects
+|
+|       
+|__ ServiceName.App/ -> Project folder for application layer
+|   |
+|   |__ Extensions.cs -> DI registration extensions
+|   |               
+|   |__ Interfaces/ -> Interfaces to be implemented in /Implementations or Infra project
+|   |   |
+|   |   |__ CQRS/ -> Interfaces for CQRS / app-layer handler implementations
+|   |   |   |
+|   |   |   |__ Handlers/ -> Handler interfaces
+|   |   |       |
+|   |   |       |__ C/ -> Command handlers (state-changing)
+|   |   |       |   |
+|   |   |       |   |__ ICommands.cs -> Base partial interface
+|   |   |       |   |__ ICommands.DoSomeCommand.cs -> Specific command handler interface
+|   |   |       |
+|   |   |       |__ Q/ -> Query handlers (read-only - no side effects)
+|   |   |       |__ U/ -> Utility handlers (neither read nor write - no side effects)
+|   |   |       |__ X/ -> Complex handlers (mixed side effects)
+|   |   |
+|   |   |__ Messaging/ -> Interfaces for infra-layer messaging implementations
+|   |   |   |
+|   |   |   |__ Handlers/ -> Messaging handler interfaces
+|   |   |       |
+|   |   |       |__ Pub/ -> Publisher interfaces
+|   |   |       |__ Sub/ -> Subscriber interfaces
+|   |   |           |
+|   |   |           |__ISubs.cs -> Base partial interface
+|   |   |           |__ISubs.SomeEvent.cs -> Specific subscriber interface
+|   |   |
+|   |   |__ Repository/ -> Interfaces for infra-layer repository implementations
+|   |   |   |
+|   |   |   |__ Handlers/ -> Repository handler interfaces
+|   |   |       |
+|   |   |       |__ C/ -> Create handlers
+|   |   |       |   |
+|   |   |       |   |__ ICreate.cs -> Base partial interface
+|   |   |       |   |__ ICreate.SomeEntity.cs -> Specific create handler interface
+|   |   |       |
+|   |   |       |__ R/ -> Read handlers
+|   |   |           U/ -> Update handlers
+|   |   |           D/ -> Delete handlers
+|   |   |
+|   |   |__ Caching/ -> Interfaces for infra-layer caching implementations 
+|   |                   (if applicable - there is a default caching impl in Contracts)
+|   |           
+|   |__ Implementations/ -> Concrete implementations
+|       |
+|       |__ CQRS/ -> Application-layer handler implementations
+|           | 
+|           |__ Handlers/ -> Handler implementations
+|               | 
+|               |__ C/ -> Command handlers
+|               |   |
+|               |   |__ DoSomeCommand.cs -> Command handler implementation
+|               |
+|               |__ Q/ -> Query handlers
+|               |__ U/ -> Utility handlers
+|               |__ X/ -> Complex handlers
+|
+|
+|__ ServiceName.Infra/ -> Project folder for infrastructure layer
+|   |
+|   |__ Extensions.cs -> DI registration extensions
+|   |
+|   |__ Messaging/ -> Messaging implementations
+|   |   |
+|   |   |__ Handlers/ -> Messaging handler implementations
+|   |   |   |
+|   |   |   |__ Pub/ -> Publishers
+|   |   |   |__ Sub/ -> Subscribers
+|   |   |       |
+|   |   |       |__ SomeEvent.cs -> Subscriber implementation
+|   |   |
+|   |   |__ MT/ -> MassTransit consumers and publishers
+|   |       |
+|   |       |__ Consumers/ -> MassTransit consumer implementations
+|   |       |   |
+|   |       |   |__ SomeEventConsumer.cs -> MassTransit consumer implementation for SomeEvent
+|   |       |
+|   |       |__ Publishers/ -> MassTransit publisher implementations
+|   |
+|   |__ Repository/ -> Repository implementations
+|       |
+|       |__ Entities/ -> EF Core entity configurations
+|       |
+|       |__ Handlers/ -> Repository handler implementations
+|       |   |
+|       |   |__ C/ -> Create handlers
+|       |   |   |
+|       |   |   |__ CreateSomeEntity.cs -> Create handler implementation
+|       |   |
+|       |   |__ R/ -> Read handlers
+|       |   |__ U/ -> Update handlers
+|       |   |__ D/ -> Delete handlers
+|       |
+|       |__ Migrations/ -> EF Core migrations
+|       |
+|       |__ Seeding/ -> Database seeding scripts
+|
+|
+|__ ServiceName.API/ -> Project folder for API layer
+    |
+    |__ Program.cs -> Service bootstrap and DI registration (uses Extensions from App and Infra)
+    |
+    |__ Services/ -> gRPC service implementations
+        |
+        |__ ServiceNameService.cs -> gRPC service delegating to App layer handlers
+```
 
 ---
 
@@ -181,7 +349,7 @@ ServiceName/
 ### When to Create a New Category
 
 **Add a TLC when:**
-- You have a fundamentally new architectural concern (e.g., `Scheduling`, `Notifications`)
+- You have a fundamentally new architectural concern (e.g., `Scheduling`)
 - It would contain 3+ handler files
 - It's orthogonal to existing categories
 
@@ -196,8 +364,10 @@ ServiceName/
 
 - **Folders:** PascalCase (`Handlers`, `MassTransit`)
 - **TLC folders:** Match architectural concern (`CQRS`, `Messaging`, `Repository`)
-- **3LC folders:** Single-letter abbreviations (`C`, `Q`, `R`) or clear terms (`Pub`, `Sub`)
-- **Files:** Match class name (e.g., `GetReferenceData.cs`)
+- **3LC folders:** Single-letter / abbreviations (`C`, `Q`, `R`) or clear terms (`Pub`, `Sub`)
+- **Files:**
+  - for implementations: **match interface name** (e.g., `SetInMem.cs` for `ISetInMemHandler` interface defined in `ICommands.SetInMem.cs`)
+  - for interfaces: prefix with **operation name** (e.g., `ICommands.SetInMem.cs` for `ICommands.cs` partial interface in `/Handlers/C/` folder)
 
 ### Extension Pattern
 
@@ -231,7 +401,7 @@ Every project follows the same organizational pattern - once learned, navigating
 Adding new operations, handlers, or categories follows established patterns without restructuring.
 
 ### Discoverability
-File location tells you exactly what it does: `CQRS/Handlers/Q/GetReferenceData.cs` is obviously a query handler.
+File location tells you exactly what it does: `CQRS/Handlers/Q/GetSomeData.cs` is obviously a query handler.
 
 ### Testability
 Clear separation between business logic (Handlers) and infrastructure (MassTransit, EF Core) enables isolated testing.
@@ -265,6 +435,7 @@ services.AddMassTransit(x =>
 ```
 
 ### Using Aliases for Clean Implementations
+This may be an odd thing to do at first, but makes handler files a lot more readable once you "get it".
 ```csharp
 using H = ICommands.ISetInMemHandler;
 using I = ICommands.SetInMemInput;
