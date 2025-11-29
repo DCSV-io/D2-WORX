@@ -23,7 +23,7 @@ public partial interface ICommands
     /// <param name="Data">
     /// The geographic reference data.
     /// </param>
-    public record SetInMemInput(GetReferenceDataResponse Data);
+    public record SetInMemInput(GeoRefData Data);
 
     /// <summary>
     /// Output for setting geographic reference data to an in-memory cache.

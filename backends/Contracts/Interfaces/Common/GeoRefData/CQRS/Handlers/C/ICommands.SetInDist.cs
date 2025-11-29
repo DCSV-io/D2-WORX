@@ -26,7 +26,7 @@ public partial interface ICommands
     /// <param name="Data">
     /// The geographic reference data.
     /// </param>
-    public record SetInDistInput(GetReferenceDataResponse Data);
+    public record SetInDistInput(GeoRefData Data);
 
     /// <summary>
     /// Output for setting geographic reference data to a distributed cache.

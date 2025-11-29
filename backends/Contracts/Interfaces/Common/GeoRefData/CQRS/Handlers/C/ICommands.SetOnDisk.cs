@@ -23,7 +23,7 @@ public partial interface ICommands
     /// <param name="Data">
     /// The geographic reference data.
     /// </param>
-    public record SetOnDiskInput(GetReferenceDataResponse Data);
+    public record SetOnDiskInput(GeoRefData Data);
 
     /// <summary>
     /// Output for setting geographic reference data to a file on disk.

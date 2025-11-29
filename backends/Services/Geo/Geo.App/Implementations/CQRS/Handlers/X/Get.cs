@@ -223,7 +223,7 @@ public class Get : BaseHandler<Get, I, O>, H
     /// The cancellation token.
     /// </param>
     private async ValueTask SetInMemAsync(
-        GetReferenceDataResponse data,
+        GeoRefData data,
         CancellationToken ct)
     {
         var setInMemR = await r_setInMem.HandleAsync(new(data), ct);
@@ -246,7 +246,7 @@ public class Get : BaseHandler<Get, I, O>, H
     /// The cancellation token.
     /// </param>
     private async ValueTask SetOnDiskAsync(
-        GetReferenceDataResponse data,
+        GeoRefData data,
         CancellationToken ct)
     {
         var setOnDiskR = await r_setOnDisk.HandleAsync(new(data), ct);
@@ -273,7 +273,7 @@ public class Get : BaseHandler<Get, I, O>, H
     /// A <see cref="ValueTask"/> containing a <see cref="D2Result"/> indicating success or failure.
     /// </returns>
     private async ValueTask<D2Result> SetInDistAsync(
-        GetReferenceDataResponse data,
+        GeoRefData data,
         CancellationToken ct)
     {
         var setInDistR = await r_setInDist.HandleAsync(new(data), ct);
@@ -303,7 +303,7 @@ public class Get : BaseHandler<Get, I, O>, H
     /// The cancellation token.
     /// </param>
     private async ValueTask NotifyUpdateAsync(
-        GetReferenceDataResponse data,
+        GeoRefData data,
         CancellationToken ct)
     {
         var updateR = await r_updater.HandleAsync(new(data.Version), ct);

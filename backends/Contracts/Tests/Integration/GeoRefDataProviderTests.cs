@@ -78,7 +78,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
         Assert.True(result.Success);
 
         // Assert - data retrievable from Redis via low-level handler
-        var getHandler = _services.GetRequiredService<IRead.IGetHandler<GetReferenceDataResponse>>();
+        var getHandler = _services.GetRequiredService<IRead.IGetHandler<GeoRefData>>();
         var getResult = await getHandler.HandleAsync(
             new(Constants.DIST_CACHE_KEY_GEO_REF_DATA),
             Ct);
@@ -101,7 +101,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
         await handler.HandleAsync(new(TestHelpers.TestGeoRefData), Ct);
 
         // Arrange - create new version
-        var newVersionData = new GetReferenceDataResponse
+        var newVersionData = new GeoRefData
         {
             Version = "2.0.0",
             Countries = { { "CA", new CountryDTO { DisplayName = "Canada" } } },
@@ -114,7 +114,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
         Assert.True(result.Success);
 
         // Assert - new version retrievable
-        var getHandler = _services.GetRequiredService<IRead.IGetHandler<GetReferenceDataResponse>>();
+        var getHandler = _services.GetRequiredService<IRead.IGetHandler<GeoRefData>>();
         var getResult = await getHandler.HandleAsync(
             new(Constants.DIST_CACHE_KEY_GEO_REF_DATA),
             Ct);

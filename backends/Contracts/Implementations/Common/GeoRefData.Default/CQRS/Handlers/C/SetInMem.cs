@@ -21,7 +21,7 @@ using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.Se
 /// </summary>
 public class SetInMem : BaseHandler<SetInMem, I, O>, H
 {
-    private readonly IUpdate.ISetHandler<GetReferenceDataResponse> r_memoryCacheSet;
+    private readonly IUpdate.ISetHandler<GeoRefData> r_memoryCacheSet;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetInMem"/> class.
@@ -34,7 +34,7 @@ public class SetInMem : BaseHandler<SetInMem, I, O>, H
     /// The handler context.
     /// </param>
     public SetInMem(
-        IUpdate.ISetHandler<GetReferenceDataResponse> memoryCacheSet,
+        IUpdate.ISetHandler<GeoRefData> memoryCacheSet,
         IHandlerContext context)
         : base(context)
     {

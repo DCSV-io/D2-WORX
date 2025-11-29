@@ -20,7 +20,7 @@ public static class TestHelpers
     /// <summary>
     /// Gets a test reference data response for GeoRefDataService tests.
     /// </summary>
-    public static GetReferenceDataResponse TestGeoRefData => new GetReferenceDataResponse
+    public static GeoRefData TestGeoRefData => new GeoRefData
         {
             Version = "0.0.0",
             UpdatedAt = Timestamp.FromDateTime(DateTime.UtcNow),

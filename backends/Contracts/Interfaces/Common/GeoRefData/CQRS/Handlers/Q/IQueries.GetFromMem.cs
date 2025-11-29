@@ -28,5 +28,5 @@ public partial interface IQueries
     /// <param name="Data">
     /// The geographic reference data retrieved.
     /// </param>
-    public record GetFromMemOutput(GetReferenceDataResponse Data);
+    public record GetFromMemOutput(GeoRefData Data);
 }

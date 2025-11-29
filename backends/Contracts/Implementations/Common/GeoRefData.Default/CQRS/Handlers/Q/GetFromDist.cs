@@ -22,7 +22,7 @@ using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.Get
 /// </summary>
 public class GetFromDist : BaseHandler<GetFromDist, I, O>, H
 {
-    private readonly IRead.IGetHandler<GetReferenceDataResponse> r_distCacheGet;
+    private readonly IRead.IGetHandler<GeoRefData> r_distCacheGet;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GetFromDist"/> class.
@@ -35,7 +35,7 @@ public class GetFromDist : BaseHandler<GetFromDist, I, O>, H
     /// The handler context.
     /// </param>
     public GetFromDist(
-        IRead.IGetHandler<GetReferenceDataResponse> distCacheGet,
+        IRead.IGetHandler<GeoRefData> distCacheGet,
         IHandlerContext context)
         : base(context)
     {

@@ -12,16 +12,16 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 
 /// <summary>
-/// Tests for serialization and deserialization of GetReferenceDataResponse.
+/// Tests for serialization and deserialization of GeoRefData.
 /// </summary>
 public class GetRefDataResSerializationTests
 {
     /// <summary>
-    /// Tests that GetReferenceDataResponse serializes/deserializes using the same logic as Redis
+    /// Tests that GeoRefData serializes/deserializes using the same logic as Redis
     /// handlers.
     /// </summary>
     [Fact]
-    public void GetReferenceDataResponse_Serializes_And_Deserializes_Like_RedisHandler()
+    public void GeoRefData_Serializes_And_Deserializes_Like_RedisHandler()
     {
         // Arrange
         var original = TestHelpers.TestGeoRefData;
@@ -32,9 +32,9 @@ public class GetRefDataResSerializationTests
             : JsonSerializer.SerializeToUtf8Bytes(original);
 
         // Act - Deserialize using handler logic (with reflection)
-        var deserialized = typeof(GetReferenceDataResponse).IsAssignableTo(typeof(IMessage))
-            ? ParseProtobuf<GetReferenceDataResponse>(bytes)
-            : JsonSerializer.Deserialize<GetReferenceDataResponse>(bytes);
+        var deserialized = typeof(GeoRefData).IsAssignableTo(typeof(IMessage))
+            ? ParseProtobuf<GeoRefData>(bytes)
+            : JsonSerializer.Deserialize<GeoRefData>(bytes);
 
         // Assert
         Assert.NotNull(deserialized);

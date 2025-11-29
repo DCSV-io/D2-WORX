@@ -196,7 +196,7 @@ public class Get : BaseHandler<Get, I, O>, H
     /// The cancellation token.
     /// </param>
     private async ValueTask SetInMemoryAndOnDiskAsync(
-        GetReferenceDataResponse data,
+        GeoRefData data,
         CancellationToken ct)
     {
         var setInMemR = await r_setInMem.HandleAsync(new(data), ct);

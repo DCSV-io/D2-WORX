@@ -233,11 +233,11 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         // Arrange
         var protoData = TestHelpers.TestGeoRefData;
-        var handler = new Set<GetReferenceDataResponse>(_redis, _context);
+        var handler = new Set<GeoRefData>(_redis, _context);
 
         // Act
         var result = await handler.HandleAsync(
-            new IUpdate.SetInput<GetReferenceDataResponse>("proto-key", protoData, null),
+            new IUpdate.SetInput<GeoRefData>("proto-key", protoData, null),
             Ct);
 
         // Assert
@@ -266,12 +266,12 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         // Arrange
         var protoData = TestHelpers.TestGeoRefData;
 
-        var setHandler = new Set<GetReferenceDataResponse>(_redis, _context);
+        var setHandler = new Set<GeoRefData>(_redis, _context);
         await setHandler.HandleAsync(
-            new IUpdate.SetInput<GetReferenceDataResponse>("proto-get-key", protoData, null),
+            new IUpdate.SetInput<GeoRefData>("proto-get-key", protoData, null),
             Ct);
 
-        var getHandler = new Get<GetReferenceDataResponse>(_redis, _context);
+        var getHandler = new Get<GeoRefData>(_redis, _context);
 
         // Act
         var result = await getHandler.HandleAsync(new IRead.GetInput("proto-get-key"), Ct);

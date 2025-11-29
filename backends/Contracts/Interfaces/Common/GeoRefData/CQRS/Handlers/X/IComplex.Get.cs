@@ -28,5 +28,5 @@ public partial interface IComplex
     /// <param name="Data">
     /// The geographic reference data retrieved.
     /// </param>
-    public record GetOutput(GetReferenceDataResponse Data);
+    public record GetOutput(GeoRefData Data);
 }

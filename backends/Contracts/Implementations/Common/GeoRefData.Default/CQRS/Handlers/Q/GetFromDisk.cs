@@ -72,7 +72,7 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
             }
 
             var bytes = await File.ReadAllBytesAsync(r_filePath, ct);
-            var data = GetReferenceDataResponse.Parser.ParseFrom(bytes);
+            var data = GeoRefData.Parser.ParseFrom(bytes);
 
             return D2Result<O?>.Ok(new O(data), traceId: TraceId);
         }

@@ -199,7 +199,7 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
         }
 
         // Create response.
-        var response = new GetReferenceDataResponse
+        var response = new GeoRefData
         {
             Version = version.Version,
             UpdatedAt = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(version.UpdatedAt),

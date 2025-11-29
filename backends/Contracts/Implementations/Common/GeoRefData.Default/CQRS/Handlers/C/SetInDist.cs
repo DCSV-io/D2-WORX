@@ -20,7 +20,7 @@ using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.Se
 /// </summary>
 public class SetInDist : BaseHandler<SetInDist, I, O>, H
 {
-    private readonly IUpdate.ISetHandler<GetReferenceDataResponse> r_distCacheSet;
+    private readonly IUpdate.ISetHandler<GeoRefData> r_distCacheSet;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SetInDist"/> class.
@@ -33,7 +33,7 @@ public class SetInDist : BaseHandler<SetInDist, I, O>, H
     /// The handler context.
     /// </param>
     public SetInDist(
-        IUpdate.ISetHandler<GetReferenceDataResponse> distCacheSet,
+        IUpdate.ISetHandler<GeoRefData> distCacheSet,
         IHandlerContext context)
         : base(context)
     {

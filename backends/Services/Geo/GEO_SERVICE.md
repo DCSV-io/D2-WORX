@@ -15,6 +15,8 @@ The **Geo** (Geography) microservice is a critical infrastructure service within
 
 | Document                                  | Description                                                                                  |
 |-------------------------------------------|----------------------------------------------------------------------------------------------|
+| [GEO_API.md](Geo.API/GEO_API.md)          | API layer: gRPC service implementation and endpoint documentation.                           |
+| [GEO_APP.md](Geo.App/GEO_APP.md)          | Application layer: CQRS handlers for reference data operations.                              |
 | [GEO_DOMAIN.md](Geo.Domain/GEO_DOMAIN.md) | Domain model: entities, value objects, enums, and validation exceptions.                     |
 | [GEO_INFRA.md](Geo.Infra/GEO_INFRA.md)    | Infrastructure layer: EF Core configuration, migrations, seed data, and repository handlers. |
 | [GEO_TESTS.md](Geo.Tests/GEO_TESTS.md)    | Unit and integration tests.                                                                  |

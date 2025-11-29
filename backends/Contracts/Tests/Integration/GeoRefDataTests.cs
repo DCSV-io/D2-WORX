@@ -93,7 +93,7 @@ public class GeoRefDataTests : IAsyncLifetime
     {
         // Arrange - put data only in Redis
         var setInDistHandler = _services.GetRequiredService<
-        IUpdate.ISetHandler<GetReferenceDataResponse>>();
+        IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
             new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, TestHelpers.TestGeoRefData),
             Ct);
@@ -189,7 +189,7 @@ public class GeoRefDataTests : IAsyncLifetime
     {
         // Arrange
         var setInDistHandler = _services.GetRequiredService<
-            IUpdate.ISetHandler<GetReferenceDataResponse>>();
+            IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
             new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, TestHelpers.TestGeoRefData),
             Ct);
@@ -305,13 +305,13 @@ public class GeoRefDataTests : IAsyncLifetime
     public async ValueTask Updated_WhenNewVersionInRedis_PopulatesCaches()
     {
         // Arrange - put new version data in Redis only
-        var newVersionData = new GetReferenceDataResponse
+        var newVersionData = new GeoRefData
         {
             Version = "2.0.0",
             Countries = { { "CA", new CountryDTO { DisplayName = "Canada" } } },
         };
 
-        var setInDistHandler = _services.GetRequiredService<IUpdate.ISetHandler<GetReferenceDataResponse>>();
+        var setInDistHandler = _services.GetRequiredService<IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
             new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, newVersionData),
             Ct);
