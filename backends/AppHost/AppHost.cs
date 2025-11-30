@@ -287,16 +287,21 @@ var keycloak = builder.AddKeycloak("d2-keycloak", 8080, kcUsername, kcPassword)
 //     .WithOtelRefs();
 
 // Geo - Service.
-db.AddDatabase("d2-services-geo");
+var geoDb = db.AddDatabase("d2-services-geo");
 var geoService = builder.AddProject<Projects.Geo_API>("d2-geo")
     .WithIconName("Location")
+    .WithReference(geoDb)
     .DefaultInfraRefs(db, cache, broker, keycloak)
     .WithOtelRefs();
 
 // REST API - Gateway.
 var restGateway = builder.AddProject<Projects.REST>("d2-rest")
     .WithIconName("Globe")
-    .WaitFor(geoService) // Services that the REST API depends on.
+
+    // Geo service dependency.
+    .WaitFor(geoService)
+    .WithReference(geoService)
+
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithOtelRefs();

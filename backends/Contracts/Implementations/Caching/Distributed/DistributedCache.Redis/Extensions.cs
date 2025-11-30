@@ -44,7 +44,11 @@ public static class Extensions
         public IServiceCollection AddRedisCaching(string redisConnectionString)
         {
             services.AddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(redisConnectionString));
+            {
+                var options = ConfigurationOptions.Parse(redisConnectionString);
+                options.AbortOnConnectFail = false;
+                return ConnectionMultiplexer.Connect(options);
+            });
 
             // The handlers for distributed cache operations.
             services.AddTransient(typeof(IRead.IGetHandler<>), typeof(Get<>));

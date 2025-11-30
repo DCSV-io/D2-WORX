@@ -14,7 +14,7 @@ using D2.Contracts.Utilities.Serialization;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using S = D2.Contracts.Interfaces.Caching.Abstract.Handlers.U.IUpdate;
+using S = D2.Contracts.Interfaces.Caching.Distributed.Handlers.U.IUpdate;
 
 /// <summary>
 /// Handler for setting a value in the distributed cache.

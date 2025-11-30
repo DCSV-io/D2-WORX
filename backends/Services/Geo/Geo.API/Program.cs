@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------
 
 using D2.Contracts.GeoRefDataService.Default;
+using D2.Contracts.Handler.Extensions;
 using D2.Contracts.ServiceDefaults;
 using D2.Contracts.Utilities.Extensions;
 using D2.Geo.App;
@@ -37,6 +38,7 @@ if (reqConnStrings.Any(x => x.Falsey()))
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddGrpc();
+builder.Services.AddHandlerContext();
 builder.Services.AddGeoInfra(
     dbConnectionString!,
     distributedCacheConnectionString!,

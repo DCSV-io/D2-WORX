@@ -9,4 +9,4 @@ namespace D2.Contracts.Interfaces.Caching.Distributed.Handlers.D;
 /// <summary>
 /// Defines a contract for delete handlers related to distributed caching services.
 /// </summary>
-public partial interface IDelete : Abstract.Handlers.D.IDelete;
+public partial interface IDelete;

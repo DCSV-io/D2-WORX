@@ -179,16 +179,17 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 >*Core abstractions, patterns, and interfaces shared across all services. These define the "what" without implementation.*
 >
->| Component                                                                        | Description                                         |
->|----------------------------------------------------------------------------------|-----------------------------------------------------|
->| [Handler](backends/Contracts/Handler/HANDLER.md)                                 | Base handler patterns with logging and tracing      |
->| [Interfaces](backends/Contracts/Interfaces/INTERFACES.md)                        | Shared contract interfaces                          |
->| [Messages](backends/Contracts/Messages/MESSAGES.md)                              | Domain event messages for pub-sub messaging         |
->| [Result](backends/Contracts/Result/RESULT.md)                                    | D2Result pattern for consistent error handling      |
->| [Result.Extensions](backends/Contracts/Result.Extensions/RESULT_EXTENSIONS.md)   | D2Result to/from proto conversion and gRPC handling |
->| [ServiceDefaults](backends/Contracts/ServiceDefaults/SERVICE_DEFAULT.md)         | Shared service configuration and telemetry          |
->| [Tests](backends/Contracts/Tests/TESTS.md)                                       | Shared testing infrastructure and base classes      |
->| [Utilities](backends/Contracts/Utilities/UTILITIES.md)                           | Shared utility extensions and helpers               |
+>| Component                                                                         | Description                                         |
+>|-----------------------------------------------------------------------------------|-----------------------------------------------------|
+>| [Handler](backends/Contracts/Handler/HANDLER.md)                                  | Base handler patterns with logging and tracing      |
+>| [Handler.Extensions](backends/Contracts/Handler.Extensions/HANDLER_EXTENSIONS.md) | DI registration for handler context services        |
+>| [Interfaces](backends/Contracts/Interfaces/INTERFACES.md)                         | Shared contract interfaces                          |
+>| [Messages](backends/Contracts/Messages/MESSAGES.md)                               | Domain event messages for pub-sub messaging         |
+>| [Result](backends/Contracts/Result/RESULT.md)                                     | D2Result pattern for consistent error handling      |
+>| [Result.Extensions](backends/Contracts/Result.Extensions/RESULT_EXTENSIONS.md)    | D2Result to/from proto conversion and gRPC handling |
+>| [ServiceDefaults](backends/Contracts/ServiceDefaults/SERVICE_DEFAULT.md)          | Shared service configuration and telemetry          |
+>| [Tests](backends/Contracts/Tests/TESTS.md)                                        | Shared testing infrastructure and base classes      |
+>| [Utilities](backends/Contracts/Utilities/UTILITIES.md)                            | Shared utility extensions and helpers               |
 >
 >**Contracts (Implementations):**
 >
@@ -221,6 +222,14 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 >| [Protos.DotNet](backends/Services/_protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts                                                  |
 >| [Geo](backends/Services/Geo/GEO_SERVICE.md)                                    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
+>
+>**Gateways:**
+>
+>*REST and SignalR API gateways translating external requests into gRPC calls to back end services.*
+>
+>| Component                              | Description                       |
+>|----------------------------------------|-----------------------------------|
+>| [REST](backends/Gateways/REST/REST.md) | HTTP/REST to gRPC routing gateway |
 
 ### Front-End Services
 Coming soon...

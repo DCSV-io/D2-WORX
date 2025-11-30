@@ -9,9 +9,9 @@ namespace D2.Contracts.InMemoryCache.Default.Handlers.D;
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
 using Microsoft.Extensions.Caching.Memory;
-using H = D2.Contracts.Interfaces.Caching.Abstract.Handlers.D.IDelete.IRemoveHandler;
-using I = D2.Contracts.Interfaces.Caching.Abstract.Handlers.D.IDelete.RemoveInput;
-using O = D2.Contracts.Interfaces.Caching.Abstract.Handlers.D.IDelete.RemoveOutput;
+using H = D2.Contracts.Interfaces.Caching.InMemory.Handlers.D.IDelete.IRemoveHandler;
+using I = D2.Contracts.Interfaces.Caching.InMemory.Handlers.D.IDelete.RemoveInput;
+using O = D2.Contracts.Interfaces.Caching.InMemory.Handlers.D.IDelete.RemoveOutput;
 
 /// <summary>
 /// Handler for removing a value from the in-memory cache.
