@@ -23,10 +23,10 @@ All endpoints use URL path versioning (`/api/v1/...`). This approach was chosen 
 
 ### Geo (`/api/v1/geo`)
 
-| Method | Path                      | Description                                           | Backend Service |
-|--------|---------------------------|-------------------------------------------------------|-----------------|
-| GET    | `/reference-data`         | Returns full geographic reference data.               | `d2-geo`        |
-| GET    | `/reference-data/version` | Returns current version of geographic reference data. | `d2-geo`        |
+| Method | Path                     | Description                                                                      | 
+|--------|--------------------------|----------------------------------------------------------------------------------|
+| GET    | `/reference-data`        | Returns full geographic reference data.                                          |
+| POST   | `/reference-data/update` | Requests that geographic reference data be updated. Returns the updated version. |
 
 ## Endpoint Organization
 

@@ -70,12 +70,12 @@ public static class GeoEndpoints
                 .WithDescription(
                     "Retrieves countries, subdivisions, currencies, languages, locales, and geopolitical entities.");
 
-            // Map endpoint to get the version of the geographic reference data.
-            group.MapGet("/reference-data/version", GetReferenceDataVersionAsync)
-                .WithName("GetGeoReferenceDataVersion")
-                .WithSummary("Returns the current version of geographic reference data.")
+            // Map endpoint to request geographic reference data update.
+            group.MapPost("/reference-data/update", RequestReferenceDataUpdateAsync)
+                .WithName("RequestGetGeoReferenceDataUpdate")
+                .WithSummary("Requests that the geographic reference data be updated.")
                 .WithDescription(
-                    "Retrieves the semantic version of the currently cached reference data.");
+                    "Requests that the geographic reference data be updated. Returns the current version of geographic reference data.");
 
             // Return the updated endpoint route builder.
             return erb;
@@ -108,7 +108,7 @@ public static class GeoEndpoints
     }
 
     /// <summary>
-    /// Handles the GET /reference-data/version endpoint.
+    /// Handles the POST /reference-data/update endpoint.
     /// </summary>
     ///
     /// <param name="geoClient">
@@ -120,7 +120,7 @@ public static class GeoEndpoints
     /// <returns>
     /// An <see cref="IResult"/> representing the HTTP response.
     /// </returns>
-    private static async Task<IResult> GetReferenceDataVersionAsync(
+    private static async Task<IResult> RequestReferenceDataUpdateAsync(
         GeoService.GeoServiceClient geoClient,
         CancellationToken ct)
     {

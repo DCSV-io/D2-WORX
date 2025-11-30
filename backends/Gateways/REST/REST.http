@@ -4,6 +4,6 @@
 GET {{ApiService_HostAddress}}/api/v1/geo/reference-data
 Accept: application/json
 
-### Get geographic reference data version
-GET {{ApiService_HostAddress}}/api/v1/geo/reference-data/version
+### Request geographic reference data update
+POST {{ApiService_HostAddress}}/api/v1/geo/reference-data/update
 Accept: application/json
