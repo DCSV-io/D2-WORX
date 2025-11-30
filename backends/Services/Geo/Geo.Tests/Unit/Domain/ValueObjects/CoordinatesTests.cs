@@ -25,16 +25,16 @@ public class CoordinatesTests
     public void Create_WithValidCoordinates_Success()
     {
         // Arrange
-        const decimal latitude = 34.0522m;
-        const decimal longitude = -118.2437m;
+        const double latitude = 34.0522;
+        const double longitude = -118.2437;
 
         // Act
         var coords = Coordinates.Create(latitude, longitude);
 
         // Assert
         coords.Should().NotBeNull();
-        coords.Latitude.Should().Be(34.0522m);
-        coords.Longitude.Should().Be(-118.2437m);
+        coords.Latitude.Should().Be(34.0522);
+        coords.Longitude.Should().Be(-118.2437);
     }
 
     /// <summary>
@@ -55,12 +55,12 @@ public class CoordinatesTests
     public void Create_WithValidBoundaryValues_Success(double lat, double lon)
     {
         // Act
-        var coords = Coordinates.Create((decimal)lat, (decimal)lon);
+        var coords = Coordinates.Create(lat, lon);
 
         // Assert
         coords.Should().NotBeNull();
-        coords.Latitude.Should().Be((decimal)lat);
-        coords.Longitude.Should().Be((decimal)lon);
+        coords.Latitude.Should().Be(lat);
+        coords.Longitude.Should().Be(lon);
     }
 
     #endregion
@@ -74,15 +74,15 @@ public class CoordinatesTests
     public void Create_QuantizesTo5DecimalPlaces()
     {
         // Arrange
-        const decimal lat = 34.052234567m;
-        const decimal lon = -118.243745678m;
+        const double lat = 34.052234567;
+        const double lon = -118.243745678;
 
         // Act
         var coords = Coordinates.Create(lat, lon);
 
         // Assert
-        coords.Latitude.Should().Be(34.05223m);
-        coords.Longitude.Should().Be(-118.24375m);
+        coords.Latitude.Should().Be(34.05223);
+        coords.Longitude.Should().Be(-118.24375);
     }
 
     /// <summary>
@@ -103,10 +103,10 @@ public class CoordinatesTests
     public void Create_QuantizesCorrectly(double input, double expected)
     {
         // Act
-        var coords = Coordinates.Create((decimal)input, 0);
+        var coords = Coordinates.Create(input, 0);
 
         // Assert
-        coords.Latitude.Should().Be((decimal)expected);
+        coords.Latitude.Should().Be(expected);
     }
 
     #endregion
@@ -128,7 +128,7 @@ public class CoordinatesTests
     public void Create_WithLatitudeTooHigh_ThrowsGeoValidationException(double lat)
     {
         // Act
-        var act = () => Coordinates.Create((decimal)lat, 0);
+        var act = () => Coordinates.Create(lat, 0);
 
         // Assert
         act.Should().Throw<GeoValidationException>();
@@ -148,7 +148,7 @@ public class CoordinatesTests
     public void Create_WithLatitudeTooLow_ThrowsGeoValidationException(double lat)
     {
         // Act
-        var act = () => Coordinates.Create((decimal)lat, 0);
+        var act = () => Coordinates.Create(lat, 0);
 
         // Assert
         act.Should().Throw<GeoValidationException>();
@@ -172,7 +172,7 @@ public class CoordinatesTests
     public void Create_WithLongitudeTooHigh_ThrowsGeoValidationException(double lon)
     {
         // Act
-        var act = () => Coordinates.Create(0, (decimal)lon);
+        var act = () => Coordinates.Create(0, lon);
 
         // Assert
         act.Should().Throw<GeoValidationException>();
@@ -193,7 +193,7 @@ public class CoordinatesTests
     public void Create_WithLongitudeTooLow_ThrowsGeoValidationException(double lon)
     {
         // Act
-        var act = () => Coordinates.Create(0, (decimal)lon);
+        var act = () => Coordinates.Create(0, lon);
 
         // Assert
         act.Should().Throw<GeoValidationException>();
@@ -210,7 +210,7 @@ public class CoordinatesTests
     public void Create_FromExistingCoordinates_Success()
     {
         // Arrange
-        var original = Coordinates.Create(34.0522m, -118.2437m);
+        var original = Coordinates.Create(34.0522, -118.2437);
 
         // Act
         var copy = Coordinates.Create(original);
@@ -228,8 +228,8 @@ public class CoordinatesTests
         // Arrange - Create invalid coordinates by bypassing factory
         var invalid = new Coordinates
         {
-            Latitude = 91m, // Invalid - out of range
-            Longitude = 0m,
+            Latitude = 91, // Invalid - out of range
+            Longitude = 0,
         };
 
         // Act

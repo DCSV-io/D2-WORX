@@ -50,7 +50,7 @@ public class LocationTests
     public void Create_WithCoordinatesOnly_Success()
     {
         // Arrange
-        var coordinates = Coordinates.Create(34.0522m, -118.2437m);
+        var coordinates = Coordinates.Create(34.0522, -118.2437);
 
         // Act
         var location = Location.Create(coordinates: coordinates);
@@ -157,7 +157,7 @@ public class LocationTests
     public void Create_WithAllProperties_Success()
     {
         // Arrange
-        var coordinates = Coordinates.Create(34.0522m, -118.2437m);
+        var coordinates = Coordinates.Create(34.0522, -118.2437);
         var address = StreetAddress.Create("123 Main St", "Building B", "Suite 400");
         const string city = "Los Angeles";
         const string postal_code = "90012";
@@ -423,7 +423,7 @@ public class LocationTests
     public void Create_WithSameContent_GeneratesSameHash()
     {
         // Arrange
-        var coordinates = Coordinates.Create(34.0522m, -118.2437m);
+        var coordinates = Coordinates.Create(34.0522, -118.2437);
         var address = StreetAddress.Create("123 Main St");
         const string city = "Los Angeles";
         const string postal_code = "90012";
@@ -506,8 +506,8 @@ public class LocationTests
     public void Create_WithDifferentCoordinates_GeneratesDifferentHash()
     {
         // Arrange
-        var coords1 = Coordinates.Create(34.0522m, -118.2437m);
-        var coords2 = Coordinates.Create(37.7749m, -122.4194m);
+        var coords1 = Coordinates.Create(34.0522, -118.2437);
+        var coords2 = Coordinates.Create(37.7749, -122.4194);
 
         // Act
         var location1 = Location.Create(coordinates: coords1);
@@ -546,7 +546,7 @@ public class LocationTests
     public void Create_WithExistingLocation_CreatesNewInstanceWithSameHash()
     {
         // Arrange
-        var coordinates = Coordinates.Create(34.0522m, -118.2437m);
+        var coordinates = Coordinates.Create(34.0522, -118.2437);
         var address = StreetAddress.Create("123 Main St");
         var original = Location.Create(
             coordinates,
@@ -581,7 +581,7 @@ public class LocationTests
     public void Create_CalledMultipleTimes_GeneratesConsistentHash()
     {
         // Arrange
-        var coordinates = Coordinates.Create(34.0522m, -118.2437m);
+        var coordinates = Coordinates.Create(34.0522, -118.2437);
         var address = StreetAddress.Create("123 Main St");
         const string city = "Los Angeles";
 
