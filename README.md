@@ -70,10 +70,11 @@ Summary:
   - CQRS handlers for geographic reference data retrieval and update requests
 - Geo service gRPC API layer
 - gRPC request/response standardization with implementation of Result.Extensions
-
-**🚧 In Progress:**
 - REST API Gateway (HTTP/REST to gRPC routing)
 - Manual E2E testing to validate initial vertical slice with OTEL coverage
+
+**🚧 In Progress:**
+- Geo Service Con't (Contacts, WhoIs, Locations)
 
 **📋 Planned:**
 - SignalR Gateway (WebSocket to gRPC routing)
