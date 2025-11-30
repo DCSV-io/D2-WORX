@@ -23,7 +23,7 @@ All endpoints use URL path versioning (`/api/v1/...`). This approach was chosen 
 
 ### Geo (`/api/v1/geo`)
 
-| Method | Path                     | Description                                                                      | 
+| Method | Path                     | Description                                                                      |
 |--------|--------------------------|----------------------------------------------------------------------------------|
 | GET    | `/reference-data`        | Returns full geographic reference data.                                          |
 | POST   | `/reference-data/update` | Requests that geographic reference data be updated. Returns the updated version. |
@@ -49,13 +49,23 @@ Each `*Endpoints.cs` file contains:
 
 ## gRPC Client Registration
 
-Clients use Aspire service discovery with the `https+http://` scheme:
+Clients use Aspire service configuration for service discovery. Example for Geo service:
 
 ```csharp
+const string config_key = "services:d2-geo:http:0";
+var geoAddress = configuration[config_key];
+if (geoAddress.Falsey())
+{
+    throw new ArgumentException(
+        $"Geo service address not configured. Missing '{config_key}' configuration.");
+}
+
 services.AddGrpcClient<GeoService.GeoServiceClient>(o =>
 {
-    o.Address = new Uri("https+http://d2-geo");
+    o.Address = new Uri(geoAddress!);
 });
+
+return services;
 ```
 
 ## Error Handling
