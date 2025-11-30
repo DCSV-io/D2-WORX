@@ -74,7 +74,7 @@ Summary:
 - Manual E2E testing to validate initial vertical slice with OTEL coverage
 
 **🚧 In Progress:**
-- Geo Service Con't (Contacts, WhoIs, Locations)
+- Geo Service Cont'd (Contacts, WhoIs, Locations)
 
 **📋 Planned:**
 - SignalR Gateway (WebSocket to gRPC routing)
