@@ -9,4 +9,4 @@ namespace D2.Contracts.Interfaces.Caching.InMemory.Handlers.C;
 /// <summary>
 /// Defines a contract for create handlers related to in-memory caching services.
 /// </summary>
-public partial interface ICreate : Abstract.Handlers.C.ICreate;
+public partial interface ICreate;

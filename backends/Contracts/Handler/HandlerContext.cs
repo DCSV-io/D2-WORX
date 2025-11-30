@@ -24,7 +24,7 @@ public class HandlerContext : IHandlerContext
     /// <param name="logger">
     /// The logger for logging within the handler.
     /// </param>
-    public HandlerContext(IRequestContext requestContext, ILogger logger)
+    public HandlerContext(IRequestContext requestContext, ILogger<HandlerContext> logger)
     {
         Request = requestContext;
         Logger = logger;

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Caching.Abstract.Handlers.R;
+namespace D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
 
 using D2.Contracts.Handler;
 

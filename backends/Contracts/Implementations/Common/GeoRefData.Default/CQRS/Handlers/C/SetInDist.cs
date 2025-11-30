@@ -7,7 +7,7 @@
 namespace D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.C;
 
 using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Caching.Abstract.Handlers.U;
+using D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Contracts.Result;
 using D2.Services.Protos.Geo.V1;
 using Constants = D2.Contracts.Utilities.Constants.Constants;

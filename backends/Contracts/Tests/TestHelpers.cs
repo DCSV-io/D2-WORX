@@ -121,7 +121,7 @@ public static class TestHelpers
         var mockContext = new Mock<IRequestContext>();
         mockContext.Setup(x => x.TraceId).Returns(Guid.NewGuid().ToString());
 
-        var mockLogger = new Mock<ILogger>();
+        var mockLogger = new Mock<ILogger<HandlerContext>>();
 
         return new HandlerContext(mockContext.Object, mockLogger.Object);
     }

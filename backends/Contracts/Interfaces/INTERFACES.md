@@ -6,37 +6,6 @@ Interface definitions for handler-based operations across caching, repositories,
 
 ## Caching
 
-> ### Abstract
->
-> #### Handlers
->
-> ##### C (Create)
->
-> | File Name                                            | Description                                                                   |
-> |------------------------------------------------------|-------------------------------------------------------------------------------|
-> | [ICreate.cs](Caching/Abstract/Handlers/C/ICreate.cs) | Partial interface defining cache creation operations with generic typed data. |
->
-> ##### D (Delete)
->
-> | File Name                                                          | Description                                                                   |
-> |--------------------------------------------------------------------|-------------------------------------------------------------------------------|
-> | [IDelete.cs](Caching/Abstract/Handlers/D/IDelete.cs)               | Partial interface defining cache deletion operations.                         |
-> | [IDelete.Remove.cs](Caching/Abstract/Handlers/D/IDelete.Remove.cs) | Extends IDelete with IRemoveHandler for explicit cache entry deletion by key. |
->
-> ##### R (Read)
->
-> | File Name                                                | Description                                                               |
-> |----------------------------------------------------------|---------------------------------------------------------------------------|
-> | [IRead.cs](Caching/Abstract/Handlers/R/IRead.cs)         | Partial interface defining cache read operations.                         |
-> | [IRead.Get.cs](Caching/Abstract/Handlers/R/IRead.Get.cs) | Extends IRead with IGetHandler for explicit cache entry retrieval by key. |
->
-> ##### U (Update)
->
-> | File Name                                                    | Description                                                                          |
-> |--------------------------------------------------------------|--------------------------------------------------------------------------------------|
-> | [IUpdate.cs](Caching/Abstract/Handlers/U/IUpdate.cs)         | Partial interface defining cache upsert operations.                                  |
-> | [IUpdate.Set.cs](Caching/Abstract/Handlers/U/IUpdate.Set.cs) | Extends IUpdate with ISetHandler for explicit cache entry storage with optional TTL. |
-
 > ### Distributed
 >
 > #### Handlers
@@ -49,9 +18,10 @@ Interface definitions for handler-based operations across caching, repositories,
 >
 > ##### D (Delete)
 >
-> | File Name                                               | Description                                                       |
-> |---------------------------------------------------------|-------------------------------------------------------------------|
-> | [IDelete.cs](Caching/Distributed/Handlers/D/IDelete.cs) | Partial interface defining distributed cache deletion operations. |
+> | File Name                                                             | Description                                                                               |
+> |-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+> | [IDelete.cs](Caching/Distributed/Handlers/D/IDelete.cs)               | Partial interface defining distributed cache deletion operations.                         |
+> | [IDelete.Remove.cs](Caching/Distributed/Handlers/D/IDelete.Remove.cs) | Extends IDelete with IRemoveHandler for explicit distributed cache entry deletion by key. |
 >
 > ##### R (Read)
 >
@@ -59,12 +29,14 @@ Interface definitions for handler-based operations across caching, repositories,
 > |-------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
 > | [IRead.cs](Caching/Distributed/Handlers/R/IRead.cs)               | Partial interface defining distributed cache read operations.                                     |
 > | [IRead.Exists.cs](Caching/Distributed/Handlers/R/IRead.Exists.cs) | Extends IRead with IExistsHandler for checking distributed cache key existence without retrieval. |
+> | [IRead.Get.cs](Caching/Distributed/Handlers/R/IRead.Get.cs)       | Extends IRead with IGetHandler for retrieving typed data from distributed cache by key.           |
 >
 > ##### U (Update)
 >
-> | File Name                                               | Description                                                     |
-> |---------------------------------------------------------|-----------------------------------------------------------------|
-> | [IUpdate.cs](Caching/Distributed/Handlers/U/IUpdate.cs) | Partial interface defining distributed cache upsert operations. |
+> | File Name                                                       | Description                                                                                     |
+> |-----------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+> | [IUpdate.cs](Caching/Distributed/Handlers/U/IUpdate.cs)         | Partial interface defining distributed cache upsert operations.                                 |
+> | [IUpdate.Set.cs](Caching/Distributed/Handlers/U/IUpdate.Set.cs) | Extends IUpdate with ISetHandler for storing typed data in distributed cache with optional TTL. |
 
 > ### InMemory
 >
@@ -78,21 +50,24 @@ Interface definitions for handler-based operations across caching, repositories,
 >
 > ##### D (Delete)
 >
-> | File Name                                            | Description                                                     |
-> |------------------------------------------------------|-----------------------------------------------------------------|
-> | [IDelete.cs](Caching/InMemory/Handlers/D/IDelete.cs) | Partial interface defining in-memory cache deletion operations. |
+> | File Name                                                          | Description                                                                             |
+> |--------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+> | [IDelete.cs](Caching/InMemory/Handlers/D/IDelete.cs)               | Partial interface defining in-memory cache deletion operations.                         |
+> | [IDelete.Remove.cs](Caching/InMemory/Handlers/D/IDelete.Remove.cs) | Extends IDelete with IRemoveHandler for explicit in-memory cache entry deletion by key. |
 >
 > ##### R (Read)
 >
-> | File Name                                        | Description                                                 |
-> |--------------------------------------------------|-------------------------------------------------------------|
-> | [IRead.cs](Caching/InMemory/Handlers/R/IRead.cs) | Partial interface defining in-memory cache read operations. |
+> | File Name                                                  | Description                                                                            |
+> |------------------------------------------------------------|----------------------------------------------------------------------------------------|
+> | [IRead.cs](Caching/InMemory/Handlers/R/IRead.cs)           | Partial interface defining in-memory cache read operations.                            |
+> | [IRead.Get.cs](Caching/InMemory/Handlers/R/IRead.Get.cs)   | Extends IRead with IGetHandler for retrieving typed data from in-memory cache by key.  |
 >
 > ##### U (Update)
 >
-> | File Name                                            | Description                                                   |
-> |------------------------------------------------------|---------------------------------------------------------------|
-> | [IUpdate.cs](Caching/InMemory/Handlers/U/IUpdate.cs) | Partial interface defining in-memory cache upsert operations. |
+> | File Name                                                    | Description                                                                                   |
+> |--------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+> | [IUpdate.cs](Caching/InMemory/Handlers/U/IUpdate.cs)         | Partial interface defining in-memory cache upsert operations.                                 |
+> | [IUpdate.Set.cs](Caching/InMemory/Handlers/U/IUpdate.Set.cs) | Extends IUpdate with ISetHandler for storing typed data in memory cache with optional TTL.    |
 
 ---
 
@@ -122,10 +97,6 @@ Interface definitions for handler-based operations across caching, repositories,
 > | [IQueries.GetFromDisk.cs](Common/GeoRefData/CQRS/Handlers/Q/IQueries.GetFromDisk.cs) | Extends IQueries with IGetFromDiskHandler for retrieving reference data from disk storage.      |
 > | [IQueries.GetFromDist.cs](Common/GeoRefData/CQRS/Handlers/Q/IQueries.GetFromDist.cs) | Extends IQueries with IGetFromDistHandler for retrieving reference data from Redis.             |
 > | [IQueries.GetFromMem.cs](Common/GeoRefData/CQRS/Handlers/Q/IQueries.GetFromMem.cs)   | Extends IQueries with IGetFromMemHandler for retrieving reference data from memory cache.       |
->
-> ###### U (Utilities)
->
-> No utility handlers.
 >
 > ###### X (Complex)
 >

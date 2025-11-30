@@ -5,12 +5,17 @@
 // -----------------------------------------------------------------------
 
 using D2.Contracts.ServiceDefaults;
+using D2.Gateways.REST.Endpoints;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+
+// Register gRPC clients.
+builder.Services.AddGeoGrpcClient(builder.Configuration);
+
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStructuredRequestLogging();
@@ -22,6 +27,9 @@ if (app.Environment.IsDevelopment())
 
 app.MapPrometheusEndpointWithIpRestriction();
 app.MapDefaultEndpoints();
+
+// Map versioned API endpoints.
+app.MapGeoEndpointsV1();
 
 try
 {

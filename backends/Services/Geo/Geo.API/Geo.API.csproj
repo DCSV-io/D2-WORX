@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\Contracts\Handler.Extensions\Handler.Extensions.csproj" />
       <ProjectReference Include="..\..\..\Contracts\ServiceDefaults\ServiceDefaults.csproj" />
       <ProjectReference Include="..\..\_protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
       <ProjectReference Include="..\Geo.Infra\Geo.Infra.csproj" />

@@ -11,9 +11,9 @@ using D2.Contracts.Handler;
 using D2.Contracts.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using H = D2.Contracts.Interfaces.Caching.Abstract.Handlers.D.IDelete.IRemoveHandler;
-using I = D2.Contracts.Interfaces.Caching.Abstract.Handlers.D.IDelete.RemoveInput;
-using O = D2.Contracts.Interfaces.Caching.Abstract.Handlers.D.IDelete.RemoveOutput;
+using H = D2.Contracts.Interfaces.Caching.Distributed.Handlers.D.IDelete.IRemoveHandler;
+using I = D2.Contracts.Interfaces.Caching.Distributed.Handlers.D.IDelete.RemoveInput;
+using O = D2.Contracts.Interfaces.Caching.Distributed.Handlers.D.IDelete.RemoveOutput;
 
 /// <summary>
 /// Handler for removing a value from the Redis distributed cache.

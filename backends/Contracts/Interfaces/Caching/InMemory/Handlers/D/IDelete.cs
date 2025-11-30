@@ -9,4 +9,4 @@ namespace D2.Contracts.Interfaces.Caching.InMemory.Handlers.D;
 /// <summary>
 /// Defines a contract for delete handlers related to in-memory caching services.
 /// </summary>
-public partial interface IDelete : Abstract.Handlers.D.IDelete;
+public partial interface IDelete;

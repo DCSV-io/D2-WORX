@@ -56,6 +56,7 @@ public static class Extensions
         {
             // Database context.
             services.AddDbContext<GeoDbContext>(options => options.UseNpgsql(dbConnectionString));
+            services.AddScoped<DbContext, GeoDbContext>();
 
             // Local in-memory cache.
             services.AddDefaultMemoryCaching();

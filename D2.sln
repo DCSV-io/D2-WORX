@@ -156,6 +156,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Transactions.Pg", "backends
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Result.Extensions", "backends\Contracts\Result.Extensions\Result.Extensions.csproj", "{7D592249-21C7-407A-9240-F9FC4291E877}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Handler.Extensions", "backends\Contracts\Handler.Extensions\Handler.Extensions.csproj", "{D1ED2D1C-5D09-486B-951A-46653B2BA8CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -262,6 +264,10 @@ Global
 		{7D592249-21C7-407A-9240-F9FC4291E877}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7D592249-21C7-407A-9240-F9FC4291E877}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7D592249-21C7-407A-9240-F9FC4291E877}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1ED2D1C-5D09-486B-951A-46653B2BA8CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1ED2D1C-5D09-486B-951A-46653B2BA8CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1ED2D1C-5D09-486B-951A-46653B2BA8CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1ED2D1C-5D09-486B-951A-46653B2BA8CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5B4C1A23-E467-42C7-933A-3894453C25F8} = {9117C8D8-BDAA-4BE7-A5CC-8C3FA8E03757}
@@ -316,5 +322,6 @@ Global
 		{12FC3E80-4A13-4B87-BC58-E839466AF7B3} = {0EBE3EDF-898F-4693-861A-A52C5606DC04}
 		{12C31EC5-29AB-4E7A-A493-47448F294176} = {12FC3E80-4A13-4B87-BC58-E839466AF7B3}
 		{7D592249-21C7-407A-9240-F9FC4291E877} = {9117C8D8-BDAA-4BE7-A5CC-8C3FA8E03757}
+		{D1ED2D1C-5D09-486B-951A-46653B2BA8CD} = {9117C8D8-BDAA-4BE7-A5CC-8C3FA8E03757}
 	EndGlobalSection
 EndGlobal

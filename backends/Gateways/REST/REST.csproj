@@ -8,10 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\Contracts\Result.Extensions\Result.Extensions.csproj" />
         <ProjectReference Include="..\..\Contracts\ServiceDefaults\ServiceDefaults.csproj"/>
+        <ProjectReference Include="..\..\Services\_protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Grpc.Net.ClientFactory" Version="2.76.0-pre1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     </ItemGroup>
 

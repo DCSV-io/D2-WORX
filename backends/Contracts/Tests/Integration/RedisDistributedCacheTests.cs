@@ -88,7 +88,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var setHandler = new Set<string>(_redis, _context);
         await setHandler.HandleAsync(
-            new IUpdate.SetInput<string>("test-key", "test-value", null), Ct);
+            new IUpdate.SetInput<string>("test-key", "test-value"), Ct);
 
         var getHandler = new Get<string>(_redis, _context);
         var result = await getHandler.HandleAsync(
@@ -110,7 +110,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         var setHandler = new Set<string>(_redis, _context);
         var setResult = await setHandler.HandleAsync(
-            new IUpdate.SetInput<string>("key", "value", null), Ct);
+            new IUpdate.SetInput<string>("key", "value"), Ct);
 
         setResult.Success.Should().BeTrue();
 
@@ -211,7 +211,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
 
         var setHandler = new Set<TestData>(_redis, _context);
         await setHandler.HandleAsync(
-            new IUpdate.SetInput<TestData>("complex-key", testObject, null),
+            new IUpdate.SetInput<TestData>("complex-key", testObject),
             Ct);
 
         var getHandler = new Get<TestData>(_redis, _context);
@@ -237,7 +237,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
 
         // Act
         var result = await handler.HandleAsync(
-            new IUpdate.SetInput<GeoRefData>("proto-key", protoData, null),
+            new IUpdate.SetInput<GeoRefData>("proto-key", protoData),
             Ct);
 
         // Assert
@@ -268,7 +268,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
 
         var setHandler = new Set<GeoRefData>(_redis, _context);
         await setHandler.HandleAsync(
-            new IUpdate.SetInput<GeoRefData>("proto-get-key", protoData, null),
+            new IUpdate.SetInput<GeoRefData>("proto-get-key", protoData),
             Ct);
 
         var getHandler = new Get<GeoRefData>(_redis, _context);
@@ -436,7 +436,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
 
         // Act
         var result = await handler.HandleAsync(
-            new IUpdate.SetInput<string>("any-key", "any-value", null),
+            new IUpdate.SetInput<string>("any-key", "any-value"),
             CancellationToken.None);
 
         // Assert
