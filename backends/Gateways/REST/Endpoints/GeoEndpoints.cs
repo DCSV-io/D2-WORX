@@ -6,6 +6,7 @@
 
 namespace D2.Gateways.REST.Endpoints;
 
+using D2.Contracts.Utilities.Extensions;
 using D2.Services.Protos.Geo.V1;
 
 /// <summary>
@@ -31,7 +32,13 @@ public static class GeoEndpoints
         /// </returns>
         public IServiceCollection AddGeoGrpcClient(IConfiguration configuration)
         {
-            var geoAddress = configuration["services:d2-geo:http:0"];
+            const string config_key = "services:d2-geo:http:0";
+            var geoAddress = configuration[config_key];
+            if (geoAddress.Falsey())
+            {
+                throw new ArgumentException(
+                    $"Geo service address not configured. Missing '{config_key}' configuration.");
+            }
 
             services.AddGrpcClient<GeoService.GeoServiceClient>(o =>
             {
