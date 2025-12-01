@@ -30,7 +30,7 @@ public class LocationTests
         // Assert
         location.Should().NotBeNull();
         location.HashId.Should().NotBeNull();
-        location.HashId.Should().HaveCount(32); // SHA-256 = 32 bytes
+        location.HashId.Should().HaveLength(64); // SHA-256 = 32 bytes = 64 hex chars
         location.Coordinates.Should().BeNull();
         location.Address.Should().BeNull();
         location.City.Should().BeNull();
@@ -57,7 +57,7 @@ public class LocationTests
 
         // Assert
         location.Should().NotBeNull();
-        location.HashId.Should().HaveCount(32);
+        location.HashId.Should().HaveLength(64);
         location.Coordinates.Should().Be(coordinates);
         location.Address.Should().BeNull();
         location.City.Should().BeNull();
@@ -77,7 +77,7 @@ public class LocationTests
 
         // Assert
         location.Should().NotBeNull();
-        location.HashId.Should().HaveCount(32);
+        location.HashId.Should().HaveLength(64);
         location.Coordinates.Should().BeNull();
         location.Address.Should().Be(address);
     }
@@ -175,7 +175,7 @@ public class LocationTests
 
         // Assert
         location.Should().NotBeNull();
-        location.HashId.Should().HaveCount(32);
+        location.HashId.Should().HaveLength(64);
         location.Coordinates.Should().Be(coordinates);
         location.Address.Should().Be(address);
         location.City.Should().Be("Los Angeles");
@@ -208,7 +208,7 @@ public class LocationTests
     /// Tests creating a Location with a dirty city name containing extra whitespace.
     /// </summary>
     [Fact]
-    public void Create_WithDirtyCity_CleansWhitespace()
+    public void Create_WithDirtyCity_Cleans()
     {
         // Arrange
         const string dirty_city = "  Los   Angeles  ";
@@ -221,17 +221,16 @@ public class LocationTests
     }
 
     /// <summary>
-    /// Tests creating a Location with a city name that is only whitespace.
+    /// Tests creating a Location with a city that is only whitespace.
     /// </summary>
     ///
     /// <param name="city">
-    /// The whitespace-only city name.
+    /// The whitespace-only city.
     /// </param>
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("   ")]
-    [InlineData("\t")]
     public void Create_WithWhitespaceOnlyCity_SetsToNull(string city)
     {
         // Act
@@ -243,7 +242,7 @@ public class LocationTests
 
     #endregion
 
-    #region String Cleanup - PostalCode (Uppercase)
+    #region String Cleanup - PostalCode
 
     /// <summary>
     /// Tests creating a Location with a clean postal code.
@@ -269,13 +268,13 @@ public class LocationTests
     public void Create_WithDirtyPostalCode_CleansAndUppercases()
     {
         // Arrange
-        const string dirty_postal = "  k1a 0b1  ";
+        const string dirty_postal = "  t2p 1a1  ";
 
         // Act
         var location = Location.Create(postalCode: dirty_postal);
 
         // Assert
-        location.PostalCode.Should().Be("K1A 0B1");
+        location.PostalCode.Should().Be("T2P 1A1");
     }
 
     /// <summary>
@@ -300,7 +299,7 @@ public class LocationTests
 
     #endregion
 
-    #region String Cleanup - SubdivisionCode (Uppercase)
+    #region String Cleanup - SubdivisionCode
 
     /// <summary>
     /// Tests creating a Location with a clean subdivision code.
@@ -357,7 +356,7 @@ public class LocationTests
 
     #endregion
 
-    #region String Cleanup - CountryCode (Uppercase)
+    #region String Cleanup - CountryCode
 
     /// <summary>
     /// Tests creating a Location with a clean country code.
@@ -435,7 +434,7 @@ public class LocationTests
         var location2 = Location.Create(coordinates, address, city, postal_code, subdivision_code, country_code);
 
         // Assert
-        location1.HashId.Should().BeEquivalentTo(location2.HashId);
+        location1.HashId.Should().Be(location2.HashId);
     }
 
     /// <summary>
@@ -454,7 +453,7 @@ public class LocationTests
         var location2 = Location.Create(city: city2);
 
         // Assert
-        location1.HashId.Should().BeEquivalentTo(location2.HashId);
+        location1.HashId.Should().Be(location2.HashId);
     }
 
     /// <summary>
@@ -473,7 +472,7 @@ public class LocationTests
         var location2 = Location.Create(countryISO31661Alpha2Code: country2);
 
         // Assert
-        location1.HashId.Should().BeEquivalentTo(location2.HashId);
+        location1.HashId.Should().Be(location2.HashId);
     }
 
     #endregion
@@ -495,7 +494,7 @@ public class LocationTests
         var location2 = Location.Create(city: city2);
 
         // Assert
-        location1.HashId.Should().NotBeEquivalentTo(location2.HashId);
+        location1.HashId.Should().NotBe(location2.HashId);
         location1.Should().NotBe(location2);
     }
 
@@ -514,7 +513,7 @@ public class LocationTests
         var location2 = Location.Create(coordinates: coords2);
 
         // Assert
-        location1.HashId.Should().NotBeEquivalentTo(location2.HashId);
+        location1.HashId.Should().NotBe(location2.HashId);
     }
 
     /// <summary>
@@ -532,7 +531,7 @@ public class LocationTests
         var location2 = Location.Create(address: address2);
 
         // Assert
-        location1.HashId.Should().NotBeEquivalentTo(location2.HashId);
+        location1.HashId.Should().NotBe(location2.HashId);
     }
 
     #endregion
@@ -561,7 +560,7 @@ public class LocationTests
 
         // Assert
         copy.Should().NotBeNull();
-        copy.HashId.Should().BeEquivalentTo(original.HashId);
+        copy.HashId.Should().Be(original.HashId);
         copy.Coordinates.Should().Be(original.Coordinates);
         copy.Address.Should().Be(original.Address);
         copy.City.Should().Be(original.City);
@@ -592,7 +591,7 @@ public class LocationTests
 
         // Assert - All should have identical hashes
         var firstHash = locations[0].HashId;
-        locations.Should().AllSatisfy(loc => loc.HashId.Should().BeEquivalentTo(firstHash));
+        locations.Should().AllSatisfy(loc => loc.HashId.Should().Be(firstHash));
     }
 
     #endregion

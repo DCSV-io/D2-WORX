@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace D2.Geo.Domain.Entities;
 
 using System.Security.Cryptography;
@@ -32,9 +33,12 @@ public record Location
     #region Identity
 
     /// <summary>
-    /// Gets a content-addressable 32-byte SHA-256 hash of the location's content.
+    /// Gets a content-addressable SHA-256 hash (hex string) of the location's content.
     /// </summary>
-    public required byte[] HashId { get; init; }
+    /// <example>
+    /// A1B2C3D4E5F6...
+    /// </example>
+    public required string HashId { get; init; }
 
     #endregion
 
@@ -175,7 +179,7 @@ public record Location
         };
         var input = hashInputArr.GetNormalizedStrForHashing();
         var inputBytes = Encoding.UTF8.GetBytes(input);
-        var hashId = SHA256.HashData(inputBytes);
+        var hashId = Convert.ToHexString(SHA256.HashData(inputBytes));
 
         // Return a new Location instance with the computed HashId and cleaned properties.
         return new Location
