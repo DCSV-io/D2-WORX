@@ -33,11 +33,11 @@ public partial interface IRead
     /// </summary>
     ///
     /// <param name="Value">
-    /// The retrieved value, or null if the key does not exist.
+    /// The cached value associated with the specified key.
     /// </param>
     ///
     /// <typeparam name="TValue">
     /// The type of the cached value.
     /// </typeparam>
-    public record GetOutput<TValue>(TValue? Value);
+    public record GetOutput<TValue>(TValue Value);
 }

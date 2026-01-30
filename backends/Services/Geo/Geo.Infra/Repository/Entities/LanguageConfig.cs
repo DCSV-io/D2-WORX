@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
-/// Configuration for the Language entity.
+/// EF Core configuration for the <see cref="Language"/> entity.
 /// </summary>
 public class LanguageConfig : IEntityTypeConfiguration<Language>
 {

@@ -55,4 +55,9 @@ public class ErrorCodes
     /// Indicates that the service is currently unavailable.
     /// </summary>
     public const string SERVICE_UNAVAILABLE = nameof(SERVICE_UNAVAILABLE);
+
+    /// <summary>
+    /// Indicates that some items were found in a query operation but not all.
+    /// </summary>
+    public const string SOME_FOUND = nameof(SOME_FOUND);
 }

@@ -40,11 +40,12 @@ builder.Services.AddProblemDetails();
 builder.Services.AddGrpc();
 builder.Services.AddHandlerContext();
 builder.Services.AddGeoInfra(
+    builder.Configuration,
     dbConnectionString!,
     distributedCacheConnectionString!,
     messageQueueConnectionString!);
 builder.Services.AddGeoRefDataProvider();
-builder.Services.AddGeoApp();
+builder.Services.AddGeoApp(builder.Configuration);
 
 // Build app and use middleware.
 var app = builder.Build();

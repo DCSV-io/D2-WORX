@@ -45,6 +45,8 @@ public static class Extensions
             services.AddTransient(typeof(IRead.IGetHandler<>), typeof(Get<>));
             services.AddTransient(typeof(IUpdate.ISetHandler<>), typeof(Set<>));
             services.AddTransient<IDelete.IRemoveHandler, Remove>();
+            services.AddTransient(typeof(IRead.IGetManyHandler<>), typeof(GetMany<>));
+            services.AddTransient(typeof(IUpdate.ISetManyHandler<>), typeof(SetMany<>));
 
             return services;
         }

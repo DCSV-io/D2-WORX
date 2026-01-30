@@ -16,6 +16,7 @@ using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.R;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -36,6 +37,9 @@ public static class Extensions
         /// Adds Geo infrastructure services to the service collection.
         /// </summary>
         ///
+        /// <param name="configuration">
+        /// The application configuration.
+        /// </param>
         /// <param name="dbConnectionString">
         /// The database connection string.
         /// </param>
@@ -50,10 +54,14 @@ public static class Extensions
         /// The updated service collection.
         /// </returns>
         public IServiceCollection AddGeoInfra(
+            IConfiguration configuration,
             string dbConnectionString,
             string distributedCacheConnectionString,
             string messageQueueConnectionString)
         {
+            // Add configuration options.
+            services.Configure<GeoInfraOptions>(configuration.GetSection(nameof(GeoInfraOptions)));
+
             // Database context.
             services.AddDbContext<GeoDbContext>(options => options.UseNpgsql(dbConnectionString));
             services.AddScoped<DbContext, GeoDbContext>();
@@ -69,6 +77,7 @@ public static class Extensions
 
             // Repository (read) handlers.
             services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetReferenceDataHandler, GetReferenceData>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetLocationsByIdsHandler, GetLocationsByIds>();
 
             // Messaging (publish) handlers.
             services.AddTransient<App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler, Update>();

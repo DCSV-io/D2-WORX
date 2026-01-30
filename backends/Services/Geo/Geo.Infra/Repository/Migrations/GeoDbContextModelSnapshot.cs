@@ -4262,6 +4262,42 @@ namespace D2.Geo.Infra.Repository.Migrations
                         });
                 });
 
+            modelBuilder.Entity("D2.Geo.Domain.Entities.Location", b =>
+                {
+                    b.Property<string>("HashId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("hash_id");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("CountryISO31661Alpha2Code")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_iso_3166_1_alpha_2_code");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("SubdivisionISO31662Code")
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)")
+                        .HasColumnName("subdivision_iso_3166_2_code");
+
+                    b.HasKey("HashId");
+
+                    b.HasIndex("CountryISO31661Alpha2Code");
+
+                    b.HasIndex("SubdivisionISO31662Code");
+
+                    b.ToTable("locations", (string)null);
+                });
+
             modelBuilder.Entity("D2.Geo.Domain.Entities.Subdivision", b =>
                 {
                     b.Property<string>("ISO31662Code")
@@ -12559,6 +12595,75 @@ namespace D2.Geo.Infra.Repository.Migrations
                     b.Navigation("Country");
 
                     b.Navigation("Language");
+                });
+
+            modelBuilder.Entity("D2.Geo.Domain.Entities.Location", b =>
+                {
+                    b.HasOne("D2.Geo.Domain.Entities.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryISO31661Alpha2Code");
+
+                    b.HasOne("D2.Geo.Domain.Entities.Subdivision", "Subdivision")
+                        .WithMany()
+                        .HasForeignKey("SubdivisionISO31662Code");
+
+                    b.OwnsOne("D2.Geo.Domain.ValueObjects.Coordinates", "Coordinates", b1 =>
+                        {
+                            b1.Property<string>("LocationHashId")
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("longitude");
+
+                            b1.HasKey("LocationHashId");
+
+                            b1.ToTable("locations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LocationHashId");
+                        });
+
+                    b.OwnsOne("D2.Geo.Domain.ValueObjects.StreetAddress", "Address", b1 =>
+                        {
+                            b1.Property<string>("LocationHashId")
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<string>("Line1")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("address_line_1");
+
+                            b1.Property<string>("Line2")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("address_line_2");
+
+                            b1.Property<string>("Line3")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("address_line_3");
+
+                            b1.HasKey("LocationHashId");
+
+                            b1.ToTable("locations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LocationHashId");
+                        });
+
+                    b.Navigation("Address");
+
+                    b.Navigation("Coordinates");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("Subdivision");
                 });
 
             modelBuilder.Entity("D2.Geo.Domain.Entities.Subdivision", b =>

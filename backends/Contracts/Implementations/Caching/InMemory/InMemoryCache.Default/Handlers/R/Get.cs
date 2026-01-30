@@ -52,7 +52,7 @@ public class Get<TValue> : BaseHandler<
         {
             return ValueTask.FromResult(
                 D2Result<S.GetOutput<TValue>?>.Ok(
-                    new S.GetOutput<TValue>(value),
+                    new S.GetOutput<TValue>(value!),
                     traceId: TraceId));
         }
 

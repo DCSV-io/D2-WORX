@@ -48,9 +48,9 @@ public class Set<TValue> : BaseHandler<
         S.SetInput<TValue> input,
         CancellationToken ct = default)
     {
-        if (input.Expiration.HasValue)
+        if (input.Expiration is not null)
         {
-            r_memoryCache.Set(input.Key, input.Value, input.Expiration.Value);
+            r_memoryCache.Set(input.Key, input.Value, (TimeSpan)input.Expiration);
         }
         else
         {

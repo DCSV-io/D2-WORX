@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
-/// Configuration for the Locale entity.
+/// EF Core configuration for the <see cref="Locale"/> entity.
 /// </summary>
 public class LocaleConfig : IEntityTypeConfiguration<Locale>
 {

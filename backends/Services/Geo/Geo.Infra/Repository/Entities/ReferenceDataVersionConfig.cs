@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
-/// Configuration for the ReferenceDataVersion entity.
+/// EF Core configuration for the ReferenceDataVersion entity.
 /// </summary>
 public class ReferenceDataVersionConfig : IEntityTypeConfiguration<ReferenceDataVersion>
 {

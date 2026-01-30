@@ -42,7 +42,7 @@ public class GeoService : SB
         return new GetReferenceDataResponse
         {
             Result = result.ToProto(),
-            Data = result.Success ? result.Data!.Data : null,
+            Data = result.Data?.Data,
         };
     }
 

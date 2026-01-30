@@ -20,54 +20,14 @@ This file provides guidance for Claude Code (and other AI assistants) when worki
 
 For deeper architectural context, consult these files:
 
-| Document               | Purpose                                                                      |
-|------------------------|------------------------------------------------------------------------------|
-| `README.md`            | Project overview, setup instructions, technology stack, and status           |
-| `backends/BACKENDS.md` | Complete backend architecture, TLC→2LC→3LC hierarchy, and folder conventions |
-
-## Project Structure
-
-```
-D2-WORX/
-├── backends/
-│   ├── AppHost/                    # Aspire orchestration
-│   ├── Contracts/                  # Shared abstractions
-│   │   ├── Handler/                # BaseHandler pattern
-│   │   ├── Interfaces/             # Contract interfaces (TLC hierarchy)
-│   │   ├── Implementations/        # Reusable implementations
-│   │   │   ├── Caching/            # Redis & In-Memory
-│   │   │   ├── Common/             # GeoRefData
-│   │   │   └── Repository/         # Transactions
-│   │   ├── Messages/               # Domain event POCOs
-│   │   ├── Result/                 # D2Result pattern
-│   │   ├── Result.Extensions/      # D2Result ↔ Proto conversions
-│   │   ├── ServiceDefaults/        # OpenTelemetry config
-│   │   ├── Tests/                  # Shared test infrastructure
-│   │   └── Utilities/              # Extensions & helpers
-│   ├── Gateways/
-│   │   └── REST/                   # HTTP/REST → gRPC gateway
-│   └── Services/
-│       ├── _protos/                # Protocol Buffers definitions
-│       │   └── _gen/Protos.DotNet/ # Generated C# code
-│       ├── Geo/                    # Geographic reference data
-│       │   ├── Geo.Domain/         # DDD entities & value objects
-│       │   ├── Geo.App/            # CQRS handlers
-│       │   ├── Geo.Infra/          # Repository, messaging, EF Core
-│       │   ├── Geo.API/            # gRPC service
-│       │   └── Geo.Tests/          # Tests
-│       └── Auth/                   # Authentication (planned)
-├── frontends/
-│   └── sveltekit/                  # SvelteKit 5 app
-├── observability/                  # LGTM stack configs
-│   ├── alloy/, loki/, grafana/, tempo/, mimir/
-├── .github/
-│   ├── workflows/test.yml          # CI/CD pipeline
-│   └── instructions/               # Copilot guidelines
-├── .editorconfig                   # Code style rules
-├── Directory.Build.props           # MSBuild/StyleCop config
-├── stylecop.json                   # StyleCop settings
-└── D2.sln                          # Solution file
-```
+| Document                                    | Description                        |
+|---------------------------------------------|------------------------------------|
+| `README.md`                                 | Project overview, setup, status    |
+| `backends/BACKENDS.md`                      | Full backend architecture          |
+| `backends/Services/Geo/GEO_SERVICE.md`      | Geo service architecture           |
+| `backends/Contracts/Handler/HANDLER.md`     | Handler pattern guide              |
+| `backends/Contracts/Result/RESULT.md`       | D2Result pattern                   |
+| `CONTRIBUTING.md`                           | Contribution guidelines            |
 
 ---
 
@@ -75,7 +35,7 @@ D2-WORX/
 
 ### TLC→2LC→3LC Folder Convention
 
-All backend code follows a three-level categorization. See `backends/BACKENDS.md` for full details.
+See `backends/BACKENDS.md` for full details.
 
 **TLC (Top-Level):** Architectural concern → `CQRS`, `Messaging`, `Repository`, `Caching`
 
@@ -89,6 +49,29 @@ All backend code follows a three-level categorization. See `backends/BACKENDS.md
 - `D/` - Deletes
 - `X/` - Complex (multi-step operations with side effects)
 - `Pub/`, `Sub/` - Publish/Subscribe messaging
+
+### CQRS Handler Categories
+
+| Handler Type | Local Cache | Distributed Cache | Database Write | External API |
+|--------------|-------------|-------------------|----------------|--------------|
+| **Query**    | ✅ OK       | ❌ No             | ❌ No          | ❌ No        |
+| **Command**  | ✅ OK       | ✅ OK             | ✅ OK          | ✅ OK        |
+| **Complex**  | ✅ OK       | ✅ OK             | ✅ OK          | ✅ OK        |
+
+**Key Distinction:** If the process dies immediately after the handler completes, would any state change persist or be visible to other instances? For Queries, the answer must be "no."
+
+- **Query**: Read-only from the perspective of persistent/shared state. Local/in-memory caching is permitted as an invisible optimization.
+- **Command**: Primary intent is mutation of persistent/shared state. Caller expects durable changes.
+- **Complex**: Primary intent is retrieval, but may mutate persistent/shared state as a side effect (e.g., fetching from external source then persisting).
+
+### Verb Semantics
+
+| Verb     | Semantics                                      | Side Effects        |
+|----------|------------------------------------------------|---------------------|
+| **Find** | "Resolve this for me" — may fetch from external source, cache | May create/upsert |
+| **Get**  | "Give me this by ID" — direct lookup           | Read-only           |
+
+Example: `FindWhoIs` (by IP+fingerprint, may hydrate from API) vs `GetWhoIsByIds` (by hash, direct lookup)
 
 ### Handler Pattern
 
@@ -133,11 +116,119 @@ D2Result<TData>.Ok(data, traceId: TraceId)
 D2Result.Fail(messages, statusCode, errorCode, traceId: TraceId)
 D2Result.ValidationFailed(inputErrors, traceId: TraceId)
 D2Result.NotFound(traceId: TraceId)
+D2Result.SomeFound(data, traceId: TraceId)  // Partial success
 D2Result.Unauthorized(traceId: TraceId)
 
 // Checking and propagating
 if (result.CheckSuccess(out var output)) { /* use output */ }
-return result.BubbleFail<TNewData>();  // Propagate errors with type change
+if (result.CheckFailure(out var output)) { /* handle error, output may have partial data */ }
+return D2Result<TNewData>.BubbleFail(result);  // Propagate errors with type change
+```
+
+**Partial Success Pattern:**
+- `NOT_FOUND` - None of the requested items were found
+- `SOME_FOUND` - Some items found, but not all (data still returned)
+- `OK` - All items found
+
+### Content-Addressable Entities
+
+`Location` and `WhoIs` entities use SHA-256 content-addressable hash IDs:
+- Hash is computed from immutable identity properties
+- Stored as 64-character hex string (32 bytes)
+- Enables automatic deduplication and idempotent operations
+- Hash computed via factory methods: `Location.Create(...)`, `WhoIs.Create(...)`
+
+```csharp
+// Location hash: coordinates + address + city + postal + subdivision + country
+var location = Location.Create(
+    coordinates: Coordinates.Create(34.0522, -118.2437),
+    address: StreetAddress.Create("123 Main St"),
+    city: "Los Angeles",
+    postalCode: "90001",
+    subdivisionISO31662Code: "US-CA",
+    countryISO31661Alpha2Code: "US");
+// location.HashId is now a 64-char hex string
+
+// WhoIs hash: IP + year + month + fingerprint (for temporal versioning)
+var whoIs = WhoIs.Create("192.168.1.1", year: 2025, month: 6, fingerprint: "Mozilla/5.0...");
+```
+
+### Mappers
+
+Mappers live in `ServiceName.App/Mappers/` and use extension member syntax:
+
+```csharp
+public static class LocationMapper
+{
+    extension(Location location)
+    {
+        public LocationDTO ToDTO() { ... }
+    }
+
+    extension(LocationDTO locationDTO)
+    {
+        public Location ToDomain() { ... }
+    }
+
+    extension(LocationToCreateDTO locationToCreateDTO)
+    {
+        public Location ToDomain() { ... }
+    }
+}
+```
+
+**Usage:**
+```csharp
+var dto = location.ToDTO();
+var domain = dto.ToDomain();
+```
+
+### Multi-Tier Caching
+
+Cache retrieval order: **Memory → Redis → Database → Disk**
+
+Cache population: When data is retrieved from a lower tier, populate all higher tiers.
+
+**Cache Key Convention:** `EntityName:{id}` (e.g., `Location:abc123...`)
+
+### Batch Operations
+
+Repository handlers use batched queries to avoid large IN clause issues:
+
+```csharp
+private const int _BATCH_SIZE = 500;  // Or from options
+
+foreach (var batch in input.HashIds.Chunk(_BATCH_SIZE))
+{
+    var results = await r_db.Locations
+        .AsNoTracking()
+        .Where(l => batch.Contains(l.HashId))
+        .ToListAsync(ct);
+    // ...
+}
+```
+
+### Options Pattern
+
+Configuration uses the Options pattern with sensible defaults:
+
+```csharp
+// In ServiceName.App/Options/
+public class GeoAppOptions
+{
+    public TimeSpan LocationCacheExpiration { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan WhoIsCacheExpiration { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan ContactCacheExpiration { get; set; } = TimeSpan.FromHours(1);
+}
+
+// In ServiceName.Infra/Options/
+public class GeoInfraOptions
+{
+    public int BatchSize { get; set; } = 500;
+}
+
+// Registration (sections are optional - defaults apply if missing)
+services.Configure<GeoAppOptions>(config.GetSection(nameof(GeoAppOptions)));
 ```
 
 ### Partial Interface Extension Pattern
@@ -166,22 +257,53 @@ public static class Extensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddMyService()
+        public IServiceCollection AddMyService(IConfiguration config)
         {
-            // Register services
+            services.Configure<MyOptions>(config.GetSection(nameof(MyOptions)));
+            services.AddTransient<IMyHandler, MyHandler>();
             return services;
         }
     }
 }
 ```
 
-### Multi-Tier Caching
+---
 
-Cache retrieval order: **Memory → Redis → Database → Disk**
+## Project Structure
 
-Cache population: When data is retrieved from a lower tier, populate all higher tiers.
-
-Update notifications: Only publish after distributed cache write succeeds.
+```
+D2-WORX/
+├── backends/
+│   ├── AppHost/                    # Aspire orchestration
+│   ├── Contracts/                  # Shared abstractions
+│   │   ├── Handler/                # BaseHandler pattern
+│   │   ├── Interfaces/             # Contract interfaces (TLC hierarchy)
+│   │   ├── Implementations/        # Reusable implementations
+│   │   │   ├── Caching/            # Redis & In-Memory
+│   │   │   ├── Common/             # GeoRefData
+│   │   │   └── Repository/         # Transactions
+│   │   ├── Messages/               # Domain event POCOs
+│   │   ├── Result/                 # D2Result pattern
+│   │   ├── Result.Extensions/      # D2Result ↔ Proto conversions
+│   │   ├── ServiceDefaults/        # OpenTelemetry config
+│   │   ├── Tests/                  # Shared test infrastructure
+│   │   └── Utilities/              # Extensions & helpers
+│   ├── Gateways/
+│   │   └── REST/                   # HTTP/REST → gRPC gateway
+│   └── Services/
+│       ├── _protos/                # Protocol Buffers definitions
+│       │   └── _gen/Protos.DotNet/ # Generated C# code
+│       └── Geo/                    # Geographic service (reference impl)
+│           ├── Geo.Domain/         # DDD entities & value objects
+│           ├── Geo.App/            # CQRS handlers, mappers, options
+│           ├── Geo.Infra/          # Repository, messaging, EF Core
+│           ├── Geo.API/            # gRPC service
+│           └── Geo.Tests/          # Tests
+├── frontends/
+│   └── sveltekit/                  # SvelteKit 5 app
+├── observability/                  # LGTM stack configs
+└── D2.sln                          # Solution file
+```
 
 ---
 
@@ -219,7 +341,7 @@ public required string ISO31661Alpha2Code { get; init; }
 | Private static fields                | `s_camelCase`      | `s_instance`               |
 | Private static readonly fields       | `sr_camelCase`     | `sr_activitySource`        |
 | Static readonly fields (non-private) | `SR_PascalCase`    | `SR_ActivitySource`        |
-| Private constants                    | `_UPPER_CASE`      | `_MAX_RETRIES`             |
+| Private constants                    | `_UPPER_CASE`      | `_BATCH_SIZE`              |
 | Public/Internal constants            | `UPPER_CASE`       | `MAX_ATTEMPTS`             |
 | Local constants (in tests)           | `snake_case`       | `expected_count`           |
 | Local variables                      | `camelCase`        | `result`                   |
@@ -228,16 +350,22 @@ public required string ISO31661Alpha2Code { get; init; }
 - Use `record` types for immutability
 - Use `required init` for mandatory properties
 - Initialize collections as empty: `ICollection<T> { }` or `[]`
+- Content-addressable entities compute hash in factory method
 
 **Database Conventions:**
 - Column names: `snake_case` (configured via EF Core)
 - Explicit schema control via entity type configurations
+- Primary keys are automatically indexed by PostgreSQL
 
 ### TypeScript/Frontend Style
+
+See `SvelteKit_and_TypeScript_Conventions_for_Enterprise_Applications.md` for details.
 
 - Strict TypeScript enabled
 - ESLint + Prettier enforced
 - Tailwind CSS v4.1 for styling
+- PascalCase for components, kebab-case for modules
+- Result patterns for error handling
 
 ---
 
@@ -260,7 +388,19 @@ Service.Tests/
 
 **Test Naming:** Descriptive names that explain the scenario, e.g.:
 - `GetHandler_WhenMemoryCacheHit_ReturnsDataWithoutCallingRedis`
-- `Updated_WhenSetInMemFails_StillSucceeds`
+- `Create_WithValidCoordinates_GeneratesConsistentHashId`
+
+**Hash ID Assertions (content-addressable entities):**
+```csharp
+// 32 bytes = 64 hex characters
+location.HashId.Should().HaveLength(64);
+
+// Same input = same hash
+location1.HashId.Should().Be(location2.HashId);
+
+// Different input = different hash
+location1.HashId.Should().NotBe(location3.HashId);
+```
 
 **Integration Tests with Testcontainers:**
 ```csharp
@@ -285,17 +425,12 @@ public class MyTests : IAsyncLifetime
 }
 ```
 
-### Frontend Tests
-
-- **Unit:** Vitest for components/utilities
-- **E2E:** Playwright for user workflows
-
 ---
 
 ## Git Conventions
 
 ### Branch Naming
-- `feature/...` - New features
+- `feat/...` - New features
 - `fix/...` - Bug fixes
 - `docs/...` - Documentation
 - `refactor/...` - Code cleanup
@@ -338,18 +473,6 @@ refactor: simplify caching logic
 
 ---
 
-## Additional Documentation
-
-| Document                                    | Description                        |
-|---------------------------------------------|------------------------------------|
-| `backends/Contracts/Handler/HANDLER.md`     | Handler pattern guide              |
-| `backends/Contracts/Result/RESULT.md`       | D2Result pattern                   |
-| `backends/Contracts/Result.Extensions/`     | gRPC ↔ D2Result conversions        |
-| `backends/Services/Geo/GEO_SERVICE.md`      | Geo service architecture           |
-| `CONTRIBUTING.md`                           | Contribution guidelines            |
-
----
-
 ## Notes for Claude
 
 ### Behavioral Guidelines
@@ -382,6 +505,28 @@ refactor: simplify caching logic
 - Don't forget license headers on new files
 - Don't create new patterns when existing ones apply
 - Don't use `_camelCase` for readonly fields (use `r_camelCase`)
+- Don't forget to implement the interface when creating generic handlers for DI
+- Don't hardcode batch sizes or cache expirations (use Options pattern)
+
+### Current Development Focus (Geo Service)
+
+**Completed:**
+- Domain entities: Location, WhoIs, Contact with content-addressable hash IDs
+- Value objects: Coordinates, StreetAddress, EmailAddress, PhoneNumber, Personal, Professional, ContactMethods
+- Mappers: All domain ↔ DTO conversions
+- CQRS interfaces: Queries, Commands, Complex handlers
+- Repository interfaces: Read, Create handlers
+- In-memory cache handlers: Get, Set, GetMany, SetMany
+- App layer: GetLocationsByIds with multi-tier caching
+
+**In Progress:**
+- Repository implementations (GetLocationsByIds, CreateLocations)
+- Integration tests for Location CRUD operations
+
+**Next:**
+- WhoIs and Contact repository handlers
+- FindWhoIs complex handler (with external API integration)
+- EF Core configurations for WhoIs and Contact
 
 ### When in Doubt
 

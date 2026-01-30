@@ -17,6 +17,27 @@ service GeoService {
 
   rpc RequestReferenceDataUpdate(RequestReferenceDataUpdateRequest)
       returns (RequestReferenceDataUpdateResponse);
+
+  rpc FindWhoIs(FindWhoIsRequest)
+      returns (FindWhoIsResponse);
+
+  rpc GetWhoIsByIds(GetWhoIsByIdsRequest)
+      returns (GetWhoIsByIdsResponse);
+
+  rpc GetLocations(GetLocationsRequest)
+      returns (GetLocationsResponse);
+
+  rpc GetContacts(GetContactsRequest)
+      returns (GetContactsResponse);
+
+  rpc GetContactsByExtKeys(GetContactsByExtKeysRequest)
+      returns (GetContactsByExtKeysResponse);
+
+  rpc CreateContacts(CreateContactsRequest)
+      returns (CreateContactsResponse);
+
+  rpc CreateLocations(CreateLocationsRequest)
+      returns (CreateLocationsResponse);
 }
 
 // **************************************
@@ -55,6 +76,143 @@ message GeoRefData {
   map<string, LocaleDTO> locales = 7; // Key is ietf_bcp_47_tag.
   map<string, GeopoliticalEntityDTO> geopolitical_entities = 8; // Key is short_code.
 }
+
+// *********************
+// ***** FindWhoIs *****
+// *********************
+
+message FindWhoIsRequest {
+  repeated FindWhoIsKeys requests = 1;
+}
+
+message FindWhoIsKeys {
+  string ip_address = 1;
+  string fingerprint = 2;
+}
+
+message FindWhoIsResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  repeated FindWhoIsData data = 2;
+}
+
+message FindWhoIsData {
+  FindWhoIsKeys key = 1;
+  WhoIsDTO whois = 2;
+}
+
+// *************************
+// ***** GetWhoIsByIds *****
+// *************************
+
+message GetWhoIsByIdsRequest {
+  repeated string hash_ids = 1;
+}
+
+message GetWhoIsByIdsResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  map<string, WhoIsDTO> data = 2; // Key is hash_id.
+}
+
+// ************************
+// ***** GetLocations *****
+// ************************
+
+message GetLocationsRequest {
+  repeated string hash_ids = 1;
+}
+
+message GetLocationsResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  map<string, LocationDTO> data = 2; // Key is hash_id.
+}
+
+// ***********************
+// ***** GetContacts *****
+// ***********************
+
+message GetContactsRequest {
+  repeated string ids = 1;
+}
+
+message GetContactsResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  map<string, ContactDTO> data = 2; // Key is id.
+}
+
+// ********************************
+// ***** GetContactsByExtKeys *****
+// ********************************
+
+message GetContactsByExtKeysRequest {
+  repeated GetContactsExtKeys keys = 1;
+}
+
+message GetContactsExtKeys {
+  string context_key = 1;
+  string related_entity_id = 2;
+}
+
+message GetContactsByExtKeysResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  repeated GetContactsByExtKeysData data = 2;
+}
+
+message GetContactsByExtKeysData {
+    GetContactsExtKeys key = 1;
+    ContactDTO contact = 2;
+}
+
+// **************************
+// ***** CreateContacts *****
+// **************************
+
+message CreateContactsRequest {
+  repeated ContactToCreateDTO contacts_to_create = 1;
+}
+
+message CreateContactsResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  repeated ContactDTO data = 2;
+}
+
+// ***************************
+// ***** CreateLocations *****
+// ***************************
+message CreateLocationsRequest {
+  repeated LocationToCreateDTO locations_to_create = 1;
+}
+
+message CreateLocationsResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  repeated LocationDTO data = 2;
+}
+
+// ***********************
+// ***** Shared DTOs *****
+// ***********************
+
+message ContactToCreateDTO {
+  google.protobuf.Timestamp created_at = 1;
+  string context_key = 2;
+  string related_entity_id = 3;
+  ContactMethodsDTO contact_methods = 4;
+  PersonalDTO personal_details = 5;
+  ProfessionalDTO professional_details = 6;
+  LocationToCreateDTO location_to_create = 7;
+}
+
+message LocationToCreateDTO {
+  CoordinatesDTO coordinates = 1;
+  StreetAddressDTO address = 2;
+  string city = 3;
+  string postal_code = 4;
+  string subdivision_iso_3166_2_code = 5;
+  string country_iso_3166_1_alpha_2_code = 6;
+}
+
+// *********************
+// ***** Full DTOs *****
+// *********************
 
 message CountryDTO {
   // Primary key.
@@ -145,4 +303,110 @@ message GeopoliticalEntityDTO {
 
   // Navigation properties as lists of identifiers.
   repeated string country_iso_3166_1_alpha_2_codes = 4; // Many-to-many.
+}
+
+message CoordinatesDTO {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message StreetAddressDTO {
+  string line_1 = 1;
+  string line_2 = 2;
+  string line_3 = 3;
+}
+
+message EmailAddressDTO {
+  string value = 1;
+  repeated string labels = 2;
+}
+
+message PhoneNumberDTO {
+  string value = 1;
+  repeated string labels = 2;
+}
+
+message PersonalDTO {
+  string title = 1;
+  string first_name = 2;
+  string preferred_name = 3;
+  string middle_name = 4;
+  string last_name = 5;
+  string generational_suffix = 6;
+  repeated string professional_credentials = 7;
+  string date_of_birth = 8;
+  string biological_sex = 9;
+}
+
+message ProfessionalDTO {
+  string company_name = 1;
+  string job_title = 2;
+  string department = 3;
+  string company_website = 4;
+}
+
+message ContactMethodsDTO {
+  repeated EmailAddressDTO emails = 1;
+  repeated PhoneNumberDTO phone_numbers = 2;
+}
+
+message LocationDTO {
+  string hash_id = 1;
+  CoordinatesDTO coordinates = 2;
+  StreetAddressDTO address = 3;
+  string city = 4;
+  string postal_code = 5;
+  string subdivision_iso_3166_2_code = 6;
+  string country_iso_3166_1_alpha_2_code = 7;
+}
+
+message WhoIsDTO {
+  string hash_id = 1;
+
+  // Content-addressable properties.
+  string ip_address = 2;
+  int32 year = 3;
+  int32 month = 4;
+  string fingerprint = 5;
+
+  // ASN properties.
+  int32 asn = 6;
+  string as_name = 7;
+  string as_domain = 8;
+  string as_type = 9;
+
+  // Carrier properties.
+  string carrier_name = 10;
+  string mcc = 11;
+  string mnc = 12;
+
+  // Change dates (ISO 8601 date strings).
+  string as_changed = 13;
+  string geo_changed = 14;
+
+  // Network flags.
+  bool is_anonymous = 15;
+  bool is_anycast = 16;
+  bool is_hosting = 17;
+  bool is_mobile = 18;
+  bool is_satellite = 19;
+  bool is_proxy = 20;
+  bool is_relay = 21;
+  bool is_tor = 22;
+  bool is_vpn = 23;
+  string privacy_name = 24;
+
+  // Foreign key.
+  string location_hash_id = 25;
+}
+
+message ContactDTO {
+  string id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  string context_key = 3;
+  string related_entity_id = 4;
+  ContactMethodsDTO contact_methods = 5;
+  PersonalDTO personal_details = 6;
+  ProfessionalDTO professional_details = 7;
+  string location_hash_id = 8;
 }

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
-/// Configuration for the Currency entity.
+/// EF Core configuration for the <see cref="Currency"/> entity.
 /// </summary>
 public class CurrencyConfig : IEntityTypeConfiguration<Currency>
 {

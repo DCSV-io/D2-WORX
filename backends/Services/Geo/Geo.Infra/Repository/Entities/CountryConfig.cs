@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
-/// Configuration for the Country entity.
+/// EF Core configuration for the <see cref="Country"/> entity.
 /// </summary>
 public class CountryConfig : IEntityTypeConfiguration<Country>
 {
