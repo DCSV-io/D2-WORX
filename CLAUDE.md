@@ -47,16 +47,16 @@ See `backends/BACKENDS.md` for full details.
 - `R/` - Repository reads
 - `U/` - Updates / Utilities
 - `D/` - Deletes
-- `X/` - Complex (multi-step operations with side effects)
+- `X/` - Complex (multistep operations with side effects)
 - `Pub/`, `Sub/` - Publish/Subscribe messaging
 
 ### CQRS Handler Categories
 
 | Handler Type | Local Cache | Distributed Cache | Database Write | External API |
 |--------------|-------------|-------------------|----------------|--------------|
-| **Query**    | ✅ OK       | ❌ No             | ❌ No          | ❌ No        |
-| **Command**  | ✅ OK       | ✅ OK             | ✅ OK          | ✅ OK        |
-| **Complex**  | ✅ OK       | ✅ OK             | ✅ OK          | ✅ OK        |
+| **Query**    | ✅ OK        | ❌ No              | ❌ No           | ❌ No         |
+| **Command**  | ✅ OK        | ✅ OK              | ✅ OK           | ✅ OK         |
+| **Complex**  | ✅ OK        | ✅ OK              | ✅ OK           | ✅ OK         |
 
 **Key Distinction:** If the process dies immediately after the handler completes, would any state change persist or be visible to other instances? For Queries, the answer must be "no."
 
@@ -66,10 +66,10 @@ See `backends/BACKENDS.md` for full details.
 
 ### Verb Semantics
 
-| Verb     | Semantics                                      | Side Effects        |
-|----------|------------------------------------------------|---------------------|
+| Verb     | Semantics                                                     | Side Effects      |
+|----------|---------------------------------------------------------------|-------------------|
 | **Find** | "Resolve this for me" — may fetch from external source, cache | May create/upsert |
-| **Get**  | "Give me this by ID" — direct lookup           | Read-only           |
+| **Get**  | "Give me this by ID" — direct lookup                          | Read-only         |
 
 Example: `FindWhoIs` (by IP+fingerprint, may hydrate from API) vs `GetWhoIsByIds` (by hash, direct lookup)
 
@@ -369,6 +369,44 @@ See `SvelteKit_and_TypeScript_Conventions_for_Enterprise_Applications.md` for de
 
 ---
 
+## Documentation
+
+### Markdown Files
+
+Every project/module should have a corresponding `.md` file documenting its purpose and contents:
+
+- `ProjectName/PROJECT_NAME.md` - e.g., `Batch.Pg/BATCH_PG.md`, `Geo.App/GEO_APP.md`
+- Update documentation as part of completing a feature iteration, not as an afterthought
+- Documentation is part of the "definition of done" for any feature work
+
+### Table Formatting
+
+Format markdown tables for **plain-text readability** with aligned columns:
+
+```markdown
+<!-- Good: Columns aligned, readable in any editor -->
+| File Name                | Description                                      |
+|--------------------------|--------------------------------------------------|
+| [Get.cs](Handlers/R/Get.cs) | Handler for retrieving data from cache.       |
+| [Set.cs](Handlers/U/Set.cs) | Handler for storing data with optional TTL.   |
+
+<!-- Bad: Columns not aligned, hard to read in plain text -->
+| File Name | Description |
+|---|---|
+| [Get.cs](Handlers/R/Get.cs) | Handler for retrieving data from cache. |
+```
+
+### When to Update Documentation
+
+Update `.md` files when:
+- Adding new handlers, mappers, or entities
+- Adding new projects or modules (create new `.md`)
+- Changing public APIs or interfaces
+- Adding new configuration options
+- Completing a feature iteration (review all affected `.md` files)
+
+---
+
 ## Testing
 
 ### Backend Tests
@@ -489,7 +527,7 @@ refactor: simplify caching logic
 - This is a **reference implementation** showing DeCAF → D² evolution
 - Emphasizes **strong DX**: minimal boilerplate, clear patterns, automatic instrumentation
 - All major patterns are established; **follow existing conventions**
-- Currently in Pre-Alpha: **Geo service is the primary implementation reference**
+- Currently, in Pre-Alpha: **Geo service is the primary implementation reference**
 
 ### Before Writing Code
 
@@ -507,26 +545,27 @@ refactor: simplify caching logic
 - Don't use `_camelCase` for readonly fields (use `r_camelCase`)
 - Don't forget to implement the interface when creating generic handlers for DI
 - Don't hardcode batch sizes or cache expirations (use Options pattern)
+- Don't forget to update/create `.md` documentation when adding features (see Documentation section)
 
 ### Current Development Focus (Geo Service)
 
 **Completed:**
 - Domain entities: Location, WhoIs, Contact with content-addressable hash IDs
 - Value objects: Coordinates, StreetAddress, EmailAddress, PhoneNumber, Personal, Professional, ContactMethods
-- Mappers: All domain ↔ DTO conversions
+- Mappers: All domain ↔ DTO conversions (with unit tests)
 - CQRS interfaces: Queries, Commands, Complex handlers
 - Repository interfaces: Read, Create handlers
 - In-memory cache handlers: Get, Set, GetMany, SetMany
-- App layer: GetLocationsByIds with multi-tier caching
-
-**In Progress:**
-- Repository implementations (GetLocationsByIds, CreateLocations)
-- Integration tests for Location CRUD operations
+- App layer: GetLocationsByIds CQRS handler with memory cache → repository fallback
+- Infra layer: GetLocationsByIds + CreateLocations repository handlers
+- EF Core configurations: Location, WhoIs, Contact entities
+- Batch.Pg: Reusable batched query utilities with D2Result integration
+- Integration tests: Location handlers, BatchQuery, GetLocationsByIds CQRS
 
 **Next:**
 - WhoIs and Contact repository handlers
+- CQRS query handlers for WhoIs and Contact
 - FindWhoIs complex handler (with external API integration)
-- EF Core configurations for WhoIs and Contact
 
 ### When in Doubt
 
