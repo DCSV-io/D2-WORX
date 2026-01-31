@@ -1,4 +1,10 @@
-﻿#nullable disable
+﻿// -----------------------------------------------------------------------
+// <copyright file="20260131082002_AddWhoIsAndContact.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+#nullable disable
 
 namespace D2.Geo.Infra.Repository.Migrations
 {
