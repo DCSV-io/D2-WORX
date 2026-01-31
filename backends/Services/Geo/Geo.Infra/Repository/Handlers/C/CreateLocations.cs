@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="CreateLocations.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -6,9 +6,9 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.C;
 
+using D2.Contracts.Batch.Pg;
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using H = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.ICreateLocationsHandler;
 using I = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateLocationsInput;
@@ -17,6 +17,7 @@ using O = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateLocationsOut
 /// <summary>
 /// Handler for creating locations in the database.
 /// </summary>
+///
 /// <remarks>
 /// Since locations are content-addressable, this performs an upsert:
 /// existing locations (by hash ID) are skipped, new ones are inserted.
@@ -65,28 +66,17 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
             .Select(l => l.HashId)
             .ToList();
 
-        // Find which ones already exist (in batches).
-        var existingHashIds = new HashSet<string>();
+        // Find which ones already exist using batched query.
+        var existingLocations = await r_db.Locations
+            .BatchGetByIds(
+                inputHashIds,
+                l => l.HashId,
+                opts => opts.BatchSize = r_options.RepoQueryBatchSize)
+            .ToDictionaryAsync(ct);
 
-        foreach (var batch in inputHashIds.Chunk(r_options.RepoQueryBatchSize))
-        {
-            var batchList = batch.ToList();
-            var existing = await r_db.Locations
-                .AsNoTracking()
-                .Where(l => batchList.Contains(l.HashId))
-                .Select(l => l.HashId)
-                .ToListAsync(ct);
-
-            foreach (var hashId in existing)
-            {
-                existingHashIds.Add(hashId);
-            }
-        }
-
-        // Filter to only new locations.
+        // Filter to only new locations (not already in database).
         var newLocations = input.Locations
-            .ToHashSet()
-            .Where(l => !existingHashIds.Contains(l.HashId))
+            .Where(l => !existingLocations.ContainsKey(l.HashId))
             .ToList();
 
         // If there are new locations, insert them.

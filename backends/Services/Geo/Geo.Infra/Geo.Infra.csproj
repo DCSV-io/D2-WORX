@@ -18,6 +18,7 @@
       <ProjectReference Include="..\..\..\Contracts\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
       <ProjectReference Include="..\..\..\Contracts\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
       <ProjectReference Include="..\..\..\Contracts\Implementations\Common\GeoRefData.Default\GeoRefData.Default.csproj" />
+      <ProjectReference Include="..\..\..\Contracts\Implementations\Repository\Batch\Batch.Pg\Batch.Pg.csproj" />
       <ProjectReference Include="..\..\..\Contracts\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
       <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
