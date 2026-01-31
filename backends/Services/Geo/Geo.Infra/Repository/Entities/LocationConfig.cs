@@ -58,5 +58,16 @@ public class LocationConfig : IEntityTypeConfiguration<Location>
         builder.Property(l => l.CountryISO31661Alpha2Code)
             .HasColumnName("country_iso_3166_1_alpha_2_code")
             .HasMaxLength(2);
+
+        // Optional foreign keys to reference data.
+        builder.HasOne(l => l.Subdivision)
+            .WithMany()
+            .HasForeignKey(l => l.SubdivisionISO31662Code)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(l => l.Country)
+            .WithMany()
+            .HasForeignKey(l => l.CountryISO31661Alpha2Code)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }
