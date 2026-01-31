@@ -39,6 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		.aspire\settings.json = .aspire\settings.json
 		backends\BACKENDS.md = backends\BACKENDS.md
 		CLAUDE.md = CLAUDE.md
+		backends\cover.json = backends\cover.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Observability", "Observability", "{B46DEAC7-AC68-4CBB-B3C3-D9985C17BB3D}"

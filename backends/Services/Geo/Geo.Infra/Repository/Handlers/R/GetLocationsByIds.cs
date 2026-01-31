@@ -9,7 +9,6 @@ namespace D2.Geo.Infra.Repository.Handlers.R;
 using D2.Contracts.Batch.Pg;
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
-using D2.Geo.Domain.Entities;
 using Microsoft.Extensions.Options;
 using H = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.IGetLocationsByIdsHandler;
 using I = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.GetLocationsByIdInput;
@@ -58,11 +57,19 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
                 opts => opts.BatchSize = r_options.RepoQueryBatchSize)
             .ToDictionaryD2ResultAsync(TraceId, ct);
 
-        if (result.CheckFailure(out var locations))
+        // Handle success case first.
+        if (result.Success)
         {
-            return D2Result<O?>.BubbleFail(result);
+            return D2Result<O?>.Ok(new O(result.Data!), traceId: TraceId);
         }
 
-        return D2Result<O?>.Ok(new O(locations!), traceId: TraceId);
+        // Handle partial success and not found - these have specific semantics.
+        // For any other errors, bubble up the failure.
+        return result.ErrorCode switch
+        {
+            ErrorCodes.SOME_FOUND => D2Result<O?>.SomeFound(new O(result.Data!), traceId: TraceId),
+            ErrorCodes.NOT_FOUND => D2Result<O?>.NotFound(traceId: TraceId),
+            _ => D2Result<O?>.BubbleFail(result),
+        };
     }
 }

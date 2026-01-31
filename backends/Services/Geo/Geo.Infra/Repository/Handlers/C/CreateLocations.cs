@@ -74,9 +74,10 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
                 opts => opts.BatchSize = r_options.RepoQueryBatchSize)
             .ToDictionaryAsync(ct);
 
-        // Filter to only new locations (not already in database).
+        // Filter to only new locations (not already in database) and deduplicate by HashId.
         var newLocations = input.Locations
             .Where(l => !existingLocations.ContainsKey(l.HashId))
+            .DistinctBy(l => l.HashId)
             .ToList();
 
         // If there are new locations, insert them.
