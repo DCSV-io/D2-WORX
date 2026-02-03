@@ -8,6 +8,7 @@ namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
+using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
@@ -23,8 +24,8 @@ using O = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.CreateContactsOutput;
 /// <remarks>
 /// This handler resolves locations before creating contacts:
 /// <list type="bullet">
-/// <item>If <c>location_hash_id</c> is provided, use it directly.</item>
-/// <item>Else if <c>location_to_create</c> is provided, extract and create the location first.</item>
+/// <item>If <c>Location.HashId</c> is provided with no other data, use it as reference to existing location.</item>
+/// <item>Else if full <c>Location</c> data is provided, extract and create the location first.</item>
 /// <item>Locations are deduplicated by hash (same address = same hash).</item>
 /// </list>
 /// </remarks>
@@ -32,6 +33,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
 {
     private readonly CreateRepo.ICreateContactsHandler r_createContactsInRepo;
     private readonly CreateRepo.ICreateLocationsHandler r_createLocationsInRepo;
+    private readonly IQueries.IGetLocationsByIdsHandler r_getLocationsByIds;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CreateContacts"/> class.
@@ -43,17 +45,22 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
     /// <param name="createLocationsInRepo">
     /// The repository handler for creating Locations.
     /// </param>
+    /// <param name="getLocationsByIds">
+    /// The handler for fetching locations by their IDs.
+    /// </param>
     /// <param name="context">
     /// The handler context.
     /// </param>
     public CreateContacts(
         CreateRepo.ICreateContactsHandler createContactsInRepo,
         CreateRepo.ICreateLocationsHandler createLocationsInRepo,
+        IQueries.IGetLocationsByIdsHandler getLocationsByIds,
         IHandlerContext context)
         : base(context)
     {
         r_createContactsInRepo = createContactsInRepo;
         r_createLocationsInRepo = createLocationsInRepo;
+        r_getLocationsByIds = getLocationsByIds;
     }
 
     /// <inheritdoc/>
@@ -101,14 +108,20 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
             return D2Result<O?>.BubbleFail(repoR);
         }
 
-        // Step 5: Return the created contacts as DTOs.
-        var dtos = contacts.Select(c => c.ToDTO()).ToList();
+        // Step 5: Fetch locations for the response.
+        var locationDict = await FetchLocationsAsync(contacts, ct);
+
+        // Step 6: Return the created contacts as DTOs with locations.
+        var dtos = contacts.Select(c => c.ToDTO(
+            c.LocationHashId is not null && locationDict.TryGetValue(c.LocationHashId, out var loc)
+                ? loc
+                : null)).ToList();
         return D2Result<O?>.Ok(new O(dtos), traceId: TraceId);
     }
 
     /// <summary>
     /// Resolves the location hash ID for each contact in the request.
-    /// Priority: explicit location_hash_id > computed from location_to_create > null.
+    /// If full location data is provided, computes hash from that. Otherwise uses explicit hash ID.
     /// </summary>
     private static List<string?> ResolveLocationHashIds(
         IReadOnlyList<ContactToCreateDTO> contactDtos)
@@ -117,19 +130,19 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
 
         foreach (var dto in contactDtos)
         {
-            // Priority 1: Explicit location_hash_id.
-            var explicitHashId = dto.GetExplicitLocationHashId();
-            if (explicitHashId is not null)
-            {
-                result.Add(explicitHashId);
-                continue;
-            }
-
-            // Priority 2: Compute from embedded location_to_create.
+            // Priority 1: Full location data provided - compute hash from that.
             var location = dto.ExtractLocation();
             if (location is not null)
             {
                 result.Add(location.HashId);
+                continue;
+            }
+
+            // Priority 2: Only hash ID provided (reference to existing location).
+            var hashId = dto.GetLocationHashId();
+            if (hashId is not null)
+            {
+                result.Add(hashId);
                 continue;
             }
 
@@ -142,7 +155,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
 
     /// <summary>
     /// Extracts unique locations that need to be created from contacts
-    /// that don't have an explicit location_hash_id.
+    /// that have full location data provided.
     /// </summary>
     private static List<Location> ExtractLocationsToCreate(
         IReadOnlyList<ContactToCreateDTO> contactDtos)
@@ -151,13 +164,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
 
         foreach (var dto in contactDtos)
         {
-            // Skip if explicit hash ID was provided (don't create location).
-            if (dto.GetExplicitLocationHashId() is not null)
-            {
-                continue;
-            }
-
-            // Skip if no location to create.
+            // Only create locations when full data is provided.
             var location = dto.ExtractLocation();
             if (location is null)
             {
@@ -169,5 +176,28 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         }
 
         return [.. uniqueLocations.Values];
+    }
+
+    private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(
+        IEnumerable<Contact> contacts,
+        CancellationToken ct)
+    {
+        var locationHashIds = contacts
+            .Where(c => c.LocationHashId is not null)
+            .Select(c => c.LocationHashId!)
+            .Distinct()
+            .ToList();
+
+        if (locationHashIds.Count == 0)
+        {
+            return [];
+        }
+
+        var locationsR = await r_getLocationsByIds.HandleAsync(
+            new IQueries.GetLocationsByIdsInput(locationHashIds),
+            ct);
+
+        // Return whatever we got (even on SOME_FOUND).
+        return locationsR.Data?.Data ?? [];
     }
 }

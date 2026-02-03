@@ -24,14 +24,14 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 |------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
 | [GetTests.cs](Integration/App/GetTests.cs)                                   | Integration tests for publisher-side Get handler verifying multi-tier cache cascade, DB fetch with notification, SetInDist failure handling.      |
 | [GetLocationsByIdsTests.cs](Integration/App/GetLocationsByIdsTests.cs)       | Integration tests for GetLocationsByIds CQRS handler verifying memory cache → repository fallback, SOME_FOUND/NOT_FOUND propagation.              |
-| [GetWhoIsByIdsTests.cs](Integration/App/GetWhoIsByIdsTests.cs)               | Integration tests for GetWhoIsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, SOME_FOUND/NOT_FOUND propagation.     |
-| [GetContactsByIdsTests.cs](Integration/App/GetContactsByIdsTests.cs)         | Integration tests for GetContactsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, SOME_FOUND/NOT_FOUND propagation.  |
-| [GetContactsByExtKeysTests.cs](Integration/App/GetContactsByExtKeysTests.cs) | Integration tests for GetContactsByExtKeys CQRS handler verifying lookup by ContextKey/RelatedEntityId with SOME_FOUND/NOT_FOUND propagation.     |
+| [GetWhoIsByIdsTests.cs](Integration/App/GetWhoIsByIdsTests.cs)               | Integration tests for GetWhoIsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, nested Location enrichment, and SOME_FOUND/NOT_FOUND propagation.     |
+| [GetContactsByIdsTests.cs](Integration/App/GetContactsByIdsTests.cs)         | Integration tests for GetContactsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, nested Location enrichment, and SOME_FOUND/NOT_FOUND propagation.  |
+| [GetContactsByExtKeysTests.cs](Integration/App/GetContactsByExtKeysTests.cs) | Integration tests for GetContactsByExtKeys CQRS handler verifying lookup by ContextKey/RelatedEntityId with nested Location enrichment and SOME_FOUND/NOT_FOUND propagation.      |
 | [CreateLocationsTests.cs](Integration/App/CreateLocationsTests.cs)           | Integration tests for CreateLocations CQRS handler verifying batch creation with deduplication and cache population.                              |
 | [CreateWhoIsTests.cs](Integration/App/CreateWhoIsTests.cs)                   | Integration tests for CreateWhoIs CQRS handler verifying batch creation with deduplication and cache population.                                  |
-| [CreateContactsTests.cs](Integration/App/CreateContactsTests.cs)             | Integration tests for CreateContacts CQRS handler verifying batch creation and cache population.                                                  |
+| [CreateContactsTests.cs](Integration/App/CreateContactsTests.cs)             | Integration tests for CreateContacts CQRS handler verifying batch creation with embedded locations, nested Location in response, and cache population. |
 | [DeleteContactsTests.cs](Integration/App/DeleteContactsTests.cs)             | Integration tests for DeleteContacts CQRS handler verifying batch deletion with cache invalidation and idempotency.                               |
-| [FindWhoIsTests.cs](Integration/App/FindWhoIsTests.cs)                       | Integration tests for FindWhoIs complex handler verifying cache check → external API → create flow with partial success handling.                 |
+| [FindWhoIsTests.cs](Integration/App/FindWhoIsTests.cs)                       | Integration tests for FindWhoIs complex handler verifying cache check → external API → create flow with nested Location enrichment and partial success handling. |
 
 ### Infra
 

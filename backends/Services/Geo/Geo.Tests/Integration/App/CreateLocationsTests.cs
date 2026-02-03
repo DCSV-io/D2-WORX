@@ -9,10 +9,11 @@ namespace D2.Geo.Tests.Integration.App;
 using D2.Contracts.Handler;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
+using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Tests.Fixtures;
-using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -77,8 +78,7 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
-        var request = new CreateLocationsRequest();
-        var input = new ICommands.CreateLocationsInput(request);
+        var input = new ICommands.CreateLocationsInput([]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -105,20 +105,12 @@ public class CreateLocationsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var uniqueCity = $"San Francisco {Guid.NewGuid():N}";
-        var request = new CreateLocationsRequest
-        {
-            LocationsToCreate =
-            {
-                new LocationToCreateDTO
-                {
-                    City = uniqueCity,
-                    PostalCode = "94102",
-                    SubdivisionIso31662Code = "US-CA",
-                    CountryIso31661Alpha2Code = "US",
-                },
-            },
-        };
-        var input = new ICommands.CreateLocationsInput(request);
+        var location = Location.Create(
+            city: uniqueCity,
+            postalCode: "94102",
+            subdivisionISO31662Code: "US-CA",
+            countryISO31661Alpha2Code: "US");
+        var input = new ICommands.CreateLocationsInput([location]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -128,8 +120,8 @@ public class CreateLocationsTests : IAsyncLifetime
         result.Data!.Data.Should().HaveCount(1);
         result.Data.Data[0].City.Should().Be(uniqueCity);
         result.Data.Data[0].PostalCode.Should().Be("94102");
-        result.Data.Data[0].SubdivisionIso31662Code.Should().Be("US-CA");
-        result.Data.Data[0].CountryIso31661Alpha2Code.Should().Be("US");
+        result.Data.Data[0].SubdivisionISO31662Code.Should().Be("US-CA");
+        result.Data.Data[0].CountryISO31661Alpha2Code.Should().Be("US");
         result.Data.Data[0].HashId.Should().HaveLength(64);
     }
 
@@ -146,16 +138,13 @@ public class CreateLocationsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var suffix = Guid.NewGuid().ToString("N");
-        var request = new CreateLocationsRequest
+        var locations = new List<Location>
         {
-            LocationsToCreate =
-            {
-                new LocationToCreateDTO { City = $"New York {suffix}", CountryIso31661Alpha2Code = "US" },
-                new LocationToCreateDTO { City = $"Los Angeles {suffix}", CountryIso31661Alpha2Code = "US" },
-                new LocationToCreateDTO { City = $"Chicago {suffix}", CountryIso31661Alpha2Code = "US" },
-            },
+            Location.Create(city: $"New York {suffix}", countryISO31661Alpha2Code: "US"),
+            Location.Create(city: $"Los Angeles {suffix}", countryISO31661Alpha2Code: "US"),
+            Location.Create(city: $"Chicago {suffix}", countryISO31661Alpha2Code: "US"),
         };
-        var input = new ICommands.CreateLocationsInput(request);
+        var input = new ICommands.CreateLocationsInput(locations);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -179,19 +168,11 @@ public class CreateLocationsTests : IAsyncLifetime
         var handler = CreateHandler();
         var uniqueLat = 37.0 + (Random.Shared.NextDouble() * 0.5);
         var uniqueLon = -122.0 - (Random.Shared.NextDouble() * 0.5);
-        var request = new CreateLocationsRequest
-        {
-            LocationsToCreate =
-            {
-                new LocationToCreateDTO
-                {
-                    Coordinates = new CoordinatesDTO { Latitude = uniqueLat, Longitude = uniqueLon },
-                    City = $"San Francisco {Guid.NewGuid():N}",
-                    CountryIso31661Alpha2Code = "US",
-                },
-            },
-        };
-        var input = new ICommands.CreateLocationsInput(request);
+        var location = Location.Create(
+            coordinates: Coordinates.Create(uniqueLat, uniqueLon),
+            city: $"San Francisco {Guid.NewGuid():N}",
+            countryISO31661Alpha2Code: "US");
+        var input = new ICommands.CreateLocationsInput([location]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -214,33 +195,22 @@ public class CreateLocationsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var uniqueAddress = $"123 Main St {Guid.NewGuid():N}";
-        var request = new CreateLocationsRequest
-        {
-            LocationsToCreate =
-            {
-                new LocationToCreateDTO
-                {
-                    Address = new StreetAddressDTO
-                    {
-                        Line1 = uniqueAddress,
-                        Line2 = "Suite 100",
-                    },
-                    City = $"Portland {Guid.NewGuid():N}",
-                    PostalCode = "97201",
-                    CountryIso31661Alpha2Code = "US",
-                },
-            },
-        };
-        var input = new ICommands.CreateLocationsInput(request);
+        var location = Location.Create(
+            address: StreetAddress.Create(uniqueAddress, "Suite 100"),
+            city: $"Portland {Guid.NewGuid():N}",
+            postalCode: "97201",
+            countryISO31661Alpha2Code: "US");
+        var input = new ICommands.CreateLocationsInput([location]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
 
         // Assert
         result.Success.Should().BeTrue();
-        result.Data!.Data[0].Address.Should().NotBeNull();
-        result.Data.Data[0].Address!.Line1.Should().Be(uniqueAddress);
-        result.Data.Data[0].Address.Line2.Should().Be("Suite 100");
+        var first = result.Data!.Data[0];
+        first.Address!.Should().NotBeNull();
+        first.Address.Line1.Should().Be(uniqueAddress);
+        first.Address.Line2.Should().Be("Suite 100");
     }
 
     #endregion
@@ -260,17 +230,9 @@ public class CreateLocationsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var uniqueCity = $"Denver {Guid.NewGuid():N}";
-        var sameLocation = new LocationToCreateDTO
-        {
-            City = uniqueCity,
-            CountryIso31661Alpha2Code = "US",
-        };
+        var location = Location.Create(city: uniqueCity, countryISO31661Alpha2Code: "US");
 
-        var request = new CreateLocationsRequest
-        {
-            LocationsToCreate = { sameLocation, sameLocation, sameLocation },
-        };
-        var input = new ICommands.CreateLocationsInput(request);
+        var input = new ICommands.CreateLocationsInput([location, location, location]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -297,14 +259,8 @@ public class CreateLocationsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var uniqueCity = $"Austin {Guid.NewGuid():N}";
-        var request = new CreateLocationsRequest
-        {
-            LocationsToCreate =
-            {
-                new LocationToCreateDTO { City = uniqueCity, CountryIso31661Alpha2Code = "US" },
-            },
-        };
-        var input = new ICommands.CreateLocationsInput(request);
+        var location = Location.Create(city: uniqueCity, countryISO31661Alpha2Code: "US");
+        var input = new ICommands.CreateLocationsInput([location]);
 
         // Act - Call twice
         var result1 = await handler.HandleAsync(input, Ct);

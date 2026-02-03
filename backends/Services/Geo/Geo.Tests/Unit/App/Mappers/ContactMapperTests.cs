@@ -60,7 +60,6 @@ public class ContactMapperTests
         dto.PersonalDetails.LastName.Should().Be("Doe");
         dto.ProfessionalDetails.Should().NotBeNull();
         dto.ProfessionalDetails!.CompanyName.Should().Be("ACME Corp");
-        dto.LocationHashId.Should().Be("location123");
     }
 
     /// <summary>
@@ -83,7 +82,7 @@ public class ContactMapperTests
         dto.ContactMethods.Should().BeNull();
         dto.PersonalDetails.Should().BeNull();
         dto.ProfessionalDetails.Should().BeNull();
-        dto.LocationHashId.Should().BeEmpty();
+        dto.Location.Should().BeNull();
     }
 
     #endregion
@@ -119,7 +118,10 @@ public class ContactMapperTests
                 CompanyName = "Tech Inc",
                 JobTitle = "Manager",
             },
-            LocationHashId = "location456",
+            Location = new LocationDTO
+            {
+                HashId = "location456",
+            },
         };
 
         // Act
@@ -140,7 +142,27 @@ public class ContactMapperTests
     }
 
     /// <summary>
-    /// Tests that ToDomain handles empty locationHashId as null.
+    /// Tests that ToDomain handles null Location correctly.
+    /// </summary>
+    [Fact]
+    public void ToDomain_WithNullLocation_TreatsAsNull()
+    {
+        // Arrange
+        var dto = new ContactDTO
+        {
+            ContextKey = "test-context",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+        };
+
+        // Act
+        var domain = dto.ToDomain();
+
+        // Assert
+        domain.LocationHashId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that ToDomain handles empty Location.HashId as null.
     /// </summary>
     [Fact]
     public void ToDomain_WithEmptyLocationHashId_TreatsAsNull()
@@ -150,7 +172,7 @@ public class ContactMapperTests
         {
             ContextKey = "test-context",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationHashId = string.Empty,
+            Location = new LocationDTO { HashId = string.Empty },
         };
 
         // Act
@@ -283,10 +305,10 @@ public class ContactMapperTests
     #region ExtractLocation Tests
 
     /// <summary>
-    /// Tests that ExtractLocation returns null when LocationToCreate is null.
+    /// Tests that ExtractLocation returns null when Location is null.
     /// </summary>
     [Fact]
-    public void ExtractLocation_WhenLocationToCreateIsNull_ReturnsNull()
+    public void ExtractLocation_WhenLocationIsNull_ReturnsNull()
     {
         // Arrange
         var dto = new ContactToCreateDTO
@@ -303,17 +325,38 @@ public class ContactMapperTests
     }
 
     /// <summary>
-    /// Tests that ExtractLocation returns null when LocationToCreate is empty.
+    /// Tests that ExtractLocation returns null when Location is empty (only HashId).
     /// </summary>
     [Fact]
-    public void ExtractLocation_WhenLocationToCreateIsEmpty_ReturnsNull()
+    public void ExtractLocation_WhenLocationIsEmpty_ReturnsNull()
     {
         // Arrange
         var dto = new ContactToCreateDTO
         {
             ContextKey = "test",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationToCreate = new LocationToCreateDTO(), // Empty protobuf message
+            Location = new LocationDTO(), // Empty protobuf message
+        };
+
+        // Act
+        var result = dto.ExtractLocation();
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that ExtractLocation returns null when only HashId is provided (reference only).
+    /// </summary>
+    [Fact]
+    public void ExtractLocation_WhenOnlyHashIdProvided_ReturnsNull()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            Location = new LocationDTO { HashId = "existinghash123" },
         };
 
         // Act
@@ -334,7 +377,7 @@ public class ContactMapperTests
         {
             ContextKey = "test",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationToCreate = new LocationToCreateDTO
+            Location = new LocationDTO
             {
                 City = "New York",
             },
@@ -360,7 +403,7 @@ public class ContactMapperTests
         {
             ContextKey = "test",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationToCreate = new LocationToCreateDTO
+            Location = new LocationDTO
             {
                 Coordinates = new CoordinatesDTO { Latitude = 40.7128, Longitude = -74.0060 },
                 Address = new StreetAddressDTO { Line1 = "123 Main St" },
@@ -397,7 +440,7 @@ public class ContactMapperTests
         {
             ContextKey = "test1",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationToCreate = new LocationToCreateDTO
+            Location = new LocationDTO
             {
                 City = "Los Angeles",
                 CountryIso31661Alpha2Code = "US",
@@ -408,7 +451,7 @@ public class ContactMapperTests
         {
             ContextKey = "test2",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationToCreate = new LocationToCreateDTO
+            Location = new LocationDTO
             {
                 City = "Los Angeles",
                 CountryIso31661Alpha2Code = "US",
@@ -425,55 +468,75 @@ public class ContactMapperTests
 
     #endregion
 
-    #region GetExplicitLocationHashId Tests
+    #region GetLocationHashId Tests
 
     /// <summary>
-    /// Tests that GetExplicitLocationHashId returns null when hash is empty.
+    /// Tests that GetLocationHashId returns null when Location is null.
     /// </summary>
     [Fact]
-    public void GetExplicitLocationHashId_WhenEmpty_ReturnsNull()
+    public void GetLocationHashId_WhenLocationIsNull_ReturnsNull()
     {
         // Arrange
         var dto = new ContactToCreateDTO
         {
             ContextKey = "test",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationHashId = string.Empty,
         };
 
         // Act
-        var result = dto.GetExplicitLocationHashId();
+        var result = dto.GetLocationHashId();
 
         // Assert
         result.Should().BeNull();
     }
 
     /// <summary>
-    /// Tests that GetExplicitLocationHashId returns null when hash is whitespace.
+    /// Tests that GetLocationHashId returns null when hash is empty.
     /// </summary>
     [Fact]
-    public void GetExplicitLocationHashId_WhenWhitespace_ReturnsNull()
+    public void GetLocationHashId_WhenEmpty_ReturnsNull()
     {
         // Arrange
         var dto = new ContactToCreateDTO
         {
             ContextKey = "test",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationHashId = "   ",
+            Location = new LocationDTO { HashId = string.Empty },
         };
 
         // Act
-        var result = dto.GetExplicitLocationHashId();
+        var result = dto.GetLocationHashId();
 
         // Assert
         result.Should().BeNull();
     }
 
     /// <summary>
-    /// Tests that GetExplicitLocationHashId returns the hash when provided.
+    /// Tests that GetLocationHashId returns null when hash is whitespace.
     /// </summary>
     [Fact]
-    public void GetExplicitLocationHashId_WhenProvided_ReturnsHash()
+    public void GetLocationHashId_WhenWhitespace_ReturnsNull()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            Location = new LocationDTO { HashId = "   " },
+        };
+
+        // Act
+        var result = dto.GetLocationHashId();
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetLocationHashId returns the hash when provided.
+    /// </summary>
+    [Fact]
+    public void GetLocationHashId_WhenProvided_ReturnsHash()
     {
         // Arrange
         var expectedHash = "abc123def456789012345678901234567890123456789012345678901234";
@@ -481,11 +544,11 @@ public class ContactMapperTests
         {
             ContextKey = "test",
             RelatedEntityId = Guid.NewGuid().ToString(),
-            LocationHashId = expectedHash,
+            Location = new LocationDTO { HashId = expectedHash },
         };
 
         // Act
-        var result = dto.GetExplicitLocationHashId();
+        var result = dto.GetLocationHashId();
 
         // Assert
         result.Should().Be(expectedHash);

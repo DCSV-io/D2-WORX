@@ -8,7 +8,6 @@ namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Contracts.Handler;
 using D2.Contracts.Result;
-using D2.Geo.App.Mappers;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.ICreateLocationsHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.CreateLocationsInput;
@@ -45,26 +44,20 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
         CancellationToken ct = default)
     {
         // If the request was empty, return early.
-        if (input.Request.LocationsToCreate.Count == 0)
+        if (input.Locations.Count == 0)
         {
             return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
-        // Convert DTOs to domain entities.
-        var locations = input.Request.LocationsToCreate
-            .Select(dto => dto.ToDomain())
-            .ToList();
-
         // Create in repository.
-        var repoR = await r_createLocationsInRepo.HandleAsync(new(locations), ct);
+        var repoR = await r_createLocationsInRepo.HandleAsync(new(input.Locations), ct);
 
         if (repoR.CheckFailure(out _))
         {
             return D2Result<O?>.BubbleFail(repoR);
         }
 
-        // Return the created locations as DTOs.
-        var dtos = locations.Select(l => l.ToDTO()).ToList();
-        return D2Result<O?>.Ok(new O(dtos), traceId: TraceId);
+        // Return the created locations.
+        return D2Result<O?>.Ok(new O(input.Locations), traceId: TraceId);
     }
 }

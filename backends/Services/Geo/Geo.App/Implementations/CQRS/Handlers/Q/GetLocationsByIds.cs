@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="GetLocationsByIds.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -10,7 +10,6 @@ using D2.Contracts.Handler;
 using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Contracts.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Contracts.Result;
-using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -68,14 +67,14 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         CancellationToken ct = default)
     {
         // If the request was empty, return early.
-        if (input.Request.HashIds.Count == 0)
+        if (input.HashIds.Count == 0)
         {
             return Success([]);
         }
 
         // First, try to get locations from in-memory cache.
         var getFromCacheR = await r_memoryCacheGetMany.HandleAsync(
-            new(GetCacheKeys(input.Request.HashIds)), ct);
+            new(GetCacheKeys(input.HashIds)), ct);
 
         // If that failed (for any reason other than "NOT or SOME found"), bubble up the failure.
         if (getFromCacheR.CheckFailure(out var getFromCache)
@@ -92,13 +91,13 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         }
 
         // If ALL locations were found in cache, return them now.
-        if (locations.Count == input.Request.HashIds.Count)
+        if (locations.Count == input.HashIds.Count)
         {
             return Success(locations);
         }
 
         // Otherwise, fetch missing locations.
-        var missingIds = input.Request.HashIds.Except(locations.Keys).ToList();
+        var missingIds = input.HashIds.Except(locations.Keys).ToList();
         var repoR = await r_getLocationsFromRepo.HandleAsync(new(missingIds), ct);
 
         // If that succeeded, add results to the list, cache and return.
@@ -179,15 +178,9 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         }
     }
 
-    private D2Result<O?> Success(Dictionary<string, Location> locations)
-    {
-        var dtoDict = locations.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDTO());
-        return D2Result<O?>.Ok(new O(dtoDict), traceId: TraceId);
-    }
+    private D2Result<O?> Success(Dictionary<string, Location> locations) =>
+        D2Result<O?>.Ok(new O(locations), traceId: TraceId);
 
-    private D2Result<O?> SomeFound(Dictionary<string, Location> locations)
-    {
-        var dtoDict = locations.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDTO());
-        return D2Result<O?>.SomeFound(new O(dtoDict), traceId: TraceId);
-    }
+    private D2Result<O?> SomeFound(Dictionary<string, Location> locations) =>
+        D2Result<O?>.SomeFound(new O(locations), traceId: TraceId);
 }

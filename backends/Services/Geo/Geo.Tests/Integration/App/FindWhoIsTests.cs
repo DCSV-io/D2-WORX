@@ -33,6 +33,8 @@ using Testcontainers.PostgreSql;
 using Xunit;
 using CacheRead = D2.Contracts.Interfaces.Caching.InMemory.Handlers.R.IRead;
 using CacheUpdate = D2.Contracts.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
+using GetLocationsByIdsCqrs = D2.Geo.App.Implementations.CQRS.Handlers.Q.GetLocationsByIds;
+using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 using GetWhoIsByIdsCqrs = D2.Geo.App.Implementations.CQRS.Handlers.Q.GetWhoIsByIds;
 using GetWhoIsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetWhoIsByIds;
 using RepoRead = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
@@ -90,8 +92,10 @@ public class FindWhoIsTests : IAsyncLifetime
         services.AddTransient<IHandlerContext>(_ => CreateHandlerContext());
         services.AddTransient(typeof(CacheRead.IGetManyHandler<>), typeof(GetMany<>));
         services.AddTransient(typeof(CacheUpdate.ISetManyHandler<>), typeof(SetMany<>));
+        services.AddTransient<RepoRead.IGetLocationsByIdsHandler, GetLocationsByIdsRepo>();
         services.AddTransient<RepoRead.IGetWhoIsByIdsHandler, GetWhoIsByIdsRepo>();
         services.AddTransient<ICreate.ICreateWhoIsHandler, CreateWhoIs>();
+        services.AddTransient<IQueries.IGetLocationsByIdsHandler, GetLocationsByIdsCqrs>();
         services.AddTransient<IQueries.IGetWhoIsByIdsHandler, GetWhoIsByIdsCqrs>();
 
         // Register mock for external API handler

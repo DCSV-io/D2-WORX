@@ -29,10 +29,14 @@ public static class ContactMapper
         /// Converts the <see cref="Contact"/> domain object to a <see cref="ContactDTO"/>.
         /// </summary>
         ///
+        /// <param name="location">
+        /// Optional location entity to include in the DTO.
+        /// </param>
+        ///
         /// <returns>
         /// The mapped <see cref="ContactDTO"/> object.
         /// </returns>
-        public ContactDTO ToDTO()
+        public ContactDTO ToDTO(Location? location = null)
         {
             return new ContactDTO
             {
@@ -43,7 +47,7 @@ public static class ContactMapper
                 ContactMethods = contact.ContactMethods?.ToDTO(),
                 PersonalDetails = contact.PersonalDetails?.ToDTO(),
                 ProfessionalDetails = contact.ProfessionalDetails?.ToDTO(),
-                LocationHashId = contact.LocationHashId ?? string.Empty,
+                Location = location?.ToDTO(),
             };
         }
     }
@@ -66,13 +70,14 @@ public static class ContactMapper
         /// </returns>
         public Contact ToDomain()
         {
+            var locationHashId = contactDTO.Location?.HashId;
             return Contact.Create(
                 contactDTO.ContextKey,
                 Guid.Parse(contactDTO.RelatedEntityId),
                 contactDTO.ContactMethods?.ToDomain(),
                 contactDTO.PersonalDetails?.ToDomain(),
                 contactDTO.ProfessionalDetails?.ToDomain(),
-                contactDTO.LocationHashId.Falsey() ? null : contactDTO.LocationHashId);
+                locationHashId.Falsey() ? null : locationHashId);
         }
     }
 
@@ -108,21 +113,25 @@ public static class ContactMapper
         }
 
         /// <summary>
-        /// Extracts the Location to create from embedded data, if present.
+        /// Extracts the Location from embedded data, if present.
+        /// If only HashId is provided (reference to existing), returns null.
+        /// If full location data is provided, converts to domain Location.
         /// </summary>
         ///
         /// <returns>
-        /// The extracted <see cref="Location"/> or null if no location data is embedded.
+        /// The extracted <see cref="Location"/> or null if no location data is embedded
+        /// or if only a hash ID reference is provided.
         /// </returns>
         public Location? ExtractLocation()
         {
-            var loc = contactToCreateDTO.LocationToCreate;
+            var loc = contactToCreateDTO.Location;
             if (loc is null)
             {
                 return null;
             }
 
-            // Check if truly empty (protobuf messages are never null, but may be empty).
+            // Check if truly empty or only contains a hash ID reference.
+            // Protobuf messages are never null, but may be empty.
             if (loc.City.Falsey() &&
                 loc.PostalCode.Falsey() &&
                 loc.SubdivisionIso31662Code.Falsey() &&
@@ -137,17 +146,17 @@ public static class ContactMapper
         }
 
         /// <summary>
-        /// Gets the explicit location hash ID if provided.
+        /// Gets the location hash ID if provided (either explicit reference or from location data).
         /// </summary>
         ///
         /// <returns>
-        /// The explicit location hash ID or null if not provided or empty.
+        /// The location hash ID or null if not provided or empty.
         /// </returns>
-        public string? GetExplicitLocationHashId()
+        public string? GetLocationHashId()
         {
-            return contactToCreateDTO.LocationHashId.Falsey()
-                ? null
-                : contactToCreateDTO.LocationHashId;
+            return contactToCreateDTO.Location?.HashId.Falsey() == false
+                ? contactToCreateDTO.Location.HashId
+                : null;
         }
     }
 }

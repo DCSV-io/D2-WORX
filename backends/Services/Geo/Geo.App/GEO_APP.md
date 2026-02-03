@@ -21,19 +21,19 @@ Application layer for the Geo microservice defining handler interfaces and imple
 >
 > | File Name                                                                    | Description                                                                                                    |
 > |------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
-> | [CreateLocations.cs](Implementations/CQRS/Handlers/C/CreateLocations.cs)     | Command handler creating Locations via repository with cache population on success.                            |
-> | [CreateWhoIs.cs](Implementations/CQRS/Handlers/C/CreateWhoIs.cs)             | Command handler creating WhoIs records via repository with cache population on success.                        |
-> | [CreateContacts.cs](Implementations/CQRS/Handlers/C/CreateContacts.cs)       | Command handler creating Contacts via repository with cache population on success, returning ContactDTOs.      |
+> | [CreateLocations.cs](Implementations/CQRS/Handlers/C/CreateLocations.cs)     | Command handler creating Locations via repository with cache population on success.                                          |
+> | [CreateWhoIs.cs](Implementations/CQRS/Handlers/C/CreateWhoIs.cs)             | Command handler creating WhoIs records via repository with cache population on success.                                      |
+> | [CreateContacts.cs](Implementations/CQRS/Handlers/C/CreateContacts.cs)       | Command handler creating Contacts with embedded locations, returning ContactDTOs with nested Location data on success.       |
 > | [DeleteContacts.cs](Implementations/CQRS/Handlers/C/DeleteContacts.cs)       | Command handler deleting Contacts via repository with cache invalidation for deleted IDs.                      |
 >
 > ##### Q (Queries)
 >
-> | File Name                                                                          | Description                                                                                             |
-> |------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
-> | [GetLocationsByIds.cs](Implementations/CQRS/Handlers/Q/GetLocationsByIds.cs)       | Query handler with memory cache → repository fallback, returning LocationDTOs with SOME_FOUND handling. |
-> | [GetWhoIsByIds.cs](Implementations/CQRS/Handlers/Q/GetWhoIsByIds.cs)               | Query handler with memory cache → repository fallback, returning WhoIsDTOs with SOME_FOUND handling.    |
-> | [GetContactsByIds.cs](Implementations/CQRS/Handlers/Q/GetContactsByIds.cs)         | Query handler with memory cache → repository fallback, returning ContactDTOs with SOME_FOUND handling.  |
-> | [GetContactsByExtKeys.cs](Implementations/CQRS/Handlers/Q/GetContactsByExtKeys.cs) | Query handler for Contacts by ContextKey/RelatedEntityId with cache → repository fallback.              |
+> | File Name                                                                          | Description                                                                                                                      |
+> |------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+> | [GetLocationsByIds.cs](Implementations/CQRS/Handlers/Q/GetLocationsByIds.cs)       | Query handler with memory cache → repository fallback, returning LocationDTOs with SOME_FOUND handling.                          |
+> | [GetWhoIsByIds.cs](Implementations/CQRS/Handlers/Q/GetWhoIsByIds.cs)               | Query handler with memory cache → repository fallback, returning WhoIsDTOs with nested Location data and SOME_FOUND handling.    |
+> | [GetContactsByIds.cs](Implementations/CQRS/Handlers/Q/GetContactsByIds.cs)         | Query handler with memory cache → repository fallback, returning ContactDTOs with nested Location data and SOME_FOUND handling.  |
+> | [GetContactsByExtKeys.cs](Implementations/CQRS/Handlers/Q/GetContactsByExtKeys.cs) | Query handler for Contacts by ContextKey/RelatedEntityId with cache → repository fallback and nested Location data.              |
 >
 > ##### U (Utilities)
 >
@@ -43,8 +43,8 @@ Application layer for the Geo microservice defining handler interfaces and imple
 >
 > | File Name                                                    | Description                                                                                                                                          |
 > |--------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-> | [Get.cs](Implementations/CQRS/Handlers/X/Get.cs)             | Publisher-side orchestrator implementing memory → Redis → DB → disk fallback with cache population and update notification on authoritative fetch.   |
-> | [FindWhoIs.cs](Implementations/CQRS/Handlers/X/FindWhoIs.cs) | Complex handler for WhoIs lookup by IP+fingerprint with cache check → external API → create flow.                                                    |
+> | [Get.cs](Implementations/CQRS/Handlers/X/Get.cs)             | Publisher-side orchestrator implementing memory → Redis → DB → disk fallback with cache population and update notification on authoritative fetch.            |
+> | [FindWhoIs.cs](Implementations/CQRS/Handlers/X/FindWhoIs.cs) | Complex handler for WhoIs lookup by IP+fingerprint with cache check → external API → create flow, returning WhoIsDTOs with nested Location data when present. |
 
 ---
 

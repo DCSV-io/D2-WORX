@@ -24,9 +24,6 @@ service GeoService {
   rpc GetWhoIsByIds(GetWhoIsByIdsRequest)
       returns (GetWhoIsByIdsResponse);
 
-  rpc GetLocations(GetLocationsRequest)
-      returns (GetLocationsResponse);
-
   rpc GetContacts(GetContactsRequest)
       returns (GetContactsResponse);
 
@@ -35,9 +32,6 @@ service GeoService {
 
   rpc CreateContacts(CreateContactsRequest)
       returns (CreateContactsResponse);
-
-  rpc CreateLocations(CreateLocationsRequest)
-      returns (CreateLocationsResponse);
 
   rpc DeleteContacts(DeleteContactsRequest)
       returns (DeleteContactsResponse);
@@ -116,19 +110,6 @@ message GetWhoIsByIdsResponse {
   map<string, WhoIsDTO> data = 2; // Key is hash_id.
 }
 
-// ************************
-// ***** GetLocations *****
-// ************************
-
-message GetLocationsRequest {
-  repeated string hash_ids = 1;
-}
-
-message GetLocationsResponse {
-  d2.common.v1.D2ResultProto result = 1;
-  map<string, LocationDTO> data = 2; // Key is hash_id.
-}
-
 // ***********************
 // ***** GetContacts *****
 // ***********************
@@ -179,18 +160,6 @@ message CreateContactsResponse {
 }
 
 // ***************************
-// ***** CreateLocations *****
-// ***************************
-message CreateLocationsRequest {
-  repeated LocationToCreateDTO locations_to_create = 1;
-}
-
-message CreateLocationsResponse {
-  d2.common.v1.D2ResultProto result = 1;
-  repeated LocationDTO data = 2;
-}
-
-// ***************************
 // ***** DeleteContacts ******
 // ***************************
 
@@ -214,17 +183,7 @@ message ContactToCreateDTO {
   ContactMethodsDTO contact_methods = 4;
   PersonalDTO personal_details = 5;
   ProfessionalDTO professional_details = 6;
-  LocationToCreateDTO location_to_create = 7;
-  string location_hash_id = 8;  // Reference existing location (takes precedence over location_to_create)
-}
-
-message LocationToCreateDTO {
-  CoordinatesDTO coordinates = 1;
-  StreetAddressDTO address = 2;
-  string city = 3;
-  string postal_code = 4;
-  string subdivision_iso_3166_2_code = 5;
-  string country_iso_3166_1_alpha_2_code = 6;
+  LocationDTO location = 7;  // Full location data or just hash_id to reference existing.
 }
 
 // *********************
@@ -413,8 +372,8 @@ message WhoIsDTO {
   bool is_vpn = 23;
   string privacy_name = 24;
 
-  // Foreign key.
-  string location_hash_id = 25;
+  // Location data.
+  LocationDTO location = 25;  // Full location data (null if no location).
 }
 
 message ContactDTO {
@@ -425,5 +384,5 @@ message ContactDTO {
   ContactMethodsDTO contact_methods = 5;
   PersonalDTO personal_details = 6;
   ProfessionalDTO professional_details = 7;
-  string location_hash_id = 8;
+  LocationDTO location = 8;  // Full location data (null if no location).
 }

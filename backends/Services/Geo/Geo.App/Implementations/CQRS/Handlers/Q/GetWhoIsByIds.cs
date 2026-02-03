@@ -10,6 +10,7 @@ using D2.Contracts.Handler;
 using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Contracts.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Contracts.Result;
+using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
     private readonly IRead.IGetManyHandler<WhoIs> r_memoryCacheGetMany;
     private readonly IUpdate.ISetManyHandler<WhoIs> r_memoryCacheSetMany;
     private readonly ReadRepo.IGetWhoIsByIdsHandler r_getWhoIsFromRepo;
+    private readonly IQueries.IGetLocationsByIdsHandler r_getLocationsByIds;
     private readonly GeoAppOptions r_options;
 
     /// <summary>
@@ -42,6 +44,9 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
     /// <param name="getWhoIsFromRepo">
     /// The repository handler for getting WhoIs records by IDs.
     /// </param>
+    /// <param name="getLocationsByIds">
+    /// The handler for fetching locations by their IDs.
+    /// </param>
     /// <param name="options">
     /// The Geo application options.
     /// </param>
@@ -52,6 +57,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         IRead.IGetManyHandler<WhoIs> memoryCacheGetMany,
         IUpdate.ISetManyHandler<WhoIs> memoryCacheSetMany,
         ReadRepo.IGetWhoIsByIdsHandler getWhoIsFromRepo,
+        IQueries.IGetLocationsByIdsHandler getLocationsByIds,
         IOptions<GeoAppOptions> options,
         IHandlerContext context)
         : base(context)
@@ -59,6 +65,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         r_memoryCacheGetMany = memoryCacheGetMany;
         r_memoryCacheSetMany = memoryCacheSetMany;
         r_getWhoIsFromRepo = getWhoIsFromRepo;
+        r_getLocationsByIds = getLocationsByIds;
         r_options = options.Value;
     }
 
@@ -70,7 +77,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         // If the request was empty, return early.
         if (input.Request.HashIds.Count == 0)
         {
-            return Success([]);
+            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
         // First, try to get WhoIs from in-memory cache.
@@ -94,7 +101,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         // If ALL WhoIs were found in cache, return them now.
         if (whoIsRecords.Count == input.Request.HashIds.Count)
         {
-            return Success(whoIsRecords);
+            return await SuccessAsync(whoIsRecords, ct);
         }
 
         // Otherwise, fetch missing WhoIs.
@@ -110,7 +117,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
             }
 
             await SetInCacheAsync(repoOutput!.WhoIs, ct);
-            return Success(whoIsRecords);
+            return await SuccessAsync(whoIsRecords, ct);
         }
 
         // If that failed, check the reason.
@@ -122,7 +129,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
                 // If we found some in cache, return [fail, SOME found].
                 if (whoIsRecords.Count > 0)
                 {
-                    return SomeFound(whoIsRecords);
+                    return await SomeFoundAsync(whoIsRecords, ct);
                 }
 
                 // Otherwise, return (fail, NOT found).
@@ -138,7 +145,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
                 }
 
                 await SetInCacheAsync(repoOutput!.WhoIs, ct);
-                return SomeFound(whoIsRecords);
+                return await SomeFoundAsync(whoIsRecords, ct);
             }
 
             // For other errors, bubble up the failure.
@@ -153,6 +160,9 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
 
     private static List<string> GetCacheKeys(IEnumerable<string> ids) =>
         ids.Select(GetCacheKey).ToList();
+
+    private static Location? GetLocation(string? hashId, Dictionary<string, Location> locations) =>
+        hashId is not null && locations.TryGetValue(hashId, out var loc) ? loc : null;
 
     private async ValueTask SetInCacheAsync(
         Dictionary<string, WhoIs> fromDbDict,
@@ -177,15 +187,47 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         }
     }
 
-    private D2Result<O?> Success(Dictionary<string, WhoIs> whoIsRecords)
+    private async ValueTask<D2Result<O?>> SuccessAsync(
+        Dictionary<string, WhoIs> whoIsRecords,
+        CancellationToken ct)
     {
-        var dtoDict = whoIsRecords.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDTO());
+        var locations = await FetchLocationsAsync(whoIsRecords.Values, ct);
+        var dtoDict = whoIsRecords.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
         return D2Result<O?>.Ok(new O(dtoDict), traceId: TraceId);
     }
 
-    private D2Result<O?> SomeFound(Dictionary<string, WhoIs> whoIsRecords)
+    private async ValueTask<D2Result<O?>> SomeFoundAsync(
+        Dictionary<string, WhoIs> whoIsRecords,
+        CancellationToken ct)
     {
-        var dtoDict = whoIsRecords.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDTO());
+        var locations = await FetchLocationsAsync(whoIsRecords.Values, ct);
+        var dtoDict = whoIsRecords.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
         return D2Result<O?>.SomeFound(new O(dtoDict), traceId: TraceId);
+    }
+
+    private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(
+        IEnumerable<WhoIs> whoIsRecords,
+        CancellationToken ct)
+    {
+        var locationHashIds = whoIsRecords
+            .Where(w => w.LocationHashId is not null)
+            .Select(w => w.LocationHashId!)
+            .Distinct()
+            .ToList();
+
+        if (locationHashIds.Count == 0)
+        {
+            return [];
+        }
+
+        var locationsR = await r_getLocationsByIds.HandleAsync(
+            new IQueries.GetLocationsByIdsInput(locationHashIds),
+            ct);
+
+        return locationsR.Data?.Data ?? [];
     }
 }

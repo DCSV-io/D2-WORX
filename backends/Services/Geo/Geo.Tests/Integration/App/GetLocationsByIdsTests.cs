@@ -20,7 +20,6 @@ using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.C;
 using D2.Geo.Tests.Fixtures;
-using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -115,8 +114,7 @@ public class GetLocationsByIdsTests : IAsyncLifetime
     {
         // Arrange
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
-        var request = new GetLocationsRequest();
-        var input = new IQueries.GetLocationsByIdsInput(request);
+        var input = new IQueries.GetLocationsByIdsInput([]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -141,9 +139,7 @@ public class GetLocationsByIdsTests : IAsyncLifetime
         var hashIds = locations.Select(l => l.HashId).ToList();
 
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
-        var request = new GetLocationsRequest();
-        request.HashIds.AddRange(hashIds);
-        var input = new IQueries.GetLocationsByIdsInput(request);
+        var input = new IQueries.GetLocationsByIdsInput(hashIds);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -169,9 +165,7 @@ public class GetLocationsByIdsTests : IAsyncLifetime
         var hashIds = locations.Select(l => l.HashId).ToList();
 
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
-        var request = new GetLocationsRequest();
-        request.HashIds.AddRange(hashIds);
-        var input = new IQueries.GetLocationsByIdsInput(request);
+        var input = new IQueries.GetLocationsByIdsInput(hashIds);
 
         // First call - fetches from database
         var firstResult = await handler.HandleAsync(input, Ct);
@@ -190,14 +184,14 @@ public class GetLocationsByIdsTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// Tests that GetLocationsByIds returns correct DTO mapping.
+    /// Tests that GetLocationsByIds returns correct entity mapping.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous operation.
     /// </returns>
     [Fact]
-    public async Task GetLocationsByIds_ReturnsCorrectlyMappedDTOs()
+    public async Task GetLocationsByIds_ReturnsCorrectlyMappedEntities()
     {
         // Arrange
         var location = Location.Create(
@@ -211,27 +205,25 @@ public class GetLocationsByIdsTests : IAsyncLifetime
         await _db.SaveChangesAsync(Ct);
 
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
-        var request = new GetLocationsRequest();
-        request.HashIds.Add(location.HashId);
-        var input = new IQueries.GetLocationsByIdsInput(request);
+        var input = new IQueries.GetLocationsByIdsInput([location.HashId]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
 
         // Assert
         result.Success.Should().BeTrue();
-        var dto = result.Data!.Data[location.HashId];
-        dto.HashId.Should().Be(location.HashId);
-        dto.City.Should().Be("Los Angeles");
-        dto.PostalCode.Should().Be("90001");
-        dto.SubdivisionIso31662Code.Should().Be("US-CA");
-        dto.CountryIso31661Alpha2Code.Should().Be("US");
-        dto.Coordinates.Should().NotBeNull();
-        dto.Coordinates!.Latitude.Should().BeApproximately(34.0522, 0.0001);
-        dto.Coordinates.Longitude.Should().BeApproximately(-118.2437, 0.0001);
-        dto.Address.Should().NotBeNull();
-        dto.Address!.Line1.Should().Be("123 Main St");
-        dto.Address.Line2.Should().Be("Suite 100");
+        var entity = result.Data!.Data[location.HashId];
+        entity.HashId.Should().Be(location.HashId);
+        entity.City.Should().Be("Los Angeles");
+        entity.PostalCode.Should().Be("90001");
+        entity.SubdivisionISO31662Code.Should().Be("US-CA");
+        entity.CountryISO31661Alpha2Code.Should().Be("US");
+        entity.Coordinates.Should().NotBeNull();
+        entity.Coordinates!.Latitude.Should().BeApproximately(34.0522, 0.0001);
+        entity.Coordinates.Longitude.Should().BeApproximately(-118.2437, 0.0001);
+        entity.Address.Should().NotBeNull();
+        entity.Address!.Line1.Should().Be("123 Main St");
+        entity.Address.Line2.Should().Be("Suite 100");
     }
 
     #endregion
@@ -258,10 +250,7 @@ public class GetLocationsByIdsTests : IAsyncLifetime
 
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
         var nonExistentId = "0000000000000000000000000000000000000000000000000000000000000000";
-        var request = new GetLocationsRequest();
-        request.HashIds.Add(existingLocation.HashId);
-        request.HashIds.Add(nonExistentId);
-        var input = new IQueries.GetLocationsByIdsInput(request);
+        var input = new IQueries.GetLocationsByIdsInput([existingLocation.HashId, nonExistentId]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -286,10 +275,11 @@ public class GetLocationsByIdsTests : IAsyncLifetime
     {
         // Arrange
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
-        var request = new GetLocationsRequest();
-        request.HashIds.Add("0000000000000000000000000000000000000000000000000000000000000001");
-        request.HashIds.Add("0000000000000000000000000000000000000000000000000000000000000002");
-        var input = new IQueries.GetLocationsByIdsInput(request);
+        var input = new IQueries.GetLocationsByIdsInput(
+        [
+            "0000000000000000000000000000000000000000000000000000000000000001",
+            "0000000000000000000000000000000000000000000000000000000000000002",
+        ]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -330,16 +320,13 @@ public class GetLocationsByIdsTests : IAsyncLifetime
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
 
         // First call - only fetch location1 to cache it
-        var firstRequest = new GetLocationsRequest();
-        firstRequest.HashIds.Add(location1.HashId);
-        var firstResult = await handler.HandleAsync(new IQueries.GetLocationsByIdsInput(firstRequest), Ct);
+        var firstResult = await handler.HandleAsync(
+            new IQueries.GetLocationsByIdsInput([location1.HashId]), Ct);
         firstResult.Success.Should().BeTrue();
 
         // Act - Second call with both locations
-        var secondRequest = new GetLocationsRequest();
-        secondRequest.HashIds.Add(location1.HashId);
-        secondRequest.HashIds.Add(location2.HashId);
-        var secondResult = await handler.HandleAsync(new IQueries.GetLocationsByIdsInput(secondRequest), Ct);
+        var secondResult = await handler.HandleAsync(
+            new IQueries.GetLocationsByIdsInput([location1.HashId, location2.HashId]), Ct);
 
         // Assert - Both returned (location1 from cache, location2 from DB)
         secondResult.Success.Should().BeTrue();
@@ -370,9 +357,7 @@ public class GetLocationsByIdsTests : IAsyncLifetime
         await _db.SaveChangesAsync(Ct);
 
         var handler = _services.GetRequiredService<IQueries.IGetLocationsByIdsHandler>();
-        var request = new GetLocationsRequest();
-        request.HashIds.AddRange(locations.Select(l => l.HashId));
-        var input = new IQueries.GetLocationsByIdsInput(request);
+        var input = new IQueries.GetLocationsByIdsInput(locations.Select(l => l.HashId).ToList());
 
         // Act
         var result = await handler.HandleAsync(input, Ct);

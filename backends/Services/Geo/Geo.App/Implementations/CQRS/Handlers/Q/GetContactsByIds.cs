@@ -10,6 +10,7 @@ using D2.Contracts.Handler;
 using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Contracts.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Contracts.Result;
+using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
     private readonly IRead.IGetManyHandler<Contact> r_memoryCacheGetMany;
     private readonly IUpdate.ISetManyHandler<Contact> r_memoryCacheSetMany;
     private readonly ReadRepo.IGetContactsByIdsHandler r_getContactsFromRepo;
+    private readonly IQueries.IGetLocationsByIdsHandler r_getLocationsByIds;
     private readonly GeoAppOptions r_options;
 
     /// <summary>
@@ -42,6 +44,9 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
     /// <param name="getContactsFromRepo">
     /// The repository handler for getting Contacts by IDs.
     /// </param>
+    /// <param name="getLocationsByIds">
+    /// The handler for fetching locations by their IDs.
+    /// </param>
     /// <param name="options">
     /// The Geo application options.
     /// </param>
@@ -52,6 +57,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         IRead.IGetManyHandler<Contact> memoryCacheGetMany,
         IUpdate.ISetManyHandler<Contact> memoryCacheSetMany,
         ReadRepo.IGetContactsByIdsHandler getContactsFromRepo,
+        IQueries.IGetLocationsByIdsHandler getLocationsByIds,
         IOptions<GeoAppOptions> options,
         IHandlerContext context)
         : base(context)
@@ -59,6 +65,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         r_memoryCacheGetMany = memoryCacheGetMany;
         r_memoryCacheSetMany = memoryCacheSetMany;
         r_getContactsFromRepo = getContactsFromRepo;
+        r_getLocationsByIds = getLocationsByIds;
         r_options = options.Value;
     }
 
@@ -70,7 +77,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         // If the request was empty, return early.
         if (input.Request.Ids.Count == 0)
         {
-            return Success([]);
+            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
         // Parse GUID strings from request.
@@ -81,7 +88,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
 
         if (requestedIds.Count == 0)
         {
-            return Success([]);
+            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
         // First, try to get Contacts from in-memory cache.
@@ -105,7 +112,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         // If ALL Contacts were found in cache, return them now.
         if (contacts.Count == requestedIds.Count)
         {
-            return Success(contacts);
+            return await SuccessAsync(contacts, ct);
         }
 
         // Otherwise, fetch missing Contacts.
@@ -121,7 +128,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
             }
 
             await SetInCacheAsync(repoOutput!.Contacts, ct);
-            return Success(contacts);
+            return await SuccessAsync(contacts, ct);
         }
 
         // If that failed, check the reason.
@@ -133,7 +140,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
                 // If we found some in cache, return [fail, SOME found].
                 if (contacts.Count > 0)
                 {
-                    return SomeFound(contacts);
+                    return await SomeFoundAsync(contacts, ct);
                 }
 
                 // Otherwise, return (fail, NOT found).
@@ -149,7 +156,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
                 }
 
                 await SetInCacheAsync(repoOutput!.Contacts, ct);
-                return SomeFound(contacts);
+                return await SomeFoundAsync(contacts, ct);
             }
 
             // For other errors, bubble up the failure.
@@ -164,6 +171,9 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
 
     private static List<string> GetCacheKeys(IEnumerable<Guid> ids) =>
         ids.Select(GetCacheKey).ToList();
+
+    private static Location? GetLocation(string? hashId, Dictionary<string, Location> locations) =>
+        hashId is not null && locations.TryGetValue(hashId, out var loc) ? loc : null;
 
     private async ValueTask SetInCacheAsync(
         Dictionary<Guid, Contact> fromDbDict,
@@ -188,15 +198,47 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         }
     }
 
-    private D2Result<O?> Success(Dictionary<Guid, Contact> contacts)
+    private async ValueTask<D2Result<O?>> SuccessAsync(
+        Dictionary<Guid, Contact> contacts,
+        CancellationToken ct)
     {
-        var dtoDict = contacts.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDTO());
+        var locations = await FetchLocationsAsync(contacts.Values, ct);
+        var dtoDict = contacts.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
         return D2Result<O?>.Ok(new O(dtoDict), traceId: TraceId);
     }
 
-    private D2Result<O?> SomeFound(Dictionary<Guid, Contact> contacts)
+    private async ValueTask<D2Result<O?>> SomeFoundAsync(
+        Dictionary<Guid, Contact> contacts,
+        CancellationToken ct)
     {
-        var dtoDict = contacts.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToDTO());
+        var locations = await FetchLocationsAsync(contacts.Values, ct);
+        var dtoDict = contacts.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
         return D2Result<O?>.SomeFound(new O(dtoDict), traceId: TraceId);
+    }
+
+    private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(
+        IEnumerable<Contact> contacts,
+        CancellationToken ct)
+    {
+        var locationHashIds = contacts
+            .Where(c => c.LocationHashId is not null)
+            .Select(c => c.LocationHashId!)
+            .Distinct()
+            .ToList();
+
+        if (locationHashIds.Count == 0)
+        {
+            return [];
+        }
+
+        var locationsR = await r_getLocationsByIds.HandleAsync(
+            new IQueries.GetLocationsByIdsInput(locationHashIds),
+            ct);
+
+        return locationsR.Data?.Data ?? [];
     }
 }

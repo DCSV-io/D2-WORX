@@ -22,11 +22,9 @@ public class GeoService : SB
 {
     private readonly GeoRefDataComplex.IGetHandler r_get;
     private readonly GeoComplex.IFindWhoIsHandler r_findWhoIs;
-    private readonly IQueries.IGetLocationsByIdsHandler r_getLocations;
     private readonly IQueries.IGetContactsByIdsHandler r_getContacts;
     private readonly IQueries.IGetContactsByExtKeysHandler r_getContactsByExtKeys;
     private readonly ICommands.ICreateContactsHandler r_createContacts;
-    private readonly ICommands.ICreateLocationsHandler r_createLocations;
     private readonly ICommands.IDeleteContactsHandler r_deleteContacts;
 
     /// <summary>
@@ -39,9 +37,6 @@ public class GeoService : SB
     /// <param name="findWhoIs">
     /// The handler for finding WhoIs information.
     /// </param>
-    /// <param name="getLocations">
-    /// The handler for getting locations by IDs.
-    /// </param>
     /// <param name="getContacts">
     /// The handler for getting contacts by IDs.
     /// </param>
@@ -51,29 +46,22 @@ public class GeoService : SB
     /// <param name="createContacts">
     /// The handler for creating contacts.
     /// </param>
-    /// <param name="createLocations">
-    /// The handler for creating locations.
-    /// </param>
     /// <param name="deleteContacts">
     /// The handler for deleting contacts.
     /// </param>
     public GeoService(
         GeoRefDataComplex.IGetHandler get,
         GeoComplex.IFindWhoIsHandler findWhoIs,
-        IQueries.IGetLocationsByIdsHandler getLocations,
         IQueries.IGetContactsByIdsHandler getContacts,
         IQueries.IGetContactsByExtKeysHandler getContactsByExtKeys,
         ICommands.ICreateContactsHandler createContacts,
-        ICommands.ICreateLocationsHandler createLocations,
         ICommands.IDeleteContactsHandler deleteContacts)
     {
         r_get = get;
         r_findWhoIs = findWhoIs;
-        r_getLocations = getLocations;
         r_getContacts = getContacts;
         r_getContactsByExtKeys = getContactsByExtKeys;
         r_createContacts = createContacts;
-        r_createLocations = createLocations;
         r_deleteContacts = deleteContacts;
     }
 
@@ -125,27 +113,6 @@ public class GeoService : SB
                     Key = kvp.Key,
                     Whois = kvp.Value,
                 }));
-        }
-
-        return response;
-    }
-
-    /// <inheritdoc/>
-    public override async Task<GetLocationsResponse> GetLocations(
-        GetLocationsRequest request,
-        ServerCallContext context)
-    {
-        var input = new IQueries.GetLocationsByIdsInput(request);
-        var result = await r_getLocations.HandleAsync(input, context.CancellationToken);
-
-        var response = new GetLocationsResponse { Result = result.ToProto() };
-
-        if (result.Data is not null)
-        {
-            foreach (var kvp in result.Data.Data)
-            {
-                response.Data.Add(kvp.Key, kvp.Value);
-            }
         }
 
         return response;
@@ -205,24 +172,6 @@ public class GeoService : SB
         var result = await r_createContacts.HandleAsync(input, context.CancellationToken);
 
         var response = new CreateContactsResponse { Result = result.ToProto() };
-
-        if (result.Data is not null)
-        {
-            response.Data.AddRange(result.Data.Data);
-        }
-
-        return response;
-    }
-
-    /// <inheritdoc/>
-    public override async Task<CreateLocationsResponse> CreateLocations(
-        CreateLocationsRequest request,
-        ServerCallContext context)
-    {
-        var input = new ICommands.CreateLocationsInput(request);
-        var result = await r_createLocations.HandleAsync(input, context.CancellationToken);
-
-        var response = new CreateLocationsResponse { Result = result.ToProto() };
 
         if (result.Data is not null)
         {

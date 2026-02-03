@@ -28,10 +28,14 @@ public static class WhoIsMapper
         /// Converts the <see cref="WhoIs"/> domain object to a <see cref="WhoIsDTO"/>.
         /// </summary>
         ///
+        /// <param name="location">
+        /// Optional location entity to include in the DTO.
+        /// </param>
+        ///
         /// <returns>
         /// The mapped <see cref="WhoIsDTO"/> object.
         /// </returns>
-        public WhoIsDTO ToDTO()
+        public WhoIsDTO ToDTO(Location? location = null)
         {
             return new WhoIsDTO
             {
@@ -59,7 +63,7 @@ public static class WhoIsMapper
                 IsTor = whoIs.IsTor ?? false,
                 IsVpn = whoIs.IsVPN ?? false,
                 PrivacyName = whoIs.PrivacyName ?? string.Empty,
-                LocationHashId = whoIs.LocationHashId ?? string.Empty,
+                Location = location?.ToDTO(),
             };
         }
     }
@@ -106,7 +110,7 @@ public static class WhoIsMapper
                 whoIsDTO.IsTor,
                 whoIsDTO.IsVpn,
                 whoIsDTO.PrivacyName.Falsey() ? null : whoIsDTO.PrivacyName,
-                whoIsDTO.LocationHashId.Falsey() ? null : whoIsDTO.LocationHashId);
+                whoIsDTO.Location?.HashId.Falsey() != false ? null : whoIsDTO.Location.HashId);
         }
     }
 }

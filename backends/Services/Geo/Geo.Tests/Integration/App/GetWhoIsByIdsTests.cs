@@ -29,6 +29,8 @@ using Moq;
 using Xunit;
 using CacheRead = D2.Contracts.Interfaces.Caching.InMemory.Handlers.R.IRead;
 using CacheUpdate = D2.Contracts.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
+using GetLocationsByIdsCqrs = D2.Geo.App.Implementations.CQRS.Handlers.Q.GetLocationsByIds;
+using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 using GetWhoIsByIdsCqrs = D2.Geo.App.Implementations.CQRS.Handlers.Q.GetWhoIsByIds;
 using GetWhoIsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetWhoIsByIds;
 using RepoRead = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
@@ -85,8 +87,10 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         services.AddTransient<IHandlerContext>(_ => CreateHandlerContext());
         services.AddTransient(typeof(CacheRead.IGetManyHandler<>), typeof(GetMany<>));
         services.AddTransient(typeof(CacheUpdate.ISetManyHandler<>), typeof(SetMany<>));
+        services.AddTransient<RepoRead.IGetLocationsByIdsHandler, GetLocationsByIdsRepo>();
         services.AddTransient<RepoRead.IGetWhoIsByIdsHandler, GetWhoIsByIdsRepo>();
         services.AddTransient<ICreate.ICreateWhoIsHandler, CreateWhoIs>();
+        services.AddTransient<IQueries.IGetLocationsByIdsHandler, GetLocationsByIdsCqrs>();
         services.AddTransient<IQueries.IGetWhoIsByIdsHandler, GetWhoIsByIdsCqrs>();
 
         _services = services.BuildServiceProvider();
@@ -235,6 +239,131 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         dto.AsType.Should().Be("ISP");
         dto.IsVpn.Should().BeTrue();
         dto.IsMobile.Should().BeFalse();
+
+        // Location should be null when WhoIs has no LocationHashId
+        dto.Location.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetWhoIsByIds returns nested Location data when WhoIs has a location.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetWhoIsByIds_WithLocation_ReturnsNestedLocationData()
+    {
+        // Arrange - Create a location first
+        var suffix = Guid.NewGuid().ToString("N");
+        var location = Location.Create(
+            coordinates: null,
+            address: null,
+            city: $"Test City {suffix}",
+            postalCode: "12345",
+            subdivisionISO31662Code: "US-CA",
+            countryISO31661Alpha2Code: "US");
+        _db.Locations.Add(location);
+        await _db.SaveChangesAsync(Ct);
+
+        // Create WhoIs with reference to the location
+        var whoIs = WhoIs.Create(
+            ipAddress: $"10.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}",
+            year: 2025,
+            month: 7,
+            fingerprint: $"test-fp-{suffix}",
+            asn: 99999,
+            asName: "Location Test AS",
+            locationHashId: location.HashId);
+        _db.WhoIsRecords.Add(whoIs);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
+        var request = new GetWhoIsByIdsRequest();
+        request.HashIds.Add(whoIs.HashId);
+        var input = new IQueries.GetWhoIsByIdsInput(request);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        var dto = result.Data!.Data[whoIs.HashId];
+
+        // Verify WhoIs fields
+        dto.HashId.Should().Be(whoIs.HashId);
+        dto.Asn.Should().Be(99999);
+
+        // Verify nested Location is present and correct
+        dto.Location.Should().NotBeNull();
+        dto.Location!.HashId.Should().Be(location.HashId);
+        dto.Location.City.Should().Be($"Test City {suffix}");
+        dto.Location.PostalCode.Should().Be("12345");
+        dto.Location.SubdivisionIso31662Code.Should().Be("US-CA");
+        dto.Location.CountryIso31661Alpha2Code.Should().Be("US");
+    }
+
+    /// <summary>
+    /// Tests that GetWhoIsByIds handles mixed records - some with locations, some without.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetWhoIsByIds_WithMixedLocationScenarios_HandlesGracefully()
+    {
+        // Arrange - Create a location
+        var suffix = Guid.NewGuid().ToString("N");
+        var location = Location.Create(
+            coordinates: null,
+            address: null,
+            city: $"Mixed City {suffix}",
+            postalCode: "54321",
+            subdivisionISO31662Code: null,
+            countryISO31661Alpha2Code: "CA");
+        _db.Locations.Add(location);
+        await _db.SaveChangesAsync(Ct);
+
+        // Create WhoIs WITH location
+        var whoIsWithLocation = WhoIs.Create(
+            ipAddress: $"172.{Random.Shared.Next(16, 31)}.{Random.Shared.Next(1, 255)}.1",
+            year: 2025,
+            month: 8,
+            fingerprint: $"with-loc-{suffix}",
+            locationHashId: location.HashId);
+
+        // Create WhoIs WITHOUT location
+        var whoIsWithoutLocation = WhoIs.Create(
+            ipAddress: $"172.{Random.Shared.Next(16, 31)}.{Random.Shared.Next(1, 255)}.2",
+            year: 2025,
+            month: 8,
+            fingerprint: $"no-loc-{suffix}");
+
+        _db.WhoIsRecords.AddRange(whoIsWithLocation, whoIsWithoutLocation);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
+        var request = new GetWhoIsByIdsRequest();
+        request.HashIds.Add(whoIsWithLocation.HashId);
+        request.HashIds.Add(whoIsWithoutLocation.HashId);
+        var input = new IQueries.GetWhoIsByIdsInput(request);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.Data.Should().HaveCount(2);
+
+        // WhoIs with location should have nested Location data
+        var dtoWithLocation = result.Data.Data[whoIsWithLocation.HashId];
+        dtoWithLocation.Location.Should().NotBeNull();
+        dtoWithLocation.Location!.City.Should().Be($"Mixed City {suffix}");
+
+        // WhoIs without location should have null Location
+        var dtoWithoutLocation = result.Data.Data[whoIsWithoutLocation.HashId];
+        dtoWithoutLocation.Location.Should().BeNull();
     }
 
     #endregion

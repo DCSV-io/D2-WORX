@@ -8,7 +8,10 @@
 namespace D2.Geo.Tests.Integration.App;
 
 using D2.Contracts.Handler;
+using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
+using D2.Contracts.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Contracts.Result;
+using D2.Geo.App;
 using D2.Geo.App.Implementations.CQRS.Handlers.Q;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.Domain.Entities;
@@ -24,6 +27,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 using GetContactsByExtKeysRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByExtKeys;
+using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 
 /// <summary>
 /// Integration tests for the <see cref="GetContactsByExtKeys"/> CQRS handler.
@@ -512,6 +516,31 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     private IQueries.IGetContactsByExtKeysHandler CreateHandler()
     {
         var getContactsRepo = new GetContactsByExtKeysRepo(_db, _options, _context);
-        return new GetContactsByExtKeys(getContactsRepo, _context);
+        var getLocationsByIds = CreateGetLocationsByIdsHandler();
+        return new GetContactsByExtKeys(getContactsRepo, getLocationsByIds, _context);
+    }
+
+    private IQueries.IGetLocationsByIdsHandler CreateGetLocationsByIdsHandler()
+    {
+        // Mock cache handlers that always return NOT_FOUND (forcing repo lookup).
+        var mockCacheGetMany = new Mock<IRead.IGetManyHandler<Location>>();
+        mockCacheGetMany
+            .Setup(x => x.HandleAsync(It.IsAny<IRead.GetManyInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(D2Result<IRead.GetManyOutput<Location>?>.NotFound());
+
+        var mockCacheSetMany = new Mock<IUpdate.ISetManyHandler<Location>>();
+        mockCacheSetMany
+            .Setup(x => x.HandleAsync(It.IsAny<IUpdate.SetManyInput<Location>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(D2Result<IUpdate.SetManyOutput?>.Ok(new IUpdate.SetManyOutput()));
+
+        var getLocationsRepo = new GetLocationsByIdsRepo(_db, _options, _context);
+        var appOptions = Options.Create(new GeoAppOptions());
+
+        return new GetLocationsByIds(
+            mockCacheGetMany.Object,
+            mockCacheSetMany.Object,
+            getLocationsRepo,
+            appOptions,
+            _context);
     }
 }

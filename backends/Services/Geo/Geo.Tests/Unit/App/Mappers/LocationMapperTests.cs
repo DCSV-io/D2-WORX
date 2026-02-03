@@ -169,37 +169,4 @@ public class LocationMapperTests
     }
 
     #endregion
-
-    #region LocationToCreateDTO Tests
-
-    /// <summary>
-    /// Tests that LocationToCreateDTO.ToDomain creates correct domain object.
-    /// </summary>
-    [Fact]
-    public void LocationToCreateDTO_ToDomain_CreatesValidLocation()
-    {
-        // Arrange
-        var createDto = new LocationToCreateDTO
-        {
-            Coordinates = new CoordinatesDTO { Latitude = 40.7128, Longitude = -74.0060 },
-            City = "New York",
-            PostalCode = "10001",
-            SubdivisionIso31662Code = "US-NY",
-            CountryIso31661Alpha2Code = "US",
-        };
-
-        // Act
-        var domain = createDto.ToDomain();
-
-        // Assert
-        domain.HashId.Should().HaveLength(64);
-        domain.Coordinates!.Latitude.Should().Be(40.7128);
-        domain.Coordinates.Longitude.Should().Be(-74.0060);
-        domain.City.Should().Be("New York");
-        domain.PostalCode.Should().Be("10001");
-        domain.SubdivisionISO31662Code.Should().Be("US-NY");
-        domain.CountryISO31661Alpha2Code.Should().Be("US");
-    }
-
-    #endregion
 }

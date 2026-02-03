@@ -17,6 +17,7 @@ using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex.IFindWhoIsHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex.FindWhoIsInput;
 using O = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex.FindWhoIsOutput;
+using Queries = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries;
 using WhoIsProvider = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead;
 
 /// <summary>
@@ -40,7 +41,8 @@ using WhoIsProvider = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead;
 /// </remarks>
 public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 {
-    private readonly IQueries.IGetWhoIsByIdsHandler r_getWhoIsByIds;
+    private readonly Queries.IGetWhoIsByIdsHandler r_getWhoIsByIds;
+    private readonly Queries.IGetLocationsByIdsHandler r_getLocationsByIds;
     private readonly WhoIsProvider.IPopulateHandler r_populateWhoIs;
     private readonly CreateRepo.ICreateWhoIsHandler r_createWhoIs;
 
@@ -50,6 +52,9 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
     ///
     /// <param name="getWhoIsByIds">
     /// The handler for getting WhoIs by their hash IDs.
+    /// </param>
+    /// <param name="getLocationsByIds">
+    /// The handler for fetching locations by their IDs.
     /// </param>
     /// <param name="populateWhoIs">
     /// The handler for populating WhoIs records from external sources.
@@ -61,13 +66,15 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
     /// The handler context.
     /// </param>
     public FindWhoIs(
-        IQueries.IGetWhoIsByIdsHandler getWhoIsByIds,
+        Queries.IGetWhoIsByIdsHandler getWhoIsByIds,
+        Queries.IGetLocationsByIdsHandler getLocationsByIds,
         WhoIsProvider.IPopulateHandler populateWhoIs,
         CreateRepo.ICreateWhoIsHandler createWhoIs,
         IHandlerContext context)
         : base(context)
     {
         r_getWhoIsByIds = getWhoIsByIds;
+        r_getLocationsByIds = getLocationsByIds;
         r_populateWhoIs = populateWhoIs;
         r_createWhoIs = createWhoIs;
     }
@@ -195,12 +202,19 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
                 createWhoIsR.ErrorCode);
         }
 
-        // Step 6: Add newly populated WhoIs to results.
+        // Step 6: Fetch locations for newly populated WhoIs records.
+        var locations = await FetchLocationsAsync(populatedRecords.Values, ct);
+
+        // Step 7: Add newly populated WhoIs to results with locations.
         foreach (var (hashId, whoIs) in populatedRecords)
         {
             if (hashIdToKey.TryGetValue(hashId, out var key))
             {
-                results[key] = whoIs.ToDTO();
+                var location = whoIs.LocationHashId is not null
+                    && locations.TryGetValue(whoIs.LocationHashId, out var loc)
+                        ? loc
+                        : null;
+                results[key] = whoIs.ToDTO(location);
             }
         }
 
@@ -211,5 +225,27 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         }
 
         return D2Result<O?>.SomeFound(new O(results), traceId: TraceId);
+    }
+
+    private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(
+        IEnumerable<WhoIs> whoIsRecords,
+        CancellationToken ct)
+    {
+        var locationHashIds = whoIsRecords
+            .Where(w => w.LocationHashId is not null)
+            .Select(w => w.LocationHashId!)
+            .Distinct()
+            .ToList();
+
+        if (locationHashIds.Count == 0)
+        {
+            return [];
+        }
+
+        var locationsR = await r_getLocationsByIds.HandleAsync(
+            new Queries.GetLocationsByIdsInput(locationHashIds),
+            ct);
+
+        return locationsR.Data?.Data ?? [];
     }
 }

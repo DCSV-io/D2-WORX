@@ -26,6 +26,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 using GetContactsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByIds;
+using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 
 /// <summary>
 /// Integration tests for the <see cref="GetContactsByIds"/> CQRS handler.
@@ -133,6 +134,129 @@ public class GetContactsByIdsTests : IAsyncLifetime
         result.Data.Data.Should().ContainKey(contact.Id);
         result.Data.Data[contact.Id].PersonalDetails!.FirstName.Should().Be("Single");
         result.Data.Data[contact.Id].PersonalDetails!.LastName.Should().Be("Contact");
+
+        // Location should be null when Contact has no LocationHashId
+        result.Data.Data[contact.Id].Location.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetContactsByIds returns nested Location data when Contact has a location.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetContactsByIds_WithLocation_ReturnsNestedLocationData()
+    {
+        // Arrange - Create a location first
+        var suffix = Guid.NewGuid().ToString("N");
+        var location = Location.Create(
+            coordinates: null,
+            address: null,
+            city: $"Contact City {suffix}",
+            postalCode: "90210",
+            subdivisionISO31662Code: "US-CA",
+            countryISO31661Alpha2Code: "US");
+        _db.Locations.Add(location);
+        await _db.SaveChangesAsync(Ct);
+
+        // Create contact with reference to the location
+        var contact = Contact.Create(
+            contextKey: $"loc-ctx-{suffix}",
+            relatedEntityId: Guid.NewGuid(),
+            personalDetails: Personal.Create("Located", lastName: "Contact"),
+            locationHashId: location.HashId);
+        _db.Contacts.Add(contact);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var request = new GetContactsRequest { Ids = { contact.Id.ToString() } };
+        var input = new IQueries.GetContactsByIdsInput(request);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.Data.Should().HaveCount(1);
+
+        var dto = result.Data.Data[contact.Id];
+
+        // Verify Contact fields
+        dto.PersonalDetails!.FirstName.Should().Be("Located");
+        dto.PersonalDetails.LastName.Should().Be("Contact");
+
+        // Verify nested Location is present and correct
+        dto.Location.Should().NotBeNull();
+        dto.Location!.HashId.Should().Be(location.HashId);
+        dto.Location.City.Should().Be($"Contact City {suffix}");
+        dto.Location.PostalCode.Should().Be("90210");
+        dto.Location.SubdivisionIso31662Code.Should().Be("US-CA");
+        dto.Location.CountryIso31661Alpha2Code.Should().Be("US");
+    }
+
+    /// <summary>
+    /// Tests that GetContactsByIds handles mixed records - some with locations, some without.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetContactsByIds_WithMixedLocationScenarios_HandlesGracefully()
+    {
+        // Arrange - Create a location
+        var suffix = Guid.NewGuid().ToString("N");
+        var location = Location.Create(
+            coordinates: null,
+            address: null,
+            city: $"Mixed Contact City {suffix}",
+            postalCode: "H0H0H0",
+            subdivisionISO31662Code: "CA-QC",
+            countryISO31661Alpha2Code: "CA");
+        _db.Locations.Add(location);
+        await _db.SaveChangesAsync(Ct);
+
+        // Create Contact WITH location
+        var contactWithLocation = Contact.Create(
+            contextKey: $"with-loc-ctx-{suffix}",
+            relatedEntityId: Guid.NewGuid(),
+            personalDetails: Personal.Create("With", lastName: "Location"),
+            locationHashId: location.HashId);
+
+        // Create Contact WITHOUT location
+        var contactWithoutLocation = Contact.Create(
+            contextKey: $"no-loc-ctx-{suffix}",
+            relatedEntityId: Guid.NewGuid(),
+            personalDetails: Personal.Create("Without", lastName: "Location"));
+
+        _db.Contacts.AddRange(contactWithLocation, contactWithoutLocation);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var request = new GetContactsRequest
+        {
+            Ids = { contactWithLocation.Id.ToString(), contactWithoutLocation.Id.ToString() },
+        };
+        var input = new IQueries.GetContactsByIdsInput(request);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.Data.Should().HaveCount(2);
+
+        // Contact with location should have nested Location data
+        var dtoWithLocation = result.Data.Data[contactWithLocation.Id];
+        dtoWithLocation.Location.Should().NotBeNull();
+        dtoWithLocation.Location!.City.Should().Be($"Mixed Contact City {suffix}");
+        dtoWithLocation.Location.CountryIso31661Alpha2Code.Should().Be("CA");
+
+        // Contact without location should have null Location
+        var dtoWithoutLocation = result.Data.Data[contactWithoutLocation.Id];
+        dtoWithoutLocation.Location.Should().BeNull();
     }
 
     #endregion
@@ -483,10 +607,35 @@ public class GetContactsByIdsTests : IAsyncLifetime
     private IQueries.IGetContactsByIdsHandler CreateHandler()
     {
         var getContactsRepo = new GetContactsByIdsRepo(_db, _infraOptions, _context);
+        var getLocationsByIds = CreateGetLocationsByIdsHandler();
         return new GetContactsByIds(
             _mockCacheGetMany.Object,
             _mockCacheSetMany.Object,
             getContactsRepo,
+            getLocationsByIds,
+            _appOptions,
+            _context);
+    }
+
+    private IQueries.IGetLocationsByIdsHandler CreateGetLocationsByIdsHandler()
+    {
+        // Mock cache handlers that always return NOT_FOUND (forcing repo lookup).
+        var mockCacheGetMany = new Mock<IRead.IGetManyHandler<Location>>();
+        mockCacheGetMany
+            .Setup(x => x.HandleAsync(It.IsAny<IRead.GetManyInput>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(D2Result<IRead.GetManyOutput<Location>?>.NotFound());
+
+        var mockCacheSetMany = new Mock<IUpdate.ISetManyHandler<Location>>();
+        mockCacheSetMany
+            .Setup(x => x.HandleAsync(It.IsAny<IUpdate.SetManyInput<Location>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(D2Result<IUpdate.SetManyOutput?>.Ok(new IUpdate.SetManyOutput()));
+
+        var getLocationsRepo = new GetLocationsByIdsRepo(_db, _infraOptions, _context);
+
+        return new GetLocationsByIds(
+            mockCacheGetMany.Object,
+            mockCacheSetMany.Object,
+            getLocationsRepo,
             _appOptions,
             _context);
     }

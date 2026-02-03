@@ -72,7 +72,7 @@ public class WhoIsMapperTests
         dto.GeoChanged.Should().NotBeEmpty();
         dto.IsAnonymous.Should().BeFalse();
         dto.IsMobile.Should().BeTrue();
-        dto.LocationHashId.Should().Be("abc123");
+        dto.Location.Should().BeNull(); // No location passed to ToDTO
     }
 
     /// <summary>
@@ -96,7 +96,7 @@ public class WhoIsMapperTests
         dto.Asn.Should().Be(0);
         dto.AsName.Should().BeEmpty();
         dto.IsAnonymous.Should().BeFalse(); // null defaults to false in proto
-        dto.LocationHashId.Should().BeEmpty();
+        dto.Location.Should().BeNull(); // No location passed to ToDTO
     }
 
     #endregion
@@ -136,7 +136,7 @@ public class WhoIsMapperTests
             IsTor = false,
             IsVpn = true,
             PrivacyName = "TestVPN",
-            LocationHashId = "location123",
+            Location = new LocationDTO { HashId = "location123" },
         };
 
         // Act
@@ -182,7 +182,6 @@ public class WhoIsMapperTests
             AsName = string.Empty,
             AsDomain = string.Empty,
             AsChanged = string.Empty,
-            LocationHashId = string.Empty,
         };
 
         // Act

@@ -72,32 +72,4 @@ public static class LocationMapper
                 locationDTO.CountryIso31661Alpha2Code);
         }
     }
-
-    /// <summary>
-    /// Maps <see cref="LocationToCreateDTO"/> to <see cref="Location"/>.
-    /// </summary>
-    ///
-    /// <param name="locationToCreateDTO">
-    /// The DTO to be mapped to a domain object.
-    /// </param>
-    extension(LocationToCreateDTO locationToCreateDTO)
-    {
-        /// <summary>
-        /// Converts the <see cref="LocationToCreateDTO"/> to a <see cref="Location"/> domain object.
-        /// </summary>
-        ///
-        /// <returns>
-        /// The mapped <see cref="Location"/> domain object.
-        /// </returns>
-        public Location ToDomain()
-        {
-            return Location.Create(
-                locationToCreateDTO.Coordinates?.ToDomain(),
-                locationToCreateDTO.Address?.ToDomain(),
-                locationToCreateDTO.City,
-                locationToCreateDTO.PostalCode,
-                locationToCreateDTO.SubdivisionIso31662Code,
-                locationToCreateDTO.CountryIso31661Alpha2Code);
-        }
-    }
 }
