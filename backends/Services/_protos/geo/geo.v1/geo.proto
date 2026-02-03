@@ -38,6 +38,9 @@ service GeoService {
 
   rpc CreateLocations(CreateLocationsRequest)
       returns (CreateLocationsResponse);
+
+  rpc DeleteContacts(DeleteContactsRequest)
+      returns (DeleteContactsResponse);
 }
 
 // **************************************
@@ -159,7 +162,7 @@ message GetContactsByExtKeysResponse {
 
 message GetContactsByExtKeysData {
     GetContactsExtKeys key = 1;
-    ContactDTO contact = 2;
+    repeated ContactDTO contacts = 2;
 }
 
 // **************************
@@ -185,6 +188,19 @@ message CreateLocationsRequest {
 message CreateLocationsResponse {
   d2.common.v1.D2ResultProto result = 1;
   repeated LocationDTO data = 2;
+}
+
+// ***************************
+// ***** DeleteContacts ******
+// ***************************
+
+message DeleteContactsRequest {
+  repeated string ids = 1;
+}
+
+message DeleteContactsResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  int32 deleted = 2;
 }
 
 // ***********************
