@@ -279,4 +279,217 @@ public class ContactMapperTests
     }
 
     #endregion
+
+    #region ExtractLocation Tests
+
+    /// <summary>
+    /// Tests that ExtractLocation returns null when LocationToCreate is null.
+    /// </summary>
+    [Fact]
+    public void ExtractLocation_WhenLocationToCreateIsNull_ReturnsNull()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+        };
+
+        // Act
+        var result = dto.ExtractLocation();
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that ExtractLocation returns null when LocationToCreate is empty.
+    /// </summary>
+    [Fact]
+    public void ExtractLocation_WhenLocationToCreateIsEmpty_ReturnsNull()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationToCreate = new LocationToCreateDTO(), // Empty protobuf message
+        };
+
+        // Act
+        var result = dto.ExtractLocation();
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that ExtractLocation returns Location when city is provided.
+    /// </summary>
+    [Fact]
+    public void ExtractLocation_WhenCityProvided_ReturnsLocation()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationToCreate = new LocationToCreateDTO
+            {
+                City = "New York",
+            },
+        };
+
+        // Act
+        var result = dto.ExtractLocation();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.City.Should().Be("New York");
+        result.HashId.Should().HaveLength(64);
+    }
+
+    /// <summary>
+    /// Tests that ExtractLocation returns Location with full data.
+    /// </summary>
+    [Fact]
+    public void ExtractLocation_WithFullLocationData_ReturnsCompleteLocation()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationToCreate = new LocationToCreateDTO
+            {
+                Coordinates = new CoordinatesDTO { Latitude = 40.7128, Longitude = -74.0060 },
+                Address = new StreetAddressDTO { Line1 = "123 Main St" },
+                City = "New York",
+                PostalCode = "10001",
+                SubdivisionIso31662Code = "US-NY",
+                CountryIso31661Alpha2Code = "US",
+            },
+        };
+
+        // Act
+        var result = dto.ExtractLocation();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Coordinates.Should().NotBeNull();
+        result.Coordinates!.Latitude.Should().Be(40.7128);
+        result.Coordinates.Longitude.Should().Be(-74.0060);
+        result.Address.Should().NotBeNull();
+        result.City.Should().Be("New York");
+        result.PostalCode.Should().Be("10001");
+        result.SubdivisionISO31662Code.Should().Be("US-NY");
+        result.CountryISO31661Alpha2Code.Should().Be("US");
+    }
+
+    /// <summary>
+    /// Tests that ExtractLocation produces consistent hash for same location data.
+    /// </summary>
+    [Fact]
+    public void ExtractLocation_WithSameData_ProducesConsistentHash()
+    {
+        // Arrange
+        var dto1 = new ContactToCreateDTO
+        {
+            ContextKey = "test1",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationToCreate = new LocationToCreateDTO
+            {
+                City = "Los Angeles",
+                CountryIso31661Alpha2Code = "US",
+            },
+        };
+
+        var dto2 = new ContactToCreateDTO
+        {
+            ContextKey = "test2",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationToCreate = new LocationToCreateDTO
+            {
+                City = "Los Angeles",
+                CountryIso31661Alpha2Code = "US",
+            },
+        };
+
+        // Act
+        var location1 = dto1.ExtractLocation();
+        var location2 = dto2.ExtractLocation();
+
+        // Assert
+        location1!.HashId.Should().Be(location2!.HashId);
+    }
+
+    #endregion
+
+    #region GetExplicitLocationHashId Tests
+
+    /// <summary>
+    /// Tests that GetExplicitLocationHashId returns null when hash is empty.
+    /// </summary>
+    [Fact]
+    public void GetExplicitLocationHashId_WhenEmpty_ReturnsNull()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationHashId = string.Empty,
+        };
+
+        // Act
+        var result = dto.GetExplicitLocationHashId();
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetExplicitLocationHashId returns null when hash is whitespace.
+    /// </summary>
+    [Fact]
+    public void GetExplicitLocationHashId_WhenWhitespace_ReturnsNull()
+    {
+        // Arrange
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationHashId = "   ",
+        };
+
+        // Act
+        var result = dto.GetExplicitLocationHashId();
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetExplicitLocationHashId returns the hash when provided.
+    /// </summary>
+    [Fact]
+    public void GetExplicitLocationHashId_WhenProvided_ReturnsHash()
+    {
+        // Arrange
+        var expectedHash = "abc123def456789012345678901234567890123456789012345678901234";
+        var dto = new ContactToCreateDTO
+        {
+            ContextKey = "test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            LocationHashId = expectedHash,
+        };
+
+        // Act
+        var result = dto.GetExplicitLocationHashId();
+
+        // Assert
+        result.Should().Be(expectedHash);
+    }
+
+    #endregion
 }

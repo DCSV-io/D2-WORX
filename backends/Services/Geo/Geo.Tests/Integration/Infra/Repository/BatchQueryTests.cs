@@ -13,6 +13,7 @@ using D2.Geo.Infra.Repository;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -38,6 +39,7 @@ public class BatchQueryTests : IAsyncLifetime
 
         var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
             .UseNpgsql(_container.GetConnectionString())
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
 
         _db = new GeoDbContext(dbOptions);

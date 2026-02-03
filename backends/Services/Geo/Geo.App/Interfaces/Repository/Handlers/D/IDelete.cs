@@ -1,12 +1,12 @@
 // -----------------------------------------------------------------------
-// <copyright file="IRead.cs" company="DCSV">
+// <copyright file="IDelete.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Geo.App.Interfaces.WhoIs.Handlers.R;
+namespace D2.Geo.App.Interfaces.Repository.Handlers.D;
 
 /// <summary>
-/// Defines a contract for WhoIs provider read handlers.
+/// Defines a contract for a geographic data delete repository.
 /// </summary>
-public partial interface IRead;
+public partial interface IDelete;

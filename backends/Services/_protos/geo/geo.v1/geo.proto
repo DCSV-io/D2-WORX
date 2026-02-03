@@ -199,6 +199,7 @@ message ContactToCreateDTO {
   PersonalDTO personal_details = 5;
   ProfessionalDTO professional_details = 6;
   LocationToCreateDTO location_to_create = 7;
+  string location_hash_id = 8;  // Reference existing location (takes precedence over location_to_create)
 }
 
 message LocationToCreateDTO {

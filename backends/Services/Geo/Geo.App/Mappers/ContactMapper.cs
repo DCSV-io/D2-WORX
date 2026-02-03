@@ -106,5 +106,48 @@ public static class ContactMapper
                 contactToCreateDTO.ProfessionalDetails?.ToDomain(),
                 locationHashId);
         }
+
+        /// <summary>
+        /// Extracts the Location to create from embedded data, if present.
+        /// </summary>
+        ///
+        /// <returns>
+        /// The extracted <see cref="Location"/> or null if no location data is embedded.
+        /// </returns>
+        public Location? ExtractLocation()
+        {
+            var loc = contactToCreateDTO.LocationToCreate;
+            if (loc is null)
+            {
+                return null;
+            }
+
+            // Check if truly empty (protobuf messages are never null, but may be empty).
+            if (loc.City.Falsey() &&
+                loc.PostalCode.Falsey() &&
+                loc.SubdivisionIso31662Code.Falsey() &&
+                loc.CountryIso31661Alpha2Code.Falsey() &&
+                loc.Coordinates is null &&
+                loc.Address is null)
+            {
+                return null;
+            }
+
+            return loc.ToDomain();
+        }
+
+        /// <summary>
+        /// Gets the explicit location hash ID if provided.
+        /// </summary>
+        ///
+        /// <returns>
+        /// The explicit location hash ID or null if not provided or empty.
+        /// </returns>
+        public string? GetExplicitLocationHashId()
+        {
+            return contactToCreateDTO.LocationHashId.Falsey()
+                ? null
+                : contactToCreateDTO.LocationHashId;
+        }
     }
 }

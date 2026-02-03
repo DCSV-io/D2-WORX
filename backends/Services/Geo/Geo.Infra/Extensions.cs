@@ -13,6 +13,8 @@ using D2.Contracts.Transactions.Pg;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
 using D2.Geo.Infra.Messaging.MT.Publishers;
 using D2.Geo.Infra.Repository;
+using D2.Geo.Infra.Repository.Handlers.C;
+using D2.Geo.Infra.Repository.Handlers.D;
 using D2.Geo.Infra.Repository.Handlers.R;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +80,23 @@ public static class Extensions
             // Repository (read) handlers.
             services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetReferenceDataHandler, GetReferenceData>();
             services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetLocationsByIdsHandler, GetLocationsByIds>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetWhoIsByIdsHandler, GetWhoIsByIds>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetContactsByIdsHandler, GetContactsByIds>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetContactsByExtKeysHandler, GetContactsByExtKeys>();
+
+            // WhoIs provider services.
+            services.AddSingleton<App.Interfaces.WhoIs.IIpInfoClient, WhoIs.IpInfoClientWrapper>();
+
+            // WhoIs provider (read) handlers.
+            services.AddTransient<App.Interfaces.WhoIs.Handlers.R.IRead.IPopulateHandler, WhoIs.Handlers.R.Populate>();
+
+            // Repository (create) handlers.
+            services.AddTransient<App.Interfaces.Repository.Handlers.C.ICreate.ICreateLocationsHandler, CreateLocations>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.C.ICreate.ICreateWhoIsHandler, CreateWhoIs>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.C.ICreate.ICreateContactsHandler, CreateContacts>();
+
+            // Repository (delete) handlers.
+            services.AddTransient<App.Interfaces.Repository.Handlers.D.IDelete.IDeleteContactsHandler, DeleteContacts>();
 
             // Messaging (publish) handlers.
             services.AddTransient<App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler, Update>();

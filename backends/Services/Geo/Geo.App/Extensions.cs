@@ -7,10 +7,13 @@
 namespace D2.Geo.App;
 
 using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
+using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Implementations.CQRS.Handlers.Q;
 using D2.Geo.App.Implementations.CQRS.Handlers.X;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ICommands = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands;
+using IGeoComplex = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex;
 using IQueries = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries;
 
 /// <summary>
@@ -42,8 +45,21 @@ public static class Extensions
         {
             services.Configure<GeoAppOptions>(configuration.GetSection(nameof(GeoAppOptions)));
 
+            // Complex handlers.
             services.AddTransient<IComplex.IGetHandler, Get>();
+            services.AddTransient<IGeoComplex.IFindWhoIsHandler, FindWhoIs>();
+
+            // Query handlers.
             services.AddTransient<IQueries.IGetLocationsByIdsHandler, GetLocationsByIds>();
+            services.AddTransient<IQueries.IGetWhoIsByIdsHandler, GetWhoIsByIds>();
+            services.AddTransient<IQueries.IGetContactsByIdsHandler, GetContactsByIds>();
+            services.AddTransient<IQueries.IGetContactsByExtKeysHandler, GetContactsByExtKeys>();
+
+            // Command handlers.
+            services.AddTransient<ICommands.ICreateLocationsHandler, CreateLocations>();
+            services.AddTransient<ICommands.ICreateWhoIsHandler, CreateWhoIs>();
+            services.AddTransient<ICommands.ICreateContactsHandler, CreateContacts>();
+            services.AddTransient<ICommands.IDeleteContactsHandler, DeleteContacts>();
 
             return services;
         }

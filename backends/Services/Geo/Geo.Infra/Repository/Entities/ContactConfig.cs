@@ -6,10 +6,12 @@
 
 namespace D2.Geo.Infra.Repository.Entities;
 
+using System.Collections.Immutable;
 using System.Text.Json;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
@@ -83,10 +85,17 @@ public class ContactConfig : IEntityTypeConfiguration<Contact>
                 .HasMaxLength(10);
 
             // ProfessionalCredentials stored as text[] array.
-            p.PrimitiveCollection(x => x.ProfessionalCredentials)
+            // Using value converter because ImmutableList has no parameterless constructor.
+            p.Property(x => x.ProfessionalCredentials)
                 .HasColumnName("personal_professional_credentials")
-                .ElementType()
-                .HasMaxLength(50);
+                .HasColumnType("text[]")
+                .HasConversion(
+                    list => list.ToArray(),
+                    arr => arr != null ? arr.ToImmutableList() : ImmutableList<string>.Empty,
+                    new ValueComparer<ImmutableList<string>>(
+                        (a, b) => a != null && b != null && a.SequenceEqual(b),
+                        c => c.Aggregate(0, (h, v) => HashCode.Combine(h, v.GetHashCode())),
+                        c => c.ToImmutableList()));
 
             p.Property(x => x.DateOfBirth)
                 .HasColumnName("personal_date_of_birth");

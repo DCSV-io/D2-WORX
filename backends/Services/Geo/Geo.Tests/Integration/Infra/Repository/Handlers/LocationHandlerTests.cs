@@ -19,6 +19,7 @@ using D2.Geo.Infra.Repository.Handlers.R;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -49,6 +50,7 @@ public class LocationHandlerTests : IAsyncLifetime
 
         var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
             .UseNpgsql(_container.GetConnectionString())
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
 
         _db = new GeoDbContext(dbOptions);
