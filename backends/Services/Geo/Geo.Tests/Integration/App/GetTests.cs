@@ -24,6 +24,7 @@ using D2.Geo.Infra.Repository.Handlers.R;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -76,6 +77,7 @@ public class GetTests : IAsyncLifetime
         // Set up database context.
         var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
             .UseNpgsql(_pgContainer.GetConnectionString())
+            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
         var db = new GeoDbContext(dbOptions);
         await db.Database.MigrateAsync(Ct);

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
-/// Configuration for the GeopoliticalEntity entity.
+/// EF Core configuration for the <see cref="GeopoliticalEntity"/> entity.
 /// </summary>
 public class GeopoliticalEntityConfig : IEntityTypeConfiguration<GeopoliticalEntity>
 {

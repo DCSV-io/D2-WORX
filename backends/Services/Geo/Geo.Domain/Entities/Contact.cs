@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace D2.Geo.Domain.Entities;
 
 using D2.Contracts.Utilities.Attributes;
@@ -96,9 +97,9 @@ public record Contact
     /// Gets foreign key to the <see cref="Location"/> entity associated with the contact.
     /// </summary>
     /// <example>
-    /// Content-addressable SHA-256 hash ID of the location.
+    /// A1B2C3D4E5F6...
     /// </example>
-    public byte[]? LocationHashId { get; init; }
+    public string? LocationHashId { get; init; }
 
     #endregion
 
@@ -163,7 +164,7 @@ public record Contact
         ContactMethods? contactMethods = null,
         Personal? personalDetails = null,
         Professional? professionalDetails = null,
-        byte[]? locationHashId = null)
+        string? locationHashId = null)
     {
         if (contextKey.Falsey())
         {

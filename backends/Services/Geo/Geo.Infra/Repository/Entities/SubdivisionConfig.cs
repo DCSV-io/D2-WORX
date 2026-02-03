@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 /// <summary>
-/// Configuration for the Subdivision entity.
+/// EF Core configuration for the <see cref="Subdivision"/> entity.
 /// </summary>
 public class SubdivisionConfig : IEntityTypeConfiguration<Subdivision>
 {

@@ -9,7 +9,6 @@ namespace D2.Contracts.Tests.Unit;
 using System.Text.Json;
 using D2.Services.Protos.Geo.V1;
 using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 
 /// <summary>
 /// Tests for serialization and deserialization of GeoRefData.

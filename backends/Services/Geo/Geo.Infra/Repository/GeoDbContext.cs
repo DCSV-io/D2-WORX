@@ -67,6 +67,21 @@ public class GeoDbContext : DbContext
     public DbSet<ReferenceDataVersion> ReferenceDataVersions { get; set; } = null!;
 
     /// <summary>
+    /// Gets or sets the Locations DbSet.
+    /// </summary>
+    public DbSet<Location> Locations { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the WhoIs DbSet.
+    /// </summary>
+    public DbSet<WhoIs> WhoIsRecords { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the Contacts DbSet.
+    /// </summary>
+    public DbSet<Contact> Contacts { get; set; } = null!;
+
+    /// <summary>
     /// Configures the model that was discovered by convention from the entity types.
     /// </summary>
     ///

@@ -10,52 +10,51 @@ using D2.Contracts.Handler;
 using D2.Geo.App.Interfaces.Repository.Handlers.R;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.R;
+using D2.Geo.Tests.Fixtures;
 using FluentAssertions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 /// <summary>
 /// Integration tests for the GetReferenceData handler.
 /// </summary>
+[Collection("ReferenceData")]
 [MustDisposeResource(false)]
 public class GetReferenceDataTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _container = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
     private IHandlerContext _context = null!;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetReferenceDataTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public GetReferenceDataTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-
-        await _container.StartAsync(Ct);
-
-        var options = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_container.GetConnectionString())
-            .Options;
-
-        _db = new GeoDbContext(options);
-
-        // Apply migrations (includes seed data).
-        await _db.Database.MigrateAsync(Ct);
-
+        _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _container.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     /// <summary>

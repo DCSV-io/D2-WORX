@@ -23,10 +23,12 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="xunit.v3" Version="3.2.0" />
+        <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\Contracts\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
+      <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
       <ProjectReference Include="..\..\..\Contracts\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
       <ProjectReference Include="..\Geo.Infra\Geo.Infra.csproj" />

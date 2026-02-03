@@ -38,10 +38,32 @@ This kind of separation is apparent throughout the application and is a core pat
 services.
 
 **Rationale:**
-- **C (Commands):** Clear intent that this operation modifies state.
-- **Q (Queries):** Guarantees no side effects, safe for caching/optimization.
-- **U (Utilities):** Helper operations that don't fit strict CQRS patterns.
-- **X (Complex):** Complex, multistep operations that span both concerns (e.g., Get with cache population).
+- **C (Commands):** Primary intent is mutation of persistent/shared state. Caller expects
+  durable changes (database writes, distributed cache updates, file writes, message publishing).
+
+- **Q (Queries):** Read-only from the perspective of persistent/shared state. Local/in-memory
+  caching is permitted as an invisible optimization — it's instance-scoped and ephemeral,
+  so it doesn't affect other service instances or survive process restarts.
+
+- **U (Utilities):** Stateless helper operations (validation, transformation, computation)
+  that neither read from nor write to any data store.
+
+- **X (Complex):** Primary intent is retrieval, but may mutate persistent/shared state as a
+  side effect to ensure future availability (e.g., fetching from external source then persisting
+  to database, write-through to distributed cache).
+
+**Side Effect Classification:**
+
+| Effect Type           | Query | Command | Complex |
+|-----------------------|-------|---------|---------|
+| Local/in-memory cache | ✅     | ✅       | ✅       |
+| Distributed cache     | ❌     | ✅       | ✅       |
+| Database              | ❌     | ✅       | ✅       |
+| File system           | ❌     | ✅       | ✅       |
+| Message publishing    | ❌     | ✅       | ✅       |
+
+**Key Distinction:** If the process dies immediately after the handler completes, would any
+state change persist or be visible to other instances? For Queries, the answer must be "no."
 
 **Structure:**
 ```

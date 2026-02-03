@@ -129,16 +129,16 @@ public class ContactTests
         // Arrange
         const string context_key = "auth-user";
         var relatedEntityId = Guid.CreateVersion7();
-        var locationHashId = new byte[32];
+        const string location_hash_id = "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2";
 
         // Act
         var contact = Contact.Create(
             context_key,
             relatedEntityId,
-            locationHashId: locationHashId);
+            locationHashId: location_hash_id);
 
         // Assert
-        contact.LocationHashId.Should().BeEquivalentTo(locationHashId);
+        contact.LocationHashId.Should().Be(location_hash_id);
     }
 
     #endregion
@@ -169,7 +169,7 @@ public class ContactTests
             "ACME Corp",
             jobTitle: "Senior Developer",
             department: "Engineering");
-        var locationHashId = new byte[32];
+        const string location_hash_id = "A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2";
 
         // Act
         var contact = Contact.Create(
@@ -178,7 +178,7 @@ public class ContactTests
             contactMethods,
             personal,
             professional,
-            locationHashId);
+            location_hash_id);
 
         // Assert
         contact.Should().NotBeNull();
@@ -189,6 +189,7 @@ public class ContactTests
         contact.PersonalDetails.Should().NotBeNull();
         contact.ProfessionalDetails.Should().NotBeNull();
         contact.LocationHashId.Should().NotBeNull();
+        contact.LocationHashId.Should().Be(location_hash_id);
     }
 
     #endregion

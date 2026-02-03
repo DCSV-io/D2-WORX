@@ -22,6 +22,46 @@ namespace D2.Geo.Infra.Repository.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("D2.Geo.Domain.Entities.Contact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContactMethods")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("contact_methods");
+
+                    b.Property<string>("ContextKey")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("context_key");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("LocationHashId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("location_hash_id");
+
+                    b.Property<Guid>("RelatedEntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("related_entity_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationHashId");
+
+                    b.HasIndex("ContextKey", "RelatedEntityId")
+                        .HasDatabaseName("ix_contacts_context_key_related_entity_id");
+
+                    b.ToTable("contacts", (string)null);
+                });
+
             modelBuilder.Entity("D2.Geo.Domain.Entities.Country", b =>
                 {
                     b.Property<string>("ISO31661Alpha2Code")
@@ -4262,6 +4302,42 @@ namespace D2.Geo.Infra.Repository.Migrations
                         });
                 });
 
+            modelBuilder.Entity("D2.Geo.Domain.Entities.Location", b =>
+                {
+                    b.Property<string>("HashId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("hash_id");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("city");
+
+                    b.Property<string>("CountryISO31661Alpha2Code")
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasColumnName("country_iso_3166_1_alpha_2_code");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("postal_code");
+
+                    b.Property<string>("SubdivisionISO31662Code")
+                        .HasMaxLength(6)
+                        .HasColumnType("character varying(6)")
+                        .HasColumnName("subdivision_iso_3166_2_code");
+
+                    b.HasKey("HashId");
+
+                    b.HasIndex("CountryISO31661Alpha2Code");
+
+                    b.HasIndex("SubdivisionISO31662Code");
+
+                    b.ToTable("locations", (string)null);
+                });
+
             modelBuilder.Entity("D2.Geo.Domain.Entities.Subdivision", b =>
                 {
                     b.Property<string>("ISO31662Code")
@@ -5764,6 +5840,134 @@ namespace D2.Geo.Infra.Repository.Migrations
                             OfficialName = "Comunidad Valenciana",
                             ShortCode = "VC"
                         });
+                });
+
+            modelBuilder.Entity("D2.Geo.Domain.Entities.WhoIs", b =>
+                {
+                    b.Property<string>("HashId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("hash_id");
+
+                    b.Property<DateOnly?>("ASChanged")
+                        .HasColumnType("date")
+                        .HasColumnName("as_changed");
+
+                    b.Property<string>("ASDomain")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("as_domain");
+
+                    b.Property<int?>("ASN")
+                        .HasColumnType("integer")
+                        .HasColumnName("asn");
+
+                    b.Property<string>("ASName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("as_name");
+
+                    b.Property<string>("ASType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("as_type");
+
+                    b.Property<string>("CarrierName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("carrier_name");
+
+                    b.Property<string>("Fingerprint")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("fingerprint");
+
+                    b.Property<DateOnly?>("GeoChanged")
+                        .HasColumnType("date")
+                        .HasColumnName("geo_changed");
+
+                    b.Property<string>("IPAddress")
+                        .IsRequired()
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)")
+                        .HasColumnName("ip_address");
+
+                    b.Property<bool?>("IsAnonymous")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_anonymous");
+
+                    b.Property<bool?>("IsAnycast")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_anycast");
+
+                    b.Property<bool?>("IsHosting")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_hosting");
+
+                    b.Property<bool?>("IsMobile")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_mobile");
+
+                    b.Property<bool?>("IsProxy")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_proxy");
+
+                    b.Property<bool?>("IsRelay")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_relay");
+
+                    b.Property<bool?>("IsSatellite")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_satellite");
+
+                    b.Property<bool?>("IsTor")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_tor");
+
+                    b.Property<bool?>("IsVPN")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_vpn");
+
+                    b.Property<string>("LocationHashId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("location_hash_id");
+
+                    b.Property<string>("MCC")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("mcc");
+
+                    b.Property<string>("MNC")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("mnc");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer")
+                        .HasColumnName("month");
+
+                    b.Property<string>("PrivacyName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("privacy_name");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.HasKey("HashId");
+
+                    b.HasIndex("Fingerprint")
+                        .HasDatabaseName("ix_who_is_fingerprint")
+                        .HasFilter("fingerprint IS NOT NULL");
+
+                    b.HasIndex("IPAddress")
+                        .HasDatabaseName("ix_who_is_ip_address");
+
+                    b.HasIndex("LocationHashId");
+
+                    b.ToTable("who_is", (string)null);
                 });
 
             modelBuilder.Entity("D2.Geo.Infra.Repository.Entities.ReferenceDataVersion", b =>
@@ -12518,6 +12722,112 @@ namespace D2.Geo.Infra.Repository.Migrations
                         });
                 });
 
+            modelBuilder.Entity("D2.Geo.Domain.Entities.Contact", b =>
+                {
+                    b.HasOne("D2.Geo.Domain.Entities.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationHashId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.OwnsOne("D2.Geo.Domain.ValueObjects.Personal", "PersonalDetails", b1 =>
+                        {
+                            b1.Property<Guid>("ContactId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("BiologicalSex")
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("personal_biological_sex");
+
+                            b1.Property<DateOnly?>("DateOfBirth")
+                                .HasColumnType("date")
+                                .HasColumnName("personal_date_of_birth");
+
+                            b1.Property<string>("FirstName")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("personal_first_name");
+
+                            b1.Property<string>("GenerationalSuffix")
+                                .HasMaxLength(10)
+                                .HasColumnType("character varying(10)")
+                                .HasColumnName("personal_generational_suffix");
+
+                            b1.Property<string>("LastName")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("personal_last_name");
+
+                            b1.Property<string>("MiddleName")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("personal_middle_name");
+
+                            b1.Property<string>("PreferredName")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("personal_preferred_name");
+
+                            b1.Property<string[]>("ProfessionalCredentials")
+                                .IsRequired()
+                                .HasColumnType("text[]")
+                                .HasColumnName("personal_professional_credentials");
+
+                            b1.Property<string>("Title")
+                                .HasMaxLength(20)
+                                .HasColumnType("character varying(20)")
+                                .HasColumnName("personal_title");
+
+                            b1.HasKey("ContactId");
+
+                            b1.ToTable("contacts");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ContactId");
+                        });
+
+                    b.OwnsOne("D2.Geo.Domain.ValueObjects.Professional", "ProfessionalDetails", b1 =>
+                        {
+                            b1.Property<Guid>("ContactId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("CompanyName")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("professional_company_name");
+
+                            b1.Property<string>("CompanyWebsite")
+                                .HasMaxLength(2048)
+                                .HasColumnType("character varying(2048)")
+                                .HasColumnName("professional_company_website");
+
+                            b1.Property<string>("Department")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("professional_department");
+
+                            b1.Property<string>("JobTitle")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("professional_job_title");
+
+                            b1.HasKey("ContactId");
+
+                            b1.ToTable("contacts");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ContactId");
+                        });
+
+                    b.Navigation("Location");
+
+                    b.Navigation("PersonalDetails");
+
+                    b.Navigation("ProfessionalDetails");
+                });
+
             modelBuilder.Entity("D2.Geo.Domain.Entities.Country", b =>
                 {
                     b.HasOne("D2.Geo.Domain.Entities.Currency", "PrimaryCurrency")
@@ -12561,6 +12871,77 @@ namespace D2.Geo.Infra.Repository.Migrations
                     b.Navigation("Language");
                 });
 
+            modelBuilder.Entity("D2.Geo.Domain.Entities.Location", b =>
+                {
+                    b.HasOne("D2.Geo.Domain.Entities.Country", "Country")
+                        .WithMany()
+                        .HasForeignKey("CountryISO31661Alpha2Code")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("D2.Geo.Domain.Entities.Subdivision", "Subdivision")
+                        .WithMany()
+                        .HasForeignKey("SubdivisionISO31662Code")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.OwnsOne("D2.Geo.Domain.ValueObjects.Coordinates", "Coordinates", b1 =>
+                        {
+                            b1.Property<string>("LocationHashId")
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("longitude");
+
+                            b1.HasKey("LocationHashId");
+
+                            b1.ToTable("locations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LocationHashId");
+                        });
+
+                    b.OwnsOne("D2.Geo.Domain.ValueObjects.StreetAddress", "Address", b1 =>
+                        {
+                            b1.Property<string>("LocationHashId")
+                                .HasColumnType("character varying(64)");
+
+                            b1.Property<string>("Line1")
+                                .IsRequired()
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("address_line_1");
+
+                            b1.Property<string>("Line2")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("address_line_2");
+
+                            b1.Property<string>("Line3")
+                                .HasMaxLength(255)
+                                .HasColumnType("character varying(255)")
+                                .HasColumnName("address_line_3");
+
+                            b1.HasKey("LocationHashId");
+
+                            b1.ToTable("locations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("LocationHashId");
+                        });
+
+                    b.Navigation("Address");
+
+                    b.Navigation("Coordinates");
+
+                    b.Navigation("Country");
+
+                    b.Navigation("Subdivision");
+                });
+
             modelBuilder.Entity("D2.Geo.Domain.Entities.Subdivision", b =>
                 {
                     b.HasOne("D2.Geo.Domain.Entities.Country", "Country")
@@ -12570,6 +12951,16 @@ namespace D2.Geo.Infra.Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("Country");
+                });
+
+            modelBuilder.Entity("D2.Geo.Domain.Entities.WhoIs", b =>
+                {
+                    b.HasOne("D2.Geo.Domain.Entities.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationHashId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Location");
                 });
 
             modelBuilder.Entity("country_currencies", b =>

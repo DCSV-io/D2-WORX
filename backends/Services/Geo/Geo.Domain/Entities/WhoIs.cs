@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable MemberCanBePrivate.Global
 namespace D2.Geo.Domain.Entities;
 
 using System.Security.Cryptography;
@@ -32,10 +33,13 @@ public record WhoIs
     #region Identity
 
     /// <summary>
-    /// Gets a content-addressable 32-byte SHA-256 hash of the IP address, year, month and browser or
-    /// device fingerprint of the record.
+    /// Gets a content-addressable SHA-256 hash (hex string) of the IP address, year, month and
+    /// browser or device fingerprint of the record.
     /// </summary>
-    public required byte[] HashId { get; init; }
+    /// <example>
+    /// A1B2C3D4E5F6...
+    /// </example>
+    public required string HashId { get; init; }
 
     #endregion
 
@@ -243,13 +247,13 @@ public record WhoIs
     #region Foreign Keys
 
     /// <summary>
-    /// Gets foreign key to the <see cref="Location"/> entity representing the geolocation of the IP
-    /// address.
+    /// Gets foreign key to the <see cref="Location"/> entity representing the geolocation of the
+    /// IP address.
     /// </summary>
     /// <example>
-    /// Content-addressable 32-byte SHA-256 hash of the Location.
+    /// A1B2C3D4E5F6...
     /// </example>
-    public byte[]? LocationHashId { get; init; }
+    public string? LocationHashId { get; init; }
 
     #endregion
 
@@ -329,7 +333,7 @@ public record WhoIs
     /// Whether the IP is a web proxy. Optional.
     /// </param>
     /// <param name="isRelay">
-    /// Whether the IP is from a anonymous relay service. Optional.
+    /// Whether the IP is from an anonymous relay service. Optional.
     /// </param>
     /// <param name="isTor">
     /// Whether the IP is associated with a TOR exit node. Optional.
@@ -379,7 +383,7 @@ public record WhoIs
         bool? isTor = null,
         bool? isVpn = null,
         string? privacyName = null,
-        byte[]? locationHashId = null)
+        string? locationHashId = null)
     {
         var yearNotNull = year ?? DateTime.UtcNow.Year;
         var monthNotNull = month ?? DateTime.UtcNow.Month;
@@ -489,7 +493,7 @@ public record WhoIs
     /// </param>
     ///
     /// <returns>
-    /// A tuple containing the computed SHA-256 hash as a byte array and the normalized IP address.
+    /// A tuple containing the computed hash (hex string) and the normalized IP address.
     /// </returns>
     ///
     /// <exception cref="GeoValidationException">
@@ -499,7 +503,7 @@ public record WhoIs
     ///
     /// <seealso cref="NormalizeAndValidateIPAddress"/>
     /// <seealso cref="IsValidIpAddress"/>
-    public static (byte[] Hash, string NormalizedIp) ComputeHashAndNormalizeIp(
+    public static (string Hash, string NormalizedIp) ComputeHashAndNormalizeIp(
         string ipAddress,
         int year,
         int month,
@@ -526,7 +530,7 @@ public record WhoIs
         }
 
         var inputBytes = Encoding.UTF8.GetBytes($"{normalizedIp}|{year}|{month}|{fingerprint.CleanStr()}");
-        var hashId = SHA256.HashData(inputBytes);
+        var hashId = Convert.ToHexString(SHA256.HashData(inputBytes));
 
         return (hashId, normalizedIp);
     }

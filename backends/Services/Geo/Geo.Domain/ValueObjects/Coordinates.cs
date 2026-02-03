@@ -29,7 +29,7 @@ public record Coordinates
     /// <example>
     /// 48.42841.
     /// </example>
-    public required decimal Latitude { get; init; }
+    public required double Latitude { get; init; }
 
     /// <summary>
     /// Gets longitude in decimal degrees.
@@ -37,7 +37,7 @@ public record Coordinates
     /// <example>
     /// -123.36564.
     /// </example>
-    public required decimal Longitude { get; init; }
+    public required double Longitude { get; init; }
 
     #region Functionality
 
@@ -60,8 +60,8 @@ public record Coordinates
     /// Thrown if latitude or longitude are out of range.
     /// </exception>
     public static Coordinates Create(
-        decimal latitude,
-        decimal longitude)
+        double latitude,
+        double longitude)
     {
         if (latitude is < -90 or > 90)
         {

@@ -384,6 +384,42 @@ public class D2Result<TData> : D2Result
             traceId: traceId);
     }
 
+    /// <summary>
+    /// Factory method to create a some found <see cref="D2Result{TResult}"/> instance.
+    /// </summary>
+    ///
+    /// <param name="data">
+    /// The resulting data of the operation. Optional.
+    /// </param>
+    /// <param name="messages">
+    /// A list of messages related to the operation. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <remarks>
+    /// When this method is used, the <see cref="D2Result.Success"/> flag is set to `false` to
+    /// indicate that not all requested items were found, but the resulting data is still provided.
+    /// </remarks>
+    ///
+    /// <returns>
+    /// A some found <see cref="D2Result{TResult}"/> instance containing the result data.
+    /// </returns>
+    public static D2Result<TData> SomeFound(
+        TData? data = default,
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        return new(
+            false,
+            data,
+            messages,
+            statusCode: HttpStatusCode.PartialContent,
+            errorCode: ErrorCodes.SOME_FOUND,
+            traceId: traceId);
+    }
+
     #endregion
 
     #region Functionality
