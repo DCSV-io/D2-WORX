@@ -112,20 +112,21 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         var locationDict = await FetchLocationsAsync(contacts, ct);
 
         // Step 6: Return the created contacts as DTOs with locations.
-        var dtos = contacts.Select(c => c.ToDTO(
+        var contactDTOs = contacts.Select(c => c.ToDTO(
             c.LocationHashId is not null && locationDict.TryGetValue(c.LocationHashId, out var loc)
                 ? loc
                 : null)).ToList();
-        return D2Result<O?>.Ok(new O(dtos), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(contactDTOs), traceId: TraceId);
     }
 
     /// <summary>
     /// Resolves the location hash ID for each contact in the request.
-    /// If full location data is provided, computes hash from that. Otherwise uses explicit hash ID.
+    /// If full location data is provided, computes hash from that. Otherwise, uses explicit
+    /// hash ID.
     /// </summary>
     private static List<string?> ResolveLocationHashIds(
-        IReadOnlyList<ContactToCreateDTO> contactDtos) =>
-        contactDtos
+        IReadOnlyList<ContactToCreateDTO> contactDTOs) =>
+        contactDTOs
             .Select(dto => dto.ExtractLocation()?.HashId ?? dto.GetLocationHashId())
             .ToList();
 
@@ -134,25 +135,12 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
     /// that have full location data provided.
     /// </summary>
     private static List<Location> ExtractLocationsToCreate(
-        IReadOnlyList<ContactToCreateDTO> contactDtos)
-    {
-        var uniqueLocations = new Dictionary<string, Location>();
-
-        foreach (var dto in contactDtos)
-        {
-            // Only create locations when full data is provided.
-            var location = dto.ExtractLocation();
-            if (location is null)
-            {
-                continue;
-            }
-
-            // Deduplicate by hash ID (same address = same hash).
-            uniqueLocations.TryAdd(location.HashId, location);
-        }
-
-        return [.. uniqueLocations.Values];
-    }
+        IReadOnlyList<ContactToCreateDTO> contactDTOs) =>
+        contactDTOs
+            .Select(dto => dto.ExtractLocation())
+            .OfType<Location>()
+            .DistinctBy(l => l.HashId)
+            .ToList();
 
     private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(
         IEnumerable<Contact> contacts,
