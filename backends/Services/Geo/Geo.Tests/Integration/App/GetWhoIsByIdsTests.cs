@@ -19,7 +19,6 @@ using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.C;
 using D2.Geo.Tests.Fixtures;
-using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -118,8 +117,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     {
         // Arrange
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput([]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -144,9 +142,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         var hashIds = whoIsRecords.Select(w => w.HashId).ToList();
 
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.AddRange(hashIds);
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput(hashIds);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -172,9 +168,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         var hashIds = whoIsRecords.Select(w => w.HashId).ToList();
 
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.AddRange(hashIds);
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput(hashIds);
 
         // First call - fetches from database
         var firstResult = await handler.HandleAsync(input, Ct);
@@ -218,9 +212,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         await _db.SaveChangesAsync(Ct);
 
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.Add(whoIs.HashId);
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput([whoIs.HashId]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -279,9 +271,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         await _db.SaveChangesAsync(Ct);
 
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.Add(whoIs.HashId);
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput([whoIs.HashId]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -344,10 +334,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         await _db.SaveChangesAsync(Ct);
 
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.Add(whoIsWithLocation.HashId);
-        request.HashIds.Add(whoIsWithoutLocation.HashId);
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput([whoIsWithLocation.HashId, whoIsWithoutLocation.HashId]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -388,10 +375,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
 
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
         var nonExistentId = "0000000000000000000000000000000000000000000000000000000000000000";
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.Add(existingWhoIs.HashId);
-        request.HashIds.Add(nonExistentId);
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput([existingWhoIs.HashId, nonExistentId]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -416,10 +400,10 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     {
         // Arrange
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.Add("0000000000000000000000000000000000000000000000000000000000000001");
-        request.HashIds.Add("0000000000000000000000000000000000000000000000000000000000000002");
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput([
+            "0000000000000000000000000000000000000000000000000000000000000001",
+            "0000000000000000000000000000000000000000000000000000000000000002",
+        ]);
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -454,16 +438,11 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
 
         // First call - only fetch whoIs1 to cache it
-        var firstRequest = new GetWhoIsByIdsRequest();
-        firstRequest.HashIds.Add(whoIs1.HashId);
-        var firstResult = await handler.HandleAsync(new IQueries.GetWhoIsByIdsInput(firstRequest), Ct);
+        var firstResult = await handler.HandleAsync(new IQueries.GetWhoIsByIdsInput([whoIs1.HashId]), Ct);
         firstResult.Success.Should().BeTrue();
 
         // Act - Second call with both records
-        var secondRequest = new GetWhoIsByIdsRequest();
-        secondRequest.HashIds.Add(whoIs1.HashId);
-        secondRequest.HashIds.Add(whoIs2.HashId);
-        var secondResult = await handler.HandleAsync(new IQueries.GetWhoIsByIdsInput(secondRequest), Ct);
+        var secondResult = await handler.HandleAsync(new IQueries.GetWhoIsByIdsInput([whoIs1.HashId, whoIs2.HashId]), Ct);
 
         // Assert - Both returned (whoIs1 from cache, whoIs2 from DB)
         secondResult.Success.Should().BeTrue();
@@ -491,9 +470,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         await _db.SaveChangesAsync(Ct);
 
         var handler = _services.GetRequiredService<IQueries.IGetWhoIsByIdsHandler>();
-        var request = new GetWhoIsByIdsRequest();
-        request.HashIds.AddRange(whoIsRecords.Select(w => w.HashId));
-        var input = new IQueries.GetWhoIsByIdsInput(request);
+        var input = new IQueries.GetWhoIsByIdsInput(whoIsRecords.Select(w => w.HashId).ToList());
 
         // Act
         var result = await handler.HandleAsync(input, Ct);

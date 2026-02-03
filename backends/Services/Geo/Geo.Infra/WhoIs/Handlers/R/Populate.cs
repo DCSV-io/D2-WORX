@@ -179,12 +179,12 @@ public class Populate : BaseHandler<Populate, I, O>, H
         if (!string.IsNullOrWhiteSpace(ipResponse.Org))
         {
             var parts = ipResponse.Org.Split(' ', 2);
-            if (parts.Length >= 1 && parts[0].StartsWith("AS", StringComparison.OrdinalIgnoreCase))
+
+            if (parts.Length >= 1 &&
+                parts[0].StartsWith("AS", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(parts[0][2..], out var parsedAsn))
             {
-                if (int.TryParse(parts[0][2..], out var parsedAsn))
-                {
-                    asn = parsedAsn;
-                }
+                asn = parsedAsn;
             }
 
             if (parts.Length >= 2)

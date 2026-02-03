@@ -116,7 +116,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         // Step 2: Check for existing WhoIs records in cache/database.
         var existingWhoIs = new Dictionary<string, WhoIsDTO>();
         var getExistingR = await r_getWhoIsByIds.HandleAsync(
-            new(new GetWhoIsByIdsRequest { HashIds = { hashIds } }),
+            new(hashIds),
             ct);
 
         if (getExistingR.CheckSuccess(out var getOutput))

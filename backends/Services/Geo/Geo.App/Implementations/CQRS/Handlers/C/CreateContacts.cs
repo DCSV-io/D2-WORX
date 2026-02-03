@@ -124,34 +124,10 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
     /// If full location data is provided, computes hash from that. Otherwise uses explicit hash ID.
     /// </summary>
     private static List<string?> ResolveLocationHashIds(
-        IReadOnlyList<ContactToCreateDTO> contactDtos)
-    {
-        var result = new List<string?>(contactDtos.Count);
-
-        foreach (var dto in contactDtos)
-        {
-            // Priority 1: Full location data provided - compute hash from that.
-            var location = dto.ExtractLocation();
-            if (location is not null)
-            {
-                result.Add(location.HashId);
-                continue;
-            }
-
-            // Priority 2: Only hash ID provided (reference to existing location).
-            var hashId = dto.GetLocationHashId();
-            if (hashId is not null)
-            {
-                result.Add(hashId);
-                continue;
-            }
-
-            // No location data.
-            result.Add(null);
-        }
-
-        return result;
-    }
+        IReadOnlyList<ContactToCreateDTO> contactDtos) =>
+        contactDtos
+            .Select(dto => dto.ExtractLocation()?.HashId ?? dto.GetLocationHashId())
+            .ToList();
 
     /// <summary>
     /// Extracts unique locations that need to be created from contacts

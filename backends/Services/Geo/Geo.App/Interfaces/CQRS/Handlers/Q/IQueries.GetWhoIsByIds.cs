@@ -21,10 +21,10 @@ public partial interface IQueries
     /// Input for getting WhoIs information by their IDs.
     /// </summary>
     ///
-    /// <param name="Request">
-    /// The request containing the WhoIs IDs to retrieve.
+    /// <param name="HashIds">
+    /// The WhoIs hash IDs to retrieve.
     /// </param>
-    public record GetWhoIsByIdsInput(GetWhoIsByIdsRequest Request);
+    public record GetWhoIsByIdsInput(IReadOnlyList<string> HashIds);
 
     /// <summary>
     /// Output for getting WhoIs information by their IDs.

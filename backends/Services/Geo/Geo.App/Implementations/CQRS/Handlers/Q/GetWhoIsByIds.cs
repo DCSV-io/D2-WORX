@@ -75,14 +75,14 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         CancellationToken ct = default)
     {
         // If the request was empty, return early.
-        if (input.Request.HashIds.Count == 0)
+        if (input.HashIds.Count == 0)
         {
             return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
         // First, try to get WhoIs from in-memory cache.
         var getFromCacheR = await r_memoryCacheGetMany.HandleAsync(
-            new(GetCacheKeys(input.Request.HashIds)), ct);
+            new(GetCacheKeys(input.HashIds)), ct);
 
         // If that failed (for any reason other than "NOT or SOME found"), bubble up the failure.
         if (getFromCacheR.CheckFailure(out var getFromCache)
@@ -99,13 +99,13 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         }
 
         // If ALL WhoIs were found in cache, return them now.
-        if (whoIsRecords.Count == input.Request.HashIds.Count)
+        if (whoIsRecords.Count == input.HashIds.Count)
         {
             return await SuccessAsync(whoIsRecords, ct);
         }
 
         // Otherwise, fetch missing WhoIs.
-        var missingIds = input.Request.HashIds.Except(whoIsRecords.Keys).ToList();
+        var missingIds = input.HashIds.Except(whoIsRecords.Keys).ToList();
         var repoR = await r_getWhoIsFromRepo.HandleAsync(new(missingIds), ct);
 
         // If that succeeded, add results to the list, cache and return.

@@ -21,9 +21,6 @@ service GeoService {
   rpc FindWhoIs(FindWhoIsRequest)
       returns (FindWhoIsResponse);
 
-  rpc GetWhoIsByIds(GetWhoIsByIdsRequest)
-      returns (GetWhoIsByIdsResponse);
-
   rpc GetContacts(GetContactsRequest)
       returns (GetContactsResponse);
 
@@ -95,19 +92,6 @@ message FindWhoIsResponse {
 message FindWhoIsData {
   FindWhoIsKeys key = 1;
   WhoIsDTO whois = 2;
-}
-
-// *************************
-// ***** GetWhoIsByIds *****
-// *************************
-
-message GetWhoIsByIdsRequest {
-  repeated string hash_ids = 1;
-}
-
-message GetWhoIsByIdsResponse {
-  d2.common.v1.D2ResultProto result = 1;
-  map<string, WhoIsDTO> data = 2; // Key is hash_id.
 }
 
 // ***********************
