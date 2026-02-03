@@ -14,7 +14,8 @@
       "Bash(fi:*)",
       "Bash(done)",
       "Bash(./Geo.Tests.dll)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(./Geo.Tests.exe --filter-uid \"D2.Geo.Tests.Integration.Infra.Repository.Handlers.LocationHandlerTests*\")"
     ]
   }
 }

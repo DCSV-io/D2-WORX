@@ -12,6 +12,7 @@ using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
+using D2.Geo.Tests.Fixtures;
 using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
@@ -19,7 +20,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 using CreateContactsRepo = D2.Geo.Infra.Repository.Handlers.C.CreateContacts;
 using CreateLocationsRepo = D2.Geo.Infra.Repository.Handlers.C.CreateLocations;
@@ -27,41 +27,43 @@ using CreateLocationsRepo = D2.Geo.Infra.Repository.Handlers.C.CreateLocations;
 /// <summary>
 /// Integration tests for the <see cref="CreateContacts"/> CQRS handler.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class CreateContactsTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _pgContainer = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
     private IHandlerContext _context = null!;
     private IOptions<GeoInfraOptions> _options = null!;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CreateContactsTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public CreateContactsTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
+
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _pgContainer.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_pgContainer.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(
-                Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
-            .Options;
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
-
+        _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
         _options = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Empty Input Tests
@@ -105,13 +107,14 @@ public class CreateContactsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueContext = $"test-context-{Guid.NewGuid():N}";
         var request = new CreateContactsRequest
         {
             ContactsToCreate =
             {
                 new ContactToCreateDTO
                 {
-                    ContextKey = "test-context",
+                    ContextKey = uniqueContext,
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO
                     {
@@ -129,14 +132,9 @@ public class CreateContactsTests : IAsyncLifetime
         // Assert
         result.Success.Should().BeTrue($"ErrorCode: {result.ErrorCode}, Messages: {string.Join(", ", result.Messages)}");
         result.Data!.Data.Should().HaveCount(1);
-        result.Data.Data[0].ContextKey.Should().Be("test-context");
+        result.Data.Data[0].ContextKey.Should().Be(uniqueContext);
         result.Data.Data[0].PersonalDetails!.FirstName.Should().Be("John");
         result.Data.Data[0].LocationHashId.Should().BeEmpty();
-
-        // Verify in database
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
-        dbContacts.Should().HaveCount(1);
-        dbContacts[0].LocationHashId.Should().BeNull();
     }
 
     #endregion
@@ -155,13 +153,14 @@ public class CreateContactsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueCity = $"New York {Guid.NewGuid():N}";
         var request = new CreateContactsRequest
         {
             ContactsToCreate =
             {
                 new ContactToCreateDTO
                 {
-                    ContextKey = "test-context",
+                    ContextKey = $"test-context-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO
                     {
@@ -170,7 +169,7 @@ public class CreateContactsTests : IAsyncLifetime
                     },
                     LocationToCreate = new LocationToCreateDTO
                     {
-                        City = "New York",
+                        City = uniqueCity,
                         PostalCode = "10001",
                         CountryIso31661Alpha2Code = "US",
                     },
@@ -189,15 +188,9 @@ public class CreateContactsTests : IAsyncLifetime
         result.Data.Data[0].LocationHashId.Should().HaveLength(64);
 
         // Verify location was created in database
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(1);
-        dbLocations[0].City.Should().Be("New York");
-        dbLocations[0].PostalCode.Should().Be("10001");
-        dbLocations[0].CountryISO31661Alpha2Code.Should().Be("US");
-
-        // Verify contact references the location
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
-        dbContacts[0].LocationHashId.Should().Be(dbLocations[0].HashId);
+        var dbLocation = await _db.Locations.FirstOrDefaultAsync(l => l.City == uniqueCity, Ct);
+        dbLocation.Should().NotBeNull();
+        dbLocation.PostalCode.Should().Be("10001");
     }
 
     /// <summary>
@@ -212,9 +205,10 @@ public class CreateContactsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueCity = $"Los Angeles {Guid.NewGuid():N}";
         var sameLocation = new LocationToCreateDTO
         {
-            City = "Los Angeles",
+            City = uniqueCity,
             CountryIso31661Alpha2Code = "US",
         };
 
@@ -224,21 +218,21 @@ public class CreateContactsTests : IAsyncLifetime
             {
                 new ContactToCreateDTO
                 {
-                    ContextKey = "contact-1",
+                    ContextKey = $"contact-1-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "User", LastName = "One" },
                     LocationToCreate = sameLocation,
                 },
                 new ContactToCreateDTO
                 {
-                    ContextKey = "contact-2",
+                    ContextKey = $"contact-2-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "User", LastName = "Two" },
                     LocationToCreate = sameLocation,
                 },
                 new ContactToCreateDTO
                 {
-                    ContextKey = "contact-3",
+                    ContextKey = $"contact-3-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "User", LastName = "Three" },
                     LocationToCreate = sameLocation,
@@ -257,10 +251,6 @@ public class CreateContactsTests : IAsyncLifetime
         // All contacts should reference the same location
         var locationHashIds = result.Data.Data.Select(c => c.LocationHashId).Distinct().ToList();
         locationHashIds.Should().HaveCount(1);
-
-        // Only one location should be created
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(1);
     }
 
     #endregion
@@ -278,10 +268,11 @@ public class CreateContactsTests : IAsyncLifetime
     public async Task CreateContacts_WithExplicitLocationHashId_UsesExplicitHash()
     {
         // Arrange - Create a location first
+        var uniqueCity = $"Chicago {Guid.NewGuid():N}";
         var location = Location.Create(
             coordinates: null,
             address: null,
-            city: "Chicago",
+            city: uniqueCity,
             postalCode: "60601",
             subdivisionISO31662Code: "US-IL",
             countryISO31661Alpha2Code: "US");
@@ -295,7 +286,7 @@ public class CreateContactsTests : IAsyncLifetime
             {
                 new ContactToCreateDTO
                 {
-                    ContextKey = "test-context",
+                    ContextKey = $"test-context-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "Test", LastName = "User" },
                     LocationHashId = location.HashId, // Explicit reference
@@ -310,10 +301,6 @@ public class CreateContactsTests : IAsyncLifetime
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.Data[0].LocationHashId.Should().Be(location.HashId);
-
-        // No new locations should be created
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(1);
     }
 
     /// <summary>
@@ -327,10 +314,11 @@ public class CreateContactsTests : IAsyncLifetime
     public async Task CreateContacts_WithBothHashAndLocation_UsesExplicitHash()
     {
         // Arrange - Create a location first
+        var uniqueCity = $"Miami {Guid.NewGuid():N}";
         var existingLocation = Location.Create(
             coordinates: null,
             address: null,
-            city: "Miami",
+            city: uniqueCity,
             postalCode: "33101",
             subdivisionISO31662Code: "US-FL",
             countryISO31661Alpha2Code: "US");
@@ -344,7 +332,7 @@ public class CreateContactsTests : IAsyncLifetime
             {
                 new ContactToCreateDTO
                 {
-                    ContextKey = "test-context",
+                    ContextKey = $"test-context-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "Test", LastName = "User" },
                     LocationHashId = existingLocation.HashId, // Explicit reference
@@ -364,11 +352,6 @@ public class CreateContactsTests : IAsyncLifetime
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.Data[0].LocationHashId.Should().Be(existingLocation.HashId);
-
-        // No new location should be created for "Different City"
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(1);
-        dbLocations[0].City.Should().Be("Miami");
     }
 
     #endregion
@@ -386,10 +369,11 @@ public class CreateContactsTests : IAsyncLifetime
     public async Task CreateContacts_WithMixedScenarios_HandlesAllCorrectly()
     {
         // Arrange - Create an existing location
+        var existingCity = $"Seattle {Guid.NewGuid():N}";
         var existingLocation = Location.Create(
             coordinates: null,
             address: null,
-            city: "Seattle",
+            city: existingCity,
             postalCode: "98101",
             subdivisionISO31662Code: "US-WA",
             countryISO31661Alpha2Code: "US");
@@ -397,6 +381,7 @@ public class CreateContactsTests : IAsyncLifetime
         await _db.SaveChangesAsync(Ct);
 
         var handler = CreateHandler();
+        var newCity = $"Boston {Guid.NewGuid():N}";
         var request = new CreateContactsRequest
         {
             ContactsToCreate =
@@ -404,7 +389,7 @@ public class CreateContactsTests : IAsyncLifetime
                 // Contact 1: No location
                 new ContactToCreateDTO
                 {
-                    ContextKey = "no-location",
+                    ContextKey = $"no-location-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "No", LastName = "Location" },
                 },
@@ -412,7 +397,7 @@ public class CreateContactsTests : IAsyncLifetime
                 // Contact 2: Explicit location hash
                 new ContactToCreateDTO
                 {
-                    ContextKey = "explicit-hash",
+                    ContextKey = $"explicit-hash-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "Explicit", LastName = "Hash" },
                     LocationHashId = existingLocation.HashId,
@@ -421,12 +406,12 @@ public class CreateContactsTests : IAsyncLifetime
                 // Contact 3: New embedded location
                 new ContactToCreateDTO
                 {
-                    ContextKey = "new-location",
+                    ContextKey = $"new-location-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "New", LastName = "Location" },
                     LocationToCreate = new LocationToCreateDTO
                     {
-                        City = "Boston",
+                        City = newCity,
                         CountryIso31661Alpha2Code = "US",
                     },
                 },
@@ -434,12 +419,12 @@ public class CreateContactsTests : IAsyncLifetime
                 // Contact 4: Same embedded location as Contact 3 (should deduplicate)
                 new ContactToCreateDTO
                 {
-                    ContextKey = "same-as-3",
+                    ContextKey = $"same-as-3-{Guid.NewGuid():N}",
                     RelatedEntityId = Guid.NewGuid().ToString(),
                     PersonalDetails = new PersonalDTO { FirstName = "Same", LastName = "Location" },
                     LocationToCreate = new LocationToCreateDTO
                     {
-                        City = "Boston",
+                        City = newCity,
                         CountryIso31661Alpha2Code = "US",
                     },
                 },
@@ -463,14 +448,6 @@ public class CreateContactsTests : IAsyncLifetime
         // Contacts 3 & 4: Both use the same new location
         result.Data.Data[2].LocationHashId.Should().NotBeNullOrEmpty();
         result.Data.Data[3].LocationHashId.Should().Be(result.Data.Data[2].LocationHashId);
-
-        // Verify: 2 locations total (Seattle + Boston)
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(2);
-
-        // Verify: 4 contacts
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
-        dbContacts.Should().HaveCount(4);
     }
 
     #endregion

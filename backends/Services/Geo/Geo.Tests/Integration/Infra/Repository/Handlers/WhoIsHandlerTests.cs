@@ -15,57 +15,55 @@ using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.C;
 using D2.Geo.Infra.Repository.Handlers.R;
+using D2.Geo.Tests.Fixtures;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 /// <summary>
 /// Integration tests for WhoIs repository handlers (GetWhoIsByIds, CreateWhoIs).
 /// </summary>
+[Collection("SharedPostgres")]
 [MustDisposeResource(false)]
 public class WhoIsHandlerTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _container = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
     private IHandlerContext _context = null!;
     private IOptions<GeoInfraOptions> _options = null!;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WhoIsHandlerTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public WhoIsHandlerTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
+
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-
-        await _container.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_container.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-
-        _db = new GeoDbContext(dbOptions);
-
-        // Apply migrations.
-        await _db.Database.MigrateAsync(Ct);
-
+        _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
         _options = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _container.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region CreateWhoIs Tests
@@ -105,11 +103,12 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange
         var handler = new CreateWhoIs(_db, _options, _context);
+        var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
-            WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1"),
-            WhoIs.Create("192.168.1.2", 2025, 1, "fingerprint-2"),
-            WhoIs.Create("10.0.0.1", 2025, 2, "fingerprint-3"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fp-1-{suffix}"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fp-2-{suffix}"),
+            WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2, $"fp-3-{suffix}"),
         };
         var input = new ICreate.CreateWhoIsInput(whoIsRecords);
 
@@ -121,8 +120,9 @@ public class WhoIsHandlerTests : IAsyncLifetime
         result.Data.Should().NotBeNull();
         result.Data!.Created.Should().Be(3);
 
-        // Verify in database
-        var dbRecords = await _db.WhoIsRecords.ToListAsync(Ct);
+        // Verify created records exist in database
+        var hashIds = whoIsRecords.Select(w => w.HashId).ToHashSet();
+        var dbRecords = await _db.WhoIsRecords.Where(w => hashIds.Contains(w.HashId)).ToListAsync(Ct);
         dbRecords.Should().HaveCount(3);
     }
 
@@ -138,10 +138,12 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange
         var handler = new CreateWhoIs(_db, _options, _context);
+        var uniqueIp = $"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}";
+        var uniqueFp = Guid.NewGuid().ToString("N");
 
         // Create same WhoIs twice (content-addressable = same hash)
-        var whoIs1 = WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1");
-        var whoIs2 = WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1");
+        var whoIs1 = WhoIs.Create(uniqueIp, 2025, 1, uniqueFp);
+        var whoIs2 = WhoIs.Create(uniqueIp, 2025, 1, uniqueFp);
 
         whoIs1.HashId.Should().Be(whoIs2.HashId); // Same content = same hash
 
@@ -154,9 +156,9 @@ public class WhoIsHandlerTests : IAsyncLifetime
         result.Success.Should().BeTrue();
         result.Data!.Created.Should().Be(1); // Only one inserted since they're the same
 
-        // Verify in database
-        var dbRecords = await _db.WhoIsRecords.ToListAsync(Ct);
-        dbRecords.Should().HaveCount(1);
+        // Verify the single record exists in database
+        var dbRecord = await _db.WhoIsRecords.FirstOrDefaultAsync(w => w.HashId == whoIs1.HashId, Ct);
+        dbRecord.Should().NotBeNull();
     }
 
     /// <summary>
@@ -171,15 +173,16 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange
         var createHandler = new CreateWhoIs(_db, _options, _context);
+        var suffix = Guid.NewGuid().ToString("N");
 
-        var existingWhoIs = WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1");
+        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"existing-{suffix}");
 
         // Insert first
         var firstInput = new ICreate.CreateWhoIsInput([existingWhoIs]);
         await createHandler.HandleAsync(firstInput, Ct);
 
         // Now try to insert same + new
-        var newWhoIs = WhoIs.Create("10.0.0.1", 2025, 2, "fingerprint-2");
+        var newWhoIs = WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2, $"new-{suffix}");
 
         var secondInput = new ICreate.CreateWhoIsInput([existingWhoIs, newWhoIs]);
 
@@ -190,8 +193,10 @@ public class WhoIsHandlerTests : IAsyncLifetime
         result.Success.Should().BeTrue();
         result.Data!.Created.Should().Be(1); // Only new one inserted
 
-        // Verify in database
-        var dbRecords = await _db.WhoIsRecords.ToListAsync(Ct);
+        // Verify both records exist in database
+        var hashIds = new[] { existingWhoIs.HashId, newWhoIs.HashId };
+        var dbRecords = await _db.WhoIsRecords.Where(
+            w => hashIds.AsEnumerable().Contains(w.HashId)).ToListAsync(Ct);
         dbRecords.Should().HaveCount(2);
     }
 
@@ -235,10 +240,11 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create WhoIs records first
         var createHandler = new CreateWhoIs(_db, _options, _context);
+        var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
-            WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1"),
-            WhoIs.Create("192.168.1.2", 2025, 1, "fingerprint-2"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fp-1-{suffix}"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fp-2-{suffix}"),
         };
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput(whoIsRecords), Ct);
 
@@ -269,7 +275,7 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create one WhoIs
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        var existingWhoIs = WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1");
+        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1, Guid.NewGuid().ToString("N"));
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput([existingWhoIs]), Ct);
 
         var getHandler = new GetWhoIsByIds(_db, _options, _context);
@@ -327,8 +333,9 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create 150 WhoIs records (more than batch size of 100)
         var createHandler = new CreateWhoIs(_db, _options, _context);
+        var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = Enumerable.Range(0, 150)
-            .Select(i => WhoIs.Create($"10.0.0.{i % 256}", 2025, 1, $"fingerprint-{i}"))
+            .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1, $"fp-{i}-{suffix}"))
             .ToList();
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput(whoIsRecords), Ct);
 
@@ -358,7 +365,7 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create one WhoIs
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        var whoIs = WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1");
+        var whoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1, Guid.NewGuid().ToString("N"));
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput([whoIs]), Ct);
 
         var getHandler = new GetWhoIsByIds(_db, _options, _context);

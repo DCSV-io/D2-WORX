@@ -10,47 +10,47 @@ using D2.Contracts.Batch.Pg;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra.Repository;
+using D2.Geo.Tests.Fixtures;
 using FluentAssertions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using Testcontainers.PostgreSql;
 using Xunit;
 
 /// <summary>
 /// Integration tests for <see cref="BatchQuery{TEntity,TKey}"/>.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class BatchQueryTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _container = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BatchQueryTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public BatchQueryTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-
-        await _container.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_container.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
+        _db = r_fixture.CreateDbContext();
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _container.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region ToListAsync Tests
@@ -87,20 +87,21 @@ public class BatchQueryTests : IAsyncLifetime
     [Fact]
     public async Task ToListAsync_WithExistingIds_ReturnsAllEntities()
     {
-        // Arrange - Create test locations
+        // Arrange - Create test locations with unique data
+        var suffix = Guid.NewGuid().ToString("N");
         var locations = new List<Location>
         {
             Location.Create(
                 coordinates: Coordinates.Create(34.0522, -118.2437),
-                city: "Los Angeles",
+                city: $"Los Angeles {suffix}",
                 countryISO31661Alpha2Code: "US"),
             Location.Create(
                 coordinates: Coordinates.Create(40.7128, -74.0060),
-                city: "New York",
+                city: $"New York {suffix}",
                 countryISO31661Alpha2Code: "US"),
             Location.Create(
                 coordinates: Coordinates.Create(51.5074, -0.1278),
-                city: "London",
+                city: $"London {suffix}",
                 countryISO31661Alpha2Code: "GB"),
         };
         _db.Locations.AddRange(locations);
@@ -114,7 +115,7 @@ public class BatchQueryTests : IAsyncLifetime
 
         // Assert
         result.Should().HaveCount(3);
-        result.Select(l => l.City).Should().BeEquivalentTo(["Los Angeles", "New York", "London"]);
+        result.Select(l => l.City).Should().BeEquivalentTo([$"Los Angeles {suffix}", $"New York {suffix}", $"London {suffix}"]);
     }
 
     /// <summary>
@@ -128,10 +129,11 @@ public class BatchQueryTests : IAsyncLifetime
     public async Task ToListAsync_WithLargeBatch_HandlesBatchingCorrectly()
     {
         // Arrange - Create 150 locations (more than default batch size)
+        var suffix = Guid.NewGuid().ToString("N");
         var locations = Enumerable.Range(0, 150)
             .Select(i => Location.Create(
                 coordinates: Coordinates.Create(i * 0.01, i * 0.01),
-                city: $"City{i}",
+                city: $"City{i}_{suffix}",
                 countryISO31661Alpha2Code: "US"))
             .ToList();
         _db.Locations.AddRange(locations);
@@ -163,7 +165,7 @@ public class BatchQueryTests : IAsyncLifetime
         // Arrange
         var existingLocation = Location.Create(
             coordinates: Coordinates.Create(34.0522, -118.2437),
-            city: "Los Angeles",
+            city: $"Existing {Guid.NewGuid():N}",
             countryISO31661Alpha2Code: "US");
         _db.Locations.Add(existingLocation);
         await _db.SaveChangesAsync(Ct);
@@ -223,15 +225,16 @@ public class BatchQueryTests : IAsyncLifetime
     public async Task GetMissingIdsAsync_WhenAllExist_ReturnsEmptySet()
     {
         // Arrange
+        var suffix = Guid.NewGuid().ToString("N");
         var locations = new List<Location>
         {
             Location.Create(
                 coordinates: Coordinates.Create(34.0522, -118.2437),
-                city: "Los Angeles",
+                city: $"Los Angeles {suffix}",
                 countryISO31661Alpha2Code: "US"),
             Location.Create(
                 coordinates: Coordinates.Create(40.7128, -74.0060),
-                city: "New York",
+                city: $"New York {suffix}",
                 countryISO31661Alpha2Code: "US"),
         };
         _db.Locations.AddRange(locations);
@@ -260,7 +263,7 @@ public class BatchQueryTests : IAsyncLifetime
         // Arrange
         var existingLocation = Location.Create(
             coordinates: Coordinates.Create(34.0522, -118.2437),
-            city: "Los Angeles",
+            city: $"Existing {Guid.NewGuid():N}",
             countryISO31661Alpha2Code: "US");
         _db.Locations.Add(existingLocation);
         await _db.SaveChangesAsync(Ct);
@@ -290,8 +293,8 @@ public class BatchQueryTests : IAsyncLifetime
     public async Task GetMissingIdsAsync_WithEmptyInput_ReturnsEmptySet()
     {
         // Arrange
-        var query = _db.Locations.BatchGetByIds(
-            Array.Empty<string>(),
+        var query = _db.Locations.BatchGetByIds<Location, string>(
+            [],
             l => l.HashId);
 
         // Act
@@ -312,8 +315,8 @@ public class BatchQueryTests : IAsyncLifetime
     public void BatchCount_WithEmptyIds_ReturnsZero()
     {
         // Arrange
-        var query = _db.Locations.BatchGetByIds(
-            Array.Empty<string>(),
+        var query = _db.Locations.BatchGetByIds<Location, string>(
+            [],
             l => l.HashId);
 
         // Act & Assert

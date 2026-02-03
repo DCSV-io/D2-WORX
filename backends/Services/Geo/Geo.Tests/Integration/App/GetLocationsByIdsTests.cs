@@ -19,16 +19,14 @@ using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.C;
+using D2.Geo.Tests.Fixtures;
 using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 using CacheRead = D2.Contracts.Interfaces.Caching.InMemory.Handlers.R.IRead;
 using CacheUpdate = D2.Contracts.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
@@ -39,29 +37,33 @@ using RepoRead = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Integration tests for the <see cref="GetLocationsByIdsCqrs"/> CQRS handler.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class GetLocationsByIdsTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _pgContainer = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private ServiceProvider _services = null!;
     private GeoDbContext _db = null!;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetLocationsByIdsTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public GetLocationsByIdsTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _pgContainer.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_pgContainer.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
+        _db = r_fixture.CreateDbContext();
 
         var services = new ServiceCollection();
         services.AddLogging();
@@ -89,14 +91,14 @@ public class GetLocationsByIdsTests : IAsyncLifetime
         services.AddTransient<IQueries.IGetLocationsByIdsHandler, GetLocationsByIdsCqrs>();
 
         _services = services.BuildServiceProvider();
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _services.DisposeAsync();
-        await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _services.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Success Path Tests
@@ -312,14 +314,15 @@ public class GetLocationsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetLocationsByIds_WithPartialCache_FetchesMissingFromDb()
     {
-        // Arrange - Create two locations
+        // Arrange - Create two locations with unique names
+        var suffix = Guid.NewGuid().ToString("N");
         var location1 = Location.Create(
             coordinates: Coordinates.Create(34.0522, -118.2437),
-            city: "Los Angeles",
+            city: $"Los Angeles {suffix}",
             countryISO31661Alpha2Code: "US");
         var location2 = Location.Create(
             coordinates: Coordinates.Create(40.7128, -74.0060),
-            city: "New York",
+            city: $"New York {suffix}",
             countryISO31661Alpha2Code: "US");
         _db.Locations.AddRange(location1, location2);
         await _db.SaveChangesAsync(Ct);
@@ -355,11 +358,12 @@ public class GetLocationsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetLocationsByIds_WithLargeBatch_HandlesCorrectly()
     {
-        // Arrange - Create 150 locations
+        // Arrange - Create 150 locations with unique names
+        var suffix = Guid.NewGuid().ToString("N");
         var locations = Enumerable.Range(0, 150)
             .Select(i => Location.Create(
                 coordinates: Coordinates.Create(i * 0.01, i * 0.01),
-                city: $"City{i}",
+                city: $"City{i}_{suffix}",
                 countryISO31661Alpha2Code: "US"))
             .ToList();
         _db.Locations.AddRange(locations);
@@ -396,19 +400,20 @@ public class GetLocationsByIdsTests : IAsyncLifetime
 
     private async Task<List<Location>> CreateTestLocationsAsync()
     {
+        var suffix = Guid.NewGuid().ToString("N");
         var locations = new List<Location>
         {
             Location.Create(
                 coordinates: Coordinates.Create(34.0522, -118.2437),
-                city: "Los Angeles",
+                city: $"Los Angeles {suffix}",
                 countryISO31661Alpha2Code: "US"),
             Location.Create(
                 coordinates: Coordinates.Create(40.7128, -74.0060),
-                city: "New York",
+                city: $"New York {suffix}",
                 countryISO31661Alpha2Code: "US"),
             Location.Create(
                 coordinates: Coordinates.Create(51.5074, -0.1278),
-                city: "London",
+                city: $"London {suffix}",
                 countryISO31661Alpha2Code: "GB"),
         };
         _db.Locations.AddRange(locations);

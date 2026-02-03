@@ -15,46 +15,48 @@ using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
+using D2.Geo.Tests.Fixtures;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 using DeleteContactsRepo = D2.Geo.Infra.Repository.Handlers.D.DeleteContacts;
 
 /// <summary>
 /// Integration tests for the <see cref="DeleteContacts"/> CQRS handler.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class DeleteContactsTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _pgContainer = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
     private IHandlerContext _context = null!;
     private IOptions<GeoInfraOptions> _options = null!;
     private Mock<IDelete.IRemoveHandler> _mockCacheRemove = null!;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DeleteContactsTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public DeleteContactsTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
+
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _pgContainer.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_pgContainer.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
-
+        _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
         _options = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
 
@@ -62,13 +64,13 @@ public class DeleteContactsTests : IAsyncLifetime
         _mockCacheRemove
             .Setup(x => x.HandleAsync(It.IsAny<IDelete.RemoveInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
             .ReturnsAsync(D2Result<IDelete.RemoveOutput?>.Ok(new IDelete.RemoveOutput()));
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Empty Input Tests
@@ -109,8 +111,9 @@ public class DeleteContactsTests : IAsyncLifetime
     [Fact]
     public async Task DeleteContacts_WithSingleContact_DeletesContact()
     {
-        // Arrange - Create a contact first
-        var contact = CreateTestContact("test-context", "John", "Doe");
+        // Arrange - Create a contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"test-context-{suffix}", "John", "Doe");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -125,8 +128,8 @@ public class DeleteContactsTests : IAsyncLifetime
         result.Data!.Deleted.Should().Be(1);
 
         // Verify deleted from database
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
-        dbContacts.Should().BeEmpty();
+        var dbContact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == contact.Id, Ct);
+        dbContact.Should().BeNull();
 
         // Verify cache invalidation was called
         _mockCacheRemove.Verify(
@@ -151,13 +154,15 @@ public class DeleteContactsTests : IAsyncLifetime
     [Fact]
     public async Task DeleteContacts_WithMultipleContacts_DeletesAll()
     {
-        // Arrange - Create multiple contacts
-        var contact1 = CreateTestContact("ctx-1", "User", "One");
-        var contact2 = CreateTestContact("ctx-2", "User", "Two");
-        var contact3 = CreateTestContact("ctx-3", "User", "Three");
+        // Arrange - Create multiple contacts with unique context keys
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact1 = CreateTestContact($"ctx-1-{suffix}", "User", "One");
+        var contact2 = CreateTestContact($"ctx-2-{suffix}", "User", "Two");
+        var contact3 = CreateTestContact($"ctx-3-{suffix}", "User", "Three");
         _db.Contacts.AddRange(contact1, contact2, contact3);
         await _db.SaveChangesAsync(Ct);
 
+        var contactIds = new[] { contact1.Id, contact2.Id, contact3.Id };
         var handler = CreateHandler();
         var input = new ICommands.DeleteContactsInput([contact1.Id, contact2.Id, contact3.Id]);
 
@@ -169,7 +174,7 @@ public class DeleteContactsTests : IAsyncLifetime
         result.Data!.Deleted.Should().Be(3);
 
         // Verify all deleted from database
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
+        var dbContacts = await _db.Contacts.Where(c => contactIds.Contains(c.Id)).ToListAsync(Ct);
         dbContacts.Should().BeEmpty();
 
         // Verify cache invalidation was called for each contact
@@ -218,8 +223,9 @@ public class DeleteContactsTests : IAsyncLifetime
     [Fact]
     public async Task DeleteContacts_WithMixedIds_DeletesOnlyExisting()
     {
-        // Arrange - Create one contact
-        var contact = CreateTestContact("mixed-ctx", "Real", "Contact");
+        // Arrange - Create one contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"mixed-ctx-{suffix}", "Real", "Contact");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -234,8 +240,8 @@ public class DeleteContactsTests : IAsyncLifetime
         result.Data!.Deleted.Should().Be(1);
 
         // Verify deleted from database
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
-        dbContacts.Should().BeEmpty();
+        var dbContact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == contact.Id, Ct);
+        dbContact.Should().BeNull();
     }
 
     #endregion
@@ -252,8 +258,9 @@ public class DeleteContactsTests : IAsyncLifetime
     [Fact]
     public async Task DeleteContacts_WhenCacheRemoveFails_StillSucceeds()
     {
-        // Arrange - Create a contact
-        var contact = CreateTestContact("cache-fail-ctx", "Cache", "Fail");
+        // Arrange - Create a contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"cache-fail-ctx-{suffix}", "Cache", "Fail");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -273,8 +280,8 @@ public class DeleteContactsTests : IAsyncLifetime
         result.Data!.Deleted.Should().Be(1);
 
         // Verify deleted from database
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
-        dbContacts.Should().BeEmpty();
+        var dbContact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == contact.Id, Ct);
+        dbContact.Should().BeNull();
     }
 
     #endregion
@@ -291,8 +298,9 @@ public class DeleteContactsTests : IAsyncLifetime
     [Fact]
     public async Task DeleteContacts_CalledTwice_IsIdempotent()
     {
-        // Arrange - Create a contact
-        var contact = CreateTestContact("idempotent-ctx", "Once", "Deleted");
+        // Arrange - Create a contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"idempotent-ctx-{suffix}", "Once", "Deleted");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -310,9 +318,9 @@ public class DeleteContactsTests : IAsyncLifetime
         result2.Success.Should().BeTrue($"ErrorCode: {result2.ErrorCode}, Messages: {string.Join(", ", result2.Messages)}");
         result2.Data!.Deleted.Should().Be(0); // Already deleted
 
-        // Verify database is empty
-        var dbContacts = await _db.Contacts.ToListAsync(Ct);
-        dbContacts.Should().BeEmpty();
+        // Verify contact is deleted from database
+        var dbContact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == contact.Id, Ct);
+        dbContact.Should().BeNull();
     }
 
     #endregion

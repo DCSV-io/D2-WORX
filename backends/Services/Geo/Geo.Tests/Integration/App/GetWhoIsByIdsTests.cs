@@ -18,16 +18,14 @@ using D2.Geo.Domain.Entities;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.C;
+using D2.Geo.Tests.Fixtures;
 using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 using CacheRead = D2.Contracts.Interfaces.Caching.InMemory.Handlers.R.IRead;
 using CacheUpdate = D2.Contracts.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
@@ -38,29 +36,33 @@ using RepoRead = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Integration tests for the <see cref="GetWhoIsByIdsCqrs"/> CQRS handler.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class GetWhoIsByIdsTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _pgContainer = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private ServiceProvider _services = null!;
     private GeoDbContext _db = null!;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetWhoIsByIdsTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public GetWhoIsByIdsTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _pgContainer.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_pgContainer.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
+        _db = r_fixture.CreateDbContext();
 
         var services = new ServiceCollection();
         services.AddLogging();
@@ -88,14 +90,14 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         services.AddTransient<IQueries.IGetWhoIsByIdsHandler, GetWhoIsByIdsCqrs>();
 
         _services = services.BuildServiceProvider();
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _services.DisposeAsync();
-        await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _services.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Success Path Tests
@@ -250,7 +252,8 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     public async Task GetWhoIsByIds_WithSomeMissingIds_ReturnsSomeFound()
     {
         // Arrange
-        var existingWhoIs = WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1");
+        var suffix = Guid.NewGuid().ToString("N");
+        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1, $"fingerprint-{suffix}");
         _db.WhoIsRecords.Add(existingWhoIs);
         await _db.SaveChangesAsync(Ct);
 
@@ -312,9 +315,10 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetWhoIsByIds_WithPartialCache_FetchesMissingFromDb()
     {
-        // Arrange - Create two WhoIs records
-        var whoIs1 = WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1");
-        var whoIs2 = WhoIs.Create("192.168.1.2", 2025, 1, "fingerprint-2");
+        // Arrange - Create two WhoIs records with unique IPs/fingerprints
+        var suffix = Guid.NewGuid().ToString("N");
+        var whoIs1 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fingerprint-1-{suffix}");
+        var whoIs2 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fingerprint-2-{suffix}");
         _db.WhoIsRecords.AddRange(whoIs1, whoIs2);
         await _db.SaveChangesAsync(Ct);
 
@@ -349,9 +353,10 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetWhoIsByIds_WithLargeBatch_HandlesCorrectly()
     {
-        // Arrange - Create 150 WhoIs records
+        // Arrange - Create 150 WhoIs records with unique fingerprints
+        var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = Enumerable.Range(0, 150)
-            .Select(i => WhoIs.Create($"10.0.0.{i % 256}", 2025, 1, $"fingerprint-{i}"))
+            .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1, $"fingerprint-{i}-{suffix}"))
             .ToList();
         _db.WhoIsRecords.AddRange(whoIsRecords);
         await _db.SaveChangesAsync(Ct);
@@ -387,11 +392,12 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
 
     private async Task<List<WhoIs>> CreateTestWhoIsRecordsAsync()
     {
+        var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
-            WhoIs.Create("192.168.1.1", 2025, 1, "fingerprint-1"),
-            WhoIs.Create("192.168.1.2", 2025, 1, "fingerprint-2"),
-            WhoIs.Create("10.0.0.1", 2025, 2, "fingerprint-3"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fingerprint-1-{suffix}"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fingerprint-2-{suffix}"),
+            WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2, $"fingerprint-3-{suffix}"),
         };
         _db.WhoIsRecords.AddRange(whoIsRecords);
         await _db.SaveChangesAsync(Ct);

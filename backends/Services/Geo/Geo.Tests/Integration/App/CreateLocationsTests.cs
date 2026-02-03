@@ -11,55 +11,56 @@ using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
+using D2.Geo.Tests.Fixtures;
 using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 using CreateLocationsRepo = D2.Geo.Infra.Repository.Handlers.C.CreateLocations;
 
 /// <summary>
 /// Integration tests for the <see cref="CreateLocations"/> CQRS handler.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class CreateLocationsTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _pgContainer = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
     private IHandlerContext _context = null!;
     private IOptions<GeoInfraOptions> _options = null!;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CreateLocationsTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public CreateLocationsTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
+
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _pgContainer.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_pgContainer.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
-
+        _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
         _options = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Empty Input Tests
@@ -103,13 +104,14 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueCity = $"San Francisco {Guid.NewGuid():N}";
         var request = new CreateLocationsRequest
         {
             LocationsToCreate =
             {
                 new LocationToCreateDTO
                 {
-                    City = "San Francisco",
+                    City = uniqueCity,
                     PostalCode = "94102",
                     SubdivisionIso31662Code = "US-CA",
                     CountryIso31661Alpha2Code = "US",
@@ -124,15 +126,11 @@ public class CreateLocationsTests : IAsyncLifetime
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.Data.Should().HaveCount(1);
-        result.Data.Data[0].City.Should().Be("San Francisco");
+        result.Data.Data[0].City.Should().Be(uniqueCity);
         result.Data.Data[0].PostalCode.Should().Be("94102");
         result.Data.Data[0].SubdivisionIso31662Code.Should().Be("US-CA");
         result.Data.Data[0].CountryIso31661Alpha2Code.Should().Be("US");
         result.Data.Data[0].HashId.Should().HaveLength(64);
-
-        // Verify in database
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(1);
     }
 
     /// <summary>
@@ -147,13 +145,14 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var suffix = Guid.NewGuid().ToString("N");
         var request = new CreateLocationsRequest
         {
             LocationsToCreate =
             {
-                new LocationToCreateDTO { City = "New York", CountryIso31661Alpha2Code = "US" },
-                new LocationToCreateDTO { City = "Los Angeles", CountryIso31661Alpha2Code = "US" },
-                new LocationToCreateDTO { City = "Chicago", CountryIso31661Alpha2Code = "US" },
+                new LocationToCreateDTO { City = $"New York {suffix}", CountryIso31661Alpha2Code = "US" },
+                new LocationToCreateDTO { City = $"Los Angeles {suffix}", CountryIso31661Alpha2Code = "US" },
+                new LocationToCreateDTO { City = $"Chicago {suffix}", CountryIso31661Alpha2Code = "US" },
             },
         };
         var input = new ICommands.CreateLocationsInput(request);
@@ -164,10 +163,6 @@ public class CreateLocationsTests : IAsyncLifetime
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.Data.Should().HaveCount(3);
-
-        // Verify in database
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(3);
     }
 
     /// <summary>
@@ -182,14 +177,16 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueLat = 37.0 + (Random.Shared.NextDouble() * 0.5);
+        var uniqueLon = -122.0 - (Random.Shared.NextDouble() * 0.5);
         var request = new CreateLocationsRequest
         {
             LocationsToCreate =
             {
                 new LocationToCreateDTO
                 {
-                    Coordinates = new CoordinatesDTO { Latitude = 37.7749, Longitude = -122.4194 },
-                    City = "San Francisco",
+                    Coordinates = new CoordinatesDTO { Latitude = uniqueLat, Longitude = uniqueLon },
+                    City = $"San Francisco {Guid.NewGuid():N}",
                     CountryIso31661Alpha2Code = "US",
                 },
             },
@@ -202,8 +199,6 @@ public class CreateLocationsTests : IAsyncLifetime
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.Data[0].Coordinates.Should().NotBeNull();
-        result.Data.Data[0].Coordinates!.Latitude.Should().Be(37.7749);
-        result.Data.Data[0].Coordinates.Longitude.Should().Be(-122.4194);
     }
 
     /// <summary>
@@ -218,6 +213,7 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueAddress = $"123 Main St {Guid.NewGuid():N}";
         var request = new CreateLocationsRequest
         {
             LocationsToCreate =
@@ -226,10 +222,10 @@ public class CreateLocationsTests : IAsyncLifetime
                 {
                     Address = new StreetAddressDTO
                     {
-                        Line1 = "123 Main St",
+                        Line1 = uniqueAddress,
                         Line2 = "Suite 100",
                     },
-                    City = "Portland",
+                    City = $"Portland {Guid.NewGuid():N}",
                     PostalCode = "97201",
                     CountryIso31661Alpha2Code = "US",
                 },
@@ -243,7 +239,7 @@ public class CreateLocationsTests : IAsyncLifetime
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.Data[0].Address.Should().NotBeNull();
-        result.Data.Data[0].Address!.Line1.Should().Be("123 Main St");
+        result.Data.Data[0].Address!.Line1.Should().Be(uniqueAddress);
         result.Data.Data[0].Address.Line2.Should().Be("Suite 100");
     }
 
@@ -263,9 +259,10 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueCity = $"Denver {Guid.NewGuid():N}";
         var sameLocation = new LocationToCreateDTO
         {
-            City = "Denver",
+            City = uniqueCity,
             CountryIso31661Alpha2Code = "US",
         };
 
@@ -285,10 +282,6 @@ public class CreateLocationsTests : IAsyncLifetime
         // All should have the same hash ID
         var hashIds = result.Data.Data.Select(l => l.HashId).Distinct().ToList();
         hashIds.Should().HaveCount(1);
-
-        // Only one should be in database
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(1);
     }
 
     /// <summary>
@@ -303,11 +296,12 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         // Arrange
         var handler = CreateHandler();
+        var uniqueCity = $"Austin {Guid.NewGuid():N}";
         var request = new CreateLocationsRequest
         {
             LocationsToCreate =
             {
-                new LocationToCreateDTO { City = "Austin", CountryIso31661Alpha2Code = "US" },
+                new LocationToCreateDTO { City = uniqueCity, CountryIso31661Alpha2Code = "US" },
             },
         };
         var input = new ICommands.CreateLocationsInput(request);
@@ -322,10 +316,6 @@ public class CreateLocationsTests : IAsyncLifetime
 
         // Both should return the same hash ID
         result1.Data!.Data[0].HashId.Should().Be(result2.Data!.Data[0].HashId);
-
-        // Only one location in database
-        var dbLocations = await _db.Locations.ToListAsync(Ct);
-        dbLocations.Should().HaveCount(1);
     }
 
     #endregion

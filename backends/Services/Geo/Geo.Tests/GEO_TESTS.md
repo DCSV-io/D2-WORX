@@ -2,6 +2,18 @@
 
 Integration and unit tests for Geo domain entities, value objects, and infrastructure layer. Tests content-addressable hashing, immutability constraints, validation rules, entity relationships, and messaging infrastructure.
 
+## Fixtures
+
+Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce PostgreSQL container startup overhead. Tests in a collection share a single container instance.
+
+| File Name                                                            | Description                                                                                                        |
+|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
+| [SharedPostgresFixture.cs](Fixtures/SharedPostgresFixture.cs)        | Shared PostgreSQL container fixture with migrations. Creates fresh DbContext per test for isolation.               |
+| [SharedPostgresCollection.cs](Fixtures/SharedPostgresCollection.cs)  | Collection definition for tests that can safely share a container (use unique/generated data).                     |
+| [ReferenceDataCollection.cs](Fixtures/ReferenceDataCollection.cs)    | Collection definition for tests that depend on pristine reference/seed data counts (249 countries, etc.).          |
+
+**Usage:** Apply `[Collection("SharedPostgres")]` or `[Collection("ReferenceData")]` to test classes and inject `SharedPostgresFixture` via constructor.
+
 ## Integration Tests
 
 ### App
@@ -48,11 +60,11 @@ Integration and unit tests for Geo domain entities, value objects, and infrastru
 
 #### Entities
 
-| File Name                                                  | Description                                                                                                        |
-|------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| [ContactTests.cs](Unit/Domain/Entities/ContactTests.cs)    | Tests validating Contact creation, ContextKey/RelatedEntityId patterns, value object nesting, and LocationHashId FK. |
-| [LocationTests.cs](Unit/Domain/Entities/LocationTests.cs)  | Tests verifying Location SHA-256 hash generation, content-addressable deduplication, and hash consistency.          |
-| [WhoIsTests.cs](Unit/Domain/Entities/WhoIsTests.cs)        | Tests confirming WhoIs hash generation from IP+year+month+fingerprint, temporal versioning, and device differentiation. |
+| File Name                                                 | Description                                                                                                             |
+|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| [ContactTests.cs](Unit/Domain/Entities/ContactTests.cs)   | Tests validating Contact creation, ContextKey/RelatedEntityId patterns, value object nesting, and LocationHashId FK.    |
+| [LocationTests.cs](Unit/Domain/Entities/LocationTests.cs) | Tests verifying Location SHA-256 hash generation, content-addressable deduplication, and hash consistency.              |
+| [WhoIsTests.cs](Unit/Domain/Entities/WhoIsTests.cs)       | Tests confirming WhoIs hash generation from IP+year+month+fingerprint, temporal versioning, and device differentiation. |
 
 #### Exceptions
 
@@ -89,6 +101,6 @@ Integration and unit tests for Geo domain entities, value objects, and infrastru
 
 #### WhoIs
 
-| File Name                                                 | Description                                                                                                                         |
-|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| [PopulateTests.cs](Unit/Infra/WhoIs/PopulateTests.cs)     | Tests for Populate handler verifying IIpInfoClient mocking, ASN parsing, location extraction, deduplication, and coordinate handling. |
+| File Name                                             | Description                                                                                                                           |
+|-------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| [PopulateTests.cs](Unit/Infra/WhoIs/PopulateTests.cs) | Tests for Populate handler verifying IIpInfoClient mocking, ASN parsing, location extraction, deduplication, and coordinate handling. |

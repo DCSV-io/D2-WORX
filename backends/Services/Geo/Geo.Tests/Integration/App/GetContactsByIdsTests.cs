@@ -17,25 +17,24 @@ using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
+using D2.Geo.Tests.Fixtures;
 using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 using GetContactsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByIds;
 
 /// <summary>
 /// Integration tests for the <see cref="GetContactsByIds"/> CQRS handler.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class GetContactsByIdsTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _pgContainer = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
     private IHandlerContext _context = null!;
     private IOptions<GeoInfraOptions> _infraOptions = null!;
@@ -43,35 +42,37 @@ public class GetContactsByIdsTests : IAsyncLifetime
     private Mock<IRead.IGetManyHandler<Contact>> _mockCacheGetMany = null!;
     private Mock<IUpdate.ISetManyHandler<Contact>> _mockCacheSetMany = null!;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetContactsByIdsTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public GetContactsByIdsTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
+
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _pgContainer.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_pgContainer.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
-
+        _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
         _infraOptions = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
         _appOptions = Options.Create(new GeoAppOptions { ContactExpirationDuration = TimeSpan.FromHours(1) });
 
         SetupMockCacheHandlers();
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Empty Input Tests
@@ -113,8 +114,9 @@ public class GetContactsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByIds_WithSingleId_ReturnsContact()
     {
-        // Arrange - Create a contact
-        var contact = CreateTestContact("single-ctx", "Single", "Contact");
+        // Arrange - Create a contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"single-ctx-{suffix}", "Single", "Contact");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -147,10 +149,11 @@ public class GetContactsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByIds_WithMultipleIds_ReturnsAllContacts()
     {
-        // Arrange - Create multiple contacts
-        var contact1 = CreateTestContact("ctx-1", "User", "One");
-        var contact2 = CreateTestContact("ctx-2", "User", "Two");
-        var contact3 = CreateTestContact("ctx-3", "User", "Three");
+        // Arrange - Create multiple contacts with unique context keys
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact1 = CreateTestContact($"ctx-1-{suffix}", "User", "One");
+        var contact2 = CreateTestContact($"ctx-2-{suffix}", "User", "Two");
+        var contact3 = CreateTestContact($"ctx-3-{suffix}", "User", "Three");
         _db.Contacts.AddRange(contact1, contact2, contact3);
         await _db.SaveChangesAsync(Ct);
 
@@ -216,8 +219,9 @@ public class GetContactsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByIds_WithMixedIds_ReturnsSomeFound()
     {
-        // Arrange - Create one contact
-        var contact = CreateTestContact("partial-ctx", "Partial", "Found");
+        // Arrange - Create one contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"partial-ctx-{suffix}", "Partial", "Found");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -252,13 +256,14 @@ public class GetContactsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByIds_WhenAllInCache_SkipsRepository()
     {
-        // Arrange - Setup cache to return contacts
-        var cachedContact = CreateTestContact("cached-ctx", "Cached", "Contact");
+        // Arrange - Setup cache to return contacts with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var cachedContact = CreateTestContact($"cached-ctx-{suffix}", "Cached", "Contact");
         var cacheKey = $"GetContactsByIds:{cachedContact.Id}";
 
         _mockCacheGetMany
             .Setup(x => x.HandleAsync(It.IsAny<IRead.GetManyInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
-            .ReturnsAsync((IRead.GetManyInput input, CancellationToken _, HandlerOptions? _) =>
+            .ReturnsAsync((IRead.GetManyInput _, CancellationToken _, HandlerOptions? _) =>
             {
                 var values = new Dictionary<string, Contact> { { cacheKey, cachedContact } };
                 return D2Result<IRead.GetManyOutput<Contact>?>.Ok(new IRead.GetManyOutput<Contact>(values));
@@ -293,8 +298,9 @@ public class GetContactsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByIds_WhenCacheMiss_PopulatesCache()
     {
-        // Arrange - Create a contact in database (cache miss)
-        var contact = CreateTestContact("cache-miss-ctx", "Cache", "Miss");
+        // Arrange - Create a contact in database (cache miss) with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"cache-miss-ctx-{suffix}", "Cache", "Miss");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -332,8 +338,9 @@ public class GetContactsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByIds_WithInvalidGuids_FiltersInvalidIds()
     {
-        // Arrange - Create a contact
-        var contact = CreateTestContact("valid-ctx", "Valid", "Contact");
+        // Arrange - Create a contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contact = CreateTestContact($"valid-ctx-{suffix}", "Valid", "Contact");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -393,13 +400,14 @@ public class GetContactsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByIds_WithPartialCacheHit_FetchesMissingFromRepo()
     {
-        // Arrange - Create contacts in database
-        var contactInDb = CreateTestContact("db-ctx", "Database", "Contact");
+        // Arrange - Create contacts in database with unique context keys
+        var suffix = Guid.NewGuid().ToString("N");
+        var contactInDb = CreateTestContact($"db-ctx-{suffix}", "Database", "Contact");
         _db.Contacts.Add(contactInDb);
         await _db.SaveChangesAsync(Ct);
 
         // Setup cache to return one contact (simulating partial hit)
-        var cachedContact = CreateTestContact("cached-ctx", "Cached", "Contact");
+        var cachedContact = CreateTestContact($"cached-ctx-{suffix}", "Cached", "Contact");
         var cacheKey = $"GetContactsByIds:{cachedContact.Id}";
 
         _mockCacheGetMany

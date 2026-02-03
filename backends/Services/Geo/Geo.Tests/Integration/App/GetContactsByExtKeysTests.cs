@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable SuspiciousElementAccess
 namespace D2.Geo.Tests.Integration.App;
 
 using D2.Contracts.Handler;
@@ -14,55 +15,56 @@ using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
+using D2.Geo.Tests.Fixtures;
 using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Testcontainers.PostgreSql;
 using Xunit;
 using GetContactsByExtKeysRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByExtKeys;
 
 /// <summary>
 /// Integration tests for the <see cref="GetContactsByExtKeys"/> CQRS handler.
 /// </summary>
-[MustDisposeResource(false)]
+[Collection("SharedPostgres")]
+[MustDisposeResource(value: false)]
 public class GetContactsByExtKeysTests : IAsyncLifetime
 {
-    private PostgreSqlContainer _pgContainer = null!;
+    private readonly SharedPostgresFixture r_fixture;
     private GeoDbContext _db = null!;
     private IHandlerContext _context = null!;
     private IOptions<GeoInfraOptions> _options = null!;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GetContactsByExtKeysTests"/> class.
+    /// </summary>
+    ///
+    /// <param name="fixture">
+    /// The shared PostgreSQL fixture.
+    /// </param>
+    [MustDisposeResource(false)]
+    public GetContactsByExtKeysTests(SharedPostgresFixture fixture)
+    {
+        r_fixture = fixture;
+    }
+
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
-    public async ValueTask InitializeAsync()
+    public ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _pgContainer.StartAsync(Ct);
-
-        var dbOptions = new DbContextOptionsBuilder<GeoDbContext>()
-            .UseNpgsql(_pgContainer.GetConnectionString())
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
-        _db = new GeoDbContext(dbOptions);
-        await _db.Database.MigrateAsync(Ct);
-
+        _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
         _options = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync().ConfigureAwait(false);
     }
 
     #region Empty Input Tests
@@ -104,9 +106,11 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByExtKeys_WithSingleKey_ReturnsContact()
     {
-        // Arrange - Create a contact
+        // Arrange - Create a contact with unique context key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextKey = $"test-context-{suffix}";
         var relatedEntityId = Guid.NewGuid();
-        var contact = CreateTestContact("test-context", relatedEntityId, "Single", "Contact");
+        var contact = CreateTestContact(contextKey, relatedEntityId, "Single", "Contact");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -117,7 +121,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
             {
                 new GetContactsExtKeys
                 {
-                    ContextKey = "test-context",
+                    ContextKey = contextKey,
                     RelatedEntityId = relatedEntityId.ToString(),
                 },
             },
@@ -132,7 +136,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
         result.Data!.Data.Should().HaveCount(1);
 
         var key = result.Data.Data.Keys.First();
-        key.ContextKey.Should().Be("test-context");
+        key.ContextKey.Should().Be(contextKey);
         key.RelatedEntityId.Should().Be(relatedEntityId.ToString());
 
         var contacts = result.Data.Data[key];
@@ -154,11 +158,13 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByExtKeys_WithMultipleContactsSameKey_ReturnsAllContacts()
     {
-        // Arrange - Create multiple contacts with the same external key
+        // Arrange - Create multiple contacts with the same external key (unique context)
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextKey = $"shared-context-{suffix}";
         var relatedEntityId = Guid.NewGuid();
-        var contact1 = CreateTestContact("shared-context", relatedEntityId, "User", "One");
-        var contact2 = CreateTestContact("shared-context", relatedEntityId, "User", "Two");
-        var contact3 = CreateTestContact("shared-context", relatedEntityId, "User", "Three");
+        var contact1 = CreateTestContact(contextKey, relatedEntityId, "User", "One");
+        var contact2 = CreateTestContact(contextKey, relatedEntityId, "User", "Two");
+        var contact3 = CreateTestContact(contextKey, relatedEntityId, "User", "Three");
         _db.Contacts.AddRange(contact1, contact2, contact3);
         await _db.SaveChangesAsync(Ct);
 
@@ -169,7 +175,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
             {
                 new GetContactsExtKeys
                 {
-                    ContextKey = "shared-context",
+                    ContextKey = contextKey,
                     RelatedEntityId = relatedEntityId.ToString(),
                 },
             },
@@ -201,12 +207,15 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByExtKeys_WithMultipleKeys_ReturnsContactsGroupedByKey()
     {
-        // Arrange - Create contacts with different external keys
+        // Arrange - Create contacts with different external keys (unique contexts)
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextA = $"context-a-{suffix}";
+        var contextB = $"context-b-{suffix}";
         var relatedEntityId1 = Guid.NewGuid();
         var relatedEntityId2 = Guid.NewGuid();
 
-        var contact1 = CreateTestContact("context-a", relatedEntityId1, "Contact", "A");
-        var contact2 = CreateTestContact("context-b", relatedEntityId2, "Contact", "B");
+        var contact1 = CreateTestContact(contextA, relatedEntityId1, "Contact", "A");
+        var contact2 = CreateTestContact(contextB, relatedEntityId2, "Contact", "B");
         _db.Contacts.AddRange(contact1, contact2);
         await _db.SaveChangesAsync(Ct);
 
@@ -217,12 +226,12 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
             {
                 new GetContactsExtKeys
                 {
-                    ContextKey = "context-a",
+                    ContextKey = contextA,
                     RelatedEntityId = relatedEntityId1.ToString(),
                 },
                 new GetContactsExtKeys
                 {
-                    ContextKey = "context-b",
+                    ContextKey = contextB,
                     RelatedEntityId = relatedEntityId2.ToString(),
                 },
             },
@@ -237,8 +246,8 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
         result.Data!.Data.Should().HaveCount(2);
 
         var keys = result.Data.Data.Keys.ToList();
-        keys.Should().Contain(k => k.ContextKey == "context-a");
-        keys.Should().Contain(k => k.ContextKey == "context-b");
+        keys.Should().Contain(k => k.ContextKey == contextA);
+        keys.Should().Contain(k => k.ContextKey == contextB);
     }
 
     #endregion
@@ -292,9 +301,11 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByExtKeys_WithMixedKeys_ReturnsSomeFound()
     {
-        // Arrange - Create one contact
+        // Arrange - Create one contact with unique context
+        var suffix = Guid.NewGuid().ToString("N");
+        var existingContext = $"existing-context-{suffix}";
         var existingRelatedId = Guid.NewGuid();
-        var contact = CreateTestContact("existing-context", existingRelatedId, "Existing", "Contact");
+        var contact = CreateTestContact(existingContext, existingRelatedId, "Existing", "Contact");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -305,7 +316,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
             {
                 new GetContactsExtKeys
                 {
-                    ContextKey = "existing-context",
+                    ContextKey = existingContext,
                     RelatedEntityId = existingRelatedId.ToString(),
                 },
                 new GetContactsExtKeys
@@ -326,7 +337,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
         result.Data!.Data.Should().HaveCount(1);
 
         var key = result.Data.Data.Keys.First();
-        key.ContextKey.Should().Be("existing-context");
+        key.ContextKey.Should().Be(existingContext);
     }
 
     #endregion
@@ -343,9 +354,11 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByExtKeys_WithInvalidGuids_FiltersInvalidKeys()
     {
-        // Arrange - Create a contact
+        // Arrange - Create a contact with unique context
+        var suffix = Guid.NewGuid().ToString("N");
+        var validContext = $"valid-ctx-{suffix}";
         var relatedEntityId = Guid.NewGuid();
-        var contact = CreateTestContact("valid-ctx", relatedEntityId, "Valid", "Contact");
+        var contact = CreateTestContact(validContext, relatedEntityId, "Valid", "Contact");
         _db.Contacts.Add(contact);
         await _db.SaveChangesAsync(Ct);
 
@@ -356,7 +369,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
             {
                 new GetContactsExtKeys
                 {
-                    ContextKey = "valid-ctx",
+                    ContextKey = validContext,
                     RelatedEntityId = relatedEntityId.ToString(),
                 },
                 new GetContactsExtKeys
@@ -376,7 +389,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
         result.Data!.Data.Should().HaveCount(1);
 
         var key = result.Data.Data.Keys.First();
-        key.ContextKey.Should().Be("valid-ctx");
+        key.ContextKey.Should().Be(validContext);
     }
 
     /// <summary>
@@ -431,12 +444,14 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     [Fact]
     public async Task GetContactsByExtKeys_SameContextDifferentEntities_ReturnsCorrectContacts()
     {
-        // Arrange - Create contacts with same context but different related entities
+        // Arrange - Create contacts with same context but different related entities (unique context)
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextKey = $"same-context-{suffix}";
         var relatedEntityId1 = Guid.NewGuid();
         var relatedEntityId2 = Guid.NewGuid();
 
-        var contact1 = CreateTestContact("same-context", relatedEntityId1, "Entity", "One");
-        var contact2 = CreateTestContact("same-context", relatedEntityId2, "Entity", "Two");
+        var contact1 = CreateTestContact(contextKey, relatedEntityId1, "Entity", "One");
+        var contact2 = CreateTestContact(contextKey, relatedEntityId2, "Entity", "Two");
         _db.Contacts.AddRange(contact1, contact2);
         await _db.SaveChangesAsync(Ct);
 
@@ -447,7 +462,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
             {
                 new GetContactsExtKeys
                 {
-                    ContextKey = "same-context",
+                    ContextKey = contextKey,
                     RelatedEntityId = relatedEntityId1.ToString(),
                 },
             },
