@@ -17,7 +17,7 @@ Summary:
 
 ### Getting started with local dev environment:
 1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.0 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.7.0+](https://nodejs.org/en/download), [PNPM 10.15.1+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
-2. Using a command line utility, navigate to the AppHost folder (`/backends/AppHost`) and set the following secrets using the `dotnet user-secrets set <key> <value>` command:
+2. Using a command line utility, navigate to the AppHost folder (`/backends/dotnet/orchestration/AppHost`) and set the following secrets using the `dotnet user-secrets set <key> <value>` command:
 
    | Secret Key                  | Description             |
    |-----------------------------|-------------------------|
@@ -28,8 +28,6 @@ Summary:
    | `Parameters:dba-email`      | PgAdmin4 admin email    |
    | `Parameters:dba-password`   | PgAdmin4 admin password |
    | `Parameters:cache-password` | Redis password          |
-   | `Parameters:kc-username`    | Keycloak username       |
-   | `Parameters:kc-password`    | Keycloak password       |
    | `Parameters:otel-username`  | Grafana username        |
    | `Parameters:otel-password`  | Grafana password        |
    | `Parameters:s3-username`    | MinIO username          |
@@ -37,7 +35,7 @@ Summary:
 
 3. To verify your entries, use the `dotnet user-secrets list` command.
 4. Edit any `appsettings.*.json` files as needed.
-5. Create a `.env` file in the `/frontends/sveltekit` directory using the `.env.example` as a template (update as needed).
+5. Copy `.env.local.example` to `.env.local` in the project root and fill in your values (including your IPInfo API token for geolocation).
 6. Run the AppHost project either via CLI or IDE of your choice.
 7. Once running, access:
     - Aspire dashboard: `http://localhost:15888`
@@ -75,12 +73,20 @@ Summary:
 
 **🚧 In Progress:**
 - Geo Service Cont'd (Contacts, WhoIs, Locations)
+- Auth service architecture (Node.js + BetterAuth)
+- Multi-dimensional rate limiting infrastructure
 
 **📋 Planned:**
 - SignalR Gateway (WebSocket to gRPC routing)
-- Auth service implementation
+- Auth service implementation (standalone Node.js service)
+- Cross-service rate limiting packages (`@d2/ratelimit`, `D2.RateLimit.Redis`)
+- Geo caching packages for local WhoIs data (`@d2/geo-cache`, `D2.Geo.Cache`)
 - OTEL alerting and notification integration
+- Kestra for scheduled task management
 - Much, much more...
+
+**📝 Internal Planning:**
+See [PLANNING.md](PLANNING.md) for detailed architecture decisions, implementation status, and sprint planning.
 
 **NOTE:** this is a **public reference implementation** documenting D²'s evolution from DeCAF's modular monolith architecture into a distributed microservices system. Expect frequent changes and incremental progress.
 
@@ -151,8 +157,6 @@ graph TB
     GEO -->|Storage| MINIO
     OTHER -->|Storage| MINIO
 
-    AUTH -->|Identity| KC[Keycloak]
-
     GEO --> GEODB
     AUTH --> AUTHDB
     OTHER --> OTHERDB
@@ -172,25 +176,25 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 >*Aspire-based service orchestration for local development and deployment configuration.*
 >
->| Component                              | Description                                    |
->|----------------------------------------|------------------------------------------------|
->| [AppHost](backends/AppHost/APPHOST.md) | Aspire orchestration and service configuration |
+>| Component                                                        | Description                                    |
+>|------------------------------------------------------------------|------------------------------------------------|
+>| [AppHost](backends/dotnet/orchestration/AppHost/APPHOST.md)      | Aspire orchestration and service configuration |
 >
 >**Contracts:**
 >
 >*Core abstractions, patterns, and interfaces shared across all services. These define the "what" without implementation.*
 >
->| Component                                                                         | Description                                         |
->|-----------------------------------------------------------------------------------|-----------------------------------------------------|
->| [Handler](backends/Contracts/Handler/HANDLER.md)                                  | Base handler patterns with logging and tracing      |
->| [Handler.Extensions](backends/Contracts/Handler.Extensions/HANDLER_EXTENSIONS.md) | DI registration for handler context services        |
->| [Interfaces](backends/Contracts/Interfaces/INTERFACES.md)                         | Shared contract interfaces                          |
->| [Messages](backends/Contracts/Messages/MESSAGES.md)                               | Domain event messages for pub-sub messaging         |
->| [Result](backends/Contracts/Result/RESULT.md)                                     | D2Result pattern for consistent error handling      |
->| [Result.Extensions](backends/Contracts/Result.Extensions/RESULT_EXTENSIONS.md)    | D2Result to/from proto conversion and gRPC handling |
->| [ServiceDefaults](backends/Contracts/ServiceDefaults/SERVICE_DEFAULT.md)          | Shared service configuration and telemetry          |
->| [Tests](backends/Contracts/Tests/TESTS.md)                                        | Shared testing infrastructure and base classes      |
->| [Utilities](backends/Contracts/Utilities/UTILITIES.md)                            | Shared utility extensions and helpers               |
+>| Component                                                                                   | Description                                         |
+>|---------------------------------------------------------------------------------------------|-----------------------------------------------------|
+>| [Handler](backends/dotnet/shared/Handler/HANDLER.md)                                        | Base handler patterns with logging and tracing      |
+>| [Handler.Extensions](backends/dotnet/shared/Handler.Extensions/HANDLER_EXTENSIONS.md)       | DI registration for handler context services        |
+>| [Interfaces](backends/dotnet/shared/Interfaces/INTERFACES.md)                               | Shared contract interfaces                          |
+>| [Messages](backends/dotnet/shared/Messages/MESSAGES.md)                                     | Domain event messages for pub-sub messaging         |
+>| [Result](backends/dotnet/shared/Result/RESULT.md)                                           | D2Result pattern for consistent error handling      |
+>| [Result.Extensions](backends/dotnet/shared/Result.Extensions/RESULT_EXTENSIONS.md)          | D2Result to/from proto conversion and gRPC handling |
+>| [ServiceDefaults](backends/dotnet/shared/ServiceDefaults/SERVICE_DEFAULT.md)                | Shared service configuration and telemetry          |
+>| [Tests](backends/dotnet/shared/Tests/TESTS.md)                                              | Shared testing infrastructure and base classes      |
+>| [Utilities](backends/dotnet/shared/Utilities/UTILITIES.md)                                  | Shared utility extensions and helpers               |
 >
 >**Contracts (Implementations):**
 >
@@ -198,39 +202,39 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 >*Caching:*
 >
->| Component                                                                                                                         | Description                              |
->|-----------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
->| [DistributedCache.Redis](backends/Contracts/Implementations/Caching/Distributed/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md) | Redis distributed caching implementation |
->| [InMemoryCache.Default](backends/Contracts/Implementations/Caching/InMemory/InMemoryCache.Default/INMEMORYCACHE_DEFAULT.md)       | In-memory caching implementation         |
+>| Component                                                                                                                                       | Description                              |
+>|-------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+>| [DistributedCache.Redis](backends/dotnet/shared/Implementations/Caching/Distributed/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md)           | Redis distributed caching implementation |
+>| [InMemoryCache.Default](backends/dotnet/shared/Implementations/Caching/InMemory/InMemoryCache.Default/INMEMORYCACHE_DEFAULT.md)                 | In-memory caching implementation         |
 >
 >*Common:*
 >
->| Component                                                                                                | Description                          |
->|----------------------------------------------------------------------------------------------------------|--------------------------------------|
->| [GeoRefData.Default](backends/Contracts/Implementations/Common/GeoRefData.Default/GEOREFDATA_DEFAULT.md) | Multi-tier georeference data caching |
+>| Component                                                                                                          | Description                          |
+>|--------------------------------------------------------------------------------------------------------------------|--------------------------------------|
+>| [GeoRefData.Default](backends/dotnet/shared/Implementations/Common/GeoRefData.Default/GEOREFDATA_DEFAULT.md)        | Multi-tier georeference data caching |
 >
 >*Repository:*
 >
->| Component                                                                                                        | Description                                |
->|------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
->| [Transactions.Pg](backends/Contracts/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md) | PostgreSQL transaction management handlers |
+>| Component                                                                                                                  | Description                                |
+>|----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+>| [Transactions.Pg](backends/dotnet/shared/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md)        | PostgreSQL transaction management handlers |
 >
 >**Services:**
 >
 >*Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async).*
 >
->| Component                                                                      | Description                                                                       |
->|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
->| [Protos.DotNet](backends/Services/_protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts                                                  |
->| [Geo](backends/Services/Geo/GEO_SERVICE.md)                                    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
+>| Component                                                                                | Description                                                                       |
+>|------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+>| [Protos.DotNet](backends/dotnet/shared/protos/_gen/Protos.DotNet/PROTOS_DOTNET.md)        | Generated gRPC service contracts                                                  |
+>| [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)                                        | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
 >
 >**Gateways:**
 >
 >*REST and SignalR API gateways translating external requests into gRPC calls to back end services.*
 >
->| Component                              | Description                       |
->|----------------------------------------|-----------------------------------|
->| [REST](backends/Gateways/REST/REST.md) | HTTP/REST to gRPC routing gateway |
+>| Component                                        | Description                       |
+>|--------------------------------------------------|-----------------------------------|
+>| [REST](backends/dotnet/gateways/REST/REST.md)    | HTTP/REST to gRPC routing gateway |
 
 ### Front-End Services
 Coming soon...
@@ -265,7 +269,6 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-8.2-DC382D?logo=redis)
 ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-4.1-FF6600?logo=rabbitmq)
-![Keycloak](https://img.shields.io/badge/Keycloak-26.4-blue?logo=keycloak)
 ![MinIO](https://img.shields.io/badge/MinIO-2025--09-C72E49?logo=minio)
 
 #### Infrastructure & Orchestration

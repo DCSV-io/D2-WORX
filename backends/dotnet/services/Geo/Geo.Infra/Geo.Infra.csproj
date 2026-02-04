@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>D2.Geo.Infra</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Folder Include="Messaging\Handlers\Sub\" />
+      <Folder Include="Messaging\MT\Consumers\" />
+      <Folder Include="Repository\Handlers\D\" />
+      <Folder Include="Repository\Handlers\U\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\shared\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
+      <ProjectReference Include="..\..\..\shared\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
+      <ProjectReference Include="..\..\..\shared\Implementations\Common\GeoRefData.Default\GeoRefData.Default.csproj" />
+      <ProjectReference Include="..\..\..\shared\Implementations\Repository\Batch\Batch.Pg\Batch.Pg.csproj" />
+      <ProjectReference Include="..\..\..\shared\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
+      <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
+      <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="IPinfo" Version="3.3.0" />
+      <PackageReference Include="MassTransit.RabbitMQ" Version="9.0.0-develop.25" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    </ItemGroup>
+
+</Project>

@@ -20,14 +20,14 @@ This file provides guidance for Claude Code (and other AI assistants) when worki
 
 For deeper architectural context, consult these files:
 
-| Document                                    | Description                        |
-|---------------------------------------------|------------------------------------|
-| `README.md`                                 | Project overview, setup, status    |
-| `backends/BACKENDS.md`                      | Full backend architecture          |
-| `backends/Services/Geo/GEO_SERVICE.md`      | Geo service architecture           |
-| `backends/Contracts/Handler/HANDLER.md`     | Handler pattern guide              |
-| `backends/Contracts/Result/RESULT.md`       | D2Result pattern                   |
-| `CONTRIBUTING.md`                           | Contribution guidelines            |
+| Document                                              | Description                        |
+|-------------------------------------------------------|------------------------------------|
+| `README.md`                                           | Project overview, setup, status    |
+| `backends/BACKENDS.md`                                | Full backend architecture          |
+| `backends/dotnet/services/Geo/GEO_SERVICE.md`         | Geo service architecture           |
+| `backends/dotnet/shared/Handler/HANDLER.md`           | Handler pattern guide              |
+| `backends/dotnet/shared/Result/RESULT.md`             | D2Result pattern                   |
+| `CONTRIBUTING.md`                                     | Contribution guidelines            |
 
 ---
 
@@ -273,36 +273,50 @@ public static class Extensions
 
 ```
 D2-WORX/
+├── contracts/
+│   └── protos/                     # Tech-agnostic Protocol Buffers
+│       ├── common/v1/              # Common types (D2Result, etc.)
+│       ├── auth/v1/                # Auth service protos
+│       └── geo/v1/                 # Geo service protos
 ├── backends/
-│   ├── AppHost/                    # Aspire orchestration
-│   ├── Contracts/                  # Shared abstractions
-│   │   ├── Handler/                # BaseHandler pattern
-│   │   ├── Interfaces/             # Contract interfaces (TLC hierarchy)
-│   │   ├── Implementations/        # Reusable implementations
-│   │   │   ├── Caching/            # Redis & In-Memory
-│   │   │   ├── Common/             # GeoRefData
-│   │   │   └── Repository/         # Transactions
-│   │   ├── Messages/               # Domain event POCOs
-│   │   ├── Result/                 # D2Result pattern
-│   │   ├── Result.Extensions/      # D2Result ↔ Proto conversions
-│   │   ├── ServiceDefaults/        # OpenTelemetry config
-│   │   ├── Tests/                  # Shared test infrastructure
-│   │   └── Utilities/              # Extensions & helpers
-│   ├── Gateways/
-│   │   └── REST/                   # HTTP/REST → gRPC gateway
-│   └── Services/
-│       ├── _protos/                # Protocol Buffers definitions
-│       │   └── _gen/Protos.DotNet/ # Generated C# code
-│       └── Geo/                    # Geographic service (reference impl)
-│           ├── Geo.Domain/         # DDD entities & value objects
-│           ├── Geo.App/            # CQRS handlers, mappers, options
-│           ├── Geo.Infra/          # Repository, messaging, EF Core
-│           ├── Geo.API/            # gRPC service
-│           └── Geo.Tests/          # Tests
-├── frontends/
-│   └── sveltekit/                  # SvelteKit 5 app
+│   ├── dotnet/                     # .NET backends
+│   │   ├── orchestration/
+│   │   │   └── AppHost/            # Aspire orchestration
+│   │   ├── shared/                 # Shared libraries
+│   │   │   ├── Handler/            # BaseHandler pattern
+│   │   │   ├── Interfaces/         # Contract interfaces (TLC hierarchy)
+│   │   │   ├── Implementations/    # Reusable implementations
+│   │   │   ├── Messages/           # Domain event POCOs
+│   │   │   ├── Result/             # D2Result pattern
+│   │   │   ├── Result.Extensions/  # D2Result ↔ Proto conversions
+│   │   │   ├── ServiceDefaults/    # OpenTelemetry config
+│   │   │   ├── Tests/              # Shared test infrastructure
+│   │   │   ├── Utilities/          # Extensions & helpers
+│   │   │   └── protos/             # Generated C# protos
+│   │   ├── gateways/
+│   │   │   └── REST/               # HTTP/REST → gRPC gateway
+│   │   └── services/
+│   │       └── Geo/                # Geographic service
+│   │           ├── Geo.Domain/     # DDD entities & value objects
+│   │           ├── Geo.App/        # CQRS handlers, mappers
+│   │           ├── Geo.Infra/      # Repository, messaging, EF Core
+│   │           ├── Geo.API/        # gRPC service
+│   │           └── Geo.Tests/      # Tests
+│   ├── node/                       # Node.js backends
+│   │   ├── shared/                 # @d2/core, @d2/protos
+│   │   └── services/
+│   │       └── auth/               # Auth service (BetterAuth)
+│   └── go/                         # Go backends
+│       ├── shared/                 # Shared Go packages
+│       └── services/
+│           └── media/              # Media/file processing
+├── clients/
+│   ├── web/                        # SvelteKit 5 app
+│   └── mobile/                     # React Native / Expo
+├── tools/
+│   └── proto-gen/                  # Proto generation scripts
 ├── observability/                  # LGTM stack configs
-└── D2.sln                          # Solution file
+└── D2.sln                          # .NET Solution file
 ```
 
 ---
@@ -500,7 +514,6 @@ refactor: simplify caching logic
 | Redis           | 8.2     | Distributed cache          |
 | RabbitMQ        | 4.1     | Async messaging            |
 | MinIO           | Latest  | Object storage (S3)        |
-| Keycloak        | 26.4    | Identity management        |
 | LGTM Stack      | Various | Observability              |
 
 ### Communication Patterns
@@ -573,3 +586,81 @@ refactor: simplify caching logic
 - Reference the `*.md` documentation files
 - Follow the patterns established in `Geo.App` and `Geo.Infra`
 - Ask for clarification rather than guessing
+
+---
+
+## Architecture Decisions (2025-02)
+
+See `PLANNING.md` for detailed ADRs and status tracking.
+
+### Authentication Architecture
+
+- **Auth Service**: Standalone Node.js + Hono + BetterAuth at `backends/node/services/auth/`
+- **SvelteKit**: Uses proxy pattern (`/api/auth/*` → Auth Service). `createAuthClient` works normally.
+- **.NET Gateways**: Validate JWTs via JWKS endpoint (no BetterAuth dependency)
+- **Keycloak**: REMOVED - do not reference or use
+
+### Rate Limiting
+
+- **Packages**: `@d2/ratelimit` (Node.js), `D2.RateLimit.Redis` (C#)
+- **Storage**: Redis (shared across all services)
+- **Dimensions**: IP, userId, fingerprint, city, country
+- **Logic**: If ANY dimension exceeds threshold → block ALL
+- **Thresholds**: Anonymous (lower) and authenticated (higher)
+
+### Geo Caching
+
+- **Packages**: `@d2/geo-cache` (Node.js), `D2.Geo.Cache` (C#)
+- Local memory cache for WhoIs data to avoid Geo service bombardment
+- TTL: 1 hour, LRU eviction
+
+---
+
+## Node.js / TypeScript Conventions
+
+### Project Structure
+
+```
+backends/node/
+├── services/
+│   └── auth/                 # BetterAuth service
+│       ├── package.json
+│       ├── src/
+│       │   ├── index.ts      # Hono app entry
+│       │   ├── auth.ts       # BetterAuth config
+│       │   └── routes/
+│       └── Dockerfile
+│
+contracts/node/
+├── ratelimit/                # @d2/ratelimit package
+├── geo-cache/                # @d2/geo-cache package
+└── tsconfig.base.json        # Shared TypeScript config
+```
+
+### TypeScript Style
+
+- **Strict mode**: Always enabled
+- **Naming**: camelCase for variables/functions, PascalCase for types/classes
+- **Imports**: Use `type` imports for type-only imports
+- **Error handling**: Use Result pattern where applicable (similar to D2Result)
+
+### Package Naming
+
+- Internal packages: `@d2/{package-name}`
+- Use pnpm workspaces for monorepo management
+
+---
+
+## Critical Reminders for Claude
+
+1. **No Keycloak** - It has been removed. Auth uses BetterAuth.
+
+2. **Check PLANNING.md** - For current sprint focus and status.
+
+3. **JWT validation for .NET** - Use `Microsoft.IdentityModel.Tokens` with JWKS from Auth Service.
+
+4. **SvelteKit auth** - Uses proxy pattern, NOT direct BetterAuth integration.
+
+5. **Rate limiting is multi-dimensional** - IP + userId + fingerprint + city + country. All dimensions tracked, any exceeds = block all.
+
+6. **Geo caching packages** - Create local cache wrappers to avoid bombarding Geo service with WhoIs lookups.

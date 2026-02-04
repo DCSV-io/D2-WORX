@@ -16,7 +16,9 @@
       "Bash(./Geo.Tests.dll)",
       "Bash(powershell:*)",
       "Bash(./Geo.Tests.exe --filter-uid \"D2.Geo.Tests.Integration.Infra.Repository.Handlers.LocationHandlerTests*\")",
-      "Bash(xargs -I {} sh -c 'head -1 \"\"{}\"\" 2>/dev/null | grep -L \"\"// -----\"\" || echo \"\"{}\"\"')"
+      "Bash(xargs -I {} sh -c 'head -1 \"\"{}\"\" 2>/dev/null | grep -L \"\"// -----\"\" || echo \"\"{}\"\"')",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ]
   }
 }
