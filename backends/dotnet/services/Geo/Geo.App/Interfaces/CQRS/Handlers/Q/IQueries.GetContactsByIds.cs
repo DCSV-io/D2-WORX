@@ -6,7 +6,7 @@
 
 namespace D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 using D2.Services.Protos.Geo.V1;
 
 public partial interface IQueries

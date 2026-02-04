@@ -6,13 +6,13 @@
 
 namespace Geo.API.Services;
 
-using D2.Contracts.Result.Extensions;
+using D2.Shared.Result.Extensions;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Services.Protos.Geo.V1;
 using Grpc.Core;
 using GeoComplex = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex;
-using GeoRefDataComplex = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex;
+using GeoRefDataComplex = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex;
 using SB = D2.Services.Protos.Geo.V1.GeoService.GeoServiceBase;
 
 /// <summary>

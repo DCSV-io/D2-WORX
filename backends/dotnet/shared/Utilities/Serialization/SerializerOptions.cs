@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Utilities.Serialization;
+namespace D2.Shared.Utilities.Serialization;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;

@@ -6,10 +6,10 @@
 
 namespace D2.Geo.Infra;
 
-using D2.Contracts.DistributedCache.Redis;
-using D2.Contracts.GeoRefDataService.Default.Messaging.MT.Consumers;
-using D2.Contracts.InMemoryCache.Default;
-using D2.Contracts.Transactions.Pg;
+using D2.Shared.DistributedCache.Redis;
+using D2.Shared.GeoRefDataService.Default.Messaging.MT.Consumers;
+using D2.Shared.InMemoryCache.Default;
+using D2.Shared.Transactions.Pg;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
 using D2.Geo.Infra.Messaging.MT.Publishers;
 using D2.Geo.Infra.Repository;

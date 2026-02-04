@@ -4,12 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.InMemoryCache.Default.Handlers.U;
+namespace D2.Shared.InMemoryCache.Default.Handlers.U;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using Microsoft.Extensions.Caching.Memory;
-using S = D2.Contracts.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
+using S = D2.Shared.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
 
 /// <summary>
 /// Handler for setting multiple values in the in-memory cache.

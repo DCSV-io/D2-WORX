@@ -14,7 +14,7 @@ public partial interface ICreate
     /// Handler for upserting WhoIs records.
     /// </summary>
     public interface ICreateWhoIsHandler
-        : D2.Contracts.Handler.IHandler<CreateWhoIsInput, CreateWhoIsOutput>;
+        : D2.Shared.Handler.IHandler<CreateWhoIsInput, CreateWhoIsOutput>;
 
     /// <summary>
     /// Input for upserting WhoIs records.

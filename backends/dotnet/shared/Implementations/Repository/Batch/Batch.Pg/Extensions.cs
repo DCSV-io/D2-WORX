@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Batch.Pg;
+namespace D2.Shared.Batch.Pg;
 
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;

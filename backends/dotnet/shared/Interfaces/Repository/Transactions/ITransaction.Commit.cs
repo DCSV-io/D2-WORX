@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Repository.Transactions;
+namespace D2.Shared.Interfaces.Repository.Transactions;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 
 public partial interface ITransaction
 {

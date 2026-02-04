@@ -6,9 +6,9 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Caching.InMemory.Handlers.D;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
+using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using DeleteRepo = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.IDeleteContactsHandler;

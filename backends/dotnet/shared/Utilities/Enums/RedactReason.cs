@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Utilities.Enums;
+namespace D2.Shared.Utilities.Enums;
 
 /// <summary>
 /// Reasons for redacting data from logs or telemetry.

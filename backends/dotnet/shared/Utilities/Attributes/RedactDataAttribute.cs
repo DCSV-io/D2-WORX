@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Utilities.Attributes;
+namespace D2.Shared.Utilities.Attributes;
 
-using D2.Contracts.Utilities.Enums;
+using D2.Shared.Utilities.Enums;
 using JetBrains.Annotations;
 
 /// <summary>

@@ -4,17 +4,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.DistributedCache.Redis.Handlers.U;
+namespace D2.Shared.DistributedCache.Redis.Handlers.U;
 
 using System.Net;
 using System.Text.Json;
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
-using D2.Contracts.Utilities.Serialization;
+using D2.Shared.Handler;
+using D2.Shared.Result;
+using D2.Shared.Utilities.Serialization;
 using Google.Protobuf;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using S = D2.Contracts.Interfaces.Caching.Distributed.Handlers.U.IUpdate;
+using S = D2.Shared.Interfaces.Caching.Distributed.Handlers.U.IUpdate;
 
 /// <summary>
 /// Handler for setting a value in the distributed cache.

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Handler;
+namespace D2.Shared.Handler;
 
 using Microsoft.Extensions.Logging;
 

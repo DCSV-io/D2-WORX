@@ -6,7 +6,7 @@
 
 namespace D2.Geo.App.Interfaces.CQRS.Handlers.C;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 
 public partial interface ICommands
 {

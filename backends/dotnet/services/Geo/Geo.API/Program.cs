@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using D2.Contracts.GeoRefDataService.Default;
-using D2.Contracts.Handler.Extensions;
-using D2.Contracts.ServiceDefaults;
-using D2.Contracts.Utilities.Extensions;
+using D2.Shared.GeoRefDataService.Default;
+using D2.Shared.Handler.Extensions;
+using D2.Shared.ServiceDefaults;
+using D2.Shared.Utilities.Extensions;
 using D2.Geo.App;
 using D2.Geo.Infra;
 using Geo.API.Services;

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Handler;
+namespace D2.Shared.Handler;
 
 using System.Diagnostics;
 
@@ -20,5 +20,5 @@ internal static class BHASW
     /// The activity source for tracing handler operations.
     /// </summary>
     internal static readonly ActivitySource SR_ActivitySource
-        = new("D2.Contracts.Handler");
+        = new("D2.Shared.Handler");
 }

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using D2.Contracts.ServiceDefaults;
+using D2.Shared.ServiceDefaults;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

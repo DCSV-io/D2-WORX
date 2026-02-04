@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Handler;
+namespace D2.Shared.Handler;
 
 using System.Diagnostics;
-using D2.Contracts.Result;
+using D2.Shared.Result;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 

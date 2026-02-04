@@ -6,11 +6,11 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Contracts.Handler;
-using D2.Contracts.InMemoryCache.Default;
-using D2.Contracts.InMemoryCache.Default.Handlers.R;
-using D2.Contracts.InMemoryCache.Default.Handlers.U;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.InMemoryCache.Default;
+using D2.Shared.InMemoryCache.Default.Handlers.R;
+using D2.Shared.InMemoryCache.Default.Handlers.U;
+using D2.Shared.Result;
 using D2.Geo.App;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Interfaces.Repository.Handlers.C;
@@ -26,8 +26,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
-using CacheRead = D2.Contracts.Interfaces.Caching.InMemory.Handlers.R.IRead;
-using CacheUpdate = D2.Contracts.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
+using CacheRead = D2.Shared.Interfaces.Caching.InMemory.Handlers.R.IRead;
+using CacheUpdate = D2.Shared.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
 using GetLocationsByIdsCqrs = D2.Geo.App.Implementations.CQRS.Handlers.Q.GetLocationsByIds;
 using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 using GetWhoIsByIdsCqrs = D2.Geo.App.Implementations.CQRS.Handlers.Q.GetWhoIsByIds;

@@ -6,7 +6,7 @@
 
 namespace D2.Geo.App;
 
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Implementations.CQRS.Handlers.Q;
 using D2.Geo.App.Implementations.CQRS.Handlers.X;

@@ -4,18 +4,18 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.C;
+namespace D2.Shared.GeoRefDataService.Default.CQRS.Handlers.C;
 
 using System.Net;
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
-using D2.Contracts.Utilities.Constants;
+using D2.Shared.Handler;
+using D2.Shared.Result;
+using D2.Shared.Utilities.Constants;
 using Google.Protobuf;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using H = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.ISetOnDiskHandler;
-using I = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetOnDiskInput;
-using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetOnDiskOutput;
+using H = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.ISetOnDiskHandler;
+using I = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetOnDiskInput;
+using O = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetOnDiskOutput;
 
 /// <summary>
 /// Handler for setting georeference data on disk.

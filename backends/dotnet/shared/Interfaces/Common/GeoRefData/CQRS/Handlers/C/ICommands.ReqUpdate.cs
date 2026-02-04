@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
+namespace D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 
 public partial interface ICommands
 {

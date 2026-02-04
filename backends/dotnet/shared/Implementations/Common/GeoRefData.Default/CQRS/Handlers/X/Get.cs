@@ -4,17 +4,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.X;
+namespace D2.Shared.GeoRefDataService.Default.CQRS.Handlers.X;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
+using D2.Shared.Result;
 using D2.Services.Protos.Geo.V1;
 using Microsoft.Extensions.Logging;
-using H = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex.IGetHandler;
-using I = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex.GetInput;
-using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex.GetOutput;
+using H = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex.IGetHandler;
+using I = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex.GetInput;
+using O = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex.GetOutput;
 
 /// <summary>
 /// Handler for getting georeference data.

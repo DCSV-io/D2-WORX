@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests.Unit;
+namespace D2.Shared.Tests.Unit;
 
-using D2.Contracts.Result;
-using D2.Contracts.Result.Extensions;
+using D2.Shared.Result;
+using D2.Shared.Result.Extensions;
 using D2.Services.Protos.Common.V1;
 
 /// <summary>

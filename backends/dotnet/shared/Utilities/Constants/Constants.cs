@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Utilities.Constants;
+namespace D2.Shared.Utilities.Constants;
 
 /// <summary>
 /// A static class containing commonly used constant values.

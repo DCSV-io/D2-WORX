@@ -6,7 +6,7 @@
 
 namespace D2.Geo.Tests.Integration.Infra.Repository.Handlers;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 using D2.Geo.App.Interfaces.Repository.Handlers.R;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.R;

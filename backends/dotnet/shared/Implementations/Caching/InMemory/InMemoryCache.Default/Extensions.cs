@@ -4,14 +4,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.InMemoryCache.Default;
+namespace D2.Shared.InMemoryCache.Default;
 
-using D2.Contracts.InMemoryCache.Default.Handlers.D;
-using D2.Contracts.InMemoryCache.Default.Handlers.R;
-using D2.Contracts.InMemoryCache.Default.Handlers.U;
-using D2.Contracts.Interfaces.Caching.InMemory.Handlers.D;
-using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
-using D2.Contracts.Interfaces.Caching.InMemory.Handlers.U;
+using D2.Shared.InMemoryCache.Default.Handlers.D;
+using D2.Shared.InMemoryCache.Default.Handlers.R;
+using D2.Shared.InMemoryCache.Default.Handlers.U;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using Microsoft.Extensions.DependencyInjection;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType

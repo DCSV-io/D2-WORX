@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default.Messaging.MT.Consumers;
+namespace D2.Shared.GeoRefDataService.Default.Messaging.MT.Consumers;
 
-using D2.Contracts.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
-using D2.Contracts.Messages.Geo;
+using D2.Shared.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
+using D2.Shared.Messages.Geo;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 

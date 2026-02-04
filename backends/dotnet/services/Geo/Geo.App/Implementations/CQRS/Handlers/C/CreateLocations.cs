@@ -6,8 +6,8 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.ICreateLocationsHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.CreateLocationsInput;

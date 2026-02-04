@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.ServiceDefaults;
+namespace D2.Shared.ServiceDefaults;
 
 using System.Net;
 

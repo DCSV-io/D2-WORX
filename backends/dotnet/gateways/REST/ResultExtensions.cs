@@ -6,8 +6,8 @@
 
 namespace D2.Gateways.REST;
 
-using D2.Contracts.Result.Extensions;
-using D2.Contracts.Utilities.Serialization;
+using D2.Shared.Result.Extensions;
+using D2.Shared.Utilities.Serialization;
 using D2.Services.Protos.Common.V1;
 
 /// <summary>

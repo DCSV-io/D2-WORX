@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Handler;
+namespace D2.Shared.Handler;
 
-using D2.Contracts.Result;
+using D2.Shared.Result;
 
 /// <summary>
 /// Represents a handler that process an input of type <typeparamref name="TInput"/>

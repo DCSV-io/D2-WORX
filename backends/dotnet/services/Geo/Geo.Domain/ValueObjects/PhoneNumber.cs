@@ -7,9 +7,9 @@
 namespace D2.Geo.Domain.ValueObjects;
 
 using System.Collections.Immutable;
-using D2.Contracts.Utilities.Attributes;
-using D2.Contracts.Utilities.Enums;
-using D2.Contracts.Utilities.Extensions;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Represents a phone number with associated labels.

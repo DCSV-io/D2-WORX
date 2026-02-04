@@ -4,16 +4,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.DistributedCache.Redis.Handlers.R;
+namespace D2.Shared.DistributedCache.Redis.Handlers.R;
 
 using System.Net;
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
-using H = D2.Contracts.Interfaces.Caching.Distributed.Handlers.R.IRead.IExistsHandler;
-using I = D2.Contracts.Interfaces.Caching.Distributed.Handlers.R.IRead.ExistsInput;
-using O = D2.Contracts.Interfaces.Caching.Distributed.Handlers.R.IRead.ExistsOutput;
+using H = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead.IExistsHandler;
+using I = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead.ExistsInput;
+using O = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead.ExistsOutput;
 
 /// <summary>
 /// Handler for checking if a key exists in the Redis distributed cache.

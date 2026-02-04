@@ -7,9 +7,9 @@
 // ReSharper disable MemberCanBePrivate.Global
 namespace D2.Geo.Domain.Entities;
 
-using D2.Contracts.Utilities.Attributes;
-using D2.Contracts.Utilities.Enums;
-using D2.Contracts.Utilities.Extensions;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
+using D2.Shared.Utilities.Extensions;
 using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;
 

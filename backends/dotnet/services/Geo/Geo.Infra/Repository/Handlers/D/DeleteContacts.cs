@@ -6,9 +6,9 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.D;
 
-using D2.Contracts.Batch.Pg;
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Batch.Pg;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using Microsoft.Extensions.Options;
 using H = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete.IDeleteContactsHandler;
 using I = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete.DeleteContactsInput;

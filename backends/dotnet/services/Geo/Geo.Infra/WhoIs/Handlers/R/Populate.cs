@@ -8,8 +8,8 @@ namespace D2.Geo.Infra.WhoIs.Handlers.R;
 
 using System.Globalization;
 using System.Net;
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using D2.Geo.App.Interfaces.WhoIs;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;

@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
+namespace D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 
 public partial interface IUpdate
 {

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Result;
+namespace D2.Shared.Result;
 
 using System.Net;
 

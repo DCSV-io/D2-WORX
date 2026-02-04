@@ -6,7 +6,7 @@
 
 namespace D2.Geo.Tests.Unit.Infra.Messaging;
 
-using D2.Contracts.Messages.Geo;
+using D2.Shared.Messages.Geo;
 using D2.Geo.Infra.Messaging.MT.Publishers;
 using FluentAssertions;
 using MassTransit;

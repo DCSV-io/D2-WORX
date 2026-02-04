@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests.Unit.BatchPg;
+namespace D2.Shared.Tests.Unit.BatchPg;
 
-using D2.Contracts.Batch.Pg;
+using D2.Shared.Batch.Pg;
 using FluentAssertions;
 using Xunit;
 

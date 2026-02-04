@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
+namespace D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 
 /// <summary>
 /// Defines a contract for update handlers related to distributed caching services.

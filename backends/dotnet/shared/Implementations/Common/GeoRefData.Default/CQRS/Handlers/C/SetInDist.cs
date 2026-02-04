@@ -4,16 +4,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.C;
+namespace D2.Shared.GeoRefDataService.Default.CQRS.Handlers.C;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
+using D2.Shared.Result;
 using D2.Services.Protos.Geo.V1;
-using Constants = D2.Contracts.Utilities.Constants.Constants;
-using H = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.ISetInDistHandler;
-using I = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetInDistInput;
-using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetInDistOutput;
+using Constants = D2.Shared.Utilities.Constants.Constants;
+using H = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.ISetInDistHandler;
+using I = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetInDistInput;
+using O = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C.ICommands.SetInDistOutput;
 
 /// <summary>
 /// Handler for setting geographic reference data to a distributed cache.

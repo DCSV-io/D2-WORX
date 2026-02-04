@@ -6,7 +6,7 @@
 
 namespace D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 
 public partial interface IPubs
 {

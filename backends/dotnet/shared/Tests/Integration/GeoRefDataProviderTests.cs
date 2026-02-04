@@ -4,15 +4,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests.Integration;
+namespace D2.Shared.Tests.Integration;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
-using D2.Contracts.DistributedCache.Redis;
-using D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.C;
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Caching.Distributed.Handlers.R;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
-using D2.Contracts.Utilities.Constants;
+using D2.Shared.DistributedCache.Redis;
+using D2.Shared.GeoRefDataService.Default.CQRS.Handlers.C;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
+using D2.Shared.Utilities.Constants;
 using D2.Services.Protos.Geo.V1;
 using JetBrains.Annotations;
 using Testcontainers.Redis;

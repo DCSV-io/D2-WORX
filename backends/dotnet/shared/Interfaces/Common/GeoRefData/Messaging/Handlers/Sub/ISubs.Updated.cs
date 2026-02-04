@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
+namespace D2.Shared.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Messages.Geo;
+using D2.Shared.Handler;
+using D2.Shared.Messages.Geo;
 
 public partial interface ISubs
 {

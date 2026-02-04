@@ -14,7 +14,7 @@ public partial interface ICreate
     /// Handler for creating Contacts.
     /// </summary>
     public interface ICreateContactsHandler
-        : D2.Contracts.Handler.IHandler<CreateContactsInput, CreateContactsOutput>;
+        : D2.Shared.Handler.IHandler<CreateContactsInput, CreateContactsOutput>;
 
     /// <summary>
     /// Input for creating Contacts.

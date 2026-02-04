@@ -4,14 +4,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Transactions.Pg.Transactions;
+namespace D2.Shared.Transactions.Pg.Transactions;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using Microsoft.EntityFrameworkCore;
-using H = D2.Contracts.Interfaces.Repository.Transactions.ITransaction.IRollbackHandler;
-using I = D2.Contracts.Interfaces.Repository.Transactions.ITransaction.RollbackInput;
-using O = D2.Contracts.Interfaces.Repository.Transactions.ITransaction.RollbackOutput;
+using H = D2.Shared.Interfaces.Repository.Transactions.ITransaction.IRollbackHandler;
+using I = D2.Shared.Interfaces.Repository.Transactions.ITransaction.RollbackInput;
+using O = D2.Shared.Interfaces.Repository.Transactions.ITransaction.RollbackOutput;
 
 /// <summary>
 /// Handler for rolling back a database transaction.

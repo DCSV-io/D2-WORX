@@ -4,17 +4,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default.Messaging.Handlers.Sub;
+namespace D2.Shared.GeoRefDataService.Default.Messaging.Handlers.Sub;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
+using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
-using H = D2.Contracts.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub.ISubs.IUpdatedHandler;
-using I = D2.Contracts.Messages.Geo.GeoRefDataUpdated;
-using O = D2.Contracts.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub.ISubs.UpdatedOutput;
+using H = D2.Shared.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub.ISubs.IUpdatedHandler;
+using I = D2.Shared.Messages.Geo.GeoRefDataUpdated;
+using O = D2.Shared.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub.ISubs.UpdatedOutput;
 
 /// <summary>
 /// Messaging subscription handler for geographic reference data updated notifications.

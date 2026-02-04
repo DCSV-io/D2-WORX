@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Repository.Transactions;
+namespace D2.Shared.Interfaces.Repository.Transactions;
 
 /// <summary>
 /// Defines a contract for a generic repository.

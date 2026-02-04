@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Result;
+namespace D2.Shared.Result;
 
 /// <summary>
 /// Standardized error codes used across the application.

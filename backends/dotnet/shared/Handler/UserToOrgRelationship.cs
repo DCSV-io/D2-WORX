@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Handler;
+namespace D2.Shared.Handler;
 
 /// <summary>
 /// Represents the relationship type between a user and an organization during a session or request.

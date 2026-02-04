@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Utilities.Enums;
+namespace D2.Shared.Utilities.Enums;
 
 /// <summary>
 /// Specifies the isolation level for database transactions.

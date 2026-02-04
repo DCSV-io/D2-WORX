@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
+namespace D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 using D2.Services.Protos.Geo.V1;
 
 public partial interface IComplex

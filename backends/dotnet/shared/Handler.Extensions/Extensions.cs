@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Handler.Extensions;
+namespace D2.Shared.Handler.Extensions;
 
 using Microsoft.Extensions.DependencyInjection;
 

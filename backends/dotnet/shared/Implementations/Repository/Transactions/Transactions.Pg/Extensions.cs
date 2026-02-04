@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Transactions.Pg;
+namespace D2.Shared.Transactions.Pg;
 
-using D2.Contracts.Interfaces.Repository.Transactions;
-using D2.Contracts.Transactions.Pg.Transactions;
+using D2.Shared.Interfaces.Repository.Transactions;
+using D2.Shared.Transactions.Pg.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>

@@ -6,12 +6,12 @@
 
 // ReSharper disable RedundantCapturedContext
 // ReSharper disable PropertyCanBeMadeInitOnly.Local
-namespace D2.Contracts.Tests.Integration;
+namespace D2.Shared.Tests.Integration;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Repository.Transactions;
-using D2.Contracts.Transactions.Pg.Transactions;
-using D2.Contracts.Utilities.Enums;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Repository.Transactions;
+using D2.Shared.Transactions.Pg.Transactions;
+using D2.Shared.Utilities.Enums;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;

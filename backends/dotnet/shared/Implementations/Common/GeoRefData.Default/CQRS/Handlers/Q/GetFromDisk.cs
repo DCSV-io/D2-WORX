@@ -4,20 +4,20 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.Q;
+namespace D2.Shared.GeoRefDataService.Default.CQRS.Handlers.Q;
 
 using System.Net;
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
-using D2.Contracts.Utilities.Constants;
+using D2.Shared.Handler;
+using D2.Shared.Result;
+using D2.Shared.Utilities.Constants;
 using D2.Services.Protos.Geo.V1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
-using H = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.IGetFromDiskHandler;
-using I = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromDiskInput;
-using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromDiskOutput;
+using H = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.IGetFromDiskHandler;
+using I = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromDiskInput;
+using O = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromDiskOutput;
 
 /// <summary>
 /// Handler for getting georeference data from disk.

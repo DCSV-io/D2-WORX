@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Messages.Geo;
+namespace D2.Shared.Messages.Geo;
 
 /// <summary>
 /// Message indicating that geographic reference data has been updated.

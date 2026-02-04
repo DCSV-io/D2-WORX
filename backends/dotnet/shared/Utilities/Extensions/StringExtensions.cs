@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Utilities.Extensions;
+namespace D2.Shared.Utilities.Extensions;
 
 using System.Text.RegularExpressions;
 

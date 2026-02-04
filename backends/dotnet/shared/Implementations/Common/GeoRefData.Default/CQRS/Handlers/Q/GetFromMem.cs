@@ -4,17 +4,17 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.Q;
+namespace D2.Shared.GeoRefDataService.Default.CQRS.Handlers.Q;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
+using D2.Shared.Result;
 using D2.Services.Protos.Geo.V1;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
-using H = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.IGetFromMemHandler;
-using I = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromMemInput;
-using O = D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromMemOutput;
+using H = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.IGetFromMemHandler;
+using I = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromMemInput;
+using O = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.GetFromMemOutput;
 
 /// <summary>
 /// Handler for getting georeference data from memory cache.

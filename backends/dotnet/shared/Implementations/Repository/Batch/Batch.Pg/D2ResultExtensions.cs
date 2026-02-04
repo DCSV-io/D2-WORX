@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Batch.Pg;
+namespace D2.Shared.Batch.Pg;
 
-using D2.Contracts.Result;
+using D2.Shared.Result;
 
 /// <summary>
 /// Extensions for converting BatchQuery results to D2Result.

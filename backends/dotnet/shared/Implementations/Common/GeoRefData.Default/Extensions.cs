@@ -4,16 +4,16 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.GeoRefDataService.Default;
+namespace D2.Shared.GeoRefDataService.Default;
 
-using D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.C;
-using D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.Q;
-using D2.Contracts.GeoRefDataService.Default.CQRS.Handlers.X;
-using D2.Contracts.GeoRefDataService.Default.Messaging.Handlers.Sub;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
-using D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
-using D2.Contracts.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
+using D2.Shared.GeoRefDataService.Default.CQRS.Handlers.C;
+using D2.Shared.GeoRefDataService.Default.CQRS.Handlers.Q;
+using D2.Shared.GeoRefDataService.Default.CQRS.Handlers.X;
+using D2.Shared.GeoRefDataService.Default.Messaging.Handlers.Sub;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.C;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
+using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
+using D2.Shared.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
 using D2.Services.Protos.Geo.V1;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
+namespace D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
 
 /// <summary>
 /// Defines a contract for query handlers related to geographic reference data services.

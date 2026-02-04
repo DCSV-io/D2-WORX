@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests.Unit;
+namespace D2.Shared.Tests.Unit;
 
-using D2.Contracts.Result;
+using D2.Shared.Result;
 
 /// <summary>
 /// Unit tests for the generic <see cref="D2Result{TData}"/> class.

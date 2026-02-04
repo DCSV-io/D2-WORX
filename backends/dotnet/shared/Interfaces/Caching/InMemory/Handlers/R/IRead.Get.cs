@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
+namespace D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 
 public partial interface IRead
 {

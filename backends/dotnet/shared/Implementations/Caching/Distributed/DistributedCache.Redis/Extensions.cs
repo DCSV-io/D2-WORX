@@ -4,15 +4,15 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.DistributedCache.Redis;
+namespace D2.Shared.DistributedCache.Redis;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
-using D2.Contracts.DistributedCache.Redis.Handlers.D;
-using D2.Contracts.DistributedCache.Redis.Handlers.R;
-using D2.Contracts.DistributedCache.Redis.Handlers.U;
-using D2.Contracts.Interfaces.Caching.Distributed.Handlers.D;
-using D2.Contracts.Interfaces.Caching.Distributed.Handlers.R;
-using D2.Contracts.Interfaces.Caching.Distributed.Handlers.U;
+using D2.Shared.DistributedCache.Redis.Handlers.D;
+using D2.Shared.DistributedCache.Redis.Handlers.R;
+using D2.Shared.DistributedCache.Redis.Handlers.U;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 

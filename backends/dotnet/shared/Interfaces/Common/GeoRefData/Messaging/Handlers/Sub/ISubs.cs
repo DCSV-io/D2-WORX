@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
+namespace D2.Shared.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
 
 /// <summary>
 /// Defines a contract for messaging subscription handlers related to geographic reference data

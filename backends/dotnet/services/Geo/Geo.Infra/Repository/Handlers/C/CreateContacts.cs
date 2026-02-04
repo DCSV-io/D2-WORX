@@ -6,8 +6,8 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.C;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using H = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.ICreateContactsHandler;
 using I = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsInput;
 using O = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsOutput;

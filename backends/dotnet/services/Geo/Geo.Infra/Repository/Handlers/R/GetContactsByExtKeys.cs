@@ -6,8 +6,8 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.R;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using D2.Geo.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;

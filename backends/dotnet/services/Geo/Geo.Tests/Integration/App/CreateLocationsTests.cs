@@ -6,7 +6,7 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Domain.Entities;

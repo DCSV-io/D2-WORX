@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Tests.Unit;
+namespace D2.Shared.Tests.Unit;
 
 using System.Text.Json;
 using D2.Services.Protos.Geo.V1;

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Result.Extensions;
+namespace D2.Shared.Result.Extensions;
 
 using System.Net;
 using D2.Services.Protos.Common.V1;

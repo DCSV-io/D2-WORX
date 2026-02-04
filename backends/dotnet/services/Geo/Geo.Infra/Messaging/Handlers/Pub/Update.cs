@@ -6,9 +6,9 @@
 
 namespace D2.Geo.Infra.Messaging.Handlers.Pub;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Messages.Geo;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Messages.Geo;
+using D2.Shared.Result;
 using D2.Geo.Infra.Messaging.MT.Publishers;
 using Microsoft.Extensions.Logging;
 using H = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler;

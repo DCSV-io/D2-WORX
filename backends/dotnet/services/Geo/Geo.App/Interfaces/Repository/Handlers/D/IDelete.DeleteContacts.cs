@@ -6,7 +6,7 @@
 
 namespace D2.Geo.App.Interfaces.Repository.Handlers.D;
 
-using D2.Contracts.Handler;
+using D2.Shared.Handler;
 
 public partial interface IDelete
 {

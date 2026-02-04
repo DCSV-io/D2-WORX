@@ -6,10 +6,10 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.Q;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Interfaces.Caching.InMemory.Handlers.R;
-using D2.Contracts.Interfaces.Caching.InMemory.Handlers.U;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
+using D2.Shared.Result;
 using D2.Geo.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;

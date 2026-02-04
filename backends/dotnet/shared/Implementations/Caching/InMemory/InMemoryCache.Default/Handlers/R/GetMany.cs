@@ -4,12 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.InMemoryCache.Default.Handlers.R;
+namespace D2.Shared.InMemoryCache.Default.Handlers.R;
 
-using D2.Contracts.Handler;
-using D2.Contracts.Result;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using Microsoft.Extensions.Caching.Memory;
-using S = D2.Contracts.Interfaces.Caching.InMemory.Handlers.R.IRead;
+using S = D2.Shared.Interfaces.Caching.InMemory.Handlers.R.IRead;
 
 /// <summary>
 /// Handler for retrieving multiple values from the in-memory cache.

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Contracts.Interfaces.Caching.InMemory.Handlers.C;
+namespace D2.Shared.Interfaces.Caching.InMemory.Handlers.C;
 
 /// <summary>
 /// Defines a contract for create handlers related to in-memory caching services.

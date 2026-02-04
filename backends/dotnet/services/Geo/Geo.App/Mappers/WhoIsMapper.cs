@@ -6,7 +6,7 @@
 
 namespace D2.Geo.App.Mappers;
 
-using D2.Contracts.Utilities.Extensions;
+using D2.Shared.Utilities.Extensions;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
 
