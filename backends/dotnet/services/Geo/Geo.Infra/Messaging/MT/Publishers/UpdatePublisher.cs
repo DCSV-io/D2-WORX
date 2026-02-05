@@ -7,7 +7,7 @@
 namespace D2.Geo.Infra.Messaging.MT.Publishers;
 
 using System.Net;
-using D2.Shared.Messages.Geo;
+using D2.Geo.Client.Messages;
 using D2.Shared.Result;
 using MassTransit;
 using Microsoft.Extensions.Logging;

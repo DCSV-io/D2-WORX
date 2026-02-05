@@ -4,10 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Geo.App.Implementations.CQRS.Handlers.X;
+namespace D2.Geo.Client.CQRS.Handlers.X;
 
-using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
-using D2.Geo.App.Interfaces.Repository.Handlers.R;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.Q;
 using D2.Services.Protos.Geo.V1;
@@ -21,16 +19,17 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.GetOutput;
 /// <summary>
 /// Handler for getting georeference data.
 /// </summary>
+/// <remarks>
+/// This implementation is meant for consumer services only.
+/// </remarks>
 public class Get : BaseHandler<Get, I, O>, H
 {
     private readonly IQueries.IGetFromMemHandler r_getFromMem;
     private readonly IQueries.IGetFromDistHandler r_getFromDist;
-    private readonly IQueries.IGetFromDiskHandler r_getFromDisk;
     private readonly ICommands.ISetInMemHandler r_setInMem;
-    private readonly ICommands.ISetInDistHandler r_setInDist;
     private readonly ICommands.ISetOnDiskHandler r_setOnDisk;
-    private readonly IRead.IGetReferenceDataHandler r_getFromRepo;
-    private readonly IPubs.IUpdateHandler r_updater;
+    private readonly IQueries.IGetFromDiskHandler r_getFromDisk;
+    private readonly ICommands.IReqUpdateHandler r_requestUpdate;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Get"/> class.
@@ -42,23 +41,17 @@ public class Get : BaseHandler<Get, I, O>, H
     /// <param name="getFromDist">
     /// The get from distributed cache handler.
     /// </param>
-    /// <param name="getFromDisk">
-    /// The get from disk handler.
-    /// </param>
     /// <param name="setInMem">
     /// The set in-memory cache handler.
-    /// </param>
-    /// <param name="setInDist">
-    /// The set in distributed cache handler.
     /// </param>
     /// <param name="setOnDisk">
     /// The set on-disk handler.
     /// </param>
-    /// <param name="getFromRepo">
-    /// The get from repository handler.
+    /// <param name="getFromDisk">
+    /// The get from disk handler.
     /// </param>
-    /// <param name="updater">
-    /// The update notification publisher handler.
+    /// <param name="requestUpdate">
+    /// The request update handler.
     /// </param>
     /// <param name="context">
     /// The handler context.
@@ -66,38 +59,35 @@ public class Get : BaseHandler<Get, I, O>, H
     public Get(
         IQueries.IGetFromMemHandler getFromMem,
         IQueries.IGetFromDistHandler getFromDist,
-        IQueries.IGetFromDiskHandler getFromDisk,
         ICommands.ISetInMemHandler setInMem,
-        ICommands.ISetInDistHandler setInDist,
         ICommands.ISetOnDiskHandler setOnDisk,
-        IRead.IGetReferenceDataHandler getFromRepo,
-        IPubs.IUpdateHandler updater,
+        IQueries.IGetFromDiskHandler getFromDisk,
+        ICommands.IReqUpdateHandler requestUpdate,
         IHandlerContext context)
         : base(context)
     {
         r_getFromMem = getFromMem;
+        r_setInMem = setInMem;
+        r_setOnDisk = setOnDisk;
         r_getFromDist = getFromDist;
         r_getFromDisk = getFromDisk;
-        r_setInMem = setInMem;
-        r_setInDist = setInDist;
-        r_setOnDisk = setOnDisk;
-        r_getFromRepo = getFromRepo;
-        r_updater = updater;
+        r_requestUpdate = requestUpdate;
     }
 
     /// <summary>
-    /// Executes the handler to get geographic reference data.
+    /// Gets the georeference data.
     /// </summary>
     ///
     /// <param name="input">
-    /// The input parameters for the handler.
+    /// The get input.
     /// </param>
     /// <param name="ct">
     /// The cancellation token.
     /// </param>
     ///
     /// <returns>
-    /// The result of the get operation.
+    /// A <see cref="ValueTask"/> containing a <see cref="D2Result{O}"/> the georeference data
+    /// if found; otherwise, NotFound.
     /// </returns>
     protected override async ValueTask<D2Result<O?>> ExecuteAsync(
         I input,
@@ -156,36 +146,21 @@ public class Get : BaseHandler<Get, I, O>, H
             var data = distOutput!.Data;
 
             // If successful, store it locally.
-            await SetInMemAsync(data, ct);
-            await SetOnDiskAsync(data, ct);
+            await SetInMemoryAndOnDiskAsync(data, ct);
 
             // Then return the data.
             return D2Result<O?>.Ok(new O(data), traceId: TraceId);
         }
 
-        // If that failed, try to get it from the database.
-        var dbR = await r_getFromRepo.HandleAsync(new(), ct);
-        if (dbR.CheckSuccess(out var dbOutput))
+        // If that failed, tell the Geo service to update the distributed cache.
+        var updateR = await r_requestUpdate.HandleAsync(new(), ct);
+        if (updateR.Failed)
         {
-            var data = dbOutput!.Data;
-
-            // Set it everywhere and notify update.
-            await SetInMemAsync(data, ct);
-            await SetOnDiskAsync(data, ct);
-            var setDistR = await SetInDistAsync(data, ct);
-            if (setDistR.Success)
-            {
-                await NotifyUpdateAsync(data, ct);
-            }
-
-            // Then return the data.
-            return D2Result<O?>.Ok(new O(dbOutput.Data), traceId: TraceId);
+            // If we failed to reach the Geo service, log an error.
+            Context.Logger.LogError(
+                "Failed to request update of georeference data (consumer). TraceId: {TraceId}",
+                TraceId);
         }
-
-        // If we failed to get it from the database, log the error.
-        Context.Logger.LogError(
-            "Failed to get data from database (provider). TraceId: {TraceId}",
-            TraceId);
 
         // Then try to get it from disk.
         var diskR = await r_getFromDisk.HandleAsync(new(), ct);
@@ -193,16 +168,14 @@ public class Get : BaseHandler<Get, I, O>, H
         {
             var data = diskOutput!.Data;
 
-            // Set everywhere (except where it came from) and notify update.
-            await SetInMemAsync(data, ct);
-            var setDistR = await SetInDistAsync(data, ct);
-            if (setDistR.Success)
+            // If successful, store it in memory cache.
+            var setInMemR = await r_setInMem.HandleAsync(new(data), ct);
+            if (setInMemR.Failed)
             {
-                await NotifyUpdateAsync(data, ct);
+                Context.Logger.LogError(
+                    "Failed to set data in memory cache (consumer). TraceId: {TraceId}",
+                    TraceId);
             }
-
-            // NOTE: If, for whatever reason, the version on disk is outdated compared to the
-            // database, a scheduled job will eventually reconcile it.
 
             // Then return the data.
             return D2Result<O?>.Ok(new O(data), traceId: TraceId);
@@ -213,16 +186,16 @@ public class Get : BaseHandler<Get, I, O>, H
     }
 
     /// <summary>
-    /// Sets the reference data in memory cache.
+    /// Sets the georeference data in both in-memory and on-disk.
     /// </summary>
     ///
     /// <param name="data">
-    /// The reference data.
+    /// The georeference data.
     /// </param>
     /// <param name="ct">
     /// The cancellation token.
     /// </param>
-    private async ValueTask SetInMemAsync(
+    private async ValueTask SetInMemoryAndOnDiskAsync(
         GeoRefData data,
         CancellationToken ct)
     {
@@ -230,87 +203,15 @@ public class Get : BaseHandler<Get, I, O>, H
         if (setInMemR.Failed)
         {
             Context.Logger.LogError(
-                "Failed to set data in memory cache (provider). TraceId: {TraceId}",
+                "Failed to set data in memory cache (consumer). TraceId: {TraceId}",
                 TraceId);
         }
-    }
 
-    /// <summary>
-    /// Sets the reference data on disk.
-    /// </summary>
-    ///
-    /// <param name="data">
-    /// The reference data.
-    /// </param>
-    /// <param name="ct">
-    /// The cancellation token.
-    /// </param>
-    private async ValueTask SetOnDiskAsync(
-        GeoRefData data,
-        CancellationToken ct)
-    {
         var setOnDiskR = await r_setOnDisk.HandleAsync(new(data), ct);
         if (setOnDiskR.Failed)
         {
             Context.Logger.LogError(
-                "Failed to set data on disk (provider). TraceId: {TraceId}",
-                TraceId);
-        }
-    }
-
-    /// <summary>
-    /// Sets the reference data in the distributed cache.
-    /// </summary>
-    ///
-    /// <param name="data">
-    /// The reference data.
-    /// </param>
-    /// <param name="ct">
-    /// The cancellation token.
-    /// </param>
-    ///
-    /// <returns>
-    /// A <see cref="ValueTask"/> containing a <see cref="D2Result"/> indicating success or failure.
-    /// </returns>
-    private async ValueTask<D2Result> SetInDistAsync(
-        GeoRefData data,
-        CancellationToken ct)
-    {
-        var setInDistR = await r_setInDist.HandleAsync(new(data), ct);
-
-        if (setInDistR.Success)
-        {
-            return D2Result.Ok(traceId: TraceId);
-        }
-
-        Context.Logger.LogError(
-            "Failed to set data in distributed cache (provider). TraceId: {TraceId}",
-            TraceId);
-        return D2Result.Fail(
-            ["Failed to set data in distributed cache."],
-            System.Net.HttpStatusCode.InternalServerError,
-            traceId: TraceId);
-    }
-
-    /// <summary>
-    /// Notifies other services of an update to the reference data.
-    /// </summary>
-    ///
-    /// <param name="data">
-    /// The reference data.
-    /// </param>
-    /// <param name="ct">
-    /// The cancellation token.
-    /// </param>
-    private async ValueTask NotifyUpdateAsync(
-        GeoRefData data,
-        CancellationToken ct)
-    {
-        var updateR = await r_updater.HandleAsync(new(data.Version), ct);
-        if (updateR.Failed)
-        {
-            Context.Logger.LogError(
-                "Failed to publish update notification (provider). TraceId: {TraceId}",
+                "Failed to set data on disk (consumer). TraceId: {TraceId}",
                 TraceId);
         }
     }

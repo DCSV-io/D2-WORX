@@ -28,8 +28,9 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\shared\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
-      <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
       <ProjectReference Include="..\..\..\shared\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
+      <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
+      <ProjectReference Include="..\Geo.Client\Geo.Client.csproj" />
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
       <ProjectReference Include="..\Geo.Infra\Geo.Infra.csproj" />
     </ItemGroup>

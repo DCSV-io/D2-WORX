@@ -12,7 +12,7 @@ using D2.Services.Protos.Geo.V1;
 using D2.Shared.Result.Extensions;
 using Grpc.Core;
 using GeoComplex = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex;
-using GeoRefDataComplex = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X.IComplex;
+using GeoRefDataComplex = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex;
 using SB = D2.Services.Protos.Geo.V1.GeoService.GeoServiceBase;
 
 /// <summary>

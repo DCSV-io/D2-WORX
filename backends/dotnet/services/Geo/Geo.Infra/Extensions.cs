@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Infra;
 
+using D2.Geo.Client.Messaging.MT.Consumers;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
 using D2.Geo.Infra.Messaging.MT.Publishers;
 using D2.Geo.Infra.Repository;
@@ -13,7 +14,6 @@ using D2.Geo.Infra.Repository.Handlers.C;
 using D2.Geo.Infra.Repository.Handlers.D;
 using D2.Geo.Infra.Repository.Handlers.R;
 using D2.Shared.DistributedCache.Redis;
-using D2.Shared.GeoRefDataService.Default.Messaging.MT.Consumers;
 using D2.Shared.InMemoryCache.Default;
 using D2.Shared.Transactions.Pg;
 using MassTransit;

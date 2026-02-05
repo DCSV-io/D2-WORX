@@ -5,8 +5,8 @@
 // -----------------------------------------------------------------------
 
 using D2.Geo.App;
+using D2.Geo.Client;
 using D2.Geo.Infra;
-using D2.Shared.GeoRefDataService.Default;
 using D2.Shared.Handler.Extensions;
 using D2.Shared.ServiceDefaults;
 using D2.Shared.Utilities.Extensions;

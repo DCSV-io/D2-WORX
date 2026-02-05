@@ -10,13 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
       <ProjectReference Include="..\Handler\Handler.csproj" />
-      <ProjectReference Include="..\Messages\Messages.csproj" />
       <ProjectReference Include="..\Utilities\Utilities.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Common\" />
-      <Folder Include="Common\GeoRefData\CQRS\Handlers\U\" />
     </ItemGroup>
 
 </Project>

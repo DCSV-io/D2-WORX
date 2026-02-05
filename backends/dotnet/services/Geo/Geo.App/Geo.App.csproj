@@ -9,8 +9,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\..\shared\Handler\Handler.csproj" />
-      <ProjectReference Include="..\..\..\shared\Interfaces\Interfaces.csproj" />
       <ProjectReference Include="..\..\..\shared\protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
+      <ProjectReference Include="..\Geo.Client\Geo.Client.csproj" />
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
     </ItemGroup>
 

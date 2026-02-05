@@ -7,10 +7,10 @@
 namespace D2.Geo.Tests.Unit.Infra.Messaging;
 
 using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
+using D2.Geo.Client.Messages;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
 using D2.Geo.Infra.Messaging.MT.Publishers;
 using D2.Shared.Handler;
-using D2.Shared.Messages.Geo;
 using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
