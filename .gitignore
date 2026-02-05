@@ -155,3 +155,7 @@ georefdata.bin
 .env.local
 .env.*.local
 !.env.local.example
+
+# Local tool settings (machine-specific)
+.claude/settings.local.json
+.aspire/settings.json
