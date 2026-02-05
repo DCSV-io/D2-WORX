@@ -503,6 +503,8 @@ refactor: simplify caching logic
 
 **With scope:** `feat(geo): add primary locales`
 
+**Important:** Do NOT add `Co-Authored-By` lines to commit messages.
+
 ---
 
 ## Infrastructure
