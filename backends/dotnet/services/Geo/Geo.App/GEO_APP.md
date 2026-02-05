@@ -6,7 +6,7 @@ Application layer for the Geo microservice defining handler interfaces and imple
 
 | File Name                              | Description                                                                                                  |
 |----------------------------------------|--------------------------------------------------------------------------------------------------------------|
-| [Extensions.cs](Extensions.cs)         | DI extension method AddGeoApp registering publisher-side CQRS handlers including SetInDist for Redis writes. |
+| [Extensions.cs](Extensions.cs)         | DI extension method AddGeoApp registering CQRS handlers for Location, WhoIs, Contact operations.            |
 | [GeoAppOptions.cs](GeoAppOptions.cs)   | Options for application configuration including cache expiration times for Location, WhoIs, and Contact.     |
 
 ---

@@ -33,6 +33,13 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 | [DeleteContactsTests.cs](Integration/App/DeleteContactsTests.cs)             | Integration tests for DeleteContacts CQRS handler verifying batch deletion with cache invalidation and idempotency.                               |
 | [FindWhoIsTests.cs](Integration/App/FindWhoIsTests.cs)                       | Integration tests for FindWhoIs complex handler verifying cache check → external API → create flow with nested Location enrichment and partial success handling. |
 
+### Client
+
+| File Name                                                                                     | Description                                                                                                                           |
+|-----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| [GeoRefDataProviderTests.cs](Integration/Client/GeoRefDataProviderTests.cs)                    | Integration tests using Testcontainers.Redis to verify provider-side SetInDist handler stores and overwrites data in Redis correctly. |
+| [GeoRefDataTests.cs](Integration/Client/GeoRefDataTests.cs)                                    | Integration tests using Testcontainers.Redis to verify multi-tier cache behavior: memory/Redis/disk cascade and cache population.     |
+
 ### Infra
 
 #### Repository
@@ -83,6 +90,13 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 | [PhoneNumberTests.cs](Unit/Domain/ValueObjects/PhoneNumberTests.cs)       | Tests checking phone digit extraction, length validation (7-15 digits), label handling, Create from existing, GetHashCode, and Equals edge cases. |
 | [ProfessionalTests.cs](Unit/Domain/ValueObjects/ProfessionalTests.cs)     | Tests verifying Professional with required CompanyName, optional properties, Uri validation, and whitespace normalization.                        |
 | [StreetAddressTests.cs](Unit/Domain/ValueObjects/StreetAddressTests.cs)   | Tests verifying 3-line address validation, Line3 dependency on Line2, whitespace cleaning, and immutability.                                      |
+
+### Client
+
+| File Name                                                                                                  | Description                                                                                                           |
+|------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| [GeoRefDataUnitTests.cs](Unit/Client/GeoRefDataUnitTests.cs)                                               | Unit tests for Geo.Client handler implementations: SetInMem, GetFromMem, SetOnDisk, GetFromDisk, ReqUpdate, Get.    |
+| [GetRefDataResSerializationTests.cs](Unit/Client/GetRefDataResSerializationTests.cs)                        | Tests verifying protobuf binary serialization/deserialization of GetReferenceDataResponse for Redis caching.          |
 
 ### Infra
 

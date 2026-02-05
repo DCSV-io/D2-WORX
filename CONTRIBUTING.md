@@ -7,7 +7,7 @@ This project is early-stage and under active development.
 Use descriptive, lowercased branches with a slash-separated prefix:
 
 - `docs/...` for documentation and repo hygiene.
-- `feature/...` for new features.
+- `feat/...` for new features.
 - `fix/...` for bug fixes.
 - `infra/...` for CI/CD, deployment, or infrastructure changes.
 - `refactor/...` for codebase cleanup without new features.

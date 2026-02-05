@@ -70,11 +70,13 @@ Summary:
 - gRPC request/response standardization with implementation of Result.Extensions
 - REST API Gateway (HTTP/REST to gRPC routing)
 - Manual E2E testing to validate initial vertical slice with OTEL coverage
+- Geo Service: WhoIs, Contact, Location handlers (CQRS + repository + external API integration)
+- Geo.Client: Service-owned client library (messages, interfaces, default handler implementations)
+- 591 Geo service tests (unit + integration) passing
 
 **🚧 In Progress:**
-- Geo Service Cont'd (Contacts, WhoIs, Locations)
 - Auth service architecture (Node.js + BetterAuth)
-- Multi-dimensional rate limiting infrastructure
+- Multi-dimensional rate limiting design
 
 **📋 Planned:**
 - SignalR Gateway (WebSocket to gRPC routing)
@@ -189,16 +191,15 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >| [Handler](backends/dotnet/shared/Handler/HANDLER.md)                                        | Base handler patterns with logging and tracing      |
 >| [Handler.Extensions](backends/dotnet/shared/Handler.Extensions/HANDLER_EXTENSIONS.md)       | DI registration for handler context services        |
 >| [Interfaces](backends/dotnet/shared/Interfaces/INTERFACES.md)                               | Shared contract interfaces                          |
->| [Messages](backends/dotnet/shared/Messages/MESSAGES.md)                                     | Domain event messages for pub-sub messaging         |
 >| [Result](backends/dotnet/shared/Result/RESULT.md)                                           | D2Result pattern for consistent error handling      |
 >| [Result.Extensions](backends/dotnet/shared/Result.Extensions/RESULT_EXTENSIONS.md)          | D2Result to/from proto conversion and gRPC handling |
 >| [ServiceDefaults](backends/dotnet/shared/ServiceDefaults/SERVICE_DEFAULT.md)                | Shared service configuration and telemetry          |
 >| [Tests](backends/dotnet/shared/Tests/TESTS.md)                                              | Shared testing infrastructure and base classes      |
 >| [Utilities](backends/dotnet/shared/Utilities/UTILITIES.md)                                  | Shared utility extensions and helpers               |
 >
->**Contracts (Implementations):**
+>**Shared Implementations:**
 >
->*Reusable, drop-in implementations of contract interfaces. Services consume these via DI without reinventing common functionality like caching, transactions, or shared business logic.*
+>*Reusable, drop-in implementations of contract interfaces. Services consume these via DI without reinventing common functionality like caching, transactions, or batch query utilities.*
 >
 >*Caching:*
 >
@@ -207,26 +208,22 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >| [DistributedCache.Redis](backends/dotnet/shared/Implementations/Caching/Distributed/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md)           | Redis distributed caching implementation |
 >| [InMemoryCache.Default](backends/dotnet/shared/Implementations/Caching/InMemory/InMemoryCache.Default/INMEMORYCACHE_DEFAULT.md)                 | In-memory caching implementation         |
 >
->*Common:*
->
->| Component                                                                                                          | Description                          |
->|--------------------------------------------------------------------------------------------------------------------|--------------------------------------|
->| [GeoRefData.Default](backends/dotnet/shared/Implementations/Common/GeoRefData.Default/GEOREFDATA_DEFAULT.md)        | Multi-tier georeference data caching |
->
 >*Repository:*
 >
->| Component                                                                                                                  | Description                                |
->|----------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
->| [Transactions.Pg](backends/dotnet/shared/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md)        | PostgreSQL transaction management handlers |
+>| Component                                                                                                                                        | Description                                |
+>|--------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+>| [Batch.Pg](backends/dotnet/shared/Implementations/Repository/Batch/Batch.Pg/BATCH_PG.md)                                                        | Reusable batched query utilities           |
+>| [Transactions.Pg](backends/dotnet/shared/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md)                             | PostgreSQL transaction management handlers |
 >
 >**Services:**
 >
->*Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async).*
+>*Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async). Each service owns a client library for consumers.*
 >
 >| Component                                                                                | Description                                                                       |
 >|------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
 >| [Protos.DotNet](backends/dotnet/shared/protos/_gen/Protos.DotNet/PROTOS_DOTNET.md)        | Generated gRPC service contracts                                                  |
 >| [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)                                        | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
+>| [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md)                       | Geo service client library for consumer services                                  |
 >
 >**Gateways:**
 >

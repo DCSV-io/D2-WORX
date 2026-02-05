@@ -21,7 +21,7 @@
 ### Primary Goals
 1. **Auth Service Setup** - Standalone Node.js service with BetterAuth
 2. **Rate Limiting Infrastructure** - Multi-dimensional rate limiter packages
-3. **Geo Service Completion** - WhoIs, Contacts, Locations handlers
+3. **Node.js Workspace** - pnpm workspaces, shared TypeScript config
 
 ### Blocked By
 - None currently
@@ -152,9 +152,9 @@ blocked:{dimension}:{value}
 | D2.ServiceDefaults | ✅ Done | `backends/dotnet/shared/ServiceDefaults/` |
 | DistributedCache.Redis | ✅ Done | `backends/dotnet/shared/Implementations/Caching/` |
 | InMemoryCache.Default | ✅ Done | `backends/dotnet/shared/Implementations/Caching/` |
-| GeoRefData.Default | ✅ Done | `backends/dotnet/shared/Implementations/Common/` |
 | Transactions.Pg | ✅ Done | `backends/dotnet/shared/Implementations/Repository/` |
 | Batch.Pg | ✅ Done | `backends/dotnet/shared/Implementations/Repository/` |
+| **Geo.Client** | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (service-owned client library) |
 | **D2.RateLimit.Redis** | 📋 Planned | Rate limiting for .NET |
 | **D2.Geo.Cache** | 📋 Planned | Local WhoIs caching |
 
@@ -174,7 +174,8 @@ blocked:{dimension}:{value}
 | Geo.App | ✅ Done | CQRS handlers, mappers |
 | Geo.Infra | ✅ Done | Repository, messaging |
 | Geo.API | ✅ Done | gRPC service |
-| Geo.Tests | ✅ Done | 574 tests passing |
+| Geo.Client | ✅ Done | Service-owned client library (messages, interfaces, handlers) |
+| Geo.Tests | ✅ Done | 591 tests passing |
 | **Auth Service** | 📋 Planned | Node.js + Hono + BetterAuth (`backends/node/services/auth/`) |
 
 ### Gateways
@@ -231,12 +232,13 @@ blocked:{dimension}:{value}
    - LRU memory cache
    - Async refresh
 
-### Phase 3: Geo Service Completion
+### Phase 3: Geo Service Completion ✅
 
-1. **WhoIs handlers** - Repository + CQRS
-2. **Contact handlers** - Repository + CQRS
-3. **FindWhoIs complex handler** - External API integration
-4. **Location handlers completion**
+All Geo service handlers are implemented and tested (591 tests passing):
+- WhoIs handlers (Repository + CQRS + FindWhoIs complex handler with external API)
+- Contact handlers (Repository + CQRS + Create/Delete/GetByIds/GetByExtKeys)
+- Location handlers (Repository + CQRS + CreateLocations)
+- Geo.Client library (service-owned client with messages, interfaces, default implementations)
 
 ---
 
@@ -275,4 +277,4 @@ blocked:{dimension}:{value}
 
 ---
 
-*Last updated: 2025-02-04*
+*Last updated: 2026-02-04*

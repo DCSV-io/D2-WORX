@@ -187,8 +187,6 @@ Contracts/
 |
 |__ Interfaces/ -> All interface definitions following TLC hierarchy
 |
-|__ Messages/ -> Pure POCO message contracts (no dependencies)
-|
 |__ Result/ -> D2Result pattern
 |
 |__ Result.Extensions/ -> Extension methods for D2Result
@@ -218,10 +216,6 @@ Implementations/ -> Common reusable implementations
 |       |
 |       |__ InMemoryCache.Default/ -> Memory implementation
 |
-|__ Common/ -> Other commonly shared, drop-in implementations
-|   |
-|   |__ GeoRefData.Default/ -> Shared georeference logic (includes disk caching)
-|
 |__ Repository/ -> Common repository implementations
     |
     |__ Transactions/ -> Transaction management implementations
@@ -233,7 +227,7 @@ Implementations/ -> Common reusable implementations
 
 **Purpose:** Each service follows clean architecture with domain, application, infrastructure, and API layers.
 
-**Key Principle:** Each service owns its data and business logic and exposes functionality via gRPC APIs with versioned contracts.
+**Key Principle:** Each service owns its data and business logic and exposes functionality via gRPC APIs with versioned contracts. Each service also owns a **client library** (`ServiceName.Client`) containing messages, interfaces, and default implementations that consumers depend on.
 
 **Rationale:**
 - **Domain Layer:** Completely unaware of D²-WORX or its patterns, pure business logic and data modeling.
@@ -245,6 +239,15 @@ Current Service Structure:
 
 ```
 ServiceName/ -> Root folder for the service
+|
+|
+|__ ServiceName.Client/ -> Service-owned client library
+|   |
+|   |__ Messages/ -> Domain event POCOs consumed by other services
+|   |__ Interfaces/ -> Handler interfaces for consumers (CQRS, Messaging)
+|   |__ CQRS/Handlers/ -> Default handler implementations (cache, disk, gRPC)
+|   |__ Messaging/ -> Default messaging handlers and MassTransit consumers
+|   |__ Extensions.cs -> DI registration for consumer services
 |
 |
 |__ ServiceName.Domain/ -> Project folder for domain layer

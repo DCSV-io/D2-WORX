@@ -71,53 +71,6 @@ Interface definitions for handler-based operations across caching, repositories,
 
 ---
 
-## Common
-
-> ### GeoRefData
->
-> #### CQRS
->
-> ##### Handlers
->
-> ###### C (Commands)
->
-> | File Name                                                                          | Description                                                                                            |
-> |------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------|
-> | [ICommands.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.cs)                     | Partial interface defining command operations for geographic reference data state-changing operations. |
-> | [ICommands.ReqUpdate.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.ReqUpdate.cs) | Extends ICommands with IReqUpdateHandler for requesting reference data updates via gRPC.               |
-> | [ICommands.SetInDist.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.SetInDist.cs) | Extends ICommands with ISetInDistHandler for storing reference data in Redis distributed cache.        |
-> | [ICommands.SetInMem.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.SetInMem.cs)   | Extends ICommands with ISetInMemHandler for storing reference data in memory cache.                    |
-> | [ICommands.SetOnDisk.cs](Common/GeoRefData/CQRS/Handlers/C/ICommands.SetOnDisk.cs) | Extends ICommands with ISetOnDiskHandler for persisting reference data to disk.                        |
->
-> ###### Q (Queries)
->
-> | File Name                                                                            | Description                                                                                     |
-> |--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-> | [IQueries.cs](Common/GeoRefData/CQRS/Handlers/Q/IQueries.cs)                         | Partial interface defining query operations for geographic reference data read-only operations. |
-> | [IQueries.GetFromDisk.cs](Common/GeoRefData/CQRS/Handlers/Q/IQueries.GetFromDisk.cs) | Extends IQueries with IGetFromDiskHandler for retrieving reference data from disk storage.      |
-> | [IQueries.GetFromDist.cs](Common/GeoRefData/CQRS/Handlers/Q/IQueries.GetFromDist.cs) | Extends IQueries with IGetFromDistHandler for retrieving reference data from Redis.             |
-> | [IQueries.GetFromMem.cs](Common/GeoRefData/CQRS/Handlers/Q/IQueries.GetFromMem.cs)   | Extends IQueries with IGetFromMemHandler for retrieving reference data from memory cache.       |
->
-> ###### X (Complex)
->
-> | File Name                                                            | Description                                                                                               |
-> |----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-> | [IComplex.cs](Common/GeoRefData/CQRS/Handlers/X/IComplex.cs)         | Partial interface defining complex operations for geographic reference data operations with side effects. |
-> | [IComplex.Get.cs](Common/GeoRefData/CQRS/Handlers/X/IComplex.Get.cs) | Extends IComplex with IGetHandler for orchestrating multi-tier cache retrieval with fallback chain.       |
->
-> #### Messaging
->
-> ##### Handlers
->
-> ###### Sub (Subscribers)
->
-> | File Name                                                                     | Description                                                                                 |
-> |-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-> | [ISubs.cs](Common/GeoRefData/Messaging/Handlers/Sub/ISubs.cs)                 | Partial interface defining subscription operations for geographic reference data messaging. |
-> | [ISubs.Updated.cs](Common/GeoRefData/Messaging/Handlers/Sub/ISubs.Updated.cs) | Extends ISubs with IUpdatedHandler for processing GeoRefDataUpdated messages.               |
-
----
-
 ## Repository
 
 > ### Transactions

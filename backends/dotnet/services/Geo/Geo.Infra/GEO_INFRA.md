@@ -6,7 +6,7 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 
 | File Name                      | Description                                                                                                                                                                                 |
 |--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Extensions.cs](Extensions.cs) | DI extension method AddGeoInfra registering GeoDbContext, MassTransit with RabbitMQ, repository handlers, messaging publisher handlers, and UpdatedConsumer from GeoRefDataService.Default. |
+| [Extensions.cs](Extensions.cs) | DI extension method AddGeoInfra registering GeoDbContext, MassTransit with RabbitMQ, repository handlers, messaging publisher handlers, and UpdatedConsumer from Geo.Client. |
 | [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration including BatchSize for repository operations.                                                                                           |
 
 ---
@@ -23,13 +23,13 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > #### Sub (Subscribers)
 >
-> No subscriber handlers - shared subscribers (like Updated from GeoRefDataService.Default) are registered via consumer services.
+> No subscriber handlers - shared subscribers (like Updated from Geo.Client) are registered via consumer services.
 >
 > ### MT (MassTransit)
 >
 > #### Consumers
 >
-> No Geo-specific consumers - shared consumers (like UpdatedConsumer from GeoRefDataService.Default) are registered via Extensions.cs.
+> No Geo-specific consumers - shared consumers (like UpdatedConsumer from Geo.Client) are registered via Extensions.cs.
 >
 > #### Publishers
 >

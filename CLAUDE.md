@@ -25,6 +25,7 @@ For deeper architectural context, consult these files:
 | `README.md`                                           | Project overview, setup, status    |
 | `backends/BACKENDS.md`                                | Full backend architecture          |
 | `backends/dotnet/services/Geo/GEO_SERVICE.md`         | Geo service architecture           |
+| `backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md` | Geo client library (reference)  |
 | `backends/dotnet/shared/Handler/HANDLER.md`           | Handler pattern guide              |
 | `backends/dotnet/shared/Result/RESULT.md`             | D2Result pattern                   |
 | `CONTRIBUTING.md`                                     | Contribution guidelines            |
@@ -285,8 +286,7 @@ D2-WORX/
 │   │   ├── shared/                 # Shared libraries
 │   │   │   ├── Handler/            # BaseHandler pattern
 │   │   │   ├── Interfaces/         # Contract interfaces (TLC hierarchy)
-│   │   │   ├── Implementations/    # Reusable implementations
-│   │   │   ├── Messages/           # Domain event POCOs
+│   │   │   ├── Implementations/    # Reusable implementations (Caching, Repository)
 │   │   │   ├── Result/             # D2Result pattern
 │   │   │   ├── Result.Extensions/  # D2Result ↔ Proto conversions
 │   │   │   ├── ServiceDefaults/    # OpenTelemetry config
@@ -297,6 +297,7 @@ D2-WORX/
 │   │   │   └── REST/               # HTTP/REST → gRPC gateway
 │   │   └── services/
 │   │       └── Geo/                # Geographic service
+│   │           ├── Geo.Client/     # Service-owned client library
 │   │           ├── Geo.Domain/     # DDD entities & value objects
 │   │           ├── Geo.App/        # CQRS handlers, mappers
 │   │           ├── Geo.Infra/      # Repository, messaging, EF Core
@@ -546,7 +547,7 @@ refactor: simplify caching logic
 
 1. **Check existing implementations** - look for similar handlers/patterns in the codebase
 2. **Read relevant documentation** - `*.md` files are authoritative references
-3. **Use existing utilities** - check `D2.Shared.Utilities` before creating helpers
+3. **Use existing utilities** - check `D2.Contracts.Utilities` before creating helpers
 4. **Follow naming conventions** - especially the field prefixes (`r_`, `s_`, `sr_`, `_`)
 
 ### Common Mistakes to Avoid
@@ -567,18 +568,19 @@ refactor: simplify caching logic
 - Value objects: Coordinates, StreetAddress, EmailAddress, PhoneNumber, Personal, Professional, ContactMethods
 - Mappers: All domain ↔ DTO conversions (with unit tests)
 - CQRS interfaces: Queries, Commands, Complex handlers
-- Repository interfaces: Read, Create handlers
+- Repository interfaces: Read, Create, Delete handlers
 - In-memory cache handlers: Get, Set, GetMany, SetMany
-- App layer: GetLocationsByIds CQRS handler with memory cache → repository fallback
-- Infra layer: GetLocationsByIds + CreateLocations repository handlers
+- App layer: Full CQRS handlers for Location, WhoIs, Contact (get, create, delete, find)
+- Infra layer: Repository handlers for all entities + WhoIs external API integration
 - EF Core configurations: Location, WhoIs, Contact entities
 - Batch.Pg: Reusable batched query utilities with D2Result integration
-- Integration tests: Location handlers, BatchQuery, GetLocationsByIds CQRS
+- Geo.Client: Service-owned client library (messages, interfaces, default handlers)
+- Integration tests: 591 tests covering all handlers, repository, messaging, client library
 
 **Next:**
-- WhoIs and Contact repository handlers
-- CQRS query handlers for WhoIs and Contact
-- FindWhoIs complex handler (with external API integration)
+- Node.js/TypeScript Geo client library
+- Auth Service (Node.js + Hono + BetterAuth)
+- Rate limiting packages (@d2/ratelimit, D2.RateLimit.Redis)
 
 ### When in Doubt
 
