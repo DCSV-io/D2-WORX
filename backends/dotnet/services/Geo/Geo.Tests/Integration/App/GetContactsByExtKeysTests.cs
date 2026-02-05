@@ -7,10 +7,6 @@
 // ReSharper disable SuspiciousElementAccess
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Shared.Handler;
-using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
-using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
-using D2.Shared.Result;
 using D2.Geo.App;
 using D2.Geo.App.Implementations.CQRS.Handlers.Q;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
@@ -20,6 +16,10 @@ using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Tests.Fixtures;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
+using D2.Shared.Result;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;

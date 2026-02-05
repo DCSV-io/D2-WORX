@@ -6,8 +6,6 @@
 
 namespace D2.Geo.Tests.Integration.Infra.Repository.Handlers;
 
-using D2.Shared.Handler;
-using D2.Shared.Result;
 using D2.Geo.App.Interfaces.Repository.Handlers.C;
 using D2.Geo.App.Interfaces.Repository.Handlers.R;
 using D2.Geo.Domain.Entities;
@@ -16,6 +14,8 @@ using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.C;
 using D2.Geo.Infra.Repository.Handlers.R;
 using D2.Geo.Tests.Fixtures;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;

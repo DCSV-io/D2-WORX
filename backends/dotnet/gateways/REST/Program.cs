@@ -4,8 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using D2.Shared.ServiceDefaults;
 using D2.Gateways.REST.Endpoints;
+using D2.Shared.ServiceDefaults;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);

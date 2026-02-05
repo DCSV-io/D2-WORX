@@ -7,10 +7,10 @@
 namespace D2.Geo.Domain.ValueObjects;
 
 using System.Globalization;
-using D2.Shared.Utilities.Attributes;
-using D2.Shared.Utilities.Enums;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
 
 /// <summary>
 /// Represents the geographic coordinates (latitude and longitude) of a <see cref="Location"/>.

@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsAspireSharedProject>true</IsAspireSharedProject>
-        <RootNamespace>D2.Contracts.ServiceDefaults</RootNamespace>
+        <RootNamespace>D2.Shared.ServiceDefaults</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

@@ -6,8 +6,8 @@
 
 namespace D2.Geo.App.Interfaces.WhoIs.Handlers.R;
 
-using D2.Shared.Handler;
 using D2.Geo.Domain.Entities;
+using D2.Shared.Handler;
 
 public partial interface IRead
 {

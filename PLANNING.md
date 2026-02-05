@@ -175,9 +175,7 @@ blocked:{dimension}:{value}
 | Geo.Infra | ✅ Done | Repository, messaging |
 | Geo.API | ✅ Done | gRPC service |
 | Geo.Tests | ✅ Done | 574 tests passing |
-| **Auth Service** | 📋 Planned | Node.js + BetterAuth |
-| Auth.Domain (.NET) | 🔲 Placeholder | May not be needed |
-| Auth.API (.NET) | 🔲 Placeholder | JWT validation only |
+| **Auth Service** | 📋 Planned | Node.js + Hono + BetterAuth (`backends/node/services/auth/`) |
 
 ### Gateways
 
@@ -247,7 +245,6 @@ blocked:{dimension}:{value}
 | Item | Priority | Notes |
 |------|----------|-------|
 | Test container sharing | Medium | Could speed up integration tests |
-| Auth.Domain/.NET cleanup | Low | Remove if not needed |
 | Standardize error codes | Medium | Ensure consistency across services |
 
 ---

@@ -9,10 +9,10 @@ namespace D2.Geo.Domain.Entities;
 
 using System.Security.Cryptography;
 using System.Text;
+using D2.Geo.Domain.Exceptions;
 using D2.Shared.Utilities.Attributes;
 using D2.Shared.Utilities.Enums;
 using D2.Shared.Utilities.Extensions;
-using D2.Geo.Domain.Exceptions;
 
 /// <summary>
 /// Represents WHOIS, ASN and GEOIP information associated with an IP address.

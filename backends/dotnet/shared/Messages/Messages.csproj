@@ -4,7 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>D2.Contracts.Messages</RootNamespace>
+        <RootNamespace>D2.Shared.Messages</RootNamespace>
     </PropertyGroup>
 
 </Project>

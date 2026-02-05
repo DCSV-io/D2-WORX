@@ -7,6 +7,10 @@
 // ReSharper disable RedundantCapturedContext
 namespace D2.Geo.Tests.Integration.App;
 
+using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
+using D2.Geo.App.Interfaces.Repository.Handlers.R;
+using D2.Geo.Infra.Repository;
+using D2.Geo.Infra.Repository.Handlers.R;
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.GeoRefDataService.Default.CQRS.Handlers.C;
 using D2.Shared.GeoRefDataService.Default.CQRS.Handlers.Q;
@@ -17,10 +21,6 @@ using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q;
 using D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.X;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Constants;
-using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
-using D2.Geo.App.Interfaces.Repository.Handlers.R;
-using D2.Geo.Infra.Repository;
-using D2.Geo.Infra.Repository.Handlers.R;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;

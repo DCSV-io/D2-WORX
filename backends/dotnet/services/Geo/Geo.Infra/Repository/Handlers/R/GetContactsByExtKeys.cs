@@ -6,9 +6,9 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.R;
 
+using D2.Geo.Domain.Entities;
 using D2.Shared.Handler;
 using D2.Shared.Result;
-using D2.Geo.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using H = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.IGetContactsByExtKeysHandler;

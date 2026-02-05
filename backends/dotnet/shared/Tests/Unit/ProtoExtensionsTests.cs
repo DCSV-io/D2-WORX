@@ -6,9 +6,9 @@
 
 namespace D2.Shared.Tests.Unit;
 
+using D2.Services.Protos.Common.V1;
 using D2.Shared.Result;
 using D2.Shared.Result.Extensions;
-using D2.Services.Protos.Common.V1;
 
 /// <summary>
 /// Unit tests for <see cref="ProtoExtensions"/>.

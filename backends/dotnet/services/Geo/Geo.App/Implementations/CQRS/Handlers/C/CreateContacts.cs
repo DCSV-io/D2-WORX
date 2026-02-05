@@ -6,12 +6,12 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
-using D2.Shared.Handler;
-using D2.Shared.Result;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.ICreateContactsHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.CreateContactsInput;

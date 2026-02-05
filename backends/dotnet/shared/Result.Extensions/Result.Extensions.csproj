@@ -4,7 +4,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>D2.Contracts.Result.Extensions</RootNamespace>
+        <RootNamespace>D2.Shared.Result.Extensions</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

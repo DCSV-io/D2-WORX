@@ -9,10 +9,10 @@ namespace D2.Geo.Domain.Entities;
 
 using System.Security.Cryptography;
 using System.Text;
+using D2.Geo.Domain.ValueObjects;
 using D2.Shared.Utilities.Attributes;
 using D2.Shared.Utilities.Enums;
 using D2.Shared.Utilities.Extensions;
-using D2.Geo.Domain.ValueObjects;
 
 /// <summary>
 /// Represents a geographical location with various address components and coordinates.

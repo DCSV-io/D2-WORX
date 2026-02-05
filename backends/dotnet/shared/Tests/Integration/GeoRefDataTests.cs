@@ -6,6 +6,8 @@
 
 namespace D2.Shared.Tests.Integration;
 
+using D2.Services.Protos.Geo.V1;
+
 // ReSharper disable AccessToStaticMemberViaDerivedType
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.GeoRefDataService.Default;
@@ -19,7 +21,6 @@ using D2.Shared.Interfaces.Common.GeoRefData.Messaging.Handlers.Sub;
 using D2.Shared.Messages.Geo;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Constants;
-using D2.Services.Protos.Geo.V1;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Testcontainers.Redis;

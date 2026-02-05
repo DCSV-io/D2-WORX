@@ -7,9 +7,9 @@
 namespace D2.Geo.Domain.ValueObjects;
 
 using System.Collections.Immutable;
+using D2.Geo.Domain.Entities;
 using D2.Shared.Utilities.Attributes;
 using D2.Shared.Utilities.Enums;
-using D2.Geo.Domain.Entities;
 
 /// <summary>
 /// Represents a collection of contact methods, including email addresses and phone numbers.

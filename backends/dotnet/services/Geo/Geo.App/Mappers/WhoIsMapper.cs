@@ -6,9 +6,9 @@
 
 namespace D2.Geo.App.Mappers;
 
-using D2.Shared.Utilities.Extensions;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Mapper for converting between <see cref="WhoIs"/> and <see cref="WhoIsDTO"/>.

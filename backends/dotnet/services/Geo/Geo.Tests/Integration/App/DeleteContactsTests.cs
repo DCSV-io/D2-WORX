@@ -6,9 +6,6 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Shared.Handler;
-using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
-using D2.Shared.Result;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Domain.Entities;
@@ -16,6 +13,9 @@ using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Tests.Fixtures;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
+using D2.Shared.Result;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;

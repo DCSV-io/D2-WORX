@@ -6,9 +6,9 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.R;
 
+using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Result;
-using D2.Services.Protos.Geo.V1;
 using Microsoft.EntityFrameworkCore;
 using H = global::D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.IGetReferenceDataHandler;
 using I = global::D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.GetReferenceDataInput;

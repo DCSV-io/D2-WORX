@@ -14,7 +14,7 @@ DI registration extensions for handler context services. Provides `AddHandlerCon
 Register handler context in your service's `Program.cs`:
 
 ```csharp
-using D2.Contracts.Handler.Extensions;
+using D2.Shared.Handler.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 

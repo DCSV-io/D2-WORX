@@ -6,8 +6,8 @@
 
 namespace D2.Shared.Tests;
 
-using D2.Shared.Handler;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Handler;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using Moq;

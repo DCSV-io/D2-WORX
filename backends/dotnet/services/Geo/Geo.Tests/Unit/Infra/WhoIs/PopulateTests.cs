@@ -6,13 +6,13 @@
 
 namespace D2.Geo.Tests.Unit.Infra.WhoIs;
 
-using D2.Shared.Handler;
-using D2.Shared.Result;
 using D2.Geo.App.Interfaces.Repository.Handlers.C;
 using D2.Geo.App.Interfaces.WhoIs;
 using D2.Geo.App.Interfaces.WhoIs.Handlers.R;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Infra.WhoIs.Handlers.R;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;

@@ -9,6 +9,8 @@
 // ReSharper disable UnusedMember.Local
 namespace D2.Shared.Tests.Integration;
 
+using D2.Services.Protos.Geo.V1;
+
 // ReSharper disable AccessToStaticMemberViaDerivedType
 using D2.Shared.DistributedCache.Redis.Handlers.D;
 using D2.Shared.DistributedCache.Redis.Handlers.R;
@@ -18,7 +20,6 @@ using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.Result;
-using D2.Services.Protos.Geo.V1;
 using FluentAssertions;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;

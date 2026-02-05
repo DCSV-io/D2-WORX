@@ -546,7 +546,7 @@ refactor: simplify caching logic
 
 1. **Check existing implementations** - look for similar handlers/patterns in the codebase
 2. **Read relevant documentation** - `*.md` files are authoritative references
-3. **Use existing utilities** - check `D2.Contracts.Utilities` before creating helpers
+3. **Use existing utilities** - check `D2.Shared.Utilities` before creating helpers
 4. **Follow naming conventions** - especially the field prefixes (`r_`, `s_`, `sr_`, `_`)
 
 ### Common Mistakes to Avoid

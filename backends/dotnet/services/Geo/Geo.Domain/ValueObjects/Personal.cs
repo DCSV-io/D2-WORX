@@ -7,12 +7,12 @@
 namespace D2.Geo.Domain.ValueObjects;
 
 using System.Collections.Immutable;
-using D2.Shared.Utilities.Attributes;
-using D2.Shared.Utilities.Enums;
-using D2.Shared.Utilities.Extensions;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Enums;
 using D2.Geo.Domain.Exceptions;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Represents personal information about an individual.

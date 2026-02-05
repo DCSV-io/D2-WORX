@@ -6,8 +6,8 @@
 
 namespace D2.Gateways.REST.Endpoints;
 
-using D2.Shared.Utilities.Extensions;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Defines the Geo-service related API endpoints.

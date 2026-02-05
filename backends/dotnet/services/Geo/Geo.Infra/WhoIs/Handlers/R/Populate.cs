@@ -8,11 +8,11 @@ namespace D2.Geo.Infra.WhoIs.Handlers.R;
 
 using System.Globalization;
 using System.Net;
-using D2.Shared.Handler;
-using D2.Shared.Result;
 using D2.Geo.App.Interfaces.WhoIs;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
+using D2.Shared.Handler;
+using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
 using H = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead.IPopulateHandler;

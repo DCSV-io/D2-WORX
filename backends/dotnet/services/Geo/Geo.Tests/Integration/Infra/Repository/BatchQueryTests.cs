@@ -6,11 +6,11 @@
 
 namespace D2.Geo.Tests.Integration.Infra.Repository;
 
-using D2.Shared.Batch.Pg;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Tests.Fixtures;
+using D2.Shared.Batch.Pg;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Xunit;

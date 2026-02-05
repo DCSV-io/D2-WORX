@@ -6,10 +6,10 @@
 
 namespace D2.Shared.GeoRefDataService.Default.CQRS.Handlers.Q;
 
+using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Shared.Result;
-using D2.Services.Protos.Geo.V1;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
 using H = D2.Shared.Interfaces.Common.GeoRefData.CQRS.Handlers.Q.IQueries.IGetFromMemHandler;
