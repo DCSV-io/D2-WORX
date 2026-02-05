@@ -5,13 +5,14 @@
 // -----------------------------------------------------------------------
 
 using AppHost;
-using Microsoft.Extensions.Configuration;
+using D2.Shared.Utilities.Configuration;
 
 // ReSharper disable UnusedVariable
-var builder = DistributedApplication.CreateBuilder(args);
 
-// Add user secrets.
-builder.Configuration.AddUserSecrets<Program>();
+// Load environment variables from .env.local / .env file.
+D2Env.Load();
+
+var builder = DistributedApplication.CreateBuilder(args);
 
 // Define all params to pass to containers.
 var dbUsername = builder.AddParameter("db-username", true);
@@ -32,6 +33,7 @@ var s3Password = builder.AddParameter("s3-password", true);
 
 // MinIO - S3 Compatible Object Storage.
 var minio = builder.AddContainer("d2-minio", "minio/minio", "RELEASE.2025-09-07T16-13-09Z")
+    .WithContainerName("d2-minio")
     .WithIconName("ScanObject")
     .WithHttpEndpoint(port: 9000, targetPort: 9000, name: "minio-api", isProxied: false)
     .WithHttpEndpoint(port: 9001, targetPort: 9001, name: "minio-console")
@@ -45,6 +47,7 @@ var minio = builder.AddContainer("d2-minio", "minio/minio", "RELEASE.2025-09-07T
 
 // MinIO Client - Used to initialize buckets.
 var minioInit = builder.AddContainer("d2-minio-init", "minio/mc", "RELEASE.2025-08-13T08-35-41Z")
+    .WithContainerName("d2-minio-init")
     .WithIconName("StarArrowRightStart")
     .WaitFor(minio)
     .WithEnvironment("MINIO_ROOT_USER", s3Username)
@@ -63,10 +66,11 @@ var minioInit = builder.AddContainer("d2-minio-init", "minio/mc", "RELEASE.2025-
 
 // Loki - Log Aggregation.
 var loki = builder.AddContainer("d2-loki", "grafana/loki", "3.5.5")
+    .WithContainerName("d2-loki")
     .WithIconName("DocumentText")
     .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "loki-http", isProxied: false)
     .WithHttpEndpoint(port: 9095, targetPort: 9095, name: "loki-grpc", isProxied: false)
-    .WithBindMount("../../observability/loki/config", "/etc/loki", isReadOnly: true)
+    .WithBindMount("../../../../observability/loki/config", "/etc/loki", isReadOnly: true)
     .WithVolume("d2-loki-data", "/loki")
     .WithArgs("-config.file=/etc/loki/loki.yaml", "-config.expand-env=true")
     .WithEnvironment("MINIO_ROOT_USER", s3Username)
@@ -76,10 +80,11 @@ var loki = builder.AddContainer("d2-loki", "grafana/loki", "3.5.5")
 
 // Tempo - Distributed Tracing.
 var tempo = builder.AddContainer("d2-tempo", "grafana/tempo", "2.8.2")
+    .WithContainerName("d2-tempo")
     .WithIconName("Timeline")
     .WithHttpEndpoint(port: 3200, targetPort: 3200, name: "tempo-http", isProxied: false)
     .WithHttpEndpoint(port: 9096, targetPort: 9096, name: "tempo-grpc", isProxied: false)
-    .WithBindMount("../../observability/tempo/config", "/etc/tempo", isReadOnly: true)
+    .WithBindMount("../../../../observability/tempo/config", "/etc/tempo", isReadOnly: true)
     .WithVolume("d2-tempo-data", "/var/tempo")
     .WithArgs("-config.file=/etc/tempo/tempo.yaml", "-config.expand-env=true")
     .WithEnvironment("MINIO_ROOT_USER", s3Username)
@@ -89,10 +94,11 @@ var tempo = builder.AddContainer("d2-tempo", "grafana/tempo", "2.8.2")
 
 // Mimir - Metrics.
 var mimir = builder.AddContainer("d2-mimir", "grafana/mimir", "2.17.1")
+    .WithContainerName("d2-mimir")
     .WithIconName("TopSpeed")
     .WithHttpEndpoint(port: 9009, targetPort: 9009, name: "mimir-http", isProxied: false)
     .WithHttpEndpoint(port: 9097, targetPort: 9097, name: "mimir-grpc", isProxied: false)
-    .WithBindMount("../../observability/mimir/config", "/etc/mimir", isReadOnly: true)
+    .WithBindMount("../../../../observability/mimir/config", "/etc/mimir", isReadOnly: true)
     .WithVolume("d2-mimir-data", "/var/mimir")
     .WithArgs("-config.file=/etc/mimir/mimir.yaml", "-config.expand-env=true")
     .WithEnvironment("MINIO_ROOT_USER", s3Username)
@@ -102,6 +108,7 @@ var mimir = builder.AddContainer("d2-mimir", "grafana/mimir", "2.17.1")
 
 // cAdvisor - Container Resource Monitoring.
 var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "v0.50.0")
+    .WithContainerName("d2-cadvisor")
     .WithIconName("ChartMultiple")
     .WithHttpEndpoint(port: 8081, targetPort: 8080, name: "cadvisor-http", isProxied: false)
     .WithBindMount("/", "/rootfs", isReadOnly: true)
@@ -115,6 +122,7 @@ var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "
 
 // Grafana Alloy - Unified Agent for Metrics, Logs and Traces.
 var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1.11.0")
+    .WithContainerName("d2-grafana-alloy")
     .WithIconName("Agents")
     .WithHttpEndpoint(port: 12345, targetPort: 12345, name: "alloy-http", isProxied: false)
     .WithHttpEndpoint(port: 4317, targetPort: 4317, name: "otlp-grpc", isProxied: false)
@@ -127,7 +135,7 @@ var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1
     .WithBindMount("/", "/rootfs", isReadOnly: true)
     .WithBindMount("/var/lib/docker", "/var/lib/docker", isReadOnly: true)
     .WithBindMount("/var/run/docker.sock", "/var/run/docker.sock", isReadOnly: true)
-    .WithBindMount("../../observability/alloy/config", "/etc/alloy", isReadOnly: true)
+    .WithBindMount("../../../../observability/alloy/config", "/etc/alloy", isReadOnly: true)
     .WithVolume("d2-alloy-data", "/var/lib/alloy/data")
     .WithVolume("d2-minio-tokens", "/minio-token", isReadOnly: true)
     .WithArgs(
@@ -144,10 +152,11 @@ var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1
 
 // Grafana - Visualization.
 var grafana = builder.AddContainer("d2-grafana", "grafana/grafana", "12.2.0")
+    .WithContainerName("d2-grafana")
     .WithIconName("ChartPerson")
     .WithHttpEndpoint(port: 3000, targetPort: 3000, name: "grafana")
     .WithBindMount(
-        "../../observability/grafana/provisioning",
+        "../../../../observability/grafana/provisioning",
         "/etc/grafana/provisioning",
         isReadOnly: true)
     .WithVolume("d2-grafana-data", "/var/grafana")
@@ -186,6 +195,7 @@ var db = builder.AddPostgres(
         dbUsername,
         dbPassword,
         54320)
+    .WithContainerName("d2-postgres")
     .WithIconName("DatabaseStack")
     .WithImageTag("18.0-trixie")
     .WithDataVolume("d2-postgres-data")
@@ -206,6 +216,7 @@ var db = builder.AddPostgres(
 // Postgres Exporter - PostgreSQL Server Monitoring.
 var postgresExporter = builder.AddContainer(
         "d2-postgres-exporter", "prometheuscommunity/postgres-exporter", "v0.18.1")
+    .WithContainerName("d2-postgres-exporter")
     .WithIconName("DatabasePlugConnected")
     .WithEnvironment(
         "DATA_SOURCE_NAME",
@@ -216,6 +227,7 @@ var postgresExporter = builder.AddContainer(
 
 // Redis - Cache.
 var cache = builder.AddRedis("d2-redis", 6379, cachePassword)
+    .WithContainerName("d2-redis")
     .WithIconName("Memory")
     .WithImageTag("8.2.1-bookworm")
     .WithDataVolume("d2-redis-data")
@@ -233,6 +245,7 @@ var cache = builder.AddRedis("d2-redis", 6379, cachePassword)
 // Redis Exporter - Redis Monitoring.
 var redisExporter = builder.AddContainer(
         "d2-redis-exporter", "oliver006/redis_exporter", "v1.78.0")
+    .WithContainerName("d2-redis-exporter")
     .WithIconName("ChartLine")
     .WithEnvironment("REDIS_ADDR", "d2-redis:6379")
     .WithEnvironment("REDIS_PASSWORD", cachePassword)
@@ -242,6 +255,7 @@ var redisExporter = builder.AddContainer(
 
 // RabbitMQ - Message Broker.
 var broker = builder.AddRabbitMQ("d2-rabbitmq", mqUsername, mqPassword, 15672)
+    .WithContainerName("d2-rabbitmq")
     .WithIconName("Mailbox")
     .WithImageTag("4.1.4-management")
     .WithDataVolume("d2-rabbitmq-data")
@@ -282,7 +296,7 @@ var restGateway = builder.AddProject<Projects.REST>("d2-rest")
 // SvelteKit - Frontend.
 var svelte = builder.AddViteApp(
         "d2-sveltekit",
-        "../../frontends/sveltekit")
+        "../../../../clients/web")
     .WaitFor(restGateway)
     .WithPnpm()
     .WithArgs("--host", "0.0.0.0", "--port", "5173")

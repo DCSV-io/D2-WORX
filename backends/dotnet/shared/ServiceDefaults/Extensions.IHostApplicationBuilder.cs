@@ -4,9 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using D2.Shared.Utilities.Configuration;
+
 namespace D2.Shared.ServiceDefaults;
 
+using D2.Shared.Utilities;
 using D2.Shared.Utilities.Extensions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
@@ -200,6 +204,9 @@ public static partial class Extensions
         /// </summary>
         public void AddServiceDefaults()
         {
+            D2Env.Load();
+            builder.Configuration.AddEnvironmentVariables();
+
             builder.AddStructuredLogging();
             builder.ConfigureOpenTelemetry();
             builder.AddDefaultHealthChecks();

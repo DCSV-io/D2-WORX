@@ -17,27 +17,10 @@ Summary:
 
 ### Getting started with local dev environment:
 1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.0 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.7.0+](https://nodejs.org/en/download), [PNPM 10.15.1+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
-2. Using a command line utility, navigate to the AppHost folder (`/backends/dotnet/orchestration/AppHost`) and set the following secrets using the `dotnet user-secrets set <key> <value>` command:
-
-   | Secret Key                  | Description             |
-   |-----------------------------|-------------------------|
-   | `Parameters:mq-username`    | RabbitMQ username       |
-   | `Parameters:mq-password`    | RabbitMQ password       |
-   | `Parameters:db-username`    | PostgreSQL username     |
-   | `Parameters:db-password`    | PostgreSQL password     |
-   | `Parameters:dba-email`      | PgAdmin4 admin email    |
-   | `Parameters:dba-password`   | PgAdmin4 admin password |
-   | `Parameters:cache-password` | Redis password          |
-   | `Parameters:otel-username`  | Grafana username        |
-   | `Parameters:otel-password`  | Grafana password        |
-   | `Parameters:s3-username`    | MinIO username          |
-   | `Parameters:s3-password`    | MinIO password          |
-
-3. To verify your entries, use the `dotnet user-secrets list` command.
-4. Edit any `appsettings.*.json` files as needed.
-5. Copy `.env.local.example` to `.env.local` in the project root and fill in your values (including your IPInfo API token for geolocation).
-6. Run the AppHost project either via CLI or IDE of your choice.
-7. Once running, access:
+2. Copy `.env.local.example` to `.env.local` in the project root and fill in your values (credentials for PostgreSQL, Redis, RabbitMQ, MinIO, Grafana, and your IPInfo API token). Env vars use `SECTION_PROPERTY` naming — `D2Env` auto-maps them to .NET configuration paths.
+3. Edit any `appsettings.*.json` files as needed.
+4. Run the AppHost project either via CLI or IDE of your choice.
+5. Once running, access:
     - Aspire dashboard: `http://localhost:15888`
     - Grafana dashboard: `http://localhost:3000`
 

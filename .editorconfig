@@ -23,3 +23,6 @@ dotnet_diagnostic.SA1124.severity = none
 
 # SA1601: Partial elements should be documented
 dotnet_diagnostic.SA1601.severity = none
+
+# SA1311: Some silly naming crap
+dotnet_diagnostic.SA1311.severity = none
