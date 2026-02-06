@@ -210,11 +210,17 @@ Implementations/ -> Common reusable implementations
 |   |
 |   |__ Distributed/ -> Shared, distributed cache implementations
 |   |   |
-|   |   |__ DistributedCache.Redis/ -> Redis implementation
+|   |   |__ DistributedCache.Redis/ -> Redis implementation (Get, Set, Remove, Exists, GetTtl, Increment)
 |   |
 |   |__ InMemory/ -> Local, in-memory cache implementations
 |       |
 |       |__ InMemoryCache.Default/ -> Memory implementation
+|
+|__ Middleware/ -> HTTP middleware implementations
+|   |
+|   |__ RequestEnrichment.Default/ -> Request context enrichment (IP resolution, fingerprinting, WhoIs)
+|   |
+|   |__ RateLimit.Default/ -> Multi-dimensional sliding-window rate limiting
 |
 |__ Repository/ -> Common repository implementations
     |

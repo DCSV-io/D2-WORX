@@ -53,7 +53,7 @@ public class TransactionsPgTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _db.DisposeAsync();
-        await _container.DisposeAsync().ConfigureAwait(false);
+        await _container.DisposeAsync();
     }
 
     /// <summary>

@@ -26,9 +26,11 @@ No create handlers - Redis Set operation is upsert (create or update).
 |-----------------------------------|---------------------------------------------------------------------------------------------|
 | [Get.cs](Handlers/R/Get.cs)       | Handler for retrieving generic typed data from Redis using protobuf binary deserialization. |
 | [Exists.cs](Handlers/R/Exists.cs) | Handler for checking if a key exists in Redis without retrieving the value.                 |
+| [GetTtl.cs](Handlers/R/GetTtl.cs) | Handler for retrieving the remaining time-to-live of a key in Redis.                        |
 
 ### U (Update)
 
-| File Name                   | Description                                                                                                     |
-|-----------------------------|-----------------------------------------------------------------------------------------------------------------|
-| [Set.cs](Handlers/U/Set.cs) | Handler for storing (upsert) generic typed data in Redis using protobuf binary serialization with optional TTL. |
+| File Name                               | Description                                                                                                     |
+|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| [Set.cs](Handlers/U/Set.cs)             | Handler for storing (upsert) generic typed data in Redis using protobuf binary serialization with optional TTL. |
+| [Increment.cs](Handlers/U/Increment.cs) | Handler for atomically incrementing a counter in Redis with optional TTL for new keys.                          |

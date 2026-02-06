@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RateLimit.Redis;
+namespace D2.Shared.RateLimit.Default;
 
 /// <summary>
 /// Represents a dimension used for rate limiting.

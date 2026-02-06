@@ -7,7 +7,7 @@
 namespace D2.Shared.Tests.Unit.Middleware.RequestEnrichment;
 
 using System.Net;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 

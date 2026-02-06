@@ -37,8 +37,8 @@
     <ItemGroup>
         <ProjectReference Include="..\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
         <ProjectReference Include="..\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
-        <ProjectReference Include="..\Implementations\Middleware\RateLimit.Redis\RateLimit.Redis.csproj" />
-        <ProjectReference Include="..\Implementations\Middleware\RequestEnrichment\RequestEnrichment.csproj" />
+        <ProjectReference Include="..\Implementations\Middleware\RateLimit.Default\RateLimit.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Middleware\RequestEnrichment.Default\RequestEnrichment.Default.csproj" />
         <ProjectReference Include="..\Implementations\Repository\Batch\Batch.Pg\Batch.Pg.csproj" />
         <ProjectReference Include="..\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
         <ProjectReference Include="..\Interfaces\Interfaces.csproj" />

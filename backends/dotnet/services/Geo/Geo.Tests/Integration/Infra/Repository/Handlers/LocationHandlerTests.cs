@@ -64,7 +64,7 @@ public class LocationHandlerTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync();
     }
 
     #region CreateLocations Tests

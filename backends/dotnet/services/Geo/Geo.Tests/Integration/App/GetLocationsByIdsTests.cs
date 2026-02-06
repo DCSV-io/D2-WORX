@@ -96,8 +96,8 @@ public class GetLocationsByIdsTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _services.DisposeAsync().ConfigureAwait(false);
-        await _db.DisposeAsync().ConfigureAwait(false);
+        await _services.DisposeAsync();
+        await _db.DisposeAsync();
     }
 
     #region Success Path Tests

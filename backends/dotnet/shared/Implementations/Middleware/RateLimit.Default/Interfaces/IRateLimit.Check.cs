@@ -4,10 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RateLimit.Redis.Interfaces;
+namespace D2.Shared.RateLimit.Default.Interfaces;
 
 using D2.Shared.Handler;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.RequestEnrichment.Default;
 
 public partial interface IRateLimit
 {

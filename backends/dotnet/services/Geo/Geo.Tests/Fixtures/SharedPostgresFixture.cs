@@ -60,6 +60,6 @@ public class SharedPostgresFixture : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _container.DisposeAsync().ConfigureAwait(false);
+        await _container.DisposeAsync();
     }
 }

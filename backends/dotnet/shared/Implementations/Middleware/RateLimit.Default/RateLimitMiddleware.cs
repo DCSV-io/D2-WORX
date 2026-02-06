@@ -4,12 +4,12 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RateLimit.Redis;
+namespace D2.Shared.RateLimit.Default;
 
 using System.Net;
 using System.Text.Json;
-using D2.Shared.RateLimit.Redis.Interfaces;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.RateLimit.Default.Interfaces;
+using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

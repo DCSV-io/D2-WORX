@@ -4,12 +4,14 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>D2.Shared.RequestEnrichment</RootNamespace>
+        <RootNamespace>D2.Shared.RateLimit.Default</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\..\services\Geo\Geo.Client\Geo.Client.csproj" />
+        <ProjectReference Include="..\RequestEnrichment.Default\RequestEnrichment.Default.csproj" />
         <ProjectReference Include="..\..\..\Handler\Handler.csproj" />
+        <ProjectReference Include="..\..\..\Result\Result.csproj" />
+        <ProjectReference Include="..\..\..\Interfaces\Interfaces.csproj" />
     </ItemGroup>
 
     <ItemGroup>

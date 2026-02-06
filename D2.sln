@@ -148,9 +148,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geo.Client", "backends\dotn
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Middleware", "Middleware", "{256BA938-803D-8B8E-508A-0B09DC3E7B7D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RequestEnrichment", "backends\dotnet\shared\Implementations\Middleware\RequestEnrichment\RequestEnrichment.csproj", "{51DFBE21-D80C-4CAE-9810-04C49181BC50}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RequestEnrichment.Default", "backends\dotnet\shared\Implementations\Middleware\RequestEnrichment.Default\RequestEnrichment.Default.csproj", "{51DFBE21-D80C-4CAE-9810-04C49181BC50}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateLimit.Redis", "backends\dotnet\shared\Implementations\Middleware\RateLimit.Redis\RateLimit.Redis.csproj", "{E5EBD93F-91C0-4016-AE0E-E7AEACEB603F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RateLimit.Default", "backends\dotnet\shared\Implementations\Middleware\RateLimit.Default\RateLimit.Default.csproj", "{E5EBD93F-91C0-4016-AE0E-E7AEACEB603F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RateLimit.Redis.Interfaces;
+namespace D2.Shared.RateLimit.Default.Interfaces;
 
 /// <summary>
 /// Base partial interface for rate limit handlers.

@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RequestEnrichment;
+namespace D2.Shared.RequestEnrichment.Default;
 
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using Microsoft.AspNetCore.Http;

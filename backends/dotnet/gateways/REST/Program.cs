@@ -6,8 +6,9 @@
 
 using D2.Gateways.REST.Endpoints;
 using D2.Geo.Client;
-using D2.Shared.RateLimit.Redis;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.DistributedCache.Redis;
+using D2.Shared.RateLimit.Default;
+using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.ServiceDefaults;
 using Serilog;
 
@@ -30,11 +31,14 @@ builder.Services.AddGeoGrpcClient(builder.Configuration);
 // Register WhoIs cache for request enrichment.
 builder.Services.AddWhoIsCache(builder.Configuration);
 
+// Register distributed caching (Redis).
+builder.Services.AddRedisCaching(redisConnectionString!);
+
 // Register request enrichment middleware services.
 builder.Services.AddRequestEnrichment(builder.Configuration);
 
 // Register rate limiting middleware services.
-builder.Services.AddRateLimiting(redisConnectionString!, builder.Configuration);
+builder.Services.AddRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 app.UseExceptionHandler();

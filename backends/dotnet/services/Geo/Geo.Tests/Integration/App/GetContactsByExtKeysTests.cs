@@ -68,7 +68,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync();
     }
 
     #region Empty Input Tests

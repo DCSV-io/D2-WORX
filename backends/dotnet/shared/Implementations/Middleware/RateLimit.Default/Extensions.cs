@@ -4,14 +4,13 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RateLimit.Redis;
+namespace D2.Shared.RateLimit.Default;
 
-using D2.Shared.RateLimit.Redis.Handlers;
-using D2.Shared.RateLimit.Redis.Interfaces;
+using D2.Shared.RateLimit.Default.Handlers;
+using D2.Shared.RateLimit.Default.Interfaces;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using StackExchange.Redis;
 
 /// <summary>
 /// Extension methods for adding rate limiting services and middleware.
@@ -31,9 +30,6 @@ public static class Extensions
         /// Adds rate limiting services to the service collection.
         /// </summary>
         ///
-        /// <param name="redisConnectionString">
-        /// The Redis connection string.
-        /// </param>
         /// <param name="configuration">
         /// The configuration to read options from.
         /// </param>
@@ -44,16 +40,14 @@ public static class Extensions
         /// <returns>
         /// The updated service collection.
         /// </returns>
+        /// <remarks>
+        /// Requires distributed caching services to be registered (e.g., via AddRedisCaching).
+        /// </remarks>
         public IServiceCollection AddRateLimiting(
-            string redisConnectionString,
             IConfiguration configuration,
             string sectionName = nameof(RateLimitOptions))
         {
             services.Configure<RateLimitOptions>(configuration.GetSection(sectionName));
-
-            services.AddSingleton<IConnectionMultiplexer>(
-                ConnectionMultiplexer.Connect(redisConnectionString));
-
             services.AddTransient<IRateLimit.ICheckHandler, Check>();
 
             return services;

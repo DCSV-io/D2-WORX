@@ -6,12 +6,18 @@
 
 namespace D2.Shared.Tests.Integration.Middleware;
 
-using D2.Shared.RateLimit.Redis;
-using D2.Shared.RateLimit.Redis.Handlers;
-using D2.Shared.RateLimit.Redis.Interfaces;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.DistributedCache.Redis;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
+using D2.Shared.RateLimit.Default;
+using D2.Shared.RateLimit.Default.Handlers;
+using D2.Shared.RateLimit.Default.Interfaces;
+using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using StackExchange.Redis;
@@ -25,6 +31,7 @@ public class RateLimitRedisTests : IAsyncLifetime
 {
     private RedisContainer _container = null!;
     private IConnectionMultiplexer _redis = null!;
+    private ServiceProvider _serviceProvider = null!;
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
@@ -34,13 +41,27 @@ public class RateLimitRedisTests : IAsyncLifetime
         _container = new RedisBuilder().Build();
         await _container.StartAsync(Ct);
         _redis = await ConnectionMultiplexer.ConnectAsync(_container.GetConnectionString());
+
+        // Set up DI container with distributed cache handlers.
+        var services = new ServiceCollection();
+        services.AddRedisCaching(_container.GetConnectionString());
+        services.AddLogging();
+
+        // Register handler context for distributed cache handlers (they extend BaseHandler).
+        var mockRequestContext = new Mock<IRequestContext>();
+        mockRequestContext.Setup(x => x.TraceId).Returns(Guid.NewGuid().ToString());
+        services.AddSingleton<IRequestContext>(_ => mockRequestContext.Object);
+        services.AddScoped<IHandlerContext, HandlerContext>();
+
+        _serviceProvider = services.BuildServiceProvider();
     }
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
+        await _serviceProvider.DisposeAsync();
         _redis.Dispose();
-        await _container.DisposeAsync().ConfigureAwait(false);
+        await _container.DisposeAsync();
     }
 
     /// <summary>
@@ -370,7 +391,18 @@ public class RateLimitRedisTests : IAsyncLifetime
     {
         var optionsWrapper = Options.Create(options);
         var context = TestHelpers.CreateHandlerContext();
-        return new Check(_redis, optionsWrapper, context);
+
+        // Get handlers from DI container.
+        var getTtlHandler = _serviceProvider.GetRequiredService<IRead.IGetTtlHandler>();
+        var incrementHandler = _serviceProvider.GetRequiredService<IUpdate.IIncrementHandler>();
+        var setHandler = _serviceProvider.GetRequiredService<IUpdate.ISetHandler<string>>();
+
+        return new Check(
+            getTtlHandler,
+            incrementHandler,
+            setHandler,
+            optionsWrapper,
+            context);
     }
 
     #endregion

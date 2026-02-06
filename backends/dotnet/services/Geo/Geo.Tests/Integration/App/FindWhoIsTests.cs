@@ -113,7 +113,7 @@ public class FindWhoIsTests : IAsyncLifetime
         _scope.Dispose();
         await _services.DisposeAsync();
         await _db.DisposeAsync();
-        await _pgContainer.DisposeAsync().ConfigureAwait(false);
+        await _pgContainer.DisposeAsync();
     }
 
     #region Empty Input Tests

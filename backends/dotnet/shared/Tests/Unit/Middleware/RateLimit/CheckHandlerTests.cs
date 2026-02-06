@@ -6,22 +6,26 @@
 
 namespace D2.Shared.Tests.Unit.Middleware.RateLimit;
 
-using D2.Shared.RateLimit.Redis;
-using D2.Shared.RateLimit.Redis.Handlers;
-using D2.Shared.RateLimit.Redis.Interfaces;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
+using D2.Shared.RateLimit.Default;
+using D2.Shared.RateLimit.Default.Handlers;
+using D2.Shared.RateLimit.Default.Interfaces;
+using D2.Shared.RequestEnrichment.Default;
+using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Moq;
-using StackExchange.Redis;
 
 /// <summary>
 /// Unit tests for the <see cref="Check"/> rate limit handler.
 /// </summary>
 public class CheckHandlerTests
 {
-    private readonly Mock<IConnectionMultiplexer> r_redisMock;
-    private readonly Mock<IDatabase> r_dbMock;
+    private readonly Mock<IRead.IGetTtlHandler> r_getTtlMock;
+    private readonly Mock<IUpdate.IIncrementHandler> r_incrementMock;
+    private readonly Mock<IUpdate.ISetHandler<string>> r_setMock;
     private readonly RateLimitOptions r_options;
 
     /// <summary>
@@ -29,10 +33,9 @@ public class CheckHandlerTests
     /// </summary>
     public CheckHandlerTests()
     {
-        r_redisMock = new Mock<IConnectionMultiplexer>();
-        r_dbMock = new Mock<IDatabase>();
-        r_redisMock.Setup(x => x.GetDatabase(It.IsAny<int>(), It.IsAny<object?>()))
-            .Returns(r_dbMock.Object);
+        r_getTtlMock = new Mock<IRead.IGetTtlHandler>();
+        r_incrementMock = new Mock<IUpdate.IIncrementHandler>();
+        r_setMock = new Mock<IUpdate.ISetHandler<string>>();
 
         r_options = new RateLimitOptions
         {
@@ -70,11 +73,12 @@ public class CheckHandlerTests
         result.Success.Should().BeTrue();
         result.Data!.IsBlocked.Should().BeFalse();
 
-        // Should not have checked fingerprint dimension (no KeyTimeToLive call for fingerprint)
-        r_dbMock.Verify(
-            x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("clientfingerprint")),
-                It.IsAny<CommandFlags>()),
+        // Should not have checked fingerprint dimension (no GetTtl call for fingerprint).
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("clientfingerprint")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Never);
     }
 
@@ -97,10 +101,11 @@ public class CheckHandlerTests
 
         result.Success.Should().BeTrue();
 
-        r_dbMock.Verify(
-            x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("clientfingerprint")),
-                It.IsAny<CommandFlags>()),
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("clientfingerprint")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Never);
     }
 
@@ -129,10 +134,11 @@ public class CheckHandlerTests
 
         result.Success.Should().BeTrue();
 
-        r_dbMock.Verify(
-            x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("blocked:ip:")),
-                It.IsAny<CommandFlags>()),
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:ip:")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Never);
     }
 
@@ -155,10 +161,11 @@ public class CheckHandlerTests
 
         result.Success.Should().BeTrue();
 
-        r_dbMock.Verify(
-            x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("blocked:city:")),
-                It.IsAny<CommandFlags>()),
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:city:")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Never);
     }
 
@@ -181,10 +188,11 @@ public class CheckHandlerTests
 
         result.Success.Should().BeTrue();
 
-        r_dbMock.Verify(
-            x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("blocked:country:")),
-                It.IsAny<CommandFlags>()),
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:country:")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Never);
     }
 
@@ -212,10 +220,11 @@ public class CheckHandlerTests
 
         result.Success.Should().BeTrue();
 
-        r_dbMock.Verify(
-            x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("blocked:country:")),
-                It.IsAny<CommandFlags>()),
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:country:")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Never);
     }
 
@@ -233,16 +242,16 @@ public class CheckHandlerTests
         var requestInfo = CreateRequestInfo(clientIp: "127.0.0.1", countryCode: "DE");
 
         SetupNotBlocked();
-        SetupBatchOperations();
 
         var result = await handler.HandleAsync(new IRateLimit.CheckInput(requestInfo), Ct);
 
         result.Success.Should().BeTrue();
 
-        r_dbMock.Verify(
-            x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("blocked:country:")),
-                It.IsAny<CommandFlags>()),
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:country:")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Once);
     }
 
@@ -265,11 +274,14 @@ public class CheckHandlerTests
             clientFingerprint: "test-fingerprint",
             clientIp: "192.0.2.1");
 
-        // Setup fingerprint dimension as already blocked
-        r_dbMock.Setup(x => x.KeyTimeToLiveAsync(
-                It.Is<RedisKey>(k => k.ToString().Contains("blocked:clientfingerprint:")),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync(TimeSpan.FromMinutes(3));
+        // Setup fingerprint dimension as already blocked.
+        r_getTtlMock
+            .Setup(x => x.HandleAsync(
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:clientfingerprint:")),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IRead.GetTtlOutput?>.Ok(
+                new IRead.GetTtlOutput(TimeSpan.FromMinutes(3))));
 
         var result = await handler.HandleAsync(new IRateLimit.CheckInput(requestInfo), Ct);
 
@@ -284,20 +296,32 @@ public class CheckHandlerTests
     #region Fail-Open Tests
 
     /// <summary>
-    /// Tests that Check allows request when Redis is unavailable (fail-open).
+    /// Tests that Check allows request when cache is unavailable (fail-open).
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task Check_WhenRedisUnavailable_FailsOpen()
+    public async Task Check_WhenCacheUnavailable_FailsOpen()
     {
-        r_redisMock.Setup(x => x.GetDatabase(It.IsAny<int>(), It.IsAny<object?>()))
-            .Throws(new RedisConnectionException(ConnectionFailureType.UnableToConnect, "Connection failed"));
-
         var handler = CreateHandler();
         var requestInfo = CreateRequestInfo(clientIp: "192.0.2.1");
+
+        // Setup cache handlers to return failures.
+        r_getTtlMock
+            .Setup(x => x.HandleAsync(
+                It.IsAny<IRead.GetTtlInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IRead.GetTtlOutput?>.Fail(["Cache unavailable"]));
+
+        r_incrementMock
+            .Setup(x => x.HandleAsync(
+                It.IsAny<IUpdate.IncrementInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IUpdate.IncrementOutput?>.Fail(["Cache unavailable"]));
 
         var result = await handler.HandleAsync(new IRateLimit.CheckInput(requestInfo), Ct);
 
@@ -306,24 +330,26 @@ public class CheckHandlerTests
     }
 
     /// <summary>
-    /// Tests that Check allows request when Redis operation throws (fail-open per dimension).
+    /// Tests that Check allows request when cache operation throws (fail-open per dimension).
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task Check_WhenRedisOperationThrows_FailsOpen()
+    public async Task Check_WhenCacheOperationThrows_FailsOpen()
     {
         var handler = CreateHandler();
         var requestInfo = CreateRequestInfo(
             clientFingerprint: "test",
             clientIp: "192.0.2.1");
 
-        r_dbMock.Setup(x => x.KeyTimeToLiveAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<CommandFlags>()))
-            .ThrowsAsync(new RedisTimeoutException("Timeout", CommandStatus.Unknown));
+        r_getTtlMock
+            .Setup(x => x.HandleAsync(
+                It.IsAny<IRead.GetTtlInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()))
+            .ThrowsAsync(new InvalidOperationException("Cache timeout"));
 
         var result = await handler.HandleAsync(new IRateLimit.CheckInput(requestInfo), Ct);
 
@@ -353,40 +379,31 @@ public class CheckHandlerTests
     {
         var options = Options.Create(r_options);
         var context = TestHelpers.CreateHandlerContext();
-        return new Check(r_redisMock.Object, options, context);
+        return new Check(
+            r_getTtlMock.Object,
+            r_incrementMock.Object,
+            r_setMock.Object,
+            options,
+            context);
     }
 
     private void SetupNotBlocked()
     {
-        r_dbMock.Setup(x => x.KeyTimeToLiveAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<CommandFlags>()))
-            .ReturnsAsync((TimeSpan?)null);
-    }
+        // GetTtl returns null (not blocked).
+        r_getTtlMock
+            .Setup(x => x.HandleAsync(
+                It.IsAny<IRead.GetTtlInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IRead.GetTtlOutput?>.Ok(new IRead.GetTtlOutput(null)));
 
-    private void SetupBatchOperations()
-    {
-        var batchMock = new Mock<IBatch>();
-        r_dbMock.Setup(x => x.CreateBatch(It.IsAny<object?>()))
-            .Returns(batchMock.Object);
-
-        batchMock.Setup(x => x.StringGetAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<CommandFlags>()))
-            .Returns(Task.FromResult(RedisValue.Null));
-
-        batchMock.Setup(x => x.StringIncrementAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<long>(),
-                It.IsAny<CommandFlags>()))
-            .Returns(Task.FromResult(1L));
-
-        batchMock.Setup(x => x.KeyExpireAsync(
-                It.IsAny<RedisKey>(),
-                It.IsAny<TimeSpan?>(),
-                It.IsAny<ExpireWhen>(),
-                It.IsAny<CommandFlags>()))
-            .Returns(Task.FromResult(true));
+        // Increment returns low count.
+        r_incrementMock
+            .Setup(x => x.HandleAsync(
+                It.IsAny<IUpdate.IncrementInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IUpdate.IncrementOutput?>.Ok(new IUpdate.IncrementOutput(1)));
     }
 
     #endregion

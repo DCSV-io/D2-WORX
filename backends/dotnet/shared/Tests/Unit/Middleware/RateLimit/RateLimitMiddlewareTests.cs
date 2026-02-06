@@ -7,9 +7,9 @@
 namespace D2.Shared.Tests.Unit.Middleware.RateLimit;
 
 using D2.Shared.Handler;
-using D2.Shared.RateLimit.Redis;
-using D2.Shared.RateLimit.Redis.Interfaces;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.RateLimit.Default;
+using D2.Shared.RateLimit.Default.Interfaces;
+using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;

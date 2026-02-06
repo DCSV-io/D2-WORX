@@ -55,7 +55,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         _redis.Dispose();
-        await _container.DisposeAsync().ConfigureAwait(false);
+        await _container.DisposeAsync();
     }
 
     /// <summary>

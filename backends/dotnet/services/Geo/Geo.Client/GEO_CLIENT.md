@@ -4,10 +4,11 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 
 ## Files
 
-| File Name                        | Description                                                                                                                                 |
-|----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| [Extensions.cs](Extensions.cs)   | DI extension method `AddGeoClient` registering all default handler implementations, MassTransit consumers, and configuration options.      |
-| [Geo.Client.csproj](Geo.Client.csproj) | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and MassTransit.Abstractions. |
+| File Name                                  | Description                                                                                                                                 |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| [Extensions.cs](Extensions.cs)             | DI extension method `AddGeoClient` registering all default handler implementations, MassTransit consumers, and configuration options.      |
+| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache including TTL and maximum entries for LRU eviction.                                                   |
+| [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and MassTransit.Abstractions. |
 
 ---
 
@@ -46,10 +47,11 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 >
 > ##### X (Complex)
 >
-> | File Name                                                            | Description                                                                                               |
-> |----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
-> | [IComplex.cs](Interfaces/CQRS/Handlers/X/IComplex.cs)                | Partial interface defining complex operations for geographic reference data operations with side effects. |
-> | [IComplex.Get.cs](Interfaces/CQRS/Handlers/X/IComplex.Get.cs)        | Extends IComplex with IGetHandler for orchestrating multi-tier cache retrieval with fallback chain.       |
+> | File Name                                                                    | Description                                                                                               |
+> |------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+> | [IComplex.cs](Interfaces/CQRS/Handlers/X/IComplex.cs)                        | Partial interface defining complex operations for geographic reference data operations with side effects. |
+> | [IComplex.Get.cs](Interfaces/CQRS/Handlers/X/IComplex.Get.cs)                | Extends IComplex with IGetHandler for orchestrating multi-tier cache retrieval with fallback chain.       |
+> | [IComplex.FindWhoIs.cs](Interfaces/CQRS/Handlers/X/IComplex.FindWhoIs.cs)    | Extends IComplex with IFindWhoIsHandler for WhoIs lookup with local caching and gRPC fallback.            |
 
 > ### Messaging
 >
@@ -87,9 +89,10 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 >
 > #### X (Complex)
 >
-> | File Name                              | Description                                                                                                                   |
-> |----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-> | [Get.cs](CQRS/Handlers/X/Get.cs)       | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.  |
+> | File Name                                    | Description                                                                                                                   |
+> |----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+> | [Get.cs](CQRS/Handlers/X/Get.cs)             | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.  |
+> | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs) | Handler for WhoIs lookups with local IMemoryCache caching and Geo gRPC service fallback. Used by request enrichment middleware. |
 
 ---
 

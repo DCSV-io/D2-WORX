@@ -50,7 +50,7 @@ public class BatchQueryTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync();
     }
 
     #region ToListAsync Tests

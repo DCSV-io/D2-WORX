@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RequestEnrichment;
+namespace D2.Shared.RequestEnrichment.Default;
 
 /// <summary>
 /// Configuration options for request enrichment middleware.

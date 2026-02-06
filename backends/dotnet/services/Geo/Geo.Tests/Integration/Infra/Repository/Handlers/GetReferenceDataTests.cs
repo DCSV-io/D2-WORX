@@ -54,7 +54,7 @@ public class GetReferenceDataTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        await _db.DisposeAsync().ConfigureAwait(false);
+        await _db.DisposeAsync();
     }
 
     /// <summary>

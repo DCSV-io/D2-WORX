@@ -30,13 +30,15 @@ Interface definitions for handler-based operations across caching, repositories,
 > | [IRead.cs](Caching/Distributed/Handlers/R/IRead.cs)               | Partial interface defining distributed cache read operations.                                     |
 > | [IRead.Exists.cs](Caching/Distributed/Handlers/R/IRead.Exists.cs) | Extends IRead with IExistsHandler for checking distributed cache key existence without retrieval. |
 > | [IRead.Get.cs](Caching/Distributed/Handlers/R/IRead.Get.cs)       | Extends IRead with IGetHandler for retrieving typed data from distributed cache by key.           |
+> | [IRead.GetTtl.cs](Caching/Distributed/Handlers/R/IRead.GetTtl.cs) | Extends IRead with IGetTtlHandler for retrieving the remaining time-to-live of a key.             |
 >
 > ##### U (Update)
 >
-> | File Name                                                       | Description                                                                                     |
-> |-----------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
-> | [IUpdate.cs](Caching/Distributed/Handlers/U/IUpdate.cs)         | Partial interface defining distributed cache upsert operations.                                 |
-> | [IUpdate.Set.cs](Caching/Distributed/Handlers/U/IUpdate.Set.cs) | Extends IUpdate with ISetHandler for storing typed data in distributed cache with optional TTL. |
+> | File Name                                                               | Description                                                                                     |
+> |-------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+> | [IUpdate.cs](Caching/Distributed/Handlers/U/IUpdate.cs)                 | Partial interface defining distributed cache upsert operations.                                 |
+> | [IUpdate.Set.cs](Caching/Distributed/Handlers/U/IUpdate.Set.cs)         | Extends IUpdate with ISetHandler for storing typed data in distributed cache with optional TTL. |
+> | [IUpdate.Increment.cs](Caching/Distributed/Handlers/U/IUpdate.Increment.cs) | Extends IUpdate with IIncrementHandler for atomically incrementing a counter with optional TTL. |
 
 > ### InMemory
 >

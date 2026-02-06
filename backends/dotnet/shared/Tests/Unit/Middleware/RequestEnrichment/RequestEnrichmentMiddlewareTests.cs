@@ -9,7 +9,7 @@ namespace D2.Shared.Tests.Unit.Middleware.RequestEnrichment;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
-using D2.Shared.RequestEnrichment;
+using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;

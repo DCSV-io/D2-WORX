@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Shared.RequestEnrichment;
+namespace D2.Shared.RequestEnrichment.Default;
 
 /// <summary>
 /// Represents enriched request context information populated by middleware.
