@@ -43,6 +43,9 @@
 - ✅ `@d2/interfaces` — Cache operation contracts (in-memory: 5 handlers, distributed: 6 handlers)
 - ✅ `@d2/result-extensions` — D2Result ↔ Proto conversions + gRPC call wrapper
 - ✅ `@d2/shared-tests` — 240 tests (54 new for interfaces + result-extensions)
+- ✅ `@d2/cache-memory` — In-memory cache store + 5 handlers (Get, GetMany, Set, SetMany, Remove)
+- ✅ `@d2/cache-redis` — Redis cache via ioredis + 6 handlers (Get, Set, Remove, Exists, GetTtl, Increment)
+- ✅ `@d2/shared-tests` — 290 tests (50 new: 29 unit for cache-memory, 21 integration for cache-redis)
 
 ### Blocked By
 
@@ -328,8 +331,8 @@ Auth (always proxied):
 | **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                       | `D2.Shared.Handler`                      |
 | **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                    | `D2.Shared.Interfaces`                   |
 | **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                             | `D2.Shared.Result.Extensions`            |
-| **@d2/cache-memory**       | 📋 Phase 1 | `backends/node/shared/implementations/caching/memory/`                | `InMemoryCache.Default`                  |
-| **@d2/cache-redis**        | 📋 Phase 1 | `backends/node/shared/implementations/caching/redis/`                 | `DistributedCache.Redis`                 |
+| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/memory/`                | `InMemoryCache.Default`                  |
+| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/redis/`                 | `DistributedCache.Redis`                 |
 | **@d2/geo-cache**          | 📋 Phase 1 | `backends/node/shared/implementations/caching/geo/`                   | `Geo.Client` (FindWhoIs)                 |
 | **@d2/request-enrichment** | 📋 Phase 1 | `backends/node/shared/implementations/middleware/request-enrichment/` | `RequestEnrichment.Default`              |
 | **@d2/ratelimit**          | 📋 Phase 1 | `backends/node/shared/implementations/middleware/ratelimit/`          | `RateLimit.Default`                      |
@@ -386,9 +389,9 @@ Auth (always proxied):
 
 **Step 3 — Contracts (Layer 2)** ✅ 12. ✅ **@d2/interfaces** — Cache operation contracts: Get, Set, Remove, Exists, GetTtl, Increment (mirrors `D2.Shared.Interfaces`) 13. ✅ **@d2/result-extensions** — D2Result ↔ Proto conversions + gRPC call wrapper (mirrors `D2.Shared.Result.Extensions`) 14. ✅ **@d2/shared-tests** — 240 tests (54 new for interfaces + result-extensions, full branch coverage)
 
-**Step 4 — Cache Implementations (Layer 3)** ← CURRENT 15. **@d2/cache-memory** — In-memory cache handlers (mirrors `InMemoryCache.Default`) 16. **@d2/cache-redis** — Redis cache handlers via ioredis (mirrors `DistributedCache.Redis`)
+**Step 4 — Cache Implementations (Layer 3)** ✅ 15. ✅ **@d2/cache-memory** — MemoryCacheStore (Map + lazy TTL) + 5 handlers (Get, GetMany, Set, SetMany, Remove) 16. ✅ **@d2/cache-redis** — 6 handlers (Get, Set, Remove, Exists, GetTtl, Increment) via ioredis + pluggable ICacheSerializer 17. ✅ **@d2/shared-tests** — 290 tests (29 unit for cache-memory, 21 integration for cache-redis via @testcontainers/redis)
 
-**Step 5 — Service Client (Layer 4)** 12. **@d2/geo-cache** — LRU memory cache + gRPC fallback to Geo service (mirrors `Geo.Client` FindWhoIs) - TTL: 8 hours (configurable), LRU eviction (10,000 entries)
+**Step 5 — Service Client (Layer 4)** ← CURRENT 12. **@d2/geo-cache** — LRU memory cache + gRPC fallback to Geo service (mirrors `Geo.Client` FindWhoIs) - TTL: 8 hours (configurable), LRU eviction (10,000 entries)
 
 **Step 6 — Middleware (Layer 5)** 13. **@d2/request-enrichment** — IP resolution, fingerprinting, WhoIs lookup middleware for Hono (mirrors `RequestEnrichment.Default`) 14. **@d2/ratelimit** — Multi-dimensional sliding-window rate limiting middleware for Hono (mirrors `RateLimit.Default`) - Rate limit alerting scaffold (hook/callback for future notifications service)
 
@@ -497,6 +500,12 @@ _(None currently — all prior questions resolved 2026-02-05)_
   - @d2/result-extensions: d2ResultToProto, d2ResultFromProto, handleGrpcCall (ServiceError detection)
   - 240 TS tests passing (54 new), full branch coverage on all result-extensions code
 - **Next up**: Layer 3 cache implementations (@d2/cache-memory, @d2/cache-redis)
+- **Phase 1, Step 4 completed**: Cache Implementations (Layer 3) done
+  - @d2/cache-memory: MemoryCacheStore (Map + lazy TTL eviction) + 5 handlers extending BaseHandler
+  - @d2/cache-redis: 6 handlers via ioredis + pluggable ICacheSerializer (JSON default, binary proto support)
+  - 290 TS tests passing (29 unit for memory, 21 integration for Redis via @testcontainers/redis)
+  - tsconfig extends path fixed: 4 levels up from implementations/caching/*/  to backends/node/
+- **Next up**: Layer 4 service client (@d2/geo-cache)
 
 ### 2026-02-05
 
