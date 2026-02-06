@@ -20,17 +20,17 @@ This file provides guidance for Claude Code (and other AI assistants) when worki
 
 For deeper architectural context, consult these files:
 
-| Document                                                                                          | Description                        |
-|---------------------------------------------------------------------------------------------------|------------------------------------|
-| `README.md`                                                                                       | Project overview, setup, status    |
-| `backends/BACKENDS.md`                                                                            | Full backend architecture          |
-| `backends/dotnet/services/Geo/GEO_SERVICE.md`                                                     | Geo service architecture           |
-| `backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md`                                           | Geo client library (reference)     |
-| `backends/dotnet/shared/Handler/HANDLER.md`                                                       | Handler pattern guide              |
-| `backends/dotnet/shared/Result/RESULT.md`                                                         | D2Result pattern                   |
-| `backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md` | Request enrichment middleware    |
-| `backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md`               | Rate limiting middleware           |
-| `CONTRIBUTING.md`                                                                                 | Contribution guidelines            |
+| Document                                                                                            | Description                     |
+| --------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `README.md`                                                                                         | Project overview, setup, status |
+| `backends/BACKENDS.md`                                                                              | Full backend architecture       |
+| `backends/dotnet/services/Geo/GEO_SERVICE.md`                                                       | Geo service architecture        |
+| `backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md`                                             | Geo client library (reference)  |
+| `backends/dotnet/shared/Handler/HANDLER.md`                                                         | Handler pattern guide           |
+| `backends/dotnet/shared/Result/RESULT.md`                                                           | D2Result pattern                |
+| `backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md` | Request enrichment middleware   |
+| `backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md`                 | Rate limiting middleware        |
+| `CONTRIBUTING.md`                                                                                   | Contribution guidelines         |
 
 ---
 
@@ -45,6 +45,7 @@ See `backends/BACKENDS.md` for full details.
 **2LC (Second-Level):** Implementation type → `Handlers`, `Entities`, `Migrations`, `MT`
 
 **3LC (Third-Level):** Operation type:
+
 - `C/` - Commands (state-changing) / Create
 - `Q/` - Queries (read-only, no side effects)
 - `R/` - Repository reads
@@ -56,10 +57,10 @@ See `backends/BACKENDS.md` for full details.
 ### CQRS Handler Categories
 
 | Handler Type | Local Cache | Distributed Cache | Database Write | External API |
-|--------------|-------------|-------------------|----------------|--------------|
-| **Query**    | ✅ OK        | ❌ No              | ❌ No           | ❌ No         |
-| **Command**  | ✅ OK        | ✅ OK              | ✅ OK           | ✅ OK         |
-| **Complex**  | ✅ OK        | ✅ OK              | ✅ OK           | ✅ OK         |
+| ------------ | ----------- | ----------------- | -------------- | ------------ |
+| **Query**    | ✅ OK       | ❌ No             | ❌ No          | ❌ No        |
+| **Command**  | ✅ OK       | ✅ OK             | ✅ OK          | ✅ OK        |
+| **Complex**  | ✅ OK       | ✅ OK             | ✅ OK          | ✅ OK        |
 
 **Key Distinction:** If the process dies immediately after the handler completes, would any state change persist or be visible to other instances? For Queries, the answer must be "no."
 
@@ -70,7 +71,7 @@ See `backends/BACKENDS.md` for full details.
 ### Verb Semantics
 
 | Verb     | Semantics                                                     | Side Effects      |
-|----------|---------------------------------------------------------------|-------------------|
+| -------- | ------------------------------------------------------------- | ----------------- |
 | **Find** | "Resolve this for me" — may fetch from external source, cache | May create/upsert |
 | **Get**  | "Give me this by ID" — direct lookup                          | Read-only         |
 
@@ -129,6 +130,7 @@ return D2Result<TNewData>.BubbleFail(result);  // Propagate errors with type cha
 ```
 
 **Partial Success Pattern:**
+
 - `NOT_FOUND` - None of the requested items were found
 - `SOME_FOUND` - Some items found, but not all (data still returned)
 - `OK` - All items found
@@ -136,6 +138,7 @@ return D2Result<TNewData>.BubbleFail(result);  // Propagate errors with type cha
 ### Content-Addressable Entities
 
 `Location` and `WhoIs` entities use SHA-256 content-addressable hash IDs:
+
 - Hash is computed from immutable identity properties
 - Stored as 64-character hex string (32 bytes)
 - Enables automatic deduplication and idempotent operations
@@ -181,6 +184,7 @@ public static class LocationMapper
 ```
 
 **Usage:**
+
 ```csharp
 var dto = location.ToDTO();
 var domain = dto.ToDomain();
@@ -353,6 +357,7 @@ D2-WORX/
 ### C# Style
 
 **File Headers (required on all .cs files):**
+
 ```csharp
 // -----------------------------------------------------------------------
 // <copyright file="FileName.cs" company="DCSV">
@@ -362,6 +367,7 @@ D2-WORX/
 ```
 
 **XML Documentation (required for public APIs):**
+
 ```csharp
 /// <summary>
 /// Gets the ISO 3166-1 alpha-2 code of the country.
@@ -373,27 +379,29 @@ public required string ISO31661Alpha2Code { get; init; }
 
 **Naming Conventions:**
 
-| Element                              | Convention         | Example                    |
-|--------------------------------------|--------------------|----------------------------|
-| Classes/Records/Interfaces           | `PascalCase`       | `GetReferenceData`         |
-| Methods/Properties                   | `PascalCase`       | `HandleAsync`              |
-| Private instance fields              | `_camelCase`       | `_memoryCache`             |
-| Private readonly instance fields     | `r_camelCase`      | `r_getFromMem`             |
-| Private static fields                | `s_camelCase`      | `s_instance`               |
-| Private static readonly fields       | `sr_camelCase`     | `sr_activitySource`        |
-| Static readonly fields (non-private) | `SR_PascalCase`    | `SR_ActivitySource`        |
-| Private constants                    | `_UPPER_CASE`      | `_BATCH_SIZE`              |
-| Public/Internal constants            | `UPPER_CASE`       | `MAX_ATTEMPTS`             |
-| Local constants (in tests)           | `snake_case`       | `expected_count`           |
-| Local variables                      | `camelCase`        | `result`                   |
+| Element                              | Convention      | Example             |
+| ------------------------------------ | --------------- | ------------------- |
+| Classes/Records/Interfaces           | `PascalCase`    | `GetReferenceData`  |
+| Methods/Properties                   | `PascalCase`    | `HandleAsync`       |
+| Private instance fields              | `_camelCase`    | `_memoryCache`      |
+| Private readonly instance fields     | `r_camelCase`   | `r_getFromMem`      |
+| Private static fields                | `s_camelCase`   | `s_instance`        |
+| Private static readonly fields       | `sr_camelCase`  | `sr_activitySource` |
+| Static readonly fields (non-private) | `SR_PascalCase` | `SR_ActivitySource` |
+| Private constants                    | `_UPPER_CASE`   | `_BATCH_SIZE`       |
+| Public/Internal constants            | `UPPER_CASE`    | `MAX_ATTEMPTS`      |
+| Local constants (in tests)           | `snake_case`    | `expected_count`    |
+| Local variables                      | `camelCase`     | `result`            |
 
 **Entity Design:**
+
 - Use `record` types for immutability
 - Use `required init` for mandatory properties
 - Initialize collections as empty: `ICollection<T> { }` or `[]`
 - Content-addressable entities compute hash in factory method
 
 **Database Conventions:**
+
 - Column names: `snake_case` (configured via EF Core)
 - Explicit schema control via entity type configurations
 - Primary keys are automatically indexed by PostgreSQL
@@ -426,20 +434,23 @@ Format markdown tables for **plain-text readability** with aligned columns:
 
 ```markdown
 <!-- Good: Columns aligned, readable in any editor -->
-| File Name                | Description                                      |
-|--------------------------|--------------------------------------------------|
-| [Get.cs](Handlers/R/Get.cs) | Handler for retrieving data from cache.       |
-| [Set.cs](Handlers/U/Set.cs) | Handler for storing data with optional TTL.   |
+
+| File Name                   | Description                                 |
+| --------------------------- | ------------------------------------------- |
+| [Get.cs](Handlers/R/Get.cs) | Handler for retrieving data from cache.     |
+| [Set.cs](Handlers/U/Set.cs) | Handler for storing data with optional TTL. |
 
 <!-- Bad: Columns not aligned, hard to read in plain text -->
-| File Name | Description |
-|---|---|
+
+| File Name                   | Description                             |
+| --------------------------- | --------------------------------------- |
 | [Get.cs](Handlers/R/Get.cs) | Handler for retrieving data from cache. |
 ```
 
 ### When to Update Documentation
 
 Update `.md` files when:
+
 - Adding new handlers, mappers, or entities
 - Adding new projects or modules (create new `.md`)
 - Changing public APIs or interfaces
@@ -455,6 +466,7 @@ Update `.md` files when:
 **Frameworks:** xUnit, FluentAssertions, Moq, Testcontainers
 
 **Structure:**
+
 ```
 Service.Tests/
 ├── Unit/
@@ -466,10 +478,12 @@ Service.Tests/
 ```
 
 **Test Naming:** Descriptive names that explain the scenario, e.g.:
+
 - `GetHandler_WhenMemoryCacheHit_ReturnsDataWithoutCallingRedis`
 - `Create_WithValidCoordinates_GeneratesConsistentHashId`
 
 **Hash ID Assertions (content-addressable entities):**
+
 ```csharp
 // 32 bytes = 64 hex characters
 location.HashId.Should().HaveLength(64);
@@ -482,6 +496,7 @@ location1.HashId.Should().NotBe(location3.HashId);
 ```
 
 **Integration Tests with Testcontainers:**
+
 ```csharp
 [MustDisposeResource(false)]
 public class MyTests : IAsyncLifetime
@@ -510,13 +525,14 @@ public class MyTests : IAsyncLifetime
 
 **Key principle:** Test projects are **separate** from source packages (mirrors .NET). Source packages have zero test dependencies — all test deps live in dedicated test projects.
 
-| Package              | Purpose                                     | .NET Equivalent                |
-|----------------------|---------------------------------------------|--------------------------------|
-| `@d2/testing`        | Shared test infra (matchers, containers)    | `D2.Shared.Tests` (infra)     |
-| `@d2/shared-tests`   | Tests for all shared packages               | `D2.Shared.Tests` (tests)     |
-| `auth-tests`         | Tests for Auth service                      | `Geo.Tests` (pattern)         |
+| Package            | Purpose                                  | .NET Equivalent           |
+| ------------------ | ---------------------------------------- | ------------------------- |
+| `@d2/testing`      | Shared test infra (matchers, containers) | `D2.Shared.Tests` (infra) |
+| `@d2/shared-tests` | Tests for all shared packages            | `D2.Shared.Tests` (tests) |
+| `auth-tests`       | Tests for Auth service                   | `Geo.Tests` (pattern)     |
 
 **Structure:**
+
 ```
 backends/node/shared/
   testing/                    # @d2/testing — shared test helpers
@@ -544,16 +560,17 @@ backends/node/services/
 
 **Test stack mapping:**
 
-| Concern           | .NET                        | TypeScript                               |
-|-------------------|-----------------------------|------------------------------------------|
-| Test runner       | xUnit                       | Vitest 4.x                               |
-| Assertions        | FluentAssertions            | Vitest `expect` + custom D2Result matchers |
-| Mocking           | Moq                         | `vi.mock`, `vi.fn`, `vi.spyOn`           |
-| Coverage          | —                           | `@vitest/coverage-v8`                    |
-| Containers (PG)   | `Testcontainers.PostgreSql` | `@testcontainers/postgresql`             |
-| Containers (Redis) | `Testcontainers.Redis`      | `@testcontainers/redis`                  |
+| Concern            | .NET                        | TypeScript                                 |
+| ------------------ | --------------------------- | ------------------------------------------ |
+| Test runner        | xUnit                       | Vitest 4.x                                 |
+| Assertions         | FluentAssertions            | Vitest `expect` + custom D2Result matchers |
+| Mocking            | Moq                         | `vi.mock`, `vi.fn`, `vi.spyOn`             |
+| Coverage           | —                           | `@vitest/coverage-v8`                      |
+| Containers (PG)    | `Testcontainers.PostgreSql` | `@testcontainers/postgresql`               |
+| Containers (Redis) | `Testcontainers.Redis`      | `@testcontainers/redis`                    |
 
 **Vitest monorepo setup:**
+
 - Root `vitest.config.ts` with `projects` discovery (auto-finds all test configs)
 - Shared `vitest.shared.ts` at `backends/node/` inherited by all test projects
 - Run from root: `pnpm vitest` (all) or `pnpm vitest --project shared-tests` (specific)
@@ -566,6 +583,7 @@ backends/node/services/
 ## Git Conventions
 
 ### Branch Naming
+
 - `feat/...` - New features
 - `fix/...` - Bug fixes
 - `docs/...` - Documentation
@@ -594,13 +612,13 @@ refactor: simplify caching logic
 
 ### Services (via Aspire)
 
-| Service         | Version | Purpose                    |
-|-----------------|---------|----------------------------|
-| PostgreSQL      | 18      | Per-service databases      |
-| Redis           | 8.2     | Distributed cache          |
-| RabbitMQ        | 4.1     | Async messaging            |
-| MinIO           | Latest  | Object storage (S3)        |
-| LGTM Stack      | Various | Observability              |
+| Service    | Version | Purpose               |
+| ---------- | ------- | --------------------- |
+| PostgreSQL | 18      | Per-service databases |
+| Redis      | 8.2     | Distributed cache     |
+| RabbitMQ   | 4.1     | Async messaging       |
+| MinIO      | Latest  | Object storage (S3)   |
+| LGTM Stack | Various | Observability         |
 
 ### Communication Patterns
 
@@ -650,6 +668,7 @@ refactor: simplify caching logic
 ### Current Development Focus
 
 **Completed (.NET):**
+
 - Geo service: Full domain, app, infra, and API layers with 591+ tests
 - Geo.Client: Service-owned client library with WhoIs cache handler (`FindWhoIs`)
 - REST Gateway: HTTP/REST → gRPC routing with request enrichment + rate limiting
@@ -661,15 +680,13 @@ refactor: simplify caching logic
 **Next (Node.js/TypeScript) — in order:**
 
 Phase 1 (TS shared infra — must come BEFORE auth):
+
 1. Node.js workspace setup (pnpm workspaces in `backends/node/`)
 2. `@d2/core` package (D2Result pattern, shared types)
 3. `@d2/ratelimit` package (same sliding-window algorithm as .NET)
 4. `@d2/geo-cache` package (local WhoIs cache with gRPC fallback)
 
-Phase 2 (Auth):
-5. Auth Service (Node.js + Hono + BetterAuth) at `backends/node/services/auth/`
-6. SvelteKit auth integration (proxy pattern, session hooks, JWT manager)
-7. .NET Gateway JWT validation (`AddJwtBearer` + JWKS)
+Phase 2 (Auth): 5. Auth Service (Node.js + Hono + BetterAuth) at `backends/node/services/auth/` 6. SvelteKit auth integration (proxy pattern, session hooks, JWT manager) 7. .NET Gateway JWT validation (`AddJwtBearer` + JWKS)
 
 ### When in Doubt
 
@@ -695,11 +712,11 @@ See `PLANNING.md` for detailed ADRs (including ADR-005: Request Flow Pattern) an
 
 BetterAuth is session-based at its core (not JWT-based). Sessions use 3-tier storage:
 
-| Tier              | Storage    | Lookup Cost | Revocation Lag            |
-|-------------------|------------|-------------|---------------------------|
-| Cookie cache      | In cookie  | Zero        | Up to 5min (maxAge)       |
-| Secondary storage | Redis      | ~1ms        | Instant                   |
-| Primary DB        | PostgreSQL | ~5-10ms     | Instant                   |
+| Tier              | Storage    | Lookup Cost | Revocation Lag      |
+| ----------------- | ---------- | ----------- | ------------------- |
+| Cookie cache      | In cookie  | Zero        | Up to 5min (maxAge) |
+| Secondary storage | Redis      | ~1ms        | Instant             |
+| Primary DB        | PostgreSQL | ~5-10ms     | Instant             |
 
 - `expiresIn`: 7 days, `updateAge`: 1 day, `cookieCache.maxAge`: 5 minutes
 - `storeSessionInDatabase: true` — dual-write for audit trail + durability
@@ -738,6 +755,7 @@ Auth (always proxied, cookie-based):
 #### Horizontal Scaling
 
 No sticky sessions required. Any instance can handle any request:
+
 - Cookie cache: session data travels with the request
 - Redis: shared session store any instance can query
 - JWTs: self-contained, any instance validates with cached JWKS public key
@@ -858,13 +876,13 @@ Layer 5:  @d2/request-enrich → handler, geo-cache
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+      "default": "./dist/index.js",
+    },
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
-  }
+    "clean": "rm -rf dist",
+  },
 }
 ```
 
@@ -885,6 +903,7 @@ Layer 5:  @d2/request-enrich → handler, geo-cache
 ```
 
 **Enforcement via `.npmrc` at project root:**
+
 ```ini
 engine-strict=true
 save-exact=true

@@ -4,7 +4,7 @@
  */
 
 /** The all-zeros UUID (equivalent to Guid.Empty in .NET). */
-export const EMPTY_UUID = '00000000-0000-0000-0000-000000000000';
+export const EMPTY_UUID = "00000000-0000-0000-0000-000000000000";
 
 /**
  * Checks if a UUID string is "truthy" (not null/undefined/empty and not the all-zeros UUID).

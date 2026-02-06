@@ -1,14 +1,10 @@
-import { logger } from './logger.server';
-import type { RequestEvent } from '@sveltejs/kit';
+import { logger } from "./logger.server";
+import type { RequestEvent } from "@sveltejs/kit";
 
-const IGNORED_PATHS = [
-  '/.well-known/',
-  '/favicon.ico',
-  '/health',
-];
+const IGNORED_PATHS = ["/.well-known/", "/favicon.ico", "/health"];
 
 function shouldIgnore(url: string): boolean {
-  return IGNORED_PATHS.some(path => url.startsWith(path));
+  return IGNORED_PATHS.some((path) => url.startsWith(path));
 }
 
 export const requestLogger = {

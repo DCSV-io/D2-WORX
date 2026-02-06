@@ -1,11 +1,11 @@
 packages:
-  - 'backends/node/shared/*'
-  - 'backends/node/shared/implementations/**'
-  - 'backends/node/services/*'
-  - 'clients/web'
+  - "backends/node/shared/*"
+  - "backends/node/shared/implementations/**"
+  - "backends/node/services/*"
+  - "clients/web"
 
 onlyBuiltDependencies:
-  - '@bufbuild/buf'
-  - '@tailwindcss/oxide'
+  - "@bufbuild/buf"
+  - "@tailwindcss/oxide"
   - esbuild
   - protobufjs

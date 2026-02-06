@@ -5,7 +5,7 @@ HTTP/REST gateway providing public API access to D² microservices via gRPC back
 ## Files
 
 | File Name                                    | Description                                                              |
-|----------------------------------------------|--------------------------------------------------------------------------|
+| -------------------------------------------- | ------------------------------------------------------------------------ |
 | [Program.cs](Program.cs)                     | Service bootstrap with gRPC clients, endpoint registration, and OpenAPI. |
 | [ResultExtensions.cs](ResultExtensions.cs)   | Extension methods for converting gRPC responses to HTTP results.         |
 | [GeoEndpoints.cs](Endpoints/GeoEndpoints.cs) | Geo service endpoints and gRPC client registration.                      |
@@ -24,7 +24,7 @@ All endpoints use URL path versioning (`/api/v1/...`). This approach was chosen 
 ### Geo (`/api/v1/geo`)
 
 | Method | Path                     | Description                                                                      |
-|--------|--------------------------|----------------------------------------------------------------------------------|
+| ------ | ------------------------ | -------------------------------------------------------------------------------- |
 | GET    | `/reference-data`        | Returns full geographic reference data.                                          |
 | POST   | `/reference-data/update` | Requests that geographic reference data be updated. Returns the updated version. |
 
@@ -80,7 +80,7 @@ All responses return a `D2Result<T>` with the HTTP status code derived from `D2R
   "traceId": "abc123",
   "messages": [],
   "inputErrors": [],
-  "data": { }
+  "data": {}
 }
 ```
 

@@ -72,7 +72,7 @@ ruler_storage:
     insecure: true
 
 limits:
-  compactor_blocks_retention_period: 2160h  # 90 days
+  compactor_blocks_retention_period: 2160h # 90 days
 
 activity_tracker:
   filepath: /var/mimir/activity.log

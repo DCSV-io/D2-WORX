@@ -5,7 +5,7 @@ DI registration extensions for handler context services. Provides `AddHandlerCon
 ## Files
 
 | File Name                              | Description                                                                  |
-|----------------------------------------|------------------------------------------------------------------------------|
+| -------------------------------------- | ---------------------------------------------------------------------------- |
 | [Extensions.cs](Extensions.cs)         | Extension methods for registering handler context services in DI containers. |
 | [RequestContext.cs](RequestContext.cs) | Implementation of `IRequestContext` extracting context from HTTP requests.   |
 
@@ -25,7 +25,7 @@ builder.Services.AddHandlerContext();
 ## Registered Services
 
 | Service           | Lifetime | Implementation   | Description                                                        |
-|-------------------|----------|------------------|--------------------------------------------------------------------|
+| ----------------- | -------- | ---------------- | ------------------------------------------------------------------ |
 | `IRequestContext` | Scoped   | `RequestContext` | Extracts trace IDs, user identity, and org info from HTTP context. |
 | `IHandlerContext` | Scoped   | `HandlerContext` | Bundles `IRequestContext` and `ILogger` for handler injection.     |
 
@@ -41,7 +41,7 @@ This package requires:
 The `RequestContext` implementation extracts information from the current HTTP request:
 
 | Property          | Source                                      |
-|-------------------|---------------------------------------------|
+| ----------------- | ------------------------------------------- |
 | `TraceId`         | `Activity.Current?.TraceId`                 |
 | `RequestId`       | `HttpContext.TraceIdentifier`               |
 | `RequestPath`     | `HttpContext.Request.Path`                  |

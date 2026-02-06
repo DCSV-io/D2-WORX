@@ -1,13 +1,10 @@
 // Common types
-export type {
-  D2ResultProto,
-  InputErrorProto,
-} from './generated/common/v1/d2_result.js';
+export type { D2ResultProto, InputErrorProto } from "./generated/common/v1/d2_result.js";
 
 export {
   D2ResultProto as D2ResultProtoFns,
   InputErrorProto as InputErrorProtoFns,
-} from './generated/common/v1/d2_result.js';
+} from "./generated/common/v1/d2_result.js";
 
 // Ping service
 export type {
@@ -15,12 +12,12 @@ export type {
   PingResponse,
   PingServiceClient,
   PingServiceServer,
-} from './generated/common/v1/ping.js';
+} from "./generated/common/v1/ping.js";
 
 export {
   PingServiceClient as PingServiceClientCtor,
   PingServiceService,
-} from './generated/common/v1/ping.js';
+} from "./generated/common/v1/ping.js";
 
 // Geo service — DTOs
 export type {
@@ -42,7 +39,7 @@ export type {
   ContactDTO,
   ContactToCreateDTO,
   GeoRefData,
-} from './generated/geo/v1/geo.js';
+} from "./generated/geo/v1/geo.js";
 
 // Geo service — request/response types
 export type {
@@ -66,12 +63,12 @@ export type {
   DeleteContactsResponse,
   GeoServiceClient,
   GeoServiceServer,
-} from './generated/geo/v1/geo.js';
+} from "./generated/geo/v1/geo.js";
 
 export {
   GeoServiceClient as GeoServiceClientCtor,
   GeoServiceService,
-} from './generated/geo/v1/geo.js';
+} from "./generated/geo/v1/geo.js";
 
 // Timestamp (well-known type)
-export type { Timestamp } from './generated/google/protobuf/timestamp.js';
+export type { Timestamp } from "./generated/google/protobuf/timestamp.js";

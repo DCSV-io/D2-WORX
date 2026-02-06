@@ -1,15 +1,10 @@
-import { expect } from 'vitest';
-import {
-  D2Result,
-  type ErrorCode,
-  type HttpStatusCode,
-  type InputError,
-} from '@d2/result';
+import { expect } from "vitest";
+import { D2Result, type ErrorCode, type HttpStatusCode, type InputError } from "@d2/result";
 
 /**
  * Augments Vitest's Assertion interface with custom D2Result matchers.
  */
-declare module 'vitest' {
+declare module "vitest" {
   interface Assertion<T> {
     /** Assert that the result is a success (success === true). */
     toBeSuccess(): void;
@@ -49,9 +44,7 @@ expect.extend({
         pass
           ? `expected result NOT to be success, but it was (status ${received.statusCode})`
           : `expected result to be success, but it failed with status ${received.statusCode}` +
-            (received.messages.length > 0
-              ? `: ${received.messages.join(', ')}`
-              : ''),
+            (received.messages.length > 0 ? `: ${received.messages.join(", ")}` : ""),
     };
   },
 
@@ -84,7 +77,7 @@ expect.extend({
       message: () =>
         pass
           ? `expected result NOT to have error code ${expected}`
-          : `expected result to have error code ${expected}, but got ${received.errorCode ?? 'undefined'}`,
+          : `expected result to have error code ${expected}, but got ${received.errorCode ?? "undefined"}`,
     };
   },
 
@@ -112,17 +105,13 @@ expect.extend({
     };
   },
 
-  toHaveInputErrors(
-    received: D2Result<unknown>,
-    expected: [string, ...string[]][],
-  ) {
+  toHaveInputErrors(received: D2Result<unknown>, expected: [string, ...string[]][]) {
     const receivedErrors = [...received.inputErrors];
     const pass =
       receivedErrors.length === expected.length &&
       receivedErrors.every(
         (err, i) =>
-          err.length === expected[i]!.length &&
-          err.every((val, j) => val === expected[i]![j]),
+          err.length === expected[i]!.length && err.every((val, j) => val === expected[i]![j]),
       );
     return {
       pass,

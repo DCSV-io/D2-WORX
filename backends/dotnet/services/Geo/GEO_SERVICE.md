@@ -11,16 +11,17 @@ The **Geo** (Geography) microservice is a critical infrastructure service within
 - **Geopolitical Entities** - Supra-national organizations (NATO, EU, etc.)
 
 ---
+
 ## Documentation
 
-| Document                                     | Description                                                                                  |
-|----------------------------------------------|----------------------------------------------------------------------------------------------|
-| [GEO_API.md](Geo.API/GEO_API.md)             | API layer: gRPC service implementation and endpoint documentation.                           |
-| [GEO_APP.md](Geo.App/GEO_APP.md)             | Application layer: CQRS handlers for reference data operations.                              |
-| [GEO_CLIENT.md](Geo.Client/GEO_CLIENT.md)    | Client library: messages, interfaces, and default handler implementations for consumers.     |
-| [GEO_DOMAIN.md](Geo.Domain/GEO_DOMAIN.md)    | Domain model: entities, value objects, enums, and validation exceptions.                     |
-| [GEO_INFRA.md](Geo.Infra/GEO_INFRA.md)       | Infrastructure layer: EF Core configuration, migrations, seed data, and repository handlers. |
-| [GEO_TESTS.md](Geo.Tests/GEO_TESTS.md)       | Unit and integration tests.                                                                  |
+| Document                                  | Description                                                                                  |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| [GEO_API.md](Geo.API/GEO_API.md)          | API layer: gRPC service implementation and endpoint documentation.                           |
+| [GEO_APP.md](Geo.App/GEO_APP.md)          | Application layer: CQRS handlers for reference data operations.                              |
+| [GEO_CLIENT.md](Geo.Client/GEO_CLIENT.md) | Client library: messages, interfaces, and default handler implementations for consumers.     |
+| [GEO_DOMAIN.md](Geo.Domain/GEO_DOMAIN.md) | Domain model: entities, value objects, enums, and validation exceptions.                     |
+| [GEO_INFRA.md](Geo.Infra/GEO_INFRA.md)    | Infrastructure layer: EF Core configuration, migrations, seed data, and repository handlers. |
+| [GEO_TESTS.md](Geo.Tests/GEO_TESTS.md)    | Unit and integration tests.                                                                  |
 
 ## Core Architectural Principles
 
@@ -29,12 +30,14 @@ The **Geo** (Geography) microservice is a critical infrastructure service within
 All data in Geo is **immutable**. Updates create new records rather than modifying existing ones.
 
 **Rationale:**
+
 - **Thread-safe** - No locks needed for concurrent reads
 - **Cacheable** - Cached data never becomes stale, only superseded
 - **Audit trail** - Complete history preserved automatically
 - **Simplified reasoning** - No hidden state changes
 
 **Implementation:**
+
 - Records use `init` accessors only (no `set`)
 - Updates create new entities with new IDs
 - Old records remain for historical reference
@@ -45,6 +48,7 @@ All data in Geo is **immutable**. Updates create new records rather than modifyi
 Location and WHOIS entities use **SHA-256 hash as primary key** instead of sequential IDs.
 
 **Rationale:**
+
 - **Automatic deduplication** - Same content = same hash = same record
 - **Deterministic lookups** - No need to search before creating
 - **Natural partitioning** - Hash-based sharding for distributed systems
@@ -61,12 +65,14 @@ Normalized string from: IP address + year + month + device fingerprint (differen
 Contacts use a **ContextKey + RelatedEntityId** pattern instead of foreign keys.
 
 **Rationale:**
+
 - **Service independence** - No database-level coupling to other services
 - **Flexible caching** - Bulk load by context ("give me all user contacts")
 - **Domain flexibility** - Same Contact can serve multiple domains
 - **Migration friendly** - Services can change without Geo schema changes
 
 **ContextKey Examples:**
+
 - `"auth-user"` - Contact belongs to a user in Auth service
 - `"sales-order"` - Contact belongs to an order in Sales service
 - `"invoice"` - Contact belongs to an invoice in Billing service
@@ -152,9 +158,11 @@ graph TB
 **Aggregate roots are the primary entry points for domain operations:**
 
 #### Contact
+
 Individual or organizational contact information with optional location reference.
 
 **Key Properties:**
+
 - Version 7 GUID for time-ordered IDs
 - ContextKey for categorization/caching
 - RelatedEntityId for loose coupling to external entities
@@ -162,27 +170,33 @@ Individual or organizational contact information with optional location referenc
 - Optional FK to Location (byte[] hash)
 
 **Design Decisions:**
+
 - ContactMethods, Personal, Professional are nullable (contacts vary widely)
 - CreatedAt always UTC (display timezone conversion in UI)
 - LocationHashId is byte[] to match Location primary key type
 
 #### Location
+
 Physical location with content-addressable hash ID.
 
 **Key Properties:**
+
 - SHA-256 hash (byte[]) as primary key
 - Optional coordinates, street address, city, postal code
 - References to subdivision and country (ISO codes)
 
 **Design Decisions:**
+
 - All address fields optional (flexibility for incomplete data)
 - Coordinates quantized to 5 decimal places (~1.1m precision)
 - Hash includes normalized lowercase strings for consistency
 
 #### WHOIS
+
 IP address geolocation and network metadata with device fingerprinting.
 
 **Key Properties:**
+
 - SHA-256 hash (byte[]) as primary key (computed from IP + year + month + fingerprint)
 - IP address (string)
 - Year and month (int) - temporal components of the hash
@@ -192,6 +206,7 @@ IP address geolocation and network metadata with device fingerprinting.
 - Network flags (isAnonymous, isVPN, isTor, isProxy, etc.)
 
 **Design Decisions:**
+
 - Content-addressable by IP + year + month + fingerprint (enables both device and temporal differentiation)
 - Year/month provide automatic monthly versioning (same device, new month = new record)
 - Fingerprint critical for home/corporate networks (multiple devices, one public IP)
@@ -199,6 +214,7 @@ IP address geolocation and network metadata with device fingerprinting.
 - Immutable - updates create new records with new hash
 
 **Use Cases:**
+
 - Track user sessions by geographic location and device over time
 - Detect suspicious login attempts from unusual locations
 - Monthly refresh of WHOIS data (automatic via hash key)
@@ -206,9 +222,11 @@ IP address geolocation and network metadata with device fingerprinting.
 - Rate limit by network (ASN) rather than just IP
 
 #### Country
+
 Sovereign state with ISO codes and metadata.
 
 **Key Properties:**
+
 - ISO 3166-1 alpha-2 code (primary key)
 - ISO 3166-1 alpha-3 code, numeric code
 - Display name, official name
@@ -217,6 +235,7 @@ Sovereign state with ISO codes and metadata.
 - FKs to primary currency and primary locale
 
 **Design Decisions:**
+
 - ISO alpha-2 code as PK (stable, standardized, compact)
 - Subdivisions are owned child entities (part of Country aggregate)
 - Direct FKs to primary currency and locale (reference data pattern)
@@ -225,6 +244,7 @@ Sovereign state with ISO codes and metadata.
 - Many-to-many with GeopoliticalEntity for memberships
 
 **Relationships:**
+
 - One-to-many: Country → Subdivisions (owned children)
 - Many-to-one: Country → Currency (primary)
 - Many-to-one: Country → Locale (primary)
@@ -233,15 +253,18 @@ Sovereign state with ISO codes and metadata.
 - Many-to-many: Country ↔ GeopoliticalEntity (memberships)
 
 #### GeopoliticalEntity
+
 Supra-national organizations and agreements.
 
 **Key Properties:**
+
 - Unique code/abbreviation (primary key) - NATO, EU, USMCA, ASEAN
 - Display name
 - Type (comprehensive enum with 20+ categories)
 - Many-to-many relationship with member countries
 
 **Design Decisions:**
+
 - Separate aggregate from Country (different lifecycle)
 - Custom code as PK (no ISO standard exists for these entities)
 - Type enum organized by category: Economic, Political, Military, Social/Cultural
@@ -249,6 +272,7 @@ Supra-national organizations and agreements.
 - No established/dissolved dates in current implementation (can add later if needed)
 
 **Type Categories:**
+
 - **General Geopolitical:** Continent, SubContinent, GeopoliticalRegion
 - **Economic:** FreeTradeAgreement, CustomsUnion, CommonMarket, EconomicUnion, MonetaryUnion, etc.
 - **Political:** PoliticalUnion, HumanRightsAgreement, EnvironmentalAgreement, PeaceTreaty, etc.
@@ -258,19 +282,23 @@ Supra-national organizations and agreements.
 ### Child Entities
 
 #### Subdivision
+
 Administrative division within a country (state, province, region).
 
 **Relationship:**
+
 - Child entity of Country aggregate
 - Accessed through Country, not directly
 
 **Key Properties:**
+
 - ISO 3166-2 code (primary key) - e.g., US-AL, CA-AB
 - Short code (2-3 characters) - extracted from ISO code - e.g., AL, AB
 - Display name and official name
 - FK to parent country (ISO 3166-1 alpha-2)
 
 **Design Decisions:**
+
 - ISO 3166-2 as PK (globally unique, includes country prefix)
 - ShortCode for convenience (local identifier within country)
 - Both display and official names (some subdivisions have formal vs common names)
@@ -280,44 +308,54 @@ Administrative division within a country (state, province, region).
 **These are standalone entities (not aggregates) that serve as lookup/reference data:**
 
 #### Currency
+
 Monetary currency information.
 
 **Key Properties:**
+
 - ISO 4217 alpha code (primary key) - USD, EUR, JPY
 - ISO 4217 numeric code (unique) - 840, 978, 392
 - Display name and official name
 - Symbol ($, €, ¥) and decimal places (0-3)
 
 **Usage:**
+
 - Referenced by Country (primary currency FK)
 - Many-to-many with Country (all accepted currencies via join table)
 
 **Design Decisions:**
+
 - ISO 4217 alpha as PK (3-letter code, globally standardized)
 - Numeric code as string to preserve leading zeros (e.g., "008" for Albanian Lek)
 - Both display and official names for flexibility
 
 #### Language
+
 Human language information.
 
 **Key Properties:**
+
 - ISO 639-1 code (primary key) - en, fr, es, zh
 - Display name (in English) - English, French, Spanish
 - Endonym (native name) - English, Français, Español
 
 **Usage:**
+
 - Referenced by Locale entities
 - Combined with Country via Locale to form regional language variants
 
 **Design Decisions:**
+
 - ISO 639-1 only (2-letter codes sufficient for ~180 major languages)
 - No ISO 639-3 (YAGNI - unlikely to support 7,000+ languages)
 - No text direction or script metadata (UI responsibility)
 
 #### Locale
+
 Language + region combination (BCP 47 format).
 
 **Key Properties:**
+
 - IETF BCP 47 tag (primary key) - en-US, fr-CA, es-MX, zh-Hans-CN
 - Display name (in English) - English (United States)
 - Endonym (native name) - English (United States), Français (Canada)
@@ -325,12 +363,14 @@ Language + region combination (BCP 47 format).
 - FK to Country (ISO 3166-1 alpha-2) - required
 
 **Usage:**
+
 - Represents regional language variants for formatting
 - Referenced by Country (primary locale FK)
 - Many-to-many with Country (all recognized locales via join table)
 - Used for date/time/number/currency formatting preferences
 
 **Design Decisions:**
+
 - BCP 47 tag as PK (standard format: language-country or language-script-country)
 - Both language and country required (region-specific locales only)
 - Separate FKs enable queries like "all locales for Spanish" or "all locales for Canada"
@@ -342,27 +382,33 @@ Language + region combination (BCP 47 format).
 Value objects are immutable, have no identity, and are defined by their properties.
 
 ### ContactMethods
+
 Collection of emails and phone numbers with validation.
 
 **Design Decisions:**
+
 - Required collections (use empty list, not null)
 - Validates all nested EmailAddress/PhoneNumber on creation
 - First in list = primary by convention
 - Provides PrimaryEmail/PrimaryPhone convenience properties
 
 ### EmailAddress
+
 Validated email with user-defined labels.
 
 **Design Decisions:**
+
 - Value cleaned (trimmed, lowercased)
 - Basic regex validation (domain enforces format, not RFC 5322 compliance)
 - Labels as ImmutableHashSet (unordered, no duplicates)
 - Labels optional/empty (not all emails need categorization)
 
 ### PhoneNumber
+
 Validated phone number with user-defined labels.
 
 **Design Decisions:**
+
 - Store E.164 format: digits only, no symbols
 - Strip all formatting on input (accept any format, normalize to digits)
 - 7-15 digit validation (E.164 spec)
@@ -370,15 +416,18 @@ Validated phone number with user-defined labels.
 - Format for display in UI layer, not domain
 
 **Rationale for digits-only storage:**
+
 - Consistent storage format
 - Smaller storage footprint
 - Easy comparison/deduplication
 - UI handles formatting per user locale
 
 ### Personal
+
 Personal information about an individual.
 
 **Design Decisions:**
+
 - FirstName required, all else optional (minimal contact = name only)
 - DateOnly for birth date (no time component)
 - Professional credentials as list with property initializer (defaults to empty)
@@ -386,30 +435,37 @@ Personal information about an individual.
 - Gender identity removed for simplicity (can add later if needed)
 
 **Enum Choices:**
+
 - NameTitle: Mr, Ms, Miss, Mrs, Mx, Dr, Prof, Rev, etc. (closed set)
 - GenerationalSuffix: Jr, Sr, I-X (closed set)
 - Professional credentials: string list (open set - too many to enumerate)
 
 ### Professional
+
 Business/company information.
 
 **Design Decisions:**
+
 - CompanyName required
 - Website as Uri type (built-in format validation)
 - JobTitle, Department optional
 
 ### Coordinates
+
 Geographic coordinates in decimal degrees.
 
 **Design Decisions:**
+
 - Decimal type for precision
 - Range validation: latitude -90 to 90, longitude -180 to 180
 - Quantized to 5 decimal places (~1.1m precision, sufficient for addresses)
 
 ### StreetAddress
+
 Multi-line street address.
 
 **Design Decisions:**
+
 - Line1 required, Line2/Line3 optional
 - Line3 cannot exist without Line2 (business rule validation)
 - All lines cleaned (whitespace normalized)
@@ -421,16 +477,19 @@ Multi-line street address.
 ### DateTime vs DateOnly vs DateTimeOffset
 
 **DateOnly** - Calendar dates without time component:
+
 - Birth dates
 - Established/dissolved dates for geopolitical entities
 - WHOIS change dates (day-granular from API)
 
 **DateTime (always UTC)** - Audit timestamps:
+
 - CreatedAt, UpdatedAt fields
 - Always stored in UTC
 - Converted to viewer's timezone in UI layer
 
 **DateTimeOffset** - Not currently used:
+
 - Would be for scheduled events where original timezone matters
 - Not needed in current Geo domain
 
@@ -440,11 +499,13 @@ Don't store time when it's meaningless. Birth date "1990-05-15" is a calendar da
 ### String vs Enums
 
 **Use Enums when:**
+
 - Closed set of values with domain meaning
 - Compiler enforcement valuable
 - Examples: BiologicalSex, NameTitle, GenerationalSuffix
 
 **Use Strings when:**
+
 - Open set (user-defined values)
 - Values vary by application context
 - Too many values to enumerate
@@ -453,22 +514,28 @@ Don't store time when it's meaningless. Birth date "1990-05-15" is a calendar da
 ### Collection Types
 
 **ImmutableList<T>** - Ordered collections where sequence matters:
+
 - Emails (first = primary)
 - Phone numbers (first = primary)
 
 **ImmutableHashSet<T>** - Unordered collections, no duplicates:
+
 - Labels for emails/phones (order doesn't matter)
 
 **Property Initializers** - Default empty collections:
+
 ```
 public ImmutableList<string> Tags { get; init; } = [];
 ```
+
 Use for optional collections that are rarely populated.
 
 **Required Collections** - No default, must be set:
+
 ```
 public required ImmutableList<EmailAddress> Emails { get; init; }
 ```
+
 Use for core collections that should be explicitly provided (even if empty).
 
 ---
@@ -482,16 +549,19 @@ Geo is **critical infrastructure** - most services depend on it. Multi-tier cach
 **Purpose:** Reduce database load, fast lookups
 
 **Structure:**
+
 - Partition by entity type and ContextKey
 - Key patterns: `geo:contacts:user:*`, `geo:contacts:order:*`
 - Location by hash: `geo:locations:{hashId}`
 
 **Operations:**
+
 - GetContactsByType() streams from Redis
 - Individual lookups check Redis before database
 - Write-through on creates
 
 **Configuration:**
+
 - Dedicated Redis instance (not shared with other services)
 - Persistence enabled (RDB + AOF)
 - Cluster mode for high availability
@@ -502,22 +572,26 @@ Geo is **critical infrastructure** - most services depend on it. Multi-tier cach
 
 **Pattern:**
 Each consuming service maintains in-memory cache of relevant contacts:
+
 - Order Service caches "order" context contacts
 - Auth Service caches "user" context contacts
 - Separate cache per ContextKey type
 
 **Lifecycle:**
+
 1. Warm cache on startup (bulk load from Geo)
 2. Check local cache first for every request
 3. Fall back to Geo service on cache miss
 4. Update local cache on response
 
 **Benefits:**
+
 - No network latency
 - Continues working during Geo service restarts
 - Reduces load on Geo service
 
 **Eviction:**
+
 - LRU eviction for memory management
 - TTL optional (immutability means stale data is just old version)
 - Explicit invalidation unnecessary (updates = new IDs)
@@ -527,20 +601,24 @@ Each consuming service maintains in-memory cache of relevant contacts:
 **Purpose:** Survive process restarts, disaster recovery
 
 **Implementation:**
+
 - Protobuf binary serialization for compact storage
 - Load from disk on startup if available
 - Fall back to Geo service if disk cache missing/corrupted
 
 **Storage:**
+
 - Service-local directory configured via `LocalFilesPath`
 - Single file for all reference data: `geo-ref-data.bin`
 
 **Benefits:**
+
 - Survives pod/container restarts
 - Fallback if Geo and Redis both down
 - Faster startup (local disk vs network)
 
 **Refresh:**
+
 - Load from disk on startup
 - Async refresh from Geo service after startup
 - Replace disk cache with fresh data
@@ -552,6 +630,7 @@ Each consuming service maintains in-memory cache of relevant contacts:
 Updates create new entities with new IDs. Old cached entries become obsolete naturally.
 
 **Pattern:**
+
 1. User updates email
 2. Geo creates new Contact with new ID
 3. Auth service updates User.ContactId to new ID
@@ -559,6 +638,7 @@ Updates create new entities with new IDs. Old cached entries become obsolete nat
 5. No explicit invalidation needed
 
 **Eventual Consistency:**
+
 - Services may see old Contact briefly
 - Acceptable for non-critical data (contact info)
 - Critical updates can force cache refresh
@@ -572,16 +652,19 @@ Updates create new entities with new IDs. Old cached entries become obsolete nat
 Domain objects enforce invariants strictly. Invalid state throws exceptions.
 
 **Rationale:**
+
 - Invalid data = programming error, not user error
 - Domain protects business rules
 - Early failure prevents corrupt state
 
 **Pattern:**
+
 - Create() methods validate inputs
 - Throw domain exceptions (GeoValidationException)
 - No "try" or "isValid" methods in domain
 
 **Example Validations:**
+
 - Email format check
 - Phone number 7-15 digits
 - Coordinates in valid range
@@ -592,21 +675,25 @@ Domain objects enforce invariants strictly. Invalid state throws exceptions.
 Application layer catches domain exceptions and returns user-friendly errors.
 
 **Pattern:**
+
 - Try/catch around domain operations
 - Convert exceptions to Result<T> or error DTOs
 - Return appropriate HTTP/gRPC status codes
 
 **Separation:**
+
 - Domain: "This violates business rules" (throw)
 - Application: "Here's what went wrong" (return error)
 
 ### Validation on Create vs Deserialize
 
 **Two Create() Overloads:**
+
 1. Create from raw values (validates and constructs)
 2. Create from existing instance (re-validates after deserialization)
 
 **Rationale:**
+
 - Deserialized data might be corrupted/tampered
 - Re-validation ensures invariants even after JSON roundtrip
 - Consistent validation regardless of data source
@@ -618,12 +705,14 @@ Application layer catches domain exceptions and returns user-friendly errors.
 ### gRPC Services
 
 **Advantages for Geo:**
+
 - Efficient binary serialization
 - Streaming support for bulk operations
 - Strong typing via Protobuf
 - Native support in .NET ecosystem
 
 **Key Patterns:**
+
 - Unary RPC for single entity lookups
 - Server streaming for bulk operations (GetContactsByType)
 - Streaming enables large result sets without memory issues
@@ -631,12 +720,14 @@ Application layer catches domain exceptions and returns user-friendly errors.
 ### Error Handling
 
 **Domain Exceptions -> gRPC Status:**
+
 - GeoValidationException -> StatusCode.InvalidArgument
 - Entity not found -> StatusCode.NotFound
 - Infrastructure errors -> StatusCode.Internal/Unavailable
 
 **Error Details:**
 Include structured error info:
+
 - Object type, property name, invalid value
 - Human-readable message
 - Enables client-side error handling
@@ -644,6 +735,7 @@ Include structured error info:
 ### Bulk Operations for Caching
 
 Specialized endpoints for cache warming:
+
 - GetContactsByType() - stream all contacts of given ContextKey
 - Optimized for startup cache loading
 - Pagination via cursor pattern for very large sets
@@ -655,11 +747,13 @@ Specialized endpoints for cache warming:
 ### Three-Tier Caching Strategy
 
 **Tier 1: PostgreSQL (Source of Truth)**
+
 - All writes go here
 - Rarely read directly (only on cache miss)
 - Single authoritative source
 
 **Tier 2: Redis (Primary Cache - Shared)**
+
 - Holds all transactional data (Contacts, WHOIS, Locations)
 - All services read directly from Redis
 - Sub-millisecond lookups (0.1-1ms)
@@ -668,6 +762,7 @@ Specialized endpoints for cache warming:
 - Can handle millions of records easily (10GB+ = 10M+ records)
 
 **Tier 3: Local Memory Cache (Per Service Instance)**
+
 - LRU cache with TTL (1 hour - 1 day depending on data type)
 - Only hot items (1K-10K records per service)
 - Sub-microsecond lookups
@@ -675,13 +770,14 @@ Specialized endpoints for cache warming:
 - No persistence needed
 
 **Local Disk (Reference Data Only)**
+
 - ONLY for small, static reference data stored as protobuf binary:
-    - Countries (249 records)
-    - Subdivisions (183 records across 8 countries)
-    - Currencies (5 major currencies)
-    - Languages (6 languages)
-    - Locales (100+ records)
-    - Geopolitical Entities (53 entities)
+  - Countries (249 records)
+  - Subdivisions (183 records across 8 countries)
+  - Currencies (5 major currencies)
+  - Languages (6 languages)
+  - Locales (100+ records)
+  - Geopolitical Entities (53 entities)
 - Total < 1MB
 - Loaded once on service startup
 - Fallback if both Redis and Geo unavailable
@@ -690,6 +786,7 @@ Specialized endpoints for cache warming:
 ### Why This Architecture?
 
 **Redis as Primary Cache (Not Full Local Replication):**
+
 - ✅ Each service only accesses a small subset of total data
 - ✅ Order service doesn't need Auth contacts
 - ✅ Auth service doesn't need all 18M WHOIS records
@@ -700,6 +797,7 @@ Specialized endpoints for cache warming:
 - ✅ Simple maintenance
 
 **Local Memory LRU (Not Full Dataset):**
+
 - ✅ Each service caches only what it actually uses
 - ✅ Automatic eviction keeps memory bounded
 - ✅ No manual cache management needed
@@ -708,18 +806,22 @@ Specialized endpoints for cache warming:
 ### Data Type Caching Strategies
 
 #### Reference Data (Countries, Currencies, Languages, etc.)
+
 **Storage:**
+
 - Redis: unlimited TTL (effectively permanent)
 - Local disk: protobuf binary as fallback
 - Local memory: loaded on startup, never evicted
 
 **Rationale:**
+
 - Small datasets (< 1MB total)
 - Changes rarely (months/years)
 - Same across all services
 - Critical for operation (need fallback)
 
 **Read Path:**
+
 ```
 1. Check local memory (loaded at startup)
 2. If empty → load from disk (protobuf binary)
@@ -728,18 +830,22 @@ Specialized endpoints for cache warming:
 ```
 
 #### Transactional Data (Contacts, WHOIS, Locations)
+
 **Storage:**
+
 - Redis: TTL varies by type (1-30 days)
 - Local memory: LRU with TTL (1 hour - 1 day)
 - No disk storage (too large, changes frequently)
 
 **Rationale:**
+
 - Large datasets (millions of records)
 - Changes frequently (daily/weekly)
 - Different subset per service
 - Not critical for operation (graceful degradation acceptable)
 
 **Read Path:**
+
 ```
 1. Check local memory LRU
 2. If miss → check Redis
@@ -753,16 +859,17 @@ Specialized endpoints for cache warming:
 
 1. Compute hash from IP address + fingerprint
 2. Check local memory cache (hot items only)
-    - If found → return immediately (sub-microsecond)
+   - If found → return immediately (sub-microsecond)
 3. Check Redis directly
-    - If found → cache locally with 24h TTL, return result (sub-millisecond)
+   - If found → cache locally with 24h TTL, return result (sub-millisecond)
 4. Redis miss → call Geo service to create and populate Redis
-    - If creation fails (invalid IP, API down) → log warning, return null
+   - If creation fails (invalid IP, API down) → log warning, return null
 5. Read from Redis again (Geo just populated it)
-    - If found → cache locally, return result
+   - If found → cache locally, return result
 6. Still null → log error (race condition or Geo failure), return null
 
 **Benefits:**
+
 - Hot items cached locally (sub-microsecond)
 - Cold items in Redis (sub-millisecond)
 - Automatic eviction (LRU)
@@ -774,14 +881,15 @@ Specialized endpoints for cache warming:
 **Step-by-step process:**
 
 1. Check local memory cache
-    - If found → return immediately (sub-microsecond)
+   - If found → return immediately (sub-microsecond)
 2. Check Redis
-    - If found → cache locally with 1h TTL, return result (sub-millisecond)
+   - If found → cache locally with 1h TTL, return result (sub-millisecond)
 3. Redis miss → contact doesn't exist or was evicted
-    - Log warning, return null
-    - Consuming service handles missing contact appropriately
+   - Log warning, return null
+   - Consuming service handles missing contact appropriately
 
 **Note on contacts:**
+
 - Unlike WHOIS (enrichment data), missing contacts may indicate an error condition
 - Services should handle null returns gracefully (retry, error message, etc.)
 - Contacts are typically created explicitly, not on-demand like WHOIS
@@ -791,29 +899,31 @@ Specialized endpoints for cache warming:
 **Reference Data (Required):**
 
 1. Try loading from local disk protobuf first (fastest)
-    - If successful → load into memory, done
+   - If successful → load into memory, done
 2. Fallback to Redis if disk file missing/corrupt
-    - Fetch all reference data from Redis
-    - Load into memory
-    - Save to disk for next startup
+   - Fetch all reference data from Redis
+   - Load into memory
+   - Save to disk for next startup
 
 **Transactional Data (Optional):**
 
 1. Determine which data this service actually needs
-    - Use service-specific ContextKey for contacts
-    - WHOIS typically not warmed (too large, access pattern is sparse)
+   - Use service-specific ContextKey for contacts
+   - WHOIS typically not warmed (too large, access pattern is sparse)
 2. Stream relevant data from Geo service
-    - Populate Redis as data arrives
-    - Populate local memory cache simultaneously
+   - Populate Redis as data arrives
+   - Populate local memory cache simultaneously
 3. Continue to serve requests during warming (non-blocking)
 
 **Strategy differences:**
+
 - Reference data: blocking (must complete before serving requests)
 - Transactional data: non-blocking (serve requests immediately, warm in background)
 
 ### Graceful Degradation
 
 **When Redis is Down:**
+
 1. Services continue with local memory cache (hot items still work)
 2. Reference data falls back to disk protobuf
 3. New reads that aren't cached → return null, log warning
@@ -821,6 +931,7 @@ Specialized endpoints for cache warming:
 5. System remains partially operational
 
 **When Geo Service is Down:**
+
 1. Existing cached data continues to work (both Redis and local memory)
 2. New data creation fails (expected behavior)
 3. WHOIS enrichment disabled (acceptable - enrichment data, not critical)
@@ -828,12 +939,14 @@ Specialized endpoints for cache warming:
 5. System operates in read-only mode for Geo data
 
 **When PostgreSQL is Down:**
+
 1. All reads work from cache (Redis + local memory)
 2. Writes fail (expected behavior)
 3. System operates fully read-only
 4. Queue writes for retry when database recovers
 
 **Philosophy:**
+
 - WHOIS is enrichment → log warning, continue without it
 - Contacts may be critical → return error, let consuming service decide
 - Reference data is critical → must have disk fallback
@@ -842,18 +955,21 @@ Specialized endpoints for cache warming:
 ### Cache Invalidation Strategy
 
 **Immutability Eliminates Most Invalidation:**
+
 - Updates create new records with new IDs
 - Old cached records remain valid (historical data)
 - Consuming services update to new IDs when ready
 - No cache invalidation needed for updates
 
 **TTL-Based Expiration:**
+
 - Reference data: unlimited (effectively permanent)
 - WHOIS: 30 days (IP assignments change slowly)
 - Contacts: 1 day Redis, 1 hour local (moderate change rate)
 - Locations: 7 days (addresses rarely change)
 
 **Active Invalidation (Rare):**
+
 - Only needed for corrections/deletes
 - Publish invalidation event to message bus
 - Services remove from local memory cache
@@ -863,16 +979,19 @@ Specialized endpoints for cache warming:
 ### Redis Configuration
 
 **Memory Limits:**
+
 - Set maxmemory based on expected dataset size
 - Use allkeys-lru eviction policy
 - Monitor memory usage via metrics
 
 **Persistence:**
+
 - Enable AOF (Append-Only File) for durability
 - Balance write performance vs data safety
 - Snapshots every 1 hour as backup
 
 **Connection Pooling:**
+
 - Use StackExchange.Redis connection multiplexer
 - Single connection per application
 - Leverage Redis pipelining for bulk operations
@@ -880,18 +999,21 @@ Specialized endpoints for cache warming:
 ### Metrics to Monitor
 
 **Cache Performance:**
+
 - Hit rate by tier (memory, Redis) and data type
 - Miss rate by data type
 - Average lookup latency by tier
 - Cache size/item count by data type
 
 **Degradation Indicators:**
+
 - Redis connection failures
 - Geo service call failures
 - PostgreSQL connection failures
 - Cache warming duration on startup
 
 **Alerts:**
+
 - Cache hit rate < 85% (indicates cache not warming properly)
 - Redis connection pool exhaustion
 - Startup cache warming > 30 seconds
@@ -906,12 +1028,14 @@ Specialized endpoints for cache warming:
 **Focus:** Value object and entity validation, business rules
 
 **Examples:**
+
 - Invalid coordinates throw exception
 - Email cleaning/normalization works correctly
 - Phone number format validation
 - Nested object validation propagates
 
 **Benefits:**
+
 - Fast execution
 - No infrastructure dependencies
 - Test business logic in isolation
@@ -921,6 +1045,7 @@ Specialized endpoints for cache warming:
 **Focus:** Persistence, retrieval, EF Core mappings
 
 **Examples:**
+
 - Save and retrieve entity preserves all properties
 - JSONB columns serialize/deserialize correctly
 - Foreign key relationships work
@@ -928,6 +1053,7 @@ Specialized endpoints for cache warming:
 - GetReferenceData returns all seeded data with relationships
 
 **Infrastructure:**
+
 - Testcontainers.PostgreSql for real database instances
 - Real EF Core context with migrations applied
 - Seed data verification
@@ -937,6 +1063,7 @@ Specialized endpoints for cache warming:
 **Focus:** Multi-tier cache behavior, resilience, graceful degradation
 
 **Examples:**
+
 - Local memory cache serves hot items sub-microsecond
 - Redis miss triggers Geo population correctly
 - Disk cache fallback works for reference data
@@ -947,6 +1074,7 @@ Specialized endpoints for cache warming:
 - WHOIS fingerprint differentiation (same IP, different devices)
 
 **Infrastructure:**
+
 - Testcontainers.Redis for real Redis instances
 - Real cache implementations (memory + disk)
 - Fault injection (simulate downtime)
@@ -962,21 +1090,25 @@ Specialized endpoints for cache warming:
 Used for ContactMethods collections (emails and phone numbers)
 
 **Benefits:**
+
 - Natural fit for one-to-many relationships (multiple emails/phones per contact)
 - Flexible schema for labels and metadata
 - GIN indexes for fast queries on nested properties
 - Avoids separate join tables for simple collections
 
 **What uses JSONB:**
+
 - EmailAddresses collection (one JSONB column)
 - PhoneNumbers collection (one JSONB column)
 
 **What uses regular columns:**
+
 - Personal information (flattened into Contact table columns)
 - Professional information (flattened into Contact table columns)
 - All other value objects that can be efficiently flattened
 
 **Rationale:**
+
 - JSONB only when one-to-many relationship benefits from it
 - Flat columns when data can be efficiently normalized
 - Keeps schema simple and queryable while maintaining flexibility where needed
@@ -985,17 +1117,20 @@ Used for ContactMethods collections (emails and phone numbers)
 Enable fast JSONB queries on nested properties (e.g., search by email domain)
 
 **Partitioning:**
+
 - Partition Contacts by ContextKey for large datasets
 - Improves query performance for context-specific lookups
 
 ### Migration Strategy
 
 **Immutability Advantage:**
+
 - Schema changes don't require data migration
 - Old format coexists with new format
 - Gradual migration as records are updated (new IDs created)
 
 **Additive Changes Only:**
+
 - Add new fields (nullable)
 - Never remove or rename fields (breaks old data)
 - Deprecate in code, not schema
@@ -1007,16 +1142,19 @@ Enable fast JSONB queries on nested properties (e.g., search by email domain)
 ### High Availability
 
 **Database:**
+
 - PostgreSQL with replication
 - Read replicas for query load
 - Automated failover
 
 **Redis:**
+
 - Redis Cluster for redundancy
 - Multiple replicas
 - Persistence enabled
 
 **Service:**
+
 - Multiple instances behind load balancer
 - Health checks on database and Redis connectivity
 - Circuit breaker for upstream dependencies
@@ -1024,12 +1162,14 @@ Enable fast JSONB queries on nested properties (e.g., search by email domain)
 ### Monitoring
 
 **Key Metrics:**
+
 - Cache hit rates (Redis, local memory)
 - Database query latency
 - gRPC call latency per operation
 - Error rates by exception type
 
 **Alerts:**
+
 - Cache hit rate drops (indicates cache issues)
 - Database connection pool exhaustion
 - High error rates
@@ -1037,11 +1177,13 @@ Enable fast JSONB queries on nested properties (e.g., search by email domain)
 ### Disaster Recovery
 
 **Backup Strategy:**
+
 - PostgreSQL backups (daily full, continuous WAL)
 - Redis snapshots (RDB)
 - Test restore procedures regularly
 
 **Failover:**
+
 - Services can operate degraded with local caches
 - Graceful degradation during Geo downtime
 - Eventual consistency acceptable for non-critical data
@@ -1055,11 +1197,13 @@ Enable fast JSONB queries on nested properties (e.g., search by email domain)
 Integrate external geocoding APIs for address validation and coordinate generation.
 
 **Benefits:**
+
 - Validate addresses against real-world data
 - Auto-populate coordinates from address
 - Suggest corrections for invalid addresses
 
 **Implementation:**
+
 - Application layer, not domain
 - Optional enhancement, not core requirement
 
@@ -1068,11 +1212,13 @@ Integrate external geocoding APIs for address validation and coordinate generati
 Integrate libphonenumber library for regional phone number validation.
 
 **Benefits:**
+
 - Country-specific validation
 - Parse various formats correctly
 - Detect mobile vs landline
 
 **Implementation:**
+
 - Application layer before calling domain
 - Domain keeps simple validation (7-15 digits)
 
@@ -1081,11 +1227,13 @@ Integrate libphonenumber library for regional phone number validation.
 Store all changes as events for complete audit trail.
 
 **Benefits:**
+
 - Full history of changes
 - Point-in-time reconstruction
 - Compliance/audit requirements
 
 **Complexity:**
+
 - Additional infrastructure (event store)
 - More complex queries
 - Consider only if compliance requires
@@ -1095,11 +1243,13 @@ Store all changes as events for complete audit trail.
 Add full-text search via Elasticsearch.
 
 **Use Cases:**
+
 - Search addresses by partial string
 - Find contacts by name fragment
 - Geospatial queries (contacts within radius)
 
 **Implementation:**
+
 - Elasticsearch indexes populated from database
 - Eventual consistency acceptable
 - Read path only, writes go through domain

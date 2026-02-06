@@ -5,7 +5,7 @@ Handler infrastructure implementing CQRS pattern with automatic logging, tracing
 ## Files
 
 | File Name                                            | Description                                                                                                                                                                                               |
-|------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [IHandler.cs](IHandler.cs)                           | Generic handler interface defining async operation contracts with input/output types, cancellation tokens, and optional handler configuration.                                                            |
 | [BaseHandler.cs](BaseHandler.cs)                     | Abstract base handler with built-in OpenTelemetry tracing, structured logging, execution timing, and exception handling wrapper around ExecuteAsync.                                                      |
 | [IHandlerContext.cs](IHandlerContext.cs)             | Context interface bundling IRequestContext and ILogger to reduce constructor boilerplate across handlers.                                                                                                 |

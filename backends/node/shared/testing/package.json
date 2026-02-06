@@ -13,7 +13,9 @@
     "build": "tsc",
     "clean": "rm -rf dist"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@d2/result": "workspace:*"
   },

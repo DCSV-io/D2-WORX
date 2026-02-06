@@ -13,5 +13,7 @@
     "build": "tsc",
     "clean": "rm -rf dist"
   },
-  "files": ["dist"]
+  "files": [
+    "dist"
+  ]
 }

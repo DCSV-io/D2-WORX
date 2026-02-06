@@ -5,7 +5,7 @@ gRPC service layer exposing geographic reference data endpoints. Thin pass-throu
 ## Files
 
 | File Name                               | Description                                                                                    |
-|-----------------------------------------|------------------------------------------------------------------------------------------------|
+| --------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | [Program.cs](Program.cs)                | Service bootstrap with DI registration for Infra, GeoRefData provider, and App layers.         |
 | [GeoService.cs](Services/GeoService.cs) | gRPC service implementation delegating to `IComplex.IGetHandler` with proto result conversion. |
 
@@ -14,7 +14,7 @@ gRPC service layer exposing geographic reference data endpoints. Thin pass-throu
 Defined in [geo.proto](../../../../../contracts/protos/geo/v1/geo.proto):
 
 | RPC                          | Request                             | Response                             | Description                                                                                                              |
-|------------------------------|-------------------------------------|--------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| ---------------------------- | ----------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | `GetReferenceData`           | `GetReferenceDataRequest`           | `GetReferenceDataResponse`           | Returns full geographic reference data (countries, subdivisions, currencies, languages, locales, geopolitical entities). |
 | `RequestReferenceDataUpdate` | `RequestReferenceDataUpdateRequest` | `RequestReferenceDataUpdateResponse` | Returns current version of reference data.                                                                               |
 
@@ -32,11 +32,11 @@ builder.Services.AddGeoApp();                              // Application layer 
 
 Required connection strings (injected via Aspire):
 
-| Key                  | Description              |
-|----------------------|--------------------------|
-| `d2-services-geo`    | PostgreSQL database      |
-| `d2-redis`           | Redis distributed cache  |
-| `d2-rabbitmq`        | RabbitMQ message broker  |
+| Key               | Description             |
+| ----------------- | ----------------------- |
+| `d2-services-geo` | PostgreSQL database     |
+| `d2-redis`        | Redis distributed cache |
+| `d2-rabbitmq`     | RabbitMQ message broker |
 
 ## Architecture
 

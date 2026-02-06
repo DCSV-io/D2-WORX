@@ -5,7 +5,7 @@ Extension methods for converting between D2Result and Protocol Buffer representa
 ## Files
 
 | File Name                                | Description                                                                                                                   |
-|------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | [ProtoExtensions.cs](ProtoExtensions.cs) | Extension methods for D2Result to/from D2ResultProto conversion and AsyncUnaryCall handling with automatic error translation. |
 
 ## Extension Methods
@@ -40,6 +40,7 @@ var result = await client.SomeMethodAsync(request, ct)
 ```
 
 Automatically handles:
+
 - `RpcException` → `D2Result.Fail` with `SERVICE_UNAVAILABLE`
 - General exceptions → `D2Result.UnhandledException`
 - Successful responses → `D2Result` with data from proto

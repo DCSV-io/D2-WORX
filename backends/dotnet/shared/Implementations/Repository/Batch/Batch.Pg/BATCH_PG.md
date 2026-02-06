@@ -37,7 +37,7 @@ var locations = await db.Locations
 ## Files
 
 | File Name                                      | Description                                                                                          |
-|------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [BatchQuery.cs](BatchQuery.cs)                 | Core batched query class with ToListAsync, ToDictionaryAsync, ToAsyncEnumerable, GetMissingIdsAsync. |
 | [BatchOptions.cs](BatchOptions.cs)             | Configuration options: BatchSize, AsNoTracking, DeduplicateIds, FilterNullIds.                       |
 | [Extensions.cs](Extensions.cs)                 | DbSet extension method `BatchGetByIds` for fluent batch query creation.                              |
@@ -45,17 +45,17 @@ var locations = await db.Locations
 
 ## BatchOptions Defaults
 
-| Option          | Default | Description                                      |
-|-----------------|---------|--------------------------------------------------|
-| BatchSize       | 500     | Maximum IDs per database query (safe: 100-2000)  |
-| AsNoTracking    | true    | Disable EF change tracking for read performance  |
-| DeduplicateIds  | true    | Remove duplicate IDs before querying             |
-| FilterNullIds   | true    | Remove null/default IDs from input               |
+| Option         | Default | Description                                     |
+| -------------- | ------- | ----------------------------------------------- |
+| BatchSize      | 500     | Maximum IDs per database query (safe: 100-2000) |
+| AsNoTracking   | true    | Disable EF change tracking for read performance |
+| DeduplicateIds | true    | Remove duplicate IDs before querying            |
+| FilterNullIds  | true    | Remove null/default IDs from input              |
 
 ## D2Result Status Codes
 
 | Condition                  | Status Code | Data         |
-|----------------------------|-------------|--------------|
+| -------------------------- | ----------- | ------------ |
 | All IDs found              | OK          | Full list    |
 | Some IDs found             | SOME_FOUND  | Partial list |
 | No IDs found               | NOT_FOUND   | null         |

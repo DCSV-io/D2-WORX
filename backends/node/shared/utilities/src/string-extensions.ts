@@ -16,7 +16,7 @@ const NON_DIGITS_RE = /[^\d]/g;
 export function cleanStr(str: string | null | undefined): string | undefined {
   const trimmed = str?.trim();
   if (!trimmed) return undefined;
-  return trimmed.replace(WHITESPACE_RE, ' ');
+  return trimmed.replace(WHITESPACE_RE, " ");
 }
 
 /**
@@ -28,7 +28,7 @@ export function cleanStr(str: string | null | undefined): string | undefined {
 export function cleanAndValidateEmail(email: string | null | undefined): string {
   const cleaned = cleanStr(email)?.toLowerCase();
   if (!cleaned || !EMAIL_RE.test(cleaned)) {
-    throw new Error('Invalid email address format.');
+    throw new Error("Invalid email address format.");
   }
   return cleaned;
 }
@@ -42,17 +42,17 @@ export function cleanAndValidateEmail(email: string | null | undefined): string 
  */
 export function cleanAndValidatePhoneNumber(phoneNumber: string | null | undefined): string {
   if (!phoneNumber?.trim()) {
-    throw new Error('Phone number cannot be null or empty.');
+    throw new Error("Phone number cannot be null or empty.");
   }
 
-  const cleaned = phoneNumber.replace(NON_DIGITS_RE, '');
+  const cleaned = phoneNumber.replace(NON_DIGITS_RE, "");
 
   if (!cleaned) {
-    throw new Error('Invalid phone number format.');
+    throw new Error("Invalid phone number format.");
   }
 
   if (cleaned.length < 7 || cleaned.length > 15) {
-    throw new Error('Phone number must be between 7 and 15 digits in length.');
+    throw new Error("Phone number must be between 7 and 15 digits in length.");
   }
 
   return cleaned;
@@ -67,5 +67,5 @@ export function cleanAndValidatePhoneNumber(phoneNumber: string | null | undefin
  * // Returns: 'test one||test3'
  */
 export function getNormalizedStrForHashing(parts: (string | null | undefined)[]): string {
-  return parts.map((p) => cleanStr(p)?.toLowerCase() ?? '').join('|');
+  return parts.map((p) => cleanStr(p)?.toLowerCase() ?? "").join("|");
 }

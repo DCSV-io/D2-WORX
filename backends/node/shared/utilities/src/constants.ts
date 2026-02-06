@@ -4,7 +4,7 @@
  */
 
 /** Prefix for all distributed cache keys. */
-export const DIST_CACHE_KEY_PREFIX = 'd2:';
+export const DIST_CACHE_KEY_PREFIX = "d2:";
 
 /** Distributed cache key prefix for geo data. */
 export const DIST_CACHE_KEY_GEO = `${DIST_CACHE_KEY_PREFIX}geo:`;

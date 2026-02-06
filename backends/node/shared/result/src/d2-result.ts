@@ -1,5 +1,5 @@
-import { ErrorCodes, type ErrorCode } from './error-codes.js';
-import { HttpStatusCode } from './http-status-codes.js';
+import { ErrorCodes, type ErrorCode } from "./error-codes.js";
+import { HttpStatusCode } from "./http-status-codes.js";
 
 /**
  * Input validation error: [fieldName, ...errorMessages].
@@ -41,8 +41,7 @@ export class D2Result<TData = void> {
     this.messages = Object.freeze(options.messages ?? []);
     this.inputErrors = Object.freeze(options.inputErrors ?? []);
     this.statusCode =
-      options.statusCode ??
-      (options.success ? HttpStatusCode.OK : HttpStatusCode.BadRequest);
+      options.statusCode ?? (options.success ? HttpStatusCode.OK : HttpStatusCode.BadRequest);
     this.errorCode = options.errorCode;
     this.traceId = options.traceId;
   }
@@ -73,11 +72,7 @@ export class D2Result<TData = void> {
   // ---------------------------------------------------------------------------
 
   /** Create a successful result. */
-  static ok<T = void>(options?: {
-    data?: T;
-    messages?: string[];
-    traceId?: string;
-  }): D2Result<T> {
+  static ok<T = void>(options?: { data?: T; messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: true,
       data: options?.data,
@@ -88,10 +83,7 @@ export class D2Result<TData = void> {
   }
 
   /** Create a successful result with 201 Created status. */
-  static created<T = void>(options?: {
-    data?: T;
-    traceId?: string;
-  }): D2Result<T> {
+  static created<T = void>(options?: { data?: T; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: true,
       data: options?.data,
@@ -123,13 +115,10 @@ export class D2Result<TData = void> {
   }
 
   /** Create a 404 Not Found result. */
-  static notFound<T = void>(options?: {
-    messages?: string[];
-    traceId?: string;
-  }): D2Result<T> {
+  static notFound<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ['Resource not found.'],
+      messages: options?.messages ?? ["Resource not found."],
       statusCode: HttpStatusCode.NotFound,
       errorCode: ErrorCodes.NOT_FOUND,
       traceId: options?.traceId,
@@ -137,15 +126,10 @@ export class D2Result<TData = void> {
   }
 
   /** Create a 401 Unauthorized result. */
-  static unauthorized<T = void>(options?: {
-    messages?: string[];
-    traceId?: string;
-  }): D2Result<T> {
+  static unauthorized<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? [
-        'You must be signed in to perform this action.',
-      ],
+      messages: options?.messages ?? ["You must be signed in to perform this action."],
       statusCode: HttpStatusCode.Unauthorized,
       errorCode: ErrorCodes.UNAUTHORIZED,
       traceId: options?.traceId,
@@ -153,13 +137,10 @@ export class D2Result<TData = void> {
   }
 
   /** Create a 403 Forbidden result. */
-  static forbidden<T = void>(options?: {
-    messages?: string[];
-    traceId?: string;
-  }): D2Result<T> {
+  static forbidden<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ['Insufficient permissions.'],
+      messages: options?.messages ?? ["Insufficient permissions."],
       statusCode: HttpStatusCode.Forbidden,
       errorCode: ErrorCodes.FORBIDDEN,
       traceId: options?.traceId,
@@ -174,9 +155,7 @@ export class D2Result<TData = void> {
   }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? [
-        'One or more validation errors occurred.',
-      ],
+      messages: options?.messages ?? ["One or more validation errors occurred."],
       inputErrors: options?.inputErrors,
       statusCode: HttpStatusCode.BadRequest,
       errorCode: ErrorCodes.VALIDATION_FAILED,
@@ -185,15 +164,10 @@ export class D2Result<TData = void> {
   }
 
   /** Create a 409 Conflict result. */
-  static conflict<T = void>(options?: {
-    messages?: string[];
-    traceId?: string;
-  }): D2Result<T> {
+  static conflict<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? [
-        'Conflict occurred while processing the request.',
-      ],
+      messages: options?.messages ?? ["Conflict occurred while processing the request."],
       statusCode: HttpStatusCode.Conflict,
       errorCode: ErrorCodes.CONFLICT,
       traceId: options?.traceId,
@@ -208,7 +182,7 @@ export class D2Result<TData = void> {
     return new D2Result<T>({
       success: false,
       messages: options?.messages ?? [
-        'An unhandled exception occurred while processing the request.',
+        "An unhandled exception occurred while processing the request.",
       ],
       statusCode: HttpStatusCode.InternalServerError,
       errorCode: ErrorCodes.UNHANDLED_EXCEPTION,
@@ -262,10 +236,7 @@ export class D2Result<TData = void> {
    * Convert a result to a different data type, preserving all details.
    * Optionally provide new data.
    */
-  static bubble<T>(
-    source: D2Result<unknown>,
-    data?: T,
-  ): D2Result<T> {
+  static bubble<T>(source: D2Result<unknown>, data?: T): D2Result<T> {
     return new D2Result<T>({
       success: source.success,
       data,

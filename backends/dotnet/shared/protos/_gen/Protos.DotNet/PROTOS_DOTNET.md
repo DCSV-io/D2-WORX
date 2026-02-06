@@ -10,8 +10,8 @@ Protocol Buffer source files define service contracts and message schemas for in
 
 Shared proto definitions used across all services:
 
-| File Name                                                 | Description                                                                                                              |
-|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| File Name                                                                       | Description                                                                                                              |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | [d2_result.proto](../../../../../../contracts/protos/common/v1/d2_result.proto) | D2ResultProto and InputErrorProto messages for standardized operation results with success status, messages, and errors. |
 | [ping.proto](../../../../../../contracts/protos/common/v1/ping.proto)           | Simple PingService for testing proto generation and gRPC connectivity with request/response messages.                    |
 
@@ -19,13 +19,14 @@ Shared proto definitions used across all services:
 
 Geographic reference data service definitions:
 
-| File Name                               | Description                                                                                                                                                                                                 |
-|-----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| File Name                                                        | Description                                                                                                                                                                                                 |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [geo.proto](../../../../../../contracts/protos/geo/v1/geo.proto) | GeoService contract with GetReferenceData and RequestReferenceDataUpdate RPCs returning D2ResultProto-wrapped responses with Country, Subdivision, Currency, Language, Locale, and GeopoliticalEntity DTOs. |
 
 ## Generated Output
 
 Grpc.Tools produces C# code including:
+
 - Service client stubs (e.g., `GeoService.GeoServiceClient`) for calling remote services
 - Service base classes (e.g., `GeoService.GeoServiceBase`) for implementing service handlers
 - Message DTOs with protobuf serialization (e.g., `CountryDTO`, `GeoRefData`, `D2ResultProto`)
@@ -43,6 +44,7 @@ message SomeOperationResponse {
 ```
 
 This enables:
+
 - Unified success/failure handling across all endpoints
 - Consistent error structure with messages, input errors, and status codes
 - Trace ID propagation for debugging and observability

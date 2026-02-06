@@ -140,9 +140,7 @@
             "namePlacement": "auto",
             "orientation": "horizontal",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "",
               "values": false
             },
@@ -214,9 +212,7 @@
             "namePlacement": "auto",
             "orientation": "horizontal",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "",
               "values": false
             },
@@ -4184,9 +4180,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_project$/",
               "values": false
             },
@@ -4254,9 +4248,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_container_number$/",
               "values": false
             },
@@ -4324,9 +4316,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_oneoff$/",
               "values": false
             },
@@ -4490,9 +4480,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_version$/",
               "values": false
             },
@@ -4560,9 +4548,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_project_config_files$/",
               "values": false
             },
@@ -4630,9 +4616,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_maintainer$/",
               "values": false
             },
@@ -4700,9 +4684,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_project_working_dir$/",
               "values": false
             },
@@ -4770,9 +4752,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_service$/",
               "values": false
             },
@@ -4840,9 +4820,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "",
               "values": false
             },
@@ -4907,9 +4885,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "",
               "values": false
             },
@@ -4974,9 +4950,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_config_hash$/",
               "values": false
             },
@@ -5044,9 +5018,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^image$/",
               "values": false
             },
@@ -5114,9 +5086,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_com_docker_compose_image$/",
               "values": false
             },
@@ -5184,9 +5154,7 @@
             "orientation": "auto",
             "percentChangeColorMode": "standard",
             "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
+              "calcs": ["lastNotNull"],
               "fields": "/^container_label_build_version$/",
               "values": false
             },
@@ -5817,9 +5785,7 @@
                   "id": "byNames",
                   "options": {
                     "mode": "exclude",
-                    "names": [
-                      "email-backups-email-backups-dovecot-lubi-uni-bremen-de-1"
-                    ],
+                    "names": ["email-backups-email-backups-dovecot-lubi-uni-bremen-de-1"],
                     "prefix": "All except:",
                     "readOnly": true
                   }
@@ -8491,12 +8457,7 @@
   ],
   "refresh": "",
   "schemaVersion": 39,
-  "tags": [
-    "cadvisor",
-    "docker",
-    "prometheus",
-    "container"
-  ],
+  "tags": ["cadvisor", "docker", "prometheus", "container"],
   "templating": {
     "list": [
       {

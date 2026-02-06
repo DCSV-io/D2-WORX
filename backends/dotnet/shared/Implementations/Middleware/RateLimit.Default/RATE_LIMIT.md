@@ -4,26 +4,26 @@ HTTP middleware implementing multi-dimensional sliding-window rate limiting usin
 
 ## Files
 
-| File Name                                               | Description                                                   |
-|---------------------------------------------------------|---------------------------------------------------------------|
-| [Interfaces/IRateLimit.cs](Interfaces/IRateLimit.cs)    | Base partial interface for rate limit handlers.               |
-| [Interfaces/IRateLimit.Check.cs](Interfaces/IRateLimit.Check.cs) | Handler interface for rate limit checking.             |
-| [Handlers/Check.cs](Handlers/Check.cs)                  | Handler implementing sliding window rate limit algorithm.     |
-| [RateLimitDimension.cs](RateLimitDimension.cs)          | Enum defining rate limit dimensions.                          |
-| [RateLimitOptions.cs](RateLimitOptions.cs)              | Configuration options with thresholds per dimension.          |
-| [RateLimitMiddleware.cs](RateLimitMiddleware.cs)        | HTTP middleware that invokes the Check handler.               |
-| [Extensions.cs](Extensions.cs)                          | DI registration and app builder extension methods.            |
+| File Name                                                        | Description                                               |
+| ---------------------------------------------------------------- | --------------------------------------------------------- |
+| [Interfaces/IRateLimit.cs](Interfaces/IRateLimit.cs)             | Base partial interface for rate limit handlers.           |
+| [Interfaces/IRateLimit.Check.cs](Interfaces/IRateLimit.Check.cs) | Handler interface for rate limit checking.                |
+| [Handlers/Check.cs](Handlers/Check.cs)                           | Handler implementing sliding window rate limit algorithm. |
+| [RateLimitDimension.cs](RateLimitDimension.cs)                   | Enum defining rate limit dimensions.                      |
+| [RateLimitOptions.cs](RateLimitOptions.cs)                       | Configuration options with thresholds per dimension.      |
+| [RateLimitMiddleware.cs](RateLimitMiddleware.cs)                 | HTTP middleware that invokes the Check handler.           |
+| [Extensions.cs](Extensions.cs)                                   | DI registration and app builder extension methods.        |
 
 ## Overview
 
 Rate limiting operates on four dimensions in hierarchy order:
 
-| Dimension            | Default Threshold | Skip Condition                    | Rationale                     |
-|----------------------|-------------------|-----------------------------------|-------------------------------|
-| Client Fingerprint   | 100/min           | Header not present                | Single device — strictest     |
-| IP                   | 5,000/min         | Localhost/loopback                | ~50 devices × 100             |
-| City                 | 25,000/min        | WhoIs data unavailable            | ~250 devices × 100            |
-| Country              | 100,000/min       | Whitelisted or WhoIs unavailable  | ~1000 devices × 100           |
+| Dimension          | Default Threshold | Skip Condition                   | Rationale                 |
+| ------------------ | ----------------- | -------------------------------- | ------------------------- |
+| Client Fingerprint | 100/min           | Header not present               | Single device — strictest |
+| IP                 | 5,000/min         | Localhost/loopback               | ~50 devices × 100         |
+| City               | 25,000/min        | WhoIs data unavailable           | ~250 devices × 100        |
+| Country            | 100,000/min       | Whitelisted or WhoIs unavailable | ~1000 devices × 100       |
 
 **Hierarchy evaluation**: Checks proceed in order from strictest (fingerprint) to most lenient (country). If any dimension is blocked, remaining dimensions are skipped.
 
@@ -32,6 +32,7 @@ Rate limiting operates on four dimensions in hierarchy order:
 Uses two fixed-window counters per dimension with weighted average — no Lua scripts required.
 
 **Redis key format:**
+
 - Counter: `ratelimit:{dimension}:{value}:{window_id}`
 - Block: `blocked:{dimension}:{value}`
 
@@ -81,6 +82,7 @@ app.UseRateLimiting();
 ## 429 Response
 
 When rate limited, the middleware returns:
+
 - Status code: `429 Too Many Requests`
 - Error code: `RATE_LIMITED`
 - `Retry-After` header with remaining block duration in seconds
