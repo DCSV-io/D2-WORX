@@ -11,3 +11,6 @@ export const DIST_CACHE_KEY_GEO = `${DIST_CACHE_KEY_PREFIX}geo:`;
 
 /** Distributed cache key for georeference data. */
 export const DIST_CACHE_KEY_GEO_REF_DATA = `${DIST_CACHE_KEY_GEO}refdata`;
+
+/** File name for persisted georeference data (protobuf binary). */
+export const GEO_REF_DATA_FILE_NAME = "georefdata.bin";

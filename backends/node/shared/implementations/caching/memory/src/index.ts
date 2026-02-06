@@ -1,4 +1,4 @@
-export { MemoryCacheStore } from "./memory-cache-store.js";
+export { MemoryCacheStore, type MemoryCacheStoreOptions } from "./memory-cache-store.js";
 export { Get } from "./handlers/get.js";
 export { GetMany } from "./handlers/get-many.js";
 export { Set } from "./handlers/set.js";

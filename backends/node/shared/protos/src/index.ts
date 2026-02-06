@@ -38,8 +38,10 @@ export type {
   WhoIsDTO,
   ContactDTO,
   ContactToCreateDTO,
-  GeoRefData,
 } from "./generated/geo/v1/geo.js";
+
+// GeoRefData — value export (provides encode/decode for proto serialization)
+export { GeoRefData } from "./generated/geo/v1/geo.js";
 
 // Geo service — request/response types
 export type {
