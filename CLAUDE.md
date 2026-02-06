@@ -324,8 +324,15 @@ D2-WORX/
 │   │   │       └── middleware/
 │   │   │           ├── request-enrichment/  # @d2/request-enrichment
 │   │   │           └── ratelimit/    # @d2/ratelimit
-│   │   └── services/
-│   │       └── auth/                 # Auth service (BetterAuth)
+│   │   ├── testing/                  # @d2/testing (shared test infra)
+│   │   └── tests/                    # @d2/shared-tests (tests all shared pkgs)
+│   │       ├── vitest.config.ts
+│   │       ├── unit/
+│   │       └── integration/
+│   │
+│   └── services/
+│       ├── auth/                     # Auth service (BetterAuth)
+│       └── auth-tests/               # Auth service tests
 │   └── go/                           # Go backends
 │       ├── shared/                   # Shared Go packages
 │       └── services/
@@ -443,7 +450,7 @@ Update `.md` files when:
 
 ## Testing
 
-### Backend Tests
+### .NET Backend Tests
 
 **Frameworks:** xUnit, FluentAssertions, Moq, Testcontainers
 
@@ -496,6 +503,63 @@ public class MyTests : IAsyncLifetime
     }
 }
 ```
+
+### TypeScript Backend Tests
+
+**Frameworks:** Vitest 4.x, Testcontainers (PostgreSQL + Redis modules)
+
+**Key principle:** Test projects are **separate** from source packages (mirrors .NET). Source packages have zero test dependencies — all test deps live in dedicated test projects.
+
+| Package              | Purpose                                     | .NET Equivalent                |
+|----------------------|---------------------------------------------|--------------------------------|
+| `@d2/testing`        | Shared test infra (matchers, containers)    | `D2.Shared.Tests` (infra)     |
+| `@d2/shared-tests`   | Tests for all shared packages               | `D2.Shared.Tests` (tests)     |
+| `auth-tests`         | Tests for Auth service                      | `Geo.Tests` (pattern)         |
+
+**Structure:**
+```
+backends/node/shared/
+  testing/                    # @d2/testing — shared test helpers
+    src/
+      matchers/               # Custom expect matchers (toBeSuccess, toBeFailure)
+      containers/             # Container factory functions (Postgres, Redis)
+      fixtures/               # Shared test fixtures
+  tests/                      # @d2/shared-tests — tests for all shared packages
+    vitest.config.ts
+    unit/
+      result/
+      handler/
+      cache-memory/
+    integration/
+      cache-redis/
+      geo-cache/
+      ratelimit/
+
+backends/node/services/
+  auth-tests/                 # Auth service tests
+    vitest.config.ts
+    unit/
+    integration/
+```
+
+**Test stack mapping:**
+
+| Concern           | .NET                        | TypeScript                               |
+|-------------------|-----------------------------|------------------------------------------|
+| Test runner       | xUnit                       | Vitest 4.x                               |
+| Assertions        | FluentAssertions            | Vitest `expect` + custom D2Result matchers |
+| Mocking           | Moq                         | `vi.mock`, `vi.fn`, `vi.spyOn`           |
+| Coverage          | —                           | `@vitest/coverage-v8`                    |
+| Containers (PG)   | `Testcontainers.PostgreSql` | `@testcontainers/postgresql`             |
+| Containers (Redis) | `Testcontainers.Redis`      | `@testcontainers/redis`                  |
+
+**Vitest monorepo setup:**
+- Root `vitest.config.ts` with `projects` discovery (auto-finds all test configs)
+- Shared `vitest.shared.ts` at `backends/node/` inherited by all test projects
+- Run from root: `pnpm vitest` (all) or `pnpm vitest --project shared-tests` (specific)
+- Coverage aggregated across all packages via `@vitest/coverage-v8`
+
+**Prefer dependency injection over module mocking** — design services to accept deps via constructor/factory (mirrors .NET handler pattern with `IHandlerContext`). Use `vi.mock` only for infrastructure boundaries.
 
 ---
 
@@ -713,10 +777,12 @@ No sticky sessions required. Any instance can handle any request:
 ```
 D2-WORX/                              # pnpm workspace root
 ├── pnpm-workspace.yaml                # packages: backends/node/shared/**, backends/node/services/*, clients/web
-├── package.json                        # Root devDeps (typescript, eslint, prettier)
+├── package.json                        # Root scripts, shared devDeps
+├── vitest.config.ts                    # Root Vitest config (projects discovery)
 │
 backends/node/
 ├── tsconfig.base.json                  # Shared TS config (strict, paths, etc.)
+├── vitest.shared.ts                    # Shared Vitest config (inherited by test projects)
 ├── shared/                             # Mirrors dotnet/shared/ — all @d2/* packages
 │   ├── result/                         # @d2/result (Layer 0)
 │   ├── utilities/                      # @d2/utilities (Layer 0)
@@ -724,22 +790,31 @@ backends/node/
 │   ├── interfaces/                     # @d2/interfaces (Layer 2) — cache contracts
 │   ├── result-extensions/              # @d2/result-extensions (Layer 2)
 │   ├── protos/                         # @d2/protos (Layer 0) — generated TS
-│   └── implementations/
-│       ├── caching/
-│       │   ├── memory/                 # @d2/cache-memory (Layer 3)
-│       │   ├── redis/                  # @d2/cache-redis (Layer 3)
-│       │   └── geo/                    # @d2/geo-cache (Layer 4)
-│       └── middleware/
-│           ├── request-enrichment/     # @d2/request-enrichment (Layer 5)
-│           └── ratelimit/              # @d2/ratelimit (Layer 5)
+│   ├── implementations/
+│   │   ├── caching/
+│   │   │   ├── memory/                 # @d2/cache-memory (Layer 3)
+│   │   │   ├── redis/                  # @d2/cache-redis (Layer 3)
+│   │   │   └── geo/                    # @d2/geo-cache (Layer 4)
+│   │   └── middleware/
+│   │       ├── request-enrichment/     # @d2/request-enrichment (Layer 5)
+│   │       └── ratelimit/             # @d2/ratelimit (Layer 5)
+│   ├── testing/                        # @d2/testing — shared test infra (matchers, containers)
+│   └── tests/                          # @d2/shared-tests — tests all shared packages
+│       ├── vitest.config.ts
+│       ├── unit/
+│       └── integration/
 └── services/
-    └── auth/                           # Auth service (Hono + BetterAuth)
-        ├── package.json
-        ├── src/
-        │   ├── index.ts                # Hono app entry
-        │   ├── auth.ts                 # BetterAuth config
-        │   └── routes/
-        └── Dockerfile
+    ├── auth/                           # Auth service (Hono + BetterAuth)
+    │   ├── package.json
+    │   ├── src/
+    │   │   ├── index.ts                # Hono app entry
+    │   │   ├── auth.ts                 # BetterAuth config
+    │   │   └── routes/
+    │   └── Dockerfile
+    └── auth-tests/                     # Auth service tests
+        ├── vitest.config.ts
+        ├── unit/
+        └── integration/
 ```
 
 ### Package Dependency Graph

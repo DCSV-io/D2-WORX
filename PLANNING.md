@@ -296,6 +296,8 @@ Auth (always proxied):
 | **@d2/geo-cache**        | 📋 Phase 1 | `backends/node/shared/implementations/caching/geo/`           | `Geo.Client` (FindWhoIs)     |
 | **@d2/request-enrichment** | 📋 Phase 1 | `backends/node/shared/implementations/middleware/request-enrichment/` | `RequestEnrichment.Default` |
 | **@d2/ratelimit**        | 📋 Phase 1 | `backends/node/shared/implementations/middleware/ratelimit/`  | `RateLimit.Default`          |
+| **@d2/testing**          | 📋 Phase 1 | `backends/node/shared/testing/`                               | `D2.Shared.Tests` (infra)    |
+| **@d2/shared-tests**     | 📋 Phase 1 | `backends/node/shared/tests/`                                 | `D2.Shared.Tests` (tests)    |
 | **@d2/service-defaults** | 📋 Phase 2 | `backends/node/shared/service-defaults/`                      | `D2.Shared.ServiceDefaults`  |
 | **@d2/auth-client**      | 📋 Phase 2 | TBD                                                          | —                            |
 | **@d2/jwt-manager**      | 📋 Phase 2 | TBD                                                          | —                            |
@@ -311,6 +313,7 @@ Auth (always proxied):
 | Geo.Client | ✅ Done | Service-owned client library (messages, interfaces, handlers) |
 | Geo.Tests | ✅ Done | 591 tests passing |
 | **Auth Service** | 📋 Planned | Node.js + Hono + BetterAuth (`backends/node/services/auth/`) |
+| **Auth.Tests**   | 📋 Planned | Auth service tests (`backends/node/services/auth-tests/`)    |
 
 ### Gateways
 
@@ -340,29 +343,34 @@ Auth (always proxied):
    - Workspace root at `D2-WORX/` (like `D2.sln`)
    - `pnpm-workspace.yaml` includes `backends/node/shared/**`, `backends/node/services/*`, `clients/web`
    - Shared `tsconfig.base.json` at `backends/node/`, eslint, prettier
+   - Vitest root config with `projects` discovery
 2. **@d2/result** — D2Result pattern, error codes (mirrors `D2.Shared.Result`)
 3. **@d2/utilities** — String helpers, env loading, serialization (mirrors `D2.Shared.Utilities`)
 4. **@d2/protos** — Generated TypeScript proto types + gRPC clients (mirrors `Protos.DotNet`)
 
-**Step 2 — Handler Pattern (Layer 1)**
+**Step 2 — Handler Pattern + Test Infrastructure (Layer 1)**
 5. **@d2/handler** — BaseHandler with OTel tracing, structured logging, error handling (mirrors `D2.Shared.Handler`)
+6. **@d2/testing** — Shared test infrastructure: custom D2Result matchers, container factories, fixtures (mirrors `D2.Shared.Tests` infra)
+7. **@d2/shared-tests** — Tests for all shared packages, validated as each layer is built (mirrors `D2.Shared.Tests`)
 
 **Step 3 — Contracts (Layer 2)**
-6. **@d2/interfaces** — Cache operation contracts: Get, Set, Remove, Exists, GetTtl, Increment (mirrors `D2.Shared.Interfaces`)
-7. **@d2/result-extensions** — D2Result ↔ Proto conversions (mirrors `D2.Shared.Result.Extensions`)
+8. **@d2/interfaces** — Cache operation contracts: Get, Set, Remove, Exists, GetTtl, Increment (mirrors `D2.Shared.Interfaces`)
+9. **@d2/result-extensions** — D2Result ↔ Proto conversions (mirrors `D2.Shared.Result.Extensions`)
 
 **Step 4 — Cache Implementations (Layer 3)**
-8. **@d2/cache-memory** — In-memory cache handlers (mirrors `InMemoryCache.Default`)
-9. **@d2/cache-redis** — Redis cache handlers via ioredis (mirrors `DistributedCache.Redis`)
+10. **@d2/cache-memory** — In-memory cache handlers (mirrors `InMemoryCache.Default`)
+11. **@d2/cache-redis** — Redis cache handlers via ioredis (mirrors `DistributedCache.Redis`)
 
 **Step 5 — Service Client (Layer 4)**
-10. **@d2/geo-cache** — LRU memory cache + gRPC fallback to Geo service (mirrors `Geo.Client` FindWhoIs)
+12. **@d2/geo-cache** — LRU memory cache + gRPC fallback to Geo service (mirrors `Geo.Client` FindWhoIs)
     - TTL: 8 hours (configurable), LRU eviction (10,000 entries)
 
 **Step 6 — Middleware (Layer 5)**
-11. **@d2/request-enrichment** — IP resolution, fingerprinting, WhoIs lookup middleware for Hono (mirrors `RequestEnrichment.Default`)
-12. **@d2/ratelimit** — Multi-dimensional sliding-window rate limiting middleware for Hono (mirrors `RateLimit.Default`)
+13. **@d2/request-enrichment** — IP resolution, fingerprinting, WhoIs lookup middleware for Hono (mirrors `RequestEnrichment.Default`)
+14. **@d2/ratelimit** — Multi-dimensional sliding-window rate limiting middleware for Hono (mirrors `RateLimit.Default`)
     - Rate limit alerting scaffold (hook/callback for future notifications service)
+
+> Tests are written and validated at each step — `@d2/shared-tests` grows as each layer is built.
 
 ### Phase 2: Auth Service + SvelteKit Integration
 
