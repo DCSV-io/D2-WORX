@@ -16,6 +16,8 @@
     "@d2/logging": "workspace:*",
     "@d2/messaging": "workspace:*",
     "@d2/protos": "workspace:*",
+    "@d2/ratelimit": "workspace:*",
+    "@d2/request-enrichment": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/result-extensions": "workspace:*",
     "@d2/testing": "workspace:*",

@@ -27,6 +27,8 @@ export default defineConfig({
       "@d2/cache-redis": resolve(impl, "caching/redis/src/index.ts"),
       "@d2/messaging": resolve(shared, "messaging/src/index.ts"),
       "@d2/geo-client": resolve(import.meta.dirname, "services/geo/geo-client/src/index.ts"),
+      "@d2/request-enrichment": resolve(impl, "middleware/request-enrichment/src/index.ts"),
+      "@d2/ratelimit": resolve(impl, "middleware/ratelimit/src/index.ts"),
     },
   },
   test: {
