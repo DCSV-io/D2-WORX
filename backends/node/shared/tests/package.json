@@ -21,6 +21,7 @@
     "@d2/testing": "workspace:*",
     "@d2/utilities": "workspace:*",
     "@grpc/grpc-js": "1.14.3",
+    "@testcontainers/rabbitmq": "10.18.0",
     "@testcontainers/redis": "10.18.0",
     "ioredis": "5.8.0",
     "rabbitmq-client": "5.0.8",

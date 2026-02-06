@@ -251,6 +251,9 @@ importers:
       '@grpc/grpc-js':
         specifier: 1.14.3
         version: 1.14.3
+      '@testcontainers/rabbitmq':
+        specifier: 10.18.0
+        version: 10.18.0
       '@testcontainers/redis':
         specifier: 10.18.0
         version: 10.18.0
@@ -1608,6 +1611,9 @@ packages:
     resolution: {integrity: sha512-BoFUoU0XqgCUS1UXWhmDJroKKhNXeDzD7/XwabjkDIAbMnc4ULn5e2FuEuBbhZ6ENZoSYzKlzvZ44Yr6EUDUSA==}
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7
+
+  '@testcontainers/rabbitmq@10.18.0':
+    resolution: {integrity: sha512-4qj8Pj0I0s8B7eSa2NqqQI8p8hK+lSdztbzceejZa1QToGtSuYwgfYCRvkWPlASYW8PDpaNotlvk85+bobevkg==}
 
   '@testcontainers/redis@10.18.0':
     resolution: {integrity: sha512-ZRIemaCl7C6ozC6D3PdR7BBfD3roT+EHX3ATIopUCXdemhQ/0gNaCNwt4Zq8akxkf8TvgnJkK/t6+Itm01FcVQ==}
@@ -4925,6 +4931,15 @@ snapshots:
       '@tailwindcss/oxide': 4.1.14
       tailwindcss: 4.1.14
       vite: 7.1.9(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)(yaml@2.8.2)
+
+  '@testcontainers/rabbitmq@10.18.0':
+    dependencies:
+      testcontainers: 10.28.0
+    transitivePeerDependencies:
+      - bare-abort-controller
+      - bare-buffer
+      - react-native-b4a
+      - supports-color
 
   '@testcontainers/redis@10.18.0':
     dependencies:
