@@ -10,6 +10,7 @@
   "devDependencies": {
     "@d2/result": "workspace:*",
     "@d2/testing": "workspace:*",
+    "@d2/utilities": "workspace:*",
     "vitest": "3.1.1"
   }
 }
