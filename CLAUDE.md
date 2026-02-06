@@ -669,24 +669,33 @@ refactor: simplify caching logic
 
 **Completed (.NET):**
 
-- Geo service: Full domain, app, infra, and API layers with 591+ tests
+- Geo service: Full domain, app, infra, and API layers with 595+ tests
 - Geo.Client: Service-owned client library with WhoIs cache handler (`FindWhoIs`)
 - REST Gateway: HTTP/REST → gRPC routing with request enrichment + rate limiting
 - RequestEnrichment.Default: IP resolution, fingerprinting, WhoIs lookup middleware
 - RateLimit.Default: Multi-dimensional sliding-window rate limiting middleware
 - Distributed cache abstractions: GetTtl, Increment handlers (abstracted from Redis)
+- BaseHandler metrics: duration histogram, invocations/failures/exceptions counters
 - All shared implementations use project-defined abstractions (no direct Redis/MS cache)
 
-**Next (Node.js/TypeScript) — in order:**
+**Completed (Node.js/TypeScript):**
 
-Phase 1 (TS shared infra — must come BEFORE auth):
+- Workspace + Foundation (Layer 0): @d2/result, @d2/utilities, @d2/protos, @d2/testing
+- Logging + Telemetry (Layer 0): @d2/logging (ILogger + Pino), @d2/service-defaults (OTel bootstrap)
+- Handler Pattern (Layer 1): @d2/handler (BaseHandler with OTel spans + metrics)
+- 186 tests in @d2/shared-tests
 
-1. Node.js workspace setup (pnpm workspaces in `backends/node/`)
-2. `@d2/core` package (D2Result pattern, shared types)
-3. `@d2/ratelimit` package (same sliding-window algorithm as .NET)
-4. `@d2/geo-cache` package (local WhoIs cache with gRPC fallback)
+**Next (Node.js/TypeScript) — Phase 1 continues:**
 
-Phase 2 (Auth): 5. Auth Service (Node.js + Hono + BetterAuth) at `backends/node/services/auth/` 6. SvelteKit auth integration (proxy pattern, session hooks, JWT manager) 7. .NET Gateway JWT validation (`AddJwtBearer` + JWKS)
+1. `@d2/interfaces` — Cache operation contracts (Layer 2)
+2. `@d2/result-extensions` — D2Result ↔ Proto conversions (Layer 2)
+3. `@d2/cache-memory` — In-memory cache handlers (Layer 3)
+4. `@d2/cache-redis` — Redis cache handlers (Layer 3)
+5. `@d2/geo-cache` — LRU memory cache + gRPC fallback (Layer 4)
+6. `@d2/request-enrichment` — IP resolution, fingerprinting middleware (Layer 5)
+7. `@d2/ratelimit` — Sliding-window rate limiting middleware (Layer 5)
+
+Phase 2 (Auth): Auth Service, SvelteKit integration, .NET Gateway JWT validation
 
 ### When in Doubt
 

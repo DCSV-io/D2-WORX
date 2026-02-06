@@ -35,6 +35,11 @@
 - ✅ `@d2/testing` — Custom Vitest matchers for D2Result assertions
 - ✅ `@d2/shared-tests` — 161 tests covering all above packages
 - ✅ ESLint 9 + Prettier monorepo configuration (root-level, covers all packages + web client)
+- ✅ `@d2/logging` — ILogger interface with Pino implementation (auto-instrumented via OTel)
+- ✅ `@d2/service-defaults` — One-call OTel SDK bootstrap (`setupTelemetry()`), re-exports OTel API
+- ✅ `@d2/handler` — BaseHandler with OTel spans + metrics, mirrors .NET handler pattern
+- ✅ .NET BaseHandler metrics (duration histogram, invocations/failures/exceptions counters)
+- ✅ `@d2/shared-tests` — 186 tests (25 new for logging + handler)
 
 ### Blocked By
 
@@ -315,7 +320,9 @@ Auth (always proxied):
 | **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                        | `Protos.DotNet`               |
 | **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                       | `D2.Shared.Tests` (infra)     |
 | **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                         | `D2.Shared.Tests` (tests)     |
-| **@d2/handler**            | 📋 Phase 1 | `backends/node/shared/handler/`                                       | `D2.Shared.Handler`           |
+| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                       | `Microsoft.Extensions.Logging` (ILogger) |
+| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                              | `D2.Shared.ServiceDefaults`   |
+| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                       | `D2.Shared.Handler`           |
 | **@d2/interfaces**         | 📋 Phase 1 | `backends/node/shared/interfaces/`                                    | `D2.Shared.Interfaces`        |
 | **@d2/result-extensions**  | 📋 Phase 1 | `backends/node/shared/result-extensions/`                             | `D2.Shared.Result.Extensions` |
 | **@d2/cache-memory**       | 📋 Phase 1 | `backends/node/shared/implementations/caching/memory/`                | `InMemoryCache.Default`       |
@@ -323,7 +330,7 @@ Auth (always proxied):
 | **@d2/geo-cache**          | 📋 Phase 1 | `backends/node/shared/implementations/caching/geo/`                   | `Geo.Client` (FindWhoIs)      |
 | **@d2/request-enrichment** | 📋 Phase 1 | `backends/node/shared/implementations/middleware/request-enrichment/` | `RequestEnrichment.Default`   |
 | **@d2/ratelimit**          | 📋 Phase 1 | `backends/node/shared/implementations/middleware/ratelimit/`          | `RateLimit.Default`           |
-| **@d2/service-defaults**   | 📋 Phase 2 | `backends/node/shared/service-defaults/`                              | `D2.Shared.ServiceDefaults`   |
+| ~~@d2/service-defaults~~   | ✅ Done    | _(moved to Layer 0 — see above)_                                      | `D2.Shared.ServiceDefaults`   |
 | **@d2/auth-client**        | 📋 Phase 2 | TBD                                                                   | —                             |
 | **@d2/jwt-manager**        | 📋 Phase 2 | TBD                                                                   | —                             |
 
@@ -336,7 +343,7 @@ Auth (always proxied):
 | Geo.Infra        | ✅ Done    | Repository, messaging                                         |
 | Geo.API          | ✅ Done    | gRPC service                                                  |
 | Geo.Client       | ✅ Done    | Service-owned client library (messages, interfaces, handlers) |
-| Geo.Tests        | ✅ Done    | 591 tests passing                                             |
+| Geo.Tests        | ✅ Done    | 595 tests passing                                             |
 | **Auth Service** | 📋 Planned | Node.js + Hono + BetterAuth (`backends/node/services/auth/`)  |
 | **Auth.Tests**   | 📋 Planned | Auth service tests (`backends/node/services/auth-tests/`)     |
 
@@ -372,9 +379,16 @@ Auth (always proxied):
 5. ✅ **@d2/testing** — Custom Vitest matchers (toBeSuccess, toBeFailure, etc.)
 6. ✅ **@d2/shared-tests** — 161 tests covering result, utilities, protos, testing
 
-**Step 2 — Handler Pattern (Layer 1)** ← CURRENT 7. **@d2/handler** — BaseHandler with OTel tracing, structured logging, error handling (mirrors `D2.Shared.Handler`)
+**Step 2 — Logging, Telemetry, Handler Pattern (Layer 0-1)** ✅
+7. ✅ **@d2/logging** — ILogger interface with Pino implementation (auto-instrumented via OTel)
+8. ✅ **@d2/service-defaults** — One-call OTel SDK bootstrap (`setupTelemetry()`), re-exports OTel API
+9. ✅ **@d2/handler** — BaseHandler with OTel spans + metrics (duration, invocations, failures, exceptions)
+10. ✅ **.NET BaseHandler metrics** — Same 4 metrics added to .NET for parity
+11. ✅ **@d2/shared-tests** — 186 tests (25 new for logging + handler)
 
-**Step 3 — Contracts (Layer 2)** 8. **@d2/interfaces** — Cache operation contracts: Get, Set, Remove, Exists, GetTtl, Increment (mirrors `D2.Shared.Interfaces`) 9. **@d2/result-extensions** — D2Result ↔ Proto conversions (mirrors `D2.Shared.Result.Extensions`)
+**Step 3 — Contracts (Layer 2)** ← CURRENT
+12. **@d2/interfaces** — Cache operation contracts: Get, Set, Remove, Exists, GetTtl, Increment (mirrors `D2.Shared.Interfaces`)
+13. **@d2/result-extensions** — D2Result ↔ Proto conversions (mirrors `D2.Shared.Result.Extensions`)
 
 **Step 4 — Cache Implementations (Layer 3)** 10. **@d2/cache-memory** — In-memory cache handlers (mirrors `InMemoryCache.Default`) 11. **@d2/cache-redis** — Redis cache handlers via ioredis (mirrors `DistributedCache.Redis`)
 
@@ -465,12 +479,23 @@ _(None currently — all prior questions resolved 2026-02-05)_
 
 ### 2026-02-06
 
+- **Phase 1, Step 2 completed**: Logging, Telemetry, Handler Pattern (Layer 0-1) all done
+  - @d2/logging: ILogger interface decoupled from Pino, auto-instrumented via OTel
+  - @d2/service-defaults: One-call `setupTelemetry()` bootstrap, re-exports OTel API
+  - @d2/handler: BaseHandler with OTel spans + 4 metrics (duration histogram, invocations/failures/exceptions counters)
+  - .NET BaseHandler: Same 4 metrics added for parity, registered in ServiceDefaults
+  - 186 TS tests passing (25 new), 595 .NET tests passing (4 new for Populate subdivision resolution)
 - **Phase 1, Step 1 completed**: Workspace + Foundation (Layer 0) packages all done
   - @d2/result, @d2/utilities, @d2/protos, @d2/testing, @d2/shared-tests (161 tests)
 - **ESLint 9 + Prettier configured**: Root-level monorepo config covering all Node.js packages + web client
   - Web client's local ESLint config consolidated into root
   - Prettier settings: double quotes, 2 spaces, CRLF, 100-char print width
-- **Next up**: @d2/handler (BaseHandler + OTel integration)
+- **Additional .NET fixes**:
+  - REST gateway: Added IHandlerContext DI registration (AddHandlerContext)
+  - Populate handler: Added subdivision code resolution via GeoRef + in-memory cache
+  - Populate handler: Fixed DI by using interface types for cache handlers
+  - Converted string.IsNullOrWhiteSpace to Truthy()/Falsey() in Populate
+- **Next up**: Layer 2 packages (@d2/interfaces, @d2/result-extensions)
 
 ### 2026-02-05
 
