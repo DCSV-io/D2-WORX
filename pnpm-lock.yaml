@@ -57,6 +57,12 @@ importers:
         specifier: 1.9.0
         version: 1.9.0
 
+  backends/node/shared/interfaces:
+    dependencies:
+      '@d2/handler':
+        specifier: workspace:*
+        version: link:../handler
+
   backends/node/shared/logging:
     dependencies:
       pino:
@@ -80,6 +86,18 @@ importers:
         version: 2.11.2
 
   backends/node/shared/result: {}
+
+  backends/node/shared/result-extensions:
+    dependencies:
+      '@d2/protos':
+        specifier: workspace:*
+        version: link:../protos
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../result
+      '@grpc/grpc-js':
+        specifier: 1.14.3
+        version: 1.14.3
 
   backends/node/shared/service-defaults:
     dependencies:
@@ -131,6 +149,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../handler
+      '@d2/interfaces':
+        specifier: workspace:*
+        version: link:../interfaces
       '@d2/logging':
         specifier: workspace:*
         version: link:../logging
@@ -140,12 +161,18 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../result
+      '@d2/result-extensions':
+        specifier: workspace:*
+        version: link:../result-extensions
       '@d2/testing':
         specifier: workspace:*
         version: link:../testing
       '@d2/utilities':
         specifier: workspace:*
         version: link:../utilities
+      '@grpc/grpc-js':
+        specifier: 1.14.3
+        version: 1.14.3
       vitest:
         specifier: 3.1.1
         version: 3.1.1(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)
