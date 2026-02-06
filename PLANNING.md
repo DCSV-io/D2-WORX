@@ -46,6 +46,10 @@
 - ✅ `@d2/cache-memory` — In-memory cache store + 5 handlers (Get, GetMany, Set, SetMany, Remove)
 - ✅ `@d2/cache-redis` — Redis cache via ioredis + 6 handlers (Get, Set, Remove, Exists, GetTtl, Increment)
 - ✅ `@d2/shared-tests` — 290 tests (50 new: 29 unit for cache-memory, 21 integration for cache-redis)
+- ✅ `MemoryCacheStore` LRU — Always-on LRU eviction with default maxEntries=10,000
+- ✅ `@d2/messaging` — Thin RabbitMQ wrapper (rabbitmq-client), MessageBus with subscribe + publish
+- ✅ `@d2/geo-client` — Full Geo.Client parity: 9 CQRS handlers, messaging handler, consumer bridge
+- ✅ `@d2/shared-tests` — 375 tests (85 new: LRU, messaging, geo-client handlers)
 
 ### Blocked By
 
@@ -333,7 +337,8 @@ Auth (always proxied):
 | **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                             | `D2.Shared.Result.Extensions`            |
 | **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/memory/`                | `InMemoryCache.Default`                  |
 | **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/redis/`                 | `DistributedCache.Redis`                 |
-| **@d2/geo-cache**          | 📋 Phase 1 | `backends/node/shared/implementations/caching/geo/`                   | `Geo.Client` (FindWhoIs)                 |
+| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                     | MassTransit (thin rabbitmq-client wrap)  |
+| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                              | `Geo.Client` (full parity)               |
 | **@d2/request-enrichment** | 📋 Phase 1 | `backends/node/shared/implementations/middleware/request-enrichment/` | `RequestEnrichment.Default`              |
 | **@d2/ratelimit**          | 📋 Phase 1 | `backends/node/shared/implementations/middleware/ratelimit/`          | `RateLimit.Default`                      |
 | ~~@d2/service-defaults~~   | ✅ Done    | _(moved to Layer 0 — see above)_                                      | `D2.Shared.ServiceDefaults`              |
@@ -391,7 +396,7 @@ Auth (always proxied):
 
 **Step 4 — Cache Implementations (Layer 3)** ✅ 15. ✅ **@d2/cache-memory** — MemoryCacheStore (Map + lazy TTL) + 5 handlers (Get, GetMany, Set, SetMany, Remove) 16. ✅ **@d2/cache-redis** — 6 handlers (Get, Set, Remove, Exists, GetTtl, Increment) via ioredis + pluggable ICacheSerializer 17. ✅ **@d2/shared-tests** — 290 tests (29 unit for cache-memory, 21 integration for cache-redis via @testcontainers/redis)
 
-**Step 5 — Service Client (Layer 4)** ← CURRENT 12. **@d2/geo-cache** — LRU memory cache + gRPC fallback to Geo service (mirrors `Geo.Client` FindWhoIs) - TTL: 8 hours (configurable), LRU eviction (10,000 entries)
+**Step 5 — Service Client + Messaging (Layer 0 + 4)** ✅ 12. ✅ **MemoryCacheStore LRU** — Always-on LRU eviction with maxEntries option (default 10,000) 13. ✅ **@d2/messaging** — Thin wrapper around rabbitmq-client: MessageBus with subscribe (consumer) + createPublisher 14. ✅ **@d2/geo-client** — Full 1:1 mirror of .NET Geo.Client: 9 CQRS handlers (SetInMem, SetInDist, SetOnDisk, GetFromMem, GetFromDist, GetFromDisk, ReqUpdate, FindWhoIs, Get), messaging handler (Updated), consumer bridge (createUpdatedConsumer), GeoRefDataSerializer 15. ✅ **@d2/shared-tests** — 375 tests (85 new for LRU, messaging, geo-client)
 
 **Step 6 — Middleware (Layer 5)** 13. **@d2/request-enrichment** — IP resolution, fingerprinting, WhoIs lookup middleware for Hono (mirrors `RequestEnrichment.Default`) 14. **@d2/ratelimit** — Multi-dimensional sliding-window rate limiting middleware for Hono (mirrors `RateLimit.Default`) - Rate limit alerting scaffold (hook/callback for future notifications service)
 
@@ -506,6 +511,15 @@ _(None currently — all prior questions resolved 2026-02-05)_
   - 290 TS tests passing (29 unit for memory, 21 integration for Redis via @testcontainers/redis)
   - tsconfig extends path fixed: 4 levels up from implementations/caching/\*/ to backends/node/
 - **Next up**: Layer 4 service client (@d2/geo-cache)
+- **Phase 1, Step 5 completed**: Service Client + Messaging (Layer 0 + 4) done
+  - MemoryCacheStore: always-on LRU with maxEntries option (default 10,000), Map insertion-order trick
+  - @d2/messaging: thin rabbitmq-client wrapper with MessageBus, subscribe, createPublisher
+  - @d2/geo-client: full 1:1 .NET Geo.Client parity with 9 CQRS handlers, Updated messaging handler, consumer bridge
+  - GeoRefDataSerializer for protobuf binary Redis serialization
+  - ESLint: added argsIgnorePattern/varsIgnorePattern for _ prefix convention
+  - pnpm-workspace.yaml: services/* → services/** for nested packages like geo/geo-client
+  - 375 TS tests passing (85 new), all passing with lint + format clean
+- **Next up**: Layer 5 middleware (@d2/request-enrichment, @d2/ratelimit)
 
 ### 2026-02-05
 
