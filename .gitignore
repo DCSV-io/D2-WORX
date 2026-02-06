@@ -160,3 +160,6 @@ georefdata.bin
 # Local tool settings (machine-specific)
 .claude/settings.local.json
 .aspire/settings.json
+
+# Coverage
+/Coverage
