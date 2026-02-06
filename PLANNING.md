@@ -504,7 +504,7 @@ _(None currently — all prior questions resolved 2026-02-05)_
   - @d2/cache-memory: MemoryCacheStore (Map + lazy TTL eviction) + 5 handlers extending BaseHandler
   - @d2/cache-redis: 6 handlers via ioredis + pluggable ICacheSerializer (JSON default, binary proto support)
   - 290 TS tests passing (29 unit for memory, 21 integration for Redis via @testcontainers/redis)
-  - tsconfig extends path fixed: 4 levels up from implementations/caching/*/  to backends/node/
+  - tsconfig extends path fixed: 4 levels up from implementations/caching/\*/ to backends/node/
 - **Next up**: Layer 4 service client (@d2/geo-cache)
 
 ### 2026-02-05
