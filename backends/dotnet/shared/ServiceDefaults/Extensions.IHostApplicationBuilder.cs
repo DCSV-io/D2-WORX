@@ -4,11 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using D2.Shared.Utilities.Configuration;
-
 namespace D2.Shared.ServiceDefaults;
 
-using D2.Shared.Utilities;
+using D2.Shared.Utilities.Configuration;
 using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

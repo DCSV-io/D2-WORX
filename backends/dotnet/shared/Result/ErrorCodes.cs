@@ -60,4 +60,9 @@ public class ErrorCodes
     /// Indicates that some items were found in a query operation but not all.
     /// </summary>
     public const string SOME_FOUND = nameof(SOME_FOUND);
+
+    /// <summary>
+    /// Indicates that the request has been rate limited.
+    /// </summary>
+    public const string RATE_LIMITED = nameof(RATE_LIMITED);
 }

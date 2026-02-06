@@ -14,15 +14,15 @@ public class GeoAppOptions
     /// <summary>
     /// Gets or sets the duration after which Location data expires in cache.
     /// </summary>
-    public TimeSpan LocationExpirationDuration { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan LocationExpirationDuration { get; set; } = TimeSpan.FromHours(4);
 
     /// <summary>
     /// Gets or sets the duration after which WhoIs data expires in cache.
     /// </summary>
-    public TimeSpan WhoIsExpirationDuration { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan WhoIsExpirationDuration { get; set; } = TimeSpan.FromHours(4);
 
     /// <summary>
     /// Gets or sets the duration after which Contact data expires in cache.
     /// </summary>
-    public TimeSpan ContactExpirationDuration { get; set; } = TimeSpan.FromHours(1);
+    public TimeSpan ContactExpirationDuration { get; set; } = TimeSpan.FromHours(4);
 }

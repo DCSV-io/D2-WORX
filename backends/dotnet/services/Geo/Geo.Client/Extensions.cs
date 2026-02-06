@@ -15,6 +15,7 @@ using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
 using D2.Geo.Client.Messaging.Handlers.Sub;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.InMemoryCache.Default;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -83,6 +84,35 @@ public static class Extensions
             services.AddTransient<ICommands.ISetInMemHandler, SetInMem>();
             services.AddTransient<ICommands.ISetOnDiskHandler, SetOnDisk>();
             services.AddTransient<ISubs.IUpdatedHandler, Updated>();
+        }
+
+        /// <summary>
+        /// Adds WhoIs caching services with local memory cache and gRPC fallback.
+        /// </summary>
+        ///
+        /// <param name="configuration">
+        /// The configuration to read options from.
+        /// </param>
+        /// <param name="sectionName">
+        /// The configuration section name for options. Defaults to "GeoClientOptions".
+        /// </param>
+        ///
+        /// <returns>
+        /// The updated service collection.
+        /// </returns>
+        /// <remarks>
+        /// This method requires a gRPC client for <see cref="GeoService.GeoServiceClient"/>
+        /// to be registered (e.g., via <see cref="AddGeoRefDataConsumer"/> or manually).
+        /// </remarks>
+        public IServiceCollection AddWhoIsCache(
+            IConfiguration configuration,
+            string sectionName = nameof(GeoClientOptions))
+        {
+            services.Configure<GeoClientOptions>(configuration.GetSection(sectionName));
+            services.AddDefaultMemoryCaching();
+            services.AddTransient<IComplex.IFindWhoIsHandler, FindWhoIs>();
+
+            return services;
         }
     }
 }

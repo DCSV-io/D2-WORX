@@ -8,6 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\..\services\Geo\Geo.Client\Geo.Client.csproj" />
+        <ProjectReference Include="..\..\shared\Implementations\Middleware\RateLimit.Redis\RateLimit.Redis.csproj" />
+        <ProjectReference Include="..\..\shared\Implementations\Middleware\RequestEnrichment\RequestEnrichment.csproj" />
         <ProjectReference Include="..\..\shared\Result.Extensions\Result.Extensions.csproj" />
         <ProjectReference Include="..\..\shared\ServiceDefaults\ServiceDefaults.csproj"/>
         <ProjectReference Include="..\..\shared\protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />

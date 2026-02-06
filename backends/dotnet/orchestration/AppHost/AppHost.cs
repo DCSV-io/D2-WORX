@@ -289,6 +289,10 @@ var restGateway = builder.AddProject<Projects.REST>("d2-rest")
     .WaitFor(geoService)
     .WithReference(geoService)
 
+    // Redis dependency for rate limiting.
+    .WaitFor(cache)
+    .WithReference(cache)
+
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
     .WithOtelRefs();

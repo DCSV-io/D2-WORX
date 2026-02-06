@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using dotenv.net;
-
 namespace D2.Shared.Utilities.Configuration;
+
+using dotenv.net;
 
 /// <summary>
 /// Convention-based environment variable loader for D2-WORX.

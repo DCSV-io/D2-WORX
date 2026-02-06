@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\shared\Handler\Handler.csproj" />
+        <ProjectReference Include="..\..\..\shared\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
         <ProjectReference Include="..\..\..\shared\Interfaces\Interfaces.csproj" />
         <ProjectReference Include="..\..\..\shared\Result.Extensions\Result.Extensions.csproj" />
         <ProjectReference Include="..\..\..\shared\Utilities\Utilities.csproj" />
