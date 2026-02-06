@@ -1,12 +1,15 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { InMemoryCache } from "@d2/interfaces";
-import type { MemoryCacheStore } from "../memory-cache-store.js";
+import type { MemoryCacheStore } from "../../memory-cache-store.js";
 
 type Input = InMemoryCache.RemoveInput;
 type Output = InMemoryCache.RemoveOutput;
 
-export class Remove extends BaseHandler<Input, Output> {
+export class Remove
+  extends BaseHandler<Input, Output>
+  implements InMemoryCache.IRemoveHandler
+{
   private readonly store: MemoryCacheStore;
 
   constructor(store: MemoryCacheStore, context: IHandlerContext) {

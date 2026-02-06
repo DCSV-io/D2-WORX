@@ -6,7 +6,10 @@ import type { DistributedCache } from "@d2/interfaces";
 type Input = DistributedCache.ExistsInput;
 type Output = DistributedCache.ExistsOutput;
 
-export class Exists extends BaseHandler<Input, Output> {
+export class Exists
+  extends BaseHandler<Input, Output>
+  implements DistributedCache.IExistsHandler
+{
   private readonly redis: Redis;
 
   constructor(redis: Redis, context: IHandlerContext) {

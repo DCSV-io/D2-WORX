@@ -3,10 +3,13 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 
-type Input = DistributedCache.GetTtlInput;
-type Output = DistributedCache.GetTtlOutput;
+type Input = DistributedCache.RemoveInput;
+type Output = DistributedCache.RemoveOutput;
 
-export class GetTtl extends BaseHandler<Input, Output> {
+export class Remove
+  extends BaseHandler<Input, Output>
+  implements DistributedCache.IRemoveHandler
+{
   private readonly redis: Redis;
 
   constructor(redis: Redis, context: IHandlerContext) {
@@ -16,11 +19,8 @@ export class GetTtl extends BaseHandler<Input, Output> {
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     try {
-      const pttl = await this.redis.pttl(input.key);
-
-      // -2 = key doesn't exist, -1 = no expiry
-      const timeToLiveMs = pttl > 0 ? pttl : undefined;
-      return D2Result.ok({ data: { timeToLiveMs }, traceId: this.traceId });
+      await this.redis.del(input.key);
+      return D2Result.ok({ data: {}, traceId: this.traceId });
     } catch {
       return D2Result.fail({
         messages: ["Unable to connect to Redis."],

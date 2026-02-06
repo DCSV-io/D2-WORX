@@ -2,12 +2,12 @@ import type Redis from "ioredis";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
-import { JsonCacheSerializer, type ICacheSerializer } from "../serialization.js";
+import { JsonCacheSerializer, type ICacheSerializer } from "../../serialization.js";
 
-export class Get<TValue> extends BaseHandler<
-  DistributedCache.GetInput,
-  DistributedCache.GetOutput<TValue>
-> {
+export class Set<TValue>
+  extends BaseHandler<DistributedCache.SetInput<TValue>, DistributedCache.SetOutput>
+  implements DistributedCache.ISetHandler<TValue>
+{
   private readonly redis: Redis;
   private readonly serializer: ICacheSerializer<TValue>;
 
@@ -18,24 +18,28 @@ export class Get<TValue> extends BaseHandler<
   }
 
   protected async executeAsync(
-    input: DistributedCache.GetInput,
-  ): Promise<D2Result<DistributedCache.GetOutput<TValue> | undefined>> {
+    input: DistributedCache.SetInput<TValue>,
+  ): Promise<D2Result<DistributedCache.SetOutput | undefined>> {
     try {
-      const raw = await this.redis.getBuffer(input.key);
-      if (raw === null) {
-        return D2Result.notFound({ traceId: this.traceId });
-      }
+      let serialized: string | Buffer;
       try {
-        const value = this.serializer.deserialize(raw);
-        return D2Result.ok({ data: { value }, traceId: this.traceId });
+        serialized = this.serializer.serialize(input.value);
       } catch {
         return D2Result.fail({
-          messages: ["Value could not be deserialized."],
+          messages: ["Value could not be serialized."],
           statusCode: HttpStatusCode.InternalServerError,
-          errorCode: ErrorCodes.COULD_NOT_BE_DESERIALIZED,
+          errorCode: ErrorCodes.COULD_NOT_BE_SERIALIZED,
           traceId: this.traceId,
         });
       }
+
+      if (input.expirationMs !== undefined) {
+        await this.redis.set(input.key, serialized, "PX", input.expirationMs);
+      } else {
+        await this.redis.set(input.key, serialized);
+      }
+
+      return D2Result.ok({ data: {}, traceId: this.traceId });
     } catch {
       return D2Result.fail({
         messages: ["Unable to connect to Redis."],

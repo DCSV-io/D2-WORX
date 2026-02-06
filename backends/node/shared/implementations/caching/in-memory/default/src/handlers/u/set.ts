@@ -1,12 +1,12 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { InMemoryCache } from "@d2/interfaces";
-import type { MemoryCacheStore } from "../memory-cache-store.js";
+import type { MemoryCacheStore } from "../../memory-cache-store.js";
 
-export class Set<TValue> extends BaseHandler<
-  InMemoryCache.SetInput<TValue>,
-  InMemoryCache.SetOutput
-> {
+export class Set<TValue>
+  extends BaseHandler<InMemoryCache.SetInput<TValue>, InMemoryCache.SetOutput>
+  implements InMemoryCache.ISetHandler<TValue>
+{
   private readonly store: MemoryCacheStore;
 
   constructor(store: MemoryCacheStore, context: IHandlerContext) {

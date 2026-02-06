@@ -3,10 +3,13 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 
-type Input = DistributedCache.IncrementInput;
-type Output = DistributedCache.IncrementOutput;
+type Input = DistributedCache.GetTtlInput;
+type Output = DistributedCache.GetTtlOutput;
 
-export class Increment extends BaseHandler<Input, Output> {
+export class GetTtl
+  extends BaseHandler<Input, Output>
+  implements DistributedCache.IGetTtlHandler
+{
   private readonly redis: Redis;
 
   constructor(redis: Redis, context: IHandlerContext) {
@@ -16,13 +19,11 @@ export class Increment extends BaseHandler<Input, Output> {
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     try {
-      const newValue = await this.redis.incrby(input.key, input.amount ?? 1);
+      const pttl = await this.redis.pttl(input.key);
 
-      if (input.expirationMs !== undefined) {
-        await this.redis.pexpire(input.key, input.expirationMs);
-      }
-
-      return D2Result.ok({ data: { newValue }, traceId: this.traceId });
+      // -2 = key doesn't exist, -1 = no expiry
+      const timeToLiveMs = pttl > 0 ? pttl : undefined;
+      return D2Result.ok({ data: { timeToLiveMs }, traceId: this.traceId });
     } catch {
       return D2Result.fail({
         messages: ["Unable to connect to Redis."],
