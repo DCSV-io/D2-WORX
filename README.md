@@ -59,11 +59,14 @@ Summary:
 - Geo.Client: Service-owned client library (messages, interfaces, WhoIs cache handler)
 - Request enrichment middleware (IP resolution, fingerprinting, WhoIs geolocation lookup)
 - Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
-- 600+ tests (unit + integration) passing
+- 600+ .NET tests (unit + integration) passing
+- Node.js pnpm workspace with shared TypeScript config and Vitest
+- ESLint 9 + Prettier monorepo-wide code quality tooling
+- Shared TypeScript packages: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing` with 161 tests
 
 **🚧 In Progress:**
 
-- Node.js workspace setup (pnpm workspaces)
+- TypeScript shared infrastructure packages (`@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing` done; `@d2/handler` next)
 - Auth service architecture (Node.js + Hono + BetterAuth)
 
 **📋 Planned:**
