@@ -838,6 +838,40 @@ Layer 5:  @d2/request-enrich → handler, geo-cache
 - **Abstractions over implementations** — Rate limiter uses cache interfaces, not Redis directly
 - **DDD on backends** — Domain-driven design with proper abstractions, even in TypeScript
 - **Lighter touch on clients** — Frontend/client code can be more pragmatic
+- **Locked dependencies** — All npm package versions pinned exactly (supply chain security)
+
+### Dependency Security
+
+**All npm/pnpm dependency versions MUST be exact** — no `^`, no `~`, no ranges. This is a supply chain security requirement.
+
+```jsonc
+// GOOD — exact versions, locked down
+"vitest": "4.0.18",
+"ioredis": "5.6.1",
+"hono": "4.7.12"
+
+// BAD — version ranges, vulnerable to supply chain attacks
+"vitest": "^4.0.0",
+"ioredis": "~5.6.0",
+"hono": ">=4.0.0"
+```
+
+**Enforcement via `.npmrc` at project root:**
+```ini
+engine-strict=true
+save-exact=true
+save-prefix=
+prefer-frozen-lockfile=true
+strict-peer-dependencies=true
+```
+
+- `save-exact=true` + `save-prefix=` — `pnpm add` always pins exact versions, no `^` or `~`
+- `prefer-frozen-lockfile=true` — CI/production installs fail if lockfile is out of date
+- `strict-peer-dependencies=true` — fail on peer dep mismatches instead of silently resolving
+- `engine-strict=true` — enforce Node.js version requirements from `package.json`
+- `pnpm-lock.yaml` is always committed and never deleted
+- Audit regularly: `pnpm audit` to check for known vulnerabilities
+- Update deliberately: pin to specific versions, update one at a time, test after each update
 
 ### TypeScript Style
 
@@ -876,3 +910,5 @@ Layer 5:  @d2/request-enrich → handler, geo-cache
 9. **Phase ordering** - TypeScript shared infrastructure (`@d2/core`, `@d2/ratelimit`, `@d2/geo-cache`) must be built BEFORE the Auth Service.
 
 10. **Session storage is 3-tier** - Cookie cache (5min) → Redis (secondary) → PostgreSQL (primary). `storeSessionInDatabase: true` for dual-write.
+
+11. **Exact dependency versions only** - No `^`, no `~`, no ranges in `package.json`. Use `save-exact=true` in `.npmrc`. This is a supply chain security requirement.
