@@ -1,4 +1,31 @@
+root = true
+
+# Default for all files
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# TypeScript / JavaScript / Svelte
+[*.{ts,js,mjs,cjs,mts,cts,svelte}]
+indent_style = space
+indent_size = 2
+
+# JSON / YAML
+[*.{json,yaml,yml}]
+indent_style = space
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+
+# C#
 [*.cs]
+indent_style = space
+indent_size = 4
+
 # SA1633: File should have header
 dotnet_diagnostic.SA1633.severity = warning
 
