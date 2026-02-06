@@ -80,6 +80,10 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         // Use default options if none are provided.
         options ??= new HandlerOptions();
 
+        // Record invocation metric.
+        var tags = new TagList { { "handler.name", typeof(THandler).Name } };
+        BHASW.SR_Invocations.Add(1, tags);
+
         // Wrap the execution in a try-catch to handle exceptions.
         try
         {
@@ -123,6 +127,13 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
             activity?.SetTag("handler.elapsed.ms", elapsedMs);
             activity?.SetStatus(result.Success ? ActivityStatusCode.Ok : ActivityStatusCode.Error);
 
+            // Record duration metric and optional failure metric.
+            BHASW.SR_Duration.Record(elapsedMs, tags);
+            if (!result.Success)
+            {
+                BHASW.SR_Failures.Add(1, tags);
+            }
+
             // Determine the log level based on success and elapsed time.
             var level = options.SuppressTimeWarnings
                 ? result.Success
@@ -163,6 +174,10 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
             activity?.SetTag("handler.elapsed.ms", elapsedMs);
             activity?.SetStatus(ActivityStatusCode.Error);
             activity?.AddException(ex);
+
+            // Record exception duration and exception counter metrics.
+            BHASW.SR_Duration.Record(elapsedMs, tags);
+            BHASW.SR_Exceptions.Add(1, tags);
 
             // Log the unhandled exception.
             Context.Logger.LogError(

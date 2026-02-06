@@ -8,6 +8,8 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@d2/handler": "workspace:*",
+    "@d2/logging": "workspace:*",
     "@d2/protos": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/testing": "workspace:*",

@@ -96,11 +96,13 @@ public static partial class Extensions
                         .AddHttpClientInstrumentation()
                         .AddRuntimeInstrumentation()
                         .AddProcessInstrumentation()
+                        .AddMeter("D2.Shared.Handler")
                         .AddPrometheusExporter();
                 })
                 .WithTracing(tracing =>
                 {
                     tracing.AddSource(builder.Environment.ApplicationName)
+                        .AddSource("D2.Shared.Handler")
                         .SetResourceBuilder(ResourceBuilder
                             .CreateDefault()
                             .AddService(builder.Environment.ApplicationName))

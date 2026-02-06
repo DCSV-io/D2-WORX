@@ -9,7 +9,6 @@ namespace D2.Shared.RateLimit.Default.Handlers;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
-using D2.Shared.RateLimit.Default.Interfaces;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;

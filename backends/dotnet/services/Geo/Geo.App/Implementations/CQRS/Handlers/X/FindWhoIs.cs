@@ -6,7 +6,6 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.X;
 
-using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;

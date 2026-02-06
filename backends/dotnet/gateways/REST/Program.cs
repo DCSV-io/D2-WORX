@@ -7,6 +7,7 @@
 using D2.Gateways.REST.Endpoints;
 using D2.Geo.Client;
 using D2.Shared.DistributedCache.Redis;
+using D2.Shared.Handler.Extensions;
 using D2.Shared.RateLimit.Default;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.ServiceDefaults;
@@ -22,6 +23,7 @@ if (string.IsNullOrWhiteSpace(redisConnectionString))
 }
 
 builder.AddServiceDefaults();
+builder.Services.AddHandlerContext();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
@@ -32,7 +34,7 @@ builder.Services.AddGeoGrpcClient(builder.Configuration);
 builder.Services.AddWhoIsCache(builder.Configuration);
 
 // Register distributed caching (Redis).
-builder.Services.AddRedisCaching(redisConnectionString!);
+builder.Services.AddRedisCaching(redisConnectionString);
 
 // Register request enrichment middleware services.
 builder.Services.AddRequestEnrichment(builder.Configuration);

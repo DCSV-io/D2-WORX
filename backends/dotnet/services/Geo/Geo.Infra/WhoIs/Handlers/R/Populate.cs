@@ -13,10 +13,14 @@ using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.ValueObjects;
 using D2.Shared.Handler;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Logging;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
+using GetGeoRef = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.IGetHandler;
 using H = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead.IPopulateHandler;
 using I = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead.PopulateInput;
+using InMemCacheR = D2.Shared.Interfaces.Caching.InMemory.Handlers.R.IRead;
+using InMemCacheU = D2.Shared.Interfaces.Caching.InMemory.Handlers.U.IUpdate;
 using O = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead.PopulateOutput;
 
 /// <summary>
@@ -30,6 +34,9 @@ public class Populate : BaseHandler<Populate, I, O>, H
 {
     private readonly IIpInfoClient r_ipInfoClient;
     private readonly CreateRepo.ICreateLocationsHandler r_createLocations;
+    private readonly GetGeoRef r_getGeoRef;
+    private readonly InMemCacheR.IGetManyHandler<string> r_getManyCache;
+    private readonly InMemCacheU.ISetManyHandler<string> r_setManyCache;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Populate"/> class.
@@ -41,17 +48,32 @@ public class Populate : BaseHandler<Populate, I, O>, H
     /// <param name="createLocations">
     /// The handler for creating Location records.
     /// </param>
+    /// <param name="getGeoRef">
+    /// The get geo reference data handler.
+    /// </param>
+    /// <param name="getManyCache">
+    /// The in-memory cache get many handler.
+    /// </param>
+    /// <param name="setManyCache">
+    /// The in-memory cache set many handler.
+    /// </param>
     /// <param name="context">
     /// The handler context.
     /// </param>
     public Populate(
         IIpInfoClient ipInfoClient,
         CreateRepo.ICreateLocationsHandler createLocations,
+        GetGeoRef getGeoRef,
+        InMemCacheR.IGetManyHandler<string> getManyCache,
+        InMemCacheU.ISetManyHandler<string> setManyCache,
         IHandlerContext context)
         : base(context)
     {
         r_ipInfoClient = ipInfoClient;
         r_createLocations = createLocations;
+        r_getGeoRef = getGeoRef;
+        r_getManyCache = getManyCache;
+        r_setManyCache = setManyCache;
     }
 
     /// <inheritdoc/>
@@ -82,13 +104,17 @@ public class Populate : BaseHandler<Populate, I, O>, H
             return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
+        // Step 2: Resolve subdivision codes.
+        var regionsToSubdivisionCodes = await BuildRegionToSubdivisionCodeMap(
+            apiResults.Values.ToList(), ct);
+
         // Step 2: Extract and dedupe locations.
         var locationsToCreate = new Dictionary<string, Location>();
         var hashIdToLocationHashId = new Dictionary<string, string?>();
 
         foreach (var (hashId, ipResponse) in apiResults)
         {
-            var location = ExtractLocation(ipResponse);
+            var location = ExtractLocation(ipResponse, regionsToSubdivisionCodes);
             if (location is not null)
             {
                 locationsToCreate.TryAdd(location.HashId, location);
@@ -129,23 +155,25 @@ public class Populate : BaseHandler<Populate, I, O>, H
         return D2Result<O?>.Ok(new O(populatedRecords), traceId: TraceId);
     }
 
-    private static Location? ExtractLocation(IpInfoResponse ipResponse)
+    private static Location? ExtractLocation(
+        IpInfoResponse ipResponse,
+        Dictionary<string, string> regionsToSubdivisionCodes)
     {
         // Check if we have any location data.
-        if (string.IsNullOrWhiteSpace(ipResponse.City)
-            && string.IsNullOrWhiteSpace(ipResponse.Region)
-            && string.IsNullOrWhiteSpace(ipResponse.Country)
-            && string.IsNullOrWhiteSpace(ipResponse.Postal)
-            && string.IsNullOrWhiteSpace(ipResponse.Latitude)
-            && string.IsNullOrWhiteSpace(ipResponse.Longitude))
+        if (ipResponse.City.Falsey()
+            && ipResponse.Region.Falsey()
+            && ipResponse.Country.Falsey()
+            && ipResponse.Postal.Falsey()
+            && ipResponse.Latitude.Falsey()
+            && ipResponse.Longitude.Falsey())
         {
             return null;
         }
 
         // Parse coordinates if available.
         Coordinates? coordinates = null;
-        if (!string.IsNullOrWhiteSpace(ipResponse.Latitude)
-            && !string.IsNullOrWhiteSpace(ipResponse.Longitude)
+        if (ipResponse.Latitude.Truthy()
+            && ipResponse.Longitude.Truthy()
             && double.TryParse(ipResponse.Latitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var lat)
             && double.TryParse(ipResponse.Longitude, NumberStyles.Float, CultureInfo.InvariantCulture, out var lon))
         {
@@ -159,12 +187,24 @@ public class Populate : BaseHandler<Populate, I, O>, H
             }
         }
 
+        // Try to get subdivision code from region.
+        string? subdivisionCode = null;
+        if (ipResponse.Region.Truthy())
+        {
+            regionsToSubdivisionCodes.TryGetValue(ipResponse.Region!, out subdivisionCode);
+            if (subdivisionCode.Falsey())
+            {
+                subdivisionCode = null;
+            }
+        }
+
+        // Build and return Location.
         return Location.Create(
             coordinates: coordinates,
             address: null,
             city: ipResponse.City,
             postalCode: ipResponse.Postal,
-            subdivisionISO31662Code: null,
+            subdivisionISO31662Code: subdivisionCode,
             countryISO31661Alpha2Code: ipResponse.Country);
     }
 
@@ -176,9 +216,9 @@ public class Populate : BaseHandler<Populate, I, O>, H
         // Parse ASN from Org field (format: "AS12345 ISP Name").
         int? asn = null;
         string? asName = null;
-        if (!string.IsNullOrWhiteSpace(ipResponse.Org))
+        if (ipResponse.Org.Truthy())
         {
-            var parts = ipResponse.Org.Split(' ', 2);
+            var parts = ipResponse.Org!.Split(' ', 2);
 
             if (parts.Length >= 1 &&
                 parts[0].StartsWith("AS", StringComparison.OrdinalIgnoreCase) &&
@@ -226,7 +266,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
         CancellationToken ct)
     {
         // Validate IP address.
-        if (string.IsNullOrWhiteSpace(ipAddress))
+        if (ipAddress.Falsey())
         {
             return null;
         }
@@ -246,5 +286,125 @@ public class Populate : BaseHandler<Populate, I, O>, H
         }
 
         return await r_ipInfoClient.GetDetailsAsync(ipStr, ct);
+    }
+
+    private async ValueTask<Dictionary<string, string>> BuildRegionToSubdivisionCodeMap(
+    List<IpInfoResponse>? apiResults = null,
+    CancellationToken ct = default)
+    {
+        try
+        {
+            // If no API results, return empty.
+            if (apiResults is null || apiResults.Count == 0)
+            {
+                return [];
+            }
+
+            // Extract unique regions from API results.
+            var regions = apiResults
+                .Select(x => x.Region)
+                .Where(x => x.Truthy())
+                .Select(x => x!)
+                .Distinct()
+                .ToList();
+
+            // Get cache keys for regions.
+            var regionKeys = regions
+                .Select(CtorCacheKey)
+                .ToList();
+
+            // Initialize region to subdivision code map with empty values.
+            var regionMap = regions.ToDictionary(x => x, _ => string.Empty);
+
+            // Try to get from cached data in-memory.
+            var cachedR = await r_getManyCache.HandleAsync(new(regionKeys), ct);
+            var inCacheCtr = 0;
+            if (cachedR.Success || cachedR.ErrorCode is ErrorCodes.SOME_FOUND)
+            {
+                foreach (var (key, value) in cachedR.Data!.Values)
+                {
+                    regionMap[key.Split(':')[^1]] = value;
+                    inCacheCtr++;
+                }
+            }
+
+            // If all regions were found in cache, return early.
+            if (inCacheCtr == regions.Count)
+            {
+                return regionMap;
+            }
+
+            // Fetch missing region subdivision codes from geo reference data.
+            var geoRefR = await r_getGeoRef.HandleAsync(new(), ct);
+
+            // If that failed, log it and return what we have.
+            if (geoRefR.Failed)
+            {
+                Context.Logger.LogError(
+                    "Failed to get geo ref data for who-is region population. TraceId: {TraceId}",
+                    TraceId);
+                return regionMap;
+            }
+
+            // Otherwise, find the missing subdivision codes.
+            foreach (var region in regions)
+            {
+                // If already found (from cache), skip.
+                if (regionMap[region].Truthy())
+                {
+                    continue;
+                }
+
+                // Find subdivision by display name (case-insensitive).
+                var subdivision = geoRefR.Data!.Data.Subdivisions.Values.FirstOrDefault(x
+                    => x.DisplayName.Equals(region, StringComparison.OrdinalIgnoreCase));
+
+                // If not found, skip.
+                if (subdivision is null)
+                {
+                    continue;
+                }
+
+                // Update the map.
+                regionMap[region] = subdivision.Iso31662Code;
+            }
+
+            // Construct cache entries to set.
+            var cacheEntries = regionMap
+                .Where(kv => kv.Value.Truthy())
+                .ToDictionary(
+                    kv => CtorCacheKey(kv.Key),
+                    kv => kv.Value);
+
+            // Set the constructed map in cache.
+            var setCacheR = await r_setManyCache.HandleAsync(
+                new(cacheEntries, TimeSpan.FromDays(1)),
+                ct);
+
+            // Log if cache set failed.
+            if (setCacheR.Failed)
+            {
+                Context.Logger.LogWarning(
+                    "Failed to set region to subdivision code map in cache during WhoIs population. TraceId: {TraceId}. ErrorCode: {ErrorCode}",
+                    TraceId,
+                    setCacheR.ErrorCode);
+            }
+
+            // Return the constructed map.
+            return regionMap;
+
+            // Local function to construct cache key.
+            string CtorCacheKey(string region)
+                => $"{nameof(Populate)}:{nameof(BuildRegionToSubdivisionCodeMap)}:{region}";
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(
+                ex,
+                "Error building region to subdivision code map during WhoIs population. TraceId: {TraceId}",
+                TraceId);
+
+            return [];
+        }
     }
 }

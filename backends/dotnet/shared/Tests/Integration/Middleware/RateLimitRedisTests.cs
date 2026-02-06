@@ -17,7 +17,6 @@ using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using StackExchange.Redis;
@@ -281,7 +280,7 @@ public class RateLimitRedisTests : IAsyncLifetime
         {
             var ttl = await db.KeyTimeToLiveAsync(key);
             ttl.Should().NotBeNull();
-            ttl!.Value.Should().BeLessThanOrEqualTo(TimeSpan.FromMinutes(2));
+            ttl.Value.Should().BeLessThanOrEqualTo(TimeSpan.FromMinutes(2));
             ttl.Value.Should().BeGreaterThan(TimeSpan.Zero);
         }
     }
@@ -312,7 +311,7 @@ public class RateLimitRedisTests : IAsyncLifetime
         var ttl = await db.KeyTimeToLiveAsync(blockedKey);
 
         ttl.Should().NotBeNull();
-        ttl!.Value.Should().BeLessThanOrEqualTo(blockDuration);
+        ttl.Value.Should().BeLessThanOrEqualTo(blockDuration);
         ttl.Value.Should().BeGreaterThan(TimeSpan.Zero);
     }
 

@@ -14,9 +14,12 @@ using D2.Geo.Infra.WhoIs.Handlers.R;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using FluentAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using GeoComplex = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex;
+using InMemCache = D2.Shared.InMemoryCache.Default.Handlers;
 
 /// <summary>
 /// Unit tests for the <see cref="Populate"/> WhoIs provider handler.
@@ -25,6 +28,10 @@ public class PopulateTests
 {
     private readonly Mock<IIpInfoClient> r_mockIpInfoClient;
     private readonly Mock<ICreate.ICreateLocationsHandler> r_mockCreateLocations;
+    private readonly Mock<GeoComplex.IGetHandler> r_mockGetGeoRef;
+    private readonly IMemoryCache r_memoryCache;
+    private readonly InMemCache.R.GetMany<string> r_getManyCache;
+    private readonly InMemCache.U.SetMany<string> r_setManyCache;
     private readonly IHandlerContext r_context;
 
     /// <summary>
@@ -39,6 +46,18 @@ public class PopulateTests
             .ReturnsAsync(D2Result<ICreate.CreateLocationsOutput?>.Ok(new ICreate.CreateLocationsOutput(0)));
 
         r_context = CreateHandlerContext();
+
+        // GeoRef mock — default returns empty ref data (no subdivisions)
+        r_mockGetGeoRef = new Mock<GeoComplex.IGetHandler>();
+        r_mockGetGeoRef
+            .Setup(x => x.HandleAsync(It.IsAny<GeoComplex.GetInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<GeoComplex.GetOutput?>.Ok(
+                new GeoComplex.GetOutput(new D2.Services.Protos.Geo.V1.GeoRefData { Version = "1.0.0" })));
+
+        // Real in-memory cache + handlers
+        r_memoryCache = new MemoryCache(new MemoryCacheOptions());
+        r_getManyCache = new InMemCache.R.GetMany<string>(r_memoryCache, r_context);
+        r_setManyCache = new InMemCache.U.SetMany<string>(r_memoryCache, r_context);
     }
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -56,7 +75,7 @@ public class PopulateTests
     public async Task Populate_WithEmptyInput_ReturnsEmptyDictionary()
     {
         // Arrange
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput([]);
 
         // Act
@@ -87,7 +106,7 @@ public class PopulateTests
     public async Task Populate_WithLocalhostIPv4_ReturnsEmptyDictionary()
     {
         // Arrange
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var partialWhoIs = WhoIs.Create(
             ipAddress: "127.0.0.1",
             year: 2025,
@@ -123,7 +142,7 @@ public class PopulateTests
     public async Task Populate_WithLocalhostIPv6_ReturnsEmptyDictionary()
     {
         // Arrange
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var partialWhoIs = WhoIs.Create(
             ipAddress: "::1",
             year: 2025,
@@ -193,7 +212,7 @@ public class PopulateTests
                 },
             });
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [partialWhoIs.HashId] = partialWhoIs,
@@ -254,7 +273,7 @@ public class PopulateTests
                 Country = "US",
             });
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [partialWhoIs.HashId] = partialWhoIs,
@@ -303,7 +322,7 @@ public class PopulateTests
                 Org = "AS64496 Example ISP",
             });
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [partialWhoIs.HashId] = partialWhoIs,
@@ -349,7 +368,7 @@ public class PopulateTests
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
             .ReturnsAsync((IpInfoResponse?)null);
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [partialWhoIs.HashId] = partialWhoIs,
@@ -405,7 +424,7 @@ public class PopulateTests
                 Org = org,
             });
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [partialWhoIs.HashId] = partialWhoIs,
@@ -462,7 +481,7 @@ public class PopulateTests
             .Callback<ICreate.CreateLocationsInput, CancellationToken, HandlerOptions?>((input, _, _) => capturedInput = input)
             .ReturnsAsync(D2Result<ICreate.CreateLocationsOutput?>.Ok(new ICreate.CreateLocationsOutput(1)));
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [whoIs1.HashId] = whoIs1,
@@ -515,7 +534,7 @@ public class PopulateTests
                 Longitude = "also-invalid",
             });
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [partialWhoIs.HashId] = partialWhoIs,
@@ -562,7 +581,7 @@ public class PopulateTests
                 Longitude = "-200.5",  // Invalid: longitude must be -180 to 180
             });
 
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
             [partialWhoIs.HashId] = partialWhoIs,
@@ -591,10 +610,223 @@ public class PopulateTests
     public void Populate_WithValidDependencies_CanBeConstructed()
     {
         // Act
-        var handler = new Populate(r_mockIpInfoClient.Object, r_mockCreateLocations.Object, r_context);
+        var handler = CreateHandler();
 
         // Assert
         handler.Should().NotBeNull();
+    }
+
+    #endregion
+
+    #region Subdivision Code Resolution Tests (exercises BuildRegionToSubdivisionCodeMap)
+
+    /// <summary>
+    /// Tests that Populate resolves a region name to an ISO 3166-2 subdivision code
+    /// using geo reference data, and passes it to the created Location.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Populate_WithRegion_ResolvesSubdivisionCodeFromGeoRef()
+    {
+        // Arrange
+        var ipAddress = "8.8.8.8";
+        var partialWhoIs = WhoIs.Create(
+            ipAddress: ipAddress,
+            year: 2025,
+            month: 6,
+            fingerprint: "test-fingerprint");
+
+        SetupGeoRefWithSubdivisions(("US-CA", "California", "US"));
+
+        r_mockIpInfoClient
+            .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IpInfoResponse
+            {
+                Ip = ipAddress,
+                City = "Mountain View",
+                Region = "California",
+                Country = "US",
+                Postal = "94043",
+                Latitude = "37.4056",
+                Longitude = "-122.0775",
+            });
+
+        ICreate.CreateLocationsInput? capturedInput = null;
+        r_mockCreateLocations
+            .Setup(x => x.HandleAsync(It.IsAny<ICreate.CreateLocationsInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .Callback<ICreate.CreateLocationsInput, CancellationToken, HandlerOptions?>((i, _, _) => capturedInput = i)
+            .ReturnsAsync(D2Result<ICreate.CreateLocationsOutput?>.Ok(new ICreate.CreateLocationsOutput(1)));
+
+        var handler = CreateHandler();
+        var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
+        {
+            [partialWhoIs.HashId] = partialWhoIs,
+        });
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        capturedInput.Should().NotBeNull();
+        capturedInput!.Locations.Should().HaveCount(1);
+        capturedInput.Locations[0].SubdivisionISO31662Code.Should().Be("US-CA");
+    }
+
+    /// <summary>
+    /// Tests that Populate caches resolved subdivision codes and does not call GeoRef
+    /// again for the same region on subsequent invocations.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Populate_WithRegion_CachesSubdivisionCodeOnSubsequentCalls()
+    {
+        // Arrange
+        var ipAddress = "8.8.8.8";
+        var partialWhoIs = WhoIs.Create(
+            ipAddress: ipAddress,
+            year: 2025,
+            month: 6,
+            fingerprint: "test-fingerprint");
+
+        SetupGeoRefWithSubdivisions(("CA-AB", "Alberta", "CA"));
+
+        r_mockIpInfoClient
+            .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IpInfoResponse
+            {
+                Ip = ipAddress,
+                City = "Calgary",
+                Region = "Alberta",
+                Country = "CA",
+            });
+
+        var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
+        {
+            [partialWhoIs.HashId] = partialWhoIs,
+        });
+
+        // Act — first call resolves from GeoRef and caches
+        var handler1 = CreateHandler();
+        await handler1.HandleAsync(input, Ct);
+
+        // Act — second call should use cache (not call GeoRef again)
+        var handler2 = CreateHandler();
+        await handler2.HandleAsync(input, Ct);
+
+        // Assert — GeoRef should only be called once (first call)
+        r_mockGetGeoRef.Verify(
+            x => x.HandleAsync(It.IsAny<GeoComplex.GetInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// Tests that Populate still populates WhoIs records when GeoRef call fails,
+    /// just without subdivision codes (graceful degradation).
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Populate_WithRegion_WhenGeoRefFails_StillPopulatesWhoIs()
+    {
+        // Arrange
+        var ipAddress = "8.8.8.8";
+        var partialWhoIs = WhoIs.Create(
+            ipAddress: ipAddress,
+            year: 2025,
+            month: 6,
+            fingerprint: "test-fingerprint");
+
+        r_mockGetGeoRef
+            .Setup(x => x.HandleAsync(It.IsAny<GeoComplex.GetInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<GeoComplex.GetOutput?>.Fail(["GeoRef unavailable"]));
+
+        r_mockIpInfoClient
+            .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IpInfoResponse
+            {
+                Ip = ipAddress,
+                City = "Mountain View",
+                Region = "California",
+                Country = "US",
+                Org = "AS15169 Google LLC",
+            });
+
+        var handler = CreateHandler();
+        var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
+        {
+            [partialWhoIs.HashId] = partialWhoIs,
+        });
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — WhoIs should still be populated (just without subdivision code on location)
+        result.Success.Should().BeTrue();
+        result.Data!.WhoIsRecords.Should().HaveCount(1);
+        result.Data.WhoIsRecords[partialWhoIs.HashId].ASN.Should().Be(15169);
+    }
+
+    /// <summary>
+    /// Tests that Populate does not set a subdivision code when the region name
+    /// is not found in the geo reference data.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Populate_WithUnknownRegion_DoesNotSetSubdivisionCode()
+    {
+        // Arrange
+        var ipAddress = "8.8.8.8";
+        var partialWhoIs = WhoIs.Create(
+            ipAddress: ipAddress,
+            year: 2025,
+            month: 6,
+            fingerprint: "test-fingerprint");
+
+        // GeoRef has US-CA but not "Atlantis"
+        SetupGeoRefWithSubdivisions(("US-CA", "California", "US"));
+
+        r_mockIpInfoClient
+            .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new IpInfoResponse
+            {
+                Ip = ipAddress,
+                City = "Lost City",
+                Region = "Atlantis",
+                Country = "US",
+            });
+
+        ICreate.CreateLocationsInput? capturedInput = null;
+        r_mockCreateLocations
+            .Setup(x => x.HandleAsync(It.IsAny<ICreate.CreateLocationsInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .Callback<ICreate.CreateLocationsInput, CancellationToken, HandlerOptions?>((i, _, _) => capturedInput = i)
+            .ReturnsAsync(D2Result<ICreate.CreateLocationsOutput?>.Ok(new ICreate.CreateLocationsOutput(1)));
+
+        var handler = CreateHandler();
+        var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
+        {
+            [partialWhoIs.HashId] = partialWhoIs,
+        });
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        capturedInput.Should().NotBeNull();
+        capturedInput!.Locations.Should().HaveCount(1);
+        capturedInput.Locations[0].SubdivisionISO31662Code.Should().BeNull();
     }
 
     #endregion
@@ -611,5 +843,34 @@ public class PopulateTests
         context.Setup(x => x.Logger).Returns(logger.Object);
 
         return context.Object;
+    }
+
+    private Populate CreateHandler() =>
+        new(
+            r_mockIpInfoClient.Object,
+            r_mockCreateLocations.Object,
+            r_mockGetGeoRef.Object,
+            r_getManyCache,
+            r_setManyCache,
+            r_context);
+
+    private void SetupGeoRefWithSubdivisions(
+        params (string Code, string DisplayName, string CountryCode)[] subdivisions)
+    {
+        var data = new D2.Services.Protos.Geo.V1.GeoRefData { Version = "1.0.0" };
+        foreach (var (code, displayName, countryCode) in subdivisions)
+        {
+            data.Subdivisions.Add(code, new D2.Services.Protos.Geo.V1.SubdivisionDTO
+            {
+                Iso31662Code = code,
+                DisplayName = displayName,
+                ShortCode = code.Split('-')[^1],
+                CountryIso31661Alpha2Code = countryCode,
+            });
+        }
+
+        r_mockGetGeoRef
+            .Setup(x => x.HandleAsync(It.IsAny<GeoComplex.GetInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<GeoComplex.GetOutput?>.Ok(new GeoComplex.GetOutput(data)));
     }
 }

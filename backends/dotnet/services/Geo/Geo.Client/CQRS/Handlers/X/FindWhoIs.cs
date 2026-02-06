@@ -6,7 +6,6 @@
 
 namespace D2.Geo.Client.CQRS.Handlers.X;
 
-using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;

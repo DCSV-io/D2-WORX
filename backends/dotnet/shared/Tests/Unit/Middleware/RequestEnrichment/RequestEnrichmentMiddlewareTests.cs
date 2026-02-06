@@ -288,7 +288,7 @@ public class RequestEnrichmentMiddlewareTests
 
         var requestInfo = context.Features.Get<IRequestInfo>();
         requestInfo.Should().NotBeNull("IRequestInfo must be set even without WhoIs");
-        requestInfo!.ClientIp.Should().Be("203.0.113.1");
+        requestInfo.ClientIp.Should().Be("203.0.113.1");
         requestInfo.City.Should().BeNull();
         requestInfo.CountryCode.Should().BeNull();
         requestInfo.WhoIsHashId.Should().BeNull();
@@ -318,7 +318,7 @@ public class RequestEnrichmentMiddlewareTests
 
         var requestInfo = context.Features.Get<IRequestInfo>();
         requestInfo.Should().NotBeNull();
-        requestInfo!.ClientIp.Should().Be("198.51.100.1");
+        requestInfo.ClientIp.Should().Be("198.51.100.1");
         requestInfo.City.Should().BeNull();
     }
 
