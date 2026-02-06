@@ -10,9 +10,11 @@
   "devDependencies": {
     "@d2/cache-memory": "workspace:*",
     "@d2/cache-redis": "workspace:*",
+    "@d2/geo-client": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/logging": "workspace:*",
+    "@d2/messaging": "workspace:*",
     "@d2/protos": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/result-extensions": "workspace:*",
@@ -21,6 +23,7 @@
     "@grpc/grpc-js": "1.14.3",
     "@testcontainers/redis": "10.18.0",
     "ioredis": "5.8.0",
+    "rabbitmq-client": "5.0.8",
     "vitest": "3.1.1"
   }
 }

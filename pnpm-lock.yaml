@@ -45,6 +45,39 @@ importers:
         specifier: 3.1.1
         version: 3.1.1(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)(yaml@2.8.2)
 
+  backends/node/services/geo/geo-client:
+    dependencies:
+      '@d2/cache-memory':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/caching/memory
+      '@d2/cache-redis':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/caching/redis
+      '@d2/handler':
+        specifier: workspace:*
+        version: link:../../../shared/handler
+      '@d2/interfaces':
+        specifier: workspace:*
+        version: link:../../../shared/interfaces
+      '@d2/logging':
+        specifier: workspace:*
+        version: link:../../../shared/logging
+      '@d2/messaging':
+        specifier: workspace:*
+        version: link:../../../shared/messaging
+      '@d2/protos':
+        specifier: workspace:*
+        version: link:../../../shared/protos
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../../../shared/result
+      '@d2/result-extensions':
+        specifier: workspace:*
+        version: link:../../../shared/result-extensions
+      '@d2/utilities':
+        specifier: workspace:*
+        version: link:../../../shared/utilities
+
   backends/node/shared/handler:
     dependencies:
       '@d2/logging':
@@ -95,6 +128,12 @@ importers:
       pino:
         specifier: 9.6.0
         version: 9.6.0
+
+  backends/node/shared/messaging:
+    dependencies:
+      rabbitmq-client:
+        specifier: 5.0.8
+        version: 5.0.8
 
   backends/node/shared/protos:
     dependencies:
@@ -179,6 +218,9 @@ importers:
       '@d2/cache-redis':
         specifier: workspace:*
         version: link:../implementations/caching/redis
+      '@d2/geo-client':
+        specifier: workspace:*
+        version: link:../../services/geo/geo-client
       '@d2/handler':
         specifier: workspace:*
         version: link:../handler
@@ -188,6 +230,9 @@ importers:
       '@d2/logging':
         specifier: workspace:*
         version: link:../logging
+      '@d2/messaging':
+        specifier: workspace:*
+        version: link:../messaging
       '@d2/protos':
         specifier: workspace:*
         version: link:../protos
@@ -212,6 +257,9 @@ importers:
       ioredis:
         specifier: 5.8.0
         version: 5.8.0
+      rabbitmq-client:
+        specifier: 5.0.8
+        version: 5.0.8
       vitest:
         specifier: 3.1.1
         version: 3.1.1(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)(yaml@2.8.2)
@@ -2963,6 +3011,10 @@ packages:
 
   quick-format-unescaped@4.0.4:
     resolution: {integrity: sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==}
+
+  rabbitmq-client@5.0.8:
+    resolution: {integrity: sha512-nNto/okuVq+d/OamRYX4HIiCkHdOE0RICIDRjS4YQUo2DI/l3R9RlsFaEEYSjIc+LT6DV+1wUub3nD1HwrM4SQ==}
+    engines: {node: '>=16'}
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -6254,6 +6306,8 @@ snapshots:
   punycode@2.3.1: {}
 
   quick-format-unescaped@4.0.4: {}
+
+  rabbitmq-client@5.0.8: {}
 
   react-is@17.0.2: {}
 

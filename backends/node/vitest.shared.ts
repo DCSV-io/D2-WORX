@@ -25,6 +25,8 @@ export default defineConfig({
       "@d2/testing": resolve(shared, "testing/src/index.ts"),
       "@d2/cache-memory": resolve(impl, "caching/memory/src/index.ts"),
       "@d2/cache-redis": resolve(impl, "caching/redis/src/index.ts"),
+      "@d2/messaging": resolve(shared, "messaging/src/index.ts"),
+      "@d2/geo-client": resolve(import.meta.dirname, "services/geo/geo-client/src/index.ts"),
     },
   },
   test: {
