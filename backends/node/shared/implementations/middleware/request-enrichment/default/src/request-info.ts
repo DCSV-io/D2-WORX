@@ -1,10 +1,10 @@
-import type { IRequestInfo } from "./types.js";
+import type { RequestEnrichment } from "@d2/interfaces";
 
 /**
  * Concrete implementation of IRequestInfo.
  * Mirrors D2.Shared.RequestEnrichment.Default.RequestInfo in .NET.
  */
-export class RequestInfo implements IRequestInfo {
+export class RequestInfo implements RequestEnrichment.IRequestInfo {
   readonly clientIp: string;
   readonly serverFingerprint: string;
   readonly clientFingerprint: string | undefined;

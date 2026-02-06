@@ -140,6 +140,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../../handler
+      '@d2/interfaces':
+        specifier: workspace:*
+        version: link:../../../../interfaces
       '@d2/logging':
         specifier: workspace:*
         version: link:../../../../logging

@@ -7,7 +7,7 @@ import {
   DEFAULT_REQUEST_ENRICHMENT_OPTIONS,
   type RequestEnrichmentOptions,
 } from "./request-enrichment-options.js";
-import type { IRequestInfo } from "./types.js";
+import type { RequestEnrichment } from "@d2/interfaces";
 
 /**
  * Enriches an HTTP request with client information.
@@ -26,7 +26,7 @@ export async function enrichRequest(
   findWhoIs: FindWhoIs,
   options?: Partial<RequestEnrichmentOptions>,
   logger?: ILogger,
-): Promise<IRequestInfo> {
+): Promise<RequestEnrichment.IRequestInfo> {
   const opts = { ...DEFAULT_REQUEST_ENRICHMENT_OPTIONS, ...options };
 
   // 1. Resolve client IP.
@@ -44,7 +44,7 @@ export async function enrichRequest(
     : undefined;
 
   // 4. Build initial request info (without WhoIs data).
-  let requestInfo: IRequestInfo = new RequestInfo({
+  let requestInfo: RequestEnrichment.IRequestInfo = new RequestInfo({
     clientIp,
     serverFingerprint,
     clientFingerprint,

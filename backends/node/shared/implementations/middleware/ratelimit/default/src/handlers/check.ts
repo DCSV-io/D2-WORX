@@ -1,10 +1,11 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { DistributedCache } from "@d2/interfaces";
+import { type DistributedCache, RateLimit } from "@d2/interfaces";
 import { isLocalhost } from "@d2/request-enrichment";
-import { RateLimitDimension } from "../rate-limit-dimension.js";
 import { DEFAULT_RATE_LIMIT_OPTIONS, type RateLimitOptions } from "../rate-limit-options.js";
-import type { CheckInput, CheckOutput } from "../types.js";
+
+type CheckInput = RateLimit.CheckInput;
+type CheckOutput = RateLimit.CheckOutput;
 
 /**
  * Handler for checking rate limits using sliding window approximation.
@@ -16,7 +17,10 @@ import type { CheckInput, CheckOutput } from "../types.js";
  *
  * Fail-open on all cache errors.
  */
-export class Check extends BaseHandler<CheckInput, CheckOutput> {
+export class Check
+  extends BaseHandler<CheckInput, CheckOutput>
+  implements RateLimit.ICheckHandler
+{
   private readonly getTtl: DistributedCache.IGetTtlHandler;
   private readonly increment: DistributedCache.IIncrementHandler;
   private readonly set: DistributedCache.ISetHandler<string>;
@@ -45,7 +49,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> {
     // 1. Check client fingerprint (if present).
     if (requestInfo.clientFingerprint) {
       const result = await this.checkDimension(
-        RateLimitDimension.ClientFingerprint,
+        RateLimit.RateLimitDimension.ClientFingerprint,
         requestInfo.clientFingerprint,
         this.options.clientFingerprintThreshold,
       );
@@ -57,7 +61,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> {
     // 2. Check IP (if not localhost).
     if (!isLocalhost(requestInfo.clientIp)) {
       const result = await this.checkDimension(
-        RateLimitDimension.Ip,
+        RateLimit.RateLimitDimension.Ip,
         requestInfo.clientIp,
         this.options.ipThreshold,
       );
@@ -69,7 +73,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> {
     // 3. Check city (if WhoIs resolved).
     if (requestInfo.city) {
       const result = await this.checkDimension(
-        RateLimitDimension.City,
+        RateLimit.RateLimitDimension.City,
         requestInfo.city,
         this.options.cityThreshold,
       );
@@ -84,7 +88,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> {
       !this.options.whitelistedCountryCodes.includes(requestInfo.countryCode)
     ) {
       const result = await this.checkDimension(
-        RateLimitDimension.Country,
+        RateLimit.RateLimitDimension.Country,
         requestInfo.countryCode,
         this.options.countryThreshold,
       );
@@ -116,7 +120,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> {
    * Checks a single dimension using sliding window approximation.
    */
   private async checkDimension(
-    dimension: RateLimitDimension,
+    dimension: RateLimit.RateLimitDimension,
     value: string,
     threshold: number,
   ): Promise<CheckOutput> {
