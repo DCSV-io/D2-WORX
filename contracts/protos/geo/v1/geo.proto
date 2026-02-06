@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
-import "common/common.v1/d2_result.proto";
+import "common/v1/d2_result.proto";
 
 package d2.geo.v1;
 

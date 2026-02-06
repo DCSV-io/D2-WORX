@@ -5,6 +5,7 @@ packages:
   - 'clients/web'
 
 onlyBuiltDependencies:
+  - '@bufbuild/buf'
   - '@tailwindcss/oxide'
   - esbuild
   - protobufjs

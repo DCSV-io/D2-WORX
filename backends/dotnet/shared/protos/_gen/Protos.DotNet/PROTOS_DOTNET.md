@@ -12,8 +12,8 @@ Shared proto definitions used across all services:
 
 | File Name                                                 | Description                                                                                                              |
 |-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| [d2_result.proto](../../common/common.v1/d2_result.proto) | D2ResultProto and InputErrorProto messages for standardized operation results with success status, messages, and errors. |
-| [ping.proto](../../common/common.v1/ping.proto)           | Simple PingService for testing proto generation and gRPC connectivity with request/response messages.                    |
+| [d2_result.proto](../../../../../../contracts/protos/common/v1/d2_result.proto) | D2ResultProto and InputErrorProto messages for standardized operation results with success status, messages, and errors. |
+| [ping.proto](../../../../../../contracts/protos/common/v1/ping.proto)           | Simple PingService for testing proto generation and gRPC connectivity with request/response messages.                    |
 
 ### Geo
 
@@ -21,7 +21,7 @@ Geographic reference data service definitions:
 
 | File Name                               | Description                                                                                                                                                                                                 |
 |-----------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [geo.proto](../../geo/geo.v1/geo.proto) | GeoService contract with GetReferenceData and RequestReferenceDataUpdate RPCs returning D2ResultProto-wrapped responses with Country, Subdivision, Currency, Language, Locale, and GeopoliticalEntity DTOs. |
+| [geo.proto](../../../../../../contracts/protos/geo/v1/geo.proto) | GeoService contract with GetReferenceData and RequestReferenceDataUpdate RPCs returning D2ResultProto-wrapped responses with Country, Subdivision, Currency, Language, Locale, and GeopoliticalEntity DTOs. |
 
 ## Generated Output
 

@@ -11,7 +11,7 @@ gRPC service layer exposing geographic reference data endpoints. Thin pass-throu
 
 ## gRPC Endpoints
 
-Defined in [geo.proto](../../_protos/geo/geo.v1/geo.proto):
+Defined in [geo.proto](../../../../../contracts/protos/geo/v1/geo.proto):
 
 | RPC                          | Request                             | Response                             | Description                                                                                                              |
 |------------------------------|-------------------------------------|--------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
