@@ -839,6 +839,34 @@ Layer 5:  @d2/request-enrich → handler, geo-cache
 - **DDD on backends** — Domain-driven design with proper abstractions, even in TypeScript
 - **Lighter touch on clients** — Frontend/client code can be more pragmatic
 - **Locked dependencies** — All npm package versions pinned exactly (supply chain security)
+- **Each package builds independently** — `tsc` compiles to `dist/`, consumers reference compiled output (like `dotnet build`)
+
+### Build Tooling
+
+- **Library packages** (`@d2/*`): Plain `tsc` — each package has its own `tsconfig.json` extending `backends/node/tsconfig.base.json`, compiles to `dist/` with `.js` + `.d.ts` output
+- **Service apps** (auth, etc.): TBD in Phase 2 (likely `tsup` or `tsx`)
+- **Module format**: ESM only (`"type": "module"` in all `package.json` files)
+- **Package exports**: Each `package.json` uses `exports` field pointing to `dist/`
+
+```jsonc
+// Example @d2/result package.json
+{
+  "name": "@d2/result",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  }
+}
+```
 
 ### Dependency Security
 
