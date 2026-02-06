@@ -20,15 +20,17 @@ This file provides guidance for Claude Code (and other AI assistants) when worki
 
 For deeper architectural context, consult these files:
 
-| Document                                              | Description                        |
-|-------------------------------------------------------|------------------------------------|
-| `README.md`                                           | Project overview, setup, status    |
-| `backends/BACKENDS.md`                                | Full backend architecture          |
-| `backends/dotnet/services/Geo/GEO_SERVICE.md`         | Geo service architecture           |
-| `backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md` | Geo client library (reference)  |
-| `backends/dotnet/shared/Handler/HANDLER.md`           | Handler pattern guide              |
-| `backends/dotnet/shared/Result/RESULT.md`             | D2Result pattern                   |
-| `CONTRIBUTING.md`                                     | Contribution guidelines            |
+| Document                                                                                          | Description                        |
+|---------------------------------------------------------------------------------------------------|------------------------------------|
+| `README.md`                                                                                       | Project overview, setup, status    |
+| `backends/BACKENDS.md`                                                                            | Full backend architecture          |
+| `backends/dotnet/services/Geo/GEO_SERVICE.md`                                                     | Geo service architecture           |
+| `backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md`                                           | Geo client library (reference)     |
+| `backends/dotnet/shared/Handler/HANDLER.md`                                                       | Handler pattern guide              |
+| `backends/dotnet/shared/Result/RESULT.md`                                                         | D2Result pattern                   |
+| `backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md` | Request enrichment middleware    |
+| `backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md`               | Rate limiting middleware           |
+| `CONTRIBUTING.md`                                                                                 | Contribution guidelines            |
 
 ---
 
@@ -563,26 +565,23 @@ refactor: simplify caching logic
 - Don't hardcode batch sizes or cache expirations (use Options pattern)
 - Don't forget to update/create `.md` documentation when adding features (see Documentation section)
 
-### Current Development Focus (Geo Service)
+### Current Development Focus
 
-**Completed:**
-- Domain entities: Location, WhoIs, Contact with content-addressable hash IDs
-- Value objects: Coordinates, StreetAddress, EmailAddress, PhoneNumber, Personal, Professional, ContactMethods
-- Mappers: All domain ↔ DTO conversions (with unit tests)
-- CQRS interfaces: Queries, Commands, Complex handlers
-- Repository interfaces: Read, Create, Delete handlers
-- In-memory cache handlers: Get, Set, GetMany, SetMany
-- App layer: Full CQRS handlers for Location, WhoIs, Contact (get, create, delete, find)
-- Infra layer: Repository handlers for all entities + WhoIs external API integration
-- EF Core configurations: Location, WhoIs, Contact entities
-- Batch.Pg: Reusable batched query utilities with D2Result integration
-- Geo.Client: Service-owned client library (messages, interfaces, default handlers)
-- Integration tests: 591 tests covering all handlers, repository, messaging, client library
+**Completed (.NET):**
+- Geo service: Full domain, app, infra, and API layers with 591+ tests
+- Geo.Client: Service-owned client library with WhoIs cache handler (`FindWhoIs`)
+- REST Gateway: HTTP/REST → gRPC routing with request enrichment + rate limiting
+- RequestEnrichment.Default: IP resolution, fingerprinting, WhoIs lookup middleware
+- RateLimit.Default: Multi-dimensional sliding-window rate limiting middleware
+- Distributed cache abstractions: GetTtl, Increment handlers (abstracted from Redis)
+- All shared implementations use project-defined abstractions (no direct Redis/MS cache)
 
-**Next:**
-- Node.js/TypeScript Geo client library
-- Auth Service (Node.js + Hono + BetterAuth)
-- Rate limiting packages (@d2/ratelimit, D2.RateLimit.Redis)
+**Next (Node.js/TypeScript):**
+- Node.js workspace setup (pnpm workspaces in `backends/node/`)
+- Auth Service (Node.js + Hono + BetterAuth) at `backends/node/services/auth/`
+- SvelteKit auth integration (proxy pattern to Auth Service)
+- `@d2/ratelimit` package (same sliding-window algorithm as .NET)
+- `@d2/geo-cache` package (local WhoIs cache with gRPC fallback)
 
 ### When in Doubt
 
@@ -606,17 +605,28 @@ See `PLANNING.md` for detailed ADRs and status tracking.
 
 ### Rate Limiting
 
-- **Packages**: `@d2/ratelimit` (Node.js), `D2.RateLimit.Redis` (C#)
-- **Storage**: Redis (shared across all services)
-- **Dimensions**: IP, userId, fingerprint, city, country
-- **Logic**: If ANY dimension exceeds threshold → block ALL
-- **Thresholds**: Anonymous (lower) and authenticated (higher)
+- **Packages**: `@d2/ratelimit` (Node.js - planned), `RateLimit.Default` (C# - done)
+- **Storage**: Redis via abstracted distributed cache handlers (GetTtl, Increment, Set)
+- **Dimensions**: ClientFingerprint (100/min), IP (5,000/min), City (25,000/min), Country (100,000/min)
+- **Algorithm**: Sliding window approximation (two fixed-window counters + weighted average)
+- **Logic**: If ANY dimension exceeds threshold → block for 5 minutes
+- **Country whitelist**: US, CA, GB exempt from country-level blocking
+- **Fail-open**: If Redis down or WhoIs unavailable, requests pass through
+
+### Request Enrichment
+
+- **Package**: `RequestEnrichment.Default` (C# - done)
+- Resolves client IP from CF-Connecting-IP → X-Real-IP → X-Forwarded-For → RemoteIp
+- Computes server fingerprint (SHA-256 of UA + Accept headers) for logging
+- Reads client fingerprint from `X-Client-Fingerprint` header for rate limiting
+- Calls Geo.Client WhoIs cache for city/country/VPN flags
+- Sets `IRequestInfo` on `HttpContext.Features` for downstream middleware
 
 ### Geo Caching
 
-- **Packages**: `@d2/geo-cache` (Node.js), `D2.Geo.Cache` (C#)
+- **Packages**: `@d2/geo-cache` (Node.js - planned), Geo.Client `FindWhoIs` handler (C# - done)
 - Local memory cache for WhoIs data to avoid Geo service bombardment
-- TTL: 1 hour, LRU eviction
+- TTL: 8 hours (configurable via `GeoClientOptions`), LRU eviction (10,000 entries)
 
 ---
 

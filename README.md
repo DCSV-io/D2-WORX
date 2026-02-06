@@ -51,21 +51,23 @@ Summary:
   - CQRS handlers for geographic reference data retrieval and update requests
 - Geo service gRPC API layer
 - gRPC request/response standardization with implementation of Result.Extensions
-- REST API Gateway (HTTP/REST to gRPC routing)
-- Manual E2E testing to validate initial vertical slice with OTEL coverage
+- REST API Gateway with request enrichment and rate limiting
 - Geo Service: WhoIs, Contact, Location handlers (CQRS + repository + external API integration)
-- Geo.Client: Service-owned client library (messages, interfaces, default handler implementations)
-- 591 Geo service tests (unit + integration) passing
+- Geo.Client: Service-owned client library (messages, interfaces, WhoIs cache handler)
+- Request enrichment middleware (IP resolution, fingerprinting, WhoIs geolocation lookup)
+- Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
+- 600+ tests (unit + integration) passing
 
 **🚧 In Progress:**
-- Auth service architecture (Node.js + BetterAuth)
-- Multi-dimensional rate limiting design
+- Node.js workspace setup (pnpm workspaces)
+- Auth service architecture (Node.js + Hono + BetterAuth)
 
 **📋 Planned:**
 - SignalR Gateway (WebSocket to gRPC routing)
-- Auth service implementation (standalone Node.js service)
-- Cross-service rate limiting packages (`@d2/ratelimit`, `D2.RateLimit.Redis`)
-- Geo caching packages for local WhoIs data (`@d2/geo-cache`, `D2.Geo.Cache`)
+- Auth service implementation (standalone Node.js service at `backends/node/services/auth/`)
+- SvelteKit auth integration (proxy pattern to Auth Service)
+- Node.js rate limiting package (`@d2/ratelimit`) — same algorithm as .NET middleware
+- Node.js geo cache package (`@d2/geo-cache`) — local WhoIs cache with gRPC fallback
 - OTEL alerting and notification integration
 - Kestra for scheduled task management
 - Much, much more...
@@ -197,6 +199,13 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >|--------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
 >| [Batch.Pg](backends/dotnet/shared/Implementations/Repository/Batch/Batch.Pg/BATCH_PG.md)                                                        | Reusable batched query utilities           |
 >| [Transactions.Pg](backends/dotnet/shared/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md)                             | PostgreSQL transaction management handlers |
+>
+>*Middleware:*
+>
+>| Component                                                                                                                                                   | Description                                              |
+>|-------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------|
+>| [RequestEnrichment.Default](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md)                             | IP resolution, fingerprinting, and WhoIs geolocation     |
+>| [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                                                      | Multi-dimensional sliding-window rate limiting           |
 >
 >**Services:**
 >

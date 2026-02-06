@@ -19,9 +19,16 @@
 ## Current Sprint Focus
 
 ### Primary Goals
-1. **Auth Service Setup** - Standalone Node.js service with BetterAuth
-2. **Rate Limiting Infrastructure** - Multi-dimensional rate limiter packages
-3. **Node.js Workspace** - pnpm workspaces, shared TypeScript config
+1. **Node.js Workspace Setup** - pnpm workspaces, shared TypeScript config in `backends/node/`
+2. **Auth Service Implementation** - Standalone Node.js + Hono + BetterAuth at `backends/node/services/auth/`
+3. **SvelteKit Auth Integration** - Proxy pattern (`/api/auth/*` → Auth Service)
+
+### Recently Completed
+- ✅ Request enrichment middleware (IP resolution, fingerprinting, WhoIs lookup)
+- ✅ Multi-dimensional rate limiting middleware (sliding-window algorithm)
+- ✅ Geo.Client WhoIs cache handler (`FindWhoIs` with IMemoryCache + gRPC fallback)
+- ✅ Distributed cache abstractions (GetTtl, Increment handlers)
+- ✅ REST Gateway integration (enrichment + rate limiting wired up)
 
 ### Blocked By
 - None currently
@@ -147,16 +154,16 @@ blocked:{dimension}:{value}
 | D2.Result | ✅ Done | `backends/dotnet/shared/Result/` |
 | D2.Result.Extensions | ✅ Done | `backends/dotnet/shared/Result.Extensions/` |
 | D2.Handler | ✅ Done | `backends/dotnet/shared/Handler/` |
-| D2.Interfaces | ✅ Done | `backends/dotnet/shared/Interfaces/` |
+| D2.Interfaces | ✅ Done | `backends/dotnet/shared/Interfaces/` (includes GetTtl, Increment) |
 | D2.Utilities | ✅ Done | `backends/dotnet/shared/Utilities/` |
 | D2.ServiceDefaults | ✅ Done | `backends/dotnet/shared/ServiceDefaults/` |
-| DistributedCache.Redis | ✅ Done | `backends/dotnet/shared/Implementations/Caching/` |
+| DistributedCache.Redis | ✅ Done | `backends/dotnet/shared/Implementations/Caching/` (Get, Set, Remove, Exists, GetTtl, Increment) |
 | InMemoryCache.Default | ✅ Done | `backends/dotnet/shared/Implementations/Caching/` |
 | Transactions.Pg | ✅ Done | `backends/dotnet/shared/Implementations/Repository/` |
 | Batch.Pg | ✅ Done | `backends/dotnet/shared/Implementations/Repository/` |
-| **Geo.Client** | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (service-owned client library) |
-| **D2.RateLimit.Redis** | 📋 Planned | Rate limiting for .NET |
-| **D2.Geo.Cache** | 📋 Planned | Local WhoIs caching |
+| **RequestEnrichment.Default** | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` |
+| **RateLimit.Default** | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (uses abstracted cache handlers) |
+| **Geo.Client** | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (includes WhoIs cache handler) |
 
 ### Shared Packages (Node.js)
 
@@ -182,7 +189,7 @@ blocked:{dimension}:{value}
 
 | Gateway | Status | Notes |
 |---------|--------|-------|
-| REST Gateway | ✅ Done | HTTP/REST → gRPC |
+| REST Gateway | ✅ Done | HTTP/REST → gRPC with request enrichment + rate limiting |
 | SignalR Gateway | 📋 Planned | WebSocket → gRPC |
 
 ### Frontend
@@ -197,44 +204,48 @@ blocked:{dimension}:{value}
 
 ## Upcoming Work
 
-### Phase 1: Auth Foundation (Current)
+### Phase 1: Node.js Foundation (Current)
 
 1. **Create Node.js workspace structure**
    - pnpm workspaces in `backends/node/`
    - Shared tsconfig, eslint, prettier
+   - Common D2Result pattern for TypeScript
 
 2. **Create Auth Service**
-   - Hono + BetterAuth
-   - PostgreSQL adapter
+   - Hono + BetterAuth at `backends/node/services/auth/`
+   - PostgreSQL adapter (uses existing d2-auth-db)
    - JWT + Bearer plugins
-   - JWKS endpoint
+   - JWKS endpoint for .NET gateway JWT validation
 
 3. **SvelteKit Auth Integration**
-   - Proxy configuration
-   - Session handling in hooks
-   - Auth client setup
+   - Proxy configuration in `hooks.server.ts`
+   - Session handling
+   - `createAuthClient` setup
 
-### Phase 2: Rate Limiting
+### Phase 2: Node.js Rate Limiting & Geo Cache
 
 1. **@d2/ratelimit package**
-   - Redis client
-   - Multi-dimensional tracking
-   - Sliding window algorithm
+   - Same sliding-window algorithm as .NET RateLimit.Default
+   - Redis client (ioredis)
+   - Multi-dimensional tracking (fingerprint, IP, city, country)
    - Middleware for Hono/SvelteKit
 
-2. **D2.RateLimit.Redis package**
-   - Same algorithm in C#
-   - ASP.NET Core middleware
-   - Shared Redis key format
+2. **@d2/geo-cache package**
+   - gRPC client to Geo service (using generated protos)
+   - LRU memory cache (similar to Geo.Client FindWhoIs)
+   - TTL + async refresh
 
-3. **@d2/geo-cache package**
-   - gRPC client to Geo service
-   - LRU memory cache
-   - Async refresh
+### Completed Phases
 
-### Phase 3: Geo Service Completion ✅
+**Phase: .NET Gateway Infrastructure** ✅
+- RequestEnrichment.Default middleware (IP resolution, fingerprinting, WhoIs lookup)
+- RateLimit.Default middleware (sliding-window with abstracted distributed cache)
+- Distributed cache abstractions (GetTtl, Increment handlers)
+- Geo.Client WhoIs cache handler (FindWhoIs with IMemoryCache + gRPC fallback)
+- REST Gateway integration (all middleware wired up)
+- 600+ tests passing
 
-All Geo service handlers are implemented and tested (591 tests passing):
+**Phase: Geo Service** ✅
 - WhoIs handlers (Repository + CQRS + FindWhoIs complex handler with external API)
 - Contact handlers (Repository + CQRS + Create/Delete/GetByIds/GetByExtKeys)
 - Location handlers (Repository + CQRS + CreateLocations)
@@ -277,4 +288,4 @@ All Geo service handlers are implemented and tested (591 tests passing):
 
 ---
 
-*Last updated: 2026-02-04*
+*Last updated: 2026-02-05*
