@@ -8,6 +8,8 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@d2/cache-memory": "workspace:*",
+    "@d2/cache-redis": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/logging": "workspace:*",
@@ -17,6 +19,8 @@
     "@d2/testing": "workspace:*",
     "@d2/utilities": "workspace:*",
     "@grpc/grpc-js": "1.14.3",
+    "@testcontainers/redis": "10.18.0",
+    "ioredis": "5.8.0",
     "vitest": "3.1.1"
   }
 }
