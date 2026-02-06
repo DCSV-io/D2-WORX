@@ -1,20 +1,6 @@
-export type {
-  GetInput,
-  GetOutput,
-  IGetHandler,
-  ExistsInput,
-  ExistsOutput,
-  IExistsHandler,
-  GetTtlInput,
-  GetTtlOutput,
-  IGetTtlHandler,
-  SetInput,
-  SetOutput,
-  ISetHandler,
-  IncrementInput,
-  IncrementOutput,
-  IIncrementHandler,
-  RemoveInput,
-  RemoveOutput,
-  IRemoveHandler,
-} from "./types.js";
+export type { GetInput, GetOutput, IGetHandler } from "./handlers/r/get.js";
+export type { ExistsInput, ExistsOutput, IExistsHandler } from "./handlers/r/exists.js";
+export type { GetTtlInput, GetTtlOutput, IGetTtlHandler } from "./handlers/r/get-ttl.js";
+export type { SetInput, SetOutput, ISetHandler } from "./handlers/u/set.js";
+export type { IncrementInput, IncrementOutput, IIncrementHandler } from "./handlers/u/increment.js";
+export type { RemoveInput, RemoveOutput, IRemoveHandler } from "./handlers/d/remove.js";
