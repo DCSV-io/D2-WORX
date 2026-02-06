@@ -276,50 +276,67 @@ public static class Extensions
 
 ```
 D2-WORX/
+├── pnpm-workspace.yaml              # TS workspace root (like D2.sln for .NET)
+├── package.json                      # Root scripts, shared devDeps
 ├── contracts/
-│   └── protos/                     # Tech-agnostic Protocol Buffers
-│       ├── common/v1/              # Common types (D2Result, etc.)
-│       ├── auth/v1/                # Auth service protos
-│       └── geo/v1/                 # Geo service protos
+│   └── protos/                       # Tech-agnostic Protocol Buffers
+│       ├── common/v1/                # Common types (D2Result, etc.)
+│       ├── auth/v1/                  # Auth service protos
+│       └── geo/v1/                   # Geo service protos
 ├── backends/
-│   ├── dotnet/                     # .NET backends
+│   ├── dotnet/                       # .NET backends
 │   │   ├── orchestration/
-│   │   │   └── AppHost/            # Aspire orchestration
-│   │   ├── shared/                 # Shared libraries
-│   │   │   ├── Handler/            # BaseHandler pattern
-│   │   │   ├── Interfaces/         # Contract interfaces (TLC hierarchy)
-│   │   │   ├── Implementations/    # Reusable implementations (Caching, Repository)
-│   │   │   ├── Result/             # D2Result pattern
-│   │   │   ├── Result.Extensions/  # D2Result ↔ Proto conversions
-│   │   │   ├── ServiceDefaults/    # OpenTelemetry config
-│   │   │   ├── Tests/              # Shared test infrastructure
-│   │   │   ├── Utilities/          # Extensions & helpers
-│   │   │   └── protos/             # Generated C# protos
+│   │   │   └── AppHost/              # Aspire orchestration
+│   │   ├── shared/                   # Shared libraries
+│   │   │   ├── Handler/              # BaseHandler pattern
+│   │   │   ├── Interfaces/           # Contract interfaces (TLC hierarchy)
+│   │   │   ├── Implementations/      # Reusable implementations (Caching, Repository)
+│   │   │   ├── Result/               # D2Result pattern
+│   │   │   ├── Result.Extensions/    # D2Result ↔ Proto conversions
+│   │   │   ├── ServiceDefaults/      # OpenTelemetry config
+│   │   │   ├── Tests/                # Shared test infrastructure
+│   │   │   ├── Utilities/            # Extensions & helpers
+│   │   │   └── protos/               # Generated C# protos
 │   │   ├── gateways/
-│   │   │   └── REST/               # HTTP/REST → gRPC gateway
+│   │   │   └── REST/                 # HTTP/REST → gRPC gateway
 │   │   └── services/
-│   │       └── Geo/                # Geographic service
-│   │           ├── Geo.Client/     # Service-owned client library
-│   │           ├── Geo.Domain/     # DDD entities & value objects
-│   │           ├── Geo.App/        # CQRS handlers, mappers
-│   │           ├── Geo.Infra/      # Repository, messaging, EF Core
-│   │           ├── Geo.API/        # gRPC service
-│   │           └── Geo.Tests/      # Tests
-│   ├── node/                       # Node.js backends
-│   │   ├── shared/                 # @d2/core, @d2/protos
+│   │       └── Geo/                  # Geographic service
+│   │           ├── Geo.Client/       # Service-owned client library
+│   │           ├── Geo.Domain/       # DDD entities & value objects
+│   │           ├── Geo.App/          # CQRS handlers, mappers
+│   │           ├── Geo.Infra/        # Repository, messaging, EF Core
+│   │           ├── Geo.API/          # gRPC service
+│   │           └── Geo.Tests/        # Tests
+│   ├── node/                         # Node.js backends
+│   │   ├── tsconfig.base.json        # Shared TypeScript config
+│   │   ├── shared/                   # Shared TS packages (mirrors dotnet/shared/)
+│   │   │   ├── result/               # @d2/result
+│   │   │   ├── utilities/            # @d2/utilities
+│   │   │   ├── handler/              # @d2/handler (BaseHandler + OTel)
+│   │   │   ├── interfaces/           # @d2/interfaces (cache contracts)
+│   │   │   ├── result-extensions/    # @d2/result-extensions
+│   │   │   ├── protos/               # @d2/protos (generated TS)
+│   │   │   └── implementations/      # Mirrors dotnet Implementations/
+│   │   │       ├── caching/
+│   │   │       │   ├── memory/       # @d2/cache-memory
+│   │   │       │   ├── redis/        # @d2/cache-redis
+│   │   │       │   └── geo/          # @d2/geo-cache
+│   │   │       └── middleware/
+│   │   │           ├── request-enrichment/  # @d2/request-enrichment
+│   │   │           └── ratelimit/    # @d2/ratelimit
 │   │   └── services/
-│   │       └── auth/               # Auth service (BetterAuth)
-│   └── go/                         # Go backends
-│       ├── shared/                 # Shared Go packages
+│   │       └── auth/                 # Auth service (BetterAuth)
+│   └── go/                           # Go backends
+│       ├── shared/                   # Shared Go packages
 │       └── services/
-│           └── media/              # Media/file processing
+│           └── media/                # Media/file processing
 ├── clients/
-│   ├── web/                        # SvelteKit 5 app
-│   └── mobile/                     # React Native / Expo
+│   ├── web/                          # SvelteKit 5 app (consumes @d2/* packages)
+│   └── mobile/                       # React Native / Expo
 ├── tools/
-│   └── proto-gen/                  # Proto generation scripts
-├── observability/                  # LGTM stack configs
-└── D2.sln                          # .NET Solution file
+│   └── proto-gen/                    # Proto generation scripts
+├── observability/                    # LGTM stack configs
+└── D2.sln                            # .NET Solution file
 ```
 
 ---
@@ -691,36 +708,75 @@ No sticky sessions required. Any instance can handle any request:
 
 ## Node.js / TypeScript Conventions
 
-### Project Structure
+### Workspace Structure
 
 ```
-backends/node/
-├── services/
-│   └── auth/                 # BetterAuth service
-│       ├── package.json
-│       ├── src/
-│       │   ├── index.ts      # Hono app entry
-│       │   ├── auth.ts       # BetterAuth config
-│       │   └── routes/
-│       └── Dockerfile
+D2-WORX/                              # pnpm workspace root
+├── pnpm-workspace.yaml                # packages: backends/node/shared/**, backends/node/services/*, clients/web
+├── package.json                        # Root devDeps (typescript, eslint, prettier)
 │
-contracts/node/
-├── ratelimit/                # @d2/ratelimit package
-├── geo-cache/                # @d2/geo-cache package
-└── tsconfig.base.json        # Shared TypeScript config
+backends/node/
+├── tsconfig.base.json                  # Shared TS config (strict, paths, etc.)
+├── shared/                             # Mirrors dotnet/shared/ — all @d2/* packages
+│   ├── result/                         # @d2/result (Layer 0)
+│   ├── utilities/                      # @d2/utilities (Layer 0)
+│   ├── handler/                        # @d2/handler (Layer 1) — BaseHandler + OTel
+│   ├── interfaces/                     # @d2/interfaces (Layer 2) — cache contracts
+│   ├── result-extensions/              # @d2/result-extensions (Layer 2)
+│   ├── protos/                         # @d2/protos (Layer 0) — generated TS
+│   └── implementations/
+│       ├── caching/
+│       │   ├── memory/                 # @d2/cache-memory (Layer 3)
+│       │   ├── redis/                  # @d2/cache-redis (Layer 3)
+│       │   └── geo/                    # @d2/geo-cache (Layer 4)
+│       └── middleware/
+│           ├── request-enrichment/     # @d2/request-enrichment (Layer 5)
+│           └── ratelimit/              # @d2/ratelimit (Layer 5)
+└── services/
+    └── auth/                           # Auth service (Hono + BetterAuth)
+        ├── package.json
+        ├── src/
+        │   ├── index.ts                # Hono app entry
+        │   ├── auth.ts                 # BetterAuth config
+        │   └── routes/
+        └── Dockerfile
 ```
+
+### Package Dependency Graph
+
+```
+Layer 0 (no project deps):  @d2/result, @d2/utilities, @d2/protos
+Layer 1:  @d2/handler        → result
+Layer 2:  @d2/interfaces     → handler, protos, utilities
+          @d2/result-ext     → result, protos
+Layer 3:  @d2/cache-memory   → handler, interfaces
+          @d2/cache-redis    → interfaces, utilities
+Layer 4:  @d2/geo-cache      → handler, cache-memory, interfaces, result-ext, utilities
+Layer 5:  @d2/request-enrich → handler, geo-cache
+          @d2/ratelimit      → request-enrich, handler, result, interfaces
+```
+
+### Design Principles
+
+- **Mirror .NET structure** — 1:1 package boundaries with .NET shared projects
+- **Handler pattern everywhere** — BaseHandler with OTel tracing on all backend operations
+- **Abstractions over implementations** — Rate limiter uses cache interfaces, not Redis directly
+- **DDD on backends** — Domain-driven design with proper abstractions, even in TypeScript
+- **Lighter touch on clients** — Frontend/client code can be more pragmatic
 
 ### TypeScript Style
 
 - **Strict mode**: Always enabled
-- **Naming**: camelCase for variables/functions, PascalCase for types/classes
+- **Naming**: camelCase for variables/functions, PascalCase for types/classes/interfaces
 - **Imports**: Use `type` imports for type-only imports
-- **Error handling**: Use Result pattern where applicable (similar to D2Result)
+- **Error handling**: Use `@d2/result` (D2Result pattern) — same semantics as .NET
 
 ### Package Naming
 
 - Internal packages: `@d2/{package-name}`
-- Use pnpm workspaces for monorepo management
+- pnpm workspaces from project root (`D2-WORX/`)
+- All shared packages under `backends/node/shared/`
+- Any TS client (SvelteKit, React Native) can reference `@d2/*` packages
 
 ---
 

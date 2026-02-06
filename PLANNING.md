@@ -280,13 +280,25 @@ Auth (always proxied):
 
 ### Shared Packages (Node.js)
 
-| Package            | Status     | Location                    | Notes                                      |
-|--------------------|------------|-----------------------------|--------------------------------------------|
-| **@d2/core**       | 📋 Phase 1 | `backends/node/shared/core/` | D2Result, shared types                     |
-| **@d2/ratelimit**  | 📋 Phase 1 | `contracts/node/ratelimit/`  | Sliding-window, multi-dimensional, Redis   |
-| **@d2/geo-cache**  | 📋 Phase 1 | `contracts/node/geo-cache/`  | LRU memory cache + gRPC fallback to Geo    |
-| **@d2/auth-client** | 📋 Phase 2 | TBD                         | Shared BetterAuth client config            |
-| **@d2/jwt-manager** | 📋 Phase 2 | TBD                         | Client-side JWT lifecycle (obtain, refresh) |
+> Mirrors .NET shared project structure under `backends/node/shared/`. All packages use `@d2/` scope.
+> Workspace root is at project root (`D2-WORX/`) — SvelteKit and other clients can consume any `@d2/*` package.
+
+| Package                  | Status     | Location                                                     | .NET Equivalent              |
+|--------------------------|------------|--------------------------------------------------------------|------------------------------|
+| **@d2/result**           | 📋 Phase 1 | `backends/node/shared/result/`                                | `D2.Shared.Result`           |
+| **@d2/utilities**        | 📋 Phase 1 | `backends/node/shared/utilities/`                             | `D2.Shared.Utilities`        |
+| **@d2/handler**          | 📋 Phase 1 | `backends/node/shared/handler/`                               | `D2.Shared.Handler`          |
+| **@d2/protos**           | 📋 Phase 1 | `backends/node/shared/protos/`                                | `Protos.DotNet`              |
+| **@d2/interfaces**       | 📋 Phase 1 | `backends/node/shared/interfaces/`                            | `D2.Shared.Interfaces`       |
+| **@d2/result-extensions** | 📋 Phase 1 | `backends/node/shared/result-extensions/`                     | `D2.Shared.Result.Extensions` |
+| **@d2/cache-memory**     | 📋 Phase 1 | `backends/node/shared/implementations/caching/memory/`        | `InMemoryCache.Default`      |
+| **@d2/cache-redis**      | 📋 Phase 1 | `backends/node/shared/implementations/caching/redis/`         | `DistributedCache.Redis`     |
+| **@d2/geo-cache**        | 📋 Phase 1 | `backends/node/shared/implementations/caching/geo/`           | `Geo.Client` (FindWhoIs)     |
+| **@d2/request-enrichment** | 📋 Phase 1 | `backends/node/shared/implementations/middleware/request-enrichment/` | `RequestEnrichment.Default` |
+| **@d2/ratelimit**        | 📋 Phase 1 | `backends/node/shared/implementations/middleware/ratelimit/`  | `RateLimit.Default`          |
+| **@d2/service-defaults** | 📋 Phase 2 | `backends/node/shared/service-defaults/`                      | `D2.Shared.ServiceDefaults`  |
+| **@d2/auth-client**      | 📋 Phase 2 | TBD                                                          | —                            |
+| **@d2/jwt-manager**      | 📋 Phase 2 | TBD                                                          | —                            |
 
 ### Services
 
@@ -321,24 +333,36 @@ Auth (always proxied):
 
 ### Phase 1: TypeScript Shared Infrastructure (Current)
 
-> **Note:** Before building the Auth Service, we need shared TypeScript packages that mirror what already exists on the .NET side. This is the "rebuild in TypeScript" step.
+> **Note:** Before building the Auth Service, we need shared TypeScript packages that mirror what already exists on the .NET side. This is the "rebuild in TypeScript" step. Package structure mirrors .NET's TLC folder convention.
 
-1. **Node.js workspace setup**
-   - pnpm workspaces in `backends/node/`
-   - Shared tsconfig, eslint, prettier
-   - Common `@d2/core` package (D2Result pattern for TypeScript, shared types)
+**Step 1 — Workspace + Foundation (Layer 0)**
+1. **pnpm workspace setup**
+   - Workspace root at `D2-WORX/` (like `D2.sln`)
+   - `pnpm-workspace.yaml` includes `backends/node/shared/**`, `backends/node/services/*`, `clients/web`
+   - Shared `tsconfig.base.json` at `backends/node/`, eslint, prettier
+2. **@d2/result** — D2Result pattern, error codes (mirrors `D2.Shared.Result`)
+3. **@d2/utilities** — String helpers, env loading, serialization (mirrors `D2.Shared.Utilities`)
+4. **@d2/protos** — Generated TypeScript proto types + gRPC clients (mirrors `Protos.DotNet`)
 
-2. **@d2/ratelimit package**
-   - Same sliding-window algorithm as .NET `RateLimit.Default`
-   - Redis client (ioredis)
-   - Multi-dimensional tracking (fingerprint, IP, city, country)
-   - Middleware adapter for Hono
-   - Rate limit alerting scaffold (hook/callback for future notifications service)
+**Step 2 — Handler Pattern (Layer 1)**
+5. **@d2/handler** — BaseHandler with OTel tracing, structured logging, error handling (mirrors `D2.Shared.Handler`)
 
-3. **@d2/geo-cache package**
-   - gRPC client to Geo service (using generated protos)
-   - LRU memory cache (similar to Geo.Client FindWhoIs)
-   - TTL: 8 hours (configurable), LRU eviction (10,000 entries)
+**Step 3 — Contracts (Layer 2)**
+6. **@d2/interfaces** — Cache operation contracts: Get, Set, Remove, Exists, GetTtl, Increment (mirrors `D2.Shared.Interfaces`)
+7. **@d2/result-extensions** — D2Result ↔ Proto conversions (mirrors `D2.Shared.Result.Extensions`)
+
+**Step 4 — Cache Implementations (Layer 3)**
+8. **@d2/cache-memory** — In-memory cache handlers (mirrors `InMemoryCache.Default`)
+9. **@d2/cache-redis** — Redis cache handlers via ioredis (mirrors `DistributedCache.Redis`)
+
+**Step 5 — Service Client (Layer 4)**
+10. **@d2/geo-cache** — LRU memory cache + gRPC fallback to Geo service (mirrors `Geo.Client` FindWhoIs)
+    - TTL: 8 hours (configurable), LRU eviction (10,000 entries)
+
+**Step 6 — Middleware (Layer 5)**
+11. **@d2/request-enrichment** — IP resolution, fingerprinting, WhoIs lookup middleware for Hono (mirrors `RequestEnrichment.Default`)
+12. **@d2/ratelimit** — Multi-dimensional sliding-window rate limiting middleware for Hono (mirrors `RateLimit.Default`)
+    - Rate limit alerting scaffold (hook/callback for future notifications service)
 
 ### Phase 2: Auth Service + SvelteKit Integration
 
