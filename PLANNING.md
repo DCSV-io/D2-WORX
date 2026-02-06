@@ -39,25 +39,91 @@
 
 ### ADR-001: Authentication Architecture
 
-**Status**: Decided (2025-02)
+**Status**: Decided (2025-02), expanded (2026-02-05)
 
-**Context**: Need authentication across multiple services (SvelteKit, .NET gateways, future Node.js services).
+**Context**: Need authentication across multiple services (SvelteKit, .NET gateways, future Node.js services). Must be horizontally scalable — multiple instances of any service can run across different locations behind load balancers, sharing Redis + PostgreSQL.
 
 **Decision**:
 - **Auth Service**: Standalone Node.js + Hono + BetterAuth (source of truth)
 - **SvelteKit**: Proxy pattern (`/api/auth/*` → Auth Service)
 - **.NET Gateways**: JWT validation via JWKS endpoint
+- **Request flow**: Hybrid Pattern C (see ADR-005)
+
+#### Session Management (3-Tier Storage)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Cookie Cache (5min, compact strategy)              │
+│  → Eliminates ~95% of storage lookups               │
+│  → Decoded locally, zero network calls              │
+├─────────────────────────────────────────────────────┤
+│  Redis (secondary storage)                          │
+│  → Fast session lookups + near-instant revocation   │
+│  → Keys: {token} → {session,user} JSON              │
+│  → Active sessions: active-sessions-{userId}        │
+├─────────────────────────────────────────────────────┤
+│  PostgreSQL (storeSessionInDatabase: true)           │
+│  → Audit trail, durability, fallback if Redis down  │
+└─────────────────────────────────────────────────────┘
+```
+
+**Session config:**
+- `expiresIn`: 7 days
+- `updateAge`: 1 day (auto-refresh on activity)
+- `cookieCache.maxAge`: 5 minutes (the revocation lag window)
+- `cookieCache.strategy`: `"compact"` (base64url + HMAC-SHA256, smallest size)
+
+**Session revocation** (all OOTB from BetterAuth):
+- `revokeSession({ token })` — kill a specific session
+- `revokeOtherSessions()` — "sign out everywhere else"
+- `revokeSessions()` — kill all sessions
+- `changePassword({ revokeOtherSessions: true })` — revoke on password change
+- Individual session revocation supported via server-side API when token not available from `listSessions()`
+
+**Caveat:** With cookie cache enabled, a revoked session may remain valid on the device that has it cached until the cookie cache expires (~5 minutes max). This is acceptable for our use case.
+
+#### JWT Configuration (for .NET Gateway validation)
+
+- **Algorithm**: RS256 (native .NET support via `Microsoft.IdentityModel.Tokens`, no extra packages)
+- **Expiration**: 15 minutes (BetterAuth default)
+- **JWKS endpoint**: `/api/auth/jwks`
+- **Key rotation**: 30-day intervals with 30-day grace period
+- **Issuer/Audience**: Configured per environment
+- **Custom claims**: User ID, email, name, roles (via `definePayload`)
+
+**Why RS256 over EdDSA (BetterAuth default):** `Microsoft.IdentityModel.Tokens` doesn't natively support EdDSA — would require `ScottBrady.IdentityModel` wrapping Bouncy Castle. RS256 works with standard `AddJwtBearer()`.
+
+#### BetterAuth Plugins
+
+| Plugin    | Purpose                                                    |
+|-----------|------------------------------------------------------------|
+| `bearer`  | Session token via `Authorization` header (for API clients) |
+| `jwt`     | Issues 15min RS256 JWTs for service-to-service auth        |
+
+**Important distinction:** The Bearer plugin uses the *session token* (opaque, validated via DB/Redis lookup). The JWT plugin issues *signed JWTs* (stateless, validated via JWKS public key). They serve different purposes and are both needed.
+
+#### Horizontal Scaling
+
+This architecture requires **no sticky sessions**:
+- Cookie cache: session data travels with the request (decoded locally)
+- Redis: shared session store any instance can query
+- JWTs: self-contained, any instance can validate with cached public key
+- New instances/locations just point at the same shared Redis + PG
 
 **Rationale**:
 - Single source of truth for auth logic
 - SvelteKit retains normal BetterAuth DX (`createAuthClient` works as-is)
 - Stateless JWT validation for .NET services (no BetterAuth dependency)
-- Horizontal scaling friendly
+- Horizontally scalable — no sticky sessions, no instance affinity
+- 3-tier session storage balances performance, revocability, and durability
 
 **Consequences**:
 - SvelteKit needs proxy configuration in `hooks.server.ts`
-- .NET gateways need JWT validation middleware (MS.IdentityModel.Tokens)
+- .NET gateways need JWT validation middleware (`Microsoft.IdentityModel.Tokens` + `AddJwtBearer`)
 - Auth Service must expose `/api/auth/jwks` endpoint
+- .NET gateway must be publicly accessible (for direct client-side API calls, see ADR-005)
+- CORS must be configured on the .NET gateway for the SvelteKit origin
+- Client-side needs a JWT manager utility (obtain, cache in memory, auto-refresh before 15min expiry)
 
 ---
 
@@ -134,6 +200,53 @@ blocked:{dimension}:{value}
 
 ---
 
+### ADR-005: Request Flow Pattern (Hybrid BFF + Direct Gateway)
+
+**Status**: Decided (2026-02-05)
+
+**Context**: Need to determine how browser clients interact with backend services. Three options: (A) all traffic through SvelteKit, (B) all API traffic direct to gateway, (C) hybrid.
+
+**Decision**: **Pattern C — Hybrid**
+
+Two request paths coexist:
+
+```
+Path 1 — SSR + slow-changing data (via SvelteKit server):
+  Browser ──cookie──► SvelteKit Server ──JWT──► .NET Gateway ──gRPC──► Services
+
+Path 2 — Interactive client-side fetches (direct to gateway):
+  Browser ──JWT──► .NET Gateway ──gRPC──► Services
+
+Auth (always proxied):
+  Browser ──cookie──► SvelteKit ──proxy──► Auth Service
+```
+
+**Path 1** is for: initial page loads, SEO-critical content, geo reference data, anything that benefits from SSR or SvelteKit-layer caching. SvelteKit server obtains/caches a JWT and calls the gateway on the user's behalf.
+
+**Path 2** is for: search-as-you-type, form submissions, real-time data, anything where the extra hop through SvelteKit would hurt perceived responsiveness. Browser obtains a JWT via `authClient.token()` (proxied through SvelteKit to the Auth Service) and calls the gateway directly.
+
+**Client-side JWT lifecycle:**
+1. `authClient.token()` obtains a 15min RS256 JWT
+2. Stored in memory only (never localStorage — XSS risk)
+3. Auto-refresh ~1 minute before expiry
+4. Exposed via a utility function (e.g., `getToken()`) for use in fetch calls
+
+**Rationale**:
+- Better UX for interactive features (eliminates SvelteKit hop for API calls)
+- SSR still works for initial loads and SEO
+- Established pattern used in production by many teams
+- Gateway's request enrichment + rate limiting works identically for both paths
+- No architectural redesign needed — just opens the gateway to direct client traffic
+
+**Consequences**:
+- .NET gateway must be publicly accessible (e.g., `api.d2worx.dev`)
+- CORS configuration required on the gateway (accept SvelteKit origin, credentials: true)
+- Client needs a JWT manager utility (Svelte store/module)
+- Two auth validation paths to maintain (SvelteKit server + direct browser)
+- SvelteKit `hooks.server.ts` handles both auth proxy and session population
+
+---
+
 ## Implementation Status
 
 ### Infrastructure
@@ -167,11 +280,13 @@ blocked:{dimension}:{value}
 
 ### Shared Packages (Node.js)
 
-| Package | Status | Location |
-|---------|--------|----------|
-| **@d2/ratelimit** | 📋 Planned | `contracts/node/ratelimit/` |
-| **@d2/geo-cache** | 📋 Planned | `contracts/node/geo-cache/` |
-| **@d2/auth-client** | 📋 Planned | Shared BetterAuth client config |
+| Package            | Status     | Location                    | Notes                                      |
+|--------------------|------------|-----------------------------|--------------------------------------------|
+| **@d2/core**       | 📋 Phase 1 | `backends/node/shared/core/` | D2Result, shared types                     |
+| **@d2/ratelimit**  | 📋 Phase 1 | `contracts/node/ratelimit/`  | Sliding-window, multi-dimensional, Redis   |
+| **@d2/geo-cache**  | 📋 Phase 1 | `contracts/node/geo-cache/`  | LRU memory cache + gRPC fallback to Geo    |
+| **@d2/auth-client** | 📋 Phase 2 | TBD                         | Shared BetterAuth client config            |
+| **@d2/jwt-manager** | 📋 Phase 2 | TBD                         | Client-side JWT lifecycle (obtain, refresh) |
 
 ### Services
 
@@ -204,36 +319,58 @@ blocked:{dimension}:{value}
 
 ## Upcoming Work
 
-### Phase 1: Node.js Foundation (Current)
+### Phase 1: TypeScript Shared Infrastructure (Current)
 
-1. **Create Node.js workspace structure**
+> **Note:** Before building the Auth Service, we need shared TypeScript packages that mirror what already exists on the .NET side. This is the "rebuild in TypeScript" step.
+
+1. **Node.js workspace setup**
    - pnpm workspaces in `backends/node/`
    - Shared tsconfig, eslint, prettier
-   - Common D2Result pattern for TypeScript
+   - Common `@d2/core` package (D2Result pattern for TypeScript, shared types)
 
-2. **Create Auth Service**
-   - Hono + BetterAuth at `backends/node/services/auth/`
-   - PostgreSQL adapter (uses existing d2-auth-db)
-   - JWT + Bearer plugins
-   - JWKS endpoint for .NET gateway JWT validation
-
-3. **SvelteKit Auth Integration**
-   - Proxy configuration in `hooks.server.ts`
-   - Session handling
-   - `createAuthClient` setup
-
-### Phase 2: Node.js Rate Limiting & Geo Cache
-
-1. **@d2/ratelimit package**
-   - Same sliding-window algorithm as .NET RateLimit.Default
+2. **@d2/ratelimit package**
+   - Same sliding-window algorithm as .NET `RateLimit.Default`
    - Redis client (ioredis)
    - Multi-dimensional tracking (fingerprint, IP, city, country)
-   - Middleware for Hono/SvelteKit
+   - Middleware adapter for Hono
+   - Rate limit alerting scaffold (hook/callback for future notifications service)
 
-2. **@d2/geo-cache package**
+3. **@d2/geo-cache package**
    - gRPC client to Geo service (using generated protos)
    - LRU memory cache (similar to Geo.Client FindWhoIs)
-   - TTL + async refresh
+   - TTL: 8 hours (configurable), LRU eviction (10,000 entries)
+
+### Phase 2: Auth Service + SvelteKit Integration
+
+1. **Auth Service** (`backends/node/services/auth/`)
+   - Hono + BetterAuth
+   - PostgreSQL adapter (d2-auth-db)
+   - Redis secondary storage (3-tier session management, see ADR-001)
+   - Plugins: `bearer` + `jwt` (RS256, 15min, JWKS at `/api/auth/jwks`)
+   - Cookie cache: 5min, compact strategy
+   - Session: 7-day expiry, 1-day updateAge
+   - Key rotation: 30-day intervals, 30-day grace period
+   - Session management endpoints: list, revoke individual, revoke others, revoke all
+
+2. **SvelteKit Auth Integration**
+   - Auth proxy in `hooks.server.ts` (`/api/auth/*` → Auth Service)
+   - Session population hook (forward cookie to Auth Service for validation, or decode cookie cache locally)
+   - `createAuthClient` setup (no `baseURL` needed — same-origin proxy)
+   - Client-side JWT manager utility (obtain, store in memory, auto-refresh)
+   - CORS configuration for direct gateway access (Pattern C, ADR-005)
+
+3. **.NET Gateway JWT Validation**
+   - `AddJwtBearer()` with JWKS from Auth Service
+   - RS256 validation (native `Microsoft.IdentityModel.Tokens`)
+   - CORS middleware for SvelteKit origin
+   - JWKS caching with periodic refresh
+
+### Phase 3: Auth Features (Future)
+
+1. **Email verification** (requires notifications service scaffold)
+2. **Password reset flow**
+3. **Session management UI** (list sessions, revoke individual, revoke all others)
+4. **Admin alerting** (rate limit threshold alerts via notifications service)
 
 ### Completed Phases
 
@@ -262,21 +399,41 @@ blocked:{dimension}:{value}
 
 ---
 
+## Resolved Questions
+
+1. **Session storage**: ✅ **Both** — PostgreSQL as primary (audit trail, durability), Redis as secondary storage (fast lookups, near-instant revocation), cookie cache (5min, compact strategy) for eliminating ~95% of storage lookups. BetterAuth's `storeSessionInDatabase: true` enables dual-write.
+
+2. **Refresh token strategy**: ✅ BetterAuth uses a **session-based model**, not access+refresh tokens. Sessions last 7 days with 1-day `updateAge` (auto-refresh on activity). **JWTs are separate** — 15-minute RS256 tokens issued via the JWT plugin for service-to-service auth. No refresh token for JWTs; the client simply requests a new one using their valid session.
+
+3. **Multi-device sessions**: ✅ **Yes** — supported OOTB by BetterAuth. `listSessions()` returns all active sessions with IP + userAgent. Individual session revocation (`revokeSession`), bulk revocation (`revokeOtherSessions`, `revokeSessions`), and revocation on password change are all built-in.
+
+4. **Rate limit alerting**: ✅ **Scaffold only** — create a hook/callback point in the rate limiting flow that calls a `[future notifications service]`. The real implementation comes later when auth + email verification land and we know who the admins are to alert. No specific threshold decided yet.
+
 ## Open Questions
 
-1. **Session storage**: Redis or PostgreSQL for BetterAuth sessions?
-   - Redis: Faster, natural TTL
-   - PostgreSQL: Simpler (one DB), queryable
-
-2. **Refresh token strategy**: Short-lived access (15m) + long-lived refresh (7d)?
-
-3. **Multi-device sessions**: Allow multiple active sessions per user?
-
-4. **Rate limit alerting**: Threshold for triggering alerts? (e.g., 10 blocks/minute?)
+_(None currently — all prior questions resolved 2026-02-05)_
 
 ---
 
 ## Meeting Notes / Decisions Log
+
+### 2026-02-05
+
+- **Session management architecture decided**: 3-tier storage (cookie cache → Redis → PostgreSQL)
+  - Cookie cache: 5min, compact strategy (~95% of lookups eliminated)
+  - Redis: secondary storage for fast lookups + near-instant revocation
+  - PostgreSQL: `storeSessionInDatabase: true` for audit trail + durability
+- **JWT config decided**: RS256 (native .NET support), 15min expiry, JWKS at `/api/auth/jwks`
+  - EdDSA rejected (BetterAuth default) because `Microsoft.IdentityModel.Tokens` lacks native support
+- **Request flow decided**: Pattern C (hybrid BFF + direct gateway) — ADR-005
+  - SSR / slow-changing data: SvelteKit server → .NET Gateway (server-side JWT)
+  - Interactive client-side: Browser → .NET Gateway directly (client-side JWT)
+  - Auth always proxied through SvelteKit (cookie-based, first-party)
+- **Session revocation**: Individual session revocation supported (server-side API for non-current sessions)
+- **Rate limit alerting**: Scaffold only — hook for future notifications service
+- **Multi-device sessions**: OOTB with BetterAuth, `listSessions()` + individual revocation
+- **Phase ordering clarified**: TypeScript shared infra (ratelimit, geo-cache) BEFORE auth service
+- All 4 prior open questions resolved
 
 ### 2025-02-04
 

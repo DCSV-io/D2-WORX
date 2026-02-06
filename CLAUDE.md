@@ -533,6 +533,7 @@ refactor: simplify caching logic
 
 ### Behavioral Guidelines
 
+- **ALWAYS ask questions when uncertain** - This is the #1 rule. If you are not sure about something — requirements, approach, tradeoffs, conventions — **ask**. Do not guess. Do not assume. Do not "pick the most likely option." Ask. Every time.
 - **Read freely** - explore any files needed to understand context
 - **Ask before changing** - do not modify files without explicit user approval
 - **Avoid assumptions** - if requirements are unclear, ask for clarification
@@ -576,12 +577,18 @@ refactor: simplify caching logic
 - Distributed cache abstractions: GetTtl, Increment handlers (abstracted from Redis)
 - All shared implementations use project-defined abstractions (no direct Redis/MS cache)
 
-**Next (Node.js/TypeScript):**
-- Node.js workspace setup (pnpm workspaces in `backends/node/`)
-- Auth Service (Node.js + Hono + BetterAuth) at `backends/node/services/auth/`
-- SvelteKit auth integration (proxy pattern to Auth Service)
-- `@d2/ratelimit` package (same sliding-window algorithm as .NET)
-- `@d2/geo-cache` package (local WhoIs cache with gRPC fallback)
+**Next (Node.js/TypeScript) — in order:**
+
+Phase 1 (TS shared infra — must come BEFORE auth):
+1. Node.js workspace setup (pnpm workspaces in `backends/node/`)
+2. `@d2/core` package (D2Result pattern, shared types)
+3. `@d2/ratelimit` package (same sliding-window algorithm as .NET)
+4. `@d2/geo-cache` package (local WhoIs cache with gRPC fallback)
+
+Phase 2 (Auth):
+5. Auth Service (Node.js + Hono + BetterAuth) at `backends/node/services/auth/`
+6. SvelteKit auth integration (proxy pattern, session hooks, JWT manager)
+7. .NET Gateway JWT validation (`AddJwtBearer` + JWKS)
 
 ### When in Doubt
 
@@ -592,9 +599,9 @@ refactor: simplify caching logic
 
 ---
 
-## Architecture Decisions (2025-02)
+## Architecture Decisions (2025-02, updated 2026-02-05)
 
-See `PLANNING.md` for detailed ADRs and status tracking.
+See `PLANNING.md` for detailed ADRs (including ADR-005: Request Flow Pattern) and status tracking.
 
 ### Authentication Architecture
 
@@ -602,6 +609,58 @@ See `PLANNING.md` for detailed ADRs and status tracking.
 - **SvelteKit**: Uses proxy pattern (`/api/auth/*` → Auth Service). `createAuthClient` works normally.
 - **.NET Gateways**: Validate JWTs via JWKS endpoint (no BetterAuth dependency)
 - **Keycloak**: REMOVED - do not reference or use
+
+#### Session Management (3-Tier)
+
+BetterAuth is session-based at its core (not JWT-based). Sessions use 3-tier storage:
+
+| Tier              | Storage    | Lookup Cost | Revocation Lag            |
+|-------------------|------------|-------------|---------------------------|
+| Cookie cache      | In cookie  | Zero        | Up to 5min (maxAge)       |
+| Secondary storage | Redis      | ~1ms        | Instant                   |
+| Primary DB        | PostgreSQL | ~5-10ms     | Instant                   |
+
+- `expiresIn`: 7 days, `updateAge`: 1 day, `cookieCache.maxAge`: 5 minutes
+- `storeSessionInDatabase: true` — dual-write for audit trail + durability
+- Session revocation is OOTB: `revokeSession`, `revokeOtherSessions`, `revokeSessions`, `listSessions`
+- Individual session revocation supported (including server-side API for non-current sessions)
+
+#### JWT (for service-to-service / .NET gateway)
+
+- **Algorithm**: RS256 (native .NET support — do NOT use EdDSA, it requires extra packages)
+- **Expiration**: 15 minutes
+- **JWKS endpoint**: `/api/auth/jwks`
+- **Key rotation**: 30 days, 30-day grace period
+- **BetterAuth plugins**: `bearer` (session token via header) + `jwt` (RS256 tokens for external services)
+- **Important**: Bearer plugin token ≠ JWT. Bearer uses the session token (validated via DB/Redis). JWT plugin issues signed tokens (validated via JWKS public key).
+
+#### Request Flow (Hybrid Pattern C)
+
+Two paths coexist — SSR through SvelteKit, interactive calls direct to gateway:
+
+```
+SSR / slow-changing data:
+  Browser ──cookie──► SvelteKit Server ──JWT──► .NET Gateway ──gRPC──► Services
+
+Interactive client-side (search, forms, real-time):
+  Browser ──JWT──► .NET Gateway ──gRPC──► Services
+
+Auth (always proxied, cookie-based):
+  Browser ──cookie──► SvelteKit ──proxy──► Auth Service
+```
+
+- SvelteKit server obtains/caches JWTs for server-side calls to the gateway
+- Client obtains JWTs via `authClient.token()` (proxied through SvelteKit to Auth Service)
+- Client stores JWT **in memory only** (never localStorage — XSS risk), auto-refreshes before 15min expiry
+- .NET gateway must be publicly accessible with CORS configured for SvelteKit origin
+
+#### Horizontal Scaling
+
+No sticky sessions required. Any instance can handle any request:
+- Cookie cache: session data travels with the request
+- Redis: shared session store any instance can query
+- JWTs: self-contained, any instance validates with cached JWKS public key
+- Spinning up new instances/locations: just point at shared Redis + PG
 
 ### Rate Limiting
 
@@ -667,14 +726,22 @@ contracts/node/
 
 ## Critical Reminders for Claude
 
-1. **No Keycloak** - It has been removed. Auth uses BetterAuth.
+1. **ALWAYS ask when uncertain** - Do not guess. Do not assume. Ask questions. This is non-negotiable.
 
-2. **Check PLANNING.md** - For current sprint focus and status.
+2. **No Keycloak** - It has been removed. Auth uses BetterAuth.
 
-3. **JWT validation for .NET** - Use `Microsoft.IdentityModel.Tokens` with JWKS from Auth Service.
+3. **Check PLANNING.md** - For current sprint focus, status, and resolved decisions.
 
-4. **SvelteKit auth** - Uses proxy pattern, NOT direct BetterAuth integration.
+4. **JWT = RS256** - Use `Microsoft.IdentityModel.Tokens` with JWKS from Auth Service. Do NOT use EdDSA.
 
-5. **Rate limiting is multi-dimensional** - IP + userId + fingerprint + city + country. All dimensions tracked, any exceeds = block all.
+5. **SvelteKit auth** - Uses proxy pattern, NOT direct BetterAuth integration. Cookie-based sessions, not JWTs, for browser ↔ SvelteKit.
 
-6. **Geo caching packages** - Create local cache wrappers to avoid bombarding Geo service with WhoIs lookups.
+6. **Request flow is hybrid (Pattern C)** - SSR via SvelteKit server, interactive client-side calls go direct to .NET gateway with JWT. Auth always proxied through SvelteKit.
+
+7. **Rate limiting is multi-dimensional** - IP + userId + fingerprint + city + country. All dimensions tracked, any exceeds = block all.
+
+8. **Geo caching packages** - Create local cache wrappers to avoid bombarding Geo service with WhoIs lookups.
+
+9. **Phase ordering** - TypeScript shared infrastructure (`@d2/core`, `@d2/ratelimit`, `@d2/geo-cache`) must be built BEFORE the Auth Service.
+
+10. **Session storage is 3-tier** - Cookie cache (5min) → Redis (secondary) → PostgreSQL (primary). `storeSessionInDatabase: true` for dual-write.
