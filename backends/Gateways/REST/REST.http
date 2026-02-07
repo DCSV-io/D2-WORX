@@ -1,9 +1,0 @@
-@ApiService_HostAddress = http://localhost:5461
-
-### Get full geographic reference data
-GET {{ApiService_HostAddress}}/api/v1/geo/reference-data
-Accept: application/json
-
-### Request geographic reference data update
-POST {{ApiService_HostAddress}}/api/v1/geo/reference-data/update
-Accept: application/json

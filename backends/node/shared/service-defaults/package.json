@@ -1,0 +1,32 @@
+{
+  "name": "@d2/service-defaults",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "0.65.0",
+    "@opentelemetry/exporter-logs-otlp-http": "0.206.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "0.206.0",
+    "@opentelemetry/exporter-trace-otlp-http": "0.206.0",
+    "@opentelemetry/resources": "2.1.0",
+    "@opentelemetry/sdk-logs": "0.206.0",
+    "@opentelemetry/sdk-metrics": "2.1.0",
+    "@opentelemetry/sdk-node": "0.206.0",
+    "@opentelemetry/sdk-trace-node": "2.5.0",
+    "@opentelemetry/semantic-conventions": "1.37.0"
+  }
+}

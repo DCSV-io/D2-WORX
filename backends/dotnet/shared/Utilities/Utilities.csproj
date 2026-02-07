@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>D2.Shared.Utilities</RootNamespace>
+        <IsAspireSharedProject>true</IsAspireSharedProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="dotenv.net" Version="3.2.1" />
+      <PackageReference Include="JetBrains.Annotations" Version="2025.2.2" />
+    </ItemGroup>
+
+</Project>

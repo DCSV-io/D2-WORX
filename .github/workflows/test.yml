@@ -2,28 +2,165 @@ name: Tests
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
-  test:
+  dotnet-shared-unit:
+    name: D2 .NET Shared - Unit Tests (v1)
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '10.0.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
 
-    - name: Restore dependencies
-      run: dotnet restore
+      - name: Restore dependencies
+        run: dotnet restore
 
-    - name: Build
-      run: dotnet build --no-restore --configuration Release
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
-    - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+      - name: Run unit tests
+        run: >
+          dotnet test backends/dotnet/shared/Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName!~Integration"
+
+  dotnet-shared-integration:
+    name: D2 .NET Shared - Integration Tests (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run integration tests
+        run: >
+          dotnet test backends/dotnet/shared/Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName~Integration"
+
+  dotnet-geo-unit:
+    name: D2 .NET Geo - Unit Tests (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: >
+          dotnet test backends/dotnet/services/Geo/Geo.Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName!~Integration"
+
+  dotnet-geo-integration:
+    name: D2 .NET Geo - Integration Tests (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run integration tests
+        run: >
+          dotnet test backends/dotnet/services/Geo/Geo.Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName~Integration"
+
+  node-shared-unit:
+    name: D2 Node.js Shared - Unit Tests (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run unit tests
+        run: pnpm vitest run --project shared-tests --exclude "**/integration/**"
+
+  node-shared-integration:
+    name: D2 Node.js Shared - Integration Tests (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run integration tests
+        run: pnpm vitest run --project shared-tests "integration"

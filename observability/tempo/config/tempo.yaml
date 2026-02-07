@@ -37,4 +37,4 @@ storage:
 
 compactor:
   compaction:
-    block_retention: 4320h  # 180 days
+    block_retention: 4320h # 180 days

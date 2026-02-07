@@ -1,4 +1,31 @@
+root = true
+
+# Default for all files
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# TypeScript / JavaScript / Svelte
+[*.{ts,js,mjs,cjs,mts,cts,svelte}]
+indent_style = space
+indent_size = 2
+
+# JSON / YAML
+[*.{json,yaml,yml}]
+indent_style = space
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+
+# C#
 [*.cs]
+indent_style = space
+indent_size = 4
+
 # SA1633: File should have header
 dotnet_diagnostic.SA1633.severity = warning
 
@@ -23,3 +50,10 @@ dotnet_diagnostic.SA1124.severity = none
 
 # SA1601: Partial elements should be documented
 dotnet_diagnostic.SA1601.severity = none
+
+# SA1311: Some silly naming crap
+dotnet_diagnostic.SA1311.severity = none
+
+# CA2007: Do not directly await a Task without ConfigureAwait
+# Not needed in ASP.NET Core (no sync context)
+dotnet_diagnostic.CA2007.severity = none

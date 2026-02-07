@@ -1,3 +1,12 @@
+# Node.js
+node_modules/
+.pnpm-store/
+**/dist/
+
+# SvelteKit build output
+**/build/
+**/.svelte-kit/
+
 # Common IntelliJ Platform excludes
 
 **/.idea/*
@@ -142,3 +151,15 @@ open_all.bat
 
 # Ignore georefdata.bin
 georefdata.bin
+
+# Environment files (keep .example files)
+.env.local
+.env.*.local
+!.env.local.example
+
+# Local tool settings (machine-specific)
+.claude/settings.local.json
+.aspire/settings.json
+
+# Coverage
+/Coverage

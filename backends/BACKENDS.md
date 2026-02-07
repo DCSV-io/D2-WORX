@@ -10,21 +10,21 @@ The D²-WORX backend follows a **hierarchical, three-tier categorization system*
 
 ### TLC (Top-Level Category)
 
->**What:** Primary architectural concern
+> **What:** Primary architectural concern
 >
->**Examples:** `CQRS`, `Messaging`, `Repository`, `Caching`
+> **Examples:** `CQRS`, `Messaging`, `Repository`, `Caching`
 
 ### 2LC (Second-Level Category)
 
->**What:** Implementation detail or subdivision
+> **What:** Implementation detail or subdivision
 >
->**Examples:** `Handlers`, `MassTransit`, `Entities`, `Migrations`
+> **Examples:** `Handlers`, `MassTransit`, `Entities`, `Migrations`
 
 ### 3LC (Third-Level Category)
 
->**What:** Specific pattern or operation type
+> **What:** Specific pattern or operation type
 >
->**Examples:** `C` (Commands), `Q` (Queries), `Pub` (Publishers), `Sub` (Subscribers)
+> **Examples:** `C` (Commands), `Q` (Queries), `Pub` (Publishers), `Sub` (Subscribers)
 
 ---
 
@@ -34,10 +34,11 @@ The D²-WORX backend follows a **hierarchical, three-tier categorization system*
 
 Separates read operations (queries) from write operations (commands) with clear semantic boundaries.
 
-This kind of separation is apparent throughout the application and is a core pattern in D²-WORX 
+This kind of separation is apparent throughout the application and is a core pattern in D²-WORX
 services.
 
 **Rationale:**
+
 - **C (Commands):** Primary intent is mutation of persistent/shared state. Caller expects
   durable changes (database writes, distributed cache updates, file writes, message publishing).
 
@@ -55,17 +56,18 @@ services.
 **Side Effect Classification:**
 
 | Effect Type           | Query | Command | Complex |
-|-----------------------|-------|---------|---------|
-| Local/in-memory cache | ✅     | ✅       | ✅       |
-| Distributed cache     | ❌     | ✅       | ✅       |
-| Database              | ❌     | ✅       | ✅       |
-| File system           | ❌     | ✅       | ✅       |
-| Message publishing    | ❌     | ✅       | ✅       |
+| --------------------- | ----- | ------- | ------- |
+| Local/in-memory cache | ✅    | ✅      | ✅      |
+| Distributed cache     | ❌    | ✅      | ✅      |
+| Database              | ❌    | ✅      | ✅      |
+| File system           | ❌    | ✅      | ✅      |
+| Message publishing    | ❌    | ✅      | ✅      |
 
 **Key Distinction:** If the process dies immediately after the handler completes, would any
 state change persist or be visible to other instances? For Queries, the answer must be "no."
 
 **Structure:**
+
 ```
 CQRS/
 |
@@ -82,12 +84,14 @@ CQRS/
 Enables loosely-coupled service communication with pub-sub patterns using RabbitMQ/MassTransit.
 
 **Rationale:**
+
 - **Handlers → Pub & Sub:** Business logic remains framework-agnostic.
 - **MT → Publishers & Consumers:** MassTransit-specific adapters isolated from domain logic.
 - Separates MassTransit / RabbitMQ from business logic
 - Enables use of interfaces to be defined by dependencies (App Layer / Contracts).
 
 **Structure:**
+
 ```
 Messaging/
 |
@@ -107,11 +111,13 @@ Messaging/
 Encapsulates database operations following CRUD patterns with additional infrastructure concerns.
 
 **Rationale:**
+
 - **CRUD separation:** Clear boundaries for each operation type.
 - **Transactions at same level:** Transaction control is orthogonal to CRUD.
 - **Entities/Migrations/Seeding:** Infrastructure concerns grouped together.
 
 **Structure:**
+
 ```
 Repository/
 |
@@ -133,6 +139,7 @@ Repository/
 Provides layered caching with abstract, distributed, and in-memory interfaces and implementations.
 
 **Structure (under Interfaces):**
+
 ```
 Caching/
 |
@@ -165,6 +172,7 @@ Caching/
 ```
 
 **Rationale:**
+
 - **Abstract provides contracts:** Services code against interfaces.
 - **Distributed vs InMemory:** Clear separation of cache tiers.
 - **Same CRUD pattern:** Consistency with Repository layer.
@@ -180,14 +188,13 @@ Caching/
 **Key Principle:** Little-to-no implementation, maximum contract definition.
 
 **Structure:**
+
 ```
 Contracts/
 |
 |__ Handler/ -> Base handler abstractions
 |
 |__ Interfaces/ -> All interface definitions following TLC hierarchy
-|
-|__ Messages/ -> Pure POCO message contracts (no dependencies)
 |
 |__ Result/ -> D2Result pattern
 |
@@ -205,6 +212,7 @@ Contracts/
 **Key Principle:** Services consume these via DI without reinventing common functionality.
 
 **Structure:**
+
 ```
 Implementations/ -> Common reusable implementations
 |
@@ -212,15 +220,17 @@ Implementations/ -> Common reusable implementations
 |   |
 |   |__ Distributed/ -> Shared, distributed cache implementations
 |   |   |
-|   |   |__ DistributedCache.Redis/ -> Redis implementation
+|   |   |__ DistributedCache.Redis/ -> Redis implementation (Get, Set, Remove, Exists, GetTtl, Increment)
 |   |
 |   |__ InMemory/ -> Local, in-memory cache implementations
 |       |
 |       |__ InMemoryCache.Default/ -> Memory implementation
 |
-|__ Common/ -> Other commonly shared, drop-in implementations
+|__ Middleware/ -> HTTP middleware implementations
 |   |
-|   |__ GeoRefData.Default/ -> Shared georeference logic (includes disk caching)
+|   |__ RequestEnrichment.Default/ -> Request context enrichment (IP resolution, fingerprinting, WhoIs)
+|   |
+|   |__ RateLimit.Default/ -> Multi-dimensional sliding-window rate limiting
 |
 |__ Repository/ -> Common repository implementations
     |
@@ -233,9 +243,10 @@ Implementations/ -> Common reusable implementations
 
 **Purpose:** Each service follows clean architecture with domain, application, infrastructure, and API layers.
 
-**Key Principle:** Each service owns its data and business logic and exposes functionality via gRPC APIs with versioned contracts.
+**Key Principle:** Each service owns its data and business logic and exposes functionality via gRPC APIs with versioned contracts. Each service also owns a **client library** (`ServiceName.Client`) containing messages, interfaces, and default implementations that consumers depend on.
 
 **Rationale:**
+
 - **Domain Layer:** Completely unaware of D²-WORX or its patterns, pure business logic and data modeling.
 - **App Layer:** Implements additional, more complex business logic using domain entities and interfaces representing infrastructure concerns via DI.
 - **Infra Layer:** Concrete implementations of infrastructure concerns (DB, messaging, caching).
@@ -245,6 +256,15 @@ Current Service Structure:
 
 ```
 ServiceName/ -> Root folder for the service
+|
+|
+|__ ServiceName.Client/ -> Service-owned client library
+|   |
+|   |__ Messages/ -> Domain event POCOs consumed by other services
+|   |__ Interfaces/ -> Handler interfaces for consumers (CQRS, Messaging)
+|   |__ CQRS/Handlers/ -> Default handler implementations (cache, disk, gRPC)
+|   |__ Messaging/ -> Default messaging handlers and MassTransit consumers
+|   |__ Extensions.cs -> DI registration for consumer services
 |
 |
 |__ ServiceName.Domain/ -> Project folder for domain layer
@@ -297,7 +317,7 @@ ServiceName/ -> Root folder for the service
 |   |   |       |__ U/ -> Update handlers
 |   |   |       |__ D/ -> Delete handlers
 |   |   |
-|   |   |__ Caching/ -> Interfaces for infra-layer caching implementations 
+|   |   |__ Caching/ -> Interfaces for infra-layer caching implementations
 |   |                   (if applicable - there is a default caching impl in Contracts)
 |   |
 |   |__ Implementations/ -> Concrete implementations
@@ -371,15 +391,18 @@ ServiceName/ -> Root folder for the service
 ### When to Create a New Category
 
 **Add a TLC when:**
+
 - You have a fundamentally new architectural concern (e.g., `Scheduling`)
 - It would contain 3+ handler files
 - It's orthogonal to existing categories
 
 **Add a 2LC when:**
+
 - You need to separate implementation details (e.g., `Entities`, `Migrations`)
 - Infrastructure adapters need isolation (e.g., `MassTransit`)
 
 **Add a 3LC when:**
+
 - You're subdividing operations by type (e.g., CRUD, Pub/Sub)
 
 ### Naming Conventions
@@ -394,12 +417,13 @@ ServiceName/ -> Root folder for the service
 ### Extension Pattern
 
 Interfaces are **partial** and split across files by operation:
+
 ```csharp
 // ICommands.cs - base partial interface
 public partial interface ICommands { }
 
 // ICommands.SetInMem.cs - extends with specific handler
-public partial interface ICommands 
+public partial interface ICommands
 {
     public interface ISetInMemHandler : IHandler<SetInMemInput, SetInMemOutput>;
     public record SetInMemInput(GetReferenceDataResponse Data);
@@ -408,6 +432,7 @@ public partial interface ICommands
 ```
 
 **Benefits:**
+
 - One file per operation (easy to find)
 - Grouped by common interface (discoverability)
 - Clean using aliases in implementations
@@ -417,18 +442,23 @@ public partial interface ICommands
 ## Benefits of This Structure
 
 ### Consistency
+
 Every project follows the same organizational pattern - once learned, navigating any project is intuitive.
 
 ### Scalability
+
 Adding new operations, handlers, or categories follows established patterns without restructuring.
 
 ### Discoverability
+
 File location tells you exactly what it does: `CQRS/Handlers/Q/GetSomeData.cs` is obviously a query handler.
 
 ### Testability
+
 Clear separation between business logic (Handlers) and infrastructure (MassTransit, EF Core) enables isolated testing.
 
 ### Maintainability
+
 Changes are localized - updating caching strategy only affects `Caching/` implementations, not consumers.
 
 ---
@@ -436,6 +466,7 @@ Changes are localized - updating caching strategy only affects `Caching/` implem
 ## Common Patterns
 
 ### Handler Registration (DI)
+
 ```csharp
 // In Extensions.cs
 services.AddTransient<ICommands.ISetInMemHandler, SetInMem>();
@@ -443,6 +474,7 @@ services.AddTransient<IQueries.IGetFromMemHandler, GetFromMem>();
 ```
 
 ### MassTransit Consumer Registration
+
 ```csharp
 // In service Infra Extensions.cs
 services.AddMassTransit(x =>
@@ -457,7 +489,9 @@ services.AddMassTransit(x =>
 ```
 
 ### Using Aliases for Clean Implementations
+
 This may be an odd thing to do at first, but makes handler files a lot more readable once you "get it".
+
 ```csharp
 using H = ICommands.ISetInMemHandler;
 using I = ICommands.SetInMemInput;

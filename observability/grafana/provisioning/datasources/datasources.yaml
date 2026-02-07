@@ -21,7 +21,7 @@ datasources:
       prometheusType: Mimir
       prometheusVersion: 2.40.0
       disableMetricsLookup: false
-      customQueryParameters: ''
+      customQueryParameters: ""
     version: 1
 
   # Loki (Logs)
@@ -40,20 +40,20 @@ datasources:
         - datasourceUid: tempo
           matcherRegex: '"trace_id"[:\s]+"([a-f0-9]+)"'
           name: TraceID_JSON
-          url: '$${__value.raw}'
-          urlDisplayLabel: 'View Trace'
+          url: "$${__value.raw}"
+          urlDisplayLabel: "View Trace"
         # Match key=value format: trace_id=abc123
         - datasourceUid: tempo
-          matcherRegex: 'trace_id=([a-f0-9]+)'
+          matcherRegex: "trace_id=([a-f0-9]+)"
           name: TraceID_KV
-          url: '$${__value.raw}'
-          urlDisplayLabel: 'View Trace'
+          url: "$${__value.raw}"
+          urlDisplayLabel: "View Trace"
         # Match alternate format: traceID=abc123
         - datasourceUid: tempo
-          matcherRegex: 'traceID=([a-f0-9]+)'
+          matcherRegex: "traceID=([a-f0-9]+)"
           name: TraceID_Alt
-          url: '$${__value.raw}'
-          urlDisplayLabel: 'View Trace'
+          url: "$${__value.raw}"
+          urlDisplayLabel: "View Trace"
     version: 1
 
   # Tempo (Traces)
@@ -68,7 +68,7 @@ datasources:
       httpMethod: GET
       tracesToLogs:
         datasourceUid: loki
-        tags: ['service.name', 'service_name', 'app']
+        tags: ["service.name", "service_name", "app"]
         mappedTags:
           - key: service.name
             value: service_name
@@ -80,10 +80,10 @@ datasources:
       tracesToMetrics:
         datasourceUid: mimir
         tags:
-          - key: 'service.name'
-            value: 'service_name'
+          - key: "service.name"
+            value: "service_name"
         queries:
-          - name: 'Request Rate'
+          - name: "Request Rate"
             query: 'sum(rate(traces_spanmetrics_calls_total{service="$${__tags.service_name}"}[5m]))'
       serviceMap:
         datasourceUid: mimir
@@ -94,5 +94,5 @@ datasources:
       lokiSearch:
         datasourceUid: loki
       spanBar:
-        type: 'Duration'
+        type: "Duration"
     version: 1
