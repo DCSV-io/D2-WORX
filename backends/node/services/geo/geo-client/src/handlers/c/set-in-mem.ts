@@ -1,7 +1,7 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { MemoryCacheStore } from "@d2/cache-memory";
-import type { Commands } from "../../interfaces/index.js";
+import { Commands } from "../../interfaces/index.js";
 
 type Input = Commands.SetInMemInput;
 type Output = Commands.SetInMemOutput;
@@ -11,6 +11,10 @@ type Output = Commands.SetInMemOutput;
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetInMem in .NET.
  */
 export class SetInMem extends BaseHandler<Input, Output> implements Commands.ISetInMemHandler {
+  override get redaction() {
+    return Commands.SET_IN_MEM_REDACTION;
+  }
+
   private readonly store: MemoryCacheStore;
 
   constructor(store: MemoryCacheStore, context: IHandlerContext) {

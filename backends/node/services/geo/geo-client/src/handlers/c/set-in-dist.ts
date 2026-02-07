@@ -5,7 +5,7 @@ import { GeoRefData as GeoRefDataCodec } from "@d2/protos";
 import type { DistributedCache } from "@d2/interfaces";
 import { DIST_CACHE_KEY_GEO_REF_DATA } from "@d2/utilities";
 import type { ICacheSerializer } from "@d2/cache-redis";
-import type { Commands } from "../../interfaces/index.js";
+import { Commands } from "../../interfaces/index.js";
 
 type Input = Commands.SetInDistInput;
 type Output = Commands.SetInDistOutput;
@@ -26,6 +26,10 @@ export class GeoRefDataSerializer implements ICacheSerializer<GeoRefData> {
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetInDist in .NET.
  */
 export class SetInDist extends BaseHandler<Input, Output> implements Commands.ISetInDistHandler {
+  override get redaction() {
+    return Commands.SET_IN_DIST_REDACTION;
+  }
+
   private readonly distCacheSet: DistributedCache.ISetHandler<GeoRefData>;
 
   constructor(distCacheSet: DistributedCache.ISetHandler<GeoRefData>, context: IHandlerContext) {

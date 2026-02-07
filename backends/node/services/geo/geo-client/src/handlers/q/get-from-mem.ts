@@ -2,7 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
-import type { Queries } from "../../interfaces/index.js";
+import { Queries } from "../../interfaces/index.js";
 
 type Input = Queries.GetFromMemInput;
 type Output = Queries.GetFromMemOutput;
@@ -12,6 +12,10 @@ type Output = Queries.GetFromMemOutput;
  * Mirrors D2.Geo.Client.CQRS.Handlers.Q.GetFromMem in .NET.
  */
 export class GetFromMem extends BaseHandler<Input, Output> implements Queries.IGetFromMemHandler {
+  override get redaction() {
+    return Queries.GET_FROM_MEM_REDACTION;
+  }
+
   private readonly store: MemoryCacheStore;
 
   constructor(store: MemoryCacheStore, context: IHandlerContext) {

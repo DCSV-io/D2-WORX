@@ -1,7 +1,7 @@
 import { BaseHandler, type IHandlerContext, type IHandler } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
-import type { Complex, Queries, Commands } from "../../interfaces/index.js";
+import { Complex, type Queries, type Commands } from "../../interfaces/index.js";
 
 type Input = Complex.GetInput;
 type Output = Complex.GetOutput;
@@ -22,6 +22,10 @@ export interface GetDeps {
  * Mirrors D2.Geo.Client.CQRS.Handlers.X.Get in .NET.
  */
 export class Get extends BaseHandler<Input, Output> implements Complex.IGetHandler {
+  override get redaction() {
+    return Complex.GET_REDACTION;
+  }
+
   private readonly deps: GetDeps;
 
   constructor(deps: GetDeps, context: IHandlerContext) {

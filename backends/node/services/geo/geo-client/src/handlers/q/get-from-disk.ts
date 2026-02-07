@@ -5,7 +5,7 @@ import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
 import { GeoRefData as GeoRefDataCodec } from "@d2/protos";
 import { GEO_REF_DATA_FILE_NAME } from "@d2/utilities";
 import type { GeoClientOptions } from "../../geo-client-options.js";
-import type { Queries } from "../../interfaces/index.js";
+import { Queries } from "../../interfaces/index.js";
 
 type Input = Queries.GetFromDiskInput;
 type Output = Queries.GetFromDiskOutput;
@@ -15,6 +15,10 @@ type Output = Queries.GetFromDiskOutput;
  * Mirrors D2.Geo.Client.CQRS.Handlers.Q.GetFromDisk in .NET.
  */
 export class GetFromDisk extends BaseHandler<Input, Output> implements Queries.IGetFromDiskHandler {
+  override get redaction() {
+    return Queries.GET_FROM_DISK_REDACTION;
+  }
+
   private readonly filePath: string;
 
   constructor(options: GeoClientOptions, context: IHandlerContext) {

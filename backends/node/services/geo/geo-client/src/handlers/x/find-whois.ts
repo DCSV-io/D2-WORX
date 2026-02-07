@@ -3,7 +3,7 @@ import { D2Result } from "@d2/result";
 import type { WhoIsDTO, FindWhoIsRequest, FindWhoIsResponse, GeoServiceClient } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
 import type { GeoClientOptions } from "../../geo-client-options.js";
-import type { Complex } from "../../interfaces/index.js";
+import { Complex } from "../../interfaces/index.js";
 
 type Input = Complex.FindWhoIsInput;
 type Output = Complex.FindWhoIsOutput;
@@ -16,6 +16,10 @@ type Output = Complex.FindWhoIsOutput;
  * Mirrors D2.Geo.Client.CQRS.Handlers.X.FindWhoIs in .NET.
  */
 export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFindWhoIsHandler {
+  override get redaction() {
+    return Complex.FIND_WHOIS_REDACTION;
+  }
+
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
   private readonly options: GeoClientOptions;

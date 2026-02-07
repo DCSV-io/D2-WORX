@@ -5,7 +5,7 @@ import { D2Result, HttpStatusCode } from "@d2/result";
 import { GeoRefData as GeoRefDataCodec } from "@d2/protos";
 import { GEO_REF_DATA_FILE_NAME } from "@d2/utilities";
 import type { GeoClientOptions } from "../../geo-client-options.js";
-import type { Commands } from "../../interfaces/index.js";
+import { Commands } from "../../interfaces/index.js";
 
 type Input = Commands.SetOnDiskInput;
 type Output = Commands.SetOnDiskOutput;
@@ -15,6 +15,10 @@ type Output = Commands.SetOnDiskOutput;
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetOnDisk in .NET.
  */
 export class SetOnDisk extends BaseHandler<Input, Output> implements Commands.ISetOnDiskHandler {
+  override get redaction() {
+    return Commands.SET_ON_DISK_REDACTION;
+  }
+
   private readonly filePath: string;
 
   constructor(options: GeoClientOptions, context: IHandlerContext) {

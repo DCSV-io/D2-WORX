@@ -3,7 +3,7 @@ import { D2Result } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
 import type { DistributedCache } from "@d2/interfaces";
 import { DIST_CACHE_KEY_GEO_REF_DATA } from "@d2/utilities";
-import type { Queries } from "../../interfaces/index.js";
+import { Queries } from "../../interfaces/index.js";
 
 type Input = Queries.GetFromDistInput;
 type Output = Queries.GetFromDistOutput;
@@ -13,6 +13,10 @@ type Output = Queries.GetFromDistOutput;
  * Mirrors D2.Geo.Client.CQRS.Handlers.Q.GetFromDist in .NET.
  */
 export class GetFromDist extends BaseHandler<Input, Output> implements Queries.IGetFromDistHandler {
+  override get redaction() {
+    return Queries.GET_FROM_DIST_REDACTION;
+  }
+
   private readonly distCacheGet: DistributedCache.IGetHandler<GeoRefData>;
 
   constructor(distCacheGet: DistributedCache.IGetHandler<GeoRefData>, context: IHandlerContext) {
