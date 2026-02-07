@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using D2.Shared.ServiceDefaults.Logging;
 using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
@@ -51,6 +52,7 @@ public static partial class Extensions
                     "Microsoft.Extensions.Http",
                     Serilog.Events.LogEventLevel.Warning)
                 .MinimumLevel.Override("System.Net.Http", Serilog.Events.LogEventLevel.Warning)
+                .Destructure.With<RedactDataDestructuringPolicy>()
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("service_name", serviceName)
                 .Enrich.WithProperty("environment", environment)
