@@ -17,10 +17,7 @@ type CheckOutput = RateLimit.CheckOutput;
  *
  * Fail-open on all cache errors.
  */
-export class Check
-  extends BaseHandler<CheckInput, CheckOutput>
-  implements RateLimit.ICheckHandler
-{
+export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateLimit.ICheckHandler {
   private readonly getTtl: DistributedCache.IGetTtlHandler;
   private readonly increment: DistributedCache.IIncrementHandler;
   private readonly set: DistributedCache.ISetHandler<string>;

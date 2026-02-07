@@ -25,10 +25,7 @@ export class GeoRefDataSerializer implements ICacheSerializer<GeoRefData> {
  * Handler for setting georeference data in the distributed (Redis) cache.
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetInDist in .NET.
  */
-export class SetInDist
-  extends BaseHandler<Input, Output>
-  implements Commands.ISetInDistHandler
-{
+export class SetInDist extends BaseHandler<Input, Output> implements Commands.ISetInDistHandler {
   private readonly distCacheSet: DistributedCache.ISetHandler<GeoRefData>;
 
   constructor(distCacheSet: DistributedCache.ISetHandler<GeoRefData>, context: IHandlerContext) {

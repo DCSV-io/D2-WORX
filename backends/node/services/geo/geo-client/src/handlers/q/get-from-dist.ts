@@ -12,10 +12,7 @@ type Output = Queries.GetFromDistOutput;
  * Handler for getting georeference data from the distributed (Redis) cache.
  * Mirrors D2.Geo.Client.CQRS.Handlers.Q.GetFromDist in .NET.
  */
-export class GetFromDist
-  extends BaseHandler<Input, Output>
-  implements Queries.IGetFromDistHandler
-{
+export class GetFromDist extends BaseHandler<Input, Output> implements Queries.IGetFromDistHandler {
   private readonly distCacheGet: DistributedCache.IGetHandler<GeoRefData>;
 
   constructor(distCacheGet: DistributedCache.IGetHandler<GeoRefData>, context: IHandlerContext) {

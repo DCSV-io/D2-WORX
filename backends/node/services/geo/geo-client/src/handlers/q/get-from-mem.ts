@@ -11,10 +11,7 @@ type Output = Queries.GetFromMemOutput;
  * Handler for getting georeference data from the in-memory cache.
  * Mirrors D2.Geo.Client.CQRS.Handlers.Q.GetFromMem in .NET.
  */
-export class GetFromMem
-  extends BaseHandler<Input, Output>
-  implements Queries.IGetFromMemHandler
-{
+export class GetFromMem extends BaseHandler<Input, Output> implements Queries.IGetFromMemHandler {
   private readonly store: MemoryCacheStore;
 
   constructor(store: MemoryCacheStore, context: IHandlerContext) {

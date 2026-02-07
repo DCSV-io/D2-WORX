@@ -21,10 +21,7 @@ export interface GetDeps {
  *
  * Mirrors D2.Geo.Client.CQRS.Handlers.X.Get in .NET.
  */
-export class Get
-  extends BaseHandler<Input, Output>
-  implements Complex.IGetHandler
-{
+export class Get extends BaseHandler<Input, Output> implements Complex.IGetHandler {
   private readonly deps: GetDeps;
 
   constructor(deps: GetDeps, context: IHandlerContext) {

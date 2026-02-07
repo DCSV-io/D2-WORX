@@ -15,10 +15,7 @@ type Output = Complex.FindWhoIsOutput;
  *
  * Mirrors D2.Geo.Client.CQRS.Handlers.X.FindWhoIs in .NET.
  */
-export class FindWhoIs
-  extends BaseHandler<Input, Output>
-  implements Complex.IFindWhoIsHandler
-{
+export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFindWhoIsHandler {
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
   private readonly options: GeoClientOptions;

@@ -10,10 +10,7 @@ type Output = Commands.SetInMemOutput;
  * Handler for setting georeference data in the in-memory cache.
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetInMem in .NET.
  */
-export class SetInMem
-  extends BaseHandler<Input, Output>
-  implements Commands.ISetInMemHandler
-{
+export class SetInMem extends BaseHandler<Input, Output> implements Commands.ISetInMemHandler {
   private readonly store: MemoryCacheStore;
 
   constructor(store: MemoryCacheStore, context: IHandlerContext) {

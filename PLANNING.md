@@ -516,8 +516,8 @@ _(None currently — all prior questions resolved 2026-02-05)_
   - @d2/messaging: thin rabbitmq-client wrapper with MessageBus, subscribe, createPublisher
   - @d2/geo-client: full 1:1 .NET Geo.Client parity with 9 CQRS handlers, Updated messaging handler, consumer bridge
   - GeoRefDataSerializer for protobuf binary Redis serialization
-  - ESLint: added argsIgnorePattern/varsIgnorePattern for _ prefix convention
-  - pnpm-workspace.yaml: services/* → services/** for nested packages like geo/geo-client
+  - ESLint: added argsIgnorePattern/varsIgnorePattern for \_ prefix convention
+  - pnpm-workspace.yaml: services/\* → services/\*\* for nested packages like geo/geo-client
   - 375 TS tests passing (85 new), all passing with lint + format clean
 - **Next up**: Layer 5 middleware (@d2/request-enrichment, @d2/ratelimit)
 

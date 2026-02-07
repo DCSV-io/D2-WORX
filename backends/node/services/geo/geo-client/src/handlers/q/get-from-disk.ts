@@ -14,10 +14,7 @@ type Output = Queries.GetFromDiskOutput;
  * Handler for getting georeference data from disk (protobuf binary).
  * Mirrors D2.Geo.Client.CQRS.Handlers.Q.GetFromDisk in .NET.
  */
-export class GetFromDisk
-  extends BaseHandler<Input, Output>
-  implements Queries.IGetFromDiskHandler
-{
+export class GetFromDisk extends BaseHandler<Input, Output> implements Queries.IGetFromDiskHandler {
   private readonly filePath: string;
 
   constructor(options: GeoClientOptions, context: IHandlerContext) {

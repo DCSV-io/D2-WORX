@@ -6,10 +6,7 @@ import type { DistributedCache } from "@d2/interfaces";
 type Input = DistributedCache.RemoveInput;
 type Output = DistributedCache.RemoveOutput;
 
-export class Remove
-  extends BaseHandler<Input, Output>
-  implements DistributedCache.IRemoveHandler
-{
+export class Remove extends BaseHandler<Input, Output> implements DistributedCache.IRemoveHandler {
   private readonly redis: Redis;
 
   constructor(redis: Redis, context: IHandlerContext) {

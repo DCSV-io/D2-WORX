@@ -28,9 +28,7 @@ export class Updated
     this.deps = deps;
   }
 
-  protected async executeAsync(
-    input: GeoRefDataUpdated,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: GeoRefDataUpdated): Promise<D2Result<Output | undefined>> {
     // Check if the current data is up to date
     const getR = await this.deps.getHandler.handleAsync({});
     const isUpToDate = getR.success && getR.data?.data.version === input.version;

@@ -14,10 +14,7 @@ type Output = Commands.SetOnDiskOutput;
  * Handler for persisting georeference data to disk as protobuf binary.
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetOnDisk in .NET.
  */
-export class SetOnDisk
-  extends BaseHandler<Input, Output>
-  implements Commands.ISetOnDiskHandler
-{
+export class SetOnDisk extends BaseHandler<Input, Output> implements Commands.ISetOnDiskHandler {
   private readonly filePath: string;
 
   constructor(options: GeoClientOptions, context: IHandlerContext) {
