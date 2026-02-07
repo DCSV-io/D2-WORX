@@ -8,7 +8,7 @@ on:
 
 jobs:
   dotnet-shared-unit:
-    name: .NET Shared - Unit Tests
+    name: D2 .NET Shared - Unit Tests (v1)
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +34,7 @@ jobs:
           --filter "FullyQualifiedName!~Integration"
 
   dotnet-shared-integration:
-    name: .NET Shared - Integration Tests
+    name: D2 .NET Shared - Integration Tests (v1)
     runs-on: ubuntu-latest
 
     steps:
@@ -60,7 +60,7 @@ jobs:
           --filter "FullyQualifiedName~Integration"
 
   dotnet-geo-unit:
-    name: .NET Geo - Unit Tests
+    name: D2 .NET Geo - Unit Tests (v1)
     runs-on: ubuntu-latest
 
     steps:
@@ -86,7 +86,7 @@ jobs:
           --filter "FullyQualifiedName!~Integration"
 
   dotnet-geo-integration:
-    name: .NET Geo - Integration Tests
+    name: D2 .NET Geo - Integration Tests (v1)
     runs-on: ubuntu-latest
 
     steps:
@@ -112,7 +112,7 @@ jobs:
           --filter "FullyQualifiedName~Integration"
 
   node-shared-unit:
-    name: Node.js Shared - Unit Tests
+    name: D2 Node.js Shared - Unit Tests (v1)
     runs-on: ubuntu-latest
 
     steps:
@@ -139,7 +139,7 @@ jobs:
         run: pnpm vitest run --project shared-tests --exclude "**/integration/**"
 
   node-shared-integration:
-    name: Node.js Shared - Integration Tests
+    name: D2 Node.js Shared - Integration Tests (v1)
     runs-on: ubuntu-latest
 
     steps:
