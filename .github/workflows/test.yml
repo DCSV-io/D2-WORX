@@ -7,8 +7,8 @@ on:
     branches: [main, develop]
 
 jobs:
-  dotnet:
-    name: .NET Tests
+  dotnet-shared:
+    name: .NET Shared Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -29,11 +29,30 @@ jobs:
       - name: Run shared tests
         run: dotnet test backends/dotnet/shared/Tests/ --no-build --configuration Release --verbosity normal
 
+  dotnet-geo:
+    name: .NET Geo Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
       - name: Run Geo tests
         run: dotnet test backends/dotnet/services/Geo/Geo.Tests/ --no-build --configuration Release --verbosity normal
 
-  node:
-    name: Node.js Tests
+  node-unit:
+    name: Node.js Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -56,18 +75,32 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Run tests
-        run: pnpm vitest run --project shared-tests
+      - name: Run unit tests
+        run: pnpm vitest run --project shared-tests --exclude "**/integration/**"
 
-  test:
-    name: Tests
+  node-integration:
+    name: Node.js Integration Tests
     runs-on: ubuntu-latest
-    needs: [dotnet, node]
-    if: always()
+
     steps:
-      - name: Check results
-        run: |
-          if [[ "${{ needs.dotnet.result }}" != "success" || "${{ needs.node.result }}" != "success" ]]; then
-            echo "One or more test jobs failed"
-            exit 1
-          fi
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run integration tests
+        run: pnpm vitest run --project shared-tests "integration"
