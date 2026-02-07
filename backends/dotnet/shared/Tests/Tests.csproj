@@ -35,6 +35,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\Handler\Handler.csproj" />
+        <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
         <ProjectReference Include="..\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
         <ProjectReference Include="..\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
         <ProjectReference Include="..\Implementations\Middleware\RateLimit.Default\RateLimit.Default.csproj" />

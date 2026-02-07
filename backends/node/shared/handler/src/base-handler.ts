@@ -114,9 +114,10 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
 
         // Log output as debug if enabled (respecting redaction)
         if (opts.logOutput && !this.redaction?.suppressOutput) {
-          const resultToLog = this.redaction?.outputFields?.length
-            ? this.redactForLogging(result, this.redaction.outputFields)
-            : result;
+          const resultToLog =
+            this.redaction?.outputFields?.length && result.data
+              ? { ...result, data: this.redactForLogging(result.data, this.redaction.outputFields) }
+              : result;
           this.context.logger.debug(
             `Handler ${handlerName} produced result: ${JSON.stringify(resultToLog)}. TraceId: ${this.context.request.traceId}.`,
           );
