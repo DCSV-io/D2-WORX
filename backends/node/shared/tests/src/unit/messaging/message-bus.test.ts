@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const { mockConsumer, mockPublisher, mockConnection, MockConnection } = vi.hoisted(() => {
   const mockConsumer = {
+    on: vi.fn().mockImplementation((_event: string, cb: () => void) => cb()),
     close: vi.fn().mockResolvedValue(undefined),
   };
 
@@ -34,6 +35,7 @@ describe("MessageBus", () => {
     MockConnection.mockReturnValue(mockConnection);
     mockConnection.createConsumer.mockReturnValue(mockConsumer);
     mockConnection.createPublisher.mockReturnValue(mockPublisher);
+    mockConsumer.on.mockImplementation((_event: string, cb: () => void) => cb());
     mockConsumer.close.mockResolvedValue(undefined);
     mockPublisher.send.mockResolvedValue(undefined);
     mockPublisher.close.mockResolvedValue(undefined);

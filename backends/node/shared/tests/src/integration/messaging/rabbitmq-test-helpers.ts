@@ -6,7 +6,9 @@ let bus: MessageBus;
 
 export async function startRabbitMQ(): Promise<void> {
   container = await new RabbitMQContainer("rabbitmq:4.1-management").start();
-  bus = new MessageBus({ url: container.getAmqpUrl(), connectionName: "integration-test" });
+  const url = `amqp://guest:guest@${container.getHost()}:${container.getMappedPort(5672)}`;
+  bus = new MessageBus({ url, connectionName: "integration-test" });
+  await bus.waitForConnection();
 }
 
 export async function stopRabbitMQ(): Promise<void> {

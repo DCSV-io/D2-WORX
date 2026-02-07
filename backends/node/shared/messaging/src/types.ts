@@ -23,6 +23,8 @@ export interface PublishTarget {
 }
 
 export interface IMessageConsumer {
+  /** Resolves when the consumer is fully set up (queue declared, bindings created, consuming). */
+  ready: Promise<void>;
   close(): Promise<void>;
 }
 

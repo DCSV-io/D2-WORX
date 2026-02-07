@@ -43,7 +43,11 @@ export class MessageBus {
       },
     );
 
+    // Prevent unhandled rejection — handler throws are expected (NACK path).
+    consumer.on("error", () => {});
+
     return {
+      ready: new Promise<void>((resolve) => consumer.on("ready", resolve)),
       close: () => consumer.close(),
     };
   }
@@ -62,6 +66,11 @@ export class MessageBus {
       },
       close: () => publisher.close(),
     };
+  }
+
+  /** Wait for the underlying connection to be established. */
+  async waitForConnection(timeout = 10_000): Promise<void> {
+    await this.connection.onConnect(timeout, true);
   }
 
   async close(): Promise<void> {

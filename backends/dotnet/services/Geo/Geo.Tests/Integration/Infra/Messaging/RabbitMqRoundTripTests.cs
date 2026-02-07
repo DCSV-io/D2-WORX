@@ -43,8 +43,8 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
         _handlerTcs = new TaskCompletionSource<GeoRefDataUpdated>();
         _mockHandler = new Mock<ISubs.IUpdatedHandler>();
         _mockHandler
-            .Setup(h => h.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .Returns<GeoRefDataUpdated, CancellationToken>((msg, _) =>
+            .Setup(h => h.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .Returns<GeoRefDataUpdated, CancellationToken, HandlerOptions?>((msg, _, _) =>
             {
                 _handlerTcs.TrySetResult(msg);
                 return new ValueTask<D2Result<ISubs.UpdatedOutput?>>(
@@ -61,6 +61,7 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
             x.UsingRabbitMq((context, cfg) =>
             {
                 cfg.Host(_container.GetConnectionString());
+                cfg.UseMessageRetry(r => r.Immediate(3));
                 cfg.ConfigureEndpoints(context);
             });
         });
@@ -75,6 +76,10 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
+        // Stop MassTransit bus before disposing to avoid RabbitMQ.Client
+        // ObjectDisposedException race during channel shutdown.
+        var busControl = _services.GetRequiredService<IBusControl>();
+        await busControl.StopAsync(CancellationToken.None);
         await _services.DisposeAsync();
         await _container.DisposeAsync();
     }
@@ -102,7 +107,8 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
         _mockHandler.Verify(
             h => h.HandleAsync(
                 It.Is<GeoRefDataUpdated>(m => m.Version == "3.0.0"),
-                It.IsAny<CancellationToken>()),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
             Times.Once);
     }
 
@@ -123,8 +129,8 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
         var secondCallTcs = new TaskCompletionSource<GeoRefDataUpdated>();
         _mockHandler.Reset();
         _mockHandler
-            .Setup(h => h.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .Returns<GeoRefDataUpdated, CancellationToken>((msg, _) =>
+            .Setup(h => h.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .Returns<GeoRefDataUpdated, CancellationToken, HandlerOptions?>((msg, _, _) =>
             {
                 callCount++;
                 if (callCount == 1)
@@ -165,8 +171,8 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
         var allReceived = new TaskCompletionSource();
         _mockHandler.Reset();
         _mockHandler
-            .Setup(h => h.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .Returns<GeoRefDataUpdated, CancellationToken>((msg, _) =>
+            .Setup(h => h.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .Returns<GeoRefDataUpdated, CancellationToken, HandlerOptions?>((msg, _, _) =>
             {
                 lock (receivedVersions)
                 {

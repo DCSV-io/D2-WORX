@@ -19,7 +19,7 @@ function createMockLogger(): ILogger {
 
 describe("createUpdatedConsumer", () => {
   it("should subscribe to the bus with the given config", () => {
-    const subscribeFn = vi.fn().mockReturnValue({ close: vi.fn() });
+    const subscribeFn = vi.fn().mockReturnValue({ ready: Promise.resolve(), close: vi.fn() });
     const bus = { subscribe: subscribeFn } as unknown as MessageBus;
     const config: ConsumerConfig = { queue: "geo-ref-data-updated" };
     const handlerFactory = vi.fn();
@@ -37,7 +37,7 @@ describe("createUpdatedConsumer", () => {
         .fn()
         .mockImplementation((_config: ConsumerConfig, cb: (message: unknown) => Promise<void>) => {
           capturedCallback = cb;
-          return { close: vi.fn() } satisfies IMessageConsumer;
+          return { ready: Promise.resolve(), close: vi.fn() } satisfies IMessageConsumer;
         }),
     } as unknown as MessageBus;
 
@@ -59,7 +59,7 @@ describe("createUpdatedConsumer", () => {
         .fn()
         .mockImplementation((_config: ConsumerConfig, cb: (message: unknown) => Promise<void>) => {
           capturedCallback = cb;
-          return { close: vi.fn() } satisfies IMessageConsumer;
+          return { ready: Promise.resolve(), close: vi.fn() } satisfies IMessageConsumer;
         }),
     } as unknown as MessageBus;
 
@@ -82,7 +82,7 @@ describe("createUpdatedConsumer", () => {
         .fn()
         .mockImplementation((_config: ConsumerConfig, cb: (message: unknown) => Promise<void>) => {
           capturedCallback = cb;
-          return { close: vi.fn() } satisfies IMessageConsumer;
+          return { ready: Promise.resolve(), close: vi.fn() } satisfies IMessageConsumer;
         }),
     } as unknown as MessageBus;
 
@@ -104,7 +104,7 @@ describe("createUpdatedConsumer", () => {
   });
 
   it("should return the consumer from bus.subscribe", () => {
-    const mockConsumer = { close: vi.fn().mockResolvedValue(undefined) };
+    const mockConsumer = { ready: Promise.resolve(), close: vi.fn().mockResolvedValue(undefined) };
     const bus = {
       subscribe: vi.fn().mockReturnValue(mockConsumer),
     } as unknown as MessageBus;
