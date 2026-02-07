@@ -42,6 +42,9 @@ public class GetFromDist : BaseHandler<GetFromDist, I, O>, H
         r_distCacheGet = distCacheGet;
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false, LogOutput: false);
+
     /// <summary>
     /// Executes the handler to get georeference data from distributed cache.
     /// </summary>

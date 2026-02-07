@@ -41,6 +41,9 @@ public class GetFromMem : BaseHandler<GetFromMem, I, O>, H
         r_memoryCacheGet = memoryCacheGet;
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false, LogOutput: false);
+
     /// <summary>
     /// Executes the handler to get georeference data from memory cache.
     /// </summary>

@@ -8,6 +8,8 @@ namespace D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
 
 public partial interface IComplex
 {
@@ -30,7 +32,9 @@ public partial interface IComplex
     /// <param name="UserAgent">
     /// The user agent string used as fingerprint.
     /// </param>
-    public record FindWhoIsInput(string IpAddress, string UserAgent);
+    public record FindWhoIsInput(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress,
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string UserAgent);
 
     /// <summary>
     /// Output for finding WhoIs data.

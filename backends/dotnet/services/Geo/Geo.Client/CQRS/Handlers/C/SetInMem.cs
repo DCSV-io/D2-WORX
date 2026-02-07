@@ -41,6 +41,9 @@ public class SetInMem : BaseHandler<SetInMem, I, O>, H
         r_memoryCacheSet = memoryCacheSet;
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false, LogOutput: false);
+
     /// <summary>
     /// Executes the handler to set georeference data in the in-memory cache.
     /// </summary>

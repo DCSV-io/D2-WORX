@@ -44,6 +44,9 @@ public class SetOnDisk : BaseHandler<SetOnDisk, I, O>, H
         r_filePath = Path.Combine(dataDir, Constants.GEO_REF_DATA_FILE_NAME);
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false, LogOutput: false);
+
     /// <summary>
     /// Executes the handler to set georeference data on disk.
     /// </summary>

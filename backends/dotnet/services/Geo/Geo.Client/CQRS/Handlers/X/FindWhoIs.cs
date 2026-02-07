@@ -65,6 +65,9 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         r_options = options.Value;
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogOutput: false);
+
     /// <summary>
     /// Finds WhoIs data for the given IP address and user agent.
     /// </summary>

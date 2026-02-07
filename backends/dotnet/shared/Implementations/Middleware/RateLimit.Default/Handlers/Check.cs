@@ -64,6 +64,9 @@ public class Check : BaseHandler<Check, I, O>, H
         r_options = options.Value;
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false);
+
     /// <summary>
     /// Checks rate limits across all dimensions.
     /// </summary>

@@ -40,6 +40,9 @@ public class SetInDist : BaseHandler<SetInDist, I, O>, H
         r_distCacheSet = distCacheSet;
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false, LogOutput: false);
+
     /// <summary>
     /// Executes the handler to set geographic reference data to a distributed cache.
     /// </summary>

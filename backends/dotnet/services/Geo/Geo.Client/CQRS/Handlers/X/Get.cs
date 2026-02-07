@@ -74,6 +74,9 @@ public class Get : BaseHandler<Get, I, O>, H
         r_requestUpdate = requestUpdate;
     }
 
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false, LogOutput: false);
+
     /// <summary>
     /// Gets the georeference data.
     /// </summary>
