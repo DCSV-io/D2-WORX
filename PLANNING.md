@@ -456,6 +456,122 @@ auth-infra/src/
 
 **Dependency injection**: **Manual factory functions** (decided 2026-02-07). Each package exports a `createXxxHandlers(deps, context)` factory that maps 1:1 to .NET's `services.AddXxx()` extension methods. Hono's `c.var` + middleware provides per-request scoping. No DI container library needed at current scale (~15 packages). If complexity grows beyond 30+ handlers with cross-cutting deps, evaluate `@snap/ts-inject` (Snap Inc., compile-time type-safe, composable containers, ESM-native, decorator-free). Avoid tsyringe/inversify (decorator-based, ESM issues).
 
+#### Auth Domain Model (decided 2026-02-07)
+
+**Multi-tenant, multi-org architecture.** Users are people; organizations are the tenancy unit that owns all business data. Users belong to zero or more organizations via memberships. All orgs are flat peers — no parent-child hierarchy at the auth layer.
+
+**Organization types** (determines UI shell, capabilities, and permission scope):
+
+| Type             | Who                                       | Purpose                                          |
+| ---------------- | ----------------------------------------- | ------------------------------------------------ |
+| `admin`          | D2 site admins and engineers              | Full system access, admin control panel           |
+| `support`        | D2 support team                           | Customer support, org emulation, ticket handling  |
+| `customer`       | Our direct customers (SMBs)               | Primary tenants — workflows, invoicing, clients   |
+| `third_party` | Our customer's customers/suppliers         | Limited scope — communication, shared data        |
+| `affiliate`      | Referral partners                         | Referral tracking, commission dashboards          |
+
+Org type is a required custom field on the `organization` table (via `schema.additionalFields`), validated in `beforeCreateOrganization` hook.
+
+**When a Customer registers one of their own customers/suppliers**, a new `third_party` org is created in the system with its own members, roles, and data. The *business relationship* between the two orgs is tracked in a domain-level table (e.g., `org_relationships` in the CRM/workflow service), NOT in the auth layer. Auth sees them as two independent orgs.
+
+**Roles** (per-membership, hierarchical by convention):
+
+| Role      | Permissions                                                             |
+| --------- | ----------------------------------------------------------------------- |
+| `auditor` | Read-only across all org data. Used for guests and emulation mode.      |
+| `agent`   | Read + limited write (create/update, no delete, no org settings)        |
+| `officer` | Full read/write, billing access, but cannot modify owner-level settings |
+| `owner`   | Everything — org settings, member management, invitations, billing      |
+
+Roles are defined via BetterAuth's `createAccessControl` with manual permission composition (no built-in hierarchy — spread agent perms into officer, officer into owner). Same role set applies across all org types; the org type determines which *features* are available, not which roles exist.
+
+**Membership model:**
+
+- A person signs up → exists as a user with zero memberships
+- Must join (via invite) or create an org to access the app
+- Can belong to multiple orgs simultaneously (e.g., own a Customer org + be agent in another)
+- Can switch active org at any time without re-authenticating
+- Roles are per-membership (can be owner of one org and agent in another)
+
+**Session extensions** (custom fields on BetterAuth's session table):
+
+| Field                        | Type          | Purpose                                               |
+| ---------------------------- | ------------- | ----------------------------------------------------- |
+| `activeOrganizationType`     | string (null) | Cached org type for the active org (avoids DB lookup)  |
+| `activeOrganizationRole`     | string (null) | User's role in the active org (avoids member lookup)   |
+| `emulatedOrganizationId`     | string (null) | Org being viewed during support/admin emulation        |
+| `emulatedOrganizationType`   | string (null) | Type of the emulated org (for UI sharding)             |
+
+BetterAuth's org plugin adds `activeOrganizationId` natively. Our 4 fields extend it.
+
+**Org context resolution** (used by SvelteKit layouts, Hono middleware, JWT payload):
+
+```
+isEmulating = session.emulatedOrganizationId != null
+effectiveOrgId   = isEmulating ? emulatedOrganizationId : activeOrganizationId
+effectiveOrgType = isEmulating ? emulatedOrganizationType : activeOrganizationType
+effectiveRole    = isEmulating ? "auditor" (forced read-only) : activeOrganizationRole
+```
+
+**Org emulation** (for support/admin — decided 2026-02-07):
+
+- Only users whose `activeOrganizationType` is `support` or `admin` can emulate
+- Sets `emulatedOrganizationId` + `emulatedOrganizationType` on the session
+- Forces `auditor` role during emulation — **read-only, no exceptions**
+- UI renders the target org's interface with a "Viewing as [Org Name]" banner
+- Ending emulation nulls both fields — instant return to real org context
+- All emulation actions are audit-logged (who emulated which org, when, duration)
+
+**User impersonation** (for escalated support — BetterAuth `impersonation` plugin):
+
+- Separate from org emulation — this is acting *as a specific user*
+- Used when support needs to reproduce a user-specific issue
+- Requires explicit flow (audit-logged, time-limited)
+- BetterAuth handles session management (creates impersonation session, "stop impersonating" returns to real session)
+- More powerful and more dangerous than emulation — use sparingly
+
+**No-org state:**
+
+- Freshly signed-up users have no `activeOrganizationId`
+- SvelteKit redirects to onboarding flow: accept pending invites or create an org
+- No access to any app features until at least one org membership exists
+
+**JWT payload** (includes org context for .NET gateway and services):
+
+```json
+{
+  "sub": "user-id",
+  "email": "user@example.com",
+  "name": "Display Name",
+  "activeOrganizationId": "org-123",
+  "activeOrganizationType": "customer",
+  "activeOrganizationRole": "officer",
+  "emulatedOrganizationId": null,
+  "isEmulating": false,
+  "iat": 1234567890,
+  "exp": 1234568790
+}
+```
+
+**Important**: When a user switches orgs or starts/stops emulation, the client must request a new JWT. The old JWT remains valid until its 15-minute expiry but carries stale org context. `@d2/auth-client` handles this: `setActiveOrg()` → `refreshJwt()` atomically.
+
+**BetterAuth organization plugin — gap analysis (75% fit):**
+
+| Requirement                     | OOTB? | Gap                                         | Effort   |
+| ------------------------------- | ----- | ------------------------------------------- | -------- |
+| Users belong to 0+ orgs         | Yes   | None                                        | —        |
+| Sign up, join/create orgs later | Yes   | None                                        | —        |
+| 5 organization types            | No    | Add custom field + validation hook          | Low      |
+| Custom roles (4 levels)         | Yes   | No hierarchy syntax, compose manually       | Low      |
+| Org-specific session switching   | Yes   | Known bugs (#4708, #3233)                   | Low      |
+| Org type in session             | No    | Custom session fields                       | Low      |
+| Org emulation                   | No    | Custom session fields + middleware           | Medium   |
+| User impersonation              | Yes   | Built-in `impersonation` plugin             | —        |
+| Org context in JWT              | No    | `definePayload` needs session lookup         | Medium   |
+| Invitation per org type         | No    | Branch logic in hooks                       | Low      |
+| Admin cross-org visibility      | No    | Query DB directly                           | Medium   |
+| Member list privacy per role    | No    | Security issue #6038, need hook filter       | Medium   |
+
 #### Auth Service — Configuration
 
 - **Framework**: Hono + BetterAuth v1.4.x (pin exact version)
@@ -465,9 +581,14 @@ auth-infra/src/
 - **Secondary storage**: `SecondaryStorage` interface wrapping `@d2/interfaces` distributed cache handlers
   - Interface is minimal: `get(key): string | null`, `set(key, value, ttl?)`, `delete(key)`
   - TTL is in **seconds** (not milliseconds)
-- **Plugins**: `bearer()` + `jwt({ jwks: { keyPairConfig: { alg: "RS256", modulusLength: 2048 } } })`
+- **Plugins**:
+  - `bearer()` — session token via Authorization header
+  - `jwt({ jwks: { keyPairConfig: { alg: "RS256", modulusLength: 2048 } } })` — RS256 JWTs for .NET services
+  - `organization({ ... })` — multi-org membership, roles, invitations, `activeOrganizationId` on session
+  - `access` — RBAC with `createAccessControl` for custom role-permission definitions
+  - `impersonation()` — user-level impersonation for escalated support (audit-logged)
   - **Important**: Config value is `"RS256"` (standard JOSE name). BetterAuth docs may show `"RSA256"` (typo). The alg is passed directly to jose's `generateKeyPair()` which requires `"RS256"`.
-- **JWT**: `expirationTime: "15m"`, custom `definePayload` for D2 claims (sub, email, name, roles)
+- **JWT**: `expirationTime: "15m"`, custom `definePayload` for D2 claims (sub, email, name, org context, role). Must include `activeOrganizationId`, `activeOrganizationType`, `activeOrganizationRole`, `emulatedOrganizationId`, and `isEmulating`. Client must re-fetch JWT after org switch or emulation start/stop.
 - **Cookie cache**: `{ enabled: true, maxAge: 300, strategy: "compact" }` (5min, base64url + HMAC-SHA256)
 - **Session**: `expiresIn: 7 days`, `updateAge: 1 day`, `storeSessionInDatabase: true` (dual-write Redis + PG)
 - **Key rotation**: `rotationInterval: 30 days`, `gracePeriod: 30 days`
@@ -495,11 +616,22 @@ auth-infra/src/
 | [#3774](https://github.com/better-auth/better-auth/issues/3774) | `modelName` hardcoded in some internal paths | Test custom table names with our plugin combination |
 | [#3954](https://github.com/better-auth/better-auth/issues/3954) | JWKS table queried on every `getSession()` (not cached) | Performance concern; monitor and potentially cache externally |
 
+**MODERATE — Organization plugin:**
+
+| Issue | Description | Mitigation |
+| --- | --- | --- |
+| [#4708](https://github.com/better-auth/better-auth/issues/4708) | `set-active` endpoint sometimes has null session context | Use `getSessionFromCtx` workaround |
+| [#6038](https://github.com/better-auth/better-auth/issues/6038) | `/get-full-organization` exposes member list to all roles | Hook-based filter or endpoint wrapper |
+| [#6081](https://github.com/better-auth/better-auth/issues/6081) | `hasPermission` silently returns false for unknown roles | Fix in progress (PR #6097); add defensive logging |
+| [#2100](https://github.com/better-auth/better-auth/issues/2100) | `updateMemberRole` fails on members with existing multi-roles | Avoid multi-role per member initially; monitor fix |
+
 **LOW — Design considerations:**
 
 - `customSession` plugin data is NOT cached in Redis or cookie cache (function runs every `getSession()`)
 - BetterAuth's built-in rate limiter is per-path only — we use our own `@d2/ratelimit` instead
 - Cookie cache invalidation is version-based (`cookieCache.version`), not per-user
+- No built-in role hierarchy — must compose permissions manually (spread pattern)
+- `definePayload` receives user, not session — need session lookup for org context in JWT
 
 #### SvelteKit Auth Integration
 
@@ -508,6 +640,28 @@ auth-infra/src/
 - `createAuthClient` setup (no `baseURL` needed — same-origin proxy)
 - Client-side JWT manager (part of `@d2/auth-client` — obtain, store in memory, auto-refresh)
 - CORS configuration for direct gateway access (Pattern C, ADR-005)
+
+**UI sharding by org type** (decided 2026-02-07):
+
+SvelteKit routes are grouped by org type. The `(app)/+layout.server.ts` resolves org context from the session and renders the appropriate layout group:
+
+```
+clients/web/src/routes/
+├── (auth)/                    # Unauthenticated (login, signup)
+├── (onboarding)/              # Authenticated, no active org (join/create)
+├── (app)/                     # Authenticated, org-scoped
+│   ├── +layout.server.ts      # Resolves orgType → renders correct layout
+│   ├── (customer)/            # Customer org: workflows, invoicing, clients
+│   ├── (third-party)/         # Third-party org: communication, limited data
+│   ├── (affiliate)/           # Affiliate: referral tracking, commissions
+│   ├── (support)/             # Support: tickets, customer lookup, org emulation
+│   └── (admin)/               # Admin: system control panel, user/org management
+```
+
+- Layout server load reads `effectiveOrgType` from session (resolved via `resolveOrgContext()`)
+- Redirects to `(onboarding)` if no active org
+- Returns 403 if accessing a route for a different org type
+- During emulation: renders the target org's UI with "Viewing as [Org Name]" banner
 
 #### .NET Gateway JWT Validation
 
@@ -522,7 +676,10 @@ auth-infra/src/
 1. **Email verification** (requires notifications service scaffold)
 2. **Password reset flow**
 3. **Session management UI** (list sessions, revoke individual, revoke all others)
-4. **Admin alerting** (rate limit threshold alerts via notifications service)
+4. **Org emulation** (support/admin can view any org's data in read-only mode)
+5. **User impersonation** (escalated support — act as a specific user, audit-logged, time-limited)
+6. **Admin control panel** (cross-org visibility, user/org management, system diagnostics)
+7. **Admin alerting** (rate limit threshold alerts via notifications service)
 
 ### Completed Phases
 
@@ -570,6 +727,12 @@ auth-infra/src/
 
 2. **BetterAuth session sync bugs**: Issues #6987, #6993, #5144 affect our 3-tier session architecture. Need to test the full session lifecycle (create → update → revoke → list) with `storeSessionInDatabase: true` + `secondaryStorage` early. Pin BetterAuth version and re-test after each upgrade.
 
+3. **Custom session fields + cookie cache**: Our 4 session extensions (orgType, role, emulation) need to survive BetterAuth's cookie cache. If `customSession` data isn't cached, we may need to store org context in the cookie cache manually or accept an extra DB/Redis lookup per request when cookie cache is stale.
+
+4. **`definePayload` session access**: Need to verify that `definePayload` can access session data (for org context in JWT) or if we need a workaround (e.g., custom endpoint that builds the JWT with session context).
+
+5. **Org emulation security**: Need to design the authorization check (who can emulate?) and audit log schema before implementing. Consider: should emulation be time-limited? Should it require 2FA?
+
 ---
 
 ## Meeting Notes / Decisions Log
@@ -584,9 +747,21 @@ auth-infra/src/
   - **JWT algorithm: `"RS256"`** (standard JOSE name) — BetterAuth docs may show `"RSA256"` (typo). Code passes alg directly to jose which requires `"RS256"`. Need early interop test with .NET.
   - **Known gotchas documented**: 8 HIGH/MODERATE GitHub issues affecting session sync, schema casing, and JWKS caching. All manageable but need testing.
   - **Hono integration**: Route-based mount (`auth.handler(c.req.raw)`), CORS before routes, session middleware via `auth.api.getSession()`. First-class support, no adapter needed.
+- **Auth domain model designed**: Multi-tenant, multi-org architecture
+  - **Flat orgs, 5 types**: admin, support, customer, third_party, affiliate. Org type is a custom DB field, not hierarchy.
+  - **Business relationships between orgs** (e.g., customer → third_party) tracked in domain layer, not auth layer. All orgs are peers at the auth level.
+  - **4 custom roles**: auditor (read-only), agent (limited write), officer (full write), owner (everything). Composed via `createAccessControl`, no hierarchy syntax needed.
+  - **Session extensions**: 4 custom fields (activeOrganizationType, activeOrganizationRole, emulatedOrganizationId, emulatedOrganizationType).
+  - **Org emulation**: Support/admin can view any org read-only. Forces auditor role. Audit-logged.
+  - **User impersonation**: BetterAuth `impersonation` plugin for escalated support. Separate from emulation.
+  - **No-org onboarding state**: New users must join or create an org before accessing features.
+  - **SvelteKit UI sharding**: Route groups by org type — `(customer)/`, `(support)/`, `(admin)/`, etc.
+  - **JWT includes org context**: activeOrganizationId, type, role, emulation state. Client re-fetches JWT on org switch.
+  - **BetterAuth org plugin gap analysis**: 75% OOTB fit. Gaps (org type, session fields, emulation, JWT+org) all bridgeable with hooks and custom fields.
+- **PII redaction sweep**: Fixed 11 log statements across .NET + Node.js that leaked IPs/fingerprints. Added 4 validation tests. Tech debt: manual OTEL log validation.
 - **CI workflow**: 6 parallel test jobs with D2 prefix + v1 suffix for branch protection discoverability
 - **RabbitMQ integration tests fixed**: consumer `ready` signaling, explicit credentials, no-op error listener for NACK path
-- **All tests passing**: 474 Node.js + 926 .NET
+- **All tests passing**: 476 Node.js + 928 .NET
 
 ### 2026-02-06
 
