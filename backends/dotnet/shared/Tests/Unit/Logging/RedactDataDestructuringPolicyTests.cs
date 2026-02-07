@@ -168,6 +168,208 @@ public class RedactDataDestructuringPolicyTests
     private record CustomReasonType(string Value);
 
     // -----------------------------------------------------------------------
+    // Additional coverage test types
+    // -----------------------------------------------------------------------
+
+    [RedactData(CustomReason = "Top-secret payload")]
+    private record TypeLevelCustomReasonRedacted(string Secret, int Count);
+
+    private record WithNullableProperties(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string? NullableField,
+        string? NormalField);
+
+    [RedactData(Reason = RedactReason.SecretInformation)]
+    private record TypeAndPropertyLevelRedacted(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string Sensitive,
+        string Normal);
+
+    private record BaseWithRedaction
+    {
+        [RedactData(Reason = RedactReason.PersonalInformation)]
+        public string Email { get; init; } = string.Empty;
+
+        public string Name { get; init; } = string.Empty;
+    }
+
+    private record DerivedFromRedacted : BaseWithRedaction
+    {
+        public int Age { get; init; }
+    }
+
+    private record EmptyRecord;
+
+    private record MixedReasonsRedacted(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string Email,
+        [property: RedactData(Reason = RedactReason.FinancialInformation)] string CreditCard,
+        [property: RedactData(Reason = RedactReason.SecretInformation)] string ApiKey,
+        string PublicField);
+
+    private record DefaultReasonRedacted(
+        [property: RedactData] string SomeField,
+        string Normal);
+
+    // -----------------------------------------------------------------------
+    // Additional coverage tests
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    public void TypeLevelCustomReason_ReplacesEntireValueWithCustomMessage()
+    {
+        // Arrange
+        var value = new TypeLevelCustomReasonRedacted("payload", 42);
+        var factory = CreateFactory();
+
+        // Act
+        var handled = _policy.TryDestructure(value, factory, out var result);
+
+        // Assert
+        handled.Should().BeTrue();
+        result.Should().BeOfType<ScalarValue>();
+        var scalar = (ScalarValue)result!;
+        scalar.Value.Should().Be("[REDACTED: Top-secret payload]");
+    }
+
+    [Fact]
+    public void NullPropertyValues_RedactedCorrectly()
+    {
+        // Arrange
+        var value = new WithNullableProperties(null, null);
+        var factory = CreateFactory();
+
+        // Act
+        var handled = _policy.TryDestructure(value, factory, out var result);
+
+        // Assert
+        handled.Should().BeTrue();
+        result.Should().BeOfType<StructureValue>();
+        var structure = (StructureValue)result!;
+        var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
+
+        // Redacted field shows redaction placeholder even when null
+        props["NullableField"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("[REDACTED: PersonalInformation]");
+
+        // Normal null field passes through as scalar null
+        props["NormalField"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().BeNull();
+    }
+
+    [Fact]
+    public void TypeAndPropertyLevel_TypeLevelWins()
+    {
+        // Arrange — type has [RedactData] at class level AND property level
+        var value = new TypeAndPropertyLevelRedacted("secret", "normal");
+        var factory = CreateFactory();
+
+        // Act
+        var handled = _policy.TryDestructure(value, factory, out var result);
+
+        // Assert — type-level should short-circuit, entire value replaced
+        handled.Should().BeTrue();
+        result.Should().BeOfType<ScalarValue>();
+        var scalar = (ScalarValue)result!;
+        scalar.Value.Should().Be("[REDACTED: SecretInformation]");
+    }
+
+    [Fact]
+    public void InheritedProperties_RedactedFromBaseClass()
+    {
+        // Arrange — DerivedFromRedacted inherits Email [RedactData] from BaseWithRedaction
+        var value = new DerivedFromRedacted
+        {
+            Email = "alice@example.com",
+            Name = "Alice",
+            Age = 30,
+        };
+        var factory = CreateFactory();
+
+        // Act
+        var handled = _policy.TryDestructure(value, factory, out var result);
+
+        // Assert — should handle the type because it has property-level redaction
+        handled.Should().BeTrue();
+        result.Should().BeOfType<StructureValue>();
+        var structure = (StructureValue)result!;
+        var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
+
+        // Inherited redacted field
+        props["Email"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("[REDACTED: PersonalInformation]");
+
+        // Non-redacted inherited field
+        props["Name"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("Alice");
+
+        // Non-redacted own field
+        props["Age"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be(30);
+    }
+
+    [Fact]
+    public void EmptyType_ReturnsFalse()
+    {
+        // Arrange — empty record with no properties, no [RedactData]
+        var value = new EmptyRecord();
+        var factory = CreateFactory();
+
+        // Act
+        var handled = _policy.TryDestructure(value, factory, out var result);
+
+        // Assert — no redaction needed, returns false
+        handled.Should().BeFalse();
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public void MixedRedactReasons_UsesCorrectReasonPerProperty()
+    {
+        // Arrange
+        var value = new MixedReasonsRedacted(
+            "alice@example.com", "4111-1111-1111-1111", "sk-abc123", "hello");
+        var factory = CreateFactory();
+
+        // Act
+        var handled = _policy.TryDestructure(value, factory, out var result);
+
+        // Assert
+        handled.Should().BeTrue();
+        result.Should().BeOfType<StructureValue>();
+        var structure = (StructureValue)result!;
+        var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
+
+        props["Email"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("[REDACTED: PersonalInformation]");
+        props["CreditCard"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("[REDACTED: FinancialInformation]");
+        props["ApiKey"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("[REDACTED: SecretInformation]");
+        props["PublicField"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("hello");
+    }
+
+    [Fact]
+    public void DefaultReason_UsesUnspecifiedWhenNoReasonSet()
+    {
+        // Arrange — [RedactData] with no Reason set (defaults to Unspecified)
+        var value = new DefaultReasonRedacted("value", "normal");
+        var factory = CreateFactory();
+
+        // Act
+        var handled = _policy.TryDestructure(value, factory, out var result);
+
+        // Assert
+        handled.Should().BeTrue();
+        result.Should().BeOfType<StructureValue>();
+        var structure = (StructureValue)result!;
+        var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
+
+        props["SomeField"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("[REDACTED: Unspecified]");
+        props["Normal"].Should().BeOfType<ScalarValue>()
+            .Which.Value.Should().Be("normal");
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
