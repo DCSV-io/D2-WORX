@@ -51,6 +51,12 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
     /// </summary>
     protected string? TraceId => Context.Request.TraceId;
 
+    /// <summary>
+    /// Gets the default handler options for this handler type.
+    /// Override to customize logging behavior (e.g., suppress input/output for sensitive data).
+    /// </summary>
+    protected virtual HandlerOptions DefaultOptions => new();
+
     /// <inheritdoc />
     /// <remarks>
     /// This method wraps the execution of the handler with logging, timing, and exception
@@ -78,7 +84,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         var sw = Stopwatch.StartNew();
 
         // Use default options if none are provided.
-        options ??= new HandlerOptions();
+        options ??= DefaultOptions;
 
         // Record invocation metric.
         var tags = new TagList { { "handler.name", typeof(THandler).Name } };
