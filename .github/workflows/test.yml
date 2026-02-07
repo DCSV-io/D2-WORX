@@ -7,8 +7,8 @@ on:
     branches: [main, develop]
 
 jobs:
-  dotnet-shared:
-    name: .NET Shared Tests
+  dotnet-shared-unit:
+    name: .NET Shared - Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -26,11 +26,15 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run shared tests
-        run: dotnet test backends/dotnet/shared/Tests/ --no-build --configuration Release --verbosity normal
+      - name: Run unit tests
+        run: >
+          dotnet test backends/dotnet/shared/Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName!~Integration"
 
-  dotnet-geo:
-    name: .NET Geo Tests
+  dotnet-shared-integration:
+    name: .NET Shared - Integration Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -48,11 +52,67 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run Geo tests
-        run: dotnet test backends/dotnet/services/Geo/Geo.Tests/ --no-build --configuration Release --verbosity normal
+      - name: Run integration tests
+        run: >
+          dotnet test backends/dotnet/shared/Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName~Integration"
 
-  node-unit:
-    name: Node.js Unit Tests
+  dotnet-geo-unit:
+    name: .NET Geo - Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run unit tests
+        run: >
+          dotnet test backends/dotnet/services/Geo/Geo.Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName!~Integration"
+
+  dotnet-geo-integration:
+    name: .NET Geo - Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run integration tests
+        run: >
+          dotnet test backends/dotnet/services/Geo/Geo.Tests/
+          --no-build --configuration Release --verbosity normal
+          -p:TestingPlatformDotnetTestSupport=false
+          --filter "FullyQualifiedName~Integration"
+
+  node-shared-unit:
+    name: Node.js Shared - Unit Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -78,8 +138,8 @@ jobs:
       - name: Run unit tests
         run: pnpm vitest run --project shared-tests --exclude "**/integration/**"
 
-  node-integration:
-    name: Node.js Integration Tests
+  node-shared-integration:
+    name: Node.js Shared - Integration Tests
     runs-on: ubuntu-latest
 
     steps:
