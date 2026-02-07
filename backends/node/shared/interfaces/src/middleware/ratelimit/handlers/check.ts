@@ -1,4 +1,4 @@
-import type { IHandler } from "@d2/handler";
+import type { IHandler, RedactionSpec } from "@d2/handler";
 import type { IRequestInfo } from "../../request-enrichment/i-request-info.js";
 import type { RateLimitDimension } from "../rate-limit-dimension.js";
 
@@ -14,5 +14,12 @@ export interface CheckOutput {
   retryAfterMs: number | undefined;
 }
 
-/** Handler for checking rate limits. */
-export type ICheckHandler = IHandler<CheckInput, CheckOutput>;
+/** Recommended redaction for rate limit check handlers. */
+export const CHECK_REDACTION: RedactionSpec = {
+  suppressInput: true, // IRequestInfo contains clientIp, fingerprint, userId, city
+};
+
+/** Handler for checking rate limits. Requires redaction (input contains PII). */
+export interface ICheckHandler extends IHandler<CheckInput, CheckOutput> {
+  readonly redaction: RedactionSpec;
+}

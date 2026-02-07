@@ -1,8 +1,9 @@
 export { type GeoClientOptions, DEFAULT_GEO_CLIENT_OPTIONS } from "./geo-client-options.js";
 export type { GeoRefDataUpdated } from "./messages/geo-ref-data-updated.js";
 
-// Interfaces (contract types + handler interfaces)
-export type { Commands, Queries, Complex, Subs } from "./interfaces/index.js";
+// Interfaces (contract types + handler interfaces + redaction constants)
+export { Commands, Queries, Complex } from "./interfaces/index.js";
+export type { Subs } from "./interfaces/index.js";
 
 // Commands
 export { ReqUpdate } from "./handlers/c/req-update.js";
