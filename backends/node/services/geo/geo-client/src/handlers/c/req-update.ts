@@ -2,19 +2,19 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { handleGrpcCall } from "@d2/result-extensions";
 import type { GeoServiceClient, RequestReferenceDataUpdateResponse } from "@d2/protos";
+import type { Commands } from "../../interfaces/index.js";
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- mirrors .NET ReqUpdateInput
-export interface ReqUpdateInput {}
-
-export interface ReqUpdateOutput {
-  version: string | undefined;
-}
+type Input = Commands.ReqUpdateInput;
+type Output = Commands.ReqUpdateOutput;
 
 /**
  * Handler for requesting a reference data update from the Geo service via gRPC.
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.ReqUpdate in .NET.
  */
-export class ReqUpdate extends BaseHandler<ReqUpdateInput, ReqUpdateOutput> {
+export class ReqUpdate
+  extends BaseHandler<Input, Output>
+  implements Commands.IReqUpdateHandler
+{
   private readonly geoClient: GeoServiceClient;
 
   constructor(geoClient: GeoServiceClient, context: IHandlerContext) {
@@ -22,9 +22,7 @@ export class ReqUpdate extends BaseHandler<ReqUpdateInput, ReqUpdateOutput> {
     this.geoClient = geoClient;
   }
 
-  protected async executeAsync(
-    _input: ReqUpdateInput,
-  ): Promise<D2Result<ReqUpdateOutput | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const r = await handleGrpcCall(
       () =>
         new Promise<RequestReferenceDataUpdateResponse>((resolve, reject) => {
@@ -40,3 +38,5 @@ export class ReqUpdate extends BaseHandler<ReqUpdateInput, ReqUpdateOutput> {
     return D2Result.bubble(r, r.data);
   }
 }
+
+export type { ReqUpdateInput, ReqUpdateOutput } from "../../interfaces/c/req-update.js";

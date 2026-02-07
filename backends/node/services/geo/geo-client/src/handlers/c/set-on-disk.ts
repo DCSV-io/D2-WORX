@@ -2,23 +2,22 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result, HttpStatusCode } from "@d2/result";
-import type { GeoRefData } from "@d2/protos";
 import { GeoRefData as GeoRefDataCodec } from "@d2/protos";
 import { GEO_REF_DATA_FILE_NAME } from "@d2/utilities";
 import type { GeoClientOptions } from "../../geo-client-options.js";
+import type { Commands } from "../../interfaces/index.js";
 
-export interface SetOnDiskInput {
-  data: GeoRefData;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface SetOnDiskOutput {}
+type Input = Commands.SetOnDiskInput;
+type Output = Commands.SetOnDiskOutput;
 
 /**
  * Handler for persisting georeference data to disk as protobuf binary.
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetOnDisk in .NET.
  */
-export class SetOnDisk extends BaseHandler<SetOnDiskInput, SetOnDiskOutput> {
+export class SetOnDisk
+  extends BaseHandler<Input, Output>
+  implements Commands.ISetOnDiskHandler
+{
   private readonly filePath: string;
 
   constructor(options: GeoClientOptions, context: IHandlerContext) {
@@ -26,9 +25,7 @@ export class SetOnDisk extends BaseHandler<SetOnDiskInput, SetOnDiskOutput> {
     this.filePath = join(options.dataDir, GEO_REF_DATA_FILE_NAME);
   }
 
-  protected async executeAsync(
-    input: SetOnDiskInput,
-  ): Promise<D2Result<SetOnDiskOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     try {
       const bytes = GeoRefDataCodec.encode(input.data).finish();
       await mkdir(join(this.filePath, ".."), { recursive: true });
@@ -46,3 +43,5 @@ export class SetOnDisk extends BaseHandler<SetOnDiskInput, SetOnDiskOutput> {
     }
   }
 }
+
+export type { SetOnDiskInput, SetOnDiskOutput } from "../../interfaces/c/set-on-disk.js";

@@ -3,19 +3,19 @@ import { D2Result } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
 import type { DistributedCache } from "@d2/interfaces";
 import { DIST_CACHE_KEY_GEO_REF_DATA } from "@d2/utilities";
+import type { Queries } from "../../interfaces/index.js";
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- mirrors .NET GetFromDistInput
-export interface GetFromDistInput {}
-
-export interface GetFromDistOutput {
-  data: GeoRefData;
-}
+type Input = Queries.GetFromDistInput;
+type Output = Queries.GetFromDistOutput;
 
 /**
  * Handler for getting georeference data from the distributed (Redis) cache.
  * Mirrors D2.Geo.Client.CQRS.Handlers.Q.GetFromDist in .NET.
  */
-export class GetFromDist extends BaseHandler<GetFromDistInput, GetFromDistOutput> {
+export class GetFromDist
+  extends BaseHandler<Input, Output>
+  implements Queries.IGetFromDistHandler
+{
   private readonly distCacheGet: DistributedCache.IGetHandler<GeoRefData>;
 
   constructor(distCacheGet: DistributedCache.IGetHandler<GeoRefData>, context: IHandlerContext) {
@@ -23,9 +23,7 @@ export class GetFromDist extends BaseHandler<GetFromDistInput, GetFromDistOutput
     this.distCacheGet = distCacheGet;
   }
 
-  protected async executeAsync(
-    _input: GetFromDistInput,
-  ): Promise<D2Result<GetFromDistOutput | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const getR = await this.distCacheGet.handleAsync({
       key: DIST_CACHE_KEY_GEO_REF_DATA,
     });
@@ -37,3 +35,5 @@ export class GetFromDist extends BaseHandler<GetFromDistInput, GetFromDistOutput
     return D2Result.notFound({ traceId: this.traceId });
   }
 }
+
+export type { GetFromDistInput, GetFromDistOutput } from "../../interfaces/q/get-from-dist.js";

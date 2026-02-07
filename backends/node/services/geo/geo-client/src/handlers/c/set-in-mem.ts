@@ -1,20 +1,19 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { GeoRefData } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import type { Commands } from "../../interfaces/index.js";
 
-export interface SetInMemInput {
-  data: GeoRefData;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface SetInMemOutput {}
+type Input = Commands.SetInMemInput;
+type Output = Commands.SetInMemOutput;
 
 /**
  * Handler for setting georeference data in the in-memory cache.
  * Mirrors D2.Geo.Client.CQRS.Handlers.C.SetInMem in .NET.
  */
-export class SetInMem extends BaseHandler<SetInMemInput, SetInMemOutput> {
+export class SetInMem
+  extends BaseHandler<Input, Output>
+  implements Commands.ISetInMemHandler
+{
   private readonly store: MemoryCacheStore;
 
   constructor(store: MemoryCacheStore, context: IHandlerContext) {
@@ -22,10 +21,10 @@ export class SetInMem extends BaseHandler<SetInMemInput, SetInMemOutput> {
     this.store = store;
   }
 
-  protected async executeAsync(
-    input: SetInMemInput,
-  ): Promise<D2Result<SetInMemOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     this.store.set("GeoRefData", input.data);
     return D2Result.ok({ data: {}, traceId: this.traceId });
   }
 }
+
+export type { SetInMemInput, SetInMemOutput } from "../../interfaces/c/set-in-mem.js";

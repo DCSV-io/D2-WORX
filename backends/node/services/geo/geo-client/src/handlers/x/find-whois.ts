@@ -3,15 +3,10 @@ import { D2Result } from "@d2/result";
 import type { WhoIsDTO, FindWhoIsRequest, FindWhoIsResponse, GeoServiceClient } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
 import type { GeoClientOptions } from "../../geo-client-options.js";
+import type { Complex } from "../../interfaces/index.js";
 
-export interface FindWhoIsInput {
-  ipAddress: string;
-  fingerprint: string;
-}
-
-export interface FindWhoIsOutput {
-  whoIs: WhoIsDTO | undefined;
-}
+type Input = Complex.FindWhoIsInput;
+type Output = Complex.FindWhoIsOutput;
 
 /**
  * Handler for finding WhoIs data by IP address and fingerprint.
@@ -20,7 +15,10 @@ export interface FindWhoIsOutput {
  *
  * Mirrors D2.Geo.Client.CQRS.Handlers.X.FindWhoIs in .NET.
  */
-export class FindWhoIs extends BaseHandler<FindWhoIsInput, FindWhoIsOutput> {
+export class FindWhoIs
+  extends BaseHandler<Input, Output>
+  implements Complex.IFindWhoIsHandler
+{
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
   private readonly options: GeoClientOptions;
@@ -37,9 +35,7 @@ export class FindWhoIs extends BaseHandler<FindWhoIsInput, FindWhoIsOutput> {
     this.options = options;
   }
 
-  protected async executeAsync(
-    input: FindWhoIsInput,
-  ): Promise<D2Result<FindWhoIsOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const cacheKey = `whois:${input.ipAddress}:${input.fingerprint}`;
 
     // Try cache first
@@ -82,3 +78,5 @@ export class FindWhoIs extends BaseHandler<FindWhoIsInput, FindWhoIsOutput> {
     return D2Result.ok({ data: { whoIs }, traceId: this.traceId });
   }
 }
+
+export type { FindWhoIsInput, FindWhoIsOutput } from "../../interfaces/x/find-whois.js";
