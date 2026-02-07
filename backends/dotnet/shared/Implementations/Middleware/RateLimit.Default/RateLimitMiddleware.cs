@@ -89,10 +89,10 @@ public class RateLimitMiddleware
         catch (Exception ex)
         {
             // Fail-open: log warning and allow request through.
+            // Do not log raw ClientIp — it is PII.
             r_logger.LogWarning(
                 ex,
-                "Rate limit check failed for IP {ClientIp}. Allowing request through (fail-open).",
-                requestInfo.ClientIp);
+                "Rate limit check failed. Allowing request through (fail-open).");
         }
 
         if (output?.IsBlocked == true)
@@ -118,9 +118,9 @@ public class RateLimitMiddleware
 
             await context.Response.WriteAsJsonAsync(response, jsonOptions, context.RequestAborted);
 
+            // Do not log raw ClientIp — it is PII.
             r_logger.LogInformation(
-                "Rate limited request from IP {ClientIp} on {Dimension} dimension. RetryAfter: {RetryAfter}s",
-                requestInfo.ClientIp,
+                "Rate limited request on {Dimension} dimension. RetryAfter: {RetryAfter}s",
                 output.BlockedDimension,
                 retryAfterSeconds);
 

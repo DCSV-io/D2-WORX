@@ -117,10 +117,12 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         catch (RpcException ex)
         {
             // Fail-open: log warning and return null, not error.
+            // Note: Do not log input.IpAddress as a scalar — it bypasses [RedactData]
+            // destructuring. Use {@Input} for structured logging or omit PII entirely.
             Context.Logger.LogWarning(
                 ex,
-                "gRPC call to Geo service failed for IP {IpAddress}. TraceId: {TraceId}",
-                input.IpAddress,
+                "gRPC call to Geo service failed for {@Input}. TraceId: {TraceId}",
+                input,
                 TraceId);
 
             return D2Result<O?>.Ok(new O(null), traceId: TraceId);
@@ -141,9 +143,11 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 
         if (setR.Failed)
         {
+            // Note: Do not log input.IpAddress as a scalar — it bypasses [RedactData]
+            // destructuring. Use {@Input} for structured logging or omit PII entirely.
             Context.Logger.LogWarning(
-                "Failed to cache WhoIs for IP {IpAddress}. TraceId: {TraceId}",
-                input.IpAddress,
+                "Failed to cache WhoIs for {@Input}. TraceId: {TraceId}",
+                input,
                 TraceId);
         }
 

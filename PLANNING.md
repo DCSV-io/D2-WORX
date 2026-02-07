@@ -349,8 +349,7 @@ Auth (always proxied):
 | **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                              | `Geo.Client` (full parity)               |
 | **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`              |
 | **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                      |
-| **@d2/auth-client**        | 📋 Phase 2 | TBD                                                                   | —                                        |
-| **@d2/jwt-manager**        | 📋 Phase 2 | TBD                                                                   | —                                        |
+| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/auth-client/`                            | `Auth.Client` (planned)                  |
 
 ### Services
 
@@ -415,28 +414,108 @@ Auth (always proxied):
 
 ### Phase 2: Auth Service + SvelteKit Integration
 
-1. **Auth Service** (`backends/node/services/auth/`)
-   - Hono + BetterAuth
-   - PostgreSQL adapter (d2-auth-db)
-   - Redis secondary storage (3-tier session management, see ADR-001)
-   - Plugins: `bearer` + `jwt` (RS256, 15min, JWKS at `/api/auth/jwks`)
-   - Cookie cache: 5min, compact strategy
-   - Session: 7-day expiry, 1-day updateAge
-   - Key rotation: 30-day intervals, 30-day grace period
-   - Session management endpoints: list, revoke individual, revoke others, revoke all
+#### Auth Service — DDD Structure
 
-2. **SvelteKit Auth Integration**
-   - Auth proxy in `hooks.server.ts` (`/api/auth/*` → Auth Service)
-   - Session population hook (forward cookie to Auth Service for validation, or decode cookie cache locally)
-   - `createAuthClient` setup (no `baseURL` needed — same-origin proxy)
-   - Client-side JWT manager utility (obtain, store in memory, auto-refresh)
-   - CORS configuration for direct gateway access (Pattern C, ADR-005)
+The Auth Service follows the same DDD layering as Geo, with BetterAuth encapsulated in the infra layer:
 
-3. **.NET Gateway JWT Validation**
-   - `AddJwtBearer()` with JWKS from Auth Service
-   - RS256 validation (native `Microsoft.IdentityModel.Tokens`)
-   - CORS middleware for SvelteKit origin
-   - JWKS caching with periodic refresh
+```
+backends/node/services/auth/
+├── auth-client/       # @d2/auth-client — consumer lib (createAuthClient + JWT manager)
+├── auth-domain/       # Entities, value objects (User, Session, etc.)
+├── auth-app/          # CQRS handlers, mappers, interface definitions
+├── auth-infra/        # BetterAuth config, adapters (implements auth-app interfaces)
+├── auth-api/          # Hono entry point, routes, composition root
+└── auth-tests/        # Tests (unit + integration)
+```
+
+Mirrors .NET Geo exactly:
+```
+Geo.Client / Geo.Domain / Geo.App / Geo.Infra / Geo.API / Geo.Tests
+```
+
+**Key design decisions:**
+
+- **Framework-agnostic by design**: BetterAuth is an infra concern only. Domain and app layers have zero BetterAuth imports. If BetterAuth is ever swapped, only auth-infra changes.
+- **`@d2/auth-client` consolidates** both auth operations (sign-in, sign-up, sessions) AND JWT lifecycle (obtain, memory-only storage, auto-refresh). Replaces the previously planned separate `@d2/jwt-manager` package.
+- **.NET side**: `Auth.Client` at `backends/dotnet/services/Auth/Auth.Client/` for JWT validation + JWKS fetching.
+
+**TLC concerns within auth-infra:**
+
+```
+auth-infra/src/
+└── auth/                    # TLC concern: "Auth" (like "Repository", "Messaging")
+    └── better-auth/         # Implementation (like "Pg", "MT", "Redis")
+```
+
+**Abstraction boundaries:**
+
+- **Caching (Redis secondary storage)**: Fully abstracted. BetterAuth's `secondaryStorage` interface (`get`, `set`, `delete`) implemented by wrapping `@d2/interfaces` distributed cache handlers (IDistributedCacheGet, Set, Remove). auth-infra never imports ioredis directly.
+- **Database (PostgreSQL)**: BetterAuth owns its DB connection via the built-in Kysely adapter with a dedicated `pg.Pool`. Give BetterAuth its own PG schema (`search_path=auth`). Accept BetterAuth's camelCase column naming internally — fighting it causes plugin compatibility issues (see Known Gotchas below). Custom `modelName` for table prefixes (e.g., `auth_users`, `auth_sessions`) is supported but has edge cases.
+- **Auth-app defines interfaces** for auth operations (sign-up, sign-in, session management, token issuance). auth-infra implements these using BetterAuth under the hood.
+- **Abstraction boundary for consumers**: JWTs validated via JWKS are the inter-service boundary. Only the auth service itself depends on BetterAuth. .NET services validate JWTs statelessly via `AddJwtBearer()`.
+
+**Dependency injection**: **Manual factory functions** (decided 2026-02-07). Each package exports a `createXxxHandlers(deps, context)` factory that maps 1:1 to .NET's `services.AddXxx()` extension methods. Hono's `c.var` + middleware provides per-request scoping. No DI container library needed at current scale (~15 packages). If complexity grows beyond 30+ handlers with cross-cutting deps, evaluate `@snap/ts-inject` (Snap Inc., compile-time type-safe, composable containers, ESM-native, decorator-free). Avoid tsyringe/inversify (decorator-based, ESM issues).
+
+#### Auth Service — Configuration
+
+- **Framework**: Hono + BetterAuth v1.4.x (pin exact version)
+- **Database adapter**: Built-in Kysely adapter with `pg.Pool` + dedicated PG schema (`search_path=auth`)
+  - NOT Drizzle — Kysely is BetterAuth's native adapter, supports CLI `migrate` command, fewer edge cases
+  - BetterAuth manages its own connection pool; auth-api provides the `Pool` at startup
+- **Secondary storage**: `SecondaryStorage` interface wrapping `@d2/interfaces` distributed cache handlers
+  - Interface is minimal: `get(key): string | null`, `set(key, value, ttl?)`, `delete(key)`
+  - TTL is in **seconds** (not milliseconds)
+- **Plugins**: `bearer()` + `jwt({ jwks: { keyPairConfig: { alg: "RS256", modulusLength: 2048 } } })`
+  - **Important**: Config value is `"RS256"` (standard JOSE name). BetterAuth docs may show `"RSA256"` (typo). The alg is passed directly to jose's `generateKeyPair()` which requires `"RS256"`.
+- **JWT**: `expirationTime: "15m"`, custom `definePayload` for D2 claims (sub, email, name, roles)
+- **Cookie cache**: `{ enabled: true, maxAge: 300, strategy: "compact" }` (5min, base64url + HMAC-SHA256)
+- **Session**: `expiresIn: 7 days`, `updateAge: 1 day`, `storeSessionInDatabase: true` (dual-write Redis + PG)
+- **Key rotation**: `rotationInterval: 30 days`, `gracePeriod: 30 days`
+- **Session management**: list, revoke individual, revoke others, revoke all (OOTB from BetterAuth)
+- **Hono integration**: Route-based mount `app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))`
+- **CORS**: Must be registered BEFORE BetterAuth routes; allow SvelteKit origin with credentials
+
+#### Auth Service — Known Gotchas (from research 2026-02-07)
+
+**HIGH — Session + Secondary Storage bugs (monitor these issues):**
+
+| Issue | Description | Mitigation |
+| --- | --- | --- |
+| [#6987](https://github.com/better-auth/better-auth/issues/6987) | `updateSession` doesn't sync back to Redis (stale data) | Monitor; may need to manually invalidate Redis on profile update |
+| [#6993](https://github.com/better-auth/better-auth/issues/6993) | Session in Redis missing `id` field with `storeSessionInDatabase: true` | Test early; may be fixed in newer versions |
+| [#5144](https://github.com/better-auth/better-auth/issues/5144) | `revokeSession` removes from Redis but not PG with `preserveSessionInDatabase` | Don't use `preserveSessionInDatabase` initially; test revocation flow |
+| [#4203](https://github.com/better-auth/better-auth/issues/4203) | Redis TTL expiry doesn't fall back to DB (premature invalidation) | Set Redis TTL >= session `expiresIn` to avoid premature expiry |
+| [#3819](https://github.com/better-auth/better-auth/issues/3819) | `active-sessions` list not cleaned on sign-out | Test `listSessions()` after sign-out; may need workaround |
+
+**MODERATE — Schema/casing:**
+
+| Issue | Description | Mitigation |
+| --- | --- | --- |
+| [#5649](https://github.com/better-auth/better-auth/issues/5649) | SSO/OIDC plugins bypass `casing: "snake_case"` field mapping | We don't use SSO/OIDC initially; test if added later |
+| [#3774](https://github.com/better-auth/better-auth/issues/3774) | `modelName` hardcoded in some internal paths | Test custom table names with our plugin combination |
+| [#3954](https://github.com/better-auth/better-auth/issues/3954) | JWKS table queried on every `getSession()` (not cached) | Performance concern; monitor and potentially cache externally |
+
+**LOW — Design considerations:**
+
+- `customSession` plugin data is NOT cached in Redis or cookie cache (function runs every `getSession()`)
+- BetterAuth's built-in rate limiter is per-path only — we use our own `@d2/ratelimit` instead
+- Cookie cache invalidation is version-based (`cookieCache.version`), not per-user
+
+#### SvelteKit Auth Integration
+
+- Auth proxy in `hooks.server.ts` (`/api/auth/*` → Auth Service)
+- Session population hook (forward cookie to Auth Service for validation, or decode cookie cache locally)
+- `createAuthClient` setup (no `baseURL` needed — same-origin proxy)
+- Client-side JWT manager (part of `@d2/auth-client` — obtain, store in memory, auto-refresh)
+- CORS configuration for direct gateway access (Pattern C, ADR-005)
+
+#### .NET Gateway JWT Validation
+
+- `Auth.Client` at `backends/dotnet/services/Auth/Auth.Client/`
+- `AddJwtBearer()` with JWKS from Auth Service
+- RS256 validation (native `Microsoft.IdentityModel.Tokens`)
+- CORS middleware for SvelteKit origin
+- JWKS caching with periodic refresh
 
 ### Phase 3: Auth Features (Future)
 
@@ -467,10 +546,11 @@ Auth (always proxied):
 
 ## Technical Debt
 
-| Item                    | Priority | Notes                              |
-| ----------------------- | -------- | ---------------------------------- |
-| Test container sharing  | Medium   | Could speed up integration tests   |
-| Standardize error codes | Medium   | Ensure consistency across services |
+| Item                              | Priority | Notes                                                                                                  |
+| --------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| **Validate redaction in OTEL**    | **High** | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output       |
+| Test container sharing            | Medium   | Could speed up integration tests                                                                       |
+| Standardize error codes           | Medium   | Ensure consistency across services                                                                     |
 
 ---
 
@@ -486,11 +566,27 @@ Auth (always proxied):
 
 ## Open Questions
 
-_(None currently — all prior questions resolved 2026-02-05)_
+1. **Verify RS256 JWT interop**: Need an early integration test that generates a JWT from BetterAuth (with `alg: "RS256"`) and validates it with .NET's `Microsoft.IdentityModel.Tokens` + JWKS. Confirm the JWT header says `"alg": "RS256"` (not `"RSA256"`).
+
+2. **BetterAuth session sync bugs**: Issues #6987, #6993, #5144 affect our 3-tier session architecture. Need to test the full session lifecycle (create → update → revoke → list) with `storeSessionInDatabase: true` + `secondaryStorage` early. Pin BetterAuth version and re-test after each upgrade.
 
 ---
 
 ## Meeting Notes / Decisions Log
+
+### 2026-02-07
+
+- **Phase 2 research completed**: DI patterns + BetterAuth customization deep-dive
+  - **DI decision: Manual factory functions** — each package exports `createXxxHandlers(deps, context)` matching .NET's `services.AddXxx()`. No DI library needed. Backup: `@snap/ts-inject` if complexity grows. Rejected: tsyringe, inversify (decorator-based), hono-netdi (too new + decorators).
+  - **BetterAuth database adapter: Kysely** (built-in) — NOT Drizzle. Kysely is BetterAuth's native adapter, supports CLI `migrate`, fewer edge cases. Dedicated PG schema (`search_path=auth`).
+  - **BetterAuth casing: Accept camelCase internally** — `casing: "snake_case"` has multiple open issues with plugins. Give BetterAuth its own schema and don't fight the casing.
+  - **Secondary storage: Wraps `@d2/interfaces`** — BetterAuth's `SecondaryStorage` is just `{ get, set, delete }`. Trivially wraps our distributed cache handlers.
+  - **JWT algorithm: `"RS256"`** (standard JOSE name) — BetterAuth docs may show `"RSA256"` (typo). Code passes alg directly to jose which requires `"RS256"`. Need early interop test with .NET.
+  - **Known gotchas documented**: 8 HIGH/MODERATE GitHub issues affecting session sync, schema casing, and JWKS caching. All manageable but need testing.
+  - **Hono integration**: Route-based mount (`auth.handler(c.req.raw)`), CORS before routes, session middleware via `auth.api.getSession()`. First-class support, no adapter needed.
+- **CI workflow**: 6 parallel test jobs with D2 prefix + v1 suffix for branch protection discoverability
+- **RabbitMQ integration tests fixed**: consumer `ready` signaling, explicit credentials, no-op error listener for NACK path
+- **All tests passing**: 474 Node.js + 926 .NET
 
 ### 2026-02-06
 

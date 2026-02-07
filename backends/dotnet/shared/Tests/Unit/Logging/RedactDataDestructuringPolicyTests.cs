@@ -370,6 +370,78 @@ public class RedactDataDestructuringPolicyTests
     }
 
     // -----------------------------------------------------------------------
+    // End-to-end scalar vs destructured logging tests
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Proves that logging a [RedactData]-annotated record property as a scalar parameter
+    /// bypasses the destructuring policy — the raw value appears in log output.
+    /// This is the anti-pattern fixed in FindWhoIs.cs.
+    /// </summary>
+    [Fact]
+    public void ScalarParameter_BypassesRedactDataPolicy_RawValueAppears()
+    {
+        // Arrange
+        var events = new List<LogEvent>();
+        var logger = new LoggerConfiguration()
+            .Destructure.With(new RedactDataDestructuringPolicy())
+            .MinimumLevel.Debug()
+            .WriteTo.Sink(new DelegateSink(events.Add))
+            .CreateLogger();
+
+        var rawIp = "192.168.99.42";
+        var input = new PropertyLevelRedacted(rawIp, "Mozilla/5.0", "FindWhoIs");
+
+        // Act — log the IP as a scalar parameter (the anti-pattern)
+        logger.Warning("gRPC call failed for IP {IpAddress}. TraceId: {TraceId}", input.IpAddress, "trace-123");
+
+        // Assert — the raw IP DOES appear because scalars bypass destructuring
+        events.Should().HaveCount(1);
+        var rendered = events[0].RenderMessage();
+        rendered.Should().Contain(rawIp, "scalar parameter bypasses [RedactData] destructuring");
+    }
+
+    /// <summary>
+    /// Proves that logging a [RedactData]-annotated record via destructured parameter ({@Input})
+    /// triggers the policy — the raw value is redacted in log output.
+    /// This is the correct pattern used after the fix.
+    /// </summary>
+    [Fact]
+    public void DestructuredParameter_TriggersRedactDataPolicy_RawValueRedacted()
+    {
+        // Arrange
+        var events = new List<LogEvent>();
+        var logger = new LoggerConfiguration()
+            .Destructure.With(new RedactDataDestructuringPolicy())
+            .MinimumLevel.Debug()
+            .WriteTo.Sink(new DelegateSink(events.Add))
+            .CreateLogger();
+
+        var rawIp = "192.168.99.42";
+        var rawUserAgent = "Mozilla/5.0";
+        var input = new PropertyLevelRedacted(rawIp, rawUserAgent, "FindWhoIs");
+
+        // Act — log the input via destructuring (the correct pattern)
+        logger.Warning("gRPC call failed for {@Input}. TraceId: {TraceId}", input, "trace-123");
+
+        // Assert — raw IP and UserAgent should NOT appear in rendered output
+        events.Should().HaveCount(1);
+        var rendered = events[0].RenderMessage();
+        rendered.Should().NotContain(rawIp, "destructured parameter should trigger [RedactData] masking");
+        rendered.Should().NotContain(rawUserAgent, "destructured parameter should trigger [RedactData] masking");
+        rendered.Should().Contain("[REDACTED: PersonalInformation]");
+        rendered.Should().Contain("FindWhoIs"); // non-redacted field should still appear
+    }
+
+    /// <summary>
+    /// Minimal Serilog sink for capturing log events in tests.
+    /// </summary>
+    private sealed class DelegateSink(Action<LogEvent> write) : ILogEventSink
+    {
+        public void Emit(LogEvent logEvent) => write(logEvent);
+    }
+
+    // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 

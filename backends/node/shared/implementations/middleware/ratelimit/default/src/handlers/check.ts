@@ -132,8 +132,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
       // 1. Check if already blocked.
       const ttlResult = await this.getTtl.handleAsync({ key: blockedKey });
       if (ttlResult.success && ttlResult.data?.timeToLiveMs !== undefined) {
+        // Do not log raw `value` — it may be an IP address or fingerprint (PII).
         this.context.logger.debug(
-          `Request blocked on ${dimension} dimension. Value: ${value}. TTL: ${ttlResult.data.timeToLiveMs}ms. TraceId: ${this.traceId}`,
+          `Request blocked on ${dimension} dimension. TTL: ${ttlResult.data.timeToLiveMs}ms. TraceId: ${this.traceId}`,
         );
         return {
           isBlocked: true,
@@ -169,9 +170,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
       });
 
       if (!incrResult.success) {
-        // Fail-open on cache errors.
+        // Fail-open on cache errors. Do not log raw `value` — may be PII.
         this.context.logger.warn(
-          `Failed to increment rate limit counter for ${dimension}:${value}. Failing open. TraceId: ${this.traceId}`,
+          `Failed to increment rate limit counter for ${dimension}. Failing open. TraceId: ${this.traceId}`,
         );
         return { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined };
       }
@@ -192,8 +193,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
           expirationMs: this.options.blockDurationMs,
         });
 
+        // Do not log raw `value` — may be an IP address or fingerprint (PII).
         this.context.logger.warn(
-          `Rate limit exceeded on ${dimension} dimension. Value: ${value}. Count: ${estimated}/${threshold}. TraceId: ${this.traceId}`,
+          `Rate limit exceeded on ${dimension} dimension. Count: ${estimated}/${threshold}. TraceId: ${this.traceId}`,
         );
 
         return {
@@ -205,9 +207,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
 
       return { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined };
     } catch {
-      // Fail-open on cache errors.
+      // Fail-open on cache errors. Do not log raw `value` — may be PII.
       this.context.logger.warn(
-        `Error checking rate limit for ${dimension}:${value}. Failing open. TraceId: ${this.traceId}`,
+        `Error checking rate limit for ${dimension}. Failing open. TraceId: ${this.traceId}`,
       );
       return { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined };
     }

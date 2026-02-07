@@ -117,26 +117,25 @@ public class RequestEnrichmentMiddleware
                         IsHosting = whoIs.IsHosting,
                     };
 
+                    // Do not log raw clientIp — it is PII. City/Country are non-identifying.
                     r_logger.LogDebug(
-                        "Enriched request from IP {ClientIp} with WhoIs data. City: {City}, Country: {Country}",
-                        clientIp,
+                        "Enriched request with WhoIs data. City: {City}, Country: {Country}",
                         whoIs.Location?.City,
                         whoIs.Location?.CountryIso31661Alpha2Code);
                 }
                 else
                 {
-                    r_logger.LogDebug(
-                        "WhoIs lookup for IP {ClientIp} returned no data",
-                        clientIp);
+                    // Do not log raw clientIp — it is PII.
+                    r_logger.LogDebug("WhoIs lookup returned no data");
                 }
             }
             catch (Exception ex)
             {
                 // Fail-open: log warning and continue without WhoIs data.
+                // Do not log raw clientIp — it is PII.
                 r_logger.LogWarning(
                     ex,
-                    "WhoIs lookup failed for IP {ClientIp}. Proceeding without WhoIs data.",
-                    clientIp);
+                    "WhoIs lookup failed. Proceeding without WhoIs data.");
             }
         }
 

@@ -58,9 +58,10 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
         });
       });
     } catch {
-      // Fail-open: log warning and return undefined
+      // Fail-open: log warning and return undefined.
+      // Do not log input.ipAddress directly — it bypasses BaseHandler's redaction.
       this.context.logger.warn(
-        `gRPC call to Geo service failed for IP ${input.ipAddress}. TraceId: ${this.traceId}`,
+        `gRPC call to Geo service failed. TraceId: ${this.traceId}`,
       );
       return D2Result.ok({ data: { whoIs: undefined }, traceId: this.traceId });
     }
