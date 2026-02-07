@@ -12,6 +12,40 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 
 ---
 
+## Data Redaction
+
+Geo.Client handlers deal with sensitive data (IP addresses, user agents, geographic coordinates) and proto-generated DTOs that cannot be annotated with `[RedactData]`. Two complementary mechanisms protect against PII leaks in logs:
+
+### DefaultOptions Overrides
+
+Most handlers suppress I/O logging entirely via `DefaultOptions` because their input/output contains proto-generated `GetReferenceDataResponse` (large, un-annotatable):
+
+| Handler     | LogInput | LogOutput | Rationale                                                  |
+| ----------- | -------- | --------- | ---------------------------------------------------------- |
+| SetInMem    | `false`  | `false`   | Input is `GetReferenceDataResponse` (proto-generated)      |
+| SetInDist   | `false`  | `false`   | Input is `GetReferenceDataResponse` (proto-generated)      |
+| SetOnDisk   | `false`  | `false`   | Input is `GetReferenceDataResponse` (proto-generated)      |
+| GetFromMem  | `false`  | `false`   | Output is `GetReferenceDataResponse` (proto-generated)     |
+| GetFromDist | `false`  | `false`   | Output is `GetReferenceDataResponse` (proto-generated)     |
+| GetFromDisk | `false`  | `false`   | Output is `GetReferenceDataResponse` (proto-generated)     |
+| Get         | `false`  | `false`   | Orchestrates all above, same proto data flows through      |
+| FindWhoIs   | `true`   | `false`   | Input annotated with `[RedactData]`; output is proto WhoIs |
+| ReqUpdate   | _(default)_ | _(default)_ | I/O is empty / non-sensitive                            |
+
+### [RedactData] Annotations
+
+`FindWhoIsInput` has property-level `[RedactData]` on its sensitive fields, processed by `RedactDataDestructuringPolicy` during Serilog destructuring:
+
+```csharp
+public record FindWhoIsInput(
+    [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress,
+    [property: RedactData(Reason = RedactReason.PersonalInformation)] string UserAgent);
+```
+
+This allows input logging to remain enabled (useful for debugging) while ensuring PII is masked in log output.
+
+---
+
 ## Messages
 
 | File Name                                             | Description                                                                  |

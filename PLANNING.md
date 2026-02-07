@@ -20,7 +20,7 @@
 
 ### Primary Goals
 
-1. **Phase 1: TypeScript Shared Infrastructure** - Build shared `@d2/*` packages mirroring .NET (in progress)
+1. **Phase 1: TypeScript Shared Infrastructure** - Build shared `@d2/*` packages mirroring .NET (complete ✅)
 2. **Phase 2: Auth Service Implementation** - Standalone Node.js + Hono + BetterAuth at `backends/node/services/auth/`
 3. **Phase 2: SvelteKit Auth Integration** - Proxy pattern (`/api/auth/*` → Auth Service)
 
@@ -33,7 +33,7 @@
 - ✅ `@d2/utilities` — Array/UUID/string helpers, cache constants (mirrors `D2.Shared.Utilities`)
 - ✅ `@d2/protos` — Generated TS proto types + gRPC client stubs (Buf + ts-proto)
 - ✅ `@d2/testing` — Custom Vitest matchers for D2Result assertions
-- ✅ `@d2/shared-tests` — 161 tests covering all above packages
+- ✅ `@d2/shared-tests` — initial 161 tests covering foundation packages
 - ✅ ESLint 9 + Prettier monorepo configuration (root-level, covers all packages + web client)
 - ✅ `@d2/logging` — ILogger interface with Pino implementation (auto-instrumented via OTel)
 - ✅ `@d2/service-defaults` — One-call OTel SDK bootstrap (`setupTelemetry()`), re-exports OTel API
@@ -50,6 +50,14 @@
 - ✅ `@d2/messaging` — Thin RabbitMQ wrapper (rabbitmq-client), MessageBus with subscribe + publish
 - ✅ `@d2/geo-client` — Full Geo.Client parity: 9 CQRS handlers, messaging handler, consumer bridge
 - ✅ `@d2/shared-tests` — 375 tests (85 new: LRU, messaging, geo-client handlers)
+- ✅ Node.js TLC folder restructuring — interfaces, cache handlers, geo-client interfaces, implementation dirs
+- ✅ Node.js `RedactionSpec` type + `BaseHandler` integration in `@d2/handler`
+- ✅ Node.js redaction specs on handler interfaces + wired to handler implementations
+- ✅ .NET `RedactDataDestructuringPolicy` — Serilog destructuring policy for `[RedactData]` attribute
+- ✅ .NET `DefaultOptions` virtual property on `BaseHandler` for handler-level logging defaults
+- ✅ .NET handler I/O annotations + `DefaultOptions` overrides (Geo.Client, RateLimit)
+- ✅ `@d2/shared-tests` — 445 tests (70 new: redaction infrastructure coverage)
+- ✅ .NET tests — 289 passing (11 new: DefaultOptionsTests + RedactDataDestructuringPolicyTests)
 
 ### Blocked By
 
@@ -335,13 +343,12 @@ Auth (always proxied):
 | **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                       | `D2.Shared.Handler`                      |
 | **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                    | `D2.Shared.Interfaces`                   |
 | **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                             | `D2.Shared.Result.Extensions`            |
-| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/memory/`                | `InMemoryCache.Default`                  |
-| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/redis/`                 | `DistributedCache.Redis`                 |
+| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`     | `InMemoryCache.Default`                  |
+| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`     | `DistributedCache.Redis`                 |
 | **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                     | MassTransit (thin rabbitmq-client wrap)  |
 | **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                              | `Geo.Client` (full parity)               |
-| **@d2/request-enrichment** | 📋 Phase 1 | `backends/node/shared/implementations/middleware/request-enrichment/` | `RequestEnrichment.Default`              |
-| **@d2/ratelimit**          | 📋 Phase 1 | `backends/node/shared/implementations/middleware/ratelimit/`          | `RateLimit.Default`                      |
-| ~~@d2/service-defaults~~   | ✅ Done    | _(moved to Layer 0 — see above)_                                      | `D2.Shared.ServiceDefaults`              |
+| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`              |
+| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                      |
 | **@d2/auth-client**        | 📋 Phase 2 | TBD                                                                   | —                                        |
 | **@d2/jwt-manager**        | 📋 Phase 2 | TBD                                                                   | —                                        |
 
@@ -377,7 +384,7 @@ Auth (always proxied):
 
 ## Upcoming Work
 
-### Phase 1: TypeScript Shared Infrastructure (Current)
+### Phase 1: TypeScript Shared Infrastructure (Complete ✅)
 
 > **Note:** Before building the Auth Service, we need shared TypeScript packages that mirror what already exists on the .NET side. This is the "rebuild in TypeScript" step. Package structure mirrors .NET's TLC folder convention.
 
@@ -398,7 +405,11 @@ Auth (always proxied):
 
 **Step 5 — Service Client + Messaging (Layer 0 + 4)** ✅ 12. ✅ **MemoryCacheStore LRU** — Always-on LRU eviction with maxEntries option (default 10,000) 13. ✅ **@d2/messaging** — Thin wrapper around rabbitmq-client: MessageBus with subscribe (consumer) + createPublisher 14. ✅ **@d2/geo-client** — Full 1:1 mirror of .NET Geo.Client: 9 CQRS handlers (SetInMem, SetInDist, SetOnDisk, GetFromMem, GetFromDist, GetFromDisk, ReqUpdate, FindWhoIs, Get), messaging handler (Updated), consumer bridge (createUpdatedConsumer), GeoRefDataSerializer 15. ✅ **@d2/shared-tests** — 375 tests (85 new for LRU, messaging, geo-client)
 
-**Step 6 — Middleware (Layer 5)** 13. **@d2/request-enrichment** — IP resolution, fingerprinting, WhoIs lookup middleware for Hono (mirrors `RequestEnrichment.Default`) 14. **@d2/ratelimit** — Multi-dimensional sliding-window rate limiting middleware for Hono (mirrors `RateLimit.Default`) - Rate limit alerting scaffold (hook/callback for future notifications service)
+**Step 6 — Middleware (Layer 5)** ✅ 13. ✅ **@d2/request-enrichment** — IP resolution, fingerprinting, WhoIs lookup middleware for Hono (mirrors `RequestEnrichment.Default`) 14. ✅ **@d2/ratelimit** — Multi-dimensional sliding-window rate limiting middleware for Hono (mirrors `RateLimit.Default`) - Rate limit alerting scaffold (hook/callback for future notifications service)
+
+**Step 7a — Polyglot Structure Alignment** ✅ 15. ✅ **@d2/interfaces restructuring** — Split flat `types.ts` files into TLC folder convention (`caching/{in-memory,distributed}/handlers/{c,d,r,u}/`), one handler per file 16. ✅ **Cache handler TLC folders** — Moved `@d2/cache-memory` and `@d2/cache-redis` handler files into `handlers/{d,r,u}/` subdirectories matching interface structure 17. ✅ **Middleware contracts to @d2/interfaces** — Moved `RateLimitDimension`, `IRequestInfo`, rate limit handler types from implementation packages to `@d2/interfaces` (`middleware/{ratelimit,request-enrichment}/`) 18. ✅ **@d2/geo-client interfaces directory** — Extracted handler types from inline definitions to dedicated `interfaces/{c,q,x,sub}/` structure mirroring .NET `Geo.Client/Interfaces/` 19. ✅ **Implementation directory restructuring** — Renamed flat implementation directories to `purpose/implementation` pattern (e.g., `ratelimit/default/`)
+
+**Step 7b — Data Redaction Infrastructure** ✅ 20. ✅ **Node.js `RedactionSpec`** — New type in `@d2/handler` declaring handler redaction posture (inputFields, outputFields, suppressInput, suppressOutput) 21. ✅ **Node.js `BaseHandler` redaction** — Input/output field masking and suppression integrated into logging flow 22. ✅ **Node.js interface redaction specs** — Companion constants (`*_REDACTION`) on handler interfaces with required `redaction` property (compile-time enforcement) 23. ✅ **Node.js handler wiring** — All geo-client and ratelimit handlers implement `redaction` getter referencing interface constants 24. ✅ **.NET `RedactDataDestructuringPolicy`** — Serilog `IDestructuringPolicy` processing `[RedactData]` attributes (type-level + property-level, reflection-cached) 25. ✅ **.NET `DefaultOptions`** — Virtual `HandlerOptions` property on `BaseHandler`; null per-call options fall through to handler defaults 26. ✅ **.NET handler annotations** — `[RedactData]` on FindWhoIs I/O, `DefaultOptions` overrides on all ref data + rate limit handlers 27. ✅ **Tests** — 17 Node.js tests (handler redaction), 13 .NET tests (RedactDataDestructuringPolicy + DefaultOptions)
 
 > Tests are written and validated at each step — `@d2/shared-tests` grows as each layer is built.
 
@@ -520,6 +531,26 @@ _(None currently — all prior questions resolved 2026-02-05)_
   - pnpm-workspace.yaml: services/\* → services/\*\* for nested packages like geo/geo-client
   - 375 TS tests passing (85 new), all passing with lint + format clean
 - **Next up**: Layer 5 middleware (@d2/request-enrichment, @d2/ratelimit)
+- **Phase 1, Step 6 completed**: Middleware (Layer 5) done
+  - @d2/request-enrichment: IP resolution, fingerprinting, WhoIs lookup middleware for Hono
+  - @d2/ratelimit: Multi-dimensional sliding-window rate limiting with abstracted cache handlers
+  - 437 TS tests passing (62 new for request-enrichment + ratelimit)
+- **Phase 1, Step 7a completed**: Polyglot Structure Alignment
+  - @d2/interfaces: Restructured from flat types.ts to TLC folder convention (one handler per file)
+  - Cache handlers: Moved into TLC subdirectories (handlers/{d,r,u}/) matching interfaces
+  - Middleware contracts: Moved RateLimitDimension, IRequestInfo, check handler types to @d2/interfaces
+  - @d2/geo-client: Extracted interfaces into dedicated interfaces/{c,q,x,sub}/ directories mirroring .NET
+  - Implementation dirs: Restructured to purpose/implementation pattern (e.g., ratelimit/default/)
+  - All tests reformatted and verified passing
+- **Phase 1, Step 7b completed**: Data Redaction Infrastructure
+  - Node.js: RedactionSpec type in @d2/handler, BaseHandler field masking + suppression
+  - Node.js: Companion *_REDACTION constants on interfaces, interface narrowing for compile-time enforcement
+  - Node.js: All geo-client + ratelimit handlers wired with redaction getters
+  - .NET: RedactDataDestructuringPolicy (Serilog IDestructuringPolicy, reflection-cached)
+  - .NET: DefaultOptions virtual property on BaseHandler, null per-call falls through to handler defaults
+  - .NET: [RedactData] on FindWhoIs I/O, DefaultOptions overrides on all ref data + rate limit handlers
+  - 445 TS tests passing (8 new), 289 .NET tests passing (11 new)
+- **Next up**: Phase 2 (Auth Service)
 
 ### 2026-02-05
 

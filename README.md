@@ -62,11 +62,17 @@ Summary:
 - 600+ .NET tests (unit + integration) passing
 - Node.js pnpm workspace with shared TypeScript config and Vitest
 - ESLint 9 + Prettier monorepo-wide code quality tooling
-- Shared TypeScript packages: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing` with 161 tests
+- TypeScript shared infrastructure (Phase 1 complete — 16 `@d2/*` packages, 445 tests):
+  - Layer 0: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing`, `@d2/messaging`
+  - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction)
+  - Layer 2: `@d2/interfaces`, `@d2/result-extensions`
+  - Layer 3: `@d2/cache-memory`, `@d2/cache-redis`
+  - Layer 4: `@d2/geo-client` (full .NET Geo.Client parity)
+  - Layer 5: `@d2/request-enrichment`, `@d2/ratelimit`
+  - Data redaction infrastructure (RedactionSpec + interface-level compile-time enforcement)
 
 **🚧 In Progress:**
 
-- TypeScript shared infrastructure packages (`@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing` done; `@d2/handler` next)
 - Auth service architecture (Node.js + Hono + BetterAuth)
 
 **📋 Planned:**
@@ -74,8 +80,7 @@ Summary:
 - SignalR Gateway (WebSocket to gRPC routing)
 - Auth service implementation (standalone Node.js service at `backends/node/services/auth/`)
 - SvelteKit auth integration (proxy pattern to Auth Service)
-- Node.js rate limiting package (`@d2/ratelimit`) — same algorithm as .NET middleware
-- Node.js geo cache package (`@d2/geo-cache`) — local WhoIs cache with gRPC fallback
+- .NET Gateway JWT validation (RS256 via JWKS)
 - OTEL alerting and notification integration
 - Kestra for scheduled task management
 - Much, much more...
@@ -101,73 +106,82 @@ D² was designed from the ground up to maximize developer experience while provi
 
 ```mermaid
 graph TB
-    subgraph Frontends
-        SK[SvelteKit<br/>Frontend + Backend]
-    end
+    BROWSER[Browser / Client]
+
+    SK[SvelteKit Client App]
 
     subgraph Backends
-        subgraph "API Gateways"
-            REST[REST Gateway]
-            SR[SignalR Gateway]
+        subgraph Gateways["API Gateways"]
+            REST[REST Gateway<br/>.NET]
+            SR[SignalR Gateway<br/>.NET]
         end
 
-        subgraph "Microservices"
-            GEO[Geo Service]
-            AUTH[Auth Service]
-            OTHER[Other Services...]
+        subgraph AuthSvc["Auth Microservice"]
+            AUTH[Auth<br/>Node.js + BetterAuth]
+        end
+
+        subgraph Services["Microservices"]
+            GEO[Geo Service<br/>.NET] ~~~ OTHER[Other Services...]
         end
     end
 
-    subgraph "Shared Infrastructure"
-        REDIS[(Redis Cache)]
-        RMQ[RabbitMQ]
-        MINIO[MinIO S3]
+    subgraph Infra["Infrastructure"]
+        GEODB[(Geo DB)] ~~~ AUTHDB[(Auth DB)] ~~~ OTHERDB[(Other DBs...)] ~~~ REDIS[(Redis)]
+        RMQ[RabbitMQ] ~~~ MINIO[MinIO S3] ~~~ LGTM[LGTM Stack]
     end
 
-    subgraph "Service Databases"
-        GEODB[(Geo DB)]
-        AUTHDB[(Auth DB)]
-        OTHERDB[(Other DBs...)]
-    end
+    %% Browser paths
+    BROWSER <-->|SSR + Auth| SK
+    BROWSER <-->|JWT API calls| REST
+    BROWSER <-->|WebSocket| SR
 
-    subgraph "Observability"
-        LGTM[LGTM Stack<br/>Loki/Grafana/Tempo/Mimir]
-    end
+    %% SvelteKit to backends
+    SK <-->|JWT| REST
+    SK <-->|Proxy /api/auth/*| AuthSvc
 
-    SK -->|HTTP/REST| REST
-    SK -->|WebSocket| SR
+    %% Internal backend routing
+    Gateways <-->|gRPC| Services
+    Gateways <-->|JWKS| AuthSvc
+    AuthSvc <-->|gRPC| Services
 
-    REST -->|gRPC| GEO
-    REST -->|gRPC| AUTH
-    REST -->|gRPC| OTHER
-    SR -->|gRPC| AUTH
-    SR -->|gRPC| OTHER
+    %% Infrastructure data
+    SK <-->|Infra Data| Infra
+    Backends <-->|Infra Data| Infra
 
-    GEO <-->|Events| RMQ
-    AUTH <-->|Events| RMQ
-    OTHER <-->|Events| RMQ
+    %% Node colors
+    classDef browser fill:#6c757d,stroke:#495057,color:#fff
+    classDef svelte fill:#FF3E00,stroke:#c73100,color:#fff
+    classDef gateway fill:#512BD4,stroke:#3d1f9e,color:#fff
+    classDef nodejs fill:#339933,stroke:#267326,color:#fff
+    classDef service fill:#1a73e8,stroke:#1557b0,color:#fff
+    classDef postgres fill:#4169E1,stroke:#2f4fb3,color:#fff
+    classDef redis fill:#DC382D,stroke:#b02d24,color:#fff
+    classDef rabbitmq fill:#FF6600,stroke:#cc5200,color:#fff
+    classDef minio fill:#C72E49,stroke:#9e243a,color:#fff
+    classDef grafana fill:#F46800,stroke:#c35300,color:#fff
 
-    GEO -->|Cache| REDIS
-    AUTH -->|Cache| REDIS
-    OTHER -->|Cache| REDIS
+    class BROWSER browser
+    class SK svelte
+    class REST,SR gateway
+    class AUTH nodejs
+    class GEO,OTHER service
+    class GEODB,AUTHDB,OTHERDB postgres
+    class REDIS redis
+    class RMQ rabbitmq
+    class MINIO minio
+    class LGTM grafana
 
-    GEO -->|Storage| MINIO
-    OTHER -->|Storage| MINIO
-
-    GEO --> GEODB
-    AUTH --> AUTHDB
-    OTHER --> OTHERDB
-
-    REST -.->|Telemetry| LGTM
-    GEO -.->|Telemetry| LGTM
-    AUTH -.->|Telemetry| LGTM
+    %% Subgraph colors
+    style Backends fill:#1e1e2e,stroke:#444,color:#ccc
+    style Gateways fill:#2a2a4a,stroke:#555,color:#ccc
+    style AuthSvc fill:#1a3a1a,stroke:#555,color:#ccc
+    style Services fill:#2a2a4a,stroke:#555,color:#ccc
+    style Infra fill:#2e1e2e,stroke:#444,color:#ccc
 ```
 
 ## Additional Documentation 📚
 
-### Back-End Services
-
-See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierarchical structure, category definitions, and architectural decisions used in D²'s back end services.
+See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierarchical structure (TLC→2LC→3LC), category definitions, and architectural decisions used across all back-end services.
 
 > **Orchestration:**
 >
@@ -177,33 +191,35 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | ----------------------------------------------------------- | ---------------------------------------------- |
 > | [AppHost](backends/dotnet/orchestration/AppHost/APPHOST.md) | Aspire orchestration and service configuration |
 >
-> **Contracts:**
+> **Core Patterns & Contracts:**
 >
-> _Core abstractions, patterns, and interfaces shared across all services. These define the "what" without implementation._
+> _Shared abstractions, patterns, and interfaces used across all services on both platforms. These define the "what" without implementation._
 >
-> | Component                                                                             | Description                                         |
-> | ------------------------------------------------------------------------------------- | --------------------------------------------------- |
-> | [Handler](backends/dotnet/shared/Handler/HANDLER.md)                                  | Base handler patterns with logging and tracing      |
-> | [Handler.Extensions](backends/dotnet/shared/Handler.Extensions/HANDLER_EXTENSIONS.md) | DI registration for handler context services        |
-> | [Interfaces](backends/dotnet/shared/Interfaces/INTERFACES.md)                         | Shared contract interfaces                          |
-> | [Result](backends/dotnet/shared/Result/RESULT.md)                                     | D2Result pattern for consistent error handling      |
-> | [Result.Extensions](backends/dotnet/shared/Result.Extensions/RESULT_EXTENSIONS.md)    | D2Result to/from proto conversion and gRPC handling |
-> | [ServiceDefaults](backends/dotnet/shared/ServiceDefaults/SERVICE_DEFAULT.md)          | Shared service configuration and telemetry          |
-> | [Tests](backends/dotnet/shared/Tests/TESTS.md)                                        | Shared testing infrastructure and base classes      |
-> | [Utilities](backends/dotnet/shared/Utilities/UTILITIES.md)                            | Shared utility extensions and helpers               |
+> | Concern           | .NET                                                                                  | Node.js                                                                          | Description                                     |
+> | ----------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------- |
+> | Result            | [Result](backends/dotnet/shared/Result/RESULT.md)                                     | [@d2/result](backends/node/shared/result/RESULT.md)                              | Errors-as-values pattern (D2Result)             |
+> | Handler           | [Handler](backends/dotnet/shared/Handler/HANDLER.md)                                  | [@d2/handler](backends/node/shared/handler/HANDLER.md)                           | BaseHandler with OTel spans, metrics, redaction |
+> | Handler Ext.      | [Handler.Extensions](backends/dotnet/shared/Handler.Extensions/HANDLER_EXTENSIONS.md) | —                                                                                | DI registration for handler context             |
+> | Interfaces        | [Interfaces](backends/dotnet/shared/Interfaces/INTERFACES.md)                         | [@d2/interfaces](backends/node/shared/interfaces/INTERFACES.md)                  | Cache + middleware contract interfaces          |
+> | Result Ext.       | [Result.Extensions](backends/dotnet/shared/Result.Extensions/RESULT_EXTENSIONS.md)    | [@d2/result-extensions](backends/node/shared/result-extensions/RESULT_EXTENSIONS.md) | D2Result ↔ Proto conversions + gRPC wrapper  |
+> | Utilities         | [Utilities](backends/dotnet/shared/Utilities/UTILITIES.md)                            | [@d2/utilities](backends/node/shared/utilities/UTILITIES.md)                     | Extension methods and helpers                   |
+> | Service Defaults  | [ServiceDefaults](backends/dotnet/shared/ServiceDefaults/SERVICE_DEFAULT.md)          | [@d2/service-defaults](backends/node/shared/service-defaults/SERVICE_DEFAULTS.md) | Telemetry and shared configuration             |
+> | Logging           | —                                                                                     | [@d2/logging](backends/node/shared/logging/LOGGING.md)                           | ILogger interface with Pino (OTel-instrumented) |
+> | Proto Contracts   | [Protos.DotNet](backends/dotnet/shared/protos/_gen/Protos.DotNet/PROTOS_DOTNET.md)    | [@d2/protos](backends/node/shared/protos/PROTOS.md)                              | Generated gRPC types from `contracts/protos/`   |
+> | Testing           | [Tests](backends/dotnet/shared/Tests/TESTS.md)                                        | [@d2/testing](backends/node/shared/testing/TESTING.md) / [@d2/shared-tests](backends/node/shared/tests/TESTS.md) | Test infrastructure and suites |
 >
 > **Shared Implementations:**
 >
-> _Reusable, drop-in implementations of contract interfaces. Services consume these via DI without reinventing common functionality like caching, transactions, or batch query utilities._
+> _Reusable, drop-in implementations of contract interfaces. Services consume these via DI without reinventing common functionality like caching, transactions, or middleware._
 >
 > _Caching:_
 >
-> | Component                                                                                                                             | Description                              |
-> | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-> | [DistributedCache.Redis](backends/dotnet/shared/Implementations/Caching/Distributed/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md) | Redis distributed caching implementation |
-> | [InMemoryCache.Default](backends/dotnet/shared/Implementations/Caching/InMemory/InMemoryCache.Default/INMEMORYCACHE_DEFAULT.md)       | In-memory caching implementation         |
+> | Concern           | .NET                                                                                                                              | Node.js                                                                                         | Description                   |
+> | ----------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------- |
+> | In-Memory Cache   | [InMemoryCache.Default](backends/dotnet/shared/Implementations/Caching/InMemory/InMemoryCache.Default/INMEMORYCACHE_DEFAULT.md)   | [@d2/cache-memory](backends/node/shared/implementations/caching/in-memory/default/CACHE_MEMORY.md) | Local cache with LRU eviction |
+> | Distributed Cache | [DistributedCache.Redis](backends/dotnet/shared/Implementations/Caching/Distributed/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md) | [@d2/cache-redis](backends/node/shared/implementations/caching/distributed/redis/CACHE_REDIS.md) | Redis caching             |
 >
-> _Repository:_
+> _Repository (.NET only):_
 >
 > | Component                                                                                                            | Description                                |
 > | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
@@ -212,30 +228,44 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 > _Middleware:_
 >
-> | Component                                                                                                                      | Description                                          |
-> | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-> | [RequestEnrichment.Default](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | IP resolution, fingerprinting, and WhoIs geolocation |
-> | [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | Multi-dimensional sliding-window rate limiting       |
+> | Concern            | .NET                                                                                                                           | Node.js                                                                                                                  | Description                                          |
+> | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+> | Request Enrichment | [RequestEnrichment.Default](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | [@d2/request-enrichment](backends/node/shared/implementations/middleware/request-enrichment/default/REQUEST_ENRICHMENT.md) | IP resolution, fingerprinting, and WhoIs geolocation |
+> | Rate Limiting      | [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | [@d2/ratelimit](backends/node/shared/implementations/middleware/ratelimit/default/RATELIMIT.md)                           | Multi-dimensional sliding-window rate limiting       |
+>
+> _Messaging (Node.js only — .NET uses MassTransit directly):_
+>
+> | Component                                                    | Description                                           |
+> | ------------------------------------------------------------ | ----------------------------------------------------- |
+> | [@d2/messaging](backends/node/shared/messaging/MESSAGING.md) | RabbitMQ pub/sub (thin wrapper around rabbitmq-client) |
 >
 > **Services:**
 >
-> _Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async). Each service owns a client library for consumers._
+> _Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async)._
 >
-> | Component                                                                          | Description                                                                       |
-> | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-> | [Protos.DotNet](backends/dotnet/shared/protos/_gen/Protos.DotNet/PROTOS_DOTNET.md) | Generated gRPC service contracts                                                  |
-> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)                                 | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
-> | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md)                | Geo service client library for consumer services                                  |
+> | Service                                                    | Platform | Status     | Description                                                                       |
+> | ---------------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------- |
+> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)         | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
+> | Auth                                                       | Node.js  | 📋 Planned | Standalone Hono + BetterAuth at `backends/node/services/auth/`                    |
+>
+> **Client Libraries:**
+>
+> _Service-owned client libraries for consumers. Each service publishes a client package so consumers don't need to know gRPC details._
+>
+> | Client     | .NET                                                                         | Node.js                                                                      | Description                     |
+> | ---------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------- |
+> | Geo Client | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md)         | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md)       | Service-owned consumer library  |
 >
 > **Gateways:**
 >
-> _REST and SignalR API gateways translating external requests into gRPC calls to back end services._
+> _API gateways translating external requests into gRPC calls to back-end services._
 >
-> | Component                                     | Description                       |
-> | --------------------------------------------- | --------------------------------- |
-> | [REST](backends/dotnet/gateways/REST/REST.md) | HTTP/REST to gRPC routing gateway |
+> | Gateway                                                | Platform | Status     | Description                       |
+> | ------------------------------------------------------ | -------- | ---------- | --------------------------------- |
+> | [REST Gateway](backends/dotnet/gateways/REST/REST.md)  | .NET     | ✅ Done    | HTTP/REST → gRPC routing gateway  |
+> | SignalR Gateway                                        | .NET     | 📋 Planned | WebSocket → gRPC routing gateway  |
 
-### Front-End Services
+### Front-End Clients
 
 Coming soon...
 
@@ -265,32 +295,43 @@ While WORX itself will be a commercial product, this repository exists (for now,
 
 ## Technology Stack 🛠️
 
-#### Backend Stack
+#### .NET Backend
 
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 ![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
 ![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
+![Serilog](https://img.shields.io/badge/Serilog-9.0-512BD4?logo=dotnet)
+![MassTransit](https://img.shields.io/badge/MassTransit-9.0-512BD4?logo=dotnet)
+
+#### Node.js Backend
+
+![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
+![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono)
+![BetterAuth](https://img.shields.io/badge/BetterAuth-1.x-000000)
+![Pino](https://img.shields.io/badge/Pino-9.6-339933?logo=nodedotjs)
+![ioredis](https://img.shields.io/badge/ioredis-5.8-DC382D?logo=redis)
+
+#### Shared Infrastructure
+
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)
-![Npgsql](https://img.shields.io/badge/Npgsql-10.0-4169E1?logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-8.2-DC382D?logo=redis)
 ![RabbitMQ](https://img.shields.io/badge/RabbitMQ-4.1-FF6600?logo=rabbitmq)
-![MinIO](https://img.shields.io/badge/MinIO-2025--09-C72E49?logo=minio)
+![MinIO](https://img.shields.io/badge/MinIO-Latest-C72E49?logo=minio)
 
 #### Infrastructure & Orchestration
 
 ![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.0-512BD4?logo=dotnet)
 ![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)
+![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
 
-#### Frontend Stack
+#### Frontend
 
 ![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte)
 ![SvelteKit](https://img.shields.io/badge/SvelteKit-2-FF3E00?logo=svelte)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1-38B2AC?logo=tailwind-css)
-![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs)
-![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
 
 #### Communication & Serialization
 
@@ -299,8 +340,9 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![gRPC](https://img.shields.io/badge/gRPC-HTTP%2F2-244c5a?logo=grpc)
 ![Protobuf](https://img.shields.io/badge/Protobuf-3-0288D1)
 
-#### Observability (LGTM Stack)
+#### Observability
 
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.14-5B5EA7?logo=opentelemetry)
 ![Loki](https://img.shields.io/badge/Loki-3.5-F46800?logo=grafana)
 ![Grafana](https://img.shields.io/badge/Grafana-12.2-F46800?logo=grafana)
 ![Tempo](https://img.shields.io/badge/Tempo-2.8-F46800?logo=grafana)
@@ -310,18 +352,19 @@ While WORX itself will be a commercial product, this repository exists (for now,
 #### Testing & Quality
 
 ![xUnit](https://img.shields.io/badge/xUnit-3.2-512BD4)
+![Vitest](https://img.shields.io/badge/Vitest-3.1-6E9F18?logo=vitest)
 ![Testcontainers](https://img.shields.io/badge/Testcontainers-4.9-2496ED?logo=docker)
 ![FluentAssertions](https://img.shields.io/badge/FluentAssertions-8.8-5C2D91)
 ![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
 ![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33?logo=playwright)
-![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?logo=vitest)
 
 #### CI/CD & Code Quality
 
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
-![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?logo=conventionalcommits)
+![ESLint](https://img.shields.io/badge/ESLint-9.39-4B32C3?logo=eslint)
+![Prettier](https://img.shields.io/badge/Prettier-3.8-F7B93E?logo=prettier)
 ![StyleCop](https://img.shields.io/badge/StyleCop-Enforced-239120)
-![XML Docs](https://img.shields.io/badge/XML_Docs-Required-512BD4)
+![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?logo=conventionalcommits)
 
 #### Documentation
 

@@ -103,3 +103,13 @@ Uses project-defined distributed cache abstractions (no direct Redis dependency)
 - `IUpdate.ISetHandler<string>` — Set block key with TTL.
 
 Requires `RequestEnrichment.Default` for `IRequestInfo` on `HttpContext.Features`.
+
+## Data Redaction
+
+The `Check` handler overrides `DefaultOptions` to suppress input logging:
+
+```csharp
+protected override HandlerOptions DefaultOptions => new(LogInput: false);
+```
+
+**Rationale:** `IRequestInfo` (the input) contains client IP, fingerprint, user ID, and city — all PII fields. Since `IRequestInfo` is a framework interface (not a domain record), it cannot be annotated with `[RedactData]`. Suppressing input logging is the appropriate coarse control.

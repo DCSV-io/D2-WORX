@@ -677,25 +677,24 @@ refactor: simplify caching logic
 - Distributed cache abstractions: GetTtl, Increment handlers (abstracted from Redis)
 - BaseHandler metrics: duration histogram, invocations/failures/exceptions counters
 - All shared implementations use project-defined abstractions (no direct Redis/MS cache)
+- RedactDataDestructuringPolicy: Serilog policy for `[RedactData]` attribute (type + property-level masking)
+- BaseHandler DefaultOptions: Virtual property for handler-level logging defaults
+- Handler I/O annotations: `[RedactData]` on FindWhoIs I/O, `DefaultOptions` overrides on all ref data + rate limit handlers
 
 **Completed (Node.js/TypeScript):**
 
 - Workspace + Foundation (Layer 0): @d2/result, @d2/utilities, @d2/protos, @d2/testing
 - Logging + Telemetry (Layer 0): @d2/logging (ILogger + Pino), @d2/service-defaults (OTel bootstrap)
-- Handler Pattern (Layer 1): @d2/handler (BaseHandler with OTel spans + metrics)
-- 186 tests in @d2/shared-tests
+- Handler Pattern (Layer 1): @d2/handler (BaseHandler with OTel spans + metrics + RedactionSpec)
+- Contracts (Layer 2): @d2/interfaces (cache + middleware contracts, TLC folder convention), @d2/result-extensions
+- Cache Implementations (Layer 3): @d2/cache-memory, @d2/cache-redis (TLC handler subdirs)
+- Service Client + Messaging (Layer 4): @d2/messaging, @d2/geo-client (full .NET parity, interfaces + redaction)
+- Middleware (Layer 5): @d2/request-enrichment, @d2/ratelimit
+- Polyglot structure alignment: All packages follow TLC folder convention matching .NET
+- Data redaction infrastructure: RedactionSpec, companion constants, interface narrowing, handler wiring
+- 445 tests in @d2/shared-tests
 
-**Next (Node.js/TypeScript) — Phase 1 continues:**
-
-1. `@d2/interfaces` — Cache operation contracts (Layer 2)
-2. `@d2/result-extensions` — D2Result ↔ Proto conversions (Layer 2)
-3. `@d2/cache-memory` — In-memory cache handlers (Layer 3)
-4. `@d2/cache-redis` — Redis cache handlers (Layer 3)
-5. `@d2/geo-cache` — LRU memory cache + gRPC fallback (Layer 4)
-6. `@d2/request-enrichment` — IP resolution, fingerprinting middleware (Layer 5)
-7. `@d2/ratelimit` — Sliding-window rate limiting middleware (Layer 5)
-
-Phase 2 (Auth): Auth Service, SvelteKit integration, .NET Gateway JWT validation
+**Next:** Phase 2 (Auth): Auth Service, SvelteKit integration, .NET Gateway JWT validation
 
 ### When in Doubt
 
