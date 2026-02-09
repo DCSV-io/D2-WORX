@@ -11,6 +11,7 @@ using D2.Geo.Client.Interfaces.CQRS.Handlers.Q;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Result;
+using D2.Shared.Result.Retry;
 using Microsoft.Extensions.Logging;
 using H = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.IGetHandler;
 using I = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.GetInput;
@@ -96,27 +97,19 @@ public class Get : BaseHandler<Get, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        // Retry logic: 6 attempts with exponential backoff delays (1s, 2s, 4s, 8s, 16s).
-        // Total time: ~31 seconds.
-        const int max_attempts = 6;
-
-        for (var attempt = 1; attempt <= max_attempts; attempt++)
-        {
-            var result = await GetAttempt(ct);
-            if (result.Success)
+        // 6 attempts with exponential backoff (1s, 2s, 4s, 8s, 16s). Total: ~31 seconds.
+        // Retry any non-success (i.e. NotFound = data not available yet, try again).
+        return await D2RetryHelper.RetryResultAsync<O?>(
+            (_, innerCt) => GetAttempt(innerCt),
+            new D2RetryOptions
             {
-                return result;
-            }
-
-            // Delay before next attempt (except after last attempt).
-            if (attempt < max_attempts)
-            {
-                var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt - 1));
-                await Task.Delay(delay, ct);
-            }
-        }
-
-        return D2Result<O?>.NotFound(traceId: TraceId);
+                MaxAttempts = 6,
+                BaseDelayMs = 1000,
+                BackoffMultiplier = 2,
+                Jitter = false,
+                IsTransientResult = r => !r.Success,
+            },
+            ct);
     }
 
     /// <summary>
