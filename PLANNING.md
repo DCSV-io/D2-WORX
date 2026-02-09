@@ -58,6 +58,7 @@
 - ✅ .NET handler I/O annotations + `DefaultOptions` overrides (Geo.Client, RateLimit)
 - ✅ `@d2/shared-tests` — 445 tests (70 new: redaction infrastructure coverage)
 - ✅ .NET tests — 289 passing (11 new: DefaultOptionsTests + RedactDataDestructuringPolicyTests)
+- ✅ Step 7c: Input Validation Infrastructure — Zod + `validateInput` on Node.js BaseHandler, FluentValidation extensions on .NET, aggregate validators (Contact, WhoIs, Location), wired to all 6 Geo handlers + 2 Node.js handlers, 40+ new .NET tests, 507 Node.js tests
 
 ### Blocked By
 
@@ -293,6 +294,157 @@ Auth (always proxied):
 - Two auth validation paths to maintain (SvelteKit server + direct browser)
 - SvelteKit `hooks.server.ts` handles both auth proxy and session population
 
+### ADR-006: Retry & Resilience Pattern
+
+**Status**: Decided (2026-02-08)
+
+**Context**: Cross-service calls (gRPC, external APIs) can fail transiently. Need a consistent retry strategy across both .NET and Node.js that's opt-in, smart about when to retry, and avoids masking permanent failures.
+
+**Decision**: General-purpose retry utility, opt-in per call site, both platforms.
+
+| Aspect | Decision |
+| --- | --- |
+| Scope | General-purpose utility, usable for gRPC + external HTTP APIs |
+| Activation | Opt-in — not all calls should retry (e.g., validation failures) |
+| Strategy | Exponential backoff: 1s → 2s → 4s → 8s (configurable) |
+| Max attempts | 4 retries (5 total attempts, configurable) |
+| Retry triggers | Transient only: 5xx, timeout, connection refused, 429 (rate limited) |
+| No retry | 4xx (validation, auth, not found) — these are permanent failures |
+| Jitter | Add random jitter to avoid thundering herd |
+| Circuit breaker | Not initially — evaluate if needed after real traffic patterns emerge |
+
+**Key design principles:**
+
+- **Smart transient detection**: The retrier inspects the error/status code to determine if retry is appropriate. gRPC `UNAVAILABLE`, `DEADLINE_EXCEEDED`, `RESOURCE_EXHAUSTED` → retry. `INVALID_ARGUMENT`, `NOT_FOUND`, `PERMISSION_DENIED` → no retry.
+- **Caller controls retry budget**: Each call site decides max attempts and backoff. Critical path (e.g., contact creation during sign-up) might use aggressive retry (4 attempts). Non-critical path (e.g., analytics ping) might use 1-2 attempts or none.
+- **Fail loudly after exhaustion**: When retries are exhausted, propagate the last error. Do not swallow failures.
+
+**Packages**: Utility function in both `@d2/utilities` (Node.js) and `D2.Shared.Utilities` (.NET). Not a middleware — a composable function that wraps any async operation.
+
+**Rationale**:
+- Polly-style libraries are overkill for our current needs — a focused retry function is simpler
+- Opt-in prevents accidental retry of non-idempotent operations
+- Exponential backoff with jitter is industry standard for distributed systems
+- Same pattern on both platforms reduces cognitive overhead
+
+---
+
+### ADR-007: Idempotency Middleware
+
+**Status**: Decided (2026-02-08)
+
+**Context**: External-facing mutation endpoints (sign-up, form submissions, payments) are vulnerable to duplicate requests from double-clicks, network retries, or client bugs. Need a general-purpose idempotency pattern for both .NET gateway and auth service.
+
+**Decision**: `Idempotency-Key` header middleware on external-facing endpoints.
+
+**How it works:**
+
+1. Client generates a UUID and sends it as `Idempotency-Key` header with mutation requests
+2. Server middleware checks Redis for the key before executing the handler
+3. If key exists → return cached response (status code + body) without re-executing
+4. If key doesn't exist → execute handler, cache response in Redis with TTL, return response
+5. TTL: 24 hours (configurable) — long enough for client retries, short enough to not bloat Redis
+
+**Key design decisions:**
+
+| Aspect | Decision |
+| --- | --- |
+| Header name | `Idempotency-Key` (industry standard, used by Stripe, PayPal, etc.) |
+| Key format | Client-generated UUID (v4 or v7) |
+| Storage | Redis (shared across instances) |
+| TTL | 24 hours (configurable) |
+| Scope | External-facing mutation endpoints only (not internal gRPC) |
+| Required? | Optional header — endpoints work without it, but duplicate protection only with it |
+| Conflict handling | If a request with the same key is in-flight, return 409 Conflict |
+| Cache content | HTTP status code + response body (serialized) |
+
+**Where applied:**
+
+- **.NET gateway**: Middleware on POST/PUT/PATCH/DELETE routes
+- **Auth service (Hono)**: Middleware on sign-up, org creation, invitation endpoints
+- **NOT on**: Internal gRPC calls (these use retry + domain-level deduplication instead)
+
+**Redis key format:** `idempotency:{service}:{key}` (e.g., `idempotency:auth:550e8400-e29b-41d4-a716-446655440000`)
+
+**Rationale**:
+- Industry-standard pattern (Stripe, PayPal, Google APIs)
+- Separate from retry logic — retries happen at the caller, idempotency at the server
+- Redis storage enables cross-instance deduplication
+- Optional header means no breaking change for existing clients
+
+---
+
+### ADR-008: Sign-Up Flow & Cross-Service Ordering
+
+**Status**: Decided (2026-02-08)
+
+**Context**: Sign-up involves creating a user (BetterAuth/auth service) and a contact (Geo service). If the user is created first but the contact fails, we have a "stale user" — a user record with no associated contact data. This is problematic because the entire system assumes contact info is always present for a user.
+
+**Decision**: **Contact BEFORE user** — create the Geo contact first, then create the user in BetterAuth.
+
+**Flow:**
+
+```
+1. Validate all input (email, name, password, etc.)
+2. Pre-generate UUIDv7 for the new user ID
+3. Create Geo Contact with relatedEntityId = pre-generated userId
+   └─ If Geo unavailable → FAIL sign-up entirely (retry with backoff first)
+   └─ Orphaned contact is harmless if user creation later fails
+4. Create user in BetterAuth with the pre-generated ID
+   └─ If BetterAuth fails → orphaned contact exists but is harmless noise
+5. Send welcome/verification email via RabbitMQ (async, fire-and-forget)
+6. Return session to client
+```
+
+**Key decisions:**
+
+| Aspect | Decision |
+| --- | --- |
+| ID format | UUIDv7 everywhere (time-ordered, `.NET: Guid.CreateVersion7()`, Node: `uuid` v7) |
+| Pre-generated IDs | Yes — userId generated before any service call, passed to both Geo and BetterAuth |
+| Geo unavailable | Fail sign-up entirely (after retry with exponential backoff) |
+| BetterAuth fails after contact created | Orphaned contact is harmless — no cleanup needed |
+| Race conditions (duplicate email) | DB unique constraint on `user.email` is sufficient — no distributed locks |
+| Orphaned contacts | Harmless noise — can be cleaned up by periodic job if desired |
+| Email notifications | Async via RabbitMQ (eventual delivery, survives temp notification service downtime) |
+
+**BetterAuth custom ID support** (researched 2026-02-08):
+
+BetterAuth supports programmer-defined IDs via two mechanisms:
+
+1. **`advanced.database.generateId`**: Global function `({ model, size }) => string` called for ALL BetterAuth tables. Set this to return UUIDv7 for all models. This replaces BetterAuth's default ID generation (nanoid/cuid) with our UUIDv7s.
+
+2. **`databaseHooks.user.create.before`**: Per-request hook that can inject a specific pre-generated ID:
+   ```typescript
+   databaseHooks: {
+     user: {
+       create: {
+         before: async (user) => {
+           const preId = getPreGeneratedId(); // from request context
+           return { data: { ...user, id: preId }, forceAllowId: true };
+         }
+       }
+     }
+   }
+   ```
+   The `forceAllowId: true` flag is required to override BetterAuth's default ID generation per-request.
+
+**Recommended approach**: Use `generateId` for global UUIDv7 on all tables. Use `databaseHooks.user.create.before` + `forceAllowId` for injecting the pre-generated userId during sign-up (the ID that was already used to create the Geo contact).
+
+**Passing pre-generated ID to BetterAuth**: The sign-up handler sets the pre-generated ID in a request-scoped context (Hono `c.set("preGeneratedUserId", id)`) before calling `auth.api.signUpEmail()`. The `before` hook reads it from the same context.
+
+**GitHub references:**
+- Issue [#2881](https://github.com/better-auth/better-auth/issues/2881): Confirms `forceAllowId` works (fixed July 2025)
+- Issue [#1060](https://github.com/better-auth/better-auth/issues/1060): Maintainers note persistence in hooks is an "anti-pattern", but `forceAllowId` addresses the ID generation use case
+- Issue [#2098](https://github.com/better-auth/better-auth/issues/2098): Hooks not respecting returned data — fixed
+
+**Rationale**:
+- Eliminates "stale user" problem entirely — worst case is an orphaned contact (harmless)
+- UUIDv7 provides time-ordering for database performance (B-tree friendly)
+- Pre-generating IDs enables contact-before-user without BetterAuth changes
+- `forceAllowId` is the official mechanism for custom ID injection
+- DB unique constraint on email is sufficient for race conditions — simpler than distributed locks
+
 ---
 
 ## Implementation Status
@@ -361,7 +513,7 @@ Auth (always proxied):
 | Geo.Infra        | ✅ Done    | Repository, messaging                                         |
 | Geo.API          | ✅ Done    | gRPC service                                                  |
 | Geo.Client       | ✅ Done    | Service-owned client library (messages, interfaces, handlers) |
-| Geo.Tests        | ✅ Done    | 595 tests passing                                             |
+| Geo.Tests        | ✅ Done    | 708 tests passing                                             |
 | **Auth Service** | 📋 Planned | Node.js + Hono + BetterAuth (`backends/node/services/auth/`)  |
 | **Auth.Tests**   | 📋 Planned | Auth service tests (`backends/node/services/auth-tests/`)     |
 
@@ -411,9 +563,40 @@ Auth (always proxied):
 
 **Step 7b — Data Redaction Infrastructure** ✅ 20. ✅ **Node.js `RedactionSpec`** — New type in `@d2/handler` declaring handler redaction posture (inputFields, outputFields, suppressInput, suppressOutput) 21. ✅ **Node.js `BaseHandler` redaction** — Input/output field masking and suppression integrated into logging flow 22. ✅ **Node.js interface redaction specs** — Companion constants (`*_REDACTION`) on handler interfaces with required `redaction` property (compile-time enforcement) 23. ✅ **Node.js handler wiring** — All geo-client and ratelimit handlers implement `redaction` getter referencing interface constants 24. ✅ **.NET `RedactDataDestructuringPolicy`** — Serilog `IDestructuringPolicy` processing `[RedactData]` attributes (type-level + property-level, reflection-cached) 25. ✅ **.NET `DefaultOptions`** — Virtual `HandlerOptions` property on `BaseHandler`; null per-call options fall through to handler defaults 26. ✅ **.NET handler annotations** — `[RedactData]` on FindWhoIs I/O, `DefaultOptions` overrides on all ref data + rate limit handlers 27. ✅ **Tests** — 17 Node.js tests (handler redaction), 13 .NET tests (RedactDataDestructuringPolicy + DefaultOptions)
 
+**Step 7c — Input Validation Infrastructure** ✅ 28. ✅ **Node.js `validateInput`** — Zod + `validateInput()` method on BaseHandler, common format validators (`isValidIpAddress`, `isValidGuid`, `zodHashId`, `zodEmail`, etc.) in `@d2/handler/validators` 29. ✅ **.NET common validator extensions** — FluentValidation `IRuleBuilder` extensions (`IsValidIpAddress`, `IsValidHashId`, `IsValidGuid`, etc.) in `D2.Handler/Validators.cs` 30. ✅ **.NET aggregate validators** — `ContactValidator`, `WhoIsValidator`, `LocationValidator` in `Geo.App/Validators/` with indexed error paths for bulk operations (`items[{i}].field`) 31. ✅ **Wired to all handlers** — 6 .NET Geo handlers (`CreateLocations`, `CreateContacts`, `CreateWhoIs`, `DeleteContacts`, `FindWhoIs`, `GetContactsByIds`) + 2 Node.js handlers (`FindWhoIs`, `RateLimit.Check`) 32. ✅ **Two-layer defense** — Fluent/Zod validation (Layer 1, must be ≥ as strict as domain) + per-item try/catch safety net (Layer 2) for bulk domain construction 33. ✅ **Tests** — 40+ new .NET handler validation tests (708 total Geo tests), 507 Node.js tests passing
+
 > Tests are written and validated at each step — `@d2/shared-tests` grows as each layer is built.
 
 ### Phase 2: Auth Service + SvelteKit Integration
+
+#### Build Order (decided 2026-02-08)
+
+**Stage A — Foundations (cross-cutting, before auth service)**
+
+1. **Retry utility** — General-purpose retrier in both `@d2/utilities` and `D2.Shared.Utilities` (ADR-006). Build now.
+2. **Idempotency middleware** — `Idempotency-Key` header middleware (ADR-007). Build when wiring auth-api endpoints.
+3. **UUIDv7 generation** — Ensure both platforms have it ready. Node: `uuid` v7. .NET: `Guid.CreateVersion7()`.
+4. **Proto contracts** — `contracts/protos/auth/v1/`. Wait until auth API surface is known from building the service.
+
+**Stage B — Auth Service (bottom-up DDD layers)**
+
+5. **auth-domain** — Domain types (User, Organization, Member, OrgType, Role, SessionContext, etc.). Pure types, no BetterAuth.
+6. **auth-infra** — BetterAuth config, Kysely adapter, secondary storage adapter (wraps `@d2/cache-redis`), hooks (`generateId` UUIDv7, `forceAllowId`), custom table migrations (`org_contact`, `sign_in_event`, `emulation_consent`).
+7. **auth-app** — Interfaces, CQRS handlers, mappers (BetterAuth→domain, domain→proto).
+8. **auth-api** — Hono entry point, route mounting, composition root, gRPC server. Wire idempotency middleware here.
+9. **auth-tests** — Unit + integration tests for all layers.
+
+**Stage C — Client Libraries**
+
+10. **@d2/auth-client** — BFF client for SvelteKit (proxy helper, JWT lifecycle, `createAuthClient`).
+11. **@d2/auth-sdk** — Backend gRPC client for other Node.js services.
+12. **.NET Auth.Client** — JWT validation via JWKS + `AddJwtBearer()`.
+
+**Stage D — Integration**
+
+13. **SvelteKit integration** — Proxy in `hooks.server.ts`, session population, route groups, onboarding flow.
+14. **.NET gateway** — JWT validation middleware, CORS for SvelteKit origin.
+15. **Notifications pipes** — Auth publishes events to RabbitMQ (e.g., `auth.email.verification`, `auth.email.password-reset`, `auth.email.invitation`). Consumer/notification service is a later deliverable — the "pipes" (event emission + message contracts) are wired during auth service build so the events flow even if nothing consumes them yet.
 
 #### Auth Service — DDD Structure
 
@@ -1078,6 +1261,18 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 6. **Notifications service scope**: ✅ **Foundational scaffold with email-only**. Shape mirrors DeCAF's notification hub pattern (multi-channel Notify orchestrator, provider abstraction, enqueue + retry, user preferences). Phase 2 wires email only; SMS/push/in-app/SignalR are Phase 3+ plugins into the same foundation.
 
+7. **Retry pattern**: ✅ **General-purpose utility, opt-in, exponential backoff** (1s→2s→4s→8s). Transient-only (5xx, timeout, 429). No retry on 4xx. Both platforms. See ADR-006.
+
+8. **Idempotency**: ✅ **`Idempotency-Key` header middleware** on external-facing endpoints (gateway + auth). Redis-backed with 24h TTL. See ADR-007.
+
+9. **Sign-up ordering**: ✅ **Contact BEFORE user**. Pre-generate UUIDv7, create Geo contact first, then user in BetterAuth. Orphaned contacts are harmless. Fail sign-up entirely if Geo unavailable. See ADR-008.
+
+10. **BetterAuth custom IDs**: ✅ **Supported** via `advanced.database.generateId` (global UUIDv7) + `databaseHooks.user.create.before` with `forceAllowId: true` (per-request ID injection). See ADR-008 for details and GitHub references.
+
+11. **Race conditions during sign-up**: ✅ **DB unique constraint on email is sufficient**. No distributed locks needed. Whoever hits the constraint first wins.
+
+12. **Async pattern**: ✅ **Hybrid** — sync gRPC for critical path (contact creation, user creation), async RabbitMQ for side effects (email notifications, audit events).
+
 ## Open Questions
 
 1. **Verify RS256 JWT interop**: Need an early integration test that generates a JWT from BetterAuth (with `alg: "RS256"`) and validates it with .NET's `Microsoft.IdentityModel.Tokens` + JWKS. Confirm the JWT header says `"alg": "RS256"` (not `"RSA256"`).
@@ -1092,9 +1287,43 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 6. **`snake_case` + org/impersonation plugins**: Need early validation that `casing: "snake_case"` works correctly with our exact plugin set (bearer, jwt, organization, access, impersonation). First integration test priority.
 
+7. **`forceAllowId` request context passing**: Need to validate that the `databaseHooks.user.create.before` hook can access request-scoped data (the pre-generated userId) from Hono's `c.var`. The hook receives the user data but not the request context — may need AsyncLocalStorage or a module-level store to bridge the gap. Validate with an early integration test.
+
+8. **Orphaned contact cleanup**: Decide whether to implement a periodic cleanup job for Geo contacts whose `relatedEntityId` doesn't match any auth user. Low priority — orphaned contacts are harmless noise, but could accumulate over time in high-traffic scenarios.
+
 ---
 
 ## Meeting Notes / Decisions Log
+
+### 2026-02-08
+
+- **Step 7c completed**: Input Validation Infrastructure across both platforms
+  - Node.js: Zod + `validateInput()` on BaseHandler, common format validators in `@d2/handler/validators`
+  - .NET: FluentValidation `IRuleBuilder` extensions in `D2.Handler/Validators.cs`
+  - .NET: Aggregate validators (ContactValidator, WhoIsValidator, LocationValidator) in `Geo.App/Validators/`
+  - Wired to 6 .NET Geo handlers + 2 Node.js handlers
+  - Two-layer defense: Fluent/Zod validation + per-item try/catch safety net for bulk domain construction
+  - 40+ new .NET handler validation tests (708 total Geo tests), 507 Node.js tests
+- **Async pattern decided**: Hybrid sync/async
+  - Critical path (contact creation, user creation): sync gRPC with retry + exponential backoff
+  - Side effects (email notifications, audit events): async via RabbitMQ (eventual delivery)
+  - If Geo unavailable during sign-up: fail entirely (no stale users)
+  - SignalR: only when concrete real-time push need exists (not sign-up)
+- **Sign-up flow ordering decided**: Contact BEFORE user (ADR-008)
+  - Pre-generate UUIDv7 for userId
+  - Create Geo Contact with pre-generated userId
+  - Then create user in BetterAuth with `forceAllowId: true`
+  - Orphaned contacts (failed user creation) are harmless noise
+  - DB unique constraint on email sufficient for race conditions (no distributed locks)
+- **BetterAuth custom ID research completed**:
+  - `advanced.database.generateId`: Global UUIDv7 for all BetterAuth tables
+  - `databaseHooks.user.create.before` + `forceAllowId: true`: Per-request ID injection
+  - Three approaches evaluated: (A) before hook + forceAllowId, (B) custom sign-up route, (C) generateId + after hook with rollback
+  - Recommended: A — before hook + forceAllowId is simplest and officially supported
+  - GitHub refs: #2881 (forceAllowId works), #1060 (maintainer notes), #2098 (hook data fixed)
+- **Retry/resilience pattern decided** (ADR-006): General-purpose utility, opt-in, exponential backoff (1s→2s→4s→8s), transient-only retry
+- **Idempotency pattern decided** (ADR-007): `Idempotency-Key` header middleware, Redis-backed, 24h TTL, external-facing endpoints only
+- **All tests passing**: 507 Node.js + 1084 .NET (708 Geo + 376 shared)
 
 ### 2026-02-07
 
@@ -1226,4 +1455,4 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ---
 
-_Last updated: 2026-02-07_
+_Last updated: 2026-02-08_
