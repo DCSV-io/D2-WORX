@@ -6,6 +6,8 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
+using D2.Geo.App.Validators;
+using D2.Geo.Domain.Exceptions;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
@@ -47,6 +49,28 @@ public class CreateWhoIs : BaseHandler<CreateWhoIs, I, O>, H
         if (input.WhoIsRecords.Count == 0)
         {
             return D2Result<O?>.Ok(new O(0), traceId: TraceId);
+        }
+
+        // Validate each WhoIs record.
+        List<List<string>> allErrors = [];
+        for (var i = 0; i < input.WhoIsRecords.Count; i++)
+        {
+            var validator = new WhoIsValidator($"items[{i}].");
+            var validationResult = await validator.ValidateAsync(input.WhoIsRecords[i], ct);
+            if (!validationResult.IsValid)
+            {
+                allErrors.AddRange(validationResult.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .Select(g => new List<string> { g.Key }
+                        .Concat(g.Select(e => e.ErrorMessage))
+                        .ToList()));
+            }
+        }
+
+        if (allErrors.Count > 0)
+        {
+            return D2Result<O?>.BubbleFail(
+                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
         }
 
         // Create in repository.

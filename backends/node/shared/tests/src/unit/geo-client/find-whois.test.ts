@@ -3,6 +3,7 @@ import { MemoryCacheStore } from "@d2/cache-memory";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { FindWhoIs, DEFAULT_GEO_CLIENT_OPTIONS } from "@d2/geo-client";
+import { ErrorCodes } from "@d2/result";
 import type { GeoServiceClient, WhoIsDTO } from "@d2/protos";
 
 function createTestContext(): IHandlerContext {
@@ -232,5 +233,62 @@ describe("FindWhoIs handler", () => {
 
     expect(store.get("whois:10.0.0.1:abc123")).toEqual(whoIs);
     expect(store.get("whois:10.0.0.1:other")).toBeUndefined();
+  });
+
+  // -------------------------------------------------------------------------
+  // Input validation tests
+  // -------------------------------------------------------------------------
+
+  it("should return validationFailed for invalid IP address", async () => {
+    const mockGeoClient = { findWhoIs: vi.fn() } as unknown as GeoServiceClient;
+    const handler = new FindWhoIs(
+      store,
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
+    const result = await handler.handleAsync({
+      ipAddress: "not-an-ip",
+      fingerprint: "ua-fingerprint",
+    });
+
+    expect(result).toBeFailure();
+    expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
+    expect(mockGeoClient.findWhoIs).not.toHaveBeenCalled();
+  });
+
+  it("should return validationFailed for empty fingerprint", async () => {
+    const mockGeoClient = { findWhoIs: vi.fn() } as unknown as GeoServiceClient;
+    const handler = new FindWhoIs(
+      store,
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
+    const result = await handler.handleAsync({
+      ipAddress: "1.2.3.4",
+      fingerprint: "",
+    });
+
+    expect(result).toBeFailure();
+    expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
+    expect(mockGeoClient.findWhoIs).not.toHaveBeenCalled();
+  });
+
+  it("should return validationFailed for empty IP address", async () => {
+    const mockGeoClient = { findWhoIs: vi.fn() } as unknown as GeoServiceClient;
+    const handler = new FindWhoIs(
+      store,
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
+    const result = await handler.handleAsync({
+      ipAddress: "",
+      fingerprint: "ua-fingerprint",
+    });
+
+    expect(result).toBeFailure();
+    expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
   });
 });

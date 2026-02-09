@@ -6,6 +6,7 @@
 
 namespace D2.Shared.ServiceDefaults;
 
+using D2.Shared.ServiceDefaults.Logging;
 using D2.Shared.Utilities.Configuration;
 using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Configuration;
@@ -16,7 +17,6 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using D2.Shared.ServiceDefaults.Logging;
 using Serilog;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;

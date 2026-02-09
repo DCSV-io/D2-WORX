@@ -1,7 +1,8 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { WhoIsDTO, FindWhoIsRequest, FindWhoIsResponse, GeoServiceClient } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { z } from "zod";
 import type { GeoClientOptions } from "../../geo-client-options.js";
 import { Complex } from "../../interfaces/index.js";
 
@@ -36,7 +37,18 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
     this.options = options;
   }
 
+  private static readonly findWhoIsSchema = z.object({
+    ipAddress: validators.zodIpAddress,
+    fingerprint: z.string().min(1, "Fingerprint must not be empty"),
+  }) as z.ZodType<Input>;
+
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
+    // Validate input.
+    const validation = this.validateInput(FindWhoIs.findWhoIsSchema, input);
+    if (validation.failed) {
+      return D2Result.bubbleFail(validation);
+    }
+
     const cacheKey = `whois:${input.ipAddress}:${input.fingerprint}`;
 
     // Try cache first

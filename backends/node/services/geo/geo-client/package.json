@@ -26,6 +26,7 @@
     "@d2/protos": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/result-extensions": "workspace:*",
-    "@d2/utilities": "workspace:*"
+    "@d2/utilities": "workspace:*",
+    "zod": "3.25.76"
   }
 }

@@ -453,14 +453,14 @@ public class GetContactsByIdsTests : IAsyncLifetime
     #region Invalid ID Tests
 
     /// <summary>
-    /// Tests that GetContactsByIds filters out invalid GUID strings.
+    /// Tests that GetContactsByIds returns ValidationFailed when any GUIDs are invalid.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous operation.
     /// </returns>
     [Fact]
-    public async Task GetContactsByIds_WithInvalidGuids_FiltersInvalidIds()
+    public async Task GetContactsByIds_WithInvalidGuids_ReturnsValidationFailed()
     {
         // Arrange - Create a contact with unique context key
         var suffix = Guid.NewGuid().ToString("N");
@@ -478,21 +478,26 @@ public class GetContactsByIdsTests : IAsyncLifetime
         // Act
         var result = await handler.HandleAsync(input, Ct);
 
-        // Assert
-        result.Success.Should().BeTrue();
-        result.Data!.Data.Should().HaveCount(1);
-        result.Data.Data.Should().ContainKey(contact.Id);
+        // Assert — should return ValidationFailed (not silent filter)
+        result.Failed.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
+        result.InputErrors.Should().NotBeEmpty();
+
+        // Should have indexed error paths for each invalid ID.
+        result.InputErrors.Should().Contain(e => e[0] == "ids[1]");
+        result.InputErrors.Should().Contain(e => e[0] == "ids[2]");
+        result.InputErrors.Should().Contain(e => e[0] == "ids[3]");
     }
 
     /// <summary>
-    /// Tests that GetContactsByIds with only invalid GUIDs returns empty.
+    /// Tests that GetContactsByIds with only invalid GUIDs returns ValidationFailed.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous operation.
     /// </returns>
     [Fact]
-    public async Task GetContactsByIds_WithOnlyInvalidGuids_ReturnsEmpty()
+    public async Task GetContactsByIds_WithOnlyInvalidGuids_ReturnsValidationFailed()
     {
         // Arrange
         var handler = CreateHandler();
@@ -505,9 +510,37 @@ public class GetContactsByIdsTests : IAsyncLifetime
         // Act
         var result = await handler.HandleAsync(input, Ct);
 
+        // Assert — should return ValidationFailed (not empty OK)
+        result.Failed.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
+        result.InputErrors.Should().HaveCount(3);
+    }
+
+    /// <summary>
+    /// Tests that GetContactsByIds with Guid.Empty returns ValidationFailed.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetContactsByIds_WithEmptyGuid_ReturnsValidationFailed()
+    {
+        // Arrange
+        var handler = CreateHandler();
+        var request = new GetContactsRequest
+        {
+            Ids = { Guid.Empty.ToString() },
+        };
+        var input = new IQueries.GetContactsByIdsInput(request);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
         // Assert
-        result.Success.Should().BeTrue();
-        result.Data!.Data.Should().BeEmpty();
+        result.Failed.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
+        result.InputErrors.Should().Contain(e => e[0] == "ids[0]");
     }
 
     #endregion

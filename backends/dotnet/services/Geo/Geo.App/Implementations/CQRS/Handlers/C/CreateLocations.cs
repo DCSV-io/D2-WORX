@@ -6,6 +6,7 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
+using D2.Geo.App.Validators;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
@@ -47,6 +48,28 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
         if (input.Locations.Count == 0)
         {
             return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+        }
+
+        // Validate each location.
+        List<List<string>> allErrors = [];
+        for (var i = 0; i < input.Locations.Count; i++)
+        {
+            var validator = new LocationValidator($"items[{i}].");
+            var validationResult = await validator.ValidateAsync(input.Locations[i], ct);
+            if (!validationResult.IsValid)
+            {
+                allErrors.AddRange(validationResult.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .Select(g => new List<string> { g.Key }
+                        .Concat(g.Select(e => e.ErrorMessage))
+                        .ToList()));
+            }
+        }
+
+        if (allErrors.Count > 0)
+        {
+            return D2Result<O?>.BubbleFail(
+                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
         }
 
         // Create in repository.

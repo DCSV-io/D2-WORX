@@ -583,4 +583,28 @@ describe("RateLimit Check handler", () => {
     // FR is whitelisted, so country check is skipped → not blocked
     expect(result.data?.isBlocked).toBe(false);
   });
+
+  // -----------------------------------------------------------------------
+  // Input validation
+  // -----------------------------------------------------------------------
+
+  it("should return validationFailed for invalid IP address", async () => {
+    const handler = createCheck(mocks);
+    const info = createRequestInfo({ clientIp: "not-an-ip" });
+    const result = await handler.handleAsync({ requestInfo: info });
+
+    expect(result).toBeFailure();
+    expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
+    // Should not have tried any cache operations
+    expect(mocks.getTtlFn).not.toHaveBeenCalled();
+  });
+
+  it("should return validationFailed for empty IP address", async () => {
+    const handler = createCheck(mocks);
+    const info = createRequestInfo({ clientIp: "" });
+    const result = await handler.handleAsync({ requestInfo: info });
+
+    expect(result).toBeFailure();
+    expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
+  });
 });

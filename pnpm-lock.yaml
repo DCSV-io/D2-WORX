@@ -77,6 +77,9 @@ importers:
       '@d2/utilities':
         specifier: workspace:*
         version: link:../../../shared/utilities
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   backends/node/shared/handler:
     dependencies:
@@ -89,6 +92,9 @@ importers:
       '@opentelemetry/api':
         specifier: 1.9.0
         version: 1.9.0
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   backends/node/shared/implementations/caching/distributed/redis:
     dependencies:
@@ -131,6 +137,9 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../../../../result
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   backends/node/shared/implementations/middleware/request-enrichment/default:
     dependencies:
@@ -305,6 +314,9 @@ importers:
       vitest:
         specifier: 3.1.1
         version: 3.1.1(@types/node@22.18.8)(jiti@2.6.1)(lightningcss@1.30.1)(yaml@2.8.2)
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   backends/node/shared/utilities: {}
 
@@ -3684,6 +3696,9 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
   zod@4.1.11:
     resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
 
@@ -7048,5 +7063,7 @@ snapshots:
       archiver-utils: 5.0.2
       compress-commons: 6.0.2
       readable-stream: 4.7.0
+
+  zod@3.25.76: {}
 
   zod@4.1.11: {}

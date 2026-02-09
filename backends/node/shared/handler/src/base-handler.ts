@@ -7,7 +7,8 @@ import {
   type Counter,
   type Histogram,
 } from "@opentelemetry/api";
-import { D2Result } from "@d2/result";
+import { D2Result, type InputError } from "@d2/result";
+import type { ZodType, ZodError } from "zod";
 import type { IHandlerContext } from "./i-handler-context.js";
 import type { IHandler } from "./i-handler.js";
 import { DEFAULT_HANDLER_OPTIONS, type HandlerOptions } from "./handler-options.js";
@@ -199,6 +200,23 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
    * Subclasses must implement this method.
    */
   protected abstract executeAsync(input: TInput): Promise<D2Result<TOutput | undefined>>;
+
+  /**
+   * Validates the input against a Zod schema.
+   * Returns ok on success, validationFailed with inputErrors on failure.
+   */
+  protected validateInput(schema: ZodType<TInput>, input: TInput): D2Result<void> {
+    const result = schema.safeParse(input);
+    if (result.success) {
+      return D2Result.ok({ traceId: this.traceId });
+    }
+
+    const inputErrors: InputError[] = (result as { error: ZodError }).error.issues.map((issue) => [
+      issue.path.join("."),
+      issue.message,
+    ]);
+    return D2Result.validationFailed({ inputErrors, traceId: this.traceId });
+  }
 
   /** Replaces specified top-level fields with "[REDACTED]" for logging. */
   private redactForLogging(obj: unknown, fields: readonly string[]): unknown {

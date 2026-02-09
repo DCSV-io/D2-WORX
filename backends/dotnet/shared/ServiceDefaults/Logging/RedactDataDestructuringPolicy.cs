@@ -31,7 +31,7 @@ using Serilog.Events;
 /// </remarks>
 public class RedactDataDestructuringPolicy : IDestructuringPolicy
 {
-    private static readonly ConcurrentDictionary<Type, TypeRedactionInfo> s_cache = new();
+    private static readonly ConcurrentDictionary<Type, TypeRedactionInfo> sr_cache = new();
 
     /// <inheritdoc />
     public bool TryDestructure(
@@ -40,7 +40,7 @@ public class RedactDataDestructuringPolicy : IDestructuringPolicy
         [NotNullWhen(true)] out LogEventPropertyValue? result)
     {
         var type = value.GetType();
-        var info = s_cache.GetOrAdd(type, AnalyzeType);
+        var info = sr_cache.GetOrAdd(type, AnalyzeType);
 
         // Type-level [RedactData] → replace entire value.
         if (info.TypeRedactionReason is not null)

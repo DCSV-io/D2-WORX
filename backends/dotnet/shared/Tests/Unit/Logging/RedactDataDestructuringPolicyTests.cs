@@ -4,6 +4,8 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable NotAccessedPositionalProperty.Local
+// ReSharper disable UnusedAutoPropertyAccessor.Local
 namespace D2.Shared.Tests.Unit.Logging;
 
 using D2.Shared.ServiceDefaults.Logging;
@@ -19,28 +21,12 @@ using Serilog.Events;
 /// </summary>
 public class RedactDataDestructuringPolicyTests
 {
-    private readonly RedactDataDestructuringPolicy _policy = new();
+    private readonly RedactDataDestructuringPolicy r_policy = new();
 
-    // -----------------------------------------------------------------------
-    // Test types
-    // -----------------------------------------------------------------------
-
-    [RedactData(Reason = RedactReason.PersonalInformation)]
-    private record TypeLevelRedacted(string Name, string Email);
-
-    private record PropertyLevelRedacted(
-        [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress,
-        [property: RedactData(Reason = RedactReason.PersonalInformation)] string UserAgent,
-        string HandlerName);
-
-    private record NoRedaction(string Name, int Age);
-
-    private record NestedOuter(string Label, PropertyLevelRedacted Inner);
-
-    // -----------------------------------------------------------------------
-    // Tests
-    // -----------------------------------------------------------------------
-
+    /// <summary>
+    /// Verifies that a type annotated with <see cref="RedactDataAttribute"/> at the class level
+    /// has its entire value replaced with a redaction placeholder.
+    /// </summary>
     [Fact]
     public void TypeLevelRedactData_ReplacesEntireValue()
     {
@@ -49,15 +35,19 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeTrue();
         result.Should().BeOfType<ScalarValue>();
-        var scalar = (ScalarValue)result!;
+        var scalar = (ScalarValue)result;
         scalar.Value.Should().Be("[REDACTED: PersonalInformation]");
     }
 
+    /// <summary>
+    /// Verifies that only properties annotated with <see cref="RedactDataAttribute"/> are masked,
+    /// while non-annotated properties pass through unchanged.
+    /// </summary>
     [Fact]
     public void PropertyLevelRedactData_MasksAnnotatedProperties()
     {
@@ -66,12 +56,12 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeTrue();
         result.Should().BeOfType<StructureValue>();
-        var structure = (StructureValue)result!;
+        var structure = (StructureValue)result;
 
         var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
 
@@ -86,6 +76,10 @@ public class RedactDataDestructuringPolicyTests
             .Which.Value.Should().Be("FindWhoIs");
     }
 
+    /// <summary>
+    /// Verifies that a type with no <see cref="RedactDataAttribute"/> annotations is not handled
+    /// by the policy and returns false.
+    /// </summary>
     [Fact]
     public void NoRedactData_ReturnsFalse()
     {
@@ -94,13 +88,18 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeFalse();
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that a nested object whose outer type has no <see cref="RedactDataAttribute"/>
+    /// is not directly handled by the policy. Recursive redaction of the inner type occurs
+    /// when Serilog invokes the policy again for the nested property.
+    /// </summary>
     [Fact]
     public void NestedObject_RedactsRecursively()
     {
@@ -110,7 +109,7 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(outer, factory, out var result);
+        var handled = r_policy.TryDestructure(outer, factory, out _);
 
         // Assert — the outer type has no [RedactData], but NestedOuter has a
         // PropertyLevelRedacted property that triggers the policy recursively
@@ -120,6 +119,10 @@ public class RedactDataDestructuringPolicyTests
         handled.Should().BeFalse();
     }
 
+    /// <summary>
+    /// Verifies that type analysis is cached so that destructuring the same type multiple times
+    /// reuses the cached analysis while still producing correct per-instance output.
+    /// </summary>
     [Fact]
     public void CachingWorks_SameTypeAnalyzedOnce()
     {
@@ -129,15 +132,15 @@ public class RedactDataDestructuringPolicyTests
         var value2 = new PropertyLevelRedacted("2.2.2.2", "UA2", "H2");
 
         // Act — call twice with same type
-        _policy.TryDestructure(value1, factory, out var result1);
-        _policy.TryDestructure(value2, factory, out var result2);
+        r_policy.TryDestructure(value1, factory, out var result1);
+        r_policy.TryDestructure(value2, factory, out var result2);
 
         // Assert — both should produce StructureValue (cached analysis)
         result1.Should().BeOfType<StructureValue>();
         result2.Should().BeOfType<StructureValue>();
 
-        var props1 = ((StructureValue)result1!).Properties.ToDictionary(p => p.Name, p => p.Value);
-        var props2 = ((StructureValue)result2!).Properties.ToDictionary(p => p.Name, p => p.Value);
+        var props1 = ((StructureValue)result1).Properties.ToDictionary(p => p.Name, p => p.Value);
+        var props2 = ((StructureValue)result2).Properties.ToDictionary(p => p.Name, p => p.Value);
 
         // Both should have redacted IpAddress
         ((ScalarValue)props1["IpAddress"]).Value.Should().Be("[REDACTED: PersonalInformation]");
@@ -148,6 +151,10 @@ public class RedactDataDestructuringPolicyTests
         ((ScalarValue)props2["HandlerName"]).Value.Should().Be("H2");
     }
 
+    /// <summary>
+    /// Verifies that a type-level <see cref="RedactDataAttribute"/> with a custom reason string
+    /// uses that custom message in the redaction placeholder.
+    /// </summary>
     [Fact]
     public void CustomReason_UsedWhenProvided()
     {
@@ -156,7 +163,7 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeTrue();
@@ -164,54 +171,10 @@ public class RedactDataDestructuringPolicyTests
         scalar.Value.Should().Be("[REDACTED: Contains API keys]");
     }
 
-    [RedactData(CustomReason = "Contains API keys")]
-    private record CustomReasonType(string Value);
-
-    // -----------------------------------------------------------------------
-    // Additional coverage test types
-    // -----------------------------------------------------------------------
-
-    [RedactData(CustomReason = "Top-secret payload")]
-    private record TypeLevelCustomReasonRedacted(string Secret, int Count);
-
-    private record WithNullableProperties(
-        [property: RedactData(Reason = RedactReason.PersonalInformation)] string? NullableField,
-        string? NormalField);
-
-    [RedactData(Reason = RedactReason.SecretInformation)]
-    private record TypeAndPropertyLevelRedacted(
-        [property: RedactData(Reason = RedactReason.PersonalInformation)] string Sensitive,
-        string Normal);
-
-    private record BaseWithRedaction
-    {
-        [RedactData(Reason = RedactReason.PersonalInformation)]
-        public string Email { get; init; } = string.Empty;
-
-        public string Name { get; init; } = string.Empty;
-    }
-
-    private record DerivedFromRedacted : BaseWithRedaction
-    {
-        public int Age { get; init; }
-    }
-
-    private record EmptyRecord;
-
-    private record MixedReasonsRedacted(
-        [property: RedactData(Reason = RedactReason.PersonalInformation)] string Email,
-        [property: RedactData(Reason = RedactReason.FinancialInformation)] string CreditCard,
-        [property: RedactData(Reason = RedactReason.SecretInformation)] string ApiKey,
-        string PublicField);
-
-    private record DefaultReasonRedacted(
-        [property: RedactData] string SomeField,
-        string Normal);
-
-    // -----------------------------------------------------------------------
-    // Additional coverage tests
-    // -----------------------------------------------------------------------
-
+    /// <summary>
+    /// Verifies that a type-level <see cref="RedactDataAttribute"/> with a custom reason replaces
+    /// the entire value with the custom message, regardless of individual property values.
+    /// </summary>
     [Fact]
     public void TypeLevelCustomReason_ReplacesEntireValueWithCustomMessage()
     {
@@ -220,15 +183,19 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeTrue();
         result.Should().BeOfType<ScalarValue>();
-        var scalar = (ScalarValue)result!;
+        var scalar = (ScalarValue)result;
         scalar.Value.Should().Be("[REDACTED: Top-secret payload]");
     }
 
+    /// <summary>
+    /// Verifies that properties with null values are still redacted when annotated with
+    /// <see cref="RedactDataAttribute"/>, while non-annotated null properties pass through as null.
+    /// </summary>
     [Fact]
     public void NullPropertyValues_RedactedCorrectly()
     {
@@ -237,12 +204,12 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeTrue();
         result.Should().BeOfType<StructureValue>();
-        var structure = (StructureValue)result!;
+        var structure = (StructureValue)result;
         var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
 
         // Redacted field shows redaction placeholder even when null
@@ -254,6 +221,10 @@ public class RedactDataDestructuringPolicyTests
             .Which.Value.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that when both type-level and property-level <see cref="RedactDataAttribute"/>
+    /// are present, the type-level attribute takes precedence and replaces the entire value.
+    /// </summary>
     [Fact]
     public void TypeAndPropertyLevel_TypeLevelWins()
     {
@@ -262,15 +233,19 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert — type-level should short-circuit, entire value replaced
         handled.Should().BeTrue();
         result.Should().BeOfType<ScalarValue>();
-        var scalar = (ScalarValue)result!;
+        var scalar = (ScalarValue)result;
         scalar.Value.Should().Be("[REDACTED: SecretInformation]");
     }
 
+    /// <summary>
+    /// Verifies that properties with <see cref="RedactDataAttribute"/> inherited from a base class
+    /// are correctly redacted in derived types.
+    /// </summary>
     [Fact]
     public void InheritedProperties_RedactedFromBaseClass()
     {
@@ -284,12 +259,12 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert — should handle the type because it has property-level redaction
         handled.Should().BeTrue();
         result.Should().BeOfType<StructureValue>();
-        var structure = (StructureValue)result!;
+        var structure = (StructureValue)result;
         var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
 
         // Inherited redacted field
@@ -305,6 +280,10 @@ public class RedactDataDestructuringPolicyTests
             .Which.Value.Should().Be(30);
     }
 
+    /// <summary>
+    /// Verifies that an empty record with no properties and no <see cref="RedactDataAttribute"/>
+    /// is not handled by the policy.
+    /// </summary>
     [Fact]
     public void EmptyType_ReturnsFalse()
     {
@@ -313,13 +292,17 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert — no redaction needed, returns false
         handled.Should().BeFalse();
         result.Should().BeNull();
     }
 
+    /// <summary>
+    /// Verifies that properties annotated with different <see cref="RedactReason"/> values
+    /// each display their respective reason in the redaction placeholder.
+    /// </summary>
     [Fact]
     public void MixedRedactReasons_UsesCorrectReasonPerProperty()
     {
@@ -329,12 +312,12 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeTrue();
         result.Should().BeOfType<StructureValue>();
-        var structure = (StructureValue)result!;
+        var structure = (StructureValue)result;
         var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
 
         props["Email"].Should().BeOfType<ScalarValue>()
@@ -347,6 +330,10 @@ public class RedactDataDestructuringPolicyTests
             .Which.Value.Should().Be("hello");
     }
 
+    /// <summary>
+    /// Verifies that a property annotated with <see cref="RedactDataAttribute"/> without an explicit
+    /// reason defaults to <see cref="RedactReason.Unspecified"/> in the redaction placeholder.
+    /// </summary>
     [Fact]
     public void DefaultReason_UsesUnspecifiedWhenNoReasonSet()
     {
@@ -355,12 +342,12 @@ public class RedactDataDestructuringPolicyTests
         var factory = CreateFactory();
 
         // Act
-        var handled = _policy.TryDestructure(value, factory, out var result);
+        var handled = r_policy.TryDestructure(value, factory, out var result);
 
         // Assert
         handled.Should().BeTrue();
         result.Should().BeOfType<StructureValue>();
-        var structure = (StructureValue)result!;
+        var structure = (StructureValue)result;
         var props = structure.Properties.ToDictionary(p => p.Name, p => p.Value);
 
         props["SomeField"].Should().BeOfType<ScalarValue>()
@@ -369,14 +356,10 @@ public class RedactDataDestructuringPolicyTests
             .Which.Value.Should().Be("normal");
     }
 
-    // -----------------------------------------------------------------------
-    // End-to-end scalar vs destructured logging tests
-    // -----------------------------------------------------------------------
-
     /// <summary>
     /// Proves that logging a [RedactData]-annotated record property as a scalar parameter
     /// bypasses the destructuring policy — the raw value appears in log output.
-    /// This is the anti-pattern fixed in FindWhoIs.cs.
+    /// This antipattern is fixed in FindWhoIs.cs.
     /// </summary>
     [Fact]
     public void ScalarParameter_BypassesRedactDataPolicy_RawValueAppears()
@@ -392,7 +375,7 @@ public class RedactDataDestructuringPolicyTests
         var rawIp = "192.168.99.42";
         var input = new PropertyLevelRedacted(rawIp, "Mozilla/5.0", "FindWhoIs");
 
-        // Act — log the IP as a scalar parameter (the anti-pattern)
+        // Act — log the IP as a scalar parameter (the antipattern)
         logger.Warning("gRPC call failed for IP {IpAddress}. TraceId: {TraceId}", input.IpAddress, "trace-123");
 
         // Assert — the raw IP DOES appear because scalars bypass destructuring
@@ -433,34 +416,77 @@ public class RedactDataDestructuringPolicyTests
         rendered.Should().Contain("FindWhoIs"); // non-redacted field should still appear
     }
 
-    /// <summary>
-    /// Minimal Serilog sink for capturing log events in tests.
-    /// </summary>
-    private sealed class DelegateSink(Action<LogEvent> write) : ILogEventSink
-    {
-        public void Emit(LogEvent logEvent) => write(logEvent);
-    }
-
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
+    #region Test Types and Helpers
 
     /// <summary>
     /// Creates a simple ILogEventPropertyValueFactory using Serilog's built-in implementation.
     /// </summary>
     private static ILogEventPropertyValueFactory CreateFactory()
     {
-        // Use a LoggerConfiguration with the policy to get a proper factory.
-        // The simplest approach is to use Serilog's internal SimplePropertyValueConverter.
-        // We'll create a logger config that gives us access to the factory.
         var config = new LoggerConfiguration()
             .Destructure.With(new RedactDataDestructuringPolicy());
-
-        // Create a sink that captures events so we can extract the factory.
         var logger = config.CreateLogger();
-
-        // Use a simple wrapper that delegates to Serilog's property creation.
         return new SerilogPropertyValueFactory(logger);
+    }
+
+    [RedactData(Reason = RedactReason.PersonalInformation)]
+    private record TypeLevelRedacted(string Name, string Email);
+
+    private record PropertyLevelRedacted(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress,
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string UserAgent,
+        string HandlerName);
+
+    private record NoRedaction(string Name, int Age);
+
+    private record NestedOuter(string Label, PropertyLevelRedacted Inner);
+
+    [RedactData(CustomReason = "Contains API keys")]
+    private record CustomReasonType(string Value);
+
+    [RedactData(CustomReason = "Top-secret payload")]
+    private record TypeLevelCustomReasonRedacted(string Secret, int Count);
+
+    private record WithNullableProperties(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string? NullableField,
+        string? NormalField);
+
+    [RedactData(Reason = RedactReason.SecretInformation)]
+    private record TypeAndPropertyLevelRedacted(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string Sensitive,
+        string Normal);
+
+    private record BaseWithRedaction
+    {
+        [RedactData(Reason = RedactReason.PersonalInformation)]
+        public string Email { get; init; } = string.Empty;
+
+        public string Name { get; init; } = string.Empty;
+    }
+
+    private record DerivedFromRedacted : BaseWithRedaction
+    {
+        public int Age { get; init; }
+    }
+
+    private record EmptyRecord;
+
+    private record MixedReasonsRedacted(
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string Email,
+        [property: RedactData(Reason = RedactReason.FinancialInformation)] string CreditCard,
+        [property: RedactData(Reason = RedactReason.SecretInformation)] string ApiKey,
+        string PublicField);
+
+    private record DefaultReasonRedacted(
+        [property: RedactData] string SomeField,
+        string Normal);
+
+    /// <summary>
+    /// Minimal Serilog sink for capturing log events in tests.
+    /// </summary>
+    private sealed class DelegateSink(Action<LogEvent> write) : ILogEventSink
+    {
+        public void Emit(LogEvent logEvent) => write(logEvent);
     }
 
     /// <summary>
@@ -471,7 +497,7 @@ public class RedactDataDestructuringPolicyTests
         public LogEventPropertyValue CreatePropertyValue(object? value, bool destructureObjects = false)
         {
             // Use LogEvent property creation via binding.
-            var prop = new LogEventProperty("__temp", new ScalarValue(value));
+            _ = new LogEventProperty("__temp", new ScalarValue(value));
 
             if (value is null)
             {
@@ -491,7 +517,9 @@ public class RedactDataDestructuringPolicyTests
                 result = boundProp.Value;
             }
 
-            return result ?? new ScalarValue(value?.ToString());
+            return result ?? new ScalarValue(value.ToString());
         }
     }
+
+    #endregion
 }
