@@ -1,5 +1,5 @@
 export { arrayTruthy, arrayFalsey } from "./array-extensions.js";
-export { uuidTruthy, uuidFalsey, EMPTY_UUID } from "./uuid-extensions.js";
+export { uuidTruthy, uuidFalsey, EMPTY_UUID, generateUuidV7 } from "./uuid-extensions.js";
 export {
   cleanStr,
   cleanAndValidateEmail,
