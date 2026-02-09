@@ -331,7 +331,7 @@ Auth (always proxied):
 
 ### ADR-007: Idempotency Middleware
 
-**Status**: Decided (2026-02-08)
+**Status**: Implemented (2026-02-09)
 
 **Context**: External-facing mutation endpoints (sign-up, form submissions, payments) are vulnerable to duplicate requests from double-clicks, network retries, or client bugs. Need a general-purpose idempotency pattern for both .NET gateway and auth service.
 
@@ -574,7 +574,7 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 **Stage A — Foundations (cross-cutting, before auth service)**
 
 1. **Retry utility** — General-purpose retrier in both `@d2/utilities` and `D2.Shared.Utilities` (ADR-006). Build now.
-2. **Idempotency middleware** — `Idempotency-Key` header middleware (ADR-007). Build when wiring auth-api endpoints.
+2. ~~**Idempotency middleware**~~ — ✅ `Idempotency-Key` header middleware (ADR-007). Implemented 2026-02-09.
 3. **UUIDv7 generation** — Ensure both platforms have it ready. Node: `uuid` v7. .NET: `Guid.CreateVersion7()`.
 4. **Proto contracts** — `contracts/protos/auth/v1/`. Wait until auth API surface is known from building the service.
 

@@ -17,8 +17,5 @@
       <ProjectReference Include="..\..\..\..\Utilities\Utilities.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Handlers\C\" />
-    </ItemGroup>
 
 </Project>

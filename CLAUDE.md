@@ -30,6 +30,7 @@ For deeper architectural context, consult these files:
 | `backends/dotnet/shared/Result/RESULT.md`                                                           | D2Result pattern                |
 | `backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md` | Request enrichment middleware   |
 | `backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md`                 | Rate limiting middleware        |
+| `backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md`             | Idempotency middleware          |
 | `CONTRIBUTING.md`                                                                                   | Contribution guidelines         |
 
 ---
@@ -674,7 +675,8 @@ refactor: simplify caching logic
 - REST Gateway: HTTP/REST → gRPC routing with request enrichment + rate limiting
 - RequestEnrichment.Default: IP resolution, fingerprinting, WhoIs lookup middleware
 - RateLimit.Default: Multi-dimensional sliding-window rate limiting middleware
-- Distributed cache abstractions: GetTtl, Increment handlers (abstracted from Redis)
+- Idempotency.Default: Idempotency-Key header middleware (SET NX + response caching)
+- Distributed cache abstractions: GetTtl, Increment, SetNx handlers (abstracted from Redis)
 - BaseHandler metrics: duration histogram, invocations/failures/exceptions counters
 - All shared implementations use project-defined abstractions (no direct Redis/MS cache)
 - RedactDataDestructuringPolicy: Serilog policy for `[RedactData]` attribute (type + property-level masking)
@@ -689,10 +691,10 @@ refactor: simplify caching logic
 - Contracts (Layer 2): @d2/interfaces (cache + middleware contracts, TLC folder convention), @d2/result-extensions
 - Cache Implementations (Layer 3): @d2/cache-memory, @d2/cache-redis (TLC handler subdirs)
 - Service Client + Messaging (Layer 4): @d2/messaging, @d2/geo-client (full .NET parity, interfaces + redaction)
-- Middleware (Layer 5): @d2/request-enrichment, @d2/ratelimit
+- Middleware (Layer 5): @d2/request-enrichment, @d2/ratelimit, @d2/idempotency
 - Polyglot structure alignment: All packages follow TLC folder convention matching .NET
 - Data redaction infrastructure: RedactionSpec, companion constants, interface narrowing, handler wiring
-- 445 tests in @d2/shared-tests
+- 609 tests in @d2/shared-tests
 
 **Next:** Phase 2 (Auth): Auth Service, SvelteKit integration, .NET Gateway JWT validation
 
@@ -823,7 +825,8 @@ backends/node/
 │   │   │   └── geo/                    # @d2/geo-cache (Layer 4)
 │   │   └── middleware/
 │   │       ├── request-enrichment/     # @d2/request-enrichment (Layer 5)
-│   │       └── ratelimit/             # @d2/ratelimit (Layer 5)
+│   │       ├── ratelimit/             # @d2/ratelimit (Layer 5)
+│   │       └── idempotency/           # @d2/idempotency (Layer 5)
 │   ├── testing/                        # @d2/testing — shared test infra (matchers, containers)
 │   └── tests/                          # @d2/shared-tests — tests all shared packages
 │       ├── vitest.config.ts
@@ -855,6 +858,7 @@ Layer 3:  @d2/cache-memory   → handler, interfaces
 Layer 4:  @d2/geo-cache      → handler, cache-memory, interfaces, result-ext, utilities
 Layer 5:  @d2/request-enrich → handler, geo-cache
           @d2/ratelimit      → request-enrich, handler, result, interfaces
+          @d2/idempotency    → handler, interfaces, result, logging
 ```
 
 ### Design Principles

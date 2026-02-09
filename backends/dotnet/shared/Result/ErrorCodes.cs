@@ -65,4 +65,9 @@ public class ErrorCodes
     /// Indicates that the request has been rate limited.
     /// </summary>
     public const string RATE_LIMITED = nameof(RATE_LIMITED);
+
+    /// <summary>
+    /// Indicates that an idempotent request is already being processed (in-flight).
+    /// </summary>
+    public const string IDEMPOTENCY_IN_FLIGHT = nameof(IDEMPOTENCY_IN_FLIGHT);
 }

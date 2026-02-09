@@ -12,6 +12,7 @@
     "@d2/cache-redis": "workspace:*",
     "@d2/geo-client": "workspace:*",
     "@d2/handler": "workspace:*",
+    "@d2/idempotency": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/logging": "workspace:*",
     "@d2/messaging": "workspace:*",

@@ -8,6 +8,7 @@ using D2.Gateways.REST.Endpoints;
 using D2.Geo.Client;
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.Handler.Extensions;
+using D2.Shared.Idempotency.Default;
 using D2.Shared.RateLimit.Default;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.ServiceDefaults;
@@ -42,11 +43,17 @@ builder.Services.AddRequestEnrichment(builder.Configuration);
 // Register rate limiting middleware services.
 builder.Services.AddRateLimiting(builder.Configuration);
 
+// Register idempotency middleware services.
+builder.Services.AddIdempotency(builder.Configuration);
+
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStructuredRequestLogging();
 app.UseRequestEnrichment();
 app.UseRateLimiting();
+
+// Auth middleware will go here.
+app.UseIdempotency();
 
 if (app.Environment.IsDevelopment())
 {
