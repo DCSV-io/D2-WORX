@@ -19,7 +19,9 @@ This document describes the complete authentication and authorization infrastruc
 11. [Request Flow Diagrams](#request-flow-diagrams)
 12. [Constants Cross-Reference](#constants-cross-reference)
 13. [Security Controls Summary](#security-controls-summary)
-14. [Test Coverage Map](#test-coverage-map)
+14. [Known Security Gaps & Pre-Production Requirements](#known-security-gaps--pre-production-requirements)
+15. [Secure Endpoint Construction Checklist](#secure-endpoint-construction-checklist)
+16. [Test Coverage Map](#test-coverage-map)
 
 ---
 
@@ -677,19 +679,110 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 | IDOR Prevention | Session-scoped org ID + handler ownership check | App-layer handlers |
 | Idempotency | Redis-backed request dedup | .NET gateway (external-facing) |
 
-### Password Security (BetterAuth Defaults)
+### Password Security
 
-- Bcrypt hashing (configurable rounds)
-- Minimum password length enforced
-- Account lockout (configurable via admin plugin)
+- Bcrypt hashing (BetterAuth default)
+- **NOT YET CONFIGURED**: Minimum password length, complexity rules, breached-password checks (see Known Security Gaps below)
 
 ### Token Storage Rules
 
 | Token | Storage | Why |
 |-------|---------|-----|
-| Session cookie | HTTP-only, Secure, SameSite=Lax | XSS-proof |
+| Session cookie | HTTP-only, Secure | XSS-proof. `sameSite` should be explicitly set (see Known Security Gaps) |
 | JWT | In-memory only (JavaScript variable) | Never localStorage/sessionStorage (XSS risk) |
 | JWKS private key | PostgreSQL (`jwks` table) | Auto-rotated, never exposed |
+
+---
+
+## Known Security Gaps & Pre-Production Requirements
+
+These are documented trade-offs and gaps identified during security audit. Items are categorized by when they must be resolved.
+
+### Must Fix Before Production
+
+| # | Gap | Severity | Details | Mitigation |
+|---|-----|----------|---------|------------|
+| 1 | **Fingerprint (`fp`) claim optional in JWT** | HIGH | `.NET JwtFingerprintMiddleware` passes through if `fp` claim is missing. Stolen JWT without fingerprint bypasses binding entirely. | Require `fp` claim presence in gateway middleware. Remove backwards-compatible pass-through once all clients issue fingerprinted JWTs. |
+| 2 | **Email verification not enforced** | HIGH | Users can sign up and immediately access the app with unverified email. Enables throwaway email abuse, weakens account recovery. | Configure `emailVerification.sendOnSignUp: true` in BetterAuth. Gate org creation/membership on `emailVerified: true`. Requires notification scaffold. |
+| 3 | **No password policy** | HIGH | BetterAuth defaults allow any password. No min length, complexity, or breached-password checks. | Configure `emailAndPassword.password.minLength` (min 10), add `beforePasswordSet` hook for complexity/HaveIBeenPwned check. |
+
+### Must Fix Before Beta
+
+| # | Gap | Severity | Details | Mitigation |
+|---|-----|----------|---------|------------|
+| 4 | **No per-account brute-force lockout** | MEDIUM | General per-IP rate limit (20/15s) exists but no per-account lockout after N failed attempts. | Implement lockout logic using `sign_in_event` data (e.g., 5 failures in 15min → lock 15min). Can use BetterAuth's `rateLimit` option or custom `after` hook on signIn. |
+| 5 | **`sameSite` cookie attribute not explicitly set** | MEDIUM | Relies on BetterAuth/browser defaults (likely `lax`). | Set `session.cookieCache.sameSite: "lax"` explicitly in BetterAuth config. |
+| 6 | **RecordSignInEvent missing Zod validation** | MEDIUM | Handler lacks `validateInput()`. Domain factory has basic null checks but no length/format validation on ipAddress and userAgent. | Add Zod schema with `.max()` on strings and UUID format on userId. |
+| 7 | **Contact handler string fields unbounded** | MEDIUM | Phone numbers, personal details (firstName, lastName, etc.), professional fields, and location fields lack `.max()` Zod constraints. `label` is correctly bounded at 100 chars. | Add `.max()` to all string fields: phone (20), names (100), addresses (200), country/subdivision codes (2-6). |
+| 8 | **`impersonatedBy` leaks admin identity in JWT** | MEDIUM | Admin user ID embedded in JWT when impersonating. JWT interception reveals which accounts have impersonation privileges. | Consider hashing the value or keeping it server-side only (session, not JWT). |
+
+### Track for GA
+
+| # | Gap | Severity | Details | Status |
+|---|-----|----------|---------|--------|
+| 9 | **Rate limiting is single-instance (in-memory)** | LOW | Auth API rate limiter uses in-memory counters. Multi-instance deployment requires Redis-backed limiting. | Planned. Use `@d2/ratelimit` (Redis-backed) when scaling beyond single instance. |
+| 10 | **Session fingerprint fail-open on Redis error** | LOW | Fingerprint check skipped if Redis is unavailable. Intentional (availability > security). | Acceptable trade-off. Documented in Fail-Closed matrix. Monitor Redis health. |
+| 11 | **CreateEmulationConsent DB error not caught gracefully** | LOW | Race condition between check-then-insert caught by DB partial unique index, but handler doesn't catch `23505` (unique violation) — returns 500 instead of 409. | Wrap `repo.create()` in try-catch, map unique violation to 409 Conflict. |
+| 12 | **GetActiveConsents no default pagination** | LOW | `limit` is optional with `.max(100)` but no default applied when omitted — returns ALL rows. | Apply default limit (e.g., 50) when not provided. |
+| 13 | **JWKS caching not explicitly configured on .NET gateway** | LOW | Relies on .NET `JwtBearerHandler` defaults for key refresh. | Explicitly configure `AutomaticRefreshInterval` and `RefreshInterval` on `TokenValidationParameters` before production. |
+
+### Documented Assumptions
+
+These are intentional design decisions, not bugs:
+
+| Assumption | Rationale |
+|------------|-----------|
+| Session middleware fails closed (503) on infrastructure errors | "Better offline than hacked" — prevents auth degradation to unauthenticated |
+| JWT fingerprint uses `SHA-256(UA\|Accept)` only | Lightweight check; not a substitute for TLS or token rotation. Attackers who control the UA+Accept headers AND have the JWT can bypass, but this raises the bar vs casual token theft |
+| Rate limiting fails open when Redis is down | Availability-first; DOS protection is best-effort |
+| CSRF uses Content-Type + Origin dual check (no CSRF token) | Hono auth routes are JSON-only APIs, not form submissions. Origin check prevents cross-site requests. Content-Type check prevents `<form>` submissions |
+| BetterAuth is session-based, JWTs are secondary | JWTs are only for .NET gateway calls. Browser↔SvelteKit always uses cookie sessions |
+
+---
+
+## Secure Endpoint Construction Checklist
+
+When adding new routes/handlers, follow this checklist. Rules apply to **both Node.js (Auth Service) and .NET (Gateway)** unless noted.
+
+### Route / Endpoint Layer
+
+1. **Declare auth requirements visibly at route registration** — security must be readable at a glance:
+   - Node.js (Hono): `app.post("/api/my-thing", requireOrg(), requireRole("officer"), async (c) => { ... });`
+   - .NET (Minimal API): `group.MapPost("/my-thing", Handler).RequireAuthorization(AuthPolicies.HAS_ACTIVE_ORG);`
+2. **Always require org context** for any org-scoped operation — Node.js: `requireOrg()`, .NET: `RequireAuthorization(AuthPolicies.HAS_ACTIVE_ORG)`
+3. **Use staff/admin guards** for privileged operations — Node.js: `requireStaff()`, `requireAdmin()`. .NET: `RequireAuthorization(AuthPolicies.STAFF_ONLY)`, `RequireAuthorization(AuthPolicies.ADMIN_ONLY)`
+4. **Use role-gated guards** leveraging the hierarchy (auditor < agent < officer < owner) — Node.js: `requireRole("officer")`. .NET: custom `RequireRole()` policy
+5. **Keep route handlers thin** — extract input → call handler → return result. No business logic in routes/endpoints.
+
+### Handler / Validation Layer
+
+6. **Always validate input**:
+   - Node.js: Zod via `this.validateInput(schema, input)` at the top of `executeAsync()`
+   - .NET: FluentValidation or Data Annotations on request DTOs. Validate in handler or via pipeline behavior
+   - All string fields: enforce max length (Node.js: `.max()`, .NET: `[MaxLength]` / `.MaximumLength()`) — never allow unbounded strings to reach the database
+   - UUIDs: Node.js: `zodGuid` helper. .NET: use `Guid` type (implicit validation)
+   - Enums: Node.js: `z.enum(VALID_VALUES)`. .NET: use typed enums, reject unknown values
+   - Dates: Validate range (e.g., `expiresAt` must be in the future, max 30 days)
+   - Nested objects: Validate all levels, not just top-level fields
+7. **IDOR prevention** — always derive the org/user scope from the session (Node.js) or JWT claims (.NET), never from user-supplied input:
+   ```
+   CORRECT: org from session/claims (server-validated)
+   WRONG:   org from request body (user-supplied, unverified)
+   ```
+8. **Ownership checks** — for update/delete, verify the entity belongs to the requesting user's org BEFORE performing the operation
+9. **Handle DB constraint violations gracefully** — catch unique violation errors (PG code `23505`) and return 409 Conflict instead of 500
+10. **Pagination defaults** — all list queries must have a DEFAULT limit (e.g., 50) and a MAX limit (e.g., 100). Never return unbounded result sets
+
+### Infrastructure Layer
+
+11. **Parameterized queries only** — Node.js: Drizzle handles this. .NET: EF Core handles this. Never concatenate user input into raw SQL
+12. **Migrations are append-only** — Node.js: never modify existing Drizzle migration files, use `drizzle-kit generate`. .NET: never modify existing EF Core migrations, use `dotnet ef migrations add`
+
+### Cross-Platform (JWT Claims, Policies, Constants)
+
+13. **New JWT claims** — add to both `JWT_CLAIM_TYPES` (Node.js) and `JwtClaimTypes` (.NET). Keep cross-reference in AUTH.md § Constants Cross-Reference
+14. **New policies** — add to both `AUTH_POLICIES` (Node.js) and `AuthPolicies` (.NET). Register via `AddD2Policies()`
+15. **Sensitive data in JWT** — do NOT embed data that reveals internal structure (admin user IDs, internal audit data). Keep sensitive data in server-side session only
 
 ---
 

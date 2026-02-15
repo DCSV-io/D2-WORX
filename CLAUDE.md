@@ -513,9 +513,22 @@ refactor: simplify caching logic
 - Don't hardcode batch sizes or cache expirations (use Options pattern)
 - Don't forget to update/create `.md` documentation when adding features (see Documentation section)
 
+### Security Checklist for New Endpoints
+
+When adding routes or handlers, follow the full checklist in `backends/node/services/auth/AUTH.md` § "Secure Endpoint Construction Checklist". Key points:
+
+- **All handlers MUST validate input** — Node.js: Zod via `this.validateInput(schema, input)` at top of `executeAsync()`. .NET: FluentValidation or Data Annotations on request DTOs
+- **All string fields need max length** — Node.js: `.max()` on Zod schemas. .NET: `[MaxLength]` or `.MaximumLength()`. Never allow unbounded strings to reach the database
+- **IDOR prevention** — derive org/user scope from session/claims, never from user-supplied input
+- **Pagination limits** — default limit (50) + max limit (100) on all list queries
+- **DB constraint errors** — catch unique violations (PG `23505`) and return 409, not 500
+- **Auth middleware visible at route/endpoint declaration** — Node.js: `requireOrg()`, `requireRole()`, `requireStaff()`. .NET: `RequireAuthorization(AuthPolicies.HAS_ACTIVE_ORG)`, `RequireServiceKey()`
+- **New JWT claims** — add to BOTH Node.js (`JWT_CLAIM_TYPES`) and .NET (`JwtClaimTypes`), update AUTH.md cross-reference
+- **No sensitive IDs in JWT** — admin user IDs, internal audit data stays server-side (session only)
+
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 437+ tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done.
+Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 485 tests (437 unit + 48 integration). .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done.
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
