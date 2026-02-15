@@ -74,9 +74,9 @@ Summary:
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
 - Auth service Stage B (Node.js + Hono + BetterAuth):
-  - Domain model (entities, value objects, business rules) — 437+ auth tests passing
+  - Domain model (entities, value objects, business rules) — 485 auth tests passing
   - Application layer (9 CQRS handlers, interfaces)
-  - Infrastructure layer (repositories, BetterAuth config, Kysely migrations)
+  - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
 
 **🚧 In Progress:**
@@ -253,7 +253,7 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                            | Platform | Status     | Description                                                                       |
 > | -------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)                         | .NET    | ✅ Done        | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
-> | [Auth](backends/node/services/auth/AUTH.md)                                | Node.js | 🚧 Stage C     | Standalone Hono + BetterAuth — DDD layers done (437+ tests), client libs next    |
+> | [Auth](backends/node/services/auth/AUTH.md)                                | Node.js | 🚧 Stage C     | Standalone Hono + BetterAuth + Drizzle — DDD layers done (485 tests), client libs next |
 >
 > **Client Libraries:**
 >
@@ -316,6 +316,7 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript)
 ![Hono](https://img.shields.io/badge/Hono-4-E36002?logo=hono)
 ![BetterAuth](https://img.shields.io/badge/BetterAuth-1.x-000000)
+![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?logo=drizzle)
 ![Pino](https://img.shields.io/badge/Pino-9.6-339933?logo=nodedotjs)
 ![ioredis](https://img.shields.io/badge/ioredis-5.8-DC382D?logo=redis)
 
