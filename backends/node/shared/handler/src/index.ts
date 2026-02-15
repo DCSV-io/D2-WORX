@@ -6,5 +6,19 @@ export { type IRequestContext } from "./i-request-context.js";
 export { type HandlerOptions, DEFAULT_HANDLER_OPTIONS } from "./handler-options.js";
 export { type RedactionSpec } from "./redaction-spec.js";
 export { OrgType } from "./org-type.js";
-export { UserToOrgRelationship } from "./user-to-org-relationship.js";
 export * as validators from "./validators.js";
+export {
+  isValidIpAddress,
+  isValidHashId,
+  isValidGuid,
+  isValidEmail,
+  isValidPhoneE164,
+  zodHashId,
+  zodIpAddress,
+  zodGuid,
+  zodEmail,
+  zodPhoneE164,
+  zodNonEmptyString,
+  zodNonEmptyArray,
+  zodAllowedContextKey,
+} from "./validators.js";

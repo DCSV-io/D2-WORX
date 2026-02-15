@@ -1,0 +1,67 @@
+// @d2/auth-domain — Pure domain types for the Auth service.
+
+// --- Constants ---
+export {
+  JWT_CLAIM_TYPES,
+  SESSION_FIELDS,
+  AUTH_POLICIES,
+  REQUEST_HEADERS,
+} from "./constants/auth-constants.js";
+
+// --- Enums ---
+export { ORG_TYPES, isValidOrgType } from "./enums/org-type.js";
+export type { OrgType } from "./enums/org-type.js";
+export { ROLES, ROLE_HIERARCHY, isValidRole } from "./enums/role.js";
+export type { Role } from "./enums/role.js";
+export {
+  INVITATION_STATUSES,
+  INVITATION_TRANSITIONS,
+  isValidInvitationStatus,
+} from "./enums/invitation-status.js";
+export type { InvitationStatus } from "./enums/invitation-status.js";
+
+// --- Exceptions ---
+export { AuthDomainError } from "./exceptions/auth-domain-error.js";
+export { AuthValidationError } from "./exceptions/auth-validation-error.js";
+
+// --- Entities ---
+export type { Account } from "./entities/account.js";
+export type { Session } from "./entities/session.js";
+export { createUser, updateUser } from "./entities/user.js";
+export type { User, CreateUserInput, UpdateUserInput } from "./entities/user.js";
+export { createOrganization, updateOrganization } from "./entities/organization.js";
+export type {
+  Organization,
+  CreateOrganizationInput,
+  UpdateOrganizationInput,
+} from "./entities/organization.js";
+export { createMember } from "./entities/member.js";
+export type { Member, CreateMemberInput } from "./entities/member.js";
+export { createInvitation } from "./entities/invitation.js";
+export type { Invitation, CreateInvitationInput } from "./entities/invitation.js";
+export { createSignInEvent } from "./entities/sign-in-event.js";
+export type { SignInEvent, CreateSignInEventInput } from "./entities/sign-in-event.js";
+export {
+  createEmulationConsent,
+  revokeEmulationConsent,
+  isConsentActive,
+} from "./entities/emulation-consent.js";
+export type {
+  EmulationConsent,
+  CreateEmulationConsentInput,
+} from "./entities/emulation-consent.js";
+export { createOrgContact, updateOrgContact } from "./entities/org-contact.js";
+export type {
+  OrgContact,
+  CreateOrgContactInput,
+  UpdateOrgContactInput,
+} from "./entities/org-contact.js";
+
+// --- Value Objects ---
+export type { SessionContext } from "./value-objects/session-context.js";
+
+// --- Business Rules ---
+export { resolveSessionContext, canEmulate } from "./rules/emulation.js";
+export { isLastOwner, isMemberOfOrg } from "./rules/membership.js";
+export { canCreateOrgType } from "./rules/org-creation.js";
+export { transitionInvitationStatus, isInvitationExpired } from "./rules/invitation.js";

@@ -131,9 +131,9 @@ describe("validators", () => {
 
   describe("zodGuid", () => {
     it("should parse valid UUID", () => {
-      expect(
-        validators.zodGuid.safeParse("550e8400-e29b-41d4-a716-446655440000").success,
-      ).toBe(true);
+      expect(validators.zodGuid.safeParse("550e8400-e29b-41d4-a716-446655440000").success).toBe(
+        true,
+      );
     });
 
     it("should reject invalid UUID", () => {
@@ -158,9 +158,7 @@ describe("validators", () => {
   describe("zodNonEmptyArray", () => {
     it("should accept non-empty arrays", () => {
       const schema = validators.zodNonEmptyArray(validators.zodGuid);
-      expect(
-        schema.safeParse(["550e8400-e29b-41d4-a716-446655440000"]).success,
-      ).toBe(true);
+      expect(schema.safeParse(["550e8400-e29b-41d4-a716-446655440000"]).success).toBe(true);
     });
 
     it("should reject empty arrays", () => {

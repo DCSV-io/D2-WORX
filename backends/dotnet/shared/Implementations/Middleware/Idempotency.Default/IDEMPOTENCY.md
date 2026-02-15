@@ -36,20 +36,20 @@ idempotency:{uuid}
 
 ## Options
 
-| Option              | Default    | Description                                               |
-| ------------------- | ---------- | --------------------------------------------------------- |
-| `CacheTtl`          | 24 hours   | TTL for cached responses                                  |
-| `InFlightTtl`       | 30 seconds | TTL for the in-flight sentinel (safety valve)             |
-| `MaxBodySizeBytes`  | 1 MB       | Max response body size to cache                           |
-| `ApplicableMethods` | POST, PUT, PATCH, DELETE | HTTP methods the middleware applies to       |
-| `CacheErrorResponses` | false    | Whether to cache 4xx/5xx responses                        |
+| Option                | Default                  | Description                                   |
+| --------------------- | ------------------------ | --------------------------------------------- |
+| `CacheTtl`            | 24 hours                 | TTL for cached responses                      |
+| `InFlightTtl`         | 30 seconds               | TTL for the in-flight sentinel (safety valve) |
+| `MaxBodySizeBytes`    | 1 MB                     | Max response body size to cache               |
+| `ApplicableMethods`   | POST, PUT, PATCH, DELETE | HTTP methods the middleware applies to        |
+| `CacheErrorResponses` | false                    | Whether to cache 4xx/5xx responses            |
 
 ## Packages
 
-| Platform | Package                             | Layer |
-| -------- | ----------------------------------- | ----- |
-| .NET     | `D2.Shared.Idempotency.Default`     | Middleware |
-| Node.js  | `@d2/idempotency`                   | Middleware |
+| Platform | Package                         | Layer      |
+| -------- | ------------------------------- | ---------- |
+| .NET     | `D2.Shared.Idempotency.Default` | Middleware |
+| Node.js  | `@d2/idempotency`               | Middleware |
 
 ## .NET Usage
 
@@ -90,11 +90,16 @@ const checkHandler = new Check(setNxHandler, getHandler, options, context);
 import { checkIdempotency } from "@d2/idempotency";
 
 const result = await checkIdempotency(
-  idempotencyKey, checkHandler, setHandler, removeHandler, options, logger
+  idempotencyKey,
+  checkHandler,
+  setHandler,
+  removeHandler,
+  options,
+  logger,
 );
 
 if (result.state === "in_flight") return c.json({ error: "In-flight" }, 409);
-if (result.state === "cached")    return replay(result.cachedResponse);
+if (result.state === "cached") return replay(result.cachedResponse);
 
 // Execute request...
 const response = await next();
@@ -133,31 +138,31 @@ Added `ICreate.ISetNxHandler<TValue>` to both platforms — wraps Redis `SET ...
 
 | File                               | Purpose                                    |
 | ---------------------------------- | ------------------------------------------ |
-| `IdempotencyMiddleware.cs`         | ASP.NET Core middleware (response capture)  |
-| `IdempotencyOptions.cs`            | Configuration with defaults                 |
-| `CachedResponse.cs`                | Record for cached HTTP response             |
-| `IdempotencyState.cs`              | Enum: Acquired, InFlight, Cached            |
-| `Extensions.cs`                    | `AddIdempotency` + `UseIdempotency`         |
-| `Interfaces/IIdempotency.cs`       | Base partial interface                      |
-| `Interfaces/IIdempotency.Check.cs` | Check handler contract                      |
-| `Handlers/X/Check.cs`              | SET NX + GET handler                        |
+| `IdempotencyMiddleware.cs`         | ASP.NET Core middleware (response capture) |
+| `IdempotencyOptions.cs`            | Configuration with defaults                |
+| `CachedResponse.cs`                | Record for cached HTTP response            |
+| `IdempotencyState.cs`              | Enum: Acquired, InFlight, Cached           |
+| `Extensions.cs`                    | `AddIdempotency` + `UseIdempotency`        |
+| `Interfaces/IIdempotency.cs`       | Base partial interface                     |
+| `Interfaces/IIdempotency.Check.cs` | Check handler contract                     |
+| `Handlers/X/Check.cs`              | SET NX + GET handler                       |
 
 ### Node.js (`@d2/idempotency`)
 
-| File                        | Purpose                                  |
-| --------------------------- | ---------------------------------------- |
-| `handlers/check.ts`         | Check handler (BaseHandler)              |
-| `check-idempotency.ts`      | Framework-agnostic orchestrator          |
-| `idempotency-options.ts`    | Options + defaults                       |
-| `index.ts`                  | Barrel exports                           |
+| File                     | Purpose                         |
+| ------------------------ | ------------------------------- |
+| `handlers/check.ts`      | Check handler (BaseHandler)     |
+| `check-idempotency.ts`   | Framework-agnostic orchestrator |
+| `idempotency-options.ts` | Options + defaults              |
+| `index.ts`               | Barrel exports                  |
 
 ### Shared Additions
 
-| File                           | Package           | Change              |
-| ------------------------------ | ----------------- | ------------------- |
-| `ICreate.SetNx.cs`            | D2.Shared.Interfaces | New SetNx contract |
-| `SetNx.cs` (Redis)            | DistributedCache.Redis | Redis SET NX impl |
-| `set-nx.ts` (interface)       | @d2/interfaces    | New SetNx contract   |
-| `set-nx.ts` (Redis)           | @d2/cache-redis   | Redis SET NX impl    |
-| `ErrorCodes.cs`               | D2.Shared.Result  | + IDEMPOTENCY_IN_FLIGHT |
-| `error-codes.ts`              | @d2/result        | + IDEMPOTENCY_IN_FLIGHT |
+| File                    | Package                | Change                  |
+| ----------------------- | ---------------------- | ----------------------- |
+| `ICreate.SetNx.cs`      | D2.Shared.Interfaces   | New SetNx contract      |
+| `SetNx.cs` (Redis)      | DistributedCache.Redis | Redis SET NX impl       |
+| `set-nx.ts` (interface) | @d2/interfaces         | New SetNx contract      |
+| `set-nx.ts` (Redis)     | @d2/cache-redis        | Redis SET NX impl       |
+| `ErrorCodes.cs`         | D2.Shared.Result       | + IDEMPOTENCY_IN_FLIGHT |
+| `error-codes.ts`        | @d2/result             | + IDEMPOTENCY_IN_FLIGHT |

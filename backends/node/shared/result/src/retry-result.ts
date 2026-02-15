@@ -114,7 +114,13 @@ export async function retryResultAsync<T>(
     // Transient failure → delay + retry (unless last attempt)
     if (attempt < config.maxAttempts) {
       await config.delayFn(
-        calculateDelay(attempt - 1, config.baseDelayMs, config.backoffMultiplier, config.maxDelayMs, config.jitter),
+        calculateDelay(
+          attempt - 1,
+          config.baseDelayMs,
+          config.backoffMultiplier,
+          config.maxDelayMs,
+          config.jitter,
+        ),
         config.signal,
       );
     }
@@ -182,7 +188,13 @@ export async function retryExternalAsync<TRaw, TData>(
     // Transient failure → delay + retry (unless last attempt)
     if (attempt < config.maxAttempts) {
       await config.delayFn(
-        calculateDelay(attempt - 1, config.baseDelayMs, config.backoffMultiplier, config.maxDelayMs, config.jitter),
+        calculateDelay(
+          attempt - 1,
+          config.baseDelayMs,
+          config.backoffMultiplier,
+          config.maxDelayMs,
+          config.jitter,
+        ),
         config.signal,
       );
     }

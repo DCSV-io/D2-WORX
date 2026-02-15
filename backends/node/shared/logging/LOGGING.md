@@ -4,13 +4,13 @@ Logging abstraction with Pino implementation. Auto-instrumented by OpenTelemetry
 
 ## Files
 
-| File Name                                | Description                                                                    |
-| ---------------------------------------- | ------------------------------------------------------------------------------ |
-| [i-logger.ts](src/i-logger.ts)           | `ILogger` interface (`debug`, `info`, `warn`, `error`, `fatal`, `child`).      |
+| File Name                                  | Description                                                                   |
+| ------------------------------------------ | ----------------------------------------------------------------------------- |
+| [i-logger.ts](src/i-logger.ts)             | `ILogger` interface (`debug`, `info`, `warn`, `error`, `fatal`, `child`).     |
 | [logger-options.ts](src/logger-options.ts) | `LoggerOptions` type for logger configuration (level, name, pretty printing). |
-| [create-logger.ts](src/create-logger.ts) | Factory function `createLogger()` to create configured logger instances.       |
-| [pino-logger.ts](src/pino-logger.ts)     | `PinoLogger` class implementing `ILogger` via Pino.                            |
-| [index.ts](src/index.ts)                 | Barrel re-export of `ILogger`, `LogLevel`, `createLogger`, `PinoLogger`.       |
+| [create-logger.ts](src/create-logger.ts)   | Factory function `createLogger()` to create configured logger instances.      |
+| [pino-logger.ts](src/pino-logger.ts)       | `PinoLogger` class implementing `ILogger` via Pino.                           |
+| [index.ts](src/index.ts)                   | Barrel re-export of `ILogger`, `LogLevel`, `createLogger`, `PinoLogger`.      |
 
 ## Usage
 

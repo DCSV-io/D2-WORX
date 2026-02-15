@@ -63,6 +63,10 @@ export type {
   CreateContactsResponse,
   DeleteContactsRequest,
   DeleteContactsResponse,
+  DeleteContactsByExtKeysRequest,
+  DeleteContactsByExtKeysResponse,
+  UpdateContactsByExtKeysRequest,
+  UpdateContactsByExtKeysResponse,
   GeoServiceClient,
   GeoServiceServer,
 } from "./generated/geo/v1/geo.js";

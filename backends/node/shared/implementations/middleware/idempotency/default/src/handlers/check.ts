@@ -60,7 +60,11 @@ export class Check
       // 2. Key exists — check if it's a sentinel or a cached response.
       const getResult = await this.get.handleAsync({ key: cacheKey });
 
-      if (!getResult.success || getResult.data?.value === undefined || getResult.data.value === null) {
+      if (
+        !getResult.success ||
+        getResult.data?.value === undefined ||
+        getResult.data.value === null
+      ) {
         // GET failed or returned null — key may have expired between SET NX and GET.
         // Fail-open: treat as acquired.
         this.context.logger.warn(
@@ -102,9 +106,7 @@ export class Check
       });
     } catch {
       // Fail-open on all cache errors.
-      this.context.logger.warn(
-        `Idempotency check failed. Failing open. TraceId: ${this.traceId}`,
-      );
+      this.context.logger.warn(`Idempotency check failed. Failing open. TraceId: ${this.traceId}`);
       return D2Result.ok({
         data: { state: "acquired" as const, cachedResponse: undefined },
         traceId: this.traceId,

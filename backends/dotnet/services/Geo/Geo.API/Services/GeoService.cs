@@ -10,6 +10,7 @@ using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Result.Extensions;
+using Geo.API.Interceptors;
 using Grpc.Core;
 using GeoComplex = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex;
 using GeoRefDataComplex = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex;
@@ -119,6 +120,7 @@ public class GeoService : SB
     }
 
     /// <inheritdoc/>
+    [RequiresApiKey]
     public override async Task<GetContactsResponse> GetContacts(
         GetContactsRequest request,
         ServerCallContext context)
@@ -140,6 +142,7 @@ public class GeoService : SB
     }
 
     /// <inheritdoc/>
+    [RequiresApiKey(ValidateContextKeys = true)]
     public override async Task<GetContactsByExtKeysResponse> GetContactsByExtKeys(
         GetContactsByExtKeysRequest request,
         ServerCallContext context)
@@ -164,6 +167,7 @@ public class GeoService : SB
     }
 
     /// <inheritdoc/>
+    [RequiresApiKey(ValidateContextKeys = true)]
     public override async Task<CreateContactsResponse> CreateContacts(
         CreateContactsRequest request,
         ServerCallContext context)
@@ -182,6 +186,7 @@ public class GeoService : SB
     }
 
     /// <inheritdoc/>
+    [RequiresApiKey]
     public override async Task<DeleteContactsResponse> DeleteContacts(
         DeleteContactsRequest request,
         ServerCallContext context)
@@ -199,5 +204,27 @@ public class GeoService : SB
             Result = result.ToProto(),
             Deleted = result.Data?.Deleted ?? 0,
         };
+    }
+
+    /// <inheritdoc/>
+    [RequiresApiKey(ValidateContextKeys = true)]
+    public override Task<DeleteContactsByExtKeysResponse> DeleteContactsByExtKeys(
+        DeleteContactsByExtKeysRequest request,
+        ServerCallContext context)
+    {
+        // TODO: Implement when Geo.App ext-key delete handler is built.
+        throw new RpcException(new Status(
+            StatusCode.Unimplemented, "DeleteContactsByExtKeys not yet implemented."));
+    }
+
+    /// <inheritdoc/>
+    [RequiresApiKey(ValidateContextKeys = true)]
+    public override Task<UpdateContactsByExtKeysResponse> UpdateContactsByExtKeys(
+        UpdateContactsByExtKeysRequest request,
+        ServerCallContext context)
+    {
+        // TODO: Implement when Geo.App ext-key update handler is built.
+        throw new RpcException(new Status(
+            StatusCode.Unimplemented, "UpdateContactsByExtKeys not yet implemented."));
     }
 }

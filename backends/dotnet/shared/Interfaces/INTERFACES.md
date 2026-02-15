@@ -25,12 +25,12 @@ Interface definitions for handler-based operations across caching, repositories,
 >
 > ##### R (Read)
 >
-> | File Name                                                           | Description                                                                                       |
-> | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-> | [IRead.cs](Caching/Distributed/Handlers/R/IRead.cs)                 | Partial interface defining distributed cache read operations.                                     |
-> | [IRead.Exists.cs](Caching/Distributed/Handlers/R/IRead.Exists.cs)   | Extends IRead with IExistsHandler for checking distributed cache key existence without retrieval. |
-> | [IRead.Get.cs](Caching/Distributed/Handlers/R/IRead.Get.cs)         | Extends IRead with IGetHandler for retrieving typed data from distributed cache by key.           |
-> | [IRead.GetTtl.cs](Caching/Distributed/Handlers/R/IRead.GetTtl.cs)   | Extends IRead with IGetTtlHandler for retrieving the remaining time-to-live of a key.             |
+> | File Name                                                         | Description                                                                                       |
+> | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+> | [IRead.cs](Caching/Distributed/Handlers/R/IRead.cs)               | Partial interface defining distributed cache read operations.                                     |
+> | [IRead.Exists.cs](Caching/Distributed/Handlers/R/IRead.Exists.cs) | Extends IRead with IExistsHandler for checking distributed cache key existence without retrieval. |
+> | [IRead.Get.cs](Caching/Distributed/Handlers/R/IRead.Get.cs)       | Extends IRead with IGetHandler for retrieving typed data from distributed cache by key.           |
+> | [IRead.GetTtl.cs](Caching/Distributed/Handlers/R/IRead.GetTtl.cs) | Extends IRead with IGetTtlHandler for retrieving the remaining time-to-live of a key.             |
 >
 > ##### U (Update)
 >
@@ -59,18 +59,18 @@ Interface definitions for handler-based operations across caching, repositories,
 >
 > ##### R (Read)
 >
-> | File Name                                                          | Description                                                                               |
-> | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
-> | [IRead.cs](Caching/InMemory/Handlers/R/IRead.cs)                   | Partial interface defining in-memory cache read operations.                               |
-> | [IRead.Get.cs](Caching/InMemory/Handlers/R/IRead.Get.cs)           | Extends IRead with IGetHandler for retrieving typed data from in-memory cache by key.     |
-> | [IRead.GetMany.cs](Caching/InMemory/Handlers/R/IRead.GetMany.cs)   | Extends IRead with IGetManyHandler for batch retrieval of typed data by multiple keys.    |
+> | File Name                                                        | Description                                                                            |
+> | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+> | [IRead.cs](Caching/InMemory/Handlers/R/IRead.cs)                 | Partial interface defining in-memory cache read operations.                            |
+> | [IRead.Get.cs](Caching/InMemory/Handlers/R/IRead.Get.cs)         | Extends IRead with IGetHandler for retrieving typed data from in-memory cache by key.  |
+> | [IRead.GetMany.cs](Caching/InMemory/Handlers/R/IRead.GetMany.cs) | Extends IRead with IGetManyHandler for batch retrieval of typed data by multiple keys. |
 >
 > ##### U (Update)
 >
-> | File Name                                                            | Description                                                                                     |
-> | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-> | [IUpdate.cs](Caching/InMemory/Handlers/U/IUpdate.cs)                 | Partial interface defining in-memory cache upsert operations.                                   |
-> | [IUpdate.Set.cs](Caching/InMemory/Handlers/U/IUpdate.Set.cs)         | Extends IUpdate with ISetHandler for storing typed data in memory cache with optional TTL.       |
+> | File Name                                                            | Description                                                                                          |
+> | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+> | [IUpdate.cs](Caching/InMemory/Handlers/U/IUpdate.cs)                 | Partial interface defining in-memory cache upsert operations.                                        |
+> | [IUpdate.Set.cs](Caching/InMemory/Handlers/U/IUpdate.Set.cs)         | Extends IUpdate with ISetHandler for storing typed data in memory cache with optional TTL.           |
 > | [IUpdate.SetMany.cs](Caching/InMemory/Handlers/U/IUpdate.SetMany.cs) | Extends IUpdate with ISetManyHandler for batch storing typed data in memory cache with optional TTL. |
 
 ---

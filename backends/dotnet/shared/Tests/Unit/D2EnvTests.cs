@@ -82,6 +82,58 @@ public class D2EnvTests : IClassFixture<D2EnvTests.EnvFixture>
             .Should().Be("tok_abc123");
     }
 
+    /// <summary>
+    /// Tests that a dictionary-style env var with double-underscore nesting preserves
+    /// the inner <c>__</c> separators after the first-underscore split.
+    /// This is the pattern used for <c>GeoAppOptions.ApiKeyMappings</c>.
+    /// </summary>
+    [Fact]
+    public void Load_DictStyleVar_PreservesNestedDoubleUnderscores()
+    {
+        // The key is D2ENVTEST_APIKEYMAPPINGS__dev-auth-key__0
+        // Split on first _ → D2ENVTEST__APIKEYMAPPINGS__dev-auth-key__0
+        // .NET then interprets __ as : → D2ENVTEST:APIKEYMAPPINGS:dev-auth-key:0
+        Environment.GetEnvironmentVariable($"{_PREFIX}__APIKEYMAPPINGS__dev-auth-key__0")
+            .Should().Be("org_contact");
+    }
+
+    /// <summary>
+    /// Tests the second indexed entry of the dictionary list value.
+    /// </summary>
+    [Fact]
+    public void Load_DictStyleVar_SecondIndexBindsCorrectly()
+    {
+        Environment.GetEnvironmentVariable($"{_PREFIX}__APIKEYMAPPINGS__dev-auth-key__1")
+            .Should().Be("user");
+    }
+
+    /// <summary>
+    /// Tests a simple string property with double-underscore nesting (e.g., ApiKey).
+    /// </summary>
+    [Fact]
+    public void Load_SimpleNestedVar_PreservesDoubleUnderscoreNesting()
+    {
+        // The key is D2ENVTEST_APIKEY
+        // Split on first _ → D2ENVTEST__APIKEY
+        Environment.GetEnvironmentVariable($"{_PREFIX}__APIKEY")
+            .Should().Be("dev-auth-api-key");
+    }
+
+    /// <summary>
+    /// Tests a list property with double-underscore indexed keys (e.g., AllowedContextKeys).
+    /// </summary>
+    [Fact]
+    public void Load_ListStyleVar_PreservesIndexedDoubleUnderscores()
+    {
+        // The key is D2ENVTEST_ALLOWEDCONTEXTKEYS__0
+        // Split on first _ → D2ENVTEST__ALLOWEDCONTEXTKEYS__0
+        Environment.GetEnvironmentVariable($"{_PREFIX}__ALLOWEDCONTEXTKEYS__0")
+            .Should().Be("org_contact");
+
+        Environment.GetEnvironmentVariable($"{_PREFIX}__ALLOWEDCONTEXTKEYS__1")
+            .Should().Be("user");
+    }
+
     #endregion
 
     #region Original Key Tests
@@ -154,15 +206,30 @@ public class D2EnvTests : IClassFixture<D2EnvTests.EnvFixture>
             $"{_PREFIX}_GEOINFRAOPTIONS_IPINFOACCESSTOKEN",
             "STANDALONE",
             $"{_PREFIX}_PREEXISTING",
+            $"{_PREFIX}_APIKEYMAPPINGS__dev-auth-key__0",
+            $"{_PREFIX}_APIKEYMAPPINGS__dev-auth-key__1",
+            $"{_PREFIX}_APIKEY",
+            $"{_PREFIX}_ALLOWEDCONTEXTKEYS__0",
+            $"{_PREFIX}_ALLOWEDCONTEXTKEYS__1",
             $"Parameters__{_PREFIX.ToLowerInvariant()}-dbusername",
             $"Parameters__{_PREFIX.ToLowerInvariant()}-cachepassword",
             $"Parameters__{_PREFIX.ToLowerInvariant()}-geoinfraoptions-ipinfoaccesstoken",
             "Parameters__standalone",
             $"Parameters__{_PREFIX.ToLowerInvariant()}-preexisting",
+            $"Parameters__{_PREFIX.ToLowerInvariant()}-apikeymappings--dev-auth-key--0",
+            $"Parameters__{_PREFIX.ToLowerInvariant()}-apikeymappings--dev-auth-key--1",
+            $"Parameters__{_PREFIX.ToLowerInvariant()}-apikey",
+            $"Parameters__{_PREFIX.ToLowerInvariant()}-allowedcontextkeys--0",
+            $"Parameters__{_PREFIX.ToLowerInvariant()}-allowedcontextkeys--1",
             $"{_PREFIX}__DBUSERNAME",
             $"{_PREFIX}__CACHEPASSWORD",
             $"{_PREFIX}__GEOINFRAOPTIONS_IPINFOACCESSTOKEN",
             $"{_PREFIX}__PREEXISTING",
+            $"{_PREFIX}__APIKEYMAPPINGS__dev-auth-key__0",
+            $"{_PREFIX}__APIKEYMAPPINGS__dev-auth-key__1",
+            $"{_PREFIX}__APIKEY",
+            $"{_PREFIX}__ALLOWEDCONTEXTKEYS__0",
+            $"{_PREFIX}__ALLOWEDCONTEXTKEYS__1",
         ];
 
         private string _envFilePath = string.Empty;
@@ -184,7 +251,12 @@ public class D2EnvTests : IClassFixture<D2EnvTests.EnvFixture>
                 $"{_PREFIX}_CACHEPASSWORD=redis123\n" +
                 $"{_PREFIX}_GEOINFRAOPTIONS_IPINFOACCESSTOKEN=tok_abc123\n" +
                 "STANDALONE=value\n" +
-                $"{_PREFIX}_PREEXISTING=should_be_overwritten\n";
+                $"{_PREFIX}_PREEXISTING=should_be_overwritten\n" +
+                $"{_PREFIX}_APIKEYMAPPINGS__dev-auth-key__0=org_contact\n" +
+                $"{_PREFIX}_APIKEYMAPPINGS__dev-auth-key__1=user\n" +
+                $"{_PREFIX}_APIKEY=dev-auth-api-key\n" +
+                $"{_PREFIX}_ALLOWEDCONTEXTKEYS__0=org_contact\n" +
+                $"{_PREFIX}_ALLOWEDCONTEXTKEYS__1=user\n";
 
             File.WriteAllText(_envFilePath, envContent);
 

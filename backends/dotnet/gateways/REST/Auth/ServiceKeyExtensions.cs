@@ -1,0 +1,61 @@
+// -----------------------------------------------------------------------
+// <copyright file="ServiceKeyExtensions.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Gateways.REST.Auth;
+
+/// <summary>
+/// Extension methods for service-to-service API key authentication.
+/// </summary>
+public static class ServiceKeyExtensions
+{
+    /// <summary>
+    /// Extension methods for <see cref="IServiceCollection"/>.
+    /// </summary>
+    extension(IServiceCollection services)
+    {
+        /// <summary>
+        /// Registers service key authentication options from configuration.
+        /// </summary>
+        ///
+        /// <param name="configuration">
+        /// The application configuration.
+        /// </param>
+        /// <param name="sectionName">
+        /// The configuration section name. Defaults to "ServiceKeyOptions".
+        /// </param>
+        ///
+        /// <returns>
+        /// The updated service collection.
+        /// </returns>
+        public IServiceCollection AddServiceKeyAuth(
+            IConfiguration configuration,
+            string sectionName = nameof(ServiceKeyOptions))
+        {
+            services.Configure<ServiceKeyOptions>(configuration.GetSection(sectionName));
+            return services;
+        }
+    }
+
+    /// <summary>
+    /// Extension methods for <see cref="RouteHandlerBuilder"/>.
+    /// </summary>
+    extension(RouteHandlerBuilder builder)
+    {
+        /// <summary>
+        /// Requires a valid service API key in the <c>X-Api-Key</c> header.
+        /// Use this on endpoints that should only be callable by trusted backend
+        /// services (e.g., SvelteKit server), not by end users directly.
+        /// </summary>
+        ///
+        /// <returns>
+        /// The route handler builder for chaining.
+        /// </returns>
+        public RouteHandlerBuilder RequireServiceKey()
+        {
+            return builder.AddEndpointFilter<ServiceKeyEndpointFilter>();
+        }
+    }
+}

@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using D2.Gateways.REST.Auth;
 using D2.Gateways.REST.Endpoints;
 using D2.Geo.Client;
 using D2.Shared.DistributedCache.Redis;
@@ -43,16 +44,33 @@ builder.Services.AddRequestEnrichment(builder.Configuration);
 // Register rate limiting middleware services.
 builder.Services.AddRateLimiting(builder.Configuration);
 
+// Register JWT authentication.
+builder.Services.AddJwtAuth(builder.Configuration);
+
+// Register service-to-service API key authentication.
+builder.Services.AddServiceKeyAuth(builder.Configuration);
+
+// Register CORS.
+builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
+    p.WithOrigins(builder.Configuration["CorsOrigin"] ?? "http://localhost:5173")
+     .AllowCredentials()
+     .WithHeaders("Content-Type", "Authorization", "Idempotency-Key")
+     .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")));
+
+// Request body size limit (256 KB — gateway payloads are small JSON).
+builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 256 * 1024);
+
 // Register idempotency middleware services.
 builder.Services.AddIdempotency(builder.Configuration);
 
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStructuredRequestLogging();
+app.UseCors();
 app.UseRequestEnrichment();
 app.UseRateLimiting();
 
-// Auth middleware will go here.
+app.UseJwtAuth();
 app.UseIdempotency();
 
 if (app.Environment.IsDevelopment())

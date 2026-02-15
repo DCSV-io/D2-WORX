@@ -29,7 +29,10 @@ describe("isTransientResult", () => {
   it("returns true for SERVICE_UNAVAILABLE", () => {
     expect(
       isTransientResult(
-        D2Result.fail({ errorCode: ErrorCodes.SERVICE_UNAVAILABLE, statusCode: HttpStatusCode.ServiceUnavailable }),
+        D2Result.fail({
+          errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
+          statusCode: HttpStatusCode.ServiceUnavailable,
+        }),
       ),
     ).toBe(true);
   });
@@ -41,7 +44,10 @@ describe("isTransientResult", () => {
   it("returns true for RATE_LIMITED", () => {
     expect(
       isTransientResult(
-        D2Result.fail({ errorCode: ErrorCodes.RATE_LIMITED, statusCode: HttpStatusCode.TooManyRequests }),
+        D2Result.fail({
+          errorCode: ErrorCodes.RATE_LIMITED,
+          statusCode: HttpStatusCode.TooManyRequests,
+        }),
       ),
     ).toBe(true);
   });
@@ -57,9 +63,9 @@ describe("isTransientResult", () => {
   });
 
   it("returns true for 429 without error code", () => {
-    expect(
-      isTransientResult(D2Result.fail({ statusCode: HttpStatusCode.TooManyRequests })),
-    ).toBe(true);
+    expect(isTransientResult(D2Result.fail({ statusCode: HttpStatusCode.TooManyRequests }))).toBe(
+      true,
+    );
   });
 
   it("returns false for NOT_FOUND", () => {
@@ -128,7 +134,10 @@ describe("retryResultAsync", () => {
     const op = vi
       .fn()
       .mockResolvedValueOnce(
-        D2Result.fail({ errorCode: ErrorCodes.SERVICE_UNAVAILABLE, statusCode: HttpStatusCode.ServiceUnavailable }),
+        D2Result.fail({
+          errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
+          statusCode: HttpStatusCode.ServiceUnavailable,
+        }),
       )
       .mockResolvedValueOnce(D2Result.ok({ data: "ok" }));
 
@@ -157,7 +166,10 @@ describe("retryResultAsync", () => {
     const op = vi
       .fn()
       .mockResolvedValueOnce(
-        D2Result.fail({ errorCode: ErrorCodes.RATE_LIMITED, statusCode: HttpStatusCode.TooManyRequests }),
+        D2Result.fail({
+          errorCode: ErrorCodes.RATE_LIMITED,
+          statusCode: HttpStatusCode.TooManyRequests,
+        }),
       )
       .mockResolvedValueOnce(D2Result.ok());
 
@@ -384,11 +396,10 @@ describe("retryExternalAsync", () => {
     const delay = createMockDelay();
     const op = vi.fn().mockResolvedValue({ status: 404 });
 
-    const result = await retryExternalAsync(
-      op,
-      () => D2Result.notFound<string>(),
-      { maxAttempts: 3, _delayFn: delay.fn },
-    );
+    const result = await retryExternalAsync(op, () => D2Result.notFound<string>(), {
+      maxAttempts: 3,
+      _delayFn: delay.fn,
+    });
 
     expect(result).toBeFailure();
     expect(result).toHaveErrorCode(ErrorCodes.NOT_FOUND);
@@ -418,15 +429,11 @@ describe("retryExternalAsync", () => {
     const delay = createMockDelay();
     const op = vi.fn().mockRejectedValue(new Error("not found upstream"));
 
-    const result = await retryExternalAsync(
-      op,
-      () => D2Result.ok<string>(),
-      {
-        maxAttempts: 3,
-        mapError: () => D2Result.notFound(),
-        _delayFn: delay.fn,
-      },
-    );
+    const result = await retryExternalAsync(op, () => D2Result.ok<string>(), {
+      maxAttempts: 3,
+      mapError: () => D2Result.notFound(),
+      _delayFn: delay.fn,
+    });
 
     expect(result).toBeFailure();
     expect(result).toHaveErrorCode(ErrorCodes.NOT_FOUND);

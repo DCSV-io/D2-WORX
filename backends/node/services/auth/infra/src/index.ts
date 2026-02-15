@@ -1,0 +1,57 @@
+// @d2/auth-infra — BetterAuth configuration, repositories, and storage adapters.
+// This is the ONLY package that imports better-auth.
+
+// --- Auth Factory ---
+export { createAuth } from "./auth/better-auth/auth-factory.js";
+export type { Auth, AuthHooks } from "./auth/better-auth/auth-factory.js";
+
+// --- Config ---
+export { AUTH_CONFIG_DEFAULTS } from "./auth/better-auth/auth-config.js";
+export type { AuthServiceConfig } from "./auth/better-auth/auth-config.js";
+
+// --- Access Control ---
+export {
+  ac,
+  ownerPermissions,
+  officerPermissions,
+  agentPermissions,
+  auditorPermissions,
+} from "./auth/better-auth/access-control.js";
+
+// --- Secondary Storage ---
+export { createSecondaryStorage } from "./auth/better-auth/secondary-storage.js";
+
+// --- Hooks ---
+export { generateId } from "./auth/better-auth/hooks/id-hooks.js";
+export { beforeCreateOrganization } from "./auth/better-auth/hooks/org-hooks.js";
+
+// --- Mappers ---
+export { toDomainUser } from "./mappers/user-mapper.js";
+export { toDomainOrganization } from "./mappers/org-mapper.js";
+export { toDomainSession } from "./mappers/session-mapper.js";
+export { toDomainMember } from "./mappers/member-mapper.js";
+export { toDomainInvitation } from "./mappers/invitation-mapper.js";
+
+// --- Repositories ---
+export { SignInEventRepository } from "./repository/handlers/sign-in-event-repository.js";
+export { EmulationConsentRepository } from "./repository/handlers/emulation-consent-repository.js";
+export { OrgContactRepository } from "./repository/handlers/org-contact-repository.js";
+
+// --- Kysely Types ---
+export type {
+  AuthCustomDatabase,
+  SignInEventTable,
+  EmulationConsentTable,
+  OrgContactTable,
+  SignInEventRow,
+  NewSignInEvent,
+  EmulationConsentRow,
+  NewEmulationConsent,
+  EmulationConsentUpdate,
+  OrgContactRow,
+  NewOrgContact,
+  OrgContactUpdate,
+} from "./repository/entities/kysely-types.js";
+
+// --- Migrations ---
+export { up, down } from "./repository/migrations/001-custom-tables.js";

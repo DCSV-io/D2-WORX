@@ -4,10 +4,11 @@ import { D2Result } from "@d2/result";
 import type { DistributedCache, Idempotency } from "@d2/interfaces";
 import type { ILogger } from "@d2/logging";
 
-function createMockCheckHandler(state: Idempotency.IdempotencyState, cachedResponse?: Idempotency.CachedResponse) {
-  const fn = vi.fn().mockResolvedValue(
-    D2Result.ok({ data: { state, cachedResponse } }),
-  );
+function createMockCheckHandler(
+  state: Idempotency.IdempotencyState,
+  cachedResponse?: Idempotency.CachedResponse,
+) {
+  const fn = vi.fn().mockResolvedValue(D2Result.ok({ data: { state, cachedResponse } }));
   return { handleAsync: fn } as unknown as Idempotency.ICheckHandler;
 }
 
@@ -65,7 +66,11 @@ describe("checkIdempotency orchestrator", () => {
     });
 
     it("should return cached state with response from check handler", async () => {
-      const cachedResponse = { statusCode: 200, body: '{"ok":true}', contentType: "application/json" };
+      const cachedResponse = {
+        statusCode: 200,
+        body: '{"ok":true}',
+        contentType: "application/json",
+      };
       const check = createMockCheckHandler("cached", cachedResponse);
       const result = await checkIdempotency("key-1", check, setMock.handler, removeMock.handler);
 
@@ -79,7 +84,11 @@ describe("checkIdempotency orchestrator", () => {
       const check = createMockCheckHandler("acquired");
       const result = await checkIdempotency("my-key", check, setMock.handler, removeMock.handler);
 
-      await result.storeResponse({ statusCode: 201, body: '{"id":"1"}', contentType: "application/json" });
+      await result.storeResponse({
+        statusCode: 201,
+        body: '{"id":"1"}',
+        contentType: "application/json",
+      });
 
       expect(setMock.fn).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -91,13 +100,9 @@ describe("checkIdempotency orchestrator", () => {
 
     it("should use custom cacheTtlMs option", async () => {
       const check = createMockCheckHandler("acquired");
-      const result = await checkIdempotency(
-        "my-key",
-        check,
-        setMock.handler,
-        removeMock.handler,
-        { cacheTtlMs: 3600_000 },
-      );
+      const result = await checkIdempotency("my-key", check, setMock.handler, removeMock.handler, {
+        cacheTtlMs: 3600_000,
+      });
 
       await result.storeResponse({ statusCode: 200, body: undefined, contentType: undefined });
 
@@ -112,7 +117,14 @@ describe("checkIdempotency orchestrator", () => {
       setMock.fn.mockRejectedValue(new Error("Redis write failed"));
       const logger = createMockLogger();
       const check = createMockCheckHandler("acquired");
-      const result = await checkIdempotency("my-key", check, setMock.handler, removeMock.handler, {}, logger);
+      const result = await checkIdempotency(
+        "my-key",
+        check,
+        setMock.handler,
+        removeMock.handler,
+        {},
+        logger,
+      );
 
       await expect(
         result.storeResponse({ statusCode: 200, body: undefined, contentType: undefined }),
@@ -138,7 +150,14 @@ describe("checkIdempotency orchestrator", () => {
       removeMock.fn.mockRejectedValue(new Error("Redis remove failed"));
       const logger = createMockLogger();
       const check = createMockCheckHandler("acquired");
-      const result = await checkIdempotency("my-key", check, setMock.handler, removeMock.handler, {}, logger);
+      const result = await checkIdempotency(
+        "my-key",
+        check,
+        setMock.handler,
+        removeMock.handler,
+        {},
+        logger,
+      );
 
       await expect(result.removeLock()).resolves.not.toThrow();
       expect(logger.warn).toHaveBeenCalled();

@@ -1,0 +1,41 @@
+{
+  "name": "@d2/auth-api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@d2/auth-app": "workspace:*",
+    "@d2/auth-domain": "workspace:*",
+    "@d2/auth-infra": "workspace:*",
+    "@d2/cache-memory": "workspace:*",
+    "@d2/cache-redis": "workspace:*",
+    "@d2/geo-client": "workspace:*",
+    "@d2/handler": "workspace:*",
+    "@d2/interfaces": "workspace:*",
+    "@d2/logging": "workspace:*",
+    "@d2/result": "workspace:*",
+    "@d2/service-defaults": "workspace:*",
+    "@d2/utilities": "workspace:*",
+    "@hono/node-server": "1.19.9",
+    "hono": "4.11.9",
+    "ioredis": "5.8.0",
+    "kysely": "0.28.11",
+    "pg": "8.18.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.16.0"
+  }
+}

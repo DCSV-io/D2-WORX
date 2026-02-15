@@ -37,7 +37,10 @@ if (reqConnStrings.Any(x => x.Falsey()))
 // Add services to the container.
 builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
-builder.Services.AddGrpc();
+builder.Services.AddGrpc(options =>
+{
+    options.Interceptors.Add<Geo.API.Interceptors.ApiKeyInterceptor>();
+});
 builder.Services.AddHandlerContext();
 builder.Services.AddGeoInfra(
     builder.Configuration,

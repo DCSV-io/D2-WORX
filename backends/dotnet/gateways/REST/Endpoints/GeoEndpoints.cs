@@ -6,7 +6,9 @@
 
 namespace D2.Gateways.REST.Endpoints;
 
+using D2.Gateways.REST.Auth;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Handler.Auth;
 using D2.Shared.Utilities.Extensions;
 
 /// <summary>
@@ -70,15 +72,17 @@ public static class GeoEndpoints
             // Map Geo-service endpoints under /api/v1/geo.
             var group = erb.MapGroup("/api/v1/geo");
 
-            // Map endpoint to get full geographic reference data.
+            // Public — geographic reference data is not sensitive.
             group.MapGet("/reference-data", GetReferenceDataAsync)
+                .AllowAnonymous()
                 .WithName("GetGeoReferenceData")
                 .WithSummary("Returns full geographic reference data.")
                 .WithDescription(
                     "Retrieves countries, subdivisions, currencies, languages, locales, and geopolitical entities.");
 
-            // Map endpoint to request geographic reference data update.
+            // Service-only — triggered by SvelteKit or other backend services, not end users.
             group.MapPost("/reference-data/update", RequestReferenceDataUpdateAsync)
+                .RequireServiceKey()
                 .WithName("RequestGetGeoReferenceDataUpdate")
                 .WithSummary("Requests that the geographic reference data be updated.")
                 .WithDescription(

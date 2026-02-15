@@ -246,10 +246,7 @@ describe("retryAsync — configuration", () => {
 
   it("jitter produces delay in [0, calculated) range", async () => {
     const delay = createMockDelay();
-    const op = vi
-      .fn()
-      .mockRejectedValueOnce(new Error("ECONNREFUSED"))
-      .mockResolvedValueOnce("ok");
+    const op = vi.fn().mockRejectedValueOnce(new Error("ECONNREFUSED")).mockResolvedValueOnce("ok");
 
     await retryAsync(op, {
       maxAttempts: 3,
@@ -379,9 +376,7 @@ describe("retryAsync — configuration", () => {
     controller.abort();
     const op = vi.fn().mockResolvedValue("ok");
 
-    await expect(
-      retryAsync(op, { maxAttempts: 3, signal: controller.signal }),
-    ).rejects.toThrow();
+    await expect(retryAsync(op, { maxAttempts: 3, signal: controller.signal })).rejects.toThrow();
     expect(op).toHaveBeenCalledTimes(0);
   });
 

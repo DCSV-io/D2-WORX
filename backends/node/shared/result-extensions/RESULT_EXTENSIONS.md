@@ -4,12 +4,12 @@ D2Result to/from Proto conversions and gRPC call wrapper. Mirrors `D2.Shared.Res
 
 ## Files
 
-| File Name                                                | Description                                                                               |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [d2-result-to-proto.ts](src/d2-result-to-proto.ts)       | `d2ResultToProto()` — converts `D2Result` to `D2ResultProto` for gRPC responses.          |
-| [d2-result-from-proto.ts](src/d2-result-from-proto.ts)   | `d2ResultFromProto()` — converts `D2ResultProto` to `D2Result` for gRPC client responses. |
-| [handle-grpc-call.ts](src/handle-grpc-call.ts)           | `handleGrpcCall()` — wraps gRPC client calls with D2Result error handling.                |
-| [index.ts](src/index.ts)                                 | Barrel re-export of all conversion functions.                                             |
+| File Name                                              | Description                                                                               |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| [d2-result-to-proto.ts](src/d2-result-to-proto.ts)     | `d2ResultToProto()` — converts `D2Result` to `D2ResultProto` for gRPC responses.          |
+| [d2-result-from-proto.ts](src/d2-result-from-proto.ts) | `d2ResultFromProto()` — converts `D2ResultProto` to `D2Result` for gRPC client responses. |
+| [handle-grpc-call.ts](src/handle-grpc-call.ts)         | `handleGrpcCall()` — wraps gRPC client calls with D2Result error handling.                |
+| [index.ts](src/index.ts)                               | Barrel re-export of all conversion functions.                                             |
 
 ## Usage
 

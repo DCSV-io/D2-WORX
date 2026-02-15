@@ -30,7 +30,7 @@ For deeper architectural context, consult these files:
 | `backends/dotnet/shared/Result/RESULT.md`                                                           | D2Result pattern                |
 | `backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md` | Request enrichment middleware   |
 | `backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md`                 | Rate limiting middleware        |
-| `backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md`             | Idempotency middleware          |
+| `backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md`              | Idempotency middleware          |
 | `CONTRIBUTING.md`                                                                                   | Contribution guidelines         |
 
 ---
@@ -515,9 +515,11 @@ refactor: simplify caching logic
 
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) is complete on both .NET and Node.js. See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
+Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 437+ tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done.
 
-**Next:** Phase 2 (Auth): Auth Service, SvelteKit integration, .NET Gateway JWT validation
+See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
+
+**Next:** Phase 2 Stage C — Auth client libraries (`@d2/auth-client` for SvelteKit BFF, `@d2/auth-sdk` for backend gRPC), SvelteKit auth integration
 
 ### When in Doubt
 

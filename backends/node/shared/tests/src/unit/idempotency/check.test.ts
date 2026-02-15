@@ -78,20 +78,14 @@ describe("Idempotency Check handler", () => {
       const handler = createCheck(mocks, { inFlightTtlMs: 5000 });
       await handler.handleAsync({ idempotencyKey: "key" });
 
-      expect(mocks.setNxFn).toHaveBeenCalledWith(
-        expect.objectContaining({ expirationMs: 5000 }),
-      );
+      expect(mocks.setNxFn).toHaveBeenCalledWith(expect.objectContaining({ expirationMs: 5000 }));
     });
   });
 
   describe("InFlight state", () => {
     it("should return in_flight when sentinel exists", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: "__processing__" } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: "__processing__" } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -104,10 +98,12 @@ describe("Idempotency Check handler", () => {
 
   describe("Cached state", () => {
     it("should return cached with valid CachedResponse JSON", async () => {
-      const cachedResponse = { statusCode: 201, body: '{"id":"123"}', contentType: "application/json" };
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
+      const cachedResponse = {
+        statusCode: 201,
+        body: '{"id":"123"}',
+        contentType: "application/json",
+      };
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
       mocks.getFn.mockResolvedValue(
         D2Result.ok({ data: { value: JSON.stringify(cachedResponse) } }),
       );
@@ -123,12 +119,8 @@ describe("Idempotency Check handler", () => {
 
   describe("Fail-open", () => {
     it("should fail-open when SET NX returns failure + GET returns failure", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.fail({ messages: ["Redis error"] }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.fail({ messages: ["Redis error"] }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.fail({ messages: ["Redis error"] }));
+      mocks.getFn.mockResolvedValue(D2Result.fail({ messages: ["Redis error"] }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -138,12 +130,8 @@ describe("Idempotency Check handler", () => {
     });
 
     it("should fail-open when GET returns null value", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: null } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: null } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -153,12 +141,8 @@ describe("Idempotency Check handler", () => {
     });
 
     it("should fail-open when GET returns undefined value", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: undefined } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: undefined } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -168,12 +152,8 @@ describe("Idempotency Check handler", () => {
     });
 
     it("should fail-open when cached response JSON is invalid", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: "not valid json {{{" } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: "not valid json {{{" } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -183,9 +163,7 @@ describe("Idempotency Check handler", () => {
     });
 
     it("should fail-open when GET throws", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
       mocks.getFn.mockRejectedValue(new Error("Redis timeout"));
 
       const handler = createCheck(mocks);
@@ -206,12 +184,8 @@ describe("Idempotency Check handler", () => {
     });
 
     it("should fail-open when JSON is a valid array (not a CachedResponse)", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: "[1, 2, 3]" } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: "[1, 2, 3]" } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -222,12 +196,8 @@ describe("Idempotency Check handler", () => {
     });
 
     it("should fail-open when JSON object has no statusCode field", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: '{"body":"test"}' } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: '{"body":"test"}' } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -238,12 +208,8 @@ describe("Idempotency Check handler", () => {
     });
 
     it("should fail-open when statusCode is a string instead of number", async () => {
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: '{"statusCode":"200"}' } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: '{"statusCode":"200"}' } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -261,12 +227,8 @@ describe("Idempotency Check handler", () => {
         body: '{"city":"日本語","emoji":"🎉"}',
         contentType: "application/json",
       };
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: JSON.stringify(cached) } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: JSON.stringify(cached) } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -279,13 +241,13 @@ describe("Idempotency Check handler", () => {
 
     it("should handle cached response with nested escaped JSON in body", async () => {
       const bodyWithEscapedJson = '{"data":"{\\"key\\":\\"value\\"}"}';
-      const cached = { statusCode: 200, body: bodyWithEscapedJson, contentType: "application/json" };
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: JSON.stringify(cached) } }),
-      );
+      const cached = {
+        statusCode: 200,
+        body: bodyWithEscapedJson,
+        contentType: "application/json",
+      };
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: JSON.stringify(cached) } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -297,12 +259,8 @@ describe("Idempotency Check handler", () => {
 
     it("should handle cached response with null body and contentType", async () => {
       const cached = { statusCode: 204, body: undefined, contentType: undefined };
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: JSON.stringify(cached) } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: JSON.stringify(cached) } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });
@@ -314,12 +272,8 @@ describe("Idempotency Check handler", () => {
 
     it("should handle cached response with statusCode 0 (footgun: invalid HTTP status)", async () => {
       const cached = { statusCode: 0, body: undefined, contentType: undefined };
-      mocks.setNxFn.mockResolvedValue(
-        D2Result.ok({ data: { wasSet: false } }),
-      );
-      mocks.getFn.mockResolvedValue(
-        D2Result.ok({ data: { value: JSON.stringify(cached) } }),
-      );
+      mocks.setNxFn.mockResolvedValue(D2Result.ok({ data: { wasSet: false } }));
+      mocks.getFn.mockResolvedValue(D2Result.ok({ data: { value: JSON.stringify(cached) } }));
 
       const handler = createCheck(mocks);
       const result = await handler.handleAsync({ idempotencyKey: "test-key" });

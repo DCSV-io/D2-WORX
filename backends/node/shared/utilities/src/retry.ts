@@ -107,7 +107,10 @@ export async function retryAsync<T>(
       if (attempt < maxAttempts && shouldRetry(result)) {
         lastResult = result;
         lastWasError = false;
-        await delayFn(calculateDelay(attempt - 1, baseDelayMs, backoffMultiplier, maxDelayMs, jitter), signal);
+        await delayFn(
+          calculateDelay(attempt - 1, baseDelayMs, backoffMultiplier, maxDelayMs, jitter),
+          signal,
+        );
         continue;
       }
 
@@ -117,7 +120,10 @@ export async function retryAsync<T>(
       lastWasError = true;
 
       if (attempt < maxAttempts && checkTransient(error)) {
-        await delayFn(calculateDelay(attempt - 1, baseDelayMs, backoffMultiplier, maxDelayMs, jitter), signal);
+        await delayFn(
+          calculateDelay(attempt - 1, baseDelayMs, backoffMultiplier, maxDelayMs, jitter),
+          signal,
+        );
         continue;
       }
 

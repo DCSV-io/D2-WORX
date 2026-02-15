@@ -43,11 +43,13 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
   }
 
   private static readonly checkSchema = z.object({
-    requestInfo: z.object({
-      clientIp: validators.zodIpAddress,
-      clientFingerprint: z.string().min(1).optional(),
-      countryCode: z.string().length(2).optional(),
-    }).passthrough(),
+    requestInfo: z
+      .object({
+        clientIp: validators.zodIpAddress,
+        clientFingerprint: z.string().min(1).optional(),
+        countryCode: z.string().length(2).optional(),
+      })
+      .passthrough(),
   }) as unknown as z.ZodType<CheckInput>;
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {

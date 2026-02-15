@@ -51,6 +51,14 @@ public static class Validators
         public IRuleBuilderOptions<T, string> IsValidPhoneE164()
             => rule.Matches(@"^\d{7,15}$")
                 .WithMessage("'{PropertyName}' must be 7-15 digits (E.164).");
+
+        /// <summary>
+        /// Validates that the string is in the allowed context key list.
+        /// Empty list disables validation (always passes).
+        /// </summary>
+        public IRuleBuilderOptions<T, string> IsAllowedContextKey(List<string> allowed)
+            => rule.Must(key => allowed.Count == 0 || allowed.Contains(key))
+                .WithMessage("'{PropertyValue}' is not an allowed context key.");
     }
 
     extension<T, TItem>(IRuleBuilder<T, IList<TItem>> rule)

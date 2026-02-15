@@ -49,6 +49,8 @@
         <ProjectReference Include="..\Result.Extensions\Result.Extensions.csproj" />
         <ProjectReference Include="..\Utilities\Utilities.csproj" />
         <ProjectReference Include="..\..\services\Geo\Geo.Client\Geo.Client.csproj" />
+        <ProjectReference Include="..\..\gateways\REST\REST.csproj" />
+        <ProjectReference Include="..\Handler.Extensions\Handler.Extensions.csproj" />
     </ItemGroup>
 
 </Project>

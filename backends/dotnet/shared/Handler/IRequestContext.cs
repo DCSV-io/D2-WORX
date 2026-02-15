@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="IRequestContext.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -10,6 +10,21 @@ namespace D2.Shared.Handler;
 /// Represents the context of a request, including tracing information, user identity,
 /// and organizational details.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Agent org</b> = the user's actual org membership. Only changes during
+/// <b>user impersonation</b> (admin acting as another user).
+/// </para>
+/// <para>
+/// <b>Target org</b> = the org all operations execute against. Always populated for
+/// authenticated users. Equals the emulated org during <b>org emulation</b>,
+/// otherwise equals the agent org.
+/// </para>
+/// <para>
+/// Downstream logic should always use target org fields for authorization and data scoping.
+/// Agent org fields are for audit/identity context only.
+/// </para>
+/// </remarks>
 public interface IRequestContext
 {
     #region Tracing
@@ -34,17 +49,18 @@ public interface IRequestContext
     #region User / Identity
 
     /// <summary>
-    /// Gets a value indicating whether indicates whether the user is authenticated.
+    /// Gets a value indicating whether the user is authenticated.
     /// </summary>
     bool IsAuthenticated { get; }
 
     /// <summary>
-    /// Gets the unique identifier of the user, if applicable.
+    /// Gets the unique identifier of the user.
+    /// During user impersonation, this is the impersonated user's ID.
     /// </summary>
     Guid? UserId { get; }
 
     /// <summary>
-    /// Gets the username of the user, if applicable.
+    /// Gets the username of the user.
     /// </summary>
     string? Username { get; }
 
@@ -53,17 +69,18 @@ public interface IRequestContext
     #region Agent Organization
 
     /// <summary>
-    /// Gets the unique identifier of the agent organization, if applicable.
+    /// Gets the unique identifier of the agent organization (user's actual org membership).
+    /// Only changes during user impersonation.
     /// </summary>
     Guid? AgentOrgId { get; }
 
     /// <summary>
-    /// Gets the name of the agent organization, if applicable.
+    /// Gets the name of the agent organization.
     /// </summary>
     string? AgentOrgName { get; }
 
     /// <summary>
-    /// Gets the type of the agent organization, if applicable.
+    /// Gets the type of the agent organization.
     /// </summary>
     OrgType? AgentOrgType { get; }
 
@@ -72,51 +89,78 @@ public interface IRequestContext
     #region Target Organization
 
     /// <summary>
-    /// Gets the unique identifier of the target organization, if applicable.
+    /// Gets the unique identifier of the target organization (the org operations execute against).
+    /// Always populated for authenticated users with org context.
+    /// Equals the emulated org during org emulation, otherwise equals the agent org.
     /// </summary>
     Guid? TargetOrgId { get; }
 
     /// <summary>
-    /// Gets the name of the target organization, if applicable.
+    /// Gets the name of the target organization.
     /// </summary>
     string? TargetOrgName { get; }
 
     /// <summary>
-    /// Gets the type of the target organization, if applicable.
+    /// Gets the type of the target organization.
     /// </summary>
     OrgType? TargetOrgType { get; }
+
+    #endregion
+
+    #region Org Emulation
+
+    /// <summary>
+    /// Gets a value indicating whether org emulation is active.
+    /// When true, a staff user is viewing another org as read-only.
+    /// All CUD operations should be blocked during org emulation.
+    /// </summary>
+    bool IsOrgEmulating { get; }
+
+    #endregion
+
+    #region User Impersonation
+
+    /// <summary>
+    /// Gets the user ID of the admin who initiated user impersonation.
+    /// Present when a support/admin user is acting as another user.
+    /// </summary>
+    Guid? ImpersonatedBy { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether user impersonation is active.
+    /// When true, <see cref="UserId"/> is the impersonated user and
+    /// <see cref="ImpersonatedBy"/> is the admin who initiated it.
+    /// Sensitive operations (payments, etc.) should be blocked during user impersonation.
+    /// </summary>
+    bool IsUserImpersonating { get; }
 
     #endregion
 
     #region Helpers
 
     /// <summary>
-    /// Gets the relationship between the user and the target organization.
-    /// </summary>
-    public UserToOrgRelationship? UserToTargetRelationship { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether indicates whether the agent organization is of type
+    /// Gets a value indicating whether the agent organization is of type
     /// <see cref="OrgType.Support"/> or <see cref="OrgType.Admin"/>.
     /// </summary>
-    public bool IsAgentStaff { get; }
+    bool IsAgentStaff { get; }
 
     /// <summary>
-    /// Gets a value indicating whether indicates whether the agent organization is of type
-    /// <see cref="OrgType.Admin"/>.</summary>
-    public bool IsAgentAdmin { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether indicates whether the target organization is of type
-    /// <see cref="OrgType.Support"/> or <see cref="OrgType.Admin"/>.
-    /// </summary>
-    public bool IsTargetingStaff { get; }
-
-    /// <summary>
-    /// Gets a value indicating whether indicates whether the target organization is of type
+    /// Gets a value indicating whether the agent organization is of type
     /// <see cref="OrgType.Admin"/>.
     /// </summary>
-    public bool IsTargetingAdmin { get; }
+    bool IsAgentAdmin { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the target organization is of type
+    /// <see cref="OrgType.Support"/> or <see cref="OrgType.Admin"/>.
+    /// </summary>
+    bool IsTargetingStaff { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the target organization is of type
+    /// <see cref="OrgType.Admin"/>.
+    /// </summary>
+    bool IsTargetingAdmin { get; }
 
     #endregion
 }

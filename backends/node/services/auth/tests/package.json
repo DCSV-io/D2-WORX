@@ -1,0 +1,26 @@
+{
+  "name": "@d2/auth-tests",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@d2/auth-api": "workspace:*",
+    "@d2/auth-app": "workspace:*",
+    "@d2/auth-domain": "workspace:*",
+    "@d2/auth-infra": "workspace:*",
+    "@d2/geo-client": "workspace:*",
+    "@d2/handler": "workspace:*",
+    "@d2/interfaces": "workspace:*",
+    "@d2/logging": "workspace:*",
+    "@d2/protos": "workspace:*",
+    "@d2/result": "workspace:*",
+    "@d2/testing": "workspace:*",
+    "@d2/utilities": "workspace:*",
+    "hono": "4.11.9",
+    "vitest": "3.1.1"
+  }
+}
