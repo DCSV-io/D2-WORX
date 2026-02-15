@@ -3,7 +3,7 @@ import type { OrgContact } from "@d2/auth-domain";
 /**
  * Repository interface for org contact junction records.
  *
- * Implemented by Kysely-backed repository in auth-infra.
+ * Implemented by Drizzle-backed repository in auth-infra.
  * Structural typing ensures compatibility without direct import.
  */
 export interface IOrgContactRepository {

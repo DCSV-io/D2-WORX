@@ -3,7 +3,7 @@ import type { EmulationConsent } from "@d2/auth-domain";
 /**
  * Repository interface for emulation consent records.
  *
- * Implemented by Kysely-backed repository in auth-infra.
+ * Implemented by Drizzle-backed repository in auth-infra.
  * Structural typing ensures compatibility without direct import.
  */
 export interface IEmulationConsentRepository {

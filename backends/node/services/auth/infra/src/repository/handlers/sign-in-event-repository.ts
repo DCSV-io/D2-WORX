@@ -1,84 +1,72 @@
-import type { Kysely } from "kysely";
+import { eq, desc, count, max } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { SignInEvent } from "@d2/auth-domain";
-import type { AuthCustomDatabase, NewSignInEvent } from "../entities/kysely-types.js";
+import { signInEvent } from "../schema/custom-tables.js";
 
 /**
- * Kysely-based repository for sign_in_event records.
+ * Drizzle-backed repository for sign_in_event records.
  */
 export class SignInEventRepository {
-  private readonly db: Kysely<AuthCustomDatabase>;
+  private readonly db: NodePgDatabase;
 
-  constructor(db: Kysely<AuthCustomDatabase>) {
+  constructor(db: NodePgDatabase) {
     this.db = db;
   }
 
   async create(event: SignInEvent): Promise<void> {
-    const row: NewSignInEvent = {
+    await this.db.insert(signInEvent).values({
       id: event.id,
-      user_id: event.userId,
+      userId: event.userId,
       successful: event.successful,
-      ip_address: event.ipAddress,
-      user_agent: event.userAgent,
-      who_is_id: event.whoIsId,
-      created_at: event.createdAt,
-    };
-
-    await this.db.insertInto("sign_in_event").values(row).execute();
+      ipAddress: event.ipAddress,
+      userAgent: event.userAgent,
+      whoIsId: event.whoIsId,
+      createdAt: event.createdAt,
+    });
   }
 
   async findByUserId(userId: string, limit: number, offset: number): Promise<SignInEvent[]> {
     const rows = await this.db
-      .selectFrom("sign_in_event")
-      .selectAll()
-      .where("user_id", "=", userId)
-      .orderBy("created_at", "desc")
+      .select()
+      .from(signInEvent)
+      .where(eq(signInEvent.userId, userId))
+      .orderBy(desc(signInEvent.createdAt))
       .limit(limit)
-      .offset(offset)
-      .execute();
+      .offset(offset);
 
     return rows.map(toSignInEvent);
   }
 
   async countByUserId(userId: string): Promise<number> {
-    const result = await this.db
-      .selectFrom("sign_in_event")
-      .select((eb) => eb.fn.countAll<number>().as("count"))
-      .where("user_id", "=", userId)
-      .executeTakeFirstOrThrow();
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(signInEvent)
+      .where(eq(signInEvent.userId, userId));
 
-    return Number(result.count);
+    return result?.count ?? 0;
   }
 
   async getLatestEventDate(userId: string): Promise<Date | null> {
-    const result = await this.db
-      .selectFrom("sign_in_event")
-      .select((eb) => eb.fn.max("created_at").as("latest"))
-      .where("user_id", "=", userId)
-      .executeTakeFirst();
+    const [result] = await this.db
+      .select({ latest: max(signInEvent.createdAt) })
+      .from(signInEvent)
+      .where(eq(signInEvent.userId, userId));
 
-    if (!result || result.latest === null || result.latest === undefined) {
+    if (!result?.latest) {
       return null;
     }
     return result.latest instanceof Date ? result.latest : new Date(result.latest as string);
   }
 }
 
-function toSignInEvent(row: {
-  id: string;
-  user_id: string;
-  successful: boolean;
-  ip_address: string;
-  user_agent: string;
-  who_is_id: string | null;
-  created_at: Date;
-}): SignInEvent {
+function toSignInEvent(row: typeof signInEvent.$inferSelect): SignInEvent {
   return {
     id: row.id,
-    userId: row.user_id,
+    userId: row.userId,
     successful: row.successful,
-    ipAddress: row.ip_address,
-    userAgent: row.user_agent,
-    whoIsId: row.who_is_id,
-    createdAt: row.created_at,
+    ipAddress: row.ipAddress,
+    userAgent: row.userAgent,
+    whoIsId: row.whoIsId,
+    createdAt: row.createdAt,
   };
 }

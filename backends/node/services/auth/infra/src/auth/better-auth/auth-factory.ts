@@ -1,10 +1,11 @@
 import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins/bearer";
 import { jwt } from "better-auth/plugins/jwt";
 import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import type { SecondaryStorage } from "better-auth";
-import type { Pool } from "pg";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { JWT_CLAIM_TYPES, SESSION_FIELDS } from "@d2/auth-domain";
 import type { AuthServiceConfig } from "./auth-config.js";
 import { AUTH_CONFIG_DEFAULTS } from "./auth-config.js";
@@ -17,6 +18,7 @@ import {
   agentPermissions,
   auditorPermissions,
 } from "./access-control.js";
+import * as betterAuthSchema from "../../repository/schema/better-auth-tables.js";
 
 /**
  * Callback interface for app-layer hooks.
@@ -46,13 +48,13 @@ export interface AuthHooks {
  * is used by the API layer to handle requests.
  *
  * @param config - Auth service configuration
- * @param pool - Pre-created pg.Pool (owned by the composition root)
+ * @param db - Drizzle database instance (owned by the composition root)
  * @param secondaryStorage - Optional Redis-backed secondary storage
  * @param hooks - Optional app-layer callbacks for cross-layer events
  */
 export function createAuth(
   config: AuthServiceConfig,
-  pool: Pool,
+  db: NodePgDatabase,
   secondaryStorage?: SecondaryStorage,
   hooks?: AuthHooks,
 ) {
@@ -67,8 +69,10 @@ export function createAuth(
     baseURL: config.baseUrl,
     basePath: "/api/auth",
 
-    // BetterAuth accepts pg.Pool directly (PostgresPool type from Kysely)
-    database: pool,
+    database: drizzleAdapter(db, {
+      provider: "pg",
+      schema: betterAuthSchema,
+    }),
 
     secondaryStorage,
 
@@ -133,11 +137,9 @@ export function createAuth(
           after: async (session) => {
             // Record sign-in event via app-layer callback
             if (hooks?.onSignIn) {
-              const ipAddress =
-                (session["ipAddress"] as string) ?? (session["ip_address"] as string) ?? "unknown";
-              const userAgent =
-                (session["userAgent"] as string) ?? (session["user_agent"] as string) ?? "unknown";
-              const userId = (session["userId"] as string) ?? (session["user_id"] as string);
+              const ipAddress = (session["ipAddress"] as string) ?? "unknown";
+              const userAgent = (session["userAgent"] as string) ?? "unknown";
+              const userId = session["userId"] as string;
 
               if (userId) {
                 // Fire-and-forget — don't block session creation

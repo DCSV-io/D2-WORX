@@ -1,36 +1,31 @@
-import type { Kysely } from "kysely";
+import { eq, desc, asc } from "drizzle-orm";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { OrgContact } from "@d2/auth-domain";
-import type { AuthCustomDatabase, NewOrgContact } from "../entities/kysely-types.js";
+import { orgContact } from "../schema/custom-tables.js";
 
 /**
- * Kysely-based repository for org_contact records.
+ * Drizzle-backed repository for org_contact records.
  */
 export class OrgContactRepository {
-  private readonly db: Kysely<AuthCustomDatabase>;
+  private readonly db: NodePgDatabase;
 
-  constructor(db: Kysely<AuthCustomDatabase>) {
+  constructor(db: NodePgDatabase) {
     this.db = db;
   }
 
   async create(contact: OrgContact): Promise<void> {
-    const row: NewOrgContact = {
+    await this.db.insert(orgContact).values({
       id: contact.id,
-      organization_id: contact.organizationId,
+      organizationId: contact.organizationId,
       label: contact.label,
-      is_primary: contact.isPrimary,
-      created_at: contact.createdAt,
-      updated_at: contact.updatedAt,
-    };
-
-    await this.db.insertInto("org_contact").values(row).execute();
+      isPrimary: contact.isPrimary,
+      createdAt: contact.createdAt,
+      updatedAt: contact.updatedAt,
+    });
   }
 
   async findById(id: string): Promise<OrgContact | undefined> {
-    const row = await this.db
-      .selectFrom("org_contact")
-      .selectAll()
-      .where("id", "=", id)
-      .executeTakeFirst();
+    const [row] = await this.db.select().from(orgContact).where(eq(orgContact.id, id));
 
     return row ? toOrgContact(row) : undefined;
   }
@@ -41,50 +36,42 @@ export class OrgContactRepository {
     offset?: number,
   ): Promise<OrgContact[]> {
     let query = this.db
-      .selectFrom("org_contact")
-      .selectAll()
-      .where("organization_id", "=", organizationId)
-      .orderBy("is_primary", "desc")
-      .orderBy("created_at", "asc");
+      .select()
+      .from(orgContact)
+      .where(eq(orgContact.organizationId, organizationId))
+      .orderBy(desc(orgContact.isPrimary), asc(orgContact.createdAt))
+      .$dynamic();
 
     if (limit !== undefined) query = query.limit(limit);
     if (offset !== undefined) query = query.offset(offset);
 
-    const rows = await query.execute();
+    const rows = await query;
     return rows.map(toOrgContact);
   }
 
   async update(contact: OrgContact): Promise<void> {
     await this.db
-      .updateTable("org_contact")
+      .update(orgContact)
       .set({
         label: contact.label,
-        is_primary: contact.isPrimary,
-        updated_at: contact.updatedAt,
+        isPrimary: contact.isPrimary,
+        updatedAt: contact.updatedAt,
       })
-      .where("id", "=", contact.id)
-      .execute();
+      .where(eq(orgContact.id, contact.id));
   }
 
   async delete(id: string): Promise<void> {
-    await this.db.deleteFrom("org_contact").where("id", "=", id).execute();
+    await this.db.delete(orgContact).where(eq(orgContact.id, id));
   }
 }
 
-function toOrgContact(row: {
-  id: string;
-  organization_id: string;
-  label: string;
-  is_primary: boolean;
-  created_at: Date;
-  updated_at: Date;
-}): OrgContact {
+function toOrgContact(row: typeof orgContact.$inferSelect): OrgContact {
   return {
     id: row.id,
-    organizationId: row.organization_id,
+    organizationId: row.organizationId,
     label: row.label,
-    isPrimary: row.is_primary,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    isPrimary: row.isPrimary,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }

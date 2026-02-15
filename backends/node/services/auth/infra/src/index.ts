@@ -37,21 +37,28 @@ export { SignInEventRepository } from "./repository/handlers/sign-in-event-repos
 export { EmulationConsentRepository } from "./repository/handlers/emulation-consent-repository.js";
 export { OrgContactRepository } from "./repository/handlers/org-contact-repository.js";
 
-// --- Kysely Types ---
+// --- Drizzle Schema ---
+export { signInEvent, emulationConsent, orgContact } from "./repository/schema/index.js";
 export type {
-  AuthCustomDatabase,
-  SignInEventTable,
-  EmulationConsentTable,
-  OrgContactTable,
   SignInEventRow,
   NewSignInEvent,
   EmulationConsentRow,
   NewEmulationConsent,
-  EmulationConsentUpdate,
   OrgContactRow,
   NewOrgContact,
-  OrgContactUpdate,
-} from "./repository/entities/kysely-types.js";
+} from "./repository/schema/index.js";
+
+// BetterAuth table schema (used by Drizzle adapter and tests)
+export {
+  user,
+  session,
+  account,
+  verification,
+  jwks,
+  organization,
+  member,
+  invitation,
+} from "./repository/schema/index.js";
 
 // --- Migrations ---
-export { up, down } from "./repository/migrations/001-custom-tables.js";
+export { runMigrations } from "./repository/migrate.js";

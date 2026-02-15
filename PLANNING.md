@@ -464,6 +464,43 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 
 ---
 
+### ADR-009: Drizzle ORM for Auth Database (Replacing Kysely)
+
+**Status**: Decided (2026-02-15)
+
+**Context**: The auth service initially used Kysely for 3 custom tables (`sign_in_event`, `emulation_consent`, `org_contact`) while BetterAuth used its built-in Kysely adapter internally. This meant two ORMs operating side-by-side — BetterAuth's internal Kysely for its 8 managed tables, and our explicit Kysely for custom tables. Migrations were hand-written with no programmatic runner.
+
+**Decision**: **Drizzle ORM 0.45.x** (stable) as the single ORM for all 11 auth tables.
+
+**Key changes:**
+
+| Aspect                       | Before (Kysely)                                     | After (Drizzle 0.45.x)                                                |
+| ---------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------- |
+| BetterAuth adapter           | Built-in Kysely (internal)                          | `drizzleAdapter(db, { provider: "pg", schema })`                       |
+| Custom table schema          | Hand-written `kysely-types.ts`                      | `pgTable()` declarations with `$inferSelect`/`$inferInsert`            |
+| BetterAuth table schema      | Managed internally by BetterAuth                    | Explicit `pgTable()` declarations matching BetterAuth CLI output       |
+| Migration generation         | Hand-written TS files                               | `drizzle-kit generate` from schema diffs                               |
+| Migration runner             | None (files existed but no runner)                  | Programmatic `runMigrations(pool)` for app startup + Testcontainers   |
+| Repository query builder     | `Kysely<AuthCustomDatabase>`                        | `NodePgDatabase` + Drizzle query builder                               |
+| Column naming                | snake_case (manual)                                 | camelCase JS props → snake_case DB columns (Drizzle convention)       |
+| Number of ORMs               | 2 (Kysely explicit + Kysely internal to BetterAuth) | 1 (Drizzle everywhere)                                                |
+
+**Schema files:**
+- `infra/src/repository/schema/better-auth-tables.ts` — 8 BetterAuth tables (user, session, account, verification, jwks, organization, member, invitation)
+- `infra/src/repository/schema/custom-tables.ts` — 3 custom tables (sign_in_event, emulation_consent, org_contact)
+- `infra/drizzle.config.ts` — Points at both schema files, generates to `src/repository/migrations/`
+
+**Rationale:**
+- Single ORM eliminates the two-ORM complexity
+- Auto-generated migrations from schema diffs (no hand-written SQL)
+- Programmatic migration runner enables Testcontainers integration tests
+- `$inferSelect`/`$inferInsert` types derived directly from schema (no manual type duplication)
+- Drizzle 0.45.x is stable; v1 beta is incompatible with BetterAuth's adapter
+
+**Supersedes**: The Kysely decision in ADR-001's research notes (line "BetterAuth database adapter: Kysely").
+
+---
+
 ## Implementation Status
 
 ### Infrastructure

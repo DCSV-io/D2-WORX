@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import pg from "pg";
 import Redis from "ioredis";
-import { Kysely, PostgresDialect } from "kysely";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -21,11 +21,11 @@ import {
 import {
   createAuth,
   createSecondaryStorage,
+  runMigrations,
   SignInEventRepository,
   EmulationConsentRepository,
   OrgContactRepository,
   type AuthServiceConfig,
-  type AuthCustomDatabase,
 } from "@d2/auth-infra";
 import {
   createSignInEventHandlers,
@@ -51,7 +51,7 @@ import { createHealthRoutes } from "./routes/health.js";
  *
  * This is the composition root (mirrors .NET Program.cs):
  *   1. Create singletons: pg.Pool, Redis, logger
- *   2. Create repos: Kysely-backed custom table repos
+ *   2. Run Drizzle migrations + create repos
  *   3. Create app-layer handlers: factory functions from auth-app
  *   4. Create AsyncLocalStorage for per-request fingerprint (JWT `fp` claim)
  *   5. Create BetterAuth: configured with all plugins + secondary storage
@@ -75,14 +75,15 @@ export async function createApp(config: AuthServiceConfig) {
       isAgentAdmin: false,
       isTargetingStaff: false,
       isTargetingAdmin: false,
+      isOrgEmulating: false,
+      isUserImpersonating: false,
     },
     logger,
   );
 
-  // 2. Kysely instance for custom tables
-  const db = new Kysely<AuthCustomDatabase>({
-    dialect: new PostgresDialect({ pool }),
-  });
+  // 2. Run Drizzle migrations + create Drizzle instance for custom tables
+  await runMigrations(pool);
+  const db = drizzle(pool);
 
   const signInEventRepo = new SignInEventRepository(db);
   const emulationConsentRepo = new EmulationConsentRepository(db);
@@ -168,7 +169,7 @@ export async function createApp(config: AuthServiceConfig) {
   const fingerprintStorage = new AsyncLocalStorage<string>();
 
   // 6. BetterAuth instance with app-layer callbacks
-  const auth = createAuth(config, pool, secondaryStorage, {
+  const auth = createAuth(config, db, secondaryStorage, {
     onSignIn: async (data) => {
       await signInEventHandlers.record.handleAsync({
         userId: data.userId,
@@ -253,7 +254,6 @@ export async function createApp(config: AuthServiceConfig) {
 
   // Cleanup function for graceful shutdown
   async function shutdown() {
-    await db.destroy();
     redis.disconnect();
     await pool.end();
   }

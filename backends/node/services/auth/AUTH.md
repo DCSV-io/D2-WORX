@@ -92,18 +92,19 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 ### Infrastructure (`@d2/auth-infra`)
 
-**Who owns what**: BetterAuth configuration, Kysely repositories, mappers, storage adapters.
+**Who owns what**: BetterAuth configuration (Drizzle adapter), Drizzle repositories, mappers, storage adapters.
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| auth-factory | `infra/src/auth/better-auth/auth-factory.ts` | Single BetterAuth creation point (plugins, hooks, session config) |
+| auth-factory | `infra/src/auth/better-auth/auth-factory.ts` | Single BetterAuth creation point (plugins, hooks, session config, Drizzle adapter) |
 | auth-config | `infra/src/auth/better-auth/auth-config.ts` | Config type + defaults |
 | secondary-storage | `infra/src/auth/better-auth/secondary-storage.ts` | Redis adapter wrapping @d2/interfaces cache handlers |
 | Access Control | `infra/src/auth/better-auth/access-control.ts` | RBAC permission definitions |
 | Hooks | `infra/src/auth/better-auth/hooks/` | ID generation (UUIDv7), org creation validation |
-| Repositories | `infra/src/repository/handlers/` | Kysely-backed repos for custom tables |
-| Kysely types | `infra/src/repository/entities/kysely-types.ts` | TypeScript types for custom DB tables |
-| Migrations | `infra/src/repository/migrations/` | Kysely migrations for custom tables |
+| Drizzle Schema | `infra/src/repository/schema/` | `pgTable()` declarations for all 11 tables (8 BetterAuth + 3 custom) |
+| Repositories | `infra/src/repository/handlers/` | Drizzle-backed repos for custom tables |
+| Migrations | `infra/src/repository/migrations/` | Drizzle auto-generated SQL migrations (all tables + indexes) |
+| Migration runner | `infra/src/repository/migrate.ts` | Programmatic `runMigrations(pool)` for app startup + tests |
 | Mappers | `infra/src/mappers/` | BetterAuth record → domain entity conversion |
 
 **BetterAuth plugins** (configured in auth-factory):
@@ -137,7 +138,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 ### BetterAuth-Managed Tables
 
-These tables are owned and managed by BetterAuth. We configure them but do NOT write custom migration code for them.
+These tables are owned and managed by BetterAuth via the Drizzle adapter. Their schema is declared in `infra/src/repository/schema/better-auth-tables.ts` and included in the Drizzle migration alongside custom tables. BetterAuth reads/writes through the Drizzle adapter — we do NOT use BetterAuth's internal Kysely adapter.
 
 | Table | Key Fields | Notes |
 |-------|-----------|-------|
@@ -150,9 +151,9 @@ These tables are owned and managed by BetterAuth. We configure them but do NOT w
 | `member` | id, organizationId, userId, role | Standard BetterAuth membership |
 | `invitation` | id, organizationId, email, role, status, expiresAt | With state machine transitions |
 
-### Custom Tables (Kysely Migrations)
+### Custom Tables (Drizzle Migrations)
 
-These tables are managed by Kysely migrations in `infra/src/migrations/001-custom-tables.ts`.
+These tables are managed by Drizzle schema declarations in `infra/src/repository/schema/custom-tables.ts`, with auto-generated SQL migrations in `infra/src/repository/migrations/`.
 
 | Table | Purpose | Key Fields |
 |-------|---------|-----------|
@@ -509,7 +510,7 @@ The following tests verify fail-closed behavior:
 
 ### Custom Handlers (Application Layer)
 
-These handlers operate on custom tables via Kysely repositories. They follow the BaseHandler pattern with OTel tracing.
+These handlers operate on custom tables via Drizzle repositories. They follow the BaseHandler pattern with OTel tracing.
 
 #### Commands (C/)
 
@@ -731,7 +732,11 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 | **App Layer** | | |
 | `app/handlers/c/*.test.ts` | — | All command handlers |
 | `app/handlers/q/*.test.ts` | — | All query handlers |
-| **Total auth-tests** | **437** | |
+| **Integration Tests** | | |
+| `integration/migration.test.ts` | 14 | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index |
+| `integration/custom-table-repositories.test.ts` | 26 | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints) |
+| `integration/better-auth-tables.test.ts` | 8 | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance |
+| **Total auth-tests** | **485** | 437 unit + 48 integration (Testcontainers PostgreSQL 18) |
 
 ### Key Security Behaviors Verified by Tests
 
@@ -789,9 +794,10 @@ backends/node/services/auth/
 │       │       ├── access-control.ts    # RBAC permission definitions
 │       │       └── hooks/               # id-hooks (UUIDv7), org-hooks (orgType validation)
 │       ├── repository/
-│       │   ├── handlers/                # Kysely repos: SignInEvent, EmulationConsent, OrgContact
-│       │   ├── entities/                # kysely-types.ts (AuthCustomDatabase)
-│       │   └── migrations/              # 001-custom-tables.ts
+│       │   ├── schema/                  # Drizzle pgTable declarations (better-auth-tables.ts, custom-tables.ts, types.ts)
+│       │   ├── handlers/                # Drizzle repos: SignInEvent, EmulationConsent, OrgContact
+│       │   ├── migrations/              # Auto-generated SQL (drizzle-kit generate)
+│       │   └── migrate.ts              # Programmatic migration runner
 │       ├── mappers/                     # BetterAuth → domain (user, org, member, invitation, session)
 │       └── index.ts
 ├── api/                                 # @d2/auth-api
@@ -811,16 +817,22 @@ backends/node/services/auth/
 │       │   ├── org-contact-routes.ts    # Thin routes: visible auth middleware, handler delegation
 │       │   └── health.ts               # Health check
 │       └── index.ts
-├── tests/                               # @d2/auth-tests (437 tests)
-│   └── src/unit/
-│       ├── api/
-│       │   ├── middleware/              # Session, fingerprint, authorization, CSRF, rate-limit, error tests
-│       │   └── routes/                  # Route tests (emulation, org-contact)
-│       ├── app/handlers/
-│       │   ├── c/                       # Command handler tests (create/revoke/record + geo integration)
-│       │   └── q/                       # Query handler tests (caching, hydration)
-│       ├── domain/                      # Entity, enum, rule tests
-│       └── infra/                       # Mapper, storage, access control tests
+├── tests/                               # @d2/auth-tests (485 tests)
+│   └── src/
+│       ├── unit/
+│       │   ├── api/
+│       │   │   ├── middleware/          # Session, fingerprint, authorization, CSRF, rate-limit, error tests
+│       │   │   └── routes/             # Route tests (emulation, org-contact)
+│       │   ├── app/handlers/
+│       │   │   ├── c/                  # Command handler tests (create/revoke/record + geo integration)
+│       │   │   └── q/                  # Query handler tests (caching, hydration)
+│       │   ├── domain/                 # Entity, enum, rule tests
+│       │   └── infra/                  # Mapper, storage, access control tests
+│       └── integration/
+│           ├── postgres-test-helpers.ts # Testcontainers PostgreSQL lifecycle
+│           ├── migration.test.ts       # All 11 tables + indexes verified
+│           ├── custom-table-repositories.test.ts  # 3 repos vs real PG
+│           └── better-auth-tables.test.ts         # BetterAuth CRUD via Drizzle adapter
 ```
 
 ### .NET Gateway Auth
