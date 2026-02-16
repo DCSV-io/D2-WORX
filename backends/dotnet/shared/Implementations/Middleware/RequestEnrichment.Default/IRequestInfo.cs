@@ -54,6 +54,15 @@ public interface IRequestInfo
     bool IsAuthenticated { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the request is from a trusted service.
+    /// </summary>
+    /// <remarks>
+    /// Set by service key detection middleware. When true, rate limiting
+    /// and fingerprint validation are bypassed.
+    /// </remarks>
+    bool IsTrustedService { get; set; }
+
+    /// <summary>
     /// Gets the WhoIs hash ID for downstream lookups.
     /// </summary>
     /// <remarks>

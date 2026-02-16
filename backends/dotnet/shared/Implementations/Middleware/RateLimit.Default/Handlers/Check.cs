@@ -87,6 +87,12 @@ public class Check : BaseHandler<Check, I, O>, H
     {
         var requestInfo = input.RequestInfo;
 
+        // Trusted services bypass all rate limiting.
+        if (requestInfo.IsTrustedService)
+        {
+            return D2Result<O?>.Ok(new O(false, null, null), traceId: TraceId);
+        }
+
         // Check dimensions in hierarchy order: fingerprint → IP → city → country.
         // Short-circuit if any dimension is already blocked.
 

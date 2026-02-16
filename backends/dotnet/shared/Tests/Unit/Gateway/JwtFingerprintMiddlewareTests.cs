@@ -10,6 +10,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using D2.Gateways.REST.Auth;
+using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -75,14 +76,15 @@ public class JwtFingerprintMiddlewareTests
     }
 
     /// <summary>
-    /// Tests that missing fp claim allows passthrough (backwards-compatible).
+    /// Tests that missing fp claim returns 401 for non-trusted requests (fingerprint is required).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
-    public async Task InvokeAsync_WithNoFpClaim_PassesThrough()
+    public async Task InvokeAsync_WithNoFpClaim_Returns401()
     {
-        // Arrange — authenticated but no fp claim.
+        // Arrange — authenticated but no fp claim, not a trusted service.
         var context = CreateAuthenticatedContext("Chrome/120", "text/html", fpClaim: null);
+        context.Response.Body = new MemoryStream();
         var nextCalled = false;
         var middleware = CreateMiddleware(_ =>
         {
@@ -94,7 +96,13 @@ public class JwtFingerprintMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        nextCalled.Should().BeTrue();
+        nextCalled.Should().BeFalse();
+        context.Response.StatusCode.Should().Be(401);
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        using var reader = new StreamReader(context.Response.Body);
+        var body = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
+        body.Should().Contain("MISSING_FINGERPRINT");
     }
 
     /// <summary>
@@ -172,14 +180,15 @@ public class JwtFingerprintMiddlewareTests
     }
 
     /// <summary>
-    /// Tests that empty fp claim is treated as "no claim" (backwards-compatible).
+    /// Tests that empty fp claim returns 401 for non-trusted requests (fingerprint is required).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
-    public async Task InvokeAsync_WithEmptyFpClaim_PassesThrough()
+    public async Task InvokeAsync_WithEmptyFpClaim_Returns401()
     {
         // Arrange
         var context = CreateAuthenticatedContext("Chrome/120", "text/html", fpClaim: string.Empty);
+        context.Response.Body = new MemoryStream();
         var nextCalled = false;
         var middleware = CreateMiddleware(_ =>
         {
@@ -191,7 +200,8 @@ public class JwtFingerprintMiddlewareTests
         await middleware.InvokeAsync(context);
 
         // Assert
-        nextCalled.Should().BeTrue();
+        nextCalled.Should().BeFalse();
+        context.Response.StatusCode.Should().Be(401);
     }
 
     /// <summary>
@@ -220,6 +230,54 @@ public class JwtFingerprintMiddlewareTests
         context.Response.StatusCode.Should().Be(401);
     }
 
+    /// <summary>
+    /// Tests that trusted services skip fingerprint validation entirely, even without fp claim.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [Fact]
+    public async Task InvokeAsync_WithNoFpClaim_TrustedService_PassesThrough()
+    {
+        // Arrange — trusted service, authenticated, no fp claim.
+        var context = CreateAuthenticatedContext("Chrome/120", "text/html", fpClaim: null);
+        SetTrustedService(context);
+        var nextCalled = false;
+        var middleware = CreateMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert — trusted services bypass fingerprint check.
+        nextCalled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that trusted services skip fingerprint validation even when fp claim is present.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
+    [Fact]
+    public async Task InvokeAsync_WithFpClaim_TrustedService_SkipsFingerprintCheck()
+    {
+        // Arrange — trusted service with a MISMATCHED fp claim (should still pass).
+        var context = CreateAuthenticatedContext("Chrome/120", "text/html", "wrong-fingerprint");
+        SetTrustedService(context);
+        var nextCalled = false;
+        var middleware = CreateMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        });
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert — trusted services skip fingerprint entirely, even with mismatched claim.
+        nextCalled.Should().BeTrue();
+    }
+
     #region Helpers
 
     /// <summary>
@@ -245,6 +303,20 @@ public class JwtFingerprintMiddlewareTests
         context.Request.Headers.Accept = accept;
 
         return context;
+    }
+
+    /// <summary>
+    /// Sets the IsTrustedService flag on the HttpContext features.
+    /// </summary>
+    private static void SetTrustedService(DefaultHttpContext context)
+    {
+        var requestInfo = new RequestInfo
+        {
+            ClientIp = "10.0.0.1",
+            ServerFingerprint = "abc123",
+            IsTrustedService = true,
+        };
+        context.Features.Set<IRequestInfo>(requestInfo);
     }
 
     /// <summary>

@@ -68,6 +68,7 @@ app.UseExceptionHandler();
 app.UseStructuredRequestLogging();
 app.UseCors();
 app.UseRequestEnrichment();
+app.UseServiceKeyDetection();
 app.UseRateLimiting();
 
 app.UseJwtAuth();

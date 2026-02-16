@@ -40,6 +40,25 @@ public static class ServiceKeyExtensions
     }
 
     /// <summary>
+    /// Extension methods for <see cref="IApplicationBuilder"/>.
+    /// </summary>
+    extension(IApplicationBuilder app)
+    {
+        /// <summary>
+        /// Adds service key detection middleware to the pipeline.
+        /// Must run after request enrichment and before rate limiting.
+        /// </summary>
+        ///
+        /// <returns>
+        /// The application builder for chaining.
+        /// </returns>
+        public IApplicationBuilder UseServiceKeyDetection()
+        {
+            return app.UseMiddleware<ServiceKeyMiddleware>();
+        }
+    }
+
+    /// <summary>
     /// Extension methods for <see cref="RouteHandlerBuilder"/>.
     /// </summary>
     extension(RouteHandlerBuilder builder)

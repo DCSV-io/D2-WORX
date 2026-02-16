@@ -9,6 +9,7 @@ namespace D2.Gateways.REST.Auth;
 using System.Net;
 using System.Text.Json;
 using D2.Shared.Handler.Auth;
+using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 
 /// <summary>
@@ -21,7 +22,8 @@ using D2.Shared.Result;
 /// Behavior:
 /// <list type="bullet">
 ///   <item>No authenticated user → pass through (auth middleware handles this).</item>
-///   <item>No <c>fp</c> claim → pass through (backwards-compatible for older JWTs).</item>
+///   <item>Trusted service (<see cref="IRequestInfo.IsTrustedService"/>) → skip fingerprint validation entirely.</item>
+///   <item>No <c>fp</c> claim (non-trusted) → 401 Unauthorized (fingerprint is required).</item>
 ///   <item><c>fp</c> claim matches computed fingerprint → pass through.</item>
 ///   <item><c>fp</c> claim does NOT match → 401 Unauthorized with D2Result error.</item>
 /// </list>
@@ -65,13 +67,35 @@ public class JwtFingerprintMiddleware
             return;
         }
 
+        // Trusted services skip fingerprint validation entirely.
+        var requestInfo = context.Features.Get<IRequestInfo>();
+        if (requestInfo?.IsTrustedService == true)
+        {
+            await r_next(context);
+            return;
+        }
+
         // Extract the `fp` claim from the JWT.
         var fpClaim = context.User.FindFirst(JwtClaimTypes.FINGERPRINT)?.Value;
 
-        // No `fp` claim → backwards-compatible, pass through.
+        // For non-trusted requests, fp claim is REQUIRED.
         if (string.IsNullOrEmpty(fpClaim))
         {
-            await r_next(context);
+            r_logger.LogWarning(
+                "JWT missing required fingerprint claim for {Path}",
+                context.Request.Path);
+
+            context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            var missingFpResponse = D2Result.Fail(
+                ["JWT fingerprint claim is required."],
+                HttpStatusCode.Unauthorized,
+                inputErrors: null,
+                "MISSING_FINGERPRINT",
+                context.TraceIdentifier);
+
+            await context.Response.WriteAsJsonAsync(missingFpResponse, sr_jsonOptions, context.RequestAborted);
             return;
         }
 

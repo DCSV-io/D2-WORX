@@ -6,41 +6,28 @@
 
 namespace D2.Gateways.REST.Auth;
 
-using Microsoft.Extensions.Options;
+using D2.Shared.RequestEnrichment.Default;
 
 /// <summary>
-/// Endpoint filter that validates the <c>X-Api-Key</c> header against
-/// configured service keys. Returns 401 Unauthorized if the key is
-/// missing or invalid.
+/// Endpoint filter that verifies the request has been identified as a trusted
+/// service by the <see cref="ServiceKeyMiddleware"/>. Returns 401 Unauthorized
+/// if the trust flag is not set.
 /// </summary>
+/// <remarks>
+/// This filter no longer validates the key itself — the <see cref="ServiceKeyMiddleware"/>
+/// handles that earlier in the pipeline. This filter simply checks the
+/// <see cref="IRequestInfo.IsTrustedService"/> flag.
+/// </remarks>
 public class ServiceKeyEndpointFilter : IEndpointFilter
 {
-    private const string _HEADER_NAME = "X-Api-Key";
-
-    private readonly HashSet<string> r_validKeys;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ServiceKeyEndpointFilter"/> class.
-    /// </summary>
-    ///
-    /// <param name="options">
-    /// The service key configuration options.
-    /// </param>
-    public ServiceKeyEndpointFilter(IOptions<ServiceKeyOptions> options)
-    {
-        r_validKeys = new HashSet<string>(
-            options.Value.ValidKeys,
-            StringComparer.Ordinal);
-    }
-
     /// <inheritdoc/>
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
         EndpointFilterDelegate next)
     {
-        var apiKey = context.HttpContext.Request.Headers[_HEADER_NAME].FirstOrDefault();
+        var requestInfo = context.HttpContext.Features.Get<IRequestInfo>();
 
-        if (string.IsNullOrEmpty(apiKey) || !r_validKeys.Contains(apiKey))
+        if (requestInfo?.IsTrustedService != true)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status401Unauthorized,

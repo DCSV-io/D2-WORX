@@ -371,8 +371,9 @@ Two independent fingerprint checks prevent token theft:
 2. Gateway recomputes hash from current request headers
 3. **Match** → pass through
 4. **Mismatch** → 401 Unauthorized (D2Result error body)
-5. **No fp claim** → pass through (backwards-compatible for older JWTs)
-6. **Not authenticated** → pass through (auth middleware handles)
+5. **No fp claim (non-trusted)** → 401 Unauthorized (`MISSING_FINGERPRINT` — fingerprint is required)
+6. **Trusted service** (`IsTrustedService` flag) → skip fingerprint validation entirely
+7. **Not authenticated** → pass through (auth middleware handles)
 
 **Cross-platform parity**: Both Node.js and .NET use the same `SHA-256(UA|Accept)` formula, ensuring the `fp` claim computed at JWT issuance matches what the .NET gateway validates.
 
@@ -468,13 +469,14 @@ The composition root builds the pipeline in this exact order:
 
 ```
 1. Request enrichment (IP resolution, fingerprint, WhoIs)
-2. Rate limiting (multi-dimensional sliding window)
-3. CORS
-4. Authentication (JWT Bearer via JWKS)
-5. Fingerprint validation (fp claim vs computed)
-6. Authorization (policy evaluation)
-7. Idempotency (for POST/PUT/PATCH)
-8. Endpoint routing
+2. Service key detection (X-Api-Key → sets IsTrustedService flag)
+3. Rate limiting (multi-dimensional sliding window — skipped for trusted services)
+4. CORS
+5. Authentication (JWT Bearer via JWKS)
+6. Fingerprint validation (fp claim vs computed — skipped for trusted services, required for non-trusted)
+7. Authorization (policy evaluation)
+8. Idempotency (for POST/PUT/PATCH)
+9. Endpoint routing
 ```
 
 ---
@@ -488,7 +490,8 @@ The composition root builds the pipeline in this exact order:
 | **Session middleware** (Node.js) | **FAIL-CLOSED** | **FAIL-CLOSED** | N/A (is the auth service) | Returns 503, does NOT treat as unauthenticated | 503 |
 | **JWT validation** (.NET) | N/A (JWKS cached) | N/A | JWKS cache still valid → pass; cache empty → **FAIL-CLOSED** | Cached JWKS keys survive outage | 401 if no cached keys |
 | **Session fingerprint** (Node.js) | FAIL-OPEN | N/A | N/A | Fingerprint check skipped, logs warning | 200 (pass-through) |
-| **JWT fingerprint** (.NET) | N/A | N/A | N/A | No fp claim → pass-through (backwards-compatible) | 200 (pass-through) |
+| **JWT fingerprint** (.NET) | N/A | N/A | N/A | No fp claim (non-trusted) → **FAIL-CLOSED** (401). Trusted services → skip. | 401 (non-trusted, no fp) |
+| **Service key detection** (.NET) | N/A | N/A | N/A | Invalid key → 401. No key → pass-through (browser request). | 401 (invalid key) |
 | **Rate limiting** (Node.js) | FAIL-OPEN | N/A | N/A | Requests pass through | 200 (pass-through) |
 | **Rate limiting** (.NET) | FAIL-OPEN | N/A | N/A | Requests pass through | 200 (pass-through) |
 | **Secondary storage** (Redis) | FAIL-CLOSED (via session MW) | N/A | N/A | BetterAuth getSession throws → 503 | 503 |
@@ -702,7 +705,7 @@ These are documented trade-offs and gaps identified during security audit. Items
 
 | # | Gap | Severity | Details | Mitigation |
 |---|-----|----------|---------|------------|
-| 1 | **Fingerprint (`fp`) claim optional in JWT** | HIGH | `.NET JwtFingerprintMiddleware` passes through if `fp` claim is missing. Stolen JWT without fingerprint bypasses binding entirely. | Require `fp` claim presence in gateway middleware. Remove backwards-compatible pass-through once all clients issue fingerprinted JWTs. |
+| 1 | ~~**Fingerprint (`fp`) claim optional in JWT**~~ | ~~HIGH~~ | **RESOLVED.** `JwtFingerprintMiddleware` now requires `fp` claim for all non-trusted requests (returns 401 `MISSING_FINGERPRINT`). Trusted services (identified by `ServiceKeyMiddleware` via `X-Api-Key`) skip fingerprint validation entirely. | Implemented in `ServiceKeyMiddleware` + updated `JwtFingerprintMiddleware`. |
 | 2 | **Email verification not enforced** | HIGH | Users can sign up and immediately access the app with unverified email. Enables throwaway email abuse, weakens account recovery. | Configure `emailVerification.sendOnSignUp: true` in BetterAuth. Gate org creation/membership on `emailVerified: true`. Requires notification scaffold. |
 | 3 | **No password policy** | HIGH | BetterAuth defaults allow any password. No min length, complexity, or breached-password checks. | Configure `emailAndPassword.password.minLength` (min 10), add `beforePasswordSet` hook for complexity/HaveIBeenPwned check. |
 

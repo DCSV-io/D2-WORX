@@ -607,6 +607,17 @@ No sticky sessions required. Any instance can handle any request:
 - JWTs: self-contained, any instance validates with cached JWKS public key
 - Spinning up new instances/locations: just point at shared Redis + PG
 
+### Service-to-Service Trust (S2S)
+
+- **Mechanism**: `X-Api-Key` header validated by `ServiceKeyMiddleware` (runs early in pipeline)
+- **Trust flag**: `IRequestInfo.IsTrustedService` — set by middleware, consumed by downstream components
+- **Design principle**: Service key = TRUST (bypasses security layers). JWT = IDENTITY (carries user context). Independent — a request can have both, either, or neither
+- **Trusted service bypasses**: Rate limiting (all dimensions skipped), JWT fingerprint validation (skipped entirely)
+- **Invalid key**: 401 immediately (fail fast, before rate limiting)
+- **No key**: Treated as browser request, continues normally
+- **Pipeline order**: RequestEnrichment → ServiceKeyDetection → RateLimiting → Auth → Fingerprint → Authz
+- **Endpoint filter**: `RequireServiceKey()` on endpoints checks `IsTrustedService` flag (no re-validation)
+
 ### Rate Limiting
 
 - **Packages**: `@d2/ratelimit` (Node.js - planned), `RateLimit.Default` (C# - done)
@@ -616,6 +627,7 @@ No sticky sessions required. Any instance can handle any request:
 - **Logic**: If ANY dimension exceeds threshold → block for 5 minutes
 - **Country whitelist**: US, CA, GB exempt from country-level blocking
 - **Fail-open**: If Redis down or WhoIs unavailable, requests pass through
+- **Trusted services**: Bypass all dimensions (early return in Check handler)
 
 ### Request Enrichment
 
