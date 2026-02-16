@@ -8,7 +8,9 @@ import { isValidOrgType } from "@d2/auth-domain";
  */
 export function beforeCreateOrganization(org: Record<string, unknown>): boolean {
   const orgType = org["orgType"] ?? org["org_type"];
-  if (!isValidOrgType(orgType)) {
+  // undefined/null is OK — BetterAuth applies the defaultValue ("customer") after this hook.
+  // Only reject explicitly invalid values.
+  if (orgType !== undefined && orgType !== null && !isValidOrgType(orgType)) {
     throw new Error(
       `Invalid organization type: "${String(orgType)}". Must be one of: admin, support, customer, third_party, affiliate.`,
     );

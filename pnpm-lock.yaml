@@ -199,6 +199,9 @@ importers:
       '@d2/cache-memory':
         specifier: workspace:*
         version: link:../../../shared/implementations/caching/in-memory/default
+      '@d2/cache-redis':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/caching/distributed/redis
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../../geo/geo-client
@@ -226,6 +229,9 @@ importers:
       '@testcontainers/postgresql':
         specifier: 10.18.0
         version: 10.18.0
+      '@testcontainers/redis':
+        specifier: 10.18.0
+        version: 10.18.0
       '@types/pg':
         specifier: 8.16.0
         version: 8.16.0
@@ -238,6 +244,9 @@ importers:
       hono:
         specifier: 4.11.9
         version: 4.11.9
+      ioredis:
+        specifier: 5.8.0
+        version: 5.8.0
       pg:
         specifier: 8.18.0
         version: 8.18.0
