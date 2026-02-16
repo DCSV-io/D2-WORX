@@ -18,7 +18,8 @@ import {
 /**
  * Tests the REAL `createAuth()` factory with all 6 plugins (bearer, username,
  * jwt, organization, admin) and hooks (UUIDv7 IDs, org type validation,
- * password validation, session hooks, JWT claims) against real PostgreSQL.
+ * password validation, session hooks, JWT claims, email verification)
+ * against real PostgreSQL.
  *
  * This is the highest-value integration test — it catches wiring issues,
  * plugin interactions, and hook behaviors that unit tests can't reach.
@@ -75,28 +76,106 @@ describe("createAuth() full integration", () => {
     onSignInCalls = [];
   });
 
-  /** Helper: sign up and return user + session token. */
-  async function signUp(email: string, name: string, password = "SecurePass123!@#") {
+  /**
+   * Raw sign-up: creates user but does NOT auto-sign-in (email unverified).
+   * Returns user only — no token or session.
+   */
+  async function rawSignUp(email: string, name: string, password = "SecurePass123!@#") {
     const res = await auth.api.signUpEmail({
       body: { email, password, name },
     });
-    const token = res.token ?? (res as Record<string, unknown>).session?.token;
-    return { user: res.user, token: token as string, session: res.session };
+    return { user: res.user };
+  }
+
+  /**
+   * Sign up + manually verify email + sign in.
+   * Use this for tests that need an authenticated session.
+   */
+  async function signUpAndVerify(email: string, name: string, password = "SecurePass123!@#") {
+    const { user } = await rawSignUp(email, name, password);
+
+    // Manually verify email (no notification service yet)
+    await getPool().query('UPDATE "user" SET email_verified = true WHERE id = $1', [user.id]);
+
+    // Sign in to get session + token
+    const signInRes = await auth.api.signInEmail({
+      body: { email, password },
+    });
+    const token =
+      signInRes.token ??
+      ((signInRes as Record<string, unknown>).session as { token: string })?.token;
+    return { user, token: token as string, session: signInRes.session };
   }
 
   // -----------------------------------------------------------------------
-  // Full sign-up flow (end-to-end)
+  // Email verification
+  // -----------------------------------------------------------------------
+  describe("email verification", () => {
+    it("should NOT auto-sign-in on sign-up (email unverified)", async () => {
+      const res = await auth.api.signUpEmail({
+        body: { email: "no-auto@example.com", password: "SecurePass123!@#", name: "No Auto" },
+      });
+
+      // BetterAuth returns { token: null, user } when requireEmailVerification is true
+      expect(res.token).toBeNull();
+      expect(res.user).toBeDefined();
+      expect(res.user.email).toBe("no-auto@example.com");
+
+      // No session created in DB
+      const sessionRows = await getPool().query("SELECT * FROM session WHERE user_id = $1", [
+        res.user.id,
+      ]);
+      expect(sessionRows.rows).toHaveLength(0);
+    });
+
+    it("should block sign-in when email is not verified", async () => {
+      await rawSignUp("unverified@example.com", "Unverified");
+
+      await expect(
+        auth.api.signInEmail({
+          body: { email: "unverified@example.com", password: "SecurePass123!@#" },
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("should allow sign-in after email is verified", async () => {
+      const { user } = await rawSignUp("verified@example.com", "Verified");
+
+      // Manually verify email
+      await getPool().query('UPDATE "user" SET email_verified = true WHERE id = $1', [user.id]);
+
+      // Sign in should succeed now
+      const signInRes = await auth.api.signInEmail({
+        body: { email: "verified@example.com", password: "SecurePass123!@#" },
+      });
+
+      expect(signInRes.token).toBeDefined();
+      expect(signInRes.user).toBeDefined();
+      expect(signInRes.user.email).toBe("verified@example.com");
+    });
+
+  });
+
+  // -----------------------------------------------------------------------
+  // Full sign-up → verify → sign-in flow (end-to-end)
   // -----------------------------------------------------------------------
   describe("full sign-up flow", () => {
-    it("should create user, account, session, and valid JWT in one sign-up", async () => {
-      const { user, token } = await signUp("e2e@example.com", "E2E User");
+    it("should create user, account, and valid JWT after verification + sign-in", async () => {
+      // Step 1: Sign up (no session — email unverified)
+      const signUpRes = await auth.api.signUpEmail({
+        body: { email: "e2e@example.com", password: "SecurePass123!@#", name: "E2E User" },
+      });
+      const userId = signUpRes.user.id;
+
+      // Verify no session created at sign-up
+      expect(signUpRes.token).toBeNull();
 
       // ---- 1. User row — every column populated correctly ----
-      const userRow = await getPool().query('SELECT * FROM "user" WHERE id = $1', [user.id]);
+      const userRow = await getPool().query('SELECT * FROM "user" WHERE id = $1', [userId]);
       expect(userRow.rows).toHaveLength(1);
       const u = userRow.rows[0];
 
-      expect(u.id).toBe(user.id);
+      expect(u.id).toBe(userId);
       expect(u.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
       expect(u.email).toBe("e2e@example.com");
       expect(u.name).toBe("E2E User");
@@ -118,7 +197,7 @@ describe("createAuth() full integration", () => {
 
       // ---- 2. Account row — credential provider linked ----
       const accountRow = await getPool().query("SELECT * FROM account WHERE user_id = $1", [
-        user.id,
+        userId,
       ]);
       expect(accountRow.rows).toHaveLength(1);
       const acct = accountRow.rows[0];
@@ -127,15 +206,25 @@ describe("createAuth() full integration", () => {
         /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
       );
       expect(acct.provider_id).toBe("credential");
-      expect(acct.user_id).toBe(user.id);
+      expect(acct.user_id).toBe(userId);
       expect(acct.password).toBeDefined();
       expect(acct.password.length).toBeGreaterThan(0);
       expect(acct.created_at).toBeInstanceOf(Date);
 
-      // ---- 3. Session row — created by autoSignIn ----
+      // Step 2: Verify email
+      await getPool().query('UPDATE "user" SET email_verified = true WHERE id = $1', [userId]);
+
+      // Step 3: Sign in (now succeeds)
+      const signInRes = await auth.api.signInEmail({
+        body: { email: "e2e@example.com", password: "SecurePass123!@#" },
+      });
+      const token = signInRes.token as string;
+      expect(token).toBeDefined();
+
+      // ---- 3. Session row — created by explicit sign-in ----
       const sessionRow = await getPool().query(
         "SELECT * FROM session WHERE user_id = $1 AND token = $2",
-        [user.id, token],
+        [userId, token],
       );
       expect(sessionRow.rows).toHaveLength(1);
       const sess = sessionRow.rows[0];
@@ -143,7 +232,7 @@ describe("createAuth() full integration", () => {
       expect(sess.id).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
       );
-      expect(sess.user_id).toBe(user.id);
+      expect(sess.user_id).toBe(userId);
       expect(sess.token).toBe(token);
       expect(sess.expires_at).toBeInstanceOf(Date);
       expect(sess.created_at).toBeInstanceOf(Date);
@@ -165,7 +254,7 @@ describe("createAuth() full integration", () => {
       expect(payload.exp - payload.iat).toBe(900); // 15-minute expiry
 
       // Identity claims — match DB values
-      expect(payload[JWT_CLAIM_TYPES.SUB]).toBe(user.id);
+      expect(payload[JWT_CLAIM_TYPES.SUB]).toBe(userId);
       expect(payload[JWT_CLAIM_TYPES.EMAIL]).toBe("e2e@example.com");
       expect(payload[JWT_CLAIM_TYPES.USERNAME]).toBe(u.username);
 
@@ -187,11 +276,11 @@ describe("createAuth() full integration", () => {
       // Fingerprint — null (no hook provided in test)
       expect(payload[JWT_CLAIM_TYPES.FINGERPRINT]).toBeNull();
 
-      // ---- 5. onSignIn hook — fired by autoSignIn ----
+      // ---- 5. onSignIn hook — fired by explicit sign-in ----
       await new Promise((r) => setTimeout(r, 100));
-      const signInCall = onSignInCalls.find((c) => c.userId === user.id);
+      const signInCall = onSignInCalls.find((c) => c.userId === userId);
       expect(signInCall).toBeDefined();
-      expect(signInCall!.userId).toBe(user.id);
+      expect(signInCall!.userId).toBe(userId);
     });
   });
 
@@ -200,7 +289,7 @@ describe("createAuth() full integration", () => {
   // -----------------------------------------------------------------------
   describe("UUIDv7 ID generation", () => {
     it("should generate UUIDv7 IDs for new users", async () => {
-      const { user } = await signUp("uuid@example.com", "UUID User");
+      const { user } = await rawSignUp("uuid@example.com", "UUID User");
 
       expect(user.id).toBeDefined();
       // UUIDv7 format: 8-4-4-4-12 = 36 chars, version nibble = 7
@@ -210,7 +299,7 @@ describe("createAuth() full integration", () => {
     });
 
     it("should generate UUIDv7 IDs for organizations", async () => {
-      const { token } = await signUp("org-id@example.com", "Org ID User");
+      const { token } = await signUpAndVerify("org-id@example.com", "Org ID User");
 
       const org = await auth.api.createOrganization({
         body: { name: "Test Org", slug: "test-org" },
@@ -227,29 +316,26 @@ describe("createAuth() full integration", () => {
   // Session hooks (onSignIn callback)
   // -----------------------------------------------------------------------
   describe("session hooks", () => {
-    it("should fire onSignIn after sign-up (auto sign-in)", async () => {
-      const { user } = await signUp("hook@example.com", "Hook User");
+    it("should NOT fire onSignIn on sign-up (no auto-sign-in)", async () => {
+      await rawSignUp("hook-no-fire@example.com", "No Fire");
+
+      // Wait a tick
+      await new Promise((r) => setTimeout(r, 100));
+
+      // No sign-in hook should fire (sign-up doesn't create a session)
+      const call = onSignInCalls.find((c) => c.userId !== undefined);
+      expect(call).toBeUndefined();
+    });
+
+    it("should fire onSignIn after explicit sign-in (post-verification)", async () => {
+      const { user } = await signUpAndVerify("signin-hook@example.com", "SignIn Hook");
 
       // Wait a tick for fire-and-forget callback
       await new Promise((r) => setTimeout(r, 100));
 
-      expect(onSignInCalls.length).toBeGreaterThanOrEqual(1);
       const call = onSignInCalls.find((c) => c.userId === user.id);
       expect(call).toBeDefined();
       expect(call!.userId).toBe(user.id);
-    });
-
-    it("should fire onSignIn after explicit sign-in", async () => {
-      await signUp("signin-hook@example.com", "SignIn Hook");
-      onSignInCalls = [];
-
-      await auth.api.signInEmail({
-        body: { email: "signin-hook@example.com", password: "SecurePass123!@#" },
-      });
-
-      await new Promise((r) => setTimeout(r, 100));
-
-      expect(onSignInCalls.length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -258,7 +344,7 @@ describe("createAuth() full integration", () => {
   // -----------------------------------------------------------------------
   describe("user row completeness", () => {
     it("should populate all user columns correctly after sign-up", async () => {
-      const { user } = await signUp("complete@example.com", "Complete User");
+      const { user } = await rawSignUp("complete@example.com", "Complete User");
 
       const result = await getPool().query('SELECT * FROM "user" WHERE id = $1', [user.id]);
       expect(result.rows).toHaveLength(1);
@@ -278,7 +364,7 @@ describe("createAuth() full integration", () => {
       // displayUsername format: PascalCase adjective + PascalCase noun + 1-3 digit suffix
       expect(row.display_username).toMatch(/^[A-Z][a-z]+[A-Z][a-z]+\d{1,3}$/);
 
-      // Email verification
+      // Email verification — false at sign-up
       expect(row.email_verified).toBe(false);
 
       // Timestamps
@@ -296,8 +382,8 @@ describe("createAuth() full integration", () => {
     });
 
     it("should generate unique usernames for different users", async () => {
-      const { user: user1 } = await signUp("unique-user1@example.com", "Unique One");
-      const { user: user2 } = await signUp("unique-user2@example.com", "Unique Two");
+      const { user: user1 } = await rawSignUp("unique-user1@example.com", "Unique One");
+      const { user: user2 } = await rawSignUp("unique-user2@example.com", "Unique Two");
 
       const result = await getPool().query(
         'SELECT username, display_username FROM "user" WHERE id IN ($1, $2)',
@@ -314,7 +400,7 @@ describe("createAuth() full integration", () => {
   // -----------------------------------------------------------------------
   describe("JWT claims", () => {
     it("should issue a JWT with all identity claims populated", async () => {
-      const { user, token } = await signUp("jwt@example.com", "JWT User");
+      const { user, token } = await signUpAndVerify("jwt@example.com", "JWT User");
 
       // Fetch the auto-generated username from DB for assertion
       const dbRow = await getPool().query('SELECT username FROM "user" WHERE id = $1', [user.id]);
@@ -360,7 +446,7 @@ describe("createAuth() full integration", () => {
     });
 
     it("should include org context claims when session has active org", async () => {
-      const { token } = await signUp("jwt-org@example.com", "JWT Org User");
+      const { token } = await signUpAndVerify("jwt-org@example.com", "JWT Org User");
 
       const org = await auth.api.createOrganization({
         body: { name: "JWT Org", slug: "jwt-org" },
@@ -390,7 +476,7 @@ describe("createAuth() full integration", () => {
   // -----------------------------------------------------------------------
   describe("organization + orgType", () => {
     it("should create an org with default orgType 'customer'", async () => {
-      const { token } = await signUp("org-default@example.com", "Org Default");
+      const { token } = await signUpAndVerify("org-default@example.com", "Org Default");
 
       const org = await auth.api.createOrganization({
         body: { name: "Default Org", slug: "default-org" },
@@ -404,7 +490,7 @@ describe("createAuth() full integration", () => {
     });
 
     it("should assign creator as owner member", async () => {
-      const { user, token } = await signUp("org-owner@example.com", "Org Owner");
+      const { user, token } = await signUpAndVerify("org-owner@example.com", "Org Owner");
 
       const org = await auth.api.createOrganization({
         body: { name: "Owner Org", slug: "owner-org" },
@@ -449,7 +535,7 @@ describe("createAuth() full integration", () => {
     });
 
     it("should accept a valid strong password", async () => {
-      const { user } = await signUp(
+      const { user } = await rawSignUp(
         "valid-pass@example.com",
         "Valid Pass User",
         "MyStr0ng!P@ssw0rd",
@@ -465,7 +551,7 @@ describe("createAuth() full integration", () => {
   // -----------------------------------------------------------------------
   describe("custom session fields", () => {
     it("should persist active organization in session after setActiveOrganization", async () => {
-      const { token } = await signUp("session-fields@example.com", "Session Fields");
+      const { token } = await signUpAndVerify("session-fields@example.com", "Session Fields");
 
       const org = await auth.api.createOrganization({
         body: { name: "Session Org", slug: "session-org" },

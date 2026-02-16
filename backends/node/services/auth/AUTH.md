@@ -40,12 +40,12 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 ### Integration Points
 
-| Consumer | Protocol | Auth Mechanism |
-|----------|----------|----------------|
-| SvelteKit (SSR) | HTTP proxy `/api/auth/*` | Cookie session |
-| SvelteKit (client-side) | HTTP via proxy | Cookie session → JWT via `authClient.token()` |
-| .NET Gateway | JWT validation via JWKS | RS256 JWT (no BetterAuth dependency) |
-| Inter-service (gRPC) | Proto contracts | Bearer token (session token) or JWT |
+| Consumer                | Protocol                 | Auth Mechanism                                |
+| ----------------------- | ------------------------ | --------------------------------------------- |
+| SvelteKit (SSR)         | HTTP proxy `/api/auth/*` | Cookie session                                |
+| SvelteKit (client-side) | HTTP via proxy           | Cookie session → JWT via `authClient.token()` |
+| .NET Gateway            | JWT validation via JWKS  | RS256 JWT (no BetterAuth dependency)          |
+| Inter-service (gRPC)    | Proto contracts          | Bearer token (session token) or JWT           |
 
 ---
 
@@ -55,14 +55,14 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 **Who owns what**: This layer defines ALL domain types, business rules, and constants. It has zero infrastructure dependencies.
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| Entities | `domain/src/entities/` | Factory functions + types for User, Organization, Member, Invitation, SignInEvent, EmulationConsent, OrgContact |
-| Enums | `domain/src/enums/` | OrgType, Role, InvitationStatus — `as const` arrays + type guards |
-| Rules | `domain/src/rules/` | emulation, membership, org-creation, invitation, sign-in-throttle (delay curve) |
-| Constants | `domain/src/constants/` | JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, SIGN_IN_THROTTLE |
-| Value Objects | `domain/src/value-objects/` | SessionContext |
-| Exceptions | `domain/src/exceptions/` | AuthDomainError, AuthValidationError |
+| Component     | Location                    | Purpose                                                                                                         |
+| ------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Entities      | `domain/src/entities/`      | Factory functions + types for User, Organization, Member, Invitation, SignInEvent, EmulationConsent, OrgContact |
+| Enums         | `domain/src/enums/`         | OrgType, Role, InvitationStatus — `as const` arrays + type guards                                               |
+| Rules         | `domain/src/rules/`         | emulation, membership, org-creation, invitation, sign-in-throttle (delay curve)                                 |
+| Constants     | `domain/src/constants/`     | JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, SIGN_IN_THROTTLE              |
+| Value Objects | `domain/src/value-objects/` | SessionContext                                                                                                  |
+| Exceptions    | `domain/src/exceptions/`    | AuthDomainError, AuthValidationError                                                                            |
 
 **Tested in**: `auth/tests/src/unit/domain/`
 
@@ -70,19 +70,19 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 **Who owns what**: CQRS handlers for custom tables (sign_in_event, emulation_consent, org_contact). These handlers DO NOT touch BetterAuth-managed tables.
 
-| Handler | Type | Purpose |
-|---------|------|---------|
-| RecordSignInEvent | Command | Audit sign-in with WhoIs linkage |
-| CreateEmulationConsent | Command | Grant org-level emulation consent |
-| RevokeEmulationConsent | Command | Revoke active consent |
-| CreateOrgContact | Command | Create Geo contact via gRPC + org_contact junction |
-| UpdateOrgContact | Command | Update metadata (label/isPrimary) or replace contact (immutability pattern) |
-| DeleteOrgContact | Command | Delete junction + best-effort Geo contact cleanup |
-| CheckSignInThrottle | Query | Check throttle status per (identifier, identity) — local cache → Redis, fail-open |
-| GetSignInEvents | Query | Paginated sign-in history (with local memory cache + staleness check) |
-| GetActiveConsents | Query | User's active emulation consents |
-| GetOrgContacts | Query | Org's contacts hydrated with full Geo contact data |
-| RecordSignInOutcome | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
+| Handler                | Type    | Purpose                                                                              |
+| ---------------------- | ------- | ------------------------------------------------------------------------------------ |
+| RecordSignInEvent      | Command | Audit sign-in with WhoIs linkage                                                     |
+| CreateEmulationConsent | Command | Grant org-level emulation consent                                                    |
+| RevokeEmulationConsent | Command | Revoke active consent                                                                |
+| CreateOrgContact       | Command | Create Geo contact via gRPC + org_contact junction                                   |
+| UpdateOrgContact       | Command | Update metadata (label/isPrimary) or replace contact (immutability pattern)          |
+| DeleteOrgContact       | Command | Delete junction + best-effort Geo contact cleanup                                    |
+| CheckSignInThrottle    | Query   | Check throttle status per (identifier, identity) — local cache → Redis, fail-open    |
+| GetSignInEvents        | Query   | Paginated sign-in history (with local memory cache + staleness check)                |
+| GetActiveConsents      | Query   | User's active emulation consents                                                     |
+| GetOrgContacts         | Query   | Org's contacts hydrated with full Geo contact data                                   |
+| RecordSignInOutcome    | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
 
 **DI pattern**: Manual factory functions — `createSignInEventHandlers(repo, context, memoryCache?)`, `createOrgContactHandlers(repo, context, geo)`, `createSignInThrottleHandlers(store, context, memoryCache?)` where `repo` is a handler bundle type (`SignInEventRepoHandlers`, `EmulationConsentRepoHandlers`, `OrgContactRepoHandlers`) and `geo` is `{ createContacts, deleteContactsByExtKeys, updateContactsByExtKeys, getContactsByExtKeys }` from `@d2/geo-client`. Repo bundles are created by infra factory functions (`createXxxRepoHandlers(db, ctx)`).
 
@@ -98,30 +98,41 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 **Who owns what**: BetterAuth configuration (Drizzle adapter), Drizzle repositories, mappers, storage adapters.
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| auth-factory | `infra/src/auth/better-auth/auth-factory.ts` | Single BetterAuth creation point (plugins, hooks, session config, Drizzle adapter) |
-| auth-config | `infra/src/auth/better-auth/auth-config.ts` | Config type + defaults |
-| secondary-storage | `infra/src/auth/better-auth/secondary-storage.ts` | Redis adapter wrapping @d2/interfaces cache handlers |
-| Access Control | `infra/src/auth/better-auth/access-control.ts` | RBAC permission definitions |
-| Hooks | `infra/src/auth/better-auth/hooks/` | ID generation (UUIDv7), org creation validation, username auto-generation (`ensureUsername`) |
-| SignInThrottleStore | `infra/src/auth/sign-in-throttle-store.ts` | Redis-backed brute-force throttle state (uses `@d2/cache-redis` handlers) |
-| Drizzle Schema | `infra/src/repository/schema/` | `pgTable()` declarations for all 11 tables (8 BetterAuth + 3 custom) |
-| Repo Handlers | `infra/src/repository/handlers/{c,r,u,d}/` | BaseHandler-based DB operations (14 handlers, TLC layout). Automatic OTel spans + D2Result error handling. PG 23505 → 409 in infra layer |
-| Repo Factories | `infra/src/repository/handlers/factories.ts` | `createSignInEventRepoHandlers(db, ctx)`, `createEmulationConsentRepoHandlers(db, ctx)`, `createOrgContactRepoHandlers(db, ctx)` |
-| Migrations | `infra/src/repository/migrations/` | Drizzle auto-generated SQL migrations (all tables + indexes) |
-| Migration runner | `infra/src/repository/migrate.ts` | Programmatic `runMigrations(pool)` for app startup + tests |
-| Mappers | `infra/src/mappers/` | BetterAuth record → domain entity conversion |
+| Component           | Location                                          | Purpose                                                                                                                                  |
+| ------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| auth-factory        | `infra/src/auth/better-auth/auth-factory.ts`      | Single BetterAuth creation point (plugins, hooks, session config, Drizzle adapter)                                                       |
+| auth-config         | `infra/src/auth/better-auth/auth-config.ts`       | Config type + defaults                                                                                                                   |
+| secondary-storage   | `infra/src/auth/better-auth/secondary-storage.ts` | Redis adapter wrapping @d2/interfaces cache handlers                                                                                     |
+| Access Control      | `infra/src/auth/better-auth/access-control.ts`    | RBAC permission definitions                                                                                                              |
+| Hooks               | `infra/src/auth/better-auth/hooks/`               | ID generation (UUIDv7), org creation validation, username auto-generation (`ensureUsername`)                                             |
+| SignInThrottleStore | `infra/src/auth/sign-in-throttle-store.ts`        | Redis-backed brute-force throttle state (uses `@d2/cache-redis` handlers)                                                                |
+| Drizzle Schema      | `infra/src/repository/schema/`                    | `pgTable()` declarations for all 11 tables (8 BetterAuth + 3 custom)                                                                     |
+| Repo Handlers       | `infra/src/repository/handlers/{c,r,u,d}/`        | BaseHandler-based DB operations (14 handlers, TLC layout). Automatic OTel spans + D2Result error handling. PG 23505 → 409 in infra layer |
+| Repo Factories      | `infra/src/repository/handlers/factories.ts`      | `createSignInEventRepoHandlers(db, ctx)`, `createEmulationConsentRepoHandlers(db, ctx)`, `createOrgContactRepoHandlers(db, ctx)`         |
+| Migrations          | `infra/src/repository/migrations/`                | Drizzle auto-generated SQL migrations (all tables + indexes)                                                                             |
+| Migration runner    | `infra/src/repository/migrate.ts`                 | Programmatic `runMigrations(pool)` for app startup + tests                                                                               |
+| Mappers             | `infra/src/mappers/`                              | BetterAuth record → domain entity conversion                                                                                             |
 
 **BetterAuth plugins** (configured in auth-factory):
 
-| Plugin | Purpose |
-|--------|---------|
-| `bearer` | Session token via Authorization header (for non-cookie clients) |
-| `jwt` | RS256 JWT issuance with custom `definePayload` |
-| `username` | Username-based sign-in (`/sign-in/username`) + username field on user |
-| `organization` | Multi-org support (roles, invitations, creation rules) |
-| `admin` | Impersonation support (1-hour session) |
+| Plugin         | Purpose                                                               |
+| -------------- | --------------------------------------------------------------------- |
+| `bearer`       | Session token via Authorization header (for non-cookie clients)       |
+| `jwt`          | RS256 JWT issuance with custom `definePayload`                        |
+| `username`     | Username-based sign-in (`/sign-in/username`) + username field on user |
+| `organization` | Multi-org support (roles, invitations, creation rules)                |
+| `admin`        | Impersonation support (1-hour session)                                |
+
+**Email verification** (configured in auth-factory, not a plugin):
+
+| Setting                       | Value           | Purpose                                                |
+| ----------------------------- | --------------- | ------------------------------------------------------ |
+| `requireEmailVerification`    | `true`          | Blocks sign-in for unverified emails                   |
+| `autoSignIn`                  | `false`         | No session created at sign-up                          |
+| `sendOnSignUp`                | `true`          | Sends verification email on sign-up                    |
+| `sendOnSignIn`                | `true`          | Re-sends verification email on blocked sign-in attempt |
+| `autoSignInAfterVerification` | `true`          | Creates session after email verification               |
+| `sendVerificationEmail`       | Not yet wired   | Will be outbound RabbitMQ message via handler          |
 
 **Tested in**: `auth/tests/src/unit/infra/`
 
@@ -129,11 +140,11 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 **Who owns what**: HTTP layer — Hono app, middleware pipeline, route handlers, composition root.
 
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| Composition root | `api/src/composition-root.ts` | 8-step DI assembly |
-| Middleware | `api/src/middleware/` | CSRF, request-enrichment, rate-limit, session, fingerprint, auth, error handling |
-| Routes | `api/src/routes/` | Thin routes with visible authorization (5-8 lines each) |
+| Component        | Location                      | Purpose                                                                          |
+| ---------------- | ----------------------------- | -------------------------------------------------------------------------------- |
+| Composition root | `api/src/composition-root.ts` | 8-step DI assembly                                                               |
+| Middleware       | `api/src/middleware/`         | CSRF, request-enrichment, rate-limit, session, fingerprint, auth, error handling |
+| Routes           | `api/src/routes/`             | Thin routes with visible authorization (5-8 lines each)                          |
 
 **Thin routes pattern**: Route handlers are intentionally thin — they extract input from the request (body, session, query params), call the handler, and return the result. All validation, business logic, and IDOR checks live in app-layer handlers. Authorization is declared via middleware at route registration (`requireOrg()`, `requireStaff()`, `requireRole("officer")`), making security requirements visible at a glance.
 
@@ -147,26 +158,26 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 These tables are owned and managed by BetterAuth via the Drizzle adapter. Their schema is declared in `infra/src/repository/schema/better-auth-tables.ts` and included in the Drizzle migration alongside custom tables. BetterAuth reads/writes through the Drizzle adapter — we do NOT use BetterAuth's internal Kysely adapter.
 
-| Table | Key Fields | Notes |
-|-------|-----------|-------|
-| `user` | id, email, name, username, displayUsername, image, emailVerified | UUIDv7 IDs, username auto-generated by `ensureUsername` hook |
-| `account` | id, userId, providerId, accountId | 1:N user:account (credential, Google, GitHub, etc.) |
-| `session` | id, userId, expiresAt, ipAddress, userAgent + 4 custom fields | 3-tier storage |
-| `verification` | id, identifier, value, expiresAt | Email verification/password reset tokens |
-| `jwks` | id, publicKey, privateKey, createdAt | RS256 key pairs for JWT signing |
-| `organization` | id, name, slug, logo, metadata + orgType | Custom `orgType` field |
-| `member` | id, organizationId, userId, role | Standard BetterAuth membership |
-| `invitation` | id, organizationId, email, role, status, expiresAt | With state machine transitions |
+| Table          | Key Fields                                                       | Notes                                                        |
+| -------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| `user`         | id, email, name, username, displayUsername, image, emailVerified | UUIDv7 IDs, username auto-generated by `ensureUsername` hook |
+| `account`      | id, userId, providerId, accountId                                | 1:N user:account (credential, Google, GitHub, etc.)          |
+| `session`      | id, userId, expiresAt, ipAddress, userAgent + 4 custom fields    | 3-tier storage                                               |
+| `verification` | id, identifier, value, expiresAt                                 | Email verification/password reset tokens                     |
+| `jwks`         | id, publicKey, privateKey, createdAt                             | RS256 key pairs for JWT signing                              |
+| `organization` | id, name, slug, logo, metadata + orgType                         | Custom `orgType` field                                       |
+| `member`       | id, organizationId, userId, role                                 | Standard BetterAuth membership                               |
+| `invitation`   | id, organizationId, email, role, status, expiresAt               | With state machine transitions                               |
 
 ### Custom Tables (Drizzle Migrations)
 
 These tables are managed by Drizzle schema declarations in `infra/src/repository/schema/custom-tables.ts`, with auto-generated SQL migrations in `infra/src/repository/migrations/`.
 
-| Table | Purpose | Key Fields |
-|-------|---------|-----------|
-| `sign_in_event` | Audit trail for sign-in attempts | userId, successful, ipAddress, userAgent, whoIsId |
-| `emulation_consent` | Per-user, per-org emulation consent | userId, grantedToOrgId, expiresAt, revokedAt |
-| `org_contact` | Org ↔ Geo Contact junction | organizationId, label, isPrimary (no contactId — junction ID is the ext key `relatedEntityId`) |
+| Table               | Purpose                             | Key Fields                                                                                     |
+| ------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `sign_in_event`     | Audit trail for sign-in attempts    | userId, successful, ipAddress, userAgent, whoIsId                                              |
+| `emulation_consent` | Per-user, per-org emulation consent | userId, grantedToOrgId, expiresAt, revokedAt                                                   |
+| `org_contact`       | Org ↔ Geo Contact junction          | organizationId, label, isPrimary (no contactId — junction ID is the ext key `relatedEntityId`) |
 
 **Partial unique index**: `emulation_consent` has a unique index on `(user_id, granted_to_org_id)` WHERE `revoked_at IS NULL` — prevents duplicate active consents.
 
@@ -174,13 +185,13 @@ These tables are managed by Drizzle schema declarations in `infra/src/repository
 
 BetterAuth sessions carry 4 custom fields (configured via `session.additionalFields`):
 
-| Field | Constant | Type | Purpose |
-|-------|----------|------|---------|
-| `activeOrganizationType` | `SESSION_FIELDS.ACTIVE_ORG_TYPE` | string? | Current org type (set on org switch) |
-| `activeOrganizationRole` | `SESSION_FIELDS.ACTIVE_ORG_ROLE` | string? | Current role in active org |
-| `activeOrganizationId` | `SESSION_FIELDS.ACTIVE_ORG_ID` | string? | Current org ID |
-| `emulatedOrganizationId` | `SESSION_FIELDS.EMULATED_ORG_ID` | string? | Emulated org (if emulating) |
-| `emulatedOrganizationType` | `SESSION_FIELDS.EMULATED_ORG_TYPE` | string? | Emulated org type |
+| Field                      | Constant                           | Type    | Purpose                              |
+| -------------------------- | ---------------------------------- | ------- | ------------------------------------ |
+| `activeOrganizationType`   | `SESSION_FIELDS.ACTIVE_ORG_TYPE`   | string? | Current org type (set on org switch) |
+| `activeOrganizationRole`   | `SESSION_FIELDS.ACTIVE_ORG_ROLE`   | string? | Current role in active org           |
+| `activeOrganizationId`     | `SESSION_FIELDS.ACTIVE_ORG_ID`     | string? | Current org ID                       |
+| `emulatedOrganizationId`   | `SESSION_FIELDS.EMULATED_ORG_ID`   | string? | Emulated org (if emulating)          |
+| `emulatedOrganizationType` | `SESSION_FIELDS.EMULATED_ORG_TYPE` | string? | Emulated org type                    |
 
 **Verified by**: `auth/tests/src/unit/infra/mappers/session-mapper.test.ts`
 
@@ -188,13 +199,13 @@ BetterAuth sessions carry 4 custom fields (configured via `session.additionalFie
 
 5 flat types (no hierarchy, no parent-child):
 
-| Type | Constant | Self-Creation | Notes |
-|------|----------|---------------|-------|
-| `admin` | `OrgTypeValues.ADMIN` | No (admin-only) | Platform administrators |
-| `support` | `OrgTypeValues.SUPPORT` | No (admin-only) | Support staff |
-| `customer` | `OrgTypeValues.CUSTOMER` | Yes (self-service) | Primary business users |
-| `third_party` | `OrgTypeValues.THIRD_PARTY` | No (customer via workflow) | External partners |
-| `affiliate` | `OrgTypeValues.AFFILIATE` | No (admin-only) | Affiliate partners |
+| Type          | Constant                    | Self-Creation              | Notes                   |
+| ------------- | --------------------------- | -------------------------- | ----------------------- |
+| `admin`       | `OrgTypeValues.ADMIN`       | No (admin-only)            | Platform administrators |
+| `support`     | `OrgTypeValues.SUPPORT`     | No (admin-only)            | Support staff           |
+| `customer`    | `OrgTypeValues.CUSTOMER`    | Yes (self-service)         | Primary business users  |
+| `third_party` | `OrgTypeValues.THIRD_PARTY` | No (customer via workflow) | External partners       |
+| `affiliate`   | `OrgTypeValues.AFFILIATE`   | No (admin-only)            | Affiliate partners      |
 
 **"Staff"** = `admin` or `support` (used in authorization policies).
 
@@ -208,12 +219,12 @@ Roles are hierarchical — higher index = more privileges:
 auditor (0) < agent (1) < officer (2) < owner (3)
 ```
 
-| Role | Level | Key Permissions |
-|------|-------|----------------|
-| `auditor` | 0 | Read-only (businessData, orgSettings) |
-| `agent` | 1 | + Create/update businessData |
-| `officer` | 2 | + Delete + billing + member CRU |
-| `owner` | 3 | + Full org settings + member CRUD |
+| Role      | Level | Key Permissions                       |
+| --------- | ----- | ------------------------------------- |
+| `auditor` | 0     | Read-only (businessData, orgSettings) |
+| `agent`   | 1     | + Create/update businessData          |
+| `officer` | 2     | + Delete + billing + member CRU       |
+| `owner`   | 3     | + Full org settings + member CRUD     |
 
 `AtOrAbove(minRole)` returns all roles at or above the minimum (used in policy evaluation).
 
@@ -227,28 +238,30 @@ Example: `AtOrAbove("officer")` → `["officer", "owner"]`
 
 BetterAuth is session-based at its core. Sessions use 3-tier storage for performance and durability:
 
-| Tier | Storage | Lookup Cost | Revocation Lag | Configured Via |
-|------|---------|-------------|----------------|----------------|
-| Cookie cache | Encrypted cookie | Zero (travels with request) | Up to 5min (maxAge) | `cookieCache.maxAge` |
-| Secondary storage | Redis | ~1ms | Instant | `secondaryStorage` adapter |
-| Primary DB | PostgreSQL | ~5-10ms | Instant | `storeSessionInDatabase: true` |
+| Tier              | Storage          | Lookup Cost                 | Revocation Lag      | Configured Via                 |
+| ----------------- | ---------------- | --------------------------- | ------------------- | ------------------------------ |
+| Cookie cache      | Encrypted cookie | Zero (travels with request) | Up to 5min (maxAge) | `cookieCache.maxAge`           |
+| Secondary storage | Redis            | ~1ms                        | Instant             | `secondaryStorage` adapter     |
+| Primary DB        | PostgreSQL       | ~5-10ms                     | Instant             | `storeSessionInDatabase: true` |
 
 ### Configuration Defaults
 
-| Setting | Value | Constant |
-|---------|-------|----------|
-| Session expiry | 7 days (604800s) | `AUTH_CONFIG_DEFAULTS.sessionExpiresIn` |
-| Session update age | 1 day (86400s) | `AUTH_CONFIG_DEFAULTS.sessionUpdateAge` |
-| Cookie cache maxAge | 5 minutes (300s) | `AUTH_CONFIG_DEFAULTS.cookieCacheMaxAge` |
-| Cookie cache strategy | `"compact"` | — |
+| Setting               | Value            | Constant                                 |
+| --------------------- | ---------------- | ---------------------------------------- |
+| Session expiry        | 7 days (604800s) | `AUTH_CONFIG_DEFAULTS.sessionExpiresIn`  |
+| Session update age    | 1 day (86400s)   | `AUTH_CONFIG_DEFAULTS.sessionUpdateAge`  |
+| Cookie cache maxAge   | 5 minutes (300s) | `AUTH_CONFIG_DEFAULTS.cookieCacheMaxAge` |
+| Cookie cache strategy | `"compact"`      | —                                        |
 
 ### Session Lifecycle
 
+1. **Sign-up**: User created with `emailVerified: false`. No session created. Verification email sent via hook
+1. **Email verification**: User clicks verification link → `emailVerified` set to `true` → auto-sign-in creates session
 1. **Sign-in**: BetterAuth creates session → dual-writes to Redis + PostgreSQL → sets cookie
-2. **Subsequent requests**: Cookie cache hit (0ms) → Redis lookup (1ms) → PG fallback (5-10ms)
-3. **Org switch**: Session updated with new org context fields → Redis + PG
-4. **Revocation**: `revokeSession` deletes from Redis + PG. Cookie cache expires naturally in ≤5min
-5. **Expiry**: Session TTL enforced at all 3 tiers
+1. **Subsequent requests**: Cookie cache hit (0ms) → Redis lookup (1ms) → PG fallback (5-10ms)
+1. **Org switch**: Session updated with new org context fields → Redis + PG
+1. **Revocation**: `revokeSession` deletes from Redis + PG. Cookie cache expires naturally in ≤5min
+1. **Expiry**: Session TTL enforced at all 3 tiers
 
 ### Secondary Storage Adapter
 
@@ -274,37 +287,37 @@ JWTs are issued for **service-to-service calls and .NET gateway authentication**
 
 ### Token Configuration
 
-| Setting | Value | Notes |
-|---------|-------|-------|
-| Algorithm | RS256 | Native .NET support — NO EdDSA |
-| Expiration | 15 minutes | `AUTH_CONFIG_DEFAULTS.jwtExpirationSeconds` |
-| JWKS endpoint | `/api/auth/.well-known/openid-configuration` | Standard OIDC discovery |
-| Key rotation | 30 days | `AUTH_CONFIG_DEFAULTS.jwksRotationDays` |
-| Grace period | 30 days | Old keys still valid during rotation |
-| Key size | 2048-bit RSA | `modulusLength: 2048` |
+| Setting       | Value                                        | Notes                                       |
+| ------------- | -------------------------------------------- | ------------------------------------------- |
+| Algorithm     | RS256                                        | Native .NET support — NO EdDSA              |
+| Expiration    | 15 minutes                                   | `AUTH_CONFIG_DEFAULTS.jwtExpirationSeconds` |
+| JWKS endpoint | `/api/auth/.well-known/openid-configuration` | Standard OIDC discovery                     |
+| Key rotation  | 30 days                                      | `AUTH_CONFIG_DEFAULTS.jwksRotationDays`     |
+| Grace period  | 30 days                                      | Old keys still valid during rotation        |
+| Key size      | 2048-bit RSA                                 | `modulusLength: 2048`                       |
 
 ### JWT Payload (definePayload)
 
 The `definePayload` function in `auth-factory.ts` constructs the JWT payload from user + session data:
 
-| Claim                  | Constant                                | Source                                   | Type            |
-|------------------------|-----------------------------------------|------------------------------------------|-----------------|
-| `sub`                  | `JWT_CLAIM_TYPES.SUB`                   | `user.id`                                | string (UUIDv7) |
-| `email`                | `JWT_CLAIM_TYPES.EMAIL`                 | `user.email`                             | string          |
-| `username`             | `JWT_CLAIM_TYPES.USERNAME`              | `user.username` (auto-generated)         | string          |
-| `orgId`                | `JWT_CLAIM_TYPES.ORG_ID`               | `session[ACTIVE_ORG_ID]`                | string?         |
-| `orgName`              | `JWT_CLAIM_TYPES.ORG_NAME`             | `organization.name`                      | string?         |
-| `orgType`              | `JWT_CLAIM_TYPES.ORG_TYPE`             | `session[ACTIVE_ORG_TYPE]`              | string?         |
-| `role`                 | `JWT_CLAIM_TYPES.ROLE`                 | `session[ACTIVE_ORG_ROLE]`              | string?         |
-| `emulatedOrgId`        | `JWT_CLAIM_TYPES.EMULATED_ORG_ID`      | `session[EMULATED_ORG_ID]`              | string?         |
-| `emulatedOrgName`      | `JWT_CLAIM_TYPES.EMULATED_ORG_NAME`    | Emulated organization name               | string?         |
-| `emulatedOrgType`      | `JWT_CLAIM_TYPES.EMULATED_ORG_TYPE`    | `session[EMULATED_ORG_TYPE]`            | string?         |
-| `isEmulating`          | `JWT_CLAIM_TYPES.IS_EMULATING`         | Derived from emulatedOrgId               | boolean         |
-| `impersonatedBy`       | `JWT_CLAIM_TYPES.IMPERSONATED_BY`      | `session["impersonatedBy"]`             | string?         |
-| `isImpersonating`      | `JWT_CLAIM_TYPES.IS_IMPERSONATING`     | Derived from impersonatedBy              | boolean         |
-| `impersonatingEmail`   | `JWT_CLAIM_TYPES.IMPERSONATING_EMAIL`  | DB lookup on impersonator user           | string?         |
-| `impersonatingUsername` | `JWT_CLAIM_TYPES.IMPERSONATING_USERNAME` | DB lookup on impersonator user         | string?         |
-| `fp`                   | `JWT_CLAIM_TYPES.FINGERPRINT`          | `hooks.getFingerprintForCurrentRequest()` | string?         |
+| Claim                   | Constant                                 | Source                                    | Type            |
+| ----------------------- | ---------------------------------------- | ----------------------------------------- | --------------- |
+| `sub`                   | `JWT_CLAIM_TYPES.SUB`                    | `user.id`                                 | string (UUIDv7) |
+| `email`                 | `JWT_CLAIM_TYPES.EMAIL`                  | `user.email`                              | string          |
+| `username`              | `JWT_CLAIM_TYPES.USERNAME`               | `user.username` (auto-generated)          | string          |
+| `orgId`                 | `JWT_CLAIM_TYPES.ORG_ID`                 | `session[ACTIVE_ORG_ID]`                  | string?         |
+| `orgName`               | `JWT_CLAIM_TYPES.ORG_NAME`               | `organization.name`                       | string?         |
+| `orgType`               | `JWT_CLAIM_TYPES.ORG_TYPE`               | `session[ACTIVE_ORG_TYPE]`                | string?         |
+| `role`                  | `JWT_CLAIM_TYPES.ROLE`                   | `session[ACTIVE_ORG_ROLE]`                | string?         |
+| `emulatedOrgId`         | `JWT_CLAIM_TYPES.EMULATED_ORG_ID`        | `session[EMULATED_ORG_ID]`                | string?         |
+| `emulatedOrgName`       | `JWT_CLAIM_TYPES.EMULATED_ORG_NAME`      | Emulated organization name                | string?         |
+| `emulatedOrgType`       | `JWT_CLAIM_TYPES.EMULATED_ORG_TYPE`      | `session[EMULATED_ORG_TYPE]`              | string?         |
+| `isEmulating`           | `JWT_CLAIM_TYPES.IS_EMULATING`           | Derived from emulatedOrgId                | boolean         |
+| `impersonatedBy`        | `JWT_CLAIM_TYPES.IMPERSONATED_BY`        | `session["impersonatedBy"]`               | string?         |
+| `isImpersonating`       | `JWT_CLAIM_TYPES.IS_IMPERSONATING`       | Derived from impersonatedBy               | boolean         |
+| `impersonatingEmail`    | `JWT_CLAIM_TYPES.IMPERSONATING_EMAIL`    | DB lookup on impersonator user            | string?         |
+| `impersonatingUsername` | `JWT_CLAIM_TYPES.IMPERSONATING_USERNAME` | DB lookup on impersonator user            | string?         |
+| `fp`                    | `JWT_CLAIM_TYPES.FINGERPRINT`            | `hooks.getFingerprintForCurrentRequest()` | string?         |
 
 ### .NET Gateway JWT Validation
 
@@ -326,22 +339,22 @@ Two distinct security concepts with different JWT shapes:
 
 **Org Emulation** (staff viewing another org's data read-only):
 
-| Claim | Value |
-|-------|-------|
-| `sub` | Staff user's ID |
-| `orgId` | Staff's own org ID |
-| `emulatedOrgId` | Target org's ID |
-| `isEmulating` | `true` |
-| `role` | Forced to `auditor` by `resolveSessionContext` |
+| Claim           | Value                                          |
+| --------------- | ---------------------------------------------- |
+| `sub`           | Staff user's ID                                |
+| `orgId`         | Staff's own org ID                             |
+| `emulatedOrgId` | Target org's ID                                |
+| `isEmulating`   | `true`                                         |
+| `role`          | Forced to `auditor` by `resolveSessionContext` |
 
 **User Impersonation** (admin acting as another user):
 
-| Claim | Value |
-|-------|-------|
-| `sub` | Impersonated user's ID |
-| `orgId` | Impersonated user's org |
-| `impersonatedBy` | Admin user's ID |
-| `isImpersonating` | `true` |
+| Claim             | Value                   |
+| ----------------- | ----------------------- |
+| `sub`             | Impersonated user's ID  |
+| `orgId`           | Impersonated user's org |
+| `impersonatedBy`  | Admin user's ID         |
+| `isImpersonating` | `true`                  |
 
 **Verified by**: `auth/tests/src/unit/domain/rules/emulation.test.ts`, `.NET: RequestContextJwtTests.cs`
 
@@ -358,6 +371,7 @@ Two independent fingerprint checks prevent token theft:
 **Formula**: `SHA-256(User-Agent + "|" + Accept)`
 
 **Behavior**:
+
 1. On session creation → compute fingerprint, store in Redis (`fp:{sessionId}`)
 2. On subsequent requests → recompute, compare with stored value
 3. **Match** → pass through
@@ -374,6 +388,7 @@ Two independent fingerprint checks prevent token theft:
 **Formula**: `SHA-256(User-Agent + "|" + Accept)` (identical to Node.js)
 
 **Behavior**:
+
 1. JWT's `fp` claim contains hash computed at token issuance time
 2. Gateway recomputes hash from current request headers
 3. **Match** → pass through
@@ -392,12 +407,12 @@ Two independent fingerprint checks prevent token theft:
 
 ### Named Policies (Shared .NET + Node.js)
 
-| Policy | Constant | Requirement |
-|--------|----------|-------------|
-| `Authenticated` | `AUTH_POLICIES.AUTHENTICATED` | Valid JWT / session (any user) |
-| `HasActiveOrg` | `AUTH_POLICIES.HAS_ACTIVE_ORG` | `orgId` + `orgType` + `role` claims present |
-| `StaffOnly` | `AUTH_POLICIES.STAFF_ONLY` | `orgType` ∈ {admin, support} |
-| `AdminOnly` | `AUTH_POLICIES.ADMIN_ONLY` | `orgType` = admin |
+| Policy          | Constant                       | Requirement                                 |
+| --------------- | ------------------------------ | ------------------------------------------- |
+| `Authenticated` | `AUTH_POLICIES.AUTHENTICATED`  | Valid JWT / session (any user)              |
+| `HasActiveOrg`  | `AUTH_POLICIES.HAS_ACTIVE_ORG` | `orgId` + `orgType` + `role` claims present |
+| `StaffOnly`     | `AUTH_POLICIES.STAFF_ONLY`     | `orgType` ∈ {admin, support}                |
+| `AdminOnly`     | `AUTH_POLICIES.ADMIN_ONLY`     | `orgType` = admin                           |
 
 ### .NET Policy Registration
 
@@ -419,15 +434,16 @@ options.RequireOrgTypeAndRole("StaffOfficer", OrgTypeValues.STAFF, RoleValues.OF
 
 Composable middleware factories that read from `c.var.session`:
 
-| Middleware | Checks | Rejects With |
-|------------|--------|-------------|
-| `requireOrg()` | Session has activeOrgId + valid orgType + valid role | 403 (no org) / 401 (no session) |
-| `requireOrgType(...types)` | `activeOrganizationType` ∈ allowed set | 403 |
-| `requireRole(minRole)` | `ROLE_HIERARCHY[activeRole] >= ROLE_HIERARCHY[minRole]` | 403 |
-| `requireStaff()` | Shorthand: `requireOrgType("admin", "support")` | 403 |
-| `requireAdmin()` | Shorthand: `requireOrgType("admin")` | 403 |
+| Middleware                 | Checks                                                  | Rejects With                    |
+| -------------------------- | ------------------------------------------------------- | ------------------------------- |
+| `requireOrg()`             | Session has activeOrgId + valid orgType + valid role    | 403 (no org) / 401 (no session) |
+| `requireOrgType(...types)` | `activeOrganizationType` ∈ allowed set                  | 403                             |
+| `requireRole(minRole)`     | `ROLE_HIERARCHY[activeRole] >= ROLE_HIERARCHY[minRole]` | 403                             |
+| `requireStaff()`           | Shorthand: `requireOrgType("admin", "support")`         | 403                             |
+| `requireAdmin()`           | Shorthand: `requireOrgType("admin")`                    | 403                             |
 
 Composition example:
+
 ```typescript
 app.use("/api/emulation/*", requireOrg(), requireStaff(), requireRole("officer"));
 ```
@@ -438,13 +454,13 @@ app.use("/api/emulation/*", requireOrg(), requireStaff(), requireRole("officer")
 
 `requireRole("officer")` accepts officers AND owners. The `AtOrAbove` function returns:
 
-| Input | Result |
-|-------|--------|
+| Input       | Result                                     |
+| ----------- | ------------------------------------------ |
 | `"auditor"` | `["auditor", "agent", "officer", "owner"]` |
-| `"agent"` | `["agent", "officer", "owner"]` |
-| `"officer"` | `["officer", "owner"]` |
-| `"owner"` | `["owner"]` |
-| `"invalid"` | `[]` |
+| `"agent"`   | `["agent", "officer", "owner"]`            |
+| `"officer"` | `["officer", "owner"]`                     |
+| `"owner"`   | `["owner"]`                                |
+| `"invalid"` | `[]`                                       |
 
 **Verified by**: `.NET: AuthPolicyTests.cs` (AtOrAbove tests), `auth/tests/src/unit/domain/enums/role.test.ts`
 
@@ -492,30 +508,30 @@ The composition root builds the pipeline in this exact order:
 
 **Principle**: "Better to be offline than hacked." Auth checks must NEVER silently degrade to unauthenticated.
 
-| Component | Redis Down | DB Down | Auth Service Down | Behavior | Status Code |
-|-----------|-----------|---------|-------------------|----------|-------------|
-| **Session middleware** (Node.js) | **FAIL-CLOSED** | **FAIL-CLOSED** | N/A (is the auth service) | Returns 503, does NOT treat as unauthenticated | 503 |
-| **JWT validation** (.NET) | N/A (JWKS cached) | N/A | JWKS cache still valid → pass; cache empty → **FAIL-CLOSED** | Cached JWKS keys survive outage | 401 if no cached keys |
-| **Session fingerprint** (Node.js) | FAIL-OPEN | N/A | N/A | Fingerprint check skipped, logs warning | 200 (pass-through) |
-| **JWT fingerprint** (.NET) | N/A | N/A | N/A | No fp claim (non-trusted) → **FAIL-CLOSED** (401). Trusted services → skip. | 401 (non-trusted, no fp) |
-| **Service key detection** (.NET) | N/A | N/A | N/A | Invalid key → 401. No key → pass-through (browser request). | 401 (invalid key) |
-| **Sign-in throttle** (Node.js) | FAIL-OPEN | N/A | N/A | Throttle check skipped, sign-in proceeds normally | 200 (pass-through) |
-| **Rate limiting** (Node.js) | FAIL-OPEN | N/A | N/A | Requests pass through | 200 (pass-through) |
-| **Rate limiting** (.NET) | FAIL-OPEN | N/A | N/A | Requests pass through | 200 (pass-through) |
-| **Secondary storage** (Redis) | FAIL-CLOSED (via session MW) | N/A | N/A | BetterAuth getSession throws → 503 | 503 |
-| **CSRF** | N/A | N/A | N/A | Always enforced (no external deps) | 403 |
-| **CORS** | N/A | N/A | N/A | Always enforced (no external deps) | Blocked by browser |
-| **Authorization middleware** | N/A | N/A | N/A | Always enforced (reads from session) | 401/403 |
+| Component                         | Redis Down                   | DB Down         | Auth Service Down                                            | Behavior                                                                    | Status Code              |
+| --------------------------------- | ---------------------------- | --------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------- | ------------------------ |
+| **Session middleware** (Node.js)  | **FAIL-CLOSED**              | **FAIL-CLOSED** | N/A (is the auth service)                                    | Returns 503, does NOT treat as unauthenticated                              | 503                      |
+| **JWT validation** (.NET)         | N/A (JWKS cached)            | N/A             | JWKS cache still valid → pass; cache empty → **FAIL-CLOSED** | Cached JWKS keys survive outage                                             | 401 if no cached keys    |
+| **Session fingerprint** (Node.js) | FAIL-OPEN                    | N/A             | N/A                                                          | Fingerprint check skipped, logs warning                                     | 200 (pass-through)       |
+| **JWT fingerprint** (.NET)        | N/A                          | N/A             | N/A                                                          | No fp claim (non-trusted) → **FAIL-CLOSED** (401). Trusted services → skip. | 401 (non-trusted, no fp) |
+| **Service key detection** (.NET)  | N/A                          | N/A             | N/A                                                          | Invalid key → 401. No key → pass-through (browser request).                 | 401 (invalid key)        |
+| **Sign-in throttle** (Node.js)    | FAIL-OPEN                    | N/A             | N/A                                                          | Throttle check skipped, sign-in proceeds normally                           | 200 (pass-through)       |
+| **Rate limiting** (Node.js)       | FAIL-OPEN                    | N/A             | N/A                                                          | Requests pass through                                                       | 200 (pass-through)       |
+| **Rate limiting** (.NET)          | FAIL-OPEN                    | N/A             | N/A                                                          | Requests pass through                                                       | 200 (pass-through)       |
+| **Secondary storage** (Redis)     | FAIL-CLOSED (via session MW) | N/A             | N/A                                                          | BetterAuth getSession throws → 503                                          | 503                      |
+| **CSRF**                          | N/A                          | N/A             | N/A                                                          | Always enforced (no external deps)                                          | 403                      |
+| **CORS**                          | N/A                          | N/A             | N/A                                                          | Always enforced (no external deps)                                          | Blocked by browser       |
+| **Authorization middleware**      | N/A                          | N/A             | N/A                                                          | Always enforced (reads from session)                                        | 401/403                  |
 
 ### Critical Fail-Closed Tests
 
 The following tests verify fail-closed behavior:
 
-| Test | File | What It Verifies |
-|------|------|-----------------|
-| `should return 503 when getSession throws` | `auth/tests/.../session.test.ts` | Redis/DB outage → 503 (not 401) |
+| Test                                                   | File                             | What It Verifies                    |
+| ------------------------------------------------------ | -------------------------------- | ----------------------------------- |
+| `should return 503 when getSession throws`             | `auth/tests/.../session.test.ts` | Redis/DB outage → 503 (not 401)     |
 | `should return 503 on infrastructure failure, not 401` | `auth/tests/.../session.test.ts` | Explicit: status is 503 AND NOT 401 |
-| `should not call next when getSession throws` | `auth/tests/.../session.test.ts` | Route handler never reached |
+| `should not call next when getSession throws`          | `auth/tests/.../session.test.ts` | Route handler never reached         |
 
 ---
 
@@ -527,41 +543,41 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 
 #### Commands (C/)
 
-| Handler | Input | Side Effects | Zod Validation | Business Logic |
-|---------|-------|-------------|----------------|----------------|
-| RecordSignInOutcome | identifierHash, identityHash, responseStatus | Redis: mark known-good / increment failures / set lockout | — (pre-hashed input) | Success (200) → markKnownGood + clearFailureState + update local cache. Failure (401/400) → incrementFailures + computeSignInDelay → setLocked if delay > 0. Other status → no-op. Fail-open on all errors |
-| RecordSignInEvent | userId, ipAddress, userAgent, whoIsId?, successful | Writes to `sign_in_event` | userId required | — |
-| CreateEmulationConsent | userId, grantedToOrgId, activeOrgType, expiresAt | Writes to `emulation_consent` | zodGuid, z.enum(ORG_TYPES), future date, max 30d | canEmulate check, org existence, duplicate prevention |
-| RevokeEmulationConsent | consentId, userId | Sets `revoked_at` | zodGuid × 2 | Consent exists, belongs to user, is active |
-| CreateOrgContact | organizationId, label, isPrimary?, contact | Creates `org_contact` junction → Geo contact via gRPC (ext key = junction ID) | zodGuid, zodNonEmptyString, contact sub-fields | Junction created first; Geo contact uses ext key `(org_contact, junction.id)`. Rollback junction on Geo failure |
-| UpdateOrgContact | id, organizationId, updates | Updates metadata or replaces contact via `updateContactsByExtKeys` | zodGuid × 2, at-least-one-field refine, optional contact | IDOR check; if contact provided: atomic replace via Geo ext-key update |
-| DeleteOrgContact | id, organizationId | Deletes junction + best-effort Geo contact cleanup via ext key | zodGuid × 2 | IDOR check; Geo delete failure tolerated (orphan cleanup by Geo job) |
+| Handler                | Input                                              | Side Effects                                                                  | Zod Validation                                           | Business Logic                                                                                                                                                                                             |
+| ---------------------- | -------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RecordSignInOutcome    | identifierHash, identityHash, responseStatus       | Redis: mark known-good / increment failures / set lockout                     | — (pre-hashed input)                                     | Success (200) → markKnownGood + clearFailureState + update local cache. Failure (401/400) → incrementFailures + computeSignInDelay → setLocked if delay > 0. Other status → no-op. Fail-open on all errors |
+| RecordSignInEvent      | userId, ipAddress, userAgent, whoIsId?, successful | Writes to `sign_in_event`                                                     | userId required                                          | —                                                                                                                                                                                                          |
+| CreateEmulationConsent | userId, grantedToOrgId, activeOrgType, expiresAt   | Writes to `emulation_consent`                                                 | zodGuid, z.enum(ORG_TYPES), future date, max 30d         | canEmulate check, org existence, duplicate prevention                                                                                                                                                      |
+| RevokeEmulationConsent | consentId, userId                                  | Sets `revoked_at`                                                             | zodGuid × 2                                              | Consent exists, belongs to user, is active                                                                                                                                                                 |
+| CreateOrgContact       | organizationId, label, isPrimary?, contact         | Creates `org_contact` junction → Geo contact via gRPC (ext key = junction ID) | zodGuid, zodNonEmptyString, contact sub-fields           | Junction created first; Geo contact uses ext key `(org_contact, junction.id)`. Rollback junction on Geo failure                                                                                            |
+| UpdateOrgContact       | id, organizationId, updates                        | Updates metadata or replaces contact via `updateContactsByExtKeys`            | zodGuid × 2, at-least-one-field refine, optional contact | IDOR check; if contact provided: atomic replace via Geo ext-key update                                                                                                                                     |
+| DeleteOrgContact       | id, organizationId                                 | Deletes junction + best-effort Geo contact cleanup via ext key                | zodGuid × 2                                              | IDOR check; Geo delete failure tolerated (orphan cleanup by Geo job)                                                                                                                                       |
 
 #### Queries (Q/)
 
-| Handler | Input | Returns | Pagination |
-|---------|-------|---------|------------|
-| CheckSignInThrottle | identifierHash, identityHash | `{ blocked, retryAfterSec? }` | N/A. Local memory cache for known-good (5min TTL, 0 Redis calls). Cache miss → concurrent `Promise.all(isKnownGood, getLockedTtlSeconds)`. Fail-open on errors |
-| GetSignInEvents | userId, limit?, offset? | SignInEvent[] + total | Default 50, max 100. Local memory cache with staleness check (latest event date) |
-| GetActiveConsents | userId, limit?, offset? | EmulationConsent[] | Default 20, max 100 |
-| GetOrgContacts | organizationId, limit?, offset? | HydratedOrgContact[] | Default 20, max 100. Batch-fetches Geo contact data via ext keys (`getContactsByExtKeys`), joins with junction metadata |
+| Handler             | Input                           | Returns                       | Pagination                                                                                                                                                     |
+| ------------------- | ------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CheckSignInThrottle | identifierHash, identityHash    | `{ blocked, retryAfterSec? }` | N/A. Local memory cache for known-good (5min TTL, 0 Redis calls). Cache miss → concurrent `Promise.all(isKnownGood, getLockedTtlSeconds)`. Fail-open on errors |
+| GetSignInEvents     | userId, limit?, offset?         | SignInEvent[] + total         | Default 50, max 100. Local memory cache with staleness check (latest event date)                                                                               |
+| GetActiveConsents   | userId, limit?, offset?         | EmulationConsent[]            | Default 20, max 100                                                                                                                                            |
+| GetOrgContacts      | organizationId, limit?, offset? | HydratedOrgContact[]          | Default 20, max 100. Batch-fetches Geo contact data via ext keys (`getContactsByExtKeys`), joins with junction metadata                                        |
 
 ### BetterAuth-Managed Operations
 
 These are handled by BetterAuth directly (not custom handlers):
 
-| Operation | BetterAuth Method | Notes |
-|-----------|------------------|-------|
-| Sign up | `emailPassword.signUp` | Pre-generates UUIDv7, creates Geo contact first |
-| Sign in (email) | `emailPassword.signIn` | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded |
-| Sign in (username) | `username.signIn` | Same hooks + throttle guard as email sign-in |
-| Sign out | `signOut` | Revokes session from all 3 tiers |
-| Get session | `getSession` | 3-tier lookup |
-| Create org | `organization.create` | Validates orgType via `beforeCreateOrganization` |
-| Invite member | `organization.inviteMember` | 48h expiry, default role = agent |
-| Accept invitation | `organization.acceptInvitation` | State machine transition |
-| JWKS | `/.well-known/jwks.json` | Auto-rotated key pairs |
-| Impersonation | `admin.impersonateUser` | 1-hour session, requires admin |
+| Operation          | BetterAuth Method               | Notes                                                                                                                                               |
+| ------------------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first. No auto-sign-in — user must verify email. Verification email via RabbitMQ (not yet wired)         |
+| Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                                      |
+| Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                                        |
+| Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                                    |
+| Get session        | `getSession`                    | 3-tier lookup                                                                                                                                       |
+| Create org         | `organization.create`           | Validates orgType via `beforeCreateOrganization`                                                                                                    |
+| Invite member      | `organization.inviteMember`     | 48h expiry, default role = agent                                                                                                                    |
+| Accept invitation  | `organization.acceptInvitation` | State machine transition                                                                                                                            |
+| JWKS               | `/.well-known/jwks.json`        | Auto-rotated key pairs                                                                                                                              |
+| Impersonation      | `admin.impersonateUser`         | 1-hour session, requires admin                                                                                                                      |
 
 ---
 
@@ -620,61 +636,61 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 
 ### JWT Claim Types
 
-| Node.js (`JWT_CLAIM_TYPES`)  | .NET (`JwtClaimTypes`)    | Value                    |
-|------------------------------|---------------------------|--------------------------|
-| `SUB`                        | `SUB`                     | `"sub"`                  |
-| `EMAIL`                      | `EMAIL`                   | `"email"`                |
-| `USERNAME`                   | `USERNAME`                | `"username"`             |
-| `ORG_ID`                     | `ORG_ID`                  | `"orgId"`                |
-| `ORG_NAME`                   | `ORG_NAME`                | `"orgName"`              |
-| `ORG_TYPE`                   | `ORG_TYPE`                | `"orgType"`              |
-| `ROLE`                       | `ROLE`                    | `"role"`                 |
-| `EMULATED_ORG_ID`            | `EMULATED_ORG_ID`         | `"emulatedOrgId"`        |
-| `EMULATED_ORG_NAME`          | `EMULATED_ORG_NAME`       | `"emulatedOrgName"`      |
-| `EMULATED_ORG_TYPE`          | `EMULATED_ORG_TYPE`       | `"emulatedOrgType"`      |
-| `IS_EMULATING`               | `IS_EMULATING`            | `"isEmulating"`          |
-| `IMPERSONATED_BY`            | `IMPERSONATED_BY`         | `"impersonatedBy"`       |
-| `IS_IMPERSONATING`           | `IS_IMPERSONATING`        | `"isImpersonating"`      |
-| `IMPERSONATING_EMAIL`        | `IMPERSONATING_EMAIL`     | `"impersonatingEmail"`   |
-| `IMPERSONATING_USERNAME`     | `IMPERSONATING_USERNAME`  | `"impersonatingUsername"` |
-| `FINGERPRINT`                | `FINGERPRINT`             | `"fp"`                   |
+| Node.js (`JWT_CLAIM_TYPES`) | .NET (`JwtClaimTypes`)   | Value                     |
+| --------------------------- | ------------------------ | ------------------------- |
+| `SUB`                       | `SUB`                    | `"sub"`                   |
+| `EMAIL`                     | `EMAIL`                  | `"email"`                 |
+| `USERNAME`                  | `USERNAME`               | `"username"`              |
+| `ORG_ID`                    | `ORG_ID`                 | `"orgId"`                 |
+| `ORG_NAME`                  | `ORG_NAME`               | `"orgName"`               |
+| `ORG_TYPE`                  | `ORG_TYPE`               | `"orgType"`               |
+| `ROLE`                      | `ROLE`                   | `"role"`                  |
+| `EMULATED_ORG_ID`           | `EMULATED_ORG_ID`        | `"emulatedOrgId"`         |
+| `EMULATED_ORG_NAME`         | `EMULATED_ORG_NAME`      | `"emulatedOrgName"`       |
+| `EMULATED_ORG_TYPE`         | `EMULATED_ORG_TYPE`      | `"emulatedOrgType"`       |
+| `IS_EMULATING`              | `IS_EMULATING`           | `"isEmulating"`           |
+| `IMPERSONATED_BY`           | `IMPERSONATED_BY`        | `"impersonatedBy"`        |
+| `IS_IMPERSONATING`          | `IS_IMPERSONATING`       | `"isImpersonating"`       |
+| `IMPERSONATING_EMAIL`       | `IMPERSONATING_EMAIL`    | `"impersonatingEmail"`    |
+| `IMPERSONATING_USERNAME`    | `IMPERSONATING_USERNAME` | `"impersonatingUsername"` |
+| `FINGERPRINT`               | `FINGERPRINT`            | `"fp"`                    |
 
 ### Auth Policies
 
-| Node.js (`AUTH_POLICIES`) | .NET (`AuthPolicies`) | Value |
-|--------------------------|---------------------|-------|
-| `AUTHENTICATED` | `AUTHENTICATED` | `"Authenticated"` |
-| `HAS_ACTIVE_ORG` | `HAS_ACTIVE_ORG` | `"HasActiveOrg"` |
-| `STAFF_ONLY` | `STAFF_ONLY` | `"StaffOnly"` |
-| `ADMIN_ONLY` | `ADMIN_ONLY` | `"AdminOnly"` |
+| Node.js (`AUTH_POLICIES`) | .NET (`AuthPolicies`) | Value             |
+| ------------------------- | --------------------- | ----------------- |
+| `AUTHENTICATED`           | `AUTHENTICATED`       | `"Authenticated"` |
+| `HAS_ACTIVE_ORG`          | `HAS_ACTIVE_ORG`      | `"HasActiveOrg"`  |
+| `STAFF_ONLY`              | `STAFF_ONLY`          | `"StaffOnly"`     |
+| `ADMIN_ONLY`              | `ADMIN_ONLY`          | `"AdminOnly"`     |
 
 ### Request Headers
 
-| Node.js (`REQUEST_HEADERS`) | .NET (`RequestHeaders`) | Value |
-|----------------------------|----------------------|-------|
-| `IDEMPOTENCY_KEY` | `IDEMPOTENCY_KEY` | `"Idempotency-Key"` |
-| `CLIENT_FINGERPRINT` | `CLIENT_FINGERPRINT` | `"X-Client-Fingerprint"` |
+| Node.js (`REQUEST_HEADERS`) | .NET (`RequestHeaders`) | Value                    |
+| --------------------------- | ----------------------- | ------------------------ |
+| `IDEMPOTENCY_KEY`           | `IDEMPOTENCY_KEY`       | `"Idempotency-Key"`      |
+| `CLIENT_FINGERPRINT`        | `CLIENT_FINGERPRINT`    | `"X-Client-Fingerprint"` |
 
 ### OrgType Values
 
-| Node.js (`ORG_TYPES`) | .NET (`OrgTypeValues`) | .NET Enum |
-|-----------------------|----------------------|-----------|
-| `"admin"` | `ADMIN` | `OrgType.Admin` |
-| `"support"` | `SUPPORT` | `OrgType.Support` |
-| `"customer"` | `CUSTOMER` | `OrgType.Customer` |
-| `"third_party"` | `THIRD_PARTY` | `OrgType.CustomerClient` |
-| `"affiliate"` | `AFFILIATE` | `OrgType.Affiliate` |
+| Node.js (`ORG_TYPES`) | .NET (`OrgTypeValues`) | .NET Enum                |
+| --------------------- | ---------------------- | ------------------------ |
+| `"admin"`             | `ADMIN`                | `OrgType.Admin`          |
+| `"support"`           | `SUPPORT`              | `OrgType.Support`        |
+| `"customer"`          | `CUSTOMER`             | `OrgType.Customer`       |
+| `"third_party"`       | `THIRD_PARTY`          | `OrgType.CustomerClient` |
+| `"affiliate"`         | `AFFILIATE`            | `OrgType.Affiliate`      |
 
 **Note**: `"third_party"` maps to `OrgType.CustomerClient` in .NET (pre-existing naming difference).
 
 ### Role Values
 
 | Node.js (`ROLES`) | .NET (`RoleValues`) | Hierarchy Level |
-|-------------------|-------------------|-----------------|
-| `"auditor"` | `AUDITOR` | 0 (lowest) |
-| `"agent"` | `AGENT` | 1 |
-| `"officer"` | `OFFICER` | 2 |
-| `"owner"` | `OWNER` | 3 (highest) |
+| ----------------- | ------------------- | --------------- |
+| `"auditor"`       | `AUDITOR`           | 0 (lowest)      |
+| `"agent"`         | `AGENT`             | 1               |
+| `"officer"`       | `OFFICER`           | 2               |
+| `"owner"`         | `OWNER`             | 3 (highest)     |
 
 ---
 
@@ -682,19 +698,19 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 
 ### Defense-in-Depth Layers
 
-| Layer | Control | Location |
-|-------|---------|----------|
-| Transport | HTTPS (TLS) | Load balancer / reverse proxy |
-| CORS | Origin whitelist | Both Node.js and .NET |
-| CSRF | Content-Type + Origin validation | Node.js (auth API) |
-| Rate Limiting | Per-IP (Node.js), Multi-dimensional (.NET) | Both |
-| Brute-Force Throttle | Progressive delay per (identifier, identity), known-good bypass | Node.js (auth API) |
-| Authentication | Cookie session (SvelteKit) / JWT (gateway) | Both |
-| Fingerprint Binding | SHA-256(UA\|Accept) → session store + JWT claim | Both |
-| Authorization | Policy-based (orgType + role hierarchy) | Both |
-| Input Validation | Zod schemas in handlers (Node.js), FluentValidation (.NET) | Both |
-| IDOR Prevention | Session-scoped org ID + handler ownership check | App-layer handlers |
-| Idempotency | Redis-backed request dedup | .NET gateway (external-facing) |
+| Layer                | Control                                                         | Location                       |
+| -------------------- | --------------------------------------------------------------- | ------------------------------ |
+| Transport            | HTTPS (TLS)                                                     | Load balancer / reverse proxy  |
+| CORS                 | Origin whitelist                                                | Both Node.js and .NET          |
+| CSRF                 | Content-Type + Origin validation                                | Node.js (auth API)             |
+| Rate Limiting        | Per-IP (Node.js), Multi-dimensional (.NET)                      | Both                           |
+| Brute-Force Throttle | Progressive delay per (identifier, identity), known-good bypass | Node.js (auth API)             |
+| Authentication       | Cookie session (SvelteKit) / JWT (gateway)                      | Both                           |
+| Fingerprint Binding  | SHA-256(UA\|Accept) → session store + JWT claim                 | Both                           |
+| Authorization        | Policy-based (orgType + role hierarchy)                         | Both                           |
+| Input Validation     | Zod schemas in handlers (Node.js), FluentValidation (.NET)      | Both                           |
+| IDOR Prevention      | Session-scoped org ID + handler ownership check                 | App-layer handlers             |
+| Idempotency          | Redis-backed request dedup                                      | .NET gateway (external-facing) |
 
 ### Password Security
 
@@ -707,11 +723,11 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 
 ### Token Storage Rules
 
-| Token | Storage | Why |
-|-------|---------|-----|
-| Session cookie | HTTP-only, Secure, SameSite=Lax | XSS-proof. CSRF protection via `lax` (blocks cross-site POST) |
-| JWT | In-memory only (JavaScript variable) | Never localStorage/sessionStorage (XSS risk) |
-| JWKS private key | PostgreSQL (`jwks` table) | Auto-rotated, never exposed |
+| Token            | Storage                              | Why                                                           |
+| ---------------- | ------------------------------------ | ------------------------------------------------------------- |
+| Session cookie   | HTTP-only, Secure, SameSite=Lax      | XSS-proof. CSRF protection via `lax` (blocks cross-site POST) |
+| JWT              | In-memory only (JavaScript variable) | Never localStorage/sessionStorage (XSS risk)                  |
+| JWKS private key | PostgreSQL (`jwks` table)            | Auto-rotated, never exposed                                   |
 
 ---
 
@@ -721,45 +737,45 @@ These are documented trade-offs and gaps identified during security audit. Items
 
 ### Must Fix Before Production
 
-| # | Gap | Severity | Details | Mitigation |
-|---|-----|----------|---------|------------|
-| 1 | ~~**Fingerprint (`fp`) claim optional in JWT**~~ | ~~HIGH~~ | **RESOLVED.** `JwtFingerprintMiddleware` now requires `fp` claim for all non-trusted requests (returns 401 `MISSING_FINGERPRINT`). Trusted services (identified by `ServiceKeyMiddleware` via `X-Api-Key`) skip fingerprint validation entirely. | Implemented in `ServiceKeyMiddleware` + updated `JwtFingerprintMiddleware`. |
-| 2 | **Email verification not enforced** | HIGH | Users can sign up and immediately access the app with unverified email. Enables throwaway email abuse, weakens account recovery. | Configure `emailVerification.sendOnSignUp: true` in BetterAuth. Gate org creation/membership on `emailVerified: true`. Requires notification scaffold. |
-| 3 | ~~**No password policy**~~ | ~~HIGH~~ | **RESOLVED.** Min 12 / max 128 (BetterAuth native `minPasswordLength` / `maxPasswordLength`). HIBP k-anonymity check via SHA-1 prefix caching (24h TTL, fail-open). Local blocklist (~200 common passwords, always-on). Blocks numeric-only and date-pattern passwords. No composition rules. | Implemented in `password-rules.ts` (domain) + `password-hooks.ts` (infra). |
+| #   | Gap                                              | Severity | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Mitigation                                                                       |
+| --- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| 1   | ~~**Fingerprint (`fp`) claim optional in JWT**~~ | ~~HIGH~~ | **RESOLVED.** `JwtFingerprintMiddleware` now requires `fp` claim for all non-trusted requests (returns 401 `MISSING_FINGERPRINT`). Trusted services (identified by `ServiceKeyMiddleware` via `X-Api-Key`) skip fingerprint validation entirely.                                                                                                                                                                                                                                                                               | Implemented in `ServiceKeyMiddleware` + updated `JwtFingerprintMiddleware`.      |
+| 2   | ~~**Email verification not enforced**~~          | ~~HIGH~~ | **RESOLVED.** `requireEmailVerification: true` blocks sign-in for unverified emails. `autoSignIn: false` prevents session creation at sign-up. `sendOnSignIn: true` re-sends on blocked sign-in attempt. `autoSignInAfterVerification: true` creates session after verification. Actual email delivery will be outbound RabbitMQ message via handler (not yet wired). OAuth providers set `emailVerified: true` automatically — verification only affects email/password sign-ups.                                              | Implemented in `auth-factory.ts`. 3 integration tests in `auth-factory.test.ts`. |
+| 3   | ~~**No password policy**~~                       | ~~HIGH~~ | **RESOLVED.** Min 12 / max 128 (BetterAuth native `minPasswordLength` / `maxPasswordLength`). HIBP k-anonymity check via SHA-1 prefix caching (24h TTL, fail-open). Local blocklist (~200 common passwords, always-on). Blocks numeric-only and date-pattern passwords. No composition rules.                                                                                                                                                                                                                                  | Implemented in `password-rules.ts` (domain) + `password-hooks.ts` (infra).       |
 
 ### Must Fix Before Beta
 
-| # | Gap | Severity | Details | Mitigation |
-|---|-----|----------|---------|------------|
-| 4 | ~~**No per-account brute-force lockout**~~ | ~~MEDIUM~~ | **RESOLVED.** Progressive delay per (IP+fingerprint, email/username): 3 free attempts then escalating delays (5s → 15s → 30s → 1m → 5m → 15m max). Known-good identity bypass with local memory cache (0 Redis calls for legitimate users on known devices). Fail-open on Redis errors. Never hard-locks accounts. Both `/sign-in/email` and `/sign-in/username` protected. | `CheckSignInThrottle` (query) + `RecordSignInOutcome` (command) + `SignInThrottleStore` (infra). |
-| 5 | ~~**`sameSite` cookie attribute not explicitly set**~~ | ~~MEDIUM~~ | **RESOLVED.** `cookieOptions: { sameSite: "lax" }` set explicitly in BetterAuth config (`auth-factory.ts`). Protects against CSRF on POST while allowing link navigation. | Implemented in `auth-factory.ts`. |
-| 6 | ~~**RecordSignInEvent missing Zod validation**~~ | ~~MEDIUM~~ | **RESOLVED.** Zod schema validates `userId` (UUID), `ipAddress` (max 45), `userAgent` (max 512), `whoIsId` (max 64 nullable). `validateInput()` called at top of `executeAsync()`. | Implemented in `record-sign-in-event.ts`. 4 validation tests added. |
-| 7 | ~~**Contact handler string fields unbounded**~~ | ~~MEDIUM~~ | **RESOLVED.** Zod schemas centralized in `@d2/geo-client` (`contactInputSchema`) as single source of truth — Auth handlers import and compose. Limits match Geo's EF Core/FluentValidation: names (255), title (20), generationalSuffix (10), company/job/department (255), addresses (255), city (255), postalCode (16), email (254), phone (20), labels (50), country code (2), subdivision (6), website (2048). .NET side: `ContactToCreateValidator` moved from `Geo.App` to `Geo.Client` for the same reuse pattern. | 5 boundary tests in `create-org-contact.test.ts`. |
-| 8 | **`impersonatedBy` leaks admin identity in JWT** | MEDIUM | Admin user ID embedded in JWT when impersonating. JWT interception reveals which accounts have impersonation privileges. | Consider hashing the value or keeping it server-side only (session, not JWT). |
+| #   | Gap                                                    | Severity   | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Mitigation                                                                                       |
+| --- | ------------------------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 4   | ~~**No per-account brute-force lockout**~~             | ~~MEDIUM~~ | **RESOLVED.** Progressive delay per (IP+fingerprint, email/username): 3 free attempts then escalating delays (5s → 15s → 30s → 1m → 5m → 15m max). Known-good identity bypass with local memory cache (0 Redis calls for legitimate users on known devices). Fail-open on Redis errors. Never hard-locks accounts. Both `/sign-in/email` and `/sign-in/username` protected.                                                                                                                                               | `CheckSignInThrottle` (query) + `RecordSignInOutcome` (command) + `SignInThrottleStore` (infra). |
+| 5   | ~~**`sameSite` cookie attribute not explicitly set**~~ | ~~MEDIUM~~ | **RESOLVED.** `cookieOptions: { sameSite: "lax" }` set explicitly in BetterAuth config (`auth-factory.ts`). Protects against CSRF on POST while allowing link navigation.                                                                                                                                                                                                                                                                                                                                                 | Implemented in `auth-factory.ts`.                                                                |
+| 6   | ~~**RecordSignInEvent missing Zod validation**~~       | ~~MEDIUM~~ | **RESOLVED.** Zod schema validates `userId` (UUID), `ipAddress` (max 45), `userAgent` (max 512), `whoIsId` (max 64 nullable). `validateInput()` called at top of `executeAsync()`.                                                                                                                                                                                                                                                                                                                                        | Implemented in `record-sign-in-event.ts`. 4 validation tests added.                              |
+| 7   | ~~**Contact handler string fields unbounded**~~        | ~~MEDIUM~~ | **RESOLVED.** Zod schemas centralized in `@d2/geo-client` (`contactInputSchema`) as single source of truth — Auth handlers import and compose. Limits match Geo's EF Core/FluentValidation: names (255), title (20), generationalSuffix (10), company/job/department (255), addresses (255), city (255), postalCode (16), email (254), phone (20), labels (50), country code (2), subdivision (6), website (2048). .NET side: `ContactToCreateValidator` moved from `Geo.App` to `Geo.Client` for the same reuse pattern. | 5 boundary tests in `create-org-contact.test.ts`.                                                |
+| 8   | ~~**`impersonatedBy` leaks admin identity in JWT**~~   | ~~MEDIUM~~ | **ACCEPTED RISK.** Admin user ID in JWT is an opaque UUIDv7 — reveals nothing about the admin account without database access. JWTs are short-lived (15min), transmitted over TLS, and fingerprint-bound. The value is needed for audit trails in downstream services. Hashing would lose the ability to look up the impersonator.                                                                                                                                                                                        | Accepted as low-risk design trade-off.                                                           |
 
 ### Track for GA
 
-| # | Gap | Severity | Details | Status |
-|---|-----|----------|---------|--------|
-| 9 | ~~**Rate limiting is single-instance (in-memory)**~~ | ~~LOW~~ | **RESOLVED.** Auth API uses `createDistributedRateLimitMiddleware` backed by `@d2/ratelimit` (Redis-backed sliding window via `@d2/interfaces`). Multi-instance safe. | Implemented in `distributed-rate-limit.ts` middleware + composition root. |
-| 10 | ~~**Session fingerprint fail-open on Redis error**~~ | ~~LOW~~ | **Not a gap.** Moved to Documented Assumptions — this is intentional (availability > security for defense-in-depth layer). | See Documented Assumptions. |
-| 11 | ~~**CreateEmulationConsent DB error not caught gracefully**~~ | ~~LOW~~ | **RESOLVED.** PG unique violation (`23505`) handled in infra-layer repo handler (`CreateEmulationConsentRecord`) → returns D2Result.fail(409 Conflict). App handler (`CreateEmulationConsent`) uses `bubbleFail()` — no PG error codes in app layer. Non-PG errors propagate as thrown (BaseHandler wraps as 500 UNHANDLED_EXCEPTION). | Implemented in repo handler + app handler. 2 tests added (PG 23505 → 409 propagation, non-PG → 500). |
-| 12 | ~~**GetActiveConsents no default pagination**~~ | ~~LOW~~ | **RESOLVED.** Default `limit: 50`, `offset: 0` applied via `input.limit ?? 50`, `input.offset ?? 0`. Existing `.max(100)` on limit unchanged. | Implemented in `get-active-consents.ts`. 2 tests added (default values, custom passthrough). |
-| 13 | ~~**JWKS caching not explicitly configured on .NET gateway**~~ | ~~LOW~~ | **RESOLVED.** `JwtAuthOptions.JwksAutoRefreshInterval` (8h) and `JwksRefreshInterval` (5min) now explicit and configurable. Auth JWKS endpoint returns `Cache-Control: public, max-age=3600`. | Implemented in `JwtAuthOptions` + `JwtAuthExtensions` (.NET) and `auth-routes.ts` (Node.js). |
+| #   | Gap                                                            | Severity | Details                                                                                                                                                                                                                                                                                                                                | Status                                                                                               |
+| --- | -------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 9   | ~~**Rate limiting is single-instance (in-memory)**~~           | ~~LOW~~  | **RESOLVED.** Auth API uses `createDistributedRateLimitMiddleware` backed by `@d2/ratelimit` (Redis-backed sliding window via `@d2/interfaces`). Multi-instance safe.                                                                                                                                                                  | Implemented in `distributed-rate-limit.ts` middleware + composition root.                            |
+| 10  | ~~**Session fingerprint fail-open on Redis error**~~           | ~~LOW~~  | **Not a gap.** Moved to Documented Assumptions — this is intentional (availability > security for defense-in-depth layer).                                                                                                                                                                                                             | See Documented Assumptions.                                                                          |
+| 11  | ~~**CreateEmulationConsent DB error not caught gracefully**~~  | ~~LOW~~  | **RESOLVED.** PG unique violation (`23505`) handled in infra-layer repo handler (`CreateEmulationConsentRecord`) → returns D2Result.fail(409 Conflict). App handler (`CreateEmulationConsent`) uses `bubbleFail()` — no PG error codes in app layer. Non-PG errors propagate as thrown (BaseHandler wraps as 500 UNHANDLED_EXCEPTION). | Implemented in repo handler + app handler. 2 tests added (PG 23505 → 409 propagation, non-PG → 500). |
+| 12  | ~~**GetActiveConsents no default pagination**~~                | ~~LOW~~  | **RESOLVED.** Default `limit: 50`, `offset: 0` applied via `input.limit ?? 50`, `input.offset ?? 0`. Existing `.max(100)` on limit unchanged.                                                                                                                                                                                          | Implemented in `get-active-consents.ts`. 2 tests added (default values, custom passthrough).         |
+| 13  | ~~**JWKS caching not explicitly configured on .NET gateway**~~ | ~~LOW~~  | **RESOLVED.** `JwtAuthOptions.JwksAutoRefreshInterval` (8h) and `JwksRefreshInterval` (5min) now explicit and configurable. Auth JWKS endpoint returns `Cache-Control: public, max-age=3600`.                                                                                                                                          | Implemented in `JwtAuthOptions` + `JwtAuthExtensions` (.NET) and `auth-routes.ts` (Node.js).         |
 
 ### Documented Assumptions
 
 These are intentional design decisions, not bugs:
 
-| Assumption | Rationale |
-|------------|-----------|
-| Session middleware fails closed (503) on infrastructure errors | "Better offline than hacked" — prevents auth degradation to unauthenticated |
-| JWT fingerprint uses `SHA-256(UA\|Accept)` only | Lightweight check; not a substitute for TLS or token rotation. Attackers who control the UA+Accept headers AND have the JWT can bypass, but this raises the bar vs casual token theft |
-| Rate limiting fails open when Redis is down | Availability-first; DOS protection is best-effort |
-| Sign-in throttle fails open when Redis is down | Availability-first; brute-force protection is best-effort. Primary auth (session) still fails closed |
-| Session fingerprint fails open when Redis is down | Fingerprint binding is a defense-in-depth layer, not primary auth. Skipping the check on Redis outage preserves availability. Primary auth (session validation) still fails closed (503) |
-| CSRF uses Content-Type + Origin dual check (no CSRF token) | Hono auth routes are JSON-only APIs, not form submissions. Origin check prevents cross-site requests. Content-Type check prevents `<form>` submissions |
-| BetterAuth is session-based, JWTs are secondary | JWTs are only for .NET gateway calls. Browser↔SvelteKit always uses cookie sessions |
+| Assumption                                                     | Rationale                                                                                                                                                                                |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Session middleware fails closed (503) on infrastructure errors | "Better offline than hacked" — prevents auth degradation to unauthenticated                                                                                                              |
+| JWT fingerprint uses `SHA-256(UA\|Accept)` only                | Lightweight check; not a substitute for TLS or token rotation. Attackers who control the UA+Accept headers AND have the JWT can bypass, but this raises the bar vs casual token theft    |
+| Rate limiting fails open when Redis is down                    | Availability-first; DOS protection is best-effort                                                                                                                                        |
+| Sign-in throttle fails open when Redis is down                 | Availability-first; brute-force protection is best-effort. Primary auth (session) still fails closed                                                                                     |
+| Session fingerprint fails open when Redis is down              | Fingerprint binding is a defense-in-depth layer, not primary auth. Skipping the check on Redis outage preserves availability. Primary auth (session validation) still fails closed (503) |
+| CSRF uses Content-Type + Origin dual check (no CSRF token)     | Hono auth routes are JSON-only APIs, not form submissions. Origin check prevents cross-site requests. Content-Type check prevents `<form>` submissions                                   |
+| BetterAuth is session-based, JWTs are secondary                | JWTs are only for .NET gateway calls. Browser↔SvelteKit always uses cookie sessions                                                                                                      |
 
 ---
 
@@ -813,75 +829,80 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 
 ### .NET Tests (Gateway Auth)
 
-| Test File | Tests | Coverage |
-|-----------|-------|---------|
-| `JwtFingerprintValidatorTests.cs` | 8 | SHA-256 formula, cross-platform parity, edge cases |
-| `JwtFingerprintMiddlewareTests.cs` | 8 | Match/mismatch, no fp claim, no auth, case-insensitive, D2Result body, short claim |
-| `RequestContextJwtTests.cs` | 14 | All claim extraction, OrgType mapping, missing claims, target header, impersonation |
-| `RequestContextDeriveRelationshipTests.cs` | 15 | All 5 DeriveRelationship branches, edge cases, null HttpContext |
-| `AuthPolicyTests.cs` | 14 | AtOrAbove (5), OrgTypeValues (2), AddD2Policies (4), RequireOrgType (1), RequireRole (1), RequireOrgTypeAndRole (1) |
-| **Subtotal** | **59** | |
+| Test File                                  | Tests  | Coverage                                                                                                            |
+| ------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------- |
+| `JwtFingerprintValidatorTests.cs`          | 8      | SHA-256 formula, cross-platform parity, edge cases                                                                  |
+| `JwtFingerprintMiddlewareTests.cs`         | 8      | Match/mismatch, no fp claim, no auth, case-insensitive, D2Result body, short claim                                  |
+| `RequestContextJwtTests.cs`                | 14     | All claim extraction, OrgType mapping, missing claims, target header, impersonation                                 |
+| `RequestContextDeriveRelationshipTests.cs` | 15     | All 5 DeriveRelationship branches, edge cases, null HttpContext                                                     |
+| `AuthPolicyTests.cs`                       | 14     | AtOrAbove (5), OrgTypeValues (2), AddD2Policies (4), RequireOrgType (1), RequireRole (1), RequireOrgTypeAndRole (1) |
+| **Subtotal**                               | **59** |                                                                                                                     |
 
 ### Node.js Tests (Auth Service)
 
-| Test File | Tests | Coverage |
-|-----------|-------|---------|
-| **API Layer** | | |
-| `middleware/authorization.test.ts` | 23 | requireOrg, requireOrgType, requireRole, requireStaff, requireAdmin, composition |
-| `middleware/session.test.ts` | 7 | Success, 401 unauthenticated, 503 fail-closed, header forwarding |
-| `middleware/session-fingerprint.test.ts` | — | SHA-256 computation, mismatch revocation, Redis storage |
-| `middleware/csrf.test.ts` | — | Content-Type + Origin validation |
-| `middleware/distributed-rate-limit.test.ts` | — | Multi-dimensional sliding-window rate limiting |
-| `middleware/error-handler.test.ts` | — | D2Result-shaped error responses |
-| `middleware/jwt-fingerprint.test.ts` | — | JWT fp claim computation |
-| `routes/auth-routes.test.ts` | 27 | Cache-Control on .well-known, throttle guard (429/Retry-After/blocked/allowed), fire-and-forget record, edge cases, case-insensitive hashing, username path, requestInfo propagation |
-| `routes/emulation-routes.test.ts` | 26 | Middleware auth (role + staff), input mapping, status codes, pagination |
-| `routes/org-contact-routes.test.ts` | 25 | Middleware auth (role), input mapping, status codes, pagination, no-org, contact details |
-| **Domain Layer** | | |
-| `domain/enums/*.test.ts` | — | OrgType, Role, InvitationStatus validation + guards |
-| `domain/entities/*.test.ts` | — | Factory functions, immutability, validation |
-| `domain/rules/*.test.ts` | — | Emulation, membership, org-creation, invitation state machine, sign-in throttle delay curve (12 tests) |
-| `domain/exceptions/*.test.ts` | — | Error structures |
-| **Infra Layer** | | |
-| `infra/access-control.test.ts` | — | RBAC permission definitions |
-| `infra/mappers/*.test.ts` | — | BetterAuth → domain mapping (5 mappers) |
-| `infra/secondary-storage.test.ts` | — | Redis adapter contract |
-| `infra/sign-in-throttle-store.test.ts` | 11 | Redis key prefixes, handler delegation, TTL conversion, failure fallbacks |
-| **App Layer** | | |
-| `app/handlers/c/*.test.ts` | — | All command handlers |
-| `app/handlers/q/*.test.ts` | — | All query handlers |
-| **Integration Tests** | | |
-| `integration/migration.test.ts` | 14 | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index |
-| `integration/custom-table-repositories.test.ts` | 26 | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints) |
-| `integration/better-auth-tables.test.ts` | 8 | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance |
-| **Total auth-tests** | **599** | 551 unit + 48 integration (Testcontainers PostgreSQL 18) |
+| Test File                                       | Tests   | Coverage                                                                                                                                                                             |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **API Layer**                                   |         |                                                                                                                                                                                      |
+| `middleware/authorization.test.ts`              | 23      | requireOrg, requireOrgType, requireRole, requireStaff, requireAdmin, composition                                                                                                     |
+| `middleware/session.test.ts`                    | 7       | Success, 401 unauthenticated, 503 fail-closed, header forwarding                                                                                                                     |
+| `middleware/session-fingerprint.test.ts`        | —       | SHA-256 computation, mismatch revocation, Redis storage                                                                                                                              |
+| `middleware/csrf.test.ts`                       | —       | Content-Type + Origin validation                                                                                                                                                     |
+| `middleware/distributed-rate-limit.test.ts`     | —       | Multi-dimensional sliding-window rate limiting                                                                                                                                       |
+| `middleware/error-handler.test.ts`              | —       | D2Result-shaped error responses                                                                                                                                                      |
+| `middleware/jwt-fingerprint.test.ts`            | —       | JWT fp claim computation                                                                                                                                                             |
+| `routes/auth-routes.test.ts`                    | 27      | Cache-Control on .well-known, throttle guard (429/Retry-After/blocked/allowed), fire-and-forget record, edge cases, case-insensitive hashing, username path, requestInfo propagation |
+| `routes/emulation-routes.test.ts`               | 26      | Middleware auth (role + staff), input mapping, status codes, pagination                                                                                                              |
+| `routes/org-contact-routes.test.ts`             | 25      | Middleware auth (role), input mapping, status codes, pagination, no-org, contact details                                                                                             |
+| **Domain Layer**                                |         |                                                                                                                                                                                      |
+| `domain/enums/*.test.ts`                        | —       | OrgType, Role, InvitationStatus validation + guards                                                                                                                                  |
+| `domain/entities/*.test.ts`                     | —       | Factory functions, immutability, validation                                                                                                                                          |
+| `domain/rules/*.test.ts`                        | —       | Emulation, membership, org-creation, invitation state machine, sign-in throttle delay curve (12 tests)                                                                               |
+| `domain/exceptions/*.test.ts`                   | —       | Error structures                                                                                                                                                                     |
+| **Infra Layer**                                 |         |                                                                                                                                                                                      |
+| `infra/access-control.test.ts`                  | —       | RBAC permission definitions                                                                                                                                                          |
+| `infra/mappers/*.test.ts`                       | —       | BetterAuth → domain mapping (5 mappers)                                                                                                                                              |
+| `infra/secondary-storage.test.ts`               | —       | Redis adapter contract                                                                                                                                                               |
+| `infra/sign-in-throttle-store.test.ts`          | 11      | Redis key prefixes, handler delegation, TTL conversion, failure fallbacks                                                                                                            |
+| **App Layer**                                   |         |                                                                                                                                                                                      |
+| `app/handlers/c/*.test.ts`                      | —       | All command handlers                                                                                                                                                                 |
+| `app/handlers/q/*.test.ts`                      | —       | All query handlers                                                                                                                                                                   |
+| **Integration Tests**                           |         |                                                                                                                                                                                      |
+| `integration/migration.test.ts`                 | 14      | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index                                                                                             |
+| `integration/custom-table-repositories.test.ts` | 26      | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints)                                                                                                    |
+| `integration/auth-factory.test.ts`              | 18      | Email verification (3), full E2E flow, UUIDv7, session hooks, user row completeness, JWT claims (all 14), org+orgType, password validation, session fields                           |
+| `integration/better-auth-tables.test.ts`        | 8       | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance                                                                                                                 |
+| **Total auth-tests**                            | **693** | 641 unit + 52 integration (Testcontainers PostgreSQL 18)                                                                                                                             |
 
 ### Key Security Behaviors Verified by Tests
 
-| Security Property | Verified By |
-|-------------------|-------------|
-| Session middleware fails closed (503, not 401) on infra errors | `session.test.ts` |
-| JWT fingerprint mismatch returns 401 | `JwtFingerprintMiddlewareTests.cs` |
-| Short fingerprint claims don't crash middleware | `JwtFingerprintMiddlewareTests.cs` |
-| No fp claim → backwards-compatible pass-through | `JwtFingerprintMiddlewareTests.cs` |
-| Only RS256 algorithm accepted | `JwtAuthExtensions.cs` configuration |
-| Signed tokens required | `JwtAuthExtensions.cs` configuration |
-| Authorization policies require authenticated user | `AuthPolicyTests.cs` |
-| Role hierarchy correctly computed (AtOrAbove) | `AuthPolicyTests.cs`, `role.test.ts` |
-| Emulation forced to auditor role | `emulation.test.ts` |
-| IDOR prevention (org ID from session, ownership check in handler) | `update-org-contact.test.ts`, `delete-org-contact.test.ts` |
-| Input validation (Zod schemas: UUID, string length, date range) | Handler test files (`create-*.test.ts`, `update-*.test.ts`, `record-sign-in-event.test.ts`) |
-| PG unique violation (23505) → 409 Conflict (not 500) | `create-emulation-consent.test.ts` |
-| Default pagination (limit 50, offset 0) on list queries | `get-active-consents.test.ts` |
-| Contact string fields bounded (aligned with Geo: names ≤255, phone ≤20, company ≤255, etc.) | `create-org-contact.test.ts` |
-| Brute-force throttle blocks with 429 + Retry-After header | `auth-routes.test.ts` |
-| Brute-force throttle never blocks known-good identities (even during attack) | `check-sign-in-throttle.test.ts` |
-| Brute-force throttle fail-open on Redis/cache errors | `check-sign-in-throttle.test.ts`, `record-sign-in-outcome.test.ts` |
-| Successful sign-in marks identity as known-good + clears failures | `record-sign-in-outcome.test.ts` |
-| Progressive delay escalates correctly (3 free → 5s → ... → 15m max) | `sign-in-throttle-rules.test.ts` |
-| Null/missing HttpContext returns safe defaults | `RequestContextDeriveRelationshipTests.cs` |
-| Unknown orgType returns null (not exception) | `RequestContextDeriveRelationshipTests.cs` |
-| All 5 DeriveRelationship branches tested | `RequestContextDeriveRelationshipTests.cs` |
+| Security Property                                                                           | Verified By                                                                                 |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Sign-up does NOT auto-sign-in (email unverified)                                            | `auth-factory.test.ts`                                                                      |
+| Sign-in blocked when email not verified                                                     | `auth-factory.test.ts`                                                                      |
+| Sign-in succeeds after email verification                                                   | `auth-factory.test.ts`                                                                      |
+| Verification email delivery via RabbitMQ (not yet wired — config ready)                     | `auth-factory.test.ts`                                                                      |
+| Session middleware fails closed (503, not 401) on infra errors                              | `session.test.ts`                                                                           |
+| JWT fingerprint mismatch returns 401                                                        | `JwtFingerprintMiddlewareTests.cs`                                                          |
+| Short fingerprint claims don't crash middleware                                             | `JwtFingerprintMiddlewareTests.cs`                                                          |
+| No fp claim → backwards-compatible pass-through                                             | `JwtFingerprintMiddlewareTests.cs`                                                          |
+| Only RS256 algorithm accepted                                                               | `JwtAuthExtensions.cs` configuration                                                        |
+| Signed tokens required                                                                      | `JwtAuthExtensions.cs` configuration                                                        |
+| Authorization policies require authenticated user                                           | `AuthPolicyTests.cs`                                                                        |
+| Role hierarchy correctly computed (AtOrAbove)                                               | `AuthPolicyTests.cs`, `role.test.ts`                                                        |
+| Emulation forced to auditor role                                                            | `emulation.test.ts`                                                                         |
+| IDOR prevention (org ID from session, ownership check in handler)                           | `update-org-contact.test.ts`, `delete-org-contact.test.ts`                                  |
+| Input validation (Zod schemas: UUID, string length, date range)                             | Handler test files (`create-*.test.ts`, `update-*.test.ts`, `record-sign-in-event.test.ts`) |
+| PG unique violation (23505) → 409 Conflict (not 500)                                        | `create-emulation-consent.test.ts`                                                          |
+| Default pagination (limit 50, offset 0) on list queries                                     | `get-active-consents.test.ts`                                                               |
+| Contact string fields bounded (aligned with Geo: names ≤255, phone ≤20, company ≤255, etc.) | `create-org-contact.test.ts`                                                                |
+| Brute-force throttle blocks with 429 + Retry-After header                                   | `auth-routes.test.ts`                                                                       |
+| Brute-force throttle never blocks known-good identities (even during attack)                | `check-sign-in-throttle.test.ts`                                                            |
+| Brute-force throttle fail-open on Redis/cache errors                                        | `check-sign-in-throttle.test.ts`, `record-sign-in-outcome.test.ts`                          |
+| Successful sign-in marks identity as known-good + clears failures                           | `record-sign-in-outcome.test.ts`                                                            |
+| Progressive delay escalates correctly (3 free → 5s → ... → 15m max)                         | `sign-in-throttle-rules.test.ts`                                                            |
+| Null/missing HttpContext returns safe defaults                                              | `RequestContextDeriveRelationshipTests.cs`                                                  |
+| Unknown orgType returns null (not exception)                                                | `RequestContextDeriveRelationshipTests.cs`                                                  |
+| All 5 DeriveRelationship branches tested                                                    | `RequestContextDeriveRelationshipTests.cs`                                                  |
 
 ---
 

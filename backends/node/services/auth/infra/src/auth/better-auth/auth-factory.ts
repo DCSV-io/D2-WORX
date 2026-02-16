@@ -89,10 +89,18 @@ export function createAuth(
 
     emailAndPassword: {
       enabled: true,
-      autoSignIn: true,
+      autoSignIn: false,
+      requireEmailVerification: true,
       minPasswordLength: config.passwordMinLength ?? AUTH_CONFIG_DEFAULTS.passwordMinLength,
       maxPasswordLength: config.passwordMaxLength ?? AUTH_CONFIG_DEFAULTS.passwordMaxLength,
       password: hooks?.passwordFunctions,
+    },
+
+    emailVerification: {
+      sendOnSignUp: true,
+      sendOnSignIn: true,
+      autoSignInAfterVerification: true,
+      // sendVerificationEmail: wired by composition root via RabbitMQ handler (not yet built)
     },
 
     session: {

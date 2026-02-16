@@ -59,6 +59,24 @@ export type {
 
 export type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 
+// --- Interfaces (Messaging Publisher Handlers) ---
+export type {
+  NotificationPublisherHandlers,
+  IPublishVerificationEmailHandler,
+  PublishVerificationEmailOutput,
+  IPublishPasswordResetHandler,
+  PublishPasswordResetOutput,
+  IPublishInvitationEmailHandler,
+  PublishInvitationEmailOutput,
+} from "./interfaces/messaging/handlers/pub/index.js";
+
+// --- Messages (RabbitMQ notification contracts) ---
+export type {
+  SendVerificationEmail,
+  SendPasswordReset,
+  SendInvitationEmail,
+} from "./messages/index.js";
+
 // --- Command Handlers ---
 export { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
 export type {
@@ -102,6 +120,11 @@ export type {
   RecordSignInOutcomeInput,
   RecordSignInOutcomeOutput,
 } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
+
+// --- Messaging Publisher Handlers ---
+export { PublishVerificationEmail } from "./implementations/messaging/handlers/pub/publish-verification-email.js";
+export { PublishPasswordReset } from "./implementations/messaging/handlers/pub/publish-password-reset.js";
+export { PublishInvitationEmail } from "./implementations/messaging/handlers/pub/publish-invitation-email.js";
 
 // --- Query Handlers ---
 export { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-events.js";
@@ -149,6 +172,9 @@ import { CreateOrgContact } from "./implementations/cqrs/handlers/c/create-org-c
 import { UpdateOrgContactHandler } from "./implementations/cqrs/handlers/c/update-org-contact.js";
 import { DeleteOrgContact } from "./implementations/cqrs/handlers/c/delete-org-contact.js";
 import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
+import { PublishVerificationEmail } from "./implementations/messaging/handlers/pub/publish-verification-email.js";
+import { PublishPasswordReset } from "./implementations/messaging/handlers/pub/publish-password-reset.js";
+import { PublishInvitationEmail } from "./implementations/messaging/handlers/pub/publish-invitation-email.js";
 
 /** Creates sign-in event handlers (mirrors .NET AddXxx() pattern). */
 export function createSignInEventHandlers(
@@ -241,3 +267,22 @@ export function createSignInThrottleHandlers(
 
 /** Return type of createSignInThrottleHandlers. */
 export type SignInThrottleHandlers = ReturnType<typeof createSignInThrottleHandlers>;
+
+/**
+ * Creates notification publisher handlers (stubbed — no RabbitMQ yet).
+ *
+ * When the notification service is built, these handlers will inject a real
+ * publisher and publish messages to RabbitMQ. The composition root wires
+ * BetterAuth callbacks (sendVerificationEmail, sendResetPassword,
+ * sendInvitationEmail) to call these handlers.
+ */
+export function createNotificationHandlers(context: IHandlerContext) {
+  return {
+    publishVerificationEmail: new PublishVerificationEmail(context),
+    publishPasswordReset: new PublishPasswordReset(context),
+    publishInvitationEmail: new PublishInvitationEmail(context),
+  };
+}
+
+/** Return type of createNotificationHandlers. */
+export type NotificationHandlers = ReturnType<typeof createNotificationHandlers>;
