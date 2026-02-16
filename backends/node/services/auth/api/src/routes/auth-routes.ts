@@ -8,9 +8,9 @@ import type { SignInThrottleHandlers } from "@d2/auth-app";
 import { REQUEST_INFO_KEY } from "../middleware/request-enrichment.js";
 
 /**
- * Clones response headers and appends a single header.
+ * Clones response headers and sets a single header (overwrites if exists).
  */
-function appendHeader(original: Headers, key: string, value: string): Headers {
+function setHeader(original: Headers, key: string, value: string): Headers {
   const headers = new Headers(original);
   headers.set(key, value);
   return headers;
@@ -118,7 +118,7 @@ export function createAuthRoutes(auth: Auth, throttleHandlers?: SignInThrottleHa
     if (c.req.path.includes(".well-known/")) {
       return new Response(response.body, {
         status: response.status,
-        headers: appendHeader(response.headers, "Cache-Control", "public, max-age=3600"),
+        headers: setHeader(response.headers, "Cache-Control", "public, max-age=3600"),
       });
     }
 

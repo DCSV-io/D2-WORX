@@ -528,11 +528,11 @@ public class RetryHelperTests
     }
 
     /// <summary>
-    /// Tests that OperationCanceledException propagates immediately and is not caught.
+    /// Tests that OperationCanceledException is not retried (not transient).
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
-    public async Task RetryAsync_OperationCanceledException_PropagatesImmediately()
+    public async Task RetryAsync_OperationCanceledException_NotRetried()
     {
         // Arrange
         var callCount = 0;
@@ -548,6 +548,98 @@ public class RetryHelperTests
                 },
                 new RetryOptions<string> { MaxAttempts = 5, DelayFunc = MockDelay },
                 Ct);
+        });
+
+        Assert.Equal(1, callCount);
+        Assert.Empty(r_delays);
+    }
+
+    /// <summary>
+    /// Tests that TaskCanceledException (HttpClient timeout) is retried when
+    /// the user's CancellationToken is NOT canceled.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RetryAsync_TaskCanceledException_WhenTokenNotCanceled_Retries()
+    {
+        // Arrange — simulates HttpClient timeout (TaskCanceledException without user cancellation)
+        var callCount = 0;
+
+        // Act
+        var result = await RetryHelper.RetryAsync(
+            (attempt, _) =>
+            {
+                callCount++;
+                if (attempt < 3)
+                {
+                    throw new TaskCanceledException("The request was canceled due to timeout.");
+                }
+
+                return ValueTask.FromResult("ok");
+            },
+            new RetryOptions<string> { MaxAttempts = 5, DelayFunc = MockDelay },
+            Ct);
+
+        // Assert
+        Assert.Equal("ok", result);
+        Assert.Equal(3, callCount);
+        Assert.Equal(2, r_delays.Count);
+    }
+
+    /// <summary>
+    /// Tests that TaskCanceledException propagates immediately when the user's
+    /// CancellationToken IS canceled (true user cancellation, not timeout).
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RetryAsync_TaskCanceledException_WhenTokenCanceled_PropagatesImmediately()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        var callCount = 0;
+
+        // Act & Assert
+        await Assert.ThrowsAsync<TaskCanceledException>(async () =>
+        {
+            await RetryHelper.RetryAsync(
+                (_, _) =>
+                {
+                    callCount++;
+                    cts.Cancel();
+                    throw new TaskCanceledException("User canceled.");
+                },
+                new RetryOptions<string> { MaxAttempts = 5, DelayFunc = MockDelay },
+                cts.Token);
+        });
+
+        Assert.Equal(1, callCount);
+        Assert.Empty(r_delays);
+    }
+
+    /// <summary>
+    /// Tests that OperationCanceledException propagates immediately when the
+    /// user's CancellationToken IS canceled.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task RetryAsync_OperationCanceledException_WhenTokenCanceled_PropagatesImmediately()
+    {
+        // Arrange
+        using var cts = new CancellationTokenSource();
+        var callCount = 0;
+
+        // Act & Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        {
+            await RetryHelper.RetryAsync(
+                (_, _) =>
+                {
+                    callCount++;
+                    cts.Cancel();
+                    throw new OperationCanceledException(cts.Token);
+                },
+                new RetryOptions<string> { MaxAttempts = 5, DelayFunc = MockDelay },
+                cts.Token);
         });
 
         Assert.Equal(1, callCount);

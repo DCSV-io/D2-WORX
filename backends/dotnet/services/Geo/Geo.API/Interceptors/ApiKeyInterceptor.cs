@@ -60,13 +60,19 @@ public class ApiKeyInterceptor : Interceptor
             return await continuation(request, context);
         }
 
-        // Skip validation entirely if no API key mappings are configured.
+        var methodName = GetMethodName(context.Method);
+
+        // Fail closed: if API key mappings are not configured, reject protected RPCs.
         if (r_options.ApiKeyMappings.Count == 0)
         {
-            return await continuation(request, context);
+            r_logger.LogError(
+                "API key mappings are not configured but RPC {Method} requires an API key",
+                methodName);
+            throw new RpcException(
+                new Status(
+                    StatusCode.Unauthenticated,
+                    "API key authentication is not configured."));
         }
-
-        var methodName = GetMethodName(context.Method);
 
         // Extract API key from metadata.
         var apiKey = context.RequestHeaders.GetValue("x-api-key");

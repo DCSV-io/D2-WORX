@@ -25,8 +25,6 @@ using System.Net.Sockets;
 /// </remarks>
 public static class RetryHelper
 {
-    private static readonly Random sr_random = new();
-
     /// <summary>
     /// Determines whether the given exception represents a transient failure
     /// that may succeed on retry.
@@ -109,7 +107,7 @@ public static class RetryHelper
 
                 return result;
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
             {
                 lastError = ex;
                 lastWasError = true;
@@ -158,7 +156,7 @@ public static class RetryHelper
         bool jitter)
     {
         var calculated = Math.Min(baseDelayMs * Math.Pow(backoffMultiplier, retryIndex), maxDelayMs);
-        var actual = jitter ? sr_random.NextDouble() * calculated : calculated;
+        var actual = jitter ? Random.Shared.NextDouble() * calculated : calculated;
         return TimeSpan.FromMilliseconds(actual);
     }
 }

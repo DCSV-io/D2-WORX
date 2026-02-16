@@ -28,7 +28,7 @@ public static class JwtAuthExtensions
         /// The application configuration.
         /// </param>
         /// <param name="sectionName">
-        /// The configuration section name. Defaults to "JwtAuth".
+        /// The configuration section name. Defaults to "JwtAuthOptions".
         /// </param>
         ///
         /// <returns>
