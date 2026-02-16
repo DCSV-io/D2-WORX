@@ -736,8 +736,8 @@ These are documented trade-offs and gaps identified during security audit. Items
 
 | # | Gap | Severity | Details | Status |
 |---|-----|----------|---------|--------|
-| 9 | **Rate limiting is single-instance (in-memory)** | LOW | Auth API rate limiter uses in-memory counters. Multi-instance deployment requires Redis-backed limiting. | Planned. Use `@d2/ratelimit` (Redis-backed) when scaling beyond single instance. |
-| 10 | **Session fingerprint fail-open on Redis error** | LOW | Fingerprint check skipped if Redis is unavailable. Intentional (availability > security). | Acceptable trade-off. Documented in Fail-Closed matrix. Monitor Redis health. |
+| 9 | ~~**Rate limiting is single-instance (in-memory)**~~ | ~~LOW~~ | **RESOLVED.** Auth API uses `createDistributedRateLimitMiddleware` backed by `@d2/ratelimit` (Redis-backed sliding window via `@d2/interfaces`). Multi-instance safe. | Implemented in `distributed-rate-limit.ts` middleware + composition root. |
+| 10 | ~~**Session fingerprint fail-open on Redis error**~~ | ~~LOW~~ | **Not a gap.** Moved to Documented Assumptions — this is intentional (availability > security for defense-in-depth layer). | See Documented Assumptions. |
 | 11 | **CreateEmulationConsent DB error not caught gracefully** | LOW | Race condition between check-then-insert caught by DB partial unique index, but handler doesn't catch `23505` (unique violation) — returns 500 instead of 409. | Wrap `repo.create()` in try-catch, map unique violation to 409 Conflict. |
 | 12 | **GetActiveConsents no default pagination** | LOW | `limit` is optional with `.max(100)` but no default applied when omitted — returns ALL rows. | Apply default limit (e.g., 50) when not provided. |
 | 13 | ~~**JWKS caching not explicitly configured on .NET gateway**~~ | ~~LOW~~ | **RESOLVED.** `JwtAuthOptions.JwksAutoRefreshInterval` (8h) and `JwksRefreshInterval` (5min) now explicit and configurable. Auth JWKS endpoint returns `Cache-Control: public, max-age=3600`. | Implemented in `JwtAuthOptions` + `JwtAuthExtensions` (.NET) and `auth-routes.ts` (Node.js). |
@@ -751,6 +751,8 @@ These are intentional design decisions, not bugs:
 | Session middleware fails closed (503) on infrastructure errors | "Better offline than hacked" — prevents auth degradation to unauthenticated |
 | JWT fingerprint uses `SHA-256(UA\|Accept)` only | Lightweight check; not a substitute for TLS or token rotation. Attackers who control the UA+Accept headers AND have the JWT can bypass, but this raises the bar vs casual token theft |
 | Rate limiting fails open when Redis is down | Availability-first; DOS protection is best-effort |
+| Sign-in throttle fails open when Redis is down | Availability-first; brute-force protection is best-effort. Primary auth (session) still fails closed |
+| Session fingerprint fails open when Redis is down | Fingerprint binding is a defense-in-depth layer, not primary auth. Skipping the check on Redis outage preserves availability. Primary auth (session validation) still fails closed (503) |
 | CSRF uses Content-Type + Origin dual check (no CSRF token) | Hono auth routes are JSON-only APIs, not form submissions. Origin check prevents cross-site requests. Content-Type check prevents `<form>` submissions |
 | BetterAuth is session-based, JWTs are secondary | JWTs are only for .NET gateway calls. Browser↔SvelteKit always uses cookie sessions |
 
