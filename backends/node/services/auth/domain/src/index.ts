@@ -7,6 +7,7 @@ export {
   AUTH_POLICIES,
   REQUEST_HEADERS,
   PASSWORD_POLICY,
+  SIGN_IN_THROTTLE,
 } from "./constants/auth-constants.js";
 
 // --- Enums ---
@@ -71,3 +72,4 @@ export { canCreateOrgType } from "./rules/org-creation.js";
 export { transitionInvitationStatus, isInvitationExpired } from "./rules/invitation.js";
 export { validatePassword } from "./rules/password-rules.js";
 export type { PasswordValidationResult } from "./rules/password-rules.js";
+export { computeSignInDelay } from "./rules/sign-in-throttle-rules.js";

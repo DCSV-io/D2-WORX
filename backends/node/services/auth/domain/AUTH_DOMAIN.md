@@ -26,6 +26,8 @@ Defines the public contract for all auth data leaving the service. These types a
 ```
 src/
   index.ts                  Barrel exports
+  constants/
+    auth-constants.ts       JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, SIGN_IN_THROTTLE
   enums/
     org-type.ts             OrgType: admin | support | customer | third_party | affiliate
     role.ts                 Role: owner | officer | agent | auditor (+ ROLE_HIERARCHY)
@@ -50,6 +52,7 @@ src/
     membership.ts           isLastOwner, isMemberOfOrg
     org-creation.ts         canCreateOrgType
     invitation.ts           transitionInvitationStatus, isInvitationExpired
+    sign-in-throttle-rules.ts  computeSignInDelay (pure: failure count → delay ms)
 ```
 
 ## Enums
@@ -87,6 +90,23 @@ All "enums" are `as const` arrays with derived union types and type guard functi
 | Org creation authorization | `canCreateOrgType(target, creatorOrgType)` — per-type rules          |
 | Invitation state machine   | `transitionInvitationStatus(inv, newStatus)` — validates transitions |
 | Invitation expiry          | `isInvitationExpired(inv)` — checks expiresAt vs now                 |
+| Sign-in throttle delay     | `computeSignInDelay(failureCount)` — 3 free, then 5s→15s→30s→1m→5m→15m max |
+
+## Constants
+
+### SIGN_IN_THROTTLE
+
+Progressive brute-force delay constants used by `computeSignInDelay` and the app-layer throttle handlers.
+
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `FREE_ATTEMPTS` | 3 | Attempts before throttling begins |
+| `MAX_DELAY_MS` | 900,000 (15 min) | Maximum delay cap |
+| `ATTEMPT_WINDOW_SECONDS` | 900 (15 min) | TTL for failure counter |
+| `KNOWN_GOOD_TTL_SECONDS` | 7,776,000 (90 days) | TTL for known-good identity flag |
+| `KNOWN_GOOD_CACHE_TTL_MS` | 300,000 (5 min) | Local memory cache TTL for known-good lookups |
+
+Redis key prefixes (`signin:known:`, `signin:attempts:`, `signin:locked:`) are infra concerns — defined in `SignInThrottleStore`, not in domain.
 
 ## Tests
 
@@ -98,7 +118,8 @@ src/unit/domain/
   exceptions/     auth-domain-error.test.ts, auth-validation-error.test.ts
   entities/       user.test.ts, organization.test.ts, member.test.ts, invitation.test.ts,
                   sign-in-event.test.ts, emulation-consent.test.ts, org-contact.test.ts
-  rules/          emulation.test.ts, membership.test.ts, org-creation.test.ts, invitation.test.ts
+  rules/          emulation.test.ts, membership.test.ts, org-creation.test.ts, invitation.test.ts,
+                  sign-in-throttle-rules.test.ts
 ```
 
 Run: `pnpm vitest run --project auth-tests`

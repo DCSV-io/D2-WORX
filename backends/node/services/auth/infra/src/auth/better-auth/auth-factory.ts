@@ -4,6 +4,7 @@ import { bearer } from "better-auth/plugins/bearer";
 import { jwt } from "better-auth/plugins/jwt";
 import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
+import { username } from "better-auth/plugins/username";
 import type { SecondaryStorage } from "better-auth";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { JWT_CLAIM_TYPES, SESSION_FIELDS } from "@d2/auth-domain";
@@ -168,6 +169,7 @@ export function createAuth(
 
     plugins: [
       bearer(),
+      username(),
       jwt({
         jwks: {
           keyPairConfig: {

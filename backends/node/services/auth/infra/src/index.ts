@@ -43,6 +43,9 @@ export { SignInEventRepository } from "./repository/handlers/sign-in-event-repos
 export { EmulationConsentRepository } from "./repository/handlers/emulation-consent-repository.js";
 export { OrgContactRepository } from "./repository/handlers/org-contact-repository.js";
 
+// --- Sign-In Throttle ---
+export { SignInThrottleStore } from "./auth/sign-in-throttle-store.js";
+
 // --- Drizzle Schema ---
 export { signInEvent, emulationConsent, orgContact } from "./repository/schema/index.js";
 export type {

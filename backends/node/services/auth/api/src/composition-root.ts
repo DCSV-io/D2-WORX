@@ -28,6 +28,7 @@ import {
   SignInEventRepository,
   EmulationConsentRepository,
   OrgContactRepository,
+  SignInThrottleStore,
   type AuthServiceConfig,
 } from "@d2/auth-infra";
 import { PASSWORD_POLICY } from "@d2/auth-domain";
@@ -35,6 +36,7 @@ import {
   createSignInEventHandlers,
   createEmulationConsentHandlers,
   createOrgContactHandlers,
+  createSignInThrottleHandlers,
 } from "@d2/auth-app";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createSessionMiddleware } from "./middleware/session.js";
@@ -106,6 +108,7 @@ export async function createApp(config: AuthServiceConfig) {
   });
 
   // Rate limiting (Redis-backed distributed sliding window via @d2/ratelimit)
+  const redisExists = new CacheRedis.Exists(redis, handlerContext);
   const redisGetTtl = new CacheRedis.GetTtl(redis, handlerContext);
   const redisIncrement = new CacheRedis.Increment(redis, handlerContext);
   const rateLimitCheck = new RateLimitCheck(redisGetTtl, redisIncrement, redisSet, {}, handlerContext);
@@ -181,6 +184,22 @@ export async function createApp(config: AuthServiceConfig) {
     deleteContactsByExtKeys,
     updateContactsByExtKeys,
     getContactsByExtKeys,
+  });
+
+  // Sign-in brute-force protection (Redis + local memory cache)
+  const throttleStore = new SignInThrottleStore(
+    redisExists,
+    redisGetTtl,
+    redisSet,
+    redisRemove,
+    redisIncrement,
+  );
+  const throttleCacheStore = new CacheMemory.MemoryCacheStore();
+  const throttleCacheGet = new CacheMemory.Get<boolean>(throttleCacheStore, handlerContext);
+  const throttleCacheSet = new CacheMemory.Set<boolean>(throttleCacheStore, handlerContext);
+  const throttleHandlers = createSignInThrottleHandlers(throttleStore, handlerContext, {
+    get: throttleCacheGet,
+    set: throttleCacheSet,
   });
 
   // 5. Password policy — HIBP k-anonymity cache + domain validation
@@ -264,7 +283,7 @@ export async function createApp(config: AuthServiceConfig) {
     const fp = computeFingerprint(c.req.raw.headers);
     await fingerprintStorage.run(fp, () => next());
   });
-  authApp.route("/", createAuthRoutes(auth));
+  authApp.route("/", createAuthRoutes(auth, throttleHandlers));
   app.route("/", authApp);
 
   // Protected custom routes: session + fingerprint + CSRF

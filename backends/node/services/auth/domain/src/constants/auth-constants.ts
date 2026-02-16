@@ -65,3 +65,23 @@ export const PASSWORD_POLICY = {
   HIBP_API_BASE: "https://api.pwnedpasswords.com/range/",
   HIBP_CACHE_MAX_ENTRIES: 10_000,
 } as const;
+
+/**
+ * Sign-in brute-force protection constants.
+ *
+ * Progressive delay per (identifier, identity) pair — never hard-locks.
+ * Known-good identities (IP + fingerprint that previously signed in successfully)
+ * bypass throttling entirely.
+ */
+export const SIGN_IN_THROTTLE = {
+  /** Number of failed attempts before delays begin. */
+  FREE_ATTEMPTS: 3,
+  /** Maximum delay in milliseconds (15 minutes). */
+  MAX_DELAY_MS: 15 * 60 * 1000,
+  /** TTL for the attempt counter in seconds (15 minutes). */
+  ATTEMPT_WINDOW_SECONDS: 15 * 60,
+  /** TTL for known-good identity flag in seconds (90 days). */
+  KNOWN_GOOD_TTL_SECONDS: 90 * 24 * 60 * 60,
+  /** Local memory cache TTL for known-good lookups in milliseconds (5 minutes). */
+  KNOWN_GOOD_CACHE_TTL_MS: 5 * 60 * 1000,
+} as const;

@@ -9,6 +9,7 @@ import type { Commands, Queries, Complex } from "@d2/geo-client";
 export type { ISignInEventRepository } from "./interfaces/repository/sign-in-event-repository.js";
 export type { IEmulationConsentRepository } from "./interfaces/repository/emulation-consent-repository.js";
 export type { IOrgContactRepository } from "./interfaces/repository/org-contact-repository.js";
+export type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 
 // --- Command Handlers ---
 export { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
@@ -48,6 +49,12 @@ export type {
   DeleteOrgContactOutput,
 } from "./implementations/cqrs/handlers/c/delete-org-contact.js";
 
+export { RecordSignInOutcome } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
+export type {
+  RecordSignInOutcomeInput,
+  RecordSignInOutcomeOutput,
+} from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
+
 // --- Query Handlers ---
 export { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-events.js";
 export type {
@@ -68,14 +75,23 @@ export type {
   HydratedOrgContact,
 } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 
+export { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
+export type {
+  CheckSignInThrottleInput,
+  CheckSignInThrottleOutput,
+} from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
+
 // --- Factory Functions ---
 
 import type { ISignInEventRepository } from "./interfaces/repository/sign-in-event-repository.js";
 import type { IEmulationConsentRepository } from "./interfaces/repository/emulation-consent-repository.js";
 import type { IOrgContactRepository } from "./interfaces/repository/org-contact-repository.js";
+import type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 import type { InMemoryCache } from "@d2/interfaces";
 import { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
 import { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-events.js";
+import { RecordSignInOutcome } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
+import { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
 import { CreateEmulationConsent } from "./implementations/cqrs/handlers/c/create-emulation-consent.js";
 import { RevokeEmulationConsent } from "./implementations/cqrs/handlers/c/revoke-emulation-consent.js";
 import { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
@@ -133,3 +149,21 @@ export function createOrgContactHandlers(
     getByOrg: new GetOrgContacts(repo, context, geo.getContactsByExtKeys),
   };
 }
+
+/** Creates sign-in throttle handlers for brute-force protection. */
+export function createSignInThrottleHandlers(
+  store: ISignInThrottleStore,
+  context: IHandlerContext,
+  memoryCache?: {
+    get: InMemoryCache.IGetHandler<boolean>;
+    set: InMemoryCache.ISetHandler<boolean>;
+  },
+) {
+  return {
+    check: new CheckSignInThrottle(store, context, memoryCache),
+    record: new RecordSignInOutcome(store, context, memoryCache),
+  };
+}
+
+/** Return type of createSignInThrottleHandlers. */
+export type SignInThrottleHandlers = ReturnType<typeof createSignInThrottleHandlers>;

@@ -59,8 +59,8 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 |-----------|----------|---------|
 | Entities | `domain/src/entities/` | Factory functions + types for User, Organization, Member, Invitation, SignInEvent, EmulationConsent, OrgContact |
 | Enums | `domain/src/enums/` | OrgType, Role, InvitationStatus — `as const` arrays + type guards |
-| Rules | `domain/src/rules/` | emulation, membership, org-creation, invitation state machine |
-| Constants | `domain/src/constants/` | JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS |
+| Rules | `domain/src/rules/` | emulation, membership, org-creation, invitation, sign-in-throttle (delay curve) |
+| Constants | `domain/src/constants/` | JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, SIGN_IN_THROTTLE |
 | Value Objects | `domain/src/value-objects/` | SessionContext |
 | Exceptions | `domain/src/exceptions/` | AuthDomainError, AuthValidationError |
 
@@ -78,11 +78,13 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | CreateOrgContact | Command | Create Geo contact via gRPC + org_contact junction |
 | UpdateOrgContact | Command | Update metadata (label/isPrimary) or replace contact (immutability pattern) |
 | DeleteOrgContact | Command | Delete junction + best-effort Geo contact cleanup |
+| CheckSignInThrottle | Query | Check throttle status per (identifier, identity) — local cache → Redis, fail-open |
 | GetSignInEvents | Query | Paginated sign-in history (with local memory cache + staleness check) |
 | GetActiveConsents | Query | User's active emulation consents |
 | GetOrgContacts | Query | Org's contacts hydrated with full Geo contact data |
+| RecordSignInOutcome | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
 
-**DI pattern**: Manual factory functions — `createSignInEventHandlers(repo, context, memoryCache?)`, `createOrgContactHandlers(repo, context, geo)` where `geo` is `{ createContacts, deleteContactsByExtKeys, updateContactsByExtKeys, getContactsByExtKeys }` from `@d2/geo-client`.
+**DI pattern**: Manual factory functions — `createSignInEventHandlers(repo, context, memoryCache?)`, `createOrgContactHandlers(repo, context, geo)`, `createSignInThrottleHandlers(store, context, memoryCache?)` where `geo` is `{ createContacts, deleteContactsByExtKeys, updateContactsByExtKeys, getContactsByExtKeys }` from `@d2/geo-client`.
 
 **Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["org_contact"]` and an `apiKey` for gRPC authentication.
 
@@ -103,6 +105,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | secondary-storage | `infra/src/auth/better-auth/secondary-storage.ts` | Redis adapter wrapping @d2/interfaces cache handlers |
 | Access Control | `infra/src/auth/better-auth/access-control.ts` | RBAC permission definitions |
 | Hooks | `infra/src/auth/better-auth/hooks/` | ID generation (UUIDv7), org creation validation |
+| SignInThrottleStore | `infra/src/auth/sign-in-throttle-store.ts` | Redis-backed brute-force throttle state (uses `@d2/cache-redis` handlers) |
 | Drizzle Schema | `infra/src/repository/schema/` | `pgTable()` declarations for all 11 tables (8 BetterAuth + 3 custom) |
 | Repositories | `infra/src/repository/handlers/` | Drizzle-backed repos for custom tables |
 | Migrations | `infra/src/repository/migrations/` | Drizzle auto-generated SQL migrations (all tables + indexes) |
@@ -115,6 +118,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 |--------|---------|
 | `bearer` | Session token via Authorization header (for non-cookie clients) |
 | `jwt` | RS256 JWT issuance with custom `definePayload` |
+| `username` | Username-based sign-in (`/sign-in/username`) + username field on user |
 | `organization` | Multi-org support (roles, invitations, creation rules) |
 | `admin` | Impersonation support (1-hour session) |
 
@@ -492,6 +496,7 @@ The composition root builds the pipeline in this exact order:
 | **Session fingerprint** (Node.js) | FAIL-OPEN | N/A | N/A | Fingerprint check skipped, logs warning | 200 (pass-through) |
 | **JWT fingerprint** (.NET) | N/A | N/A | N/A | No fp claim (non-trusted) → **FAIL-CLOSED** (401). Trusted services → skip. | 401 (non-trusted, no fp) |
 | **Service key detection** (.NET) | N/A | N/A | N/A | Invalid key → 401. No key → pass-through (browser request). | 401 (invalid key) |
+| **Sign-in throttle** (Node.js) | FAIL-OPEN | N/A | N/A | Throttle check skipped, sign-in proceeds normally | 200 (pass-through) |
 | **Rate limiting** (Node.js) | FAIL-OPEN | N/A | N/A | Requests pass through | 200 (pass-through) |
 | **Rate limiting** (.NET) | FAIL-OPEN | N/A | N/A | Requests pass through | 200 (pass-through) |
 | **Secondary storage** (Redis) | FAIL-CLOSED (via session MW) | N/A | N/A | BetterAuth getSession throws → 503 | 503 |
@@ -521,6 +526,7 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 
 | Handler | Input | Side Effects | Zod Validation | Business Logic |
 |---------|-------|-------------|----------------|----------------|
+| RecordSignInOutcome | identifierHash, identityHash, responseStatus | Redis: mark known-good / increment failures / set lockout | — (pre-hashed input) | Success (200) → markKnownGood + clearFailureState + update local cache. Failure (401/400) → incrementFailures + computeSignInDelay → setLocked if delay > 0. Other status → no-op. Fail-open on all errors |
 | RecordSignInEvent | userId, ipAddress, userAgent, whoIsId?, successful | Writes to `sign_in_event` | userId required | — |
 | CreateEmulationConsent | userId, grantedToOrgId, activeOrgType, expiresAt | Writes to `emulation_consent` | zodGuid, z.enum(ORG_TYPES), future date, max 30d | canEmulate check, org existence, duplicate prevention |
 | RevokeEmulationConsent | consentId, userId | Sets `revoked_at` | zodGuid × 2 | Consent exists, belongs to user, is active |
@@ -532,6 +538,7 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 
 | Handler | Input | Returns | Pagination |
 |---------|-------|---------|------------|
+| CheckSignInThrottle | identifierHash, identityHash | `{ blocked, retryAfterSec? }` | N/A. Local memory cache for known-good (5min TTL, 0 Redis calls). Cache miss → concurrent `Promise.all(isKnownGood, getLockedTtlSeconds)`. Fail-open on errors |
 | GetSignInEvents | userId, limit?, offset? | SignInEvent[] + total | Default 50, max 100. Local memory cache with staleness check (latest event date) |
 | GetActiveConsents | userId, limit?, offset? | EmulationConsent[] | Default 20, max 100 |
 | GetOrgContacts | organizationId, limit?, offset? | HydratedOrgContact[] | Default 20, max 100. Batch-fetches Geo contact data via ext keys (`getContactsByExtKeys`), joins with junction metadata |
@@ -543,7 +550,8 @@ These are handled by BetterAuth directly (not custom handlers):
 | Operation | BetterAuth Method | Notes |
 |-----------|------------------|-------|
 | Sign up | `emailPassword.signUp` | Pre-generates UUIDv7, creates Geo contact first |
-| Sign in | `emailPassword.signIn` | Triggers `onSignIn` hook → RecordSignInEvent |
+| Sign in (email) | `emailPassword.signIn` | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded |
+| Sign in (username) | `username.signIn` | Same hooks + throttle guard as email sign-in |
 | Sign out | `signOut` | Revokes session from all 3 tiers |
 | Get session | `getSession` | 3-tier lookup |
 | Create org | `organization.create` | Validates orgType via `beforeCreateOrganization` |
@@ -674,7 +682,8 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 | Transport | HTTPS (TLS) | Load balancer / reverse proxy |
 | CORS | Origin whitelist | Both Node.js and .NET |
 | CSRF | Content-Type + Origin validation | Node.js (auth API) |
-| Rate Limiting | Per-IP (Node.js), Multi-dimensional (. NET) | Both |
+| Rate Limiting | Per-IP (Node.js), Multi-dimensional (.NET) | Both |
+| Brute-Force Throttle | Progressive delay per (identifier, identity), known-good bypass | Node.js (auth API) |
 | Authentication | Cookie session (SvelteKit) / JWT (gateway) | Both |
 | Fingerprint Binding | SHA-256(UA\|Accept) → session store + JWT claim | Both |
 | Authorization | Policy-based (orgType + role hierarchy) | Both |
@@ -717,7 +726,7 @@ These are documented trade-offs and gaps identified during security audit. Items
 
 | # | Gap | Severity | Details | Mitigation |
 |---|-----|----------|---------|------------|
-| 4 | **No per-account brute-force lockout** | MEDIUM | General per-IP rate limit (20/15s) exists but no per-account lockout after N failed attempts. | Implement lockout logic using `sign_in_event` data (e.g., 5 failures in 15min → lock 15min). Can use BetterAuth's `rateLimit` option or custom `after` hook on signIn. |
+| 4 | ~~**No per-account brute-force lockout**~~ | ~~MEDIUM~~ | **RESOLVED.** Progressive delay per (IP+fingerprint, email/username): 3 free attempts then escalating delays (5s → 15s → 30s → 1m → 5m → 15m max). Known-good identity bypass with local memory cache (0 Redis calls for legitimate users on known devices). Fail-open on Redis errors. Never hard-locks accounts. Both `/sign-in/email` and `/sign-in/username` protected. | `CheckSignInThrottle` (query) + `RecordSignInOutcome` (command) + `SignInThrottleStore` (infra). |
 | 5 | **`sameSite` cookie attribute not explicitly set** | MEDIUM | Relies on BetterAuth/browser defaults (likely `lax`). | Set `session.cookieCache.sameSite: "lax"` explicitly in BetterAuth config. |
 | 6 | **RecordSignInEvent missing Zod validation** | MEDIUM | Handler lacks `validateInput()`. Domain factory has basic null checks but no length/format validation on ipAddress and userAgent. | Add Zod schema with `.max()` on strings and UUID format on userId. |
 | 7 | **Contact handler string fields unbounded** | MEDIUM | Phone numbers, personal details (firstName, lastName, etc.), professional fields, and location fields lack `.max()` Zod constraints. `label` is correctly bounded at 100 chars. | Add `.max()` to all string fields: phone (20), names (100), addresses (200), country/subdivision codes (2-6). |
@@ -818,17 +827,19 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `middleware/distributed-rate-limit.test.ts` | — | Multi-dimensional sliding-window rate limiting |
 | `middleware/error-handler.test.ts` | — | D2Result-shaped error responses |
 | `middleware/jwt-fingerprint.test.ts` | — | JWT fp claim computation |
+| `routes/auth-routes.test.ts` | 27 | Cache-Control on .well-known, throttle guard (429/Retry-After/blocked/allowed), fire-and-forget record, edge cases, case-insensitive hashing, username path, requestInfo propagation |
 | `routes/emulation-routes.test.ts` | 26 | Middleware auth (role + staff), input mapping, status codes, pagination |
 | `routes/org-contact-routes.test.ts` | 25 | Middleware auth (role), input mapping, status codes, pagination, no-org, contact details |
 | **Domain Layer** | | |
 | `domain/enums/*.test.ts` | — | OrgType, Role, InvitationStatus validation + guards |
 | `domain/entities/*.test.ts` | — | Factory functions, immutability, validation |
-| `domain/rules/*.test.ts` | — | Emulation, membership, org-creation, invitation state machine |
+| `domain/rules/*.test.ts` | — | Emulation, membership, org-creation, invitation state machine, sign-in throttle delay curve (12 tests) |
 | `domain/exceptions/*.test.ts` | — | Error structures |
 | **Infra Layer** | | |
 | `infra/access-control.test.ts` | — | RBAC permission definitions |
 | `infra/mappers/*.test.ts` | — | BetterAuth → domain mapping (5 mappers) |
 | `infra/secondary-storage.test.ts` | — | Redis adapter contract |
+| `infra/sign-in-throttle-store.test.ts` | 11 | Redis key prefixes, handler delegation, TTL conversion, failure fallbacks |
 | **App Layer** | | |
 | `app/handlers/c/*.test.ts` | — | All command handlers |
 | `app/handlers/q/*.test.ts` | — | All query handlers |
@@ -836,7 +847,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `integration/migration.test.ts` | 14 | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index |
 | `integration/custom-table-repositories.test.ts` | 26 | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints) |
 | `integration/better-auth-tables.test.ts` | 8 | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance |
-| **Total auth-tests** | **485** | 437 unit + 48 integration (Testcontainers PostgreSQL 18) |
+| **Total auth-tests** | **586** | 538 unit + 48 integration (Testcontainers PostgreSQL 18) |
 
 ### Key Security Behaviors Verified by Tests
 
@@ -853,6 +864,11 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | Emulation forced to auditor role | `emulation.test.ts` |
 | IDOR prevention (org ID from session, ownership check in handler) | `update-org-contact.test.ts`, `delete-org-contact.test.ts` |
 | Input validation (Zod schemas: UUID, string length, date range) | Handler test files (`create-*.test.ts`, `update-*.test.ts`, etc.) |
+| Brute-force throttle blocks with 429 + Retry-After header | `auth-routes.test.ts` |
+| Brute-force throttle never blocks known-good identities (even during attack) | `check-sign-in-throttle.test.ts` |
+| Brute-force throttle fail-open on Redis/cache errors | `check-sign-in-throttle.test.ts`, `record-sign-in-outcome.test.ts` |
+| Successful sign-in marks identity as known-good + clears failures | `record-sign-in-outcome.test.ts` |
+| Progressive delay escalates correctly (3 free → 5s → ... → 15m max) | `sign-in-throttle-rules.test.ts` |
 | Null/missing HttpContext returns safe defaults | `RequestContextDeriveRelationshipTests.cs` |
 | Unknown orgType returns null (not exception) | `RequestContextDeriveRelationshipTests.cs` |
 | All 5 DeriveRelationship branches tested | `RequestContextDeriveRelationshipTests.cs` |
@@ -867,11 +883,11 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 backends/node/services/auth/
 ├── domain/                              # @d2/auth-domain
 │   └── src/
-│       ├── constants/auth-constants.ts  # JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS
+│       ├── constants/auth-constants.ts  # JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, SIGN_IN_THROTTLE
 │       ├── entities/                    # User, Organization, Member, Invitation, SignInEvent, EmulationConsent, OrgContact
 │       ├── enums/                       # OrgType, Role, InvitationStatus (+ type guards)
 │       ├── exceptions/                  # AuthDomainError, AuthValidationError
-│       ├── rules/                       # emulation, membership, org-creation, invitation
+│       ├── rules/                       # emulation, membership, org-creation, invitation, sign-in-throttle (delay curve)
 │       ├── value-objects/               # SessionContext
 │       └── index.ts                     # Public API
 ├── app/                                 # @d2/auth-app (TLC: mirrors Geo.App)
@@ -879,20 +895,21 @@ backends/node/services/auth/
 │       ├── implementations/
 │       │   └── cqrs/
 │       │       └── handlers/
-│       │           ├── c/               # Command handlers (6) — all with Zod validation
-│       │           └── q/               # Query handlers (3) — all with Zod validation
+│       │           ├── c/               # Command handlers (7) — RecordSignInOutcome + 6 with Zod validation
+│       │           └── q/               # Query handlers (4) — CheckSignInThrottle + 3 with Zod validation
 │       ├── interfaces/
-│       │   └── repository/              # ISignInEventRepository, IEmulationConsentRepository, IOrgContactRepository
+│       │   └── repository/              # ISignInEventRepository, IEmulationConsentRepository, IOrgContactRepository, ISignInThrottleStore
 │       └── index.ts                     # Re-exports + factory functions
 ├── infra/                               # @d2/auth-infra (TLC: mirrors Geo.Infra)
 │   └── src/
 │       ├── auth/
-│       │   └── better-auth/
-│       │       ├── auth-factory.ts      # BetterAuth creation (single source of truth)
-│       │       ├── auth-config.ts       # Config type + defaults
-│       │       ├── secondary-storage.ts # Redis adapter for BetterAuth
-│       │       ├── access-control.ts    # RBAC permission definitions
-│       │       └── hooks/               # id-hooks (UUIDv7), org-hooks (orgType validation)
+│       │   ├── better-auth/
+│       │   │   ├── auth-factory.ts      # BetterAuth creation (single source of truth)
+│       │   │   ├── auth-config.ts       # Config type + defaults
+│       │   │   ├── secondary-storage.ts # Redis adapter for BetterAuth
+│       │   │   ├── access-control.ts    # RBAC permission definitions
+│       │   │   └── hooks/               # id-hooks (UUIDv7), org-hooks (orgType validation)
+│       │   └── sign-in-throttle-store.ts # Redis-backed brute-force throttle (Exists, GetTtl, Set, Remove, Increment)
 │       ├── repository/
 │       │   ├── schema/                  # Drizzle pgTable declarations (better-auth-tables.ts, custom-tables.ts, types.ts)
 │       │   ├── handlers/                # Drizzle repos: SignInEvent, EmulationConsent, OrgContact
@@ -913,22 +930,22 @@ backends/node/services/auth/
 │       │   ├── distributed-rate-limit.ts # @d2/ratelimit middleware
 │       │   └── error-handler.ts         # D2Result error responses
 │       ├── routes/
-│       │   ├── auth-routes.ts           # BetterAuth route passthrough
+│       │   ├── auth-routes.ts           # BetterAuth routes + sign-in throttle guard
 │       │   ├── emulation-routes.ts      # Thin routes: visible auth middleware, handler delegation
 │       │   ├── org-contact-routes.ts    # Thin routes: visible auth middleware, handler delegation
 │       │   └── health.ts               # Health check
 │       └── index.ts
-├── tests/                               # @d2/auth-tests (485 tests)
+├── tests/                               # @d2/auth-tests (586 tests)
 │   └── src/
 │       ├── unit/
 │       │   ├── api/
 │       │   │   ├── middleware/          # Session, fingerprint, authorization, CSRF, request-enrichment, rate-limit, error tests
-│       │   │   └── routes/             # Route tests (emulation, org-contact)
+│       │   │   └── routes/             # Route tests (auth throttle, emulation, org-contact)
 │       │   ├── app/handlers/
-│       │   │   ├── c/                  # Command handler tests (create/revoke/record + geo integration)
-│       │   │   └── q/                  # Query handler tests (caching, hydration)
-│       │   ├── domain/                 # Entity, enum, rule tests
-│       │   └── infra/                  # Mapper, storage, access control tests
+│       │   │   ├── c/                  # Command handler tests (create/revoke/record/throttle + geo integration)
+│       │   │   └── q/                  # Query handler tests (throttle, caching, hydration)
+│       │   ├── domain/                 # Entity, enum, rule, throttle delay curve tests
+│       │   └── infra/                  # Mapper, storage, access control, throttle store tests
 │       └── integration/
 │           ├── postgres-test-helpers.ts # Testcontainers PostgreSQL lifecycle
 │           ├── migration.test.ts       # All 11 tables + indexes verified
