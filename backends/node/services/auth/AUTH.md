@@ -127,7 +127,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | Composition root | `api/src/composition-root.ts` | 8-step DI assembly |
-| Middleware | `api/src/middleware/` | CSRF, rate-limit, session, fingerprint, auth, error handling |
+| Middleware | `api/src/middleware/` | CSRF, request-enrichment, rate-limit, session, fingerprint, auth, error handling |
 | Routes | `api/src/routes/` | Thin routes with visible authorization (5-8 lines each) |
 
 **Thin routes pattern**: Route handlers are intentionally thin — they extract input from the request (body, session, query params), call the handler, and return the result. All validation, business logic, and IDOR checks live in app-layer handlers. Authorization is declared via middleware at route registration (`requireOrg()`, `requireStaff()`, `requireRole("officer")`), making security requirements visible at a glance.
@@ -811,7 +811,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `middleware/session.test.ts` | 7 | Success, 401 unauthenticated, 503 fail-closed, header forwarding |
 | `middleware/session-fingerprint.test.ts` | — | SHA-256 computation, mismatch revocation, Redis storage |
 | `middleware/csrf.test.ts` | — | Content-Type + Origin validation |
-| `middleware/rate-limit.test.ts` | — | Per-IP throttling |
+| `middleware/distributed-rate-limit.test.ts` | — | Multi-dimensional sliding-window rate limiting |
 | `middleware/error-handler.test.ts` | — | D2Result-shaped error responses |
 | `middleware/jwt-fingerprint.test.ts` | — | JWT fp claim computation |
 | `routes/emulation-routes.test.ts` | 26 | Middleware auth (role + staff), input mapping, status codes, pagination |
@@ -905,7 +905,8 @@ backends/node/services/auth/
 │       │   ├── session-fingerprint.ts   # Stolen token detection
 │       │   ├── csrf.ts                  # Content-Type + Origin validation
 │       │   ├── cors.ts                  # CORS middleware factory
-│       │   ├── rate-limit.ts            # Per-IP rate limiter
+│       │   ├── request-enrichment.ts    # @d2/request-enrichment middleware
+│       │   ├── distributed-rate-limit.ts # @d2/ratelimit middleware
 │       │   └── error-handler.ts         # D2Result error responses
 │       ├── routes/
 │       │   ├── auth-routes.ts           # BetterAuth route passthrough
@@ -917,7 +918,7 @@ backends/node/services/auth/
 │   └── src/
 │       ├── unit/
 │       │   ├── api/
-│       │   │   ├── middleware/          # Session, fingerprint, authorization, CSRF, rate-limit, error tests
+│       │   │   ├── middleware/          # Session, fingerprint, authorization, CSRF, request-enrichment, rate-limit, error tests
 │       │   │   └── routes/             # Route tests (emulation, org-contact)
 │       │   ├── app/handlers/
 │       │   │   ├── c/                  # Command handler tests (create/revoke/record + geo integration)

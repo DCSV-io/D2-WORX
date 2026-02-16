@@ -13,11 +13,13 @@ import * as CacheMemory from "@d2/cache-memory";
 import {
   CreateContacts,
   DeleteContactsByExtKeys,
+  FindWhoIs,
   GetContactsByExtKeys,
   UpdateContactsByExtKeys,
   DEFAULT_GEO_CLIENT_OPTIONS,
   type GeoClientOptions,
 } from "@d2/geo-client";
+import { Check as RateLimitCheck } from "@d2/ratelimit";
 import {
   createAuth,
   createSecondaryStorage,
@@ -35,7 +37,8 @@ import {
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createSessionMiddleware } from "./middleware/session.js";
 import { createCsrfMiddleware } from "./middleware/csrf.js";
-import { createRateLimitMiddleware } from "./middleware/rate-limit.js";
+import { createRequestEnrichmentMiddleware } from "./middleware/request-enrichment.js";
+import { createDistributedRateLimitMiddleware } from "./middleware/distributed-rate-limit.js";
 import {
   createSessionFingerprintMiddleware,
   computeFingerprint,
@@ -56,7 +59,7 @@ import { createHealthRoutes } from "./routes/health.js";
  *   4. Create AsyncLocalStorage for per-request fingerprint (JWT `fp` claim)
  *   5. Create BetterAuth: configured with all plugins + secondary storage
  *   6. Session fingerprint binding (stolen token detection)
- *   7. Build Hono app: CORS → body limit → rate limit → fingerprint → session → CSRF → routes
+ *   7. Build Hono app: CORS → body limit → enrichment → rate limit → fingerprint → session → CSRF → routes
  *   8. Return app + cleanup function
  */
 export async function createApp(config: AuthServiceConfig) {
@@ -99,6 +102,11 @@ export async function createApp(config: AuthServiceConfig) {
     remove: redisRemove,
   });
 
+  // Rate limiting (Redis-backed distributed sliding window via @d2/ratelimit)
+  const redisGetTtl = new CacheRedis.GetTtl(redis, handlerContext);
+  const redisIncrement = new CacheRedis.Increment(redis, handlerContext);
+  const rateLimitCheck = new RateLimitCheck(redisGetTtl, redisIncrement, redisSet, {}, handlerContext);
+
   // Helper: checks whether an organization exists in BetterAuth's organization table.
   async function checkOrgExists(orgId: string): Promise<boolean> {
     const result = await pool.query("SELECT 1 FROM organization WHERE id = $1 LIMIT 1", [orgId]);
@@ -134,6 +142,13 @@ export async function createApp(config: AuthServiceConfig) {
     geoOptions,
     handlerContext,
   );
+
+  // FindWhoIs for request enrichment (WhoIs lookup for IP → city/country).
+  // Uses same geoClient placeholder — fail-open when Geo gRPC is unavailable.
+  // IP + fingerprint enrichment works regardless; city/country dimensions
+  // activate once Geo gRPC is connected.
+  const whoIsCacheStore = new CacheMemory.MemoryCacheStore();
+  const findWhoIs = new FindWhoIs(whoIsCacheStore, geoClient, geoOptions, handlerContext);
 
   // In-memory cache for sign-in event queries
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -222,18 +237,18 @@ export async function createApp(config: AuthServiceConfig) {
         ),
     }),
   );
+  app.use("*", createRequestEnrichmentMiddleware(findWhoIs, undefined, logger));
+  app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);
 
   // Health (no auth required)
   app.route("/", createHealthRoutes());
 
   // BetterAuth routes (handles its own auth)
-  // Rate limit: 20 requests per 15 seconds per IP on auth endpoints
-  // Fingerprint check on auth routes too — catches stolen tokens on sign-in
+  // Fingerprint check on auth routes — catches stolen tokens on sign-in.
   // AsyncLocalStorage middleware: stores the request fingerprint so that
   // BetterAuth's definePayload callback can embed it as the JWT `fp` claim.
   const authApp = new Hono();
-  authApp.use("*", createRateLimitMiddleware(20, 15_000));
   authApp.use("*", sessionFingerprintMiddleware);
   authApp.use("*", async (c, next) => {
     const fp = computeFingerprint(c.req.raw.headers);
@@ -242,9 +257,8 @@ export async function createApp(config: AuthServiceConfig) {
   authApp.route("/", createAuthRoutes(auth));
   app.route("/", authApp);
 
-  // Protected custom routes: session + fingerprint + CSRF + rate limit
+  // Protected custom routes: session + fingerprint + CSRF
   const protectedRoutes = new Hono();
-  protectedRoutes.use("*", createRateLimitMiddleware(60, 60_000));
   protectedRoutes.use("*", createSessionMiddleware(auth));
   protectedRoutes.use("*", sessionFingerprintMiddleware);
   protectedRoutes.use("*", createCsrfMiddleware(config.corsOrigin));

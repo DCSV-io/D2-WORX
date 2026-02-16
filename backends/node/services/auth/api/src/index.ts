@@ -5,7 +5,8 @@ export type { SessionVariables } from "./middleware/session.js";
 
 // Middleware factories (exported for testing)
 export { createCsrfMiddleware } from "./middleware/csrf.js";
-export { createRateLimitMiddleware } from "./middleware/rate-limit.js";
+export { createRequestEnrichmentMiddleware } from "./middleware/request-enrichment.js";
+export { createDistributedRateLimitMiddleware } from "./middleware/distributed-rate-limit.js";
 export { createSessionMiddleware } from "./middleware/session.js";
 export {
   createSessionFingerprintMiddleware,
