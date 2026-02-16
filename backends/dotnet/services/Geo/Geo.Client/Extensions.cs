@@ -93,8 +93,11 @@ public static class Extensions
         /// <param name="configuration">
         /// The configuration to read options from.
         /// </param>
-        /// <param name="sectionName">
-        /// The configuration section name for options. Defaults to "GeoClientOptions".
+        /// <param name="servicePrefix">
+        /// Optional service prefix for layered configuration. When provided,
+        /// shared defaults from <c>GeoClientOptions</c> are bound first, then
+        /// service-specific overrides from <c>{prefix}GeoClientOptions</c> are
+        /// overlaid. For example, <c>"Auth"</c> reads from <c>AuthGeoClientOptions</c>.
         /// </param>
         ///
         /// <returns>
@@ -106,13 +109,69 @@ public static class Extensions
         /// </remarks>
         public IServiceCollection AddWhoIsCache(
             IConfiguration configuration,
-            string sectionName = nameof(GeoClientOptions))
+            string? servicePrefix = null)
         {
-            services.Configure<GeoClientOptions>(configuration.GetSection(sectionName));
+            services.ConfigureGeoClientOptions(configuration, servicePrefix);
             services.AddDefaultMemoryCaching();
             services.AddTransient<IComplex.IFindWhoIsHandler, FindWhoIs>();
 
             return services;
+        }
+
+        /// <summary>
+        /// Adds contact handler services with local memory cache and gRPC calls.
+        /// </summary>
+        ///
+        /// <param name="configuration">
+        /// The configuration to read options from.
+        /// </param>
+        /// <param name="servicePrefix">
+        /// Optional service prefix for layered configuration. When provided,
+        /// shared defaults from <c>GeoClientOptions</c> are bound first, then
+        /// service-specific overrides from <c>{prefix}GeoClientOptions</c> are
+        /// overlaid. For example, <c>"Auth"</c> reads from <c>AuthGeoClientOptions</c>.
+        /// </param>
+        ///
+        /// <returns>
+        /// The updated service collection.
+        /// </returns>
+        /// <remarks>
+        /// This method requires a gRPC client for <see cref="GeoService.GeoServiceClient"/>
+        /// to be registered (e.g., via <see cref="AddGeoRefDataConsumer"/> or manually).
+        /// </remarks>
+        public IServiceCollection AddContactHandlers(
+            IConfiguration configuration,
+            string? servicePrefix = null)
+        {
+            services.ConfigureGeoClientOptions(configuration, servicePrefix);
+            services.AddDefaultMemoryCaching();
+            services.AddTransient<ICommands.ICreateContactsHandler, CreateContacts>();
+            services.AddTransient<ICommands.IDeleteContactsByExtKeysHandler, DeleteContactsByExtKeys>();
+            services.AddTransient<IQueries.IGetContactsByExtKeysHandler, GetContactsByExtKeys>();
+            services.AddTransient<IComplex.IUpdateContactsByExtKeysHandler, UpdateContactsByExtKeys>();
+
+            return services;
+        }
+
+        /// <summary>
+        /// Binds <see cref="GeoClientOptions"/> using a layered approach: shared defaults
+        /// first, then service-specific overrides on top.
+        /// </summary>
+        private void ConfigureGeoClientOptions(
+            IConfiguration configuration,
+            string? servicePrefix)
+        {
+            const string baseSectionName = nameof(GeoClientOptions);
+
+            // Always bind shared defaults.
+            services.Configure<GeoClientOptions>(configuration.GetSection(baseSectionName));
+
+            // Overlay service-specific overrides if prefix provided.
+            if (!string.IsNullOrEmpty(servicePrefix))
+            {
+                services.Configure<GeoClientOptions>(
+                    configuration.GetSection($"{servicePrefix}{baseSectionName}"));
+            }
         }
     }
 }

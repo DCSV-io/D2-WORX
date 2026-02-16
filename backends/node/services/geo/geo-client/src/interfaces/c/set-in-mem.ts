@@ -5,7 +5,6 @@ export interface SetInMemInput {
   data: GeoRefData;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SetInMemOutput {}
 
 /** Recommended redaction for SetInMem handlers. */

@@ -27,6 +27,9 @@ public class RequestInfo : IRequestInfo
     public bool IsAuthenticated { get; set; }
 
     /// <inheritdoc/>
+    public bool IsTrustedService { get; set; }
+
+    /// <inheritdoc/>
     public string? WhoIsHashId { get; init; }
 
     /// <inheritdoc/>

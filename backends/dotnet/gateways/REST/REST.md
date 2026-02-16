@@ -8,8 +8,12 @@ HTTP/REST gateway providing public API access to D² microservices via gRPC back
 | -------------------------------------------- | ------------------------------------------------------------------------ |
 | [Program.cs](Program.cs)                     | Service bootstrap with gRPC clients, endpoint registration, and OpenAPI. |
 | [ResultExtensions.cs](ResultExtensions.cs)   | Extension methods for converting gRPC responses to HTTP results.         |
-| [GeoEndpoints.cs](Endpoints/GeoEndpoints.cs) | Geo service endpoints and gRPC client registration.                      |
-| [REST.http](REST.http)                       | HTTP request file for testing endpoints in Rider/VS Code.                |
+| [GeoEndpoints.cs](Endpoints/GeoEndpoints.cs)                     | Geo service endpoints and gRPC client registration.                                                          |
+| [REST.http](REST.http)                                           | HTTP request file for testing endpoints in Rider/VS Code.                                                    |
+| [JwtAuthExtensions.cs](Auth/JwtAuthExtensions.cs)                | `AddJwtAuth()` + `UseJwtAuth()` — JWT Bearer authentication via JWKS endpoint with RS256, policy registration. |
+| [JwtAuthOptions.cs](Auth/JwtAuthOptions.cs)                      | Configuration: BaseUrl, Issuer, Audience, ClockSkew for JWT validation.                                        |
+| [JwtFingerprintMiddleware.cs](Auth/JwtFingerprintMiddleware.cs)  | Middleware validating JWT `fp` claim against computed SHA-256(UA\|Accept). Fail-open, backwards-compatible.    |
+| [JwtFingerprintValidator.cs](Auth/JwtFingerprintValidator.cs)    | `ComputeFingerprint()` — SHA-256(User-Agent + "\|" + Accept) for stolen token detection.                     |
 
 ## API Versioning
 

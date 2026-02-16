@@ -3,7 +3,6 @@ import {
   BaseHandler,
   HandlerContext,
   OrgType,
-  UserToOrgRelationship,
   DEFAULT_HANDLER_OPTIONS,
   type IHandlerContext,
   type IRequestContext,
@@ -23,6 +22,7 @@ function createTestRequestContext(overrides?: Partial<IRequestContext>): IReques
     requestPath: "/test",
     isAuthenticated: true,
     userId: "user-123",
+    email: "testuser@example.com",
     username: "testuser",
     agentOrgId: "org-agent-1",
     agentOrgName: "Agent Org",
@@ -30,6 +30,11 @@ function createTestRequestContext(overrides?: Partial<IRequestContext>): IReques
     targetOrgId: "org-target-1",
     targetOrgName: "Target Org",
     targetOrgType: OrgType.Customer,
+    isOrgEmulating: false,
+    impersonatedBy: undefined,
+    impersonatingEmail: undefined,
+    impersonatingUsername: undefined,
+    isUserImpersonating: false,
     isAgentStaff: true,
     isAgentAdmin: true,
     isTargetingStaff: false,
@@ -231,19 +236,6 @@ describe("OrgType", () => {
   it("has exactly 5 members", () => {
     const values = Object.values(OrgType);
     expect(values).toHaveLength(5);
-  });
-});
-
-describe("UserToOrgRelationship", () => {
-  it("has all .NET enum values", () => {
-    expect(UserToOrgRelationship.DirectMember).toBe("DirectMember");
-    expect(UserToOrgRelationship.AssociatedMember).toBe("AssociatedMember");
-    expect(UserToOrgRelationship.Emulation).toBe("Emulation");
-  });
-
-  it("has exactly 3 members", () => {
-    const values = Object.values(UserToOrgRelationship);
-    expect(values).toHaveLength(3);
   });
 });
 

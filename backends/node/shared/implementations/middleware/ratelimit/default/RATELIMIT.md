@@ -4,11 +4,11 @@ Multi-dimensional sliding-window rate limiting. Mirrors `RateLimit.Default` in .
 
 ## Files
 
-| File Name                                            | Description                                                                    |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------ |
-| [handlers/check.ts](src/handlers/check.ts)           | `Check` handler — sliding window approximation across 4 dimensions.            |
-| [rate-limit-options.ts](src/rate-limit-options.ts)   | `RateLimitOptions` + `DEFAULT_RATE_LIMIT_OPTIONS`.                             |
-| [index.ts](src/index.ts)                             | Barrel re-export of `Check` handler + options (with deprecation notices).      |
+| File Name                                          | Description                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------- |
+| [handlers/check.ts](src/handlers/check.ts)         | `Check` handler — sliding window approximation across 4 dimensions.       |
+| [rate-limit-options.ts](src/rate-limit-options.ts) | `RateLimitOptions` + `DEFAULT_RATE_LIMIT_OPTIONS`.                        |
+| [index.ts](src/index.ts)                           | Barrel re-export of `Check` handler + options (with deprecation notices). |
 
 ## Dimensions
 

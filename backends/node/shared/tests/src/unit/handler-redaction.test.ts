@@ -272,6 +272,54 @@ class ThrowingRedactedHandler extends BaseHandler<{ ip: string }, { data: string
   }
 }
 
+// Handler that makes manual logger calls inside executeAsync (the "escape hatch" pattern).
+// This simulates the FindWhoIs bug: handler has inputFields redaction but logs PII
+// manually within its own method body.
+class ManualLogSafeHandler extends BaseHandler<
+  { ip: string; fingerprint: string },
+  { data: string }
+> {
+  override get redaction(): RedactionSpec {
+    return { inputFields: ["ip", "fingerprint"] };
+  }
+
+  constructor(context: IHandlerContext) {
+    super(context);
+  }
+
+  protected async executeAsync(input: {
+    ip: string;
+    fingerprint: string;
+  }): Promise<D2Result<{ data: string } | undefined>> {
+    // Safe: does NOT log raw PII in manual calls
+    this.context.logger.warn(`gRPC call failed. TraceId: ${this.traceId}`);
+    return D2Result.ok({ data: { data: "ok" }, traceId: this.traceId });
+  }
+}
+
+// Handler that INCORRECTLY logs PII in manual calls (anti-pattern for testing detection)
+class ManualLogLeakyHandler extends BaseHandler<
+  { ip: string; fingerprint: string },
+  { data: string }
+> {
+  override get redaction(): RedactionSpec {
+    return { inputFields: ["ip", "fingerprint"] };
+  }
+
+  constructor(context: IHandlerContext) {
+    super(context);
+  }
+
+  protected async executeAsync(input: {
+    ip: string;
+    fingerprint: string;
+  }): Promise<D2Result<{ data: string } | undefined>> {
+    // UNSAFE: logs raw PII despite having redaction spec on input
+    this.context.logger.warn(`gRPC call failed for IP ${input.ip}. TraceId: ${this.traceId}`);
+    return D2Result.ok({ data: { data: "ok" }, traceId: this.traceId });
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -550,5 +598,54 @@ describe("BaseHandler redaction", () => {
       (c[0] as string).includes("unhandled exception"),
     );
     expect(errorLog).toBeDefined();
+  });
+
+  // -----------------------------------------------------------------------
+  // Manual logger call PII leak detection tests
+  // -----------------------------------------------------------------------
+
+  it("safe manual log call inside executeAsync does not contain raw PII", async () => {
+    const { context, debugSpy } = createDebugContext();
+    const warnSpy = vi.spyOn(context.logger, "warn");
+    const handler = new ManualLogSafeHandler(context);
+
+    const sensitiveIp = "192.168.99.42";
+    const sensitiveFingerprint = "secret-fingerprint-abc123";
+    await handler.handleAsync({ ip: sensitiveIp, fingerprint: sensitiveFingerprint });
+
+    // Verify BaseHandler's automatic redaction works on input log
+    const inputLog = debugSpy.mock.calls.find((c) => (c[0] as string).includes("received input"));
+    expect(inputLog).toBeDefined();
+    expect(inputLog![0]).not.toContain(sensitiveIp);
+    expect(inputLog![0]).not.toContain(sensitiveFingerprint);
+
+    // Verify manual warn() call does NOT contain raw PII
+    const allLogCalls = [
+      ...debugSpy.mock.calls.map((c) => c[0] as string),
+      ...warnSpy.mock.calls.map((c) => c[0] as string),
+    ];
+    for (const msg of allLogCalls) {
+      expect(msg).not.toContain(sensitiveIp);
+      expect(msg).not.toContain(sensitiveFingerprint);
+    }
+  });
+
+  it("leaky manual log call inside executeAsync DOES contain raw PII (demonstrates the anti-pattern)", async () => {
+    const { context, debugSpy } = createDebugContext();
+    const warnSpy = vi.spyOn(context.logger, "warn");
+    const handler = new ManualLogLeakyHandler(context);
+
+    const sensitiveIp = "192.168.99.42";
+    await handler.handleAsync({ ip: sensitiveIp, fingerprint: "fp" });
+
+    // BaseHandler's automatic redaction still works on its own debug log
+    const inputLog = debugSpy.mock.calls.find((c) => (c[0] as string).includes("received input"));
+    expect(inputLog).toBeDefined();
+    expect(inputLog![0]).not.toContain(sensitiveIp);
+
+    // But the manual warn() call LEAKS the IP (this is the anti-pattern we fixed)
+    const warnCalls = warnSpy.mock.calls.map((c) => c[0] as string);
+    const leakyCall = warnCalls.find((msg) => msg.includes(sensitiveIp));
+    expect(leakyCall).toBeDefined(); // proves the leak exists in the anti-pattern
   });
 });

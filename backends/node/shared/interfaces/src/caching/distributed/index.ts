@@ -3,4 +3,5 @@ export type { ExistsInput, ExistsOutput, IExistsHandler } from "./handlers/r/exi
 export type { GetTtlInput, GetTtlOutput, IGetTtlHandler } from "./handlers/r/get-ttl.js";
 export type { SetInput, SetOutput, ISetHandler } from "./handlers/u/set.js";
 export type { IncrementInput, IncrementOutput, IIncrementHandler } from "./handlers/u/increment.js";
+export type { SetNxInput, SetNxOutput, ISetNxHandler } from "./handlers/c/set-nx.js";
 export type { RemoveInput, RemoveOutput, IRemoveHandler } from "./handlers/d/remove.js";

@@ -1,5 +1,18 @@
 export { type GeoClientOptions, DEFAULT_GEO_CLIENT_OPTIONS } from "./geo-client-options.js";
+
+// Validation schemas (single source of truth for contact field constraints)
+export {
+  contactMethodsSchema,
+  personalDetailsSchema,
+  professionalDetailsSchema,
+  locationInputSchema,
+  contactInputSchema,
+} from "./validation/contact-schemas.js";
 export type { GeoRefDataUpdated } from "./messages/geo-ref-data-updated.js";
+
+// gRPC helpers
+export { createApiKeyInterceptor } from "./grpc/api-key-interceptor.js";
+export { createGeoServiceClient } from "./grpc/create-geo-client.js";
 
 // Interfaces (contract types + handler interfaces + redaction constants)
 export { Commands, Queries, Complex } from "./interfaces/index.js";
@@ -14,6 +27,13 @@ export { SetInDist, GeoRefDataSerializer } from "./handlers/c/set-in-dist.js";
 export type { SetInDistInput, SetInDistOutput } from "./interfaces/c/set-in-dist.js";
 export { SetOnDisk } from "./handlers/c/set-on-disk.js";
 export type { SetOnDiskInput, SetOnDiskOutput } from "./interfaces/c/set-on-disk.js";
+export { CreateContacts } from "./handlers/c/create-contacts.js";
+export type { CreateContactsInput, CreateContactsOutput } from "./interfaces/c/create-contacts.js";
+export { DeleteContactsByExtKeys } from "./handlers/c/delete-contacts-by-ext-keys.js";
+export type {
+  DeleteContactsByExtKeysInput,
+  DeleteContactsByExtKeysOutput,
+} from "./interfaces/c/delete-contacts-by-ext-keys.js";
 
 // Queries
 export { GetFromMem } from "./handlers/q/get-from-mem.js";
@@ -22,12 +42,22 @@ export { GetFromDist } from "./handlers/q/get-from-dist.js";
 export type { GetFromDistInput, GetFromDistOutput } from "./interfaces/q/get-from-dist.js";
 export { GetFromDisk } from "./handlers/q/get-from-disk.js";
 export type { GetFromDiskInput, GetFromDiskOutput } from "./interfaces/q/get-from-disk.js";
+export { GetContactsByExtKeys } from "./handlers/q/get-contacts-by-ext-keys.js";
+export type {
+  GetContactsByExtKeysInput,
+  GetContactsByExtKeysOutput,
+} from "./interfaces/q/get-contacts-by-ext-keys.js";
 
 // Complex
 export { FindWhoIs } from "./handlers/x/find-whois.js";
 export type { FindWhoIsInput, FindWhoIsOutput } from "./interfaces/x/find-whois.js";
 export { Get, type GetDeps } from "./handlers/x/get.js";
 export type { GetInput, GetOutput } from "./interfaces/x/get.js";
+export { UpdateContactsByExtKeys } from "./handlers/x/update-contacts-by-ext-keys.js";
+export type {
+  UpdateContactsByExtKeysInput,
+  UpdateContactsByExtKeysOutput,
+} from "./interfaces/x/update-contacts-by-ext-keys.js";
 
 // Messaging
 export { Updated, type UpdatedDeps } from "./messaging/handlers/sub/updated.js";

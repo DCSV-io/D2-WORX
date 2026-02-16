@@ -172,16 +172,18 @@ describe("PingServiceService", () => {
 // ---------------------------------------------------------------------------
 
 describe("GeoServiceService", () => {
-  it("has all 7 RPC methods", () => {
+  it("has all 9 RPC methods", () => {
     const methods = Object.keys(GeoServiceService);
     expect(methods).toEqual([
       "getReferenceData",
       "requestReferenceDataUpdate",
       "findWhoIs",
       "getContacts",
+      "deleteContacts",
       "getContactsByExtKeys",
       "createContacts",
-      "deleteContacts",
+      "deleteContactsByExtKeys",
+      "updateContactsByExtKeys",
     ]);
   });
 

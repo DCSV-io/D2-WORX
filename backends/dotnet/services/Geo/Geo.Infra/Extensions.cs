@@ -108,7 +108,11 @@ public static class Extensions
             services.AddMassTransit(x =>
             {
                 // Add geographic reference data updated consumer.
-                x.AddConsumer<UpdatedConsumer>();
+                // Temporary = true creates a unique auto-delete queue per instance,
+                // converting from competing-consumer (one gets it) to broadcast
+                // (all instances get it). Required for multi-instance cache refresh.
+                x.AddConsumer<UpdatedConsumer>()
+                    .Endpoint(e => e.Temporary = true);
 
                 // Configure RabbitMQ as the transport.
                 x.UsingRabbitMq((context, cfg) =>

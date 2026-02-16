@@ -6,7 +6,7 @@ export interface RemoveInput {
 }
 
 /** Output for removing a single key from the distributed cache. */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+
 export interface RemoveOutput {}
 
 /** Handler for removing a single key from the distributed cache. */

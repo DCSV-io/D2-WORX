@@ -1,10 +1,19 @@
 import type { OrgType } from "./org-type.js";
-import type { UserToOrgRelationship } from "./user-to-org-relationship.js";
 
 /**
  * Represents the context of a request, including tracing information,
  * user identity, and organizational details.
  * Mirrors D2.Shared.Handler.IRequestContext in .NET.
+ *
+ * **Agent org** = the user's actual org membership. Only changes during
+ * **user impersonation** (admin acting as another user).
+ *
+ * **Target org** = the org all operations execute against. Always populated for
+ * authenticated users with org context. Equals the emulated org during
+ * **org emulation**, otherwise equals the agent org.
+ *
+ * Downstream logic should always use target org fields for authorization and
+ * data scoping. Agent org fields are for audit/identity context only.
  */
 export interface IRequestContext {
   // Tracing
@@ -15,6 +24,7 @@ export interface IRequestContext {
   // User / Identity
   isAuthenticated: boolean;
   userId?: string;
+  email?: string;
   username?: string;
 
   // Agent Organization
@@ -27,8 +37,16 @@ export interface IRequestContext {
   targetOrgName?: string;
   targetOrgType?: OrgType;
 
+  // Org Emulation
+  isOrgEmulating: boolean;
+
+  // User Impersonation
+  impersonatedBy?: string;
+  impersonatingEmail?: string;
+  impersonatingUsername?: string;
+  isUserImpersonating: boolean;
+
   // Helpers (computed)
-  userToTargetRelationship?: UserToOrgRelationship;
   isAgentStaff: boolean;
   isAgentAdmin: boolean;
   isTargetingStaff: boolean;

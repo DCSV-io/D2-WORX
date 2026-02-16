@@ -80,15 +80,25 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
             return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
-        // Parse GUID strings from request.
-        var requestedIds = input.Request.Ids
-            .Select(id => Guid.TryParse(id, out var guid) ? guid : Guid.Empty)
-            .Where(g => g != Guid.Empty)
-            .ToList();
-
-        if (requestedIds.Count == 0)
+        // Validate: all IDs must be valid, non-empty GUIDs.
+        List<List<string>> allErrors = [];
+        var requestedIds = new List<Guid>(input.Request.Ids.Count);
+        for (var i = 0; i < input.Request.Ids.Count; i++)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            if (!Guid.TryParse(input.Request.Ids[i], out var guid) || guid == Guid.Empty)
+            {
+                allErrors.Add([$"ids[{i}]", "Must be a valid, non-empty GUID."]);
+            }
+            else
+            {
+                requestedIds.Add(guid);
+            }
+        }
+
+        if (allErrors.Count > 0)
+        {
+            return D2Result<O?>.BubbleFail(
+                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
         }
 
         // First, try to get Contacts from in-memory cache.

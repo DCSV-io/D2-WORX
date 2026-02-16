@@ -1,7 +1,8 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { type DistributedCache, RateLimit } from "@d2/interfaces";
 import { isLocalhost } from "@d2/request-enrichment";
+import { z } from "zod";
 import { DEFAULT_RATE_LIMIT_OPTIONS, type RateLimitOptions } from "../rate-limit-options.js";
 
 type CheckInput = RateLimit.CheckInput;
@@ -41,7 +42,23 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
     this.options = { ...DEFAULT_RATE_LIMIT_OPTIONS, ...options };
   }
 
+  private static readonly checkSchema = z.object({
+    requestInfo: z
+      .object({
+        clientIp: validators.zodIpAddress,
+        clientFingerprint: z.string().min(1).optional(),
+        countryCode: z.string().length(2).optional(),
+      })
+      .passthrough(),
+  }) as unknown as z.ZodType<CheckInput>;
+
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
+    // Validate input.
+    const validation = this.validateInput(Check.checkSchema, input);
+    if (validation.failed) {
+      return D2Result.bubbleFail(validation);
+    }
+
     const { requestInfo } = input;
 
     // Check dimensions in hierarchy order: fingerprint -> IP -> city -> country.
@@ -132,8 +149,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
       // 1. Check if already blocked.
       const ttlResult = await this.getTtl.handleAsync({ key: blockedKey });
       if (ttlResult.success && ttlResult.data?.timeToLiveMs !== undefined) {
+        // Do not log raw `value` — it may be an IP address or fingerprint (PII).
         this.context.logger.debug(
-          `Request blocked on ${dimension} dimension. Value: ${value}. TTL: ${ttlResult.data.timeToLiveMs}ms. TraceId: ${this.traceId}`,
+          `Request blocked on ${dimension} dimension. TTL: ${ttlResult.data.timeToLiveMs}ms. TraceId: ${this.traceId}`,
         );
         return {
           isBlocked: true,
@@ -169,9 +187,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
       });
 
       if (!incrResult.success) {
-        // Fail-open on cache errors.
+        // Fail-open on cache errors. Do not log raw `value` — may be PII.
         this.context.logger.warn(
-          `Failed to increment rate limit counter for ${dimension}:${value}. Failing open. TraceId: ${this.traceId}`,
+          `Failed to increment rate limit counter for ${dimension}. Failing open. TraceId: ${this.traceId}`,
         );
         return { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined };
       }
@@ -192,8 +210,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
           expirationMs: this.options.blockDurationMs,
         });
 
+        // Do not log raw `value` — may be an IP address or fingerprint (PII).
         this.context.logger.warn(
-          `Rate limit exceeded on ${dimension} dimension. Value: ${value}. Count: ${estimated}/${threshold}. TraceId: ${this.traceId}`,
+          `Rate limit exceeded on ${dimension} dimension. Count: ${estimated}/${threshold}. TraceId: ${this.traceId}`,
         );
 
         return {
@@ -205,9 +224,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
 
       return { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined };
     } catch {
-      // Fail-open on cache errors.
+      // Fail-open on cache errors. Do not log raw `value` — may be PII.
       this.context.logger.warn(
-        `Error checking rate limit for ${dimension}:${value}. Failing open. TraceId: ${this.traceId}`,
+        `Error checking rate limit for ${dimension}. Failing open. TraceId: ${this.traceId}`,
       );
       return { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined };
     }

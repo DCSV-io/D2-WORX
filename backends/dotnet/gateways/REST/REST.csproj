@@ -11,6 +11,7 @@
         <ProjectReference Include="..\..\shared\Handler.Extensions\Handler.Extensions.csproj" />
         <ProjectReference Include="..\..\services\Geo\Geo.Client\Geo.Client.csproj" />
         <ProjectReference Include="..\..\shared\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
+        <ProjectReference Include="..\..\shared\Implementations\Middleware\Idempotency.Default\Idempotency.Default.csproj" />
         <ProjectReference Include="..\..\shared\Implementations\Middleware\RateLimit.Default\RateLimit.Default.csproj" />
         <ProjectReference Include="..\..\shared\Implementations\Middleware\RequestEnrichment.Default\RequestEnrichment.Default.csproj" />
         <ProjectReference Include="..\..\shared\Result.Extensions\Result.Extensions.csproj" />
@@ -20,6 +21,7 @@
 
     <ItemGroup>
         <PackageReference Include="Grpc.Net.ClientFactory" Version="2.76.0-pre1" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     </ItemGroup>
 

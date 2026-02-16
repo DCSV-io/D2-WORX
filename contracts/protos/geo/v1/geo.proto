@@ -21,8 +21,15 @@ service GeoService {
   rpc FindWhoIs(FindWhoIsRequest)
       returns (FindWhoIsResponse);
 
+  // Internal only — not exposed via Geo client libraries.
+  // External consumers use GetContactsByExtKeys / DeleteContactsByExtKeys / UpdateContactsByExtKeys.
   rpc GetContacts(GetContactsRequest)
       returns (GetContactsResponse);
+
+  // Internal only — not exposed via Geo client libraries.
+  // External consumers use DeleteContactsByExtKeys.
+  rpc DeleteContacts(DeleteContactsRequest)
+      returns (DeleteContactsResponse);
 
   rpc GetContactsByExtKeys(GetContactsByExtKeysRequest)
       returns (GetContactsByExtKeysResponse);
@@ -30,8 +37,12 @@ service GeoService {
   rpc CreateContacts(CreateContactsRequest)
       returns (CreateContactsResponse);
 
-  rpc DeleteContacts(DeleteContactsRequest)
-      returns (DeleteContactsResponse);
+  rpc DeleteContactsByExtKeys(DeleteContactsByExtKeysRequest)
+      returns (DeleteContactsByExtKeysResponse);
+
+  // Replaces contacts at the given ext keys. Geo internally deletes old, creates new.
+  rpc UpdateContactsByExtKeys(UpdateContactsByExtKeysRequest)
+      returns (UpdateContactsByExtKeysResponse);
 }
 
 // **************************************
@@ -154,6 +165,34 @@ message DeleteContactsRequest {
 message DeleteContactsResponse {
   d2.common.v1.D2ResultProto result = 1;
   int32 deleted = 2;
+}
+
+// ************************************
+// ***** DeleteContactsByExtKeys ******
+// ************************************
+
+message DeleteContactsByExtKeysRequest {
+  repeated GetContactsExtKeys keys = 1;
+}
+
+message DeleteContactsByExtKeysResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  int32 deleted = 2;
+}
+
+// ************************************
+// ***** UpdateContactsByExtKeys ******
+// ************************************
+
+// Replaces contacts at the given ext keys. Geo internally deletes old, creates new.
+// Uses the same ContactToCreateDTO shape (which already contains context_key + related_entity_id).
+message UpdateContactsByExtKeysRequest {
+  repeated ContactToCreateDTO contacts = 1;
+}
+
+message UpdateContactsByExtKeysResponse {
+  d2.common.v1.D2ResultProto result = 1;
+  repeated ContactDTO data = 2;
 }
 
 // ***********************

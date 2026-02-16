@@ -30,6 +30,7 @@ For deeper architectural context, consult these files:
 | `backends/dotnet/shared/Result/RESULT.md`                                                           | D2Result pattern                |
 | `backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md` | Request enrichment middleware   |
 | `backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md`                 | Rate limiting middleware        |
+| `backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md`              | Idempotency middleware          |
 | `CONTRIBUTING.md`                                                                                   | Contribution guidelines         |
 
 ---
@@ -137,58 +138,11 @@ return D2Result<TNewData>.BubbleFail(result);  // Propagate errors with type cha
 
 ### Content-Addressable Entities
 
-`Location` and `WhoIs` entities use SHA-256 content-addressable hash IDs:
-
-- Hash is computed from immutable identity properties
-- Stored as 64-character hex string (32 bytes)
-- Enables automatic deduplication and idempotent operations
-- Hash computed via factory methods: `Location.Create(...)`, `WhoIs.Create(...)`
-
-```csharp
-// Location hash: coordinates + address + city + postal + subdivision + country
-var location = Location.Create(
-    coordinates: Coordinates.Create(34.0522, -118.2437),
-    address: StreetAddress.Create("123 Main St"),
-    city: "Los Angeles",
-    postalCode: "90001",
-    subdivisionISO31662Code: "US-CA",
-    countryISO31661Alpha2Code: "US");
-// location.HashId is now a 64-char hex string
-
-// WhoIs hash: IP + year + month + fingerprint (for temporal versioning)
-var whoIs = WhoIs.Create("192.168.1.1", year: 2025, month: 6, fingerprint: "Mozilla/5.0...");
-```
+`Location` and `WhoIs` entities use SHA-256 content-addressable hash IDs (64-char hex, computed via `Location.Create(...)` / `WhoIs.Create(...)`). Enables automatic deduplication and idempotent operations.
 
 ### Mappers
 
-Mappers live in `ServiceName.App/Mappers/` and use extension member syntax:
-
-```csharp
-public static class LocationMapper
-{
-    extension(Location location)
-    {
-        public LocationDTO ToDTO() { ... }
-    }
-
-    extension(LocationDTO locationDTO)
-    {
-        public Location ToDomain() { ... }
-    }
-
-    extension(LocationToCreateDTO locationToCreateDTO)
-    {
-        public Location ToDomain() { ... }
-    }
-}
-```
-
-**Usage:**
-
-```csharp
-var dto = location.ToDTO();
-var domain = dto.ToDomain();
-```
+Mappers live in `ServiceName.App/Mappers/` using C# 14 extension member syntax: `extension(Location location) { public LocationDTO ToDTO() { ... } }`. Provides `ToDTO()` and `ToDomain()` conversions.
 
 ### Multi-Tier Caching
 
@@ -200,43 +154,11 @@ Cache population: When data is retrieved from a lower tier, populate all higher 
 
 ### Batch Operations
 
-Repository handlers use batched queries to avoid large IN clause issues:
-
-```csharp
-private const int _BATCH_SIZE = 500;  // Or from options
-
-foreach (var batch in input.HashIds.Chunk(_BATCH_SIZE))
-{
-    var results = await r_db.Locations
-        .AsNoTracking()
-        .Where(l => batch.Contains(l.HashId))
-        .ToListAsync(ct);
-    // ...
-}
-```
+Repository handlers use `input.HashIds.Chunk(_BATCH_SIZE)` to avoid large IN clause issues. Batch size comes from Options pattern (default 500).
 
 ### Options Pattern
 
-Configuration uses the Options pattern with sensible defaults:
-
-```csharp
-// In ServiceName.App/Options/
-public class GeoAppOptions
-{
-    public TimeSpan LocationCacheExpiration { get; set; } = TimeSpan.FromHours(1);
-    public TimeSpan WhoIsCacheExpiration { get; set; } = TimeSpan.FromHours(1);
-    public TimeSpan ContactCacheExpiration { get; set; } = TimeSpan.FromHours(1);
-}
-
-// In ServiceName.Infra/Options/
-public class GeoInfraOptions
-{
-    public int BatchSize { get; set; } = 500;
-}
-
-// Registration (sections are optional - defaults apply if missing)
-services.Configure<GeoAppOptions>(config.GetSection(nameof(GeoAppOptions)));
-```
+Configuration uses `IOptions<T>` with sensible defaults. App options in `ServiceName.App/Options/`, infra options in `ServiceName.Infra/Options/`. Register via `services.Configure<T>(config.GetSection(nameof(T)))`.
 
 ### Partial Interface Extension Pattern
 
@@ -327,7 +249,8 @@ D2-WORX/
 │   │   │       │   └── geo/          # @d2/geo-cache
 │   │   │       └── middleware/
 │   │   │           ├── request-enrichment/  # @d2/request-enrichment
-│   │   │           └── ratelimit/    # @d2/ratelimit
+│   │   │           ├── ratelimit/    # @d2/ratelimit
+│   │   │           └── idempotency/  # @d2/idempotency
 │   │   ├── testing/                  # @d2/testing (shared test infra)
 │   │   └── tests/                    # @d2/shared-tests (tests all shared pkgs)
 │   │       ├── vitest.config.ts
@@ -430,22 +353,7 @@ Every project/module should have a corresponding `.md` file documenting its purp
 
 ### Table Formatting
 
-Format markdown tables for **plain-text readability** with aligned columns:
-
-```markdown
-<!-- Good: Columns aligned, readable in any editor -->
-
-| File Name                   | Description                                 |
-| --------------------------- | ------------------------------------------- |
-| [Get.cs](Handlers/R/Get.cs) | Handler for retrieving data from cache.     |
-| [Set.cs](Handlers/U/Set.cs) | Handler for storing data with optional TTL. |
-
-<!-- Bad: Columns not aligned, hard to read in plain text -->
-
-| File Name                   | Description                             |
-| --------------------------- | --------------------------------------- |
-| [Get.cs](Handlers/R/Get.cs) | Handler for retrieving data from cache. |
-```
+Format markdown tables with **aligned columns** for plain-text readability (pad cells so `|` characters line up).
 
 ### When to Update Documentation
 
@@ -482,42 +390,9 @@ Service.Tests/
 - `GetHandler_WhenMemoryCacheHit_ReturnsDataWithoutCallingRedis`
 - `Create_WithValidCoordinates_GeneratesConsistentHashId`
 
-**Hash ID Assertions (content-addressable entities):**
+**Hash ID Assertions:** `HaveLength(64)`, same input → same hash, different input → different hash.
 
-```csharp
-// 32 bytes = 64 hex characters
-location.HashId.Should().HaveLength(64);
-
-// Same input = same hash
-location1.HashId.Should().Be(location2.HashId);
-
-// Different input = different hash
-location1.HashId.Should().NotBe(location3.HashId);
-```
-
-**Integration Tests with Testcontainers:**
-
-```csharp
-[MustDisposeResource(false)]
-public class MyTests : IAsyncLifetime
-{
-    private PostgreSqlContainer _container = null!;
-    protected CancellationToken Ct => TestContext.Current.CancellationToken;
-
-    public async ValueTask InitializeAsync()
-    {
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
-            .Build();
-        await _container.StartAsync(Ct);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _container.DisposeAsync();
-    }
-}
-```
+**Integration Tests:** Use Testcontainers (`PostgreSqlBuilder`, `RedisBuilder`) with `IAsyncLifetime`. Image: `postgres:18`.
 
 ### TypeScript Backend Tests
 
@@ -530,33 +405,6 @@ public class MyTests : IAsyncLifetime
 | `@d2/testing`      | Shared test infra (matchers, containers) | `D2.Shared.Tests` (infra) |
 | `@d2/shared-tests` | Tests for all shared packages            | `D2.Shared.Tests` (tests) |
 | `auth-tests`       | Tests for Auth service                   | `Geo.Tests` (pattern)     |
-
-**Structure:**
-
-```
-backends/node/shared/
-  testing/                    # @d2/testing — shared test helpers
-    src/
-      matchers/               # Custom expect matchers (toBeSuccess, toBeFailure)
-      containers/             # Container factory functions (Postgres, Redis)
-      fixtures/               # Shared test fixtures
-  tests/                      # @d2/shared-tests — tests for all shared packages
-    vitest.config.ts
-    unit/
-      result/
-      handler/
-      cache-memory/
-    integration/
-      cache-redis/
-      geo-cache/
-      ratelimit/
-
-backends/node/services/
-  auth-tests/                 # Auth service tests
-    vitest.config.ts
-    unit/
-    integration/
-```
 
 **Test stack mapping:**
 
@@ -665,36 +513,26 @@ refactor: simplify caching logic
 - Don't hardcode batch sizes or cache expirations (use Options pattern)
 - Don't forget to update/create `.md` documentation when adding features (see Documentation section)
 
+### Security Checklist for New Endpoints
+
+When adding routes or handlers, follow the full checklist in `backends/node/services/auth/AUTH.md` § "Secure Endpoint Construction Checklist". Key points:
+
+- **All handlers MUST validate input** — Node.js: Zod via `this.validateInput(schema, input)` at top of `executeAsync()`. .NET: FluentValidation or Data Annotations on request DTOs
+- **All string fields need max length** — Node.js: `.max()` on Zod schemas. .NET: `[MaxLength]` or `.MaximumLength()`. Never allow unbounded strings to reach the database
+- **IDOR prevention** — derive org/user scope from session/claims, never from user-supplied input
+- **Pagination limits** — default limit (50) + max limit (100) on all list queries
+- **DB constraint errors** — catch unique violations (PG `23505`) and return 409, not 500
+- **Auth middleware visible at route/endpoint declaration** — Node.js: `requireOrg()`, `requireRole()`, `requireStaff()`. .NET: `RequireAuthorization(AuthPolicies.HAS_ACTIVE_ORG)`, `RequireServiceKey()`
+- **New JWT claims** — add to BOTH Node.js (`JWT_CLAIM_TYPES`) and .NET (`JwtClaimTypes`), update AUTH.md cross-reference
+- **No sensitive IDs in JWT** — admin user IDs, internal audit data stays server-side (session only)
+
 ### Current Development Focus
 
-**Completed (.NET):**
+Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 485 tests (437 unit + 48 integration). .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done.
 
-- Geo service: Full domain, app, infra, and API layers with 595+ tests
-- Geo.Client: Service-owned client library with WhoIs cache handler (`FindWhoIs`)
-- REST Gateway: HTTP/REST → gRPC routing with request enrichment + rate limiting
-- RequestEnrichment.Default: IP resolution, fingerprinting, WhoIs lookup middleware
-- RateLimit.Default: Multi-dimensional sliding-window rate limiting middleware
-- Distributed cache abstractions: GetTtl, Increment handlers (abstracted from Redis)
-- BaseHandler metrics: duration histogram, invocations/failures/exceptions counters
-- All shared implementations use project-defined abstractions (no direct Redis/MS cache)
-- RedactDataDestructuringPolicy: Serilog policy for `[RedactData]` attribute (type + property-level masking)
-- BaseHandler DefaultOptions: Virtual property for handler-level logging defaults
-- Handler I/O annotations: `[RedactData]` on FindWhoIs I/O, `DefaultOptions` overrides on all ref data + rate limit handlers
+See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
-**Completed (Node.js/TypeScript):**
-
-- Workspace + Foundation (Layer 0): @d2/result, @d2/utilities, @d2/protos, @d2/testing
-- Logging + Telemetry (Layer 0): @d2/logging (ILogger + Pino), @d2/service-defaults (OTel bootstrap)
-- Handler Pattern (Layer 1): @d2/handler (BaseHandler with OTel spans + metrics + RedactionSpec)
-- Contracts (Layer 2): @d2/interfaces (cache + middleware contracts, TLC folder convention), @d2/result-extensions
-- Cache Implementations (Layer 3): @d2/cache-memory, @d2/cache-redis (TLC handler subdirs)
-- Service Client + Messaging (Layer 4): @d2/messaging, @d2/geo-client (full .NET parity, interfaces + redaction)
-- Middleware (Layer 5): @d2/request-enrichment, @d2/ratelimit
-- Polyglot structure alignment: All packages follow TLC folder convention matching .NET
-- Data redaction infrastructure: RedactionSpec, companion constants, interface narrowing, handler wiring
-- 445 tests in @d2/shared-tests
-
-**Next:** Phase 2 (Auth): Auth Service, SvelteKit integration, .NET Gateway JWT validation
+**Next:** Phase 2 Stage C — Auth client libraries (`@d2/auth-client` for SvelteKit BFF, `@d2/auth-sdk` for backend gRPC), SvelteKit auth integration
 
 ### When in Doubt
 
@@ -769,6 +607,17 @@ No sticky sessions required. Any instance can handle any request:
 - JWTs: self-contained, any instance validates with cached JWKS public key
 - Spinning up new instances/locations: just point at shared Redis + PG
 
+### Service-to-Service Trust (S2S)
+
+- **Mechanism**: `X-Api-Key` header validated by `ServiceKeyMiddleware` (runs early in pipeline)
+- **Trust flag**: `IRequestInfo.IsTrustedService` — set by middleware, consumed by downstream components
+- **Design principle**: Service key = TRUST (bypasses security layers). JWT = IDENTITY (carries user context). Independent — a request can have both, either, or neither
+- **Trusted service bypasses**: Rate limiting (all dimensions skipped), JWT fingerprint validation (skipped entirely)
+- **Invalid key**: 401 immediately (fail fast, before rate limiting)
+- **No key**: Treated as browser request, continues normally
+- **Pipeline order**: RequestEnrichment → ServiceKeyDetection → RateLimiting → Auth → Fingerprint → Authz
+- **Endpoint filter**: `RequireServiceKey()` on endpoints checks `IsTrustedService` flag (no re-validation)
+
 ### Rate Limiting
 
 - **Packages**: `@d2/ratelimit` (Node.js - planned), `RateLimit.Default` (C# - done)
@@ -778,6 +627,7 @@ No sticky sessions required. Any instance can handle any request:
 - **Logic**: If ANY dimension exceeds threshold → block for 5 minutes
 - **Country whitelist**: US, CA, GB exempt from country-level blocking
 - **Fail-open**: If Redis down or WhoIs unavailable, requests pass through
+- **Trusted services**: Bypass all dimensions (early return in Check handler)
 
 ### Request Enrichment
 
@@ -800,48 +650,11 @@ No sticky sessions required. Any instance can handle any request:
 
 ### Workspace Structure
 
-```
-D2-WORX/                              # pnpm workspace root
-├── pnpm-workspace.yaml                # packages: backends/node/shared/**, backends/node/services/*, clients/web
-├── package.json                        # Root scripts, shared devDeps
-├── vitest.config.ts                    # Root Vitest config (projects discovery)
-│
-backends/node/
-├── tsconfig.base.json                  # Shared TS config (strict, paths, etc.)
-├── vitest.shared.ts                    # Shared Vitest config (inherited by test projects)
-├── shared/                             # Mirrors dotnet/shared/ — all @d2/* packages
-│   ├── result/                         # @d2/result (Layer 0)
-│   ├── utilities/                      # @d2/utilities (Layer 0)
-│   ├── handler/                        # @d2/handler (Layer 1) — BaseHandler + OTel
-│   ├── interfaces/                     # @d2/interfaces (Layer 2) — cache contracts
-│   ├── result-extensions/              # @d2/result-extensions (Layer 2)
-│   ├── protos/                         # @d2/protos (Layer 0) — generated TS
-│   ├── implementations/
-│   │   ├── caching/
-│   │   │   ├── memory/                 # @d2/cache-memory (Layer 3)
-│   │   │   ├── redis/                  # @d2/cache-redis (Layer 3)
-│   │   │   └── geo/                    # @d2/geo-cache (Layer 4)
-│   │   └── middleware/
-│   │       ├── request-enrichment/     # @d2/request-enrichment (Layer 5)
-│   │       └── ratelimit/             # @d2/ratelimit (Layer 5)
-│   ├── testing/                        # @d2/testing — shared test infra (matchers, containers)
-│   └── tests/                          # @d2/shared-tests — tests all shared packages
-│       ├── vitest.config.ts
-│       ├── unit/
-│       └── integration/
-└── services/
-    ├── auth/                           # Auth service (Hono + BetterAuth)
-    │   ├── package.json
-    │   ├── src/
-    │   │   ├── index.ts                # Hono app entry
-    │   │   ├── auth.ts                 # BetterAuth config
-    │   │   └── routes/
-    │   └── Dockerfile
-    └── auth-tests/                     # Auth service tests
-        ├── vitest.config.ts
-        ├── unit/
-        └── integration/
-```
+See the **Project Structure** section above for the full tree. Key Node.js roots:
+
+- `pnpm-workspace.yaml` at project root — defines workspace packages
+- `backends/node/tsconfig.base.json` — shared TS config (strict, paths)
+- `backends/node/vitest.shared.ts` — shared Vitest config inherited by test projects
 
 ### Package Dependency Graph
 
@@ -855,6 +668,7 @@ Layer 3:  @d2/cache-memory   → handler, interfaces
 Layer 4:  @d2/geo-cache      → handler, cache-memory, interfaces, result-ext, utilities
 Layer 5:  @d2/request-enrich → handler, geo-cache
           @d2/ratelimit      → request-enrich, handler, result, interfaces
+          @d2/idempotency    → handler, interfaces, result, logging
 ```
 
 ### Design Principles
@@ -872,61 +686,11 @@ Layer 5:  @d2/request-enrich → handler, geo-cache
 - **Library packages** (`@d2/*`): Plain `tsc` — each package has its own `tsconfig.json` extending `backends/node/tsconfig.base.json`, compiles to `dist/` with `.js` + `.d.ts` output
 - **Service apps** (auth, etc.): TBD in Phase 2 (likely `tsup` or `tsx`)
 - **Module format**: ESM only (`"type": "module"` in all `package.json` files)
-- **Package exports**: Each `package.json` uses `exports` field pointing to `dist/`
-
-```jsonc
-// Example @d2/result package.json
-{
-  "name": "@d2/result",
-  "version": "0.0.1",
-  "private": true,
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js",
-    },
-  },
-  "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist",
-  },
-}
-```
+- **Package exports**: Each `package.json` uses `exports` field pointing to `dist/` (see any existing `@d2/*` package for the pattern)
 
 ### Dependency Security
 
-**All npm/pnpm dependency versions MUST be exact** — no `^`, no `~`, no ranges. This is a supply chain security requirement.
-
-```jsonc
-// GOOD — exact versions, locked down
-"vitest": "4.0.18",
-"ioredis": "5.6.1",
-"hono": "4.7.12"
-
-// BAD — version ranges, vulnerable to supply chain attacks
-"vitest": "^4.0.0",
-"ioredis": "~5.6.0",
-"hono": ">=4.0.0"
-```
-
-**Enforcement via `.npmrc` at project root:**
-
-```ini
-engine-strict=true
-save-exact=true
-save-prefix=
-prefer-frozen-lockfile=true
-strict-peer-dependencies=true
-```
-
-- `save-exact=true` + `save-prefix=` — `pnpm add` always pins exact versions, no `^` or `~`
-- `prefer-frozen-lockfile=true` — CI/production installs fail if lockfile is out of date
-- `strict-peer-dependencies=true` — fail on peer dep mismatches instead of silently resolving
-- `engine-strict=true` — enforce Node.js version requirements from `package.json`
-- `pnpm-lock.yaml` is always committed and never deleted
-- Audit regularly: `pnpm audit` to check for known vulnerabilities
-- Update deliberately: pin to specific versions, update one at a time, test after each update
+**All npm/pnpm dependency versions MUST be exact** — no `^`, no `~`, no ranges. Enforced by `.npmrc` (`save-exact=true`, `save-prefix=`, `strict-peer-dependencies=true`, `prefer-frozen-lockfile=true`). `pnpm-lock.yaml` is always committed.
 
 ### TypeScript Style
 
@@ -947,23 +711,8 @@ strict-peer-dependencies=true
 ## Critical Reminders for Claude
 
 1. **ALWAYS ask when uncertain** - Do not guess. Do not assume. Ask questions. This is non-negotiable.
-
-2. **No Keycloak** - It has been removed. Auth uses BetterAuth.
-
-3. **Check PLANNING.md** - For current sprint focus, status, and resolved decisions.
-
-4. **JWT = RS256** - Use `Microsoft.IdentityModel.Tokens` with JWKS from Auth Service. Do NOT use EdDSA.
-
-5. **SvelteKit auth** - Uses proxy pattern, NOT direct BetterAuth integration. Cookie-based sessions, not JWTs, for browser ↔ SvelteKit.
-
-6. **Request flow is hybrid (Pattern C)** - SSR via SvelteKit server, interactive client-side calls go direct to .NET gateway with JWT. Auth always proxied through SvelteKit.
-
-7. **Rate limiting is multi-dimensional** - IP + userId + fingerprint + city + country. All dimensions tracked, any exceeds = block all.
-
-8. **Geo caching packages** - Create local cache wrappers to avoid bombarding Geo service with WhoIs lookups.
-
-9. **Phase ordering** - TypeScript shared infrastructure (`@d2/core`, `@d2/ratelimit`, `@d2/geo-cache`) must be built BEFORE the Auth Service.
-
-10. **Session storage is 3-tier** - Cookie cache (5min) → Redis (secondary) → PostgreSQL (primary). `storeSessionInDatabase: true` for dual-write.
-
-11. **Exact dependency versions only** - No `^`, no `~`, no ranges in `package.json`. Use `save-exact=true` in `.npmrc`. This is a supply chain security requirement.
+2. **Check PLANNING.md** - For current sprint focus, status, and resolved decisions.
+3. **No Keycloak** - Auth uses BetterAuth. Do not reference Keycloak.
+4. **JWT = RS256** - Do NOT use EdDSA. Use `Microsoft.IdentityModel.Tokens` with JWKS.
+5. **SvelteKit auth** - Proxy pattern (`/api/auth/*` → Auth Service). Cookie sessions for browser ↔ SvelteKit.
+6. **Exact dependency versions only** - No `^`/`~` in `package.json`. Enforced by `.npmrc`.

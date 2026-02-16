@@ -25,4 +25,13 @@ public class GeoAppOptions
     /// Gets or sets the duration after which Contact data expires in cache.
     /// </summary>
     public TimeSpan ContactExpirationDuration { get; set; } = TimeSpan.FromHours(4);
+
+    /// <summary>
+    /// Gets or sets the API key → allowed context keys mapping for contact operations.
+    /// Keys are API key strings, values are lists of context keys the caller may access.
+    /// </summary>
+    /// <example>
+    /// { "auth-service-key-abc": ["org_contact", "user"], "billing-service-key-xyz": ["billing_contact"] }.
+    /// </example>
+    public Dictionary<string, List<string>> ApiKeyMappings { get; set; } = [];
 }

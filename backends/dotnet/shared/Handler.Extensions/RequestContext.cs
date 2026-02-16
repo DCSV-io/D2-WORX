@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="RequestContext.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -7,12 +7,20 @@
 namespace D2.Shared.Handler.Extensions;
 
 using System.Diagnostics;
+using System.Security.Claims;
+using D2.Shared.Handler.Auth;
 using Microsoft.AspNetCore.Http;
 
 /// <summary>
 /// Implementation of <see cref="IRequestContext"/> that extracts request context
 /// from the current HTTP context including tracing, identity, and organization information.
 /// </summary>
+/// <remarks>
+/// <para>
+/// Target org is always derived from JWT claims: emulated org if org emulation is active,
+/// otherwise the agent org. No request headers are used for target org resolution.
+/// </para>
+/// </remarks>
 public class RequestContext : IRequestContext
 {
     /// <summary>
@@ -31,27 +39,46 @@ public class RequestContext : IRequestContext
         RequestId = ctx?.TraceIdentifier;
         RequestPath = ctx?.Request.Path.Value;
 
-        // User / Identity - defaults for unauthenticated requests.
-        // TODO: Extract from JWT claims when auth is implemented.
+        // User / Identity — extracted from JWT claims.
         IsAuthenticated = ctx?.User.Identity?.IsAuthenticated ?? false;
-        UserId = null;
-        Username = null;
+        UserId = GetGuidClaim(ctx, JwtClaimTypes.SUB);
+        Email = GetStringClaim(ctx, JwtClaimTypes.EMAIL);
+        Username = GetStringClaim(ctx, JwtClaimTypes.USERNAME);
 
-        // Agent Organization - defaults for unauthenticated requests.
-        // TODO: Extract from JWT claims when auth is implemented.
-        AgentOrgId = null;
-        AgentOrgName = null;
-        AgentOrgType = null;
+        // Agent Organization — the user's actual org membership.
+        AgentOrgId = GetGuidClaim(ctx, JwtClaimTypes.ORG_ID);
+        AgentOrgName = GetStringClaim(ctx, JwtClaimTypes.ORG_NAME);
+        AgentOrgType = GetOrgTypeClaim(ctx, JwtClaimTypes.ORG_TYPE);
 
-        // Target Organization - defaults for unauthenticated requests.
-        // TODO: Extract from JWT claims or request headers when auth is implemented.
-        TargetOrgId = null;
-        TargetOrgName = null;
-        TargetOrgType = null;
+        // Org Emulation — staff viewing another org as read-only.
+        IsOrgEmulating = string.Equals(
+            GetStringClaim(ctx, JwtClaimTypes.IS_EMULATING),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
 
-        // Relationship - default for unauthenticated requests.
-        // TODO: Compute from claims when auth is implemented.
-        UserToTargetRelationship = null;
+        // Target Organization — the org all operations execute against.
+        // Emulated org during org emulation, otherwise agent org.
+        if (IsOrgEmulating)
+        {
+            TargetOrgId = GetGuidClaim(ctx, JwtClaimTypes.EMULATED_ORG_ID) ?? AgentOrgId;
+            TargetOrgName = GetStringClaim(ctx, JwtClaimTypes.EMULATED_ORG_NAME) ?? AgentOrgName;
+            TargetOrgType = GetOrgTypeClaim(ctx, JwtClaimTypes.EMULATED_ORG_TYPE) ?? AgentOrgType;
+        }
+        else
+        {
+            TargetOrgId = AgentOrgId;
+            TargetOrgName = AgentOrgName;
+            TargetOrgType = AgentOrgType;
+        }
+
+        // User Impersonation — admin acting as another user.
+        ImpersonatedBy = GetGuidClaim(ctx, JwtClaimTypes.IMPERSONATED_BY);
+        ImpersonatingEmail = GetStringClaim(ctx, JwtClaimTypes.IMPERSONATING_EMAIL);
+        ImpersonatingUsername = GetStringClaim(ctx, JwtClaimTypes.IMPERSONATING_USERNAME);
+        IsUserImpersonating = string.Equals(
+            GetStringClaim(ctx, JwtClaimTypes.IS_IMPERSONATING),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
     }
 
     #region Tracing
@@ -74,6 +101,9 @@ public class RequestContext : IRequestContext
 
     /// <inheritdoc/>
     public Guid? UserId { get; }
+
+    /// <inheritdoc/>
+    public string? Email { get; }
 
     /// <inheritdoc/>
     public string? Username { get; }
@@ -106,10 +136,30 @@ public class RequestContext : IRequestContext
 
     #endregion
 
-    #region Helpers
+    #region Org Emulation
 
     /// <inheritdoc/>
-    public UserToOrgRelationship? UserToTargetRelationship { get; }
+    public bool IsOrgEmulating { get; }
+
+    #endregion
+
+    #region User Impersonation
+
+    /// <inheritdoc/>
+    public Guid? ImpersonatedBy { get; }
+
+    /// <inheritdoc/>
+    public string? ImpersonatingEmail { get; }
+
+    /// <inheritdoc/>
+    public string? ImpersonatingUsername { get; }
+
+    /// <inheritdoc/>
+    public bool IsUserImpersonating { get; }
+
+    #endregion
+
+    #region Helpers
 
     /// <inheritdoc/>
     public bool IsAgentStaff =>
@@ -126,6 +176,58 @@ public class RequestContext : IRequestContext
     /// <inheritdoc/>
     public bool IsTargetingAdmin =>
         TargetOrgType is OrgType.Admin;
+
+    #endregion
+
+    #region Claim Extraction Helpers
+
+    /// <summary>
+    /// Extracts a string claim value from the authenticated user principal.
+    /// </summary>
+    private static string? GetStringClaim(HttpContext? ctx, string claimType)
+    {
+        var value = ctx?.User.FindFirst(claimType)?.Value;
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    /// <summary>
+    /// Extracts a Guid claim value from the authenticated user principal.
+    /// </summary>
+    private static Guid? GetGuidClaim(HttpContext? ctx, string claimType)
+    {
+        var value = ctx?.User.FindFirst(claimType)?.Value;
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        return Guid.TryParse(value, out var guid) ? guid : null;
+    }
+
+    /// <summary>
+    /// Extracts an OrgType claim value from the authenticated user principal.
+    /// Maps Node.js org type strings (lowercase) to .NET <see cref="OrgType"/> enum values.
+    /// </summary>
+    private static OrgType? GetOrgTypeClaim(HttpContext? ctx, string claimType)
+    {
+        var value = ctx?.User.FindFirst(claimType)?.Value;
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        // Node.js auth service uses lowercase string values: admin, support, affiliate, customer, third_party.
+        // Map to .NET OrgType enum. Note: "third_party" maps to CustomerClient (pre-existing naming difference).
+        return value.ToLowerInvariant() switch
+        {
+            OrgTypeValues.ADMIN => OrgType.Admin,
+            OrgTypeValues.SUPPORT => OrgType.Support,
+            OrgTypeValues.AFFILIATE => OrgType.Affiliate,
+            OrgTypeValues.CUSTOMER => OrgType.Customer,
+            OrgTypeValues.THIRD_PARTY => OrgType.CustomerClient,
+            _ => Enum.TryParse<OrgType>(value, ignoreCase: true, out var parsed) ? parsed : null,
+        };
+    }
 
     #endregion
 }

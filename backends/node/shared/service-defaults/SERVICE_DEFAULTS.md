@@ -4,11 +4,11 @@ One-call OpenTelemetry SDK bootstrap for Node.js services. Mirrors `D2.Shared.Se
 
 ## Files
 
-| File Name                                        | Description                                                                            |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| [setup-telemetry.ts](src/setup-telemetry.ts)     | `setupTelemetry()` function — bootstraps OTel SDK with OTLP exporters for traces/metrics. |
-| [telemetry-config.ts](src/telemetry-config.ts)   | `TelemetryConfig` interface for service name, version, and OTLP endpoints.             |
-| [index.ts](src/index.ts)                         | Re-exports `setupTelemetry`, `TelemetryConfig`, and key OTel API types.                |
+| File Name                                      | Description                                                                               |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [setup-telemetry.ts](src/setup-telemetry.ts)   | `setupTelemetry()` function — bootstraps OTel SDK with OTLP exporters for traces/metrics. |
+| [telemetry-config.ts](src/telemetry-config.ts) | `TelemetryConfig` interface for service name, version, and OTLP endpoints.                |
+| [index.ts](src/index.ts)                       | Re-exports `setupTelemetry`, `TelemetryConfig`, and key OTel API types.                   |
 
 ## Usage
 

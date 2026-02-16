@@ -273,7 +273,8 @@ public class Populate : BaseHandler<Populate, I, O>, H
 
         if (!IPAddress.TryParse(ipAddress, out var ip))
         {
-            Context.Logger.LogWarning("Invalid IP address: {IpAddress}", ipAddress);
+            // Do not log raw ipAddress — it is PII.
+            Context.Logger.LogWarning("Invalid IP address encountered. TraceId: {TraceId}", TraceId);
             return null;
         }
 

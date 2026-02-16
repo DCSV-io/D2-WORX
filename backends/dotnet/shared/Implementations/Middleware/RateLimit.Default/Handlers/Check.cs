@@ -87,6 +87,12 @@ public class Check : BaseHandler<Check, I, O>, H
     {
         var requestInfo = input.RequestInfo;
 
+        // Trusted services bypass all rate limiting.
+        if (requestInfo.IsTrustedService)
+        {
+            return D2Result<O?>.Ok(new O(false, null, null), traceId: TraceId);
+        }
+
         // Check dimensions in hierarchy order: fingerprint → IP → city → country.
         // Short-circuit if any dimension is already blocked.
 
@@ -207,10 +213,10 @@ public class Check : BaseHandler<Check, I, O>, H
             var ttlResult = await r_getTtl.HandleAsync(new IRead.GetTtlInput(blockedKey), ct);
             if (ttlResult.CheckSuccess(out var ttlOutput) && ttlOutput?.TimeToLive.HasValue == true)
             {
+                // Do not log raw `value` — it may be an IP address or fingerprint (PII).
                 Context.Logger.LogDebug(
-                    "Request blocked on {Dimension} dimension. Value: {Value}. TTL: {TTL}. TraceId: {TraceId}",
+                    "Request blocked on {Dimension} dimension. TTL: {TTL}. TraceId: {TraceId}",
                     dimension,
-                    value,
                     ttlOutput.TimeToLive.Value,
                     TraceId);
 
@@ -240,11 +246,10 @@ public class Check : BaseHandler<Check, I, O>, H
 
             if (!incrResult.CheckSuccess(out var incrOutput))
             {
-                // Fail-open on cache errors.
+                // Fail-open on cache errors. Do not log raw `value` — may be PII.
                 Context.Logger.LogWarning(
-                    "Failed to increment rate limit counter for {Dimension}:{Value}. Failing open. TraceId: {TraceId}",
+                    "Failed to increment rate limit counter for {Dimension}. Failing open. TraceId: {TraceId}",
                     dimension,
-                    value,
                     TraceId);
 
                 return new O(false, null, null);
@@ -265,10 +270,10 @@ public class Check : BaseHandler<Check, I, O>, H
                     new IUpdate.SetInput<string>(blockedKey, "1", r_options.BlockDuration),
                     ct);
 
+                // Do not log raw `value` — may be an IP address or fingerprint (PII).
                 Context.Logger.LogWarning(
-                    "Rate limit exceeded on {Dimension} dimension. Value: {Value}. Count: {Count}/{Threshold}. TraceId: {TraceId}",
+                    "Rate limit exceeded on {Dimension} dimension. Count: {Count}/{Threshold}. TraceId: {TraceId}",
                     dimension,
-                    value,
                     estimated,
                     threshold,
                     TraceId);
@@ -280,12 +285,11 @@ public class Check : BaseHandler<Check, I, O>, H
         }
         catch (Exception ex)
         {
-            // Fail-open on cache errors.
+            // Fail-open on cache errors. Do not log raw `value` — may be PII.
             Context.Logger.LogWarning(
                 ex,
-                "Error checking rate limit for {Dimension}:{Value}. Failing open. TraceId: {TraceId}",
+                "Error checking rate limit for {Dimension}. Failing open. TraceId: {TraceId}",
                 dimension,
-                value,
                 TraceId);
 
             return new O(false, null, null);

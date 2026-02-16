@@ -20,6 +20,7 @@
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/request-enrichment": "workspace:*",
-    "@d2/result": "workspace:*"
+    "@d2/result": "workspace:*",
+    "zod": "3.25.76"
   }
 }

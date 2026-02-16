@@ -4,14 +4,14 @@ Request enrichment middleware for IP resolution, fingerprinting, and WhoIs looku
 
 ## Files
 
-| File Name                                                                  | Description                                                                             |
-| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [enrich-request.ts](src/enrich-request.ts)                                 | `enrichRequest()` — main orchestration function combining all enrichment steps.         |
-| [ip-resolver.ts](src/ip-resolver.ts)                                       | `resolveIp()` + `isLocalhost()` — extract client IP from proxy headers.                 |
-| [fingerprint-builder.ts](src/fingerprint-builder.ts)                       | `buildServerFingerprint()` — SHA-256 hash of User-Agent + Accept headers.               |
-| [request-info.ts](src/request-info.ts)                                     | `RequestInfo` class implementing `IRequestInfo` from `@d2/interfaces`.                  |
-| [request-enrichment-options.ts](src/request-enrichment-options.ts)         | `RequestEnrichmentOptions` + `DEFAULT_REQUEST_ENRICHMENT_OPTIONS`.                      |
-| [index.ts](src/index.ts)                                                   | Barrel re-export of `enrichRequest`, helpers, and types.                                |
+| File Name                                                          | Description                                                                     |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| [enrich-request.ts](src/enrich-request.ts)                         | `enrichRequest()` — main orchestration function combining all enrichment steps. |
+| [ip-resolver.ts](src/ip-resolver.ts)                               | `resolveIp()` + `isLocalhost()` — extract client IP from proxy headers.         |
+| [fingerprint-builder.ts](src/fingerprint-builder.ts)               | `buildServerFingerprint()` — SHA-256 hash of User-Agent + Accept headers.       |
+| [request-info.ts](src/request-info.ts)                             | `RequestInfo` class implementing `IRequestInfo` from `@d2/interfaces`.          |
+| [request-enrichment-options.ts](src/request-enrichment-options.ts) | `RequestEnrichmentOptions` + `DEFAULT_REQUEST_ENRICHMENT_OPTIONS`.              |
+| [index.ts](src/index.ts)                                           | Barrel re-export of `enrichRequest`, helpers, and types.                        |
 
 ## Logic Flow
 

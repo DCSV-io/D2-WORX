@@ -6,6 +6,7 @@
 
 namespace D2.Geo.App.Implementations.CQRS.Handlers.X;
 
+using System.Net;
 using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
@@ -87,6 +88,24 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         if (input.Request.Requests.Count == 0)
         {
             return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+        }
+
+        // Validate each FindWhoIsKeys: IP must be valid.
+        List<List<string>> allErrors = [];
+        for (var i = 0; i < input.Request.Requests.Count; i++)
+        {
+            var key = input.Request.Requests[i];
+            if (string.IsNullOrWhiteSpace(key.IpAddress)
+                || !IPAddress.TryParse(key.IpAddress, out _))
+            {
+                allErrors.Add([$"requests[{i}].ipAddress", "Must be a valid IPv4 or IPv6 address."]);
+            }
+        }
+
+        if (allErrors.Count > 0)
+        {
+            return D2Result<O?>.BubbleFail(
+                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
         }
 
         // Step 1: Compute WhoIs hash IDs and build partial records for all requests.

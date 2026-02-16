@@ -71,7 +71,8 @@ public class IpInfoClientWrapper : IIpInfoClient
         }
         catch (Exception ex)
         {
-            r_logger.LogError(ex, "Failed to get IP details from IPinfo.io for {IpAddress}", ipAddress);
+            // Do not log raw ipAddress — it is PII.
+            r_logger.LogError(ex, "Failed to get IP details from IPinfo.io");
             return null;
         }
     }

@@ -51,6 +51,50 @@ public class CheckHandlerTests
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
+    #region Trusted Service Bypass Tests
+
+    /// <summary>
+    /// Tests that trusted services bypass all rate limit dimensions.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
+    [Fact]
+    public async Task Check_WhenTrustedService_ReturnsNotBlocked()
+    {
+        var handler = CreateHandler();
+        var mock = new Mock<IRequestInfo>();
+        mock.Setup(x => x.IsTrustedService).Returns(true);
+        mock.Setup(x => x.ClientFingerprint).Returns("test-fingerprint");
+        mock.Setup(x => x.ClientIp).Returns("192.0.2.1");
+        mock.Setup(x => x.City).Returns("TestCity");
+        mock.Setup(x => x.CountryCode).Returns("DE");
+
+        var result = await handler.HandleAsync(
+            new IRateLimit.CheckInput(mock.Object), Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.IsBlocked.Should().BeFalse();
+
+        // Should not have called any cache handlers (no dimension checks).
+        r_getTtlMock.Verify(
+            x => x.HandleAsync(
+                It.IsAny<IRead.GetTtlInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
+            Times.Never);
+
+        r_incrementMock.Verify(
+            x => x.HandleAsync(
+                It.IsAny<IUpdate.IncrementInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
+            Times.Never);
+    }
+
+    #endregion
+
     #region Dimension Skip Tests
 
     /// <summary>

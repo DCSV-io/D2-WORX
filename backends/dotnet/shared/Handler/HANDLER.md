@@ -11,10 +11,15 @@ Handler infrastructure implementing CQRS pattern with automatic logging, tracing
 | [IHandlerContext.cs](IHandlerContext.cs)             | Context interface bundling IRequestContext and ILogger to reduce constructor boilerplate across handlers.                                                                                                 |
 | [HandlerContext.cs](HandlerContext.cs)               | Default implementation of IHandlerContext providing request context and logging access.                                                                                                                   |
 | [IRequestContext.cs](IRequestContext.cs)             | Request-scoped identity context with trace IDs, user authentication state, agent/target organization details, and relationship helpers.                                                                   |
-| [HandlerOptions.cs](HandlerOptions.cs)               | Configuration record for handler execution behavior including input/output logging, time warning thresholds, and suppression flags.                                                                      |
+| [HandlerOptions.cs](HandlerOptions.cs)               | Configuration record for handler execution behavior including input/output logging, time warning thresholds, and suppression flags.                                                                       |
 | [BHASW.cs](BHASW.cs)                                 | Internal static class providing ActivitySource for OpenTelemetry distributed tracing of handler operations. Acronym: Base Handler Activity Source Wrapper.                                                |
 | [OrgType.cs](OrgType.cs)                             | Enum defining organization types: Admin (full system access), Support (customer support capabilities), Affiliate (partners/resellers), Customer (standard users), CustomerClient (external subsidiaries). |
-| [UserToOrgRelationship.cs](UserToOrgRelationship.cs) | Enum defining user-organization relationship types: DirectMember (direct membership), AssociatedMember (affiliate/partner association), Emulation (impersonation/emulation access).                       |
+| [Auth/JwtClaimTypes.cs](Auth/JwtClaimTypes.cs)       | JWT claim type string constants (sub, email, name, orgId, orgName, orgType, role, emulatedOrgId, emulatedOrgName, emulatedOrgType, isEmulating, impersonatedBy, isImpersonating, fp).                     |
+| [Auth/OrgTypeValues.cs](Auth/OrgTypeValues.cs)       | Organization type string constants + STAFF/ALL arrays for policy evaluation.                                                                                                                              |
+| [Auth/RoleValues.cs](Auth/RoleValues.cs)             | Role string constants (auditor, agent, officer, owner) + HIERARCHY dictionary + `AtOrAbove(minRole)` helper.                                                                                              |
+| [Auth/AuthPolicies.cs](Auth/AuthPolicies.cs)         | Named authorization policy constants (Authenticated, HasActiveOrg, StaffOnly, AdminOnly).                                                                                                                 |
+| [Auth/RequestHeaders.cs](Auth/RequestHeaders.cs)     | Custom HTTP header constants (Idempotency-Key, X-Client-Fingerprint).                                                                                                                                    |
+| [Validators.cs](Validators.cs)                       | FluentValidation extensions: `IsValidIpAddress`, `IsValidHashId`, `IsValidGuid`, `IsValidEmail`, `IsValidPhoneE164`, `IsAllowedContextKey`.                                                              |
 
 ---
 
@@ -51,11 +56,11 @@ await handler.HandleAsync(input, ct, options: new HandlerOptions(LogInput: true)
 
 All handlers automatically emit four metrics via the `BHASW` static instrumentation:
 
-| Metric                      | Type      | Description                                     |
-| --------------------------- | --------- | ----------------------------------------------- |
-| `d2.handler.duration`       | Histogram | Execution duration in milliseconds              |
-| `d2.handler.invocations`    | Counter   | Total handler invocations                       |
-| `d2.handler.failures`       | Counter   | Non-success results (D2Result.Success == false) |
-| `d2.handler.exceptions`     | Counter   | Unhandled exceptions caught by BaseHandler      |
+| Metric                   | Type      | Description                                     |
+| ------------------------ | --------- | ----------------------------------------------- |
+| `d2.handler.duration`    | Histogram | Execution duration in milliseconds              |
+| `d2.handler.invocations` | Counter   | Total handler invocations                       |
+| `d2.handler.failures`    | Counter   | Non-success results (D2Result.Success == false) |
+| `d2.handler.exceptions`  | Counter   | Unhandled exceptions caught by BaseHandler      |
 
 All metrics are tagged with `handler.name` for per-handler breakdowns.

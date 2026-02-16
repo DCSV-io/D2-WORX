@@ -8,7 +8,9 @@ namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Mappers;
+using D2.Geo.Client.Validators;
 using D2.Geo.Domain.Entities;
+using D2.Geo.Domain.Exceptions;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Result;
@@ -74,6 +76,29 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
             return D2Result<O?>.Ok(new O([]), traceId: TraceId);
         }
 
+        // Validate each ContactToCreateDTO.
+        List<List<string>> allErrors = [];
+        for (var i = 0; i < input.Request.ContactsToCreate.Count; i++)
+        {
+            var validator = new ContactToCreateValidator($"items[{i}].");
+            var validationResult = await validator.ValidateAsync(
+                input.Request.ContactsToCreate[i], ct);
+            if (!validationResult.IsValid)
+            {
+                allErrors.AddRange(validationResult.Errors
+                    .GroupBy(e => e.PropertyName)
+                    .Select(g => new List<string> { g.Key }
+                        .Concat(g.Select(e => e.ErrorMessage))
+                        .ToList()));
+            }
+        }
+
+        if (allErrors.Count > 0)
+        {
+            return D2Result<O?>.BubbleFail(
+                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+        }
+
         // Step 1: Resolve LocationHashIds for each contact.
         var locationHashIds = ResolveLocationHashIds(input.Request.ContactsToCreate);
 
@@ -93,11 +118,31 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         }
 
         // Step 3: Convert DTOs to domain entities with resolved location hash IDs.
+        // Per-item try/catch safety net: if domain construction throws despite Fluent validation
+        // passing, catch per item and collect errors instead of propagating a generic 500.
         var contacts = new List<Contact>(input.Request.ContactsToCreate.Count);
+        List<List<string>> domainErrors = [];
         for (var i = 0; i < input.Request.ContactsToCreate.Count; i++)
         {
-            var dto = input.Request.ContactsToCreate[i];
-            contacts.Add(dto.ToDomain(locationHashIds[i]));
+            try
+            {
+                var dto = input.Request.ContactsToCreate[i];
+                contacts.Add(dto.ToDomain(locationHashIds[i]));
+            }
+            catch (GeoValidationException ex)
+            {
+                domainErrors.Add([$"items[{i}].{ex.PropertyName}", ex.Reason]);
+            }
+            catch (ArgumentException ex)
+            {
+                domainErrors.Add([$"items[{i}]", ex.Message]);
+            }
+        }
+
+        if (domainErrors.Count > 0)
+        {
+            return D2Result<O?>.BubbleFail(
+                D2Result.ValidationFailed(inputErrors: domainErrors, traceId: TraceId));
         }
 
         // Step 4: Create contacts in repository.

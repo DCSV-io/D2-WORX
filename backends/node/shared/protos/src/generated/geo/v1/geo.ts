@@ -167,6 +167,28 @@ export interface DeleteContactsResponse {
   deleted: number;
 }
 
+export interface DeleteContactsByExtKeysRequest {
+  keys: GetContactsExtKeys[];
+}
+
+export interface DeleteContactsByExtKeysResponse {
+  result: D2ResultProto | undefined;
+  deleted: number;
+}
+
+/**
+ * Replaces contacts at the given ext keys. Geo internally deletes old, creates new.
+ * Uses the same ContactToCreateDTO shape (which already contains context_key + related_entity_id).
+ */
+export interface UpdateContactsByExtKeysRequest {
+  contacts: ContactToCreateDTO[];
+}
+
+export interface UpdateContactsByExtKeysResponse {
+  result: D2ResultProto | undefined;
+  data: ContactDTO[];
+}
+
 export interface ContactToCreateDTO {
   createdAt: Date | undefined;
   contextKey: string;
@@ -2611,6 +2633,292 @@ export const DeleteContactsResponse: MessageFns<DeleteContactsResponse> = {
       ? D2ResultProto.fromPartial(object.result)
       : undefined;
     message.deleted = object.deleted ?? 0;
+    return message;
+  },
+};
+
+function createBaseDeleteContactsByExtKeysRequest(): DeleteContactsByExtKeysRequest {
+  return { keys: [] };
+}
+
+export const DeleteContactsByExtKeysRequest: MessageFns<DeleteContactsByExtKeysRequest> = {
+  encode(message: DeleteContactsByExtKeysRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.keys) {
+      GetContactsExtKeys.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteContactsByExtKeysRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteContactsByExtKeysRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.keys.push(GetContactsExtKeys.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteContactsByExtKeysRequest {
+    return {
+      keys: globalThis.Array.isArray(object?.keys) ? object.keys.map((e: any) => GetContactsExtKeys.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: DeleteContactsByExtKeysRequest): unknown {
+    const obj: any = {};
+    if (message.keys?.length) {
+      obj.keys = message.keys.map((e) => GetContactsExtKeys.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DeleteContactsByExtKeysRequest>, I>>(base?: I): DeleteContactsByExtKeysRequest {
+    return DeleteContactsByExtKeysRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DeleteContactsByExtKeysRequest>, I>>(
+    object: I,
+  ): DeleteContactsByExtKeysRequest {
+    const message = createBaseDeleteContactsByExtKeysRequest();
+    message.keys = object.keys?.map((e) => GetContactsExtKeys.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseDeleteContactsByExtKeysResponse(): DeleteContactsByExtKeysResponse {
+  return { result: undefined, deleted: 0 };
+}
+
+export const DeleteContactsByExtKeysResponse: MessageFns<DeleteContactsByExtKeysResponse> = {
+  encode(message: DeleteContactsByExtKeysResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.result !== undefined) {
+      D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
+    }
+    if (message.deleted !== 0) {
+      writer.uint32(16).int32(message.deleted);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): DeleteContactsByExtKeysResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseDeleteContactsByExtKeysResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.result = D2ResultProto.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.deleted = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): DeleteContactsByExtKeysResponse {
+    return {
+      result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
+      deleted: isSet(object.deleted) ? globalThis.Number(object.deleted) : 0,
+    };
+  },
+
+  toJSON(message: DeleteContactsByExtKeysResponse): unknown {
+    const obj: any = {};
+    if (message.result !== undefined) {
+      obj.result = D2ResultProto.toJSON(message.result);
+    }
+    if (message.deleted !== 0) {
+      obj.deleted = Math.round(message.deleted);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<DeleteContactsByExtKeysResponse>, I>>(base?: I): DeleteContactsByExtKeysResponse {
+    return DeleteContactsByExtKeysResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<DeleteContactsByExtKeysResponse>, I>>(
+    object: I,
+  ): DeleteContactsByExtKeysResponse {
+    const message = createBaseDeleteContactsByExtKeysResponse();
+    message.result = (object.result !== undefined && object.result !== null)
+      ? D2ResultProto.fromPartial(object.result)
+      : undefined;
+    message.deleted = object.deleted ?? 0;
+    return message;
+  },
+};
+
+function createBaseUpdateContactsByExtKeysRequest(): UpdateContactsByExtKeysRequest {
+  return { contacts: [] };
+}
+
+export const UpdateContactsByExtKeysRequest: MessageFns<UpdateContactsByExtKeysRequest> = {
+  encode(message: UpdateContactsByExtKeysRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.contacts) {
+      ContactToCreateDTO.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateContactsByExtKeysRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateContactsByExtKeysRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.contacts.push(ContactToCreateDTO.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateContactsByExtKeysRequest {
+    return {
+      contacts: globalThis.Array.isArray(object?.contacts)
+        ? object.contacts.map((e: any) => ContactToCreateDTO.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: UpdateContactsByExtKeysRequest): unknown {
+    const obj: any = {};
+    if (message.contacts?.length) {
+      obj.contacts = message.contacts.map((e) => ContactToCreateDTO.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UpdateContactsByExtKeysRequest>, I>>(base?: I): UpdateContactsByExtKeysRequest {
+    return UpdateContactsByExtKeysRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UpdateContactsByExtKeysRequest>, I>>(
+    object: I,
+  ): UpdateContactsByExtKeysRequest {
+    const message = createBaseUpdateContactsByExtKeysRequest();
+    message.contacts = object.contacts?.map((e) => ContactToCreateDTO.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseUpdateContactsByExtKeysResponse(): UpdateContactsByExtKeysResponse {
+  return { result: undefined, data: [] };
+}
+
+export const UpdateContactsByExtKeysResponse: MessageFns<UpdateContactsByExtKeysResponse> = {
+  encode(message: UpdateContactsByExtKeysResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.result !== undefined) {
+      D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
+    }
+    for (const v of message.data) {
+      ContactDTO.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UpdateContactsByExtKeysResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUpdateContactsByExtKeysResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.result = D2ResultProto.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.data.push(ContactDTO.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UpdateContactsByExtKeysResponse {
+    return {
+      result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
+      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => ContactDTO.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: UpdateContactsByExtKeysResponse): unknown {
+    const obj: any = {};
+    if (message.result !== undefined) {
+      obj.result = D2ResultProto.toJSON(message.result);
+    }
+    if (message.data?.length) {
+      obj.data = message.data.map((e) => ContactDTO.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UpdateContactsByExtKeysResponse>, I>>(base?: I): UpdateContactsByExtKeysResponse {
+    return UpdateContactsByExtKeysResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UpdateContactsByExtKeysResponse>, I>>(
+    object: I,
+  ): UpdateContactsByExtKeysResponse {
+    const message = createBaseUpdateContactsByExtKeysResponse();
+    message.result = (object.result !== undefined && object.result !== null)
+      ? D2ResultProto.fromPartial(object.result)
+      : undefined;
+    message.data = object.data?.map((e) => ContactDTO.fromPartial(e)) || [];
     return message;
   },
 };
@@ -5591,6 +5899,10 @@ export const GeoServiceService = {
     responseSerialize: (value: FindWhoIsResponse): Buffer => Buffer.from(FindWhoIsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): FindWhoIsResponse => FindWhoIsResponse.decode(value),
   },
+  /**
+   * Internal only — not exposed via Geo client libraries.
+   * External consumers use GetContactsByExtKeys / DeleteContactsByExtKeys / UpdateContactsByExtKeys.
+   */
   getContacts: {
     path: "/d2.geo.v1.GeoService/GetContacts",
     requestStream: false,
@@ -5599,6 +5911,21 @@ export const GeoServiceService = {
     requestDeserialize: (value: Buffer): GetContactsRequest => GetContactsRequest.decode(value),
     responseSerialize: (value: GetContactsResponse): Buffer => Buffer.from(GetContactsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): GetContactsResponse => GetContactsResponse.decode(value),
+  },
+  /**
+   * Internal only — not exposed via Geo client libraries.
+   * External consumers use DeleteContactsByExtKeys.
+   */
+  deleteContacts: {
+    path: "/d2.geo.v1.GeoService/DeleteContacts",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: DeleteContactsRequest): Buffer =>
+      Buffer.from(DeleteContactsRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): DeleteContactsRequest => DeleteContactsRequest.decode(value),
+    responseSerialize: (value: DeleteContactsResponse): Buffer =>
+      Buffer.from(DeleteContactsResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): DeleteContactsResponse => DeleteContactsResponse.decode(value),
   },
   getContactsByExtKeys: {
     path: "/d2.geo.v1.GeoService/GetContactsByExtKeys",
@@ -5622,16 +5949,30 @@ export const GeoServiceService = {
       Buffer.from(CreateContactsResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): CreateContactsResponse => CreateContactsResponse.decode(value),
   },
-  deleteContacts: {
-    path: "/d2.geo.v1.GeoService/DeleteContacts",
+  deleteContactsByExtKeys: {
+    path: "/d2.geo.v1.GeoService/DeleteContactsByExtKeys",
     requestStream: false,
     responseStream: false,
-    requestSerialize: (value: DeleteContactsRequest): Buffer =>
-      Buffer.from(DeleteContactsRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): DeleteContactsRequest => DeleteContactsRequest.decode(value),
-    responseSerialize: (value: DeleteContactsResponse): Buffer =>
-      Buffer.from(DeleteContactsResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): DeleteContactsResponse => DeleteContactsResponse.decode(value),
+    requestSerialize: (value: DeleteContactsByExtKeysRequest): Buffer =>
+      Buffer.from(DeleteContactsByExtKeysRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): DeleteContactsByExtKeysRequest => DeleteContactsByExtKeysRequest.decode(value),
+    responseSerialize: (value: DeleteContactsByExtKeysResponse): Buffer =>
+      Buffer.from(DeleteContactsByExtKeysResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): DeleteContactsByExtKeysResponse =>
+      DeleteContactsByExtKeysResponse.decode(value),
+  },
+  /** Replaces contacts at the given ext keys. Geo internally deletes old, creates new. */
+  updateContactsByExtKeys: {
+    path: "/d2.geo.v1.GeoService/UpdateContactsByExtKeys",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: UpdateContactsByExtKeysRequest): Buffer =>
+      Buffer.from(UpdateContactsByExtKeysRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): UpdateContactsByExtKeysRequest => UpdateContactsByExtKeysRequest.decode(value),
+    responseSerialize: (value: UpdateContactsByExtKeysResponse): Buffer =>
+      Buffer.from(UpdateContactsByExtKeysResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): UpdateContactsByExtKeysResponse =>
+      UpdateContactsByExtKeysResponse.decode(value),
   },
 } as const;
 
@@ -5639,10 +5980,21 @@ export interface GeoServiceServer extends UntypedServiceImplementation {
   getReferenceData: handleUnaryCall<GetReferenceDataRequest, GetReferenceDataResponse>;
   requestReferenceDataUpdate: handleUnaryCall<RequestReferenceDataUpdateRequest, RequestReferenceDataUpdateResponse>;
   findWhoIs: handleUnaryCall<FindWhoIsRequest, FindWhoIsResponse>;
+  /**
+   * Internal only — not exposed via Geo client libraries.
+   * External consumers use GetContactsByExtKeys / DeleteContactsByExtKeys / UpdateContactsByExtKeys.
+   */
   getContacts: handleUnaryCall<GetContactsRequest, GetContactsResponse>;
+  /**
+   * Internal only — not exposed via Geo client libraries.
+   * External consumers use DeleteContactsByExtKeys.
+   */
+  deleteContacts: handleUnaryCall<DeleteContactsRequest, DeleteContactsResponse>;
   getContactsByExtKeys: handleUnaryCall<GetContactsByExtKeysRequest, GetContactsByExtKeysResponse>;
   createContacts: handleUnaryCall<CreateContactsRequest, CreateContactsResponse>;
-  deleteContacts: handleUnaryCall<DeleteContactsRequest, DeleteContactsResponse>;
+  deleteContactsByExtKeys: handleUnaryCall<DeleteContactsByExtKeysRequest, DeleteContactsByExtKeysResponse>;
+  /** Replaces contacts at the given ext keys. Geo internally deletes old, creates new. */
+  updateContactsByExtKeys: handleUnaryCall<UpdateContactsByExtKeysRequest, UpdateContactsByExtKeysResponse>;
 }
 
 export interface GeoServiceClient extends Client {
@@ -5691,6 +6043,10 @@ export interface GeoServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: FindWhoIsResponse) => void,
   ): ClientUnaryCall;
+  /**
+   * Internal only — not exposed via Geo client libraries.
+   * External consumers use GetContactsByExtKeys / DeleteContactsByExtKeys / UpdateContactsByExtKeys.
+   */
   getContacts(
     request: GetContactsRequest,
     callback: (error: ServiceError | null, response: GetContactsResponse) => void,
@@ -5705,6 +6061,25 @@ export interface GeoServiceClient extends Client {
     metadata: Metadata,
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: GetContactsResponse) => void,
+  ): ClientUnaryCall;
+  /**
+   * Internal only — not exposed via Geo client libraries.
+   * External consumers use DeleteContactsByExtKeys.
+   */
+  deleteContacts(
+    request: DeleteContactsRequest,
+    callback: (error: ServiceError | null, response: DeleteContactsResponse) => void,
+  ): ClientUnaryCall;
+  deleteContacts(
+    request: DeleteContactsRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: DeleteContactsResponse) => void,
+  ): ClientUnaryCall;
+  deleteContacts(
+    request: DeleteContactsRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: DeleteContactsResponse) => void,
   ): ClientUnaryCall;
   getContactsByExtKeys(
     request: GetContactsByExtKeysRequest,
@@ -5736,20 +6111,36 @@ export interface GeoServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: CreateContactsResponse) => void,
   ): ClientUnaryCall;
-  deleteContacts(
-    request: DeleteContactsRequest,
-    callback: (error: ServiceError | null, response: DeleteContactsResponse) => void,
+  deleteContactsByExtKeys(
+    request: DeleteContactsByExtKeysRequest,
+    callback: (error: ServiceError | null, response: DeleteContactsByExtKeysResponse) => void,
   ): ClientUnaryCall;
-  deleteContacts(
-    request: DeleteContactsRequest,
+  deleteContactsByExtKeys(
+    request: DeleteContactsByExtKeysRequest,
     metadata: Metadata,
-    callback: (error: ServiceError | null, response: DeleteContactsResponse) => void,
+    callback: (error: ServiceError | null, response: DeleteContactsByExtKeysResponse) => void,
   ): ClientUnaryCall;
-  deleteContacts(
-    request: DeleteContactsRequest,
+  deleteContactsByExtKeys(
+    request: DeleteContactsByExtKeysRequest,
     metadata: Metadata,
     options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: DeleteContactsResponse) => void,
+    callback: (error: ServiceError | null, response: DeleteContactsByExtKeysResponse) => void,
+  ): ClientUnaryCall;
+  /** Replaces contacts at the given ext keys. Geo internally deletes old, creates new. */
+  updateContactsByExtKeys(
+    request: UpdateContactsByExtKeysRequest,
+    callback: (error: ServiceError | null, response: UpdateContactsByExtKeysResponse) => void,
+  ): ClientUnaryCall;
+  updateContactsByExtKeys(
+    request: UpdateContactsByExtKeysRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: UpdateContactsByExtKeysResponse) => void,
+  ): ClientUnaryCall;
+  updateContactsByExtKeys(
+    request: UpdateContactsByExtKeysRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: UpdateContactsByExtKeysResponse) => void,
   ): ClientUnaryCall;
 }
 

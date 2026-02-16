@@ -5,7 +5,6 @@ export interface SetInDistInput {
   data: GeoRefData;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SetInDistOutput {}
 
 /** Recommended redaction for SetInDist handlers. */

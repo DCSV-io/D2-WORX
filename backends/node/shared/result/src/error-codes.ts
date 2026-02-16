@@ -14,6 +14,7 @@ export const ErrorCodes = {
   SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
   SOME_FOUND: "SOME_FOUND",
   RATE_LIMITED: "RATE_LIMITED",
+  IDEMPOTENCY_IN_FLIGHT: "IDEMPOTENCY_IN_FLIGHT",
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

@@ -1,5 +1,5 @@
 import { BaseHandler, type IHandlerContext, type IHandler } from "@d2/handler";
-import { D2Result } from "@d2/result";
+import { D2Result, retryResultAsync } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
 import { Complex, type Queries, type Commands } from "../../interfaces/index.js";
 
@@ -34,22 +34,15 @@ export class Get extends BaseHandler<Input, Output> implements Complex.IGetHandl
   }
 
   protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
-    const maxAttempts = 6;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const result = await this.getAttempt();
-      if (result.success) {
-        return result;
-      }
-
-      // Delay before next attempt (except after last attempt)
-      if (attempt < maxAttempts) {
-        const delayMs = Math.pow(2, attempt - 1) * 1000;
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-    }
-
-    return D2Result.notFound({ traceId: this.traceId });
+    // 6 attempts with exponential backoff (1s, 2s, 4s, 8s, 16s). Total: ~31 seconds.
+    // Retry any non-success (i.e. NotFound = data not available yet, try again).
+    return retryResultAsync(() => this.getAttempt(), {
+      maxAttempts: 6,
+      baseDelayMs: 1000,
+      backoffMultiplier: 2,
+      jitter: false,
+      isTransientResult: (r) => !r.success,
+    });
   }
 
   private async getAttempt(): Promise<D2Result<Output | undefined>> {

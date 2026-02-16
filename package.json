@@ -7,7 +7,7 @@
     "pnpm": ">=10.0.0"
   },
   "scripts": {
-    "build": "pnpm -r run build",
+    "build": "pnpm run format && pnpm run lint && pnpm -r run build",
     "clean": "pnpm -r run clean",
     "test": "vitest run",
     "test:watch": "vitest",

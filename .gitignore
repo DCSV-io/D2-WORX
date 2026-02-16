@@ -158,8 +158,9 @@ georefdata.bin
 !.env.local.example
 
 # Local tool settings (machine-specific)
-.claude/settings.local.json
+.claude/
 .aspire/settings.json
 
 # Coverage
 /Coverage
+nul

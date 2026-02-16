@@ -4,11 +4,11 @@ Thin wrapper around `rabbitmq-client` for pub/sub messaging. Layer 0 — depends
 
 ## Files
 
-| File Name                              | Description                                                                          |
-| -------------------------------------- | ------------------------------------------------------------------------------------ |
-| [message-bus.ts](src/message-bus.ts)   | `MessageBus` class — subscribe (consumer) + createPublisher with auto-reconnect.     |
-| [types.ts](src/types.ts)               | Type definitions (`MessageBusOptions`, `ConsumerConfig`, `PublisherConfig`, etc.).    |
-| [index.ts](src/index.ts)               | Barrel re-export of `MessageBus` + all types.                                        |
+| File Name                            | Description                                                                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------- |
+| [message-bus.ts](src/message-bus.ts) | `MessageBus` class — subscribe (consumer) + createPublisher with auto-reconnect.   |
+| [types.ts](src/types.ts)             | Type definitions (`MessageBusOptions`, `ConsumerConfig`, `PublisherConfig`, etc.). |
+| [index.ts](src/index.ts)             | Barrel re-export of `MessageBus` + all types.                                      |
 
 ## Usage
 
@@ -20,7 +20,9 @@ const bus = new MessageBus({ url: "amqp://localhost" });
 // Subscribe to messages
 bus.subscribe({
   queue: "geo.ref-data.updated",
-  handler: async (msg) => { /* process message */ },
+  handler: async (msg) => {
+    /* process message */
+  },
 });
 
 // Publish messages

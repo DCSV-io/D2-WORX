@@ -5,7 +5,6 @@ export interface SetOnDiskInput {
   data: GeoRefData;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SetOnDiskOutput {}
 
 /** Recommended redaction for SetOnDisk handlers. */

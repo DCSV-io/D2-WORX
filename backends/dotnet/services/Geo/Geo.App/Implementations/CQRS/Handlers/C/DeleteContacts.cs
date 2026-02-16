@@ -57,6 +57,22 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
             return D2Result<O?>.Ok(new O(0), traceId: TraceId);
         }
 
+        // Validate: no empty GUIDs.
+        List<List<string>> allErrors = [];
+        for (var i = 0; i < input.ContactIds.Count; i++)
+        {
+            if (input.ContactIds[i] == Guid.Empty)
+            {
+                allErrors.Add([$"items[{i}]", "Contact ID must not be an empty GUID."]);
+            }
+        }
+
+        if (allErrors.Count > 0)
+        {
+            return D2Result<O?>.BubbleFail(
+                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+        }
+
         // Delete from repository.
         var repoR = await r_deleteContactsFromRepo.HandleAsync(
             new(input.ContactIds), ct);

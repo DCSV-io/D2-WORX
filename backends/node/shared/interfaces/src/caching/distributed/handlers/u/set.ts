@@ -8,7 +8,7 @@ export interface SetInput<TValue> {
 }
 
 /** Output for setting a single value in the distributed cache. */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+
 export interface SetOutput {}
 
 /** Handler for setting a single value in the distributed cache. */
