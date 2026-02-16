@@ -727,7 +727,7 @@ These are documented trade-offs and gaps identified during security audit. Items
 | 10 | **Session fingerprint fail-open on Redis error** | LOW | Fingerprint check skipped if Redis is unavailable. Intentional (availability > security). | Acceptable trade-off. Documented in Fail-Closed matrix. Monitor Redis health. |
 | 11 | **CreateEmulationConsent DB error not caught gracefully** | LOW | Race condition between check-then-insert caught by DB partial unique index, but handler doesn't catch `23505` (unique violation) — returns 500 instead of 409. | Wrap `repo.create()` in try-catch, map unique violation to 409 Conflict. |
 | 12 | **GetActiveConsents no default pagination** | LOW | `limit` is optional with `.max(100)` but no default applied when omitted — returns ALL rows. | Apply default limit (e.g., 50) when not provided. |
-| 13 | **JWKS caching not explicitly configured on .NET gateway** | LOW | Relies on .NET `JwtBearerHandler` defaults for key refresh. | Explicitly configure `AutomaticRefreshInterval` and `RefreshInterval` on `TokenValidationParameters` before production. |
+| 13 | ~~**JWKS caching not explicitly configured on .NET gateway**~~ | ~~LOW~~ | **RESOLVED.** `JwtAuthOptions.JwksAutoRefreshInterval` (8h) and `JwksRefreshInterval` (5min) now explicit and configurable. Auth JWKS endpoint returns `Cache-Control: public, max-age=3600`. | Implemented in `JwtAuthOptions` + `JwtAuthExtensions` (.NET) and `auth-routes.ts` (Node.js). |
 
 ### Documented Assumptions
 

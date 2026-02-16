@@ -26,6 +26,7 @@ export {
 } from "./middleware/authorization.js";
 
 // Route factories (exported for testing)
+export { createAuthRoutes } from "./routes/auth-routes.js";
 export { createEmulationRoutes } from "./routes/emulation-routes.js";
 export { createOrgContactRoutes } from "./routes/org-contact-routes.js";
 export { createHealthRoutes } from "./routes/health.js";

@@ -64,6 +64,12 @@ public static class JwtAuthExtensions
                         ValidAlgorithms = ["RS256"],
                     };
 
+                    // Explicit JWKS refresh intervals.
+                    // Framework defaults (12h auto, 30s forced) are reasonable but implicit.
+                    // Making them configurable and visible.
+                    jwt.AutomaticRefreshInterval = options.JwksAutoRefreshInterval;
+                    jwt.RefreshInterval = options.JwksRefreshInterval;
+
                     // BetterAuth may not serve a standard OIDC discovery document.
                     // Fall back to direct JWKS endpoint if discovery fails.
                     jwt.Configuration = null;
