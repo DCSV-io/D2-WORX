@@ -4,7 +4,10 @@ import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import { updateOrgContact, type OrgContact, type UpdateOrgContactInput } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Complex } from "@d2/geo-client";
-import type { IOrgContactRepository } from "../../../../interfaces/repository/org-contact-repository.js";
+import type {
+  IFindOrgContactByIdHandler,
+  IUpdateOrgContactRecordHandler,
+} from "../../../../interfaces/repository/handlers/index.js";
 import type { ContactInput } from "./create-org-contact.js";
 
 export interface UpdateOrgContactHandlerInput {
@@ -48,16 +51,19 @@ export class UpdateOrgContactHandler extends BaseHandler<
   UpdateOrgContactHandlerInput,
   UpdateOrgContactOutput
 > {
-  private readonly repo: IOrgContactRepository;
+  private readonly findById: IFindOrgContactByIdHandler;
+  private readonly updateRecord: IUpdateOrgContactRecordHandler;
   private readonly updateContactsByExtKeys: Complex.IUpdateContactsByExtKeysHandler;
 
   constructor(
-    repo: IOrgContactRepository,
+    findById: IFindOrgContactByIdHandler,
+    updateRecord: IUpdateOrgContactRecordHandler,
     context: IHandlerContext,
     updateContactsByExtKeys: Complex.IUpdateContactsByExtKeysHandler,
   ) {
     super(context);
-    this.repo = repo;
+    this.findById = findById;
+    this.updateRecord = updateRecord;
     this.updateContactsByExtKeys = updateContactsByExtKeys;
   }
 
@@ -67,10 +73,12 @@ export class UpdateOrgContactHandler extends BaseHandler<
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
-    const existing = await this.repo.findById(input.id);
-    if (!existing) {
+    const findResult = await this.findById.handleAsync({ id: input.id });
+    if (!findResult.success || !findResult.data) {
       return D2Result.notFound({ traceId: this.traceId });
     }
+
+    const existing = findResult.data.contact;
 
     // IDOR check: contact must belong to the caller's active org
     if (existing.organizationId !== input.organizationId) {
@@ -119,7 +127,8 @@ export class UpdateOrgContactHandler extends BaseHandler<
     }
 
     const updated = updateOrgContact(existing, metadataUpdates);
-    await this.repo.update(updated);
+    const updateResult = await this.updateRecord.handleAsync({ contact: updated });
+    if (!updateResult.success) return D2Result.bubbleFail(updateResult);
 
     return D2Result.ok({
       data: { contact: updated, geoContact: newGeoContact },

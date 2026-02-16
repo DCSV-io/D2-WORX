@@ -2,7 +2,7 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { createSignInEvent, type CreateSignInEventInput, type SignInEvent } from "@d2/auth-domain";
-import type { ISignInEventRepository } from "../../../../interfaces/repository/sign-in-event-repository.js";
+import type { ICreateSignInEventHandler } from "../../../../interfaces/repository/handlers/index.js";
 
 export interface RecordSignInEventInput {
   readonly userId: string;
@@ -30,11 +30,11 @@ export class RecordSignInEvent extends BaseHandler<
   RecordSignInEventInput,
   RecordSignInEventOutput
 > {
-  private readonly repo: ISignInEventRepository;
+  private readonly createRecord: ICreateSignInEventHandler;
 
-  constructor(repo: ISignInEventRepository, context: IHandlerContext) {
+  constructor(createRecord: ICreateSignInEventHandler, context: IHandlerContext) {
     super(context);
-    this.repo = repo;
+    this.createRecord = createRecord;
   }
 
   protected async executeAsync(
@@ -52,7 +52,8 @@ export class RecordSignInEvent extends BaseHandler<
     };
 
     const event = createSignInEvent(createInput);
-    await this.repo.create(event);
+    const createResult = await this.createRecord.handleAsync({ event });
+    if (!createResult.success) return D2Result.bubbleFail(createResult);
 
     return D2Result.ok({ data: { event }, traceId: this.traceId });
   }

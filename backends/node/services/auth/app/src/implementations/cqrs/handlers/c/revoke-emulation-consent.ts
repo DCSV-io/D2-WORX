@@ -2,7 +2,10 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import { revokeEmulationConsent, isConsentActive, type EmulationConsent } from "@d2/auth-domain";
-import type { IEmulationConsentRepository } from "../../../../interfaces/repository/emulation-consent-repository.js";
+import type {
+  IFindEmulationConsentByIdHandler,
+  IRevokeEmulationConsentRecordHandler,
+} from "../../../../interfaces/repository/handlers/index.js";
 
 export interface RevokeEmulationConsentInput {
   readonly consentId: string;
@@ -26,11 +29,17 @@ export class RevokeEmulationConsent extends BaseHandler<
   RevokeEmulationConsentInput,
   RevokeEmulationConsentOutput
 > {
-  private readonly repo: IEmulationConsentRepository;
+  private readonly findById: IFindEmulationConsentByIdHandler;
+  private readonly revokeRecord: IRevokeEmulationConsentRecordHandler;
 
-  constructor(repo: IEmulationConsentRepository, context: IHandlerContext) {
+  constructor(
+    findById: IFindEmulationConsentByIdHandler,
+    revokeRecord: IRevokeEmulationConsentRecordHandler,
+    context: IHandlerContext,
+  ) {
     super(context);
-    this.repo = repo;
+    this.findById = findById;
+    this.revokeRecord = revokeRecord;
   }
 
   protected async executeAsync(
@@ -39,10 +48,12 @@ export class RevokeEmulationConsent extends BaseHandler<
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
-    const existing = await this.repo.findById(input.consentId);
-    if (!existing) {
+    const findResult = await this.findById.handleAsync({ id: input.consentId });
+    if (!findResult.success || !findResult.data) {
       return D2Result.notFound({ traceId: this.traceId });
     }
+
+    const existing = findResult.data.consent;
 
     // Ownership check: consent must belong to the authenticated user
     if (existing.userId !== input.userId) {
@@ -64,7 +75,8 @@ export class RevokeEmulationConsent extends BaseHandler<
     }
 
     const revoked = revokeEmulationConsent(existing);
-    await this.repo.revoke(input.consentId);
+    const revokeResult = await this.revokeRecord.handleAsync({ id: input.consentId });
+    if (!revokeResult.success) return D2Result.bubbleFail(revokeResult);
 
     return D2Result.ok({ data: { consent: revoked }, traceId: this.traceId });
   }

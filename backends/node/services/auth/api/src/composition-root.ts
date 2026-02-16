@@ -25,9 +25,9 @@ import {
   createSecondaryStorage,
   createPasswordFunctions,
   runMigrations,
-  SignInEventRepository,
-  EmulationConsentRepository,
-  OrgContactRepository,
+  createSignInEventRepoHandlers,
+  createEmulationConsentRepoHandlers,
+  createOrgContactRepoHandlers,
   SignInThrottleStore,
   type AuthServiceConfig,
 } from "@d2/auth-infra";
@@ -93,9 +93,9 @@ export async function createApp(config: AuthServiceConfig) {
   await runMigrations(pool);
   const db = drizzle(pool);
 
-  const signInEventRepo = new SignInEventRepository(db);
-  const emulationConsentRepo = new EmulationConsentRepository(db);
-  const orgContactRepo = new OrgContactRepository(db);
+  const signInEventRepo = createSignInEventRepoHandlers(db, handlerContext);
+  const emulationConsentRepo = createEmulationConsentRepoHandlers(db, handlerContext);
+  const orgContactRepo = createOrgContactRepoHandlers(db, handlerContext);
 
   // 3. Secondary storage (Redis-backed via @d2/cache-redis handlers)
   const redisGet = new CacheRedis.Get<string>(redis, handlerContext);

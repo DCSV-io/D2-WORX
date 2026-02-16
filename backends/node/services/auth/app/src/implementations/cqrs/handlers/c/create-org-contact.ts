@@ -5,7 +5,10 @@ import { generateUuidV7 } from "@d2/utilities";
 import { createOrgContact, type OrgContact } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Commands } from "@d2/geo-client";
-import type { IOrgContactRepository } from "../../../../interfaces/repository/org-contact-repository.js";
+import type {
+  ICreateOrgContactRecordHandler,
+  IDeleteOrgContactRecordHandler,
+} from "../../../../interfaces/repository/handlers/index.js";
 
 /** Contact details input shape (mirrors proto ContactToCreateDTO with optional nested fields). */
 export interface ContactInput {
@@ -66,16 +69,19 @@ const schema = z.object({
  * If Geo creation fails, the junction is rolled back (deleted).
  */
 export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateOrgContactOutput> {
-  private readonly repo: IOrgContactRepository;
+  private readonly createRecord: ICreateOrgContactRecordHandler;
+  private readonly deleteRecord: IDeleteOrgContactRecordHandler;
   private readonly createContacts: Commands.ICreateContactsHandler;
 
   constructor(
-    repo: IOrgContactRepository,
+    createRecord: ICreateOrgContactRecordHandler,
+    deleteRecord: IDeleteOrgContactRecordHandler,
     context: IHandlerContext,
     createContacts: Commands.ICreateContactsHandler,
   ) {
     super(context);
-    this.repo = repo;
+    this.createRecord = createRecord;
+    this.deleteRecord = deleteRecord;
     this.createContacts = createContacts;
   }
 
@@ -96,7 +102,8 @@ export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateO
       isPrimary: input.isPrimary,
     });
 
-    await this.repo.create(contact);
+    const createResult = await this.createRecord.handleAsync({ contact });
+    if (!createResult.success) return D2Result.bubbleFail(createResult);
 
     // Build ContactToCreateDTO using junction ID as relatedEntityId
     const contactToCreate = {
@@ -113,7 +120,7 @@ export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateO
     if (!geoResult.success || !geoResult.data) {
       // Rollback: delete the junction since Geo contact creation failed
       try {
-        await this.repo.delete(orgContactId);
+        await this.deleteRecord.handleAsync({ id: orgContactId });
       } catch {
         // Best-effort rollback — log elsewhere
       }
@@ -123,7 +130,7 @@ export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateO
     const geoContact = geoResult.data.data[0];
     if (!geoContact) {
       try {
-        await this.repo.delete(orgContactId);
+        await this.deleteRecord.handleAsync({ id: orgContactId });
       } catch {
         // Best-effort rollback
       }

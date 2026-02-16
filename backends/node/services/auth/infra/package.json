@@ -19,8 +19,11 @@
     "dist"
   ],
   "dependencies": {
+    "@d2/auth-app": "workspace:*",
     "@d2/auth-domain": "workspace:*",
+    "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",
+    "@d2/result": "workspace:*",
     "@d2/utilities": "workspace:*",
     "better-auth": "1.4.18",
     "drizzle-orm": "0.45.1",

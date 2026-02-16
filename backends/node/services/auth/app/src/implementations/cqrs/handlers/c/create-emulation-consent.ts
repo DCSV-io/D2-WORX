@@ -8,7 +8,10 @@ import {
   type EmulationConsent,
   type OrgType,
 } from "@d2/auth-domain";
-import type { IEmulationConsentRepository } from "../../../../interfaces/repository/emulation-consent-repository.js";
+import type {
+  ICreateEmulationConsentRecordHandler,
+  IFindActiveConsentByUserIdAndOrgHandler,
+} from "../../../../interfaces/repository/handlers/index.js";
 
 export interface CreateEmulationConsentInput {
   readonly userId: string;
@@ -45,16 +48,19 @@ export class CreateEmulationConsent extends BaseHandler<
   CreateEmulationConsentInput,
   CreateEmulationConsentOutput
 > {
-  private readonly repo: IEmulationConsentRepository;
+  private readonly createRecord: ICreateEmulationConsentRecordHandler;
+  private readonly findActiveByUserIdAndOrg: IFindActiveConsentByUserIdAndOrgHandler;
   private readonly checkOrgExists: (orgId: string) => Promise<boolean>;
 
   constructor(
-    repo: IEmulationConsentRepository,
+    createRecord: ICreateEmulationConsentRecordHandler,
+    findActiveByUserIdAndOrg: IFindActiveConsentByUserIdAndOrgHandler,
     context: IHandlerContext,
     checkOrgExists: (orgId: string) => Promise<boolean>,
   ) {
     super(context);
-    this.repo = repo;
+    this.createRecord = createRecord;
+    this.findActiveByUserIdAndOrg = findActiveByUserIdAndOrg;
     this.checkOrgExists = checkOrgExists;
   }
 
@@ -85,11 +91,11 @@ export class CreateEmulationConsent extends BaseHandler<
     }
 
     // Prevent duplicate active consents for same user+org
-    const existing = await this.repo.findActiveByUserIdAndOrg(
-      input.userId,
-      input.grantedToOrgId,
-    );
-    if (existing) {
+    const findResult = await this.findActiveByUserIdAndOrg.handleAsync({
+      userId: input.userId,
+      grantedToOrgId: input.grantedToOrgId,
+    });
+    if (findResult.success && findResult.data?.consent) {
       return D2Result.fail({
         messages: ["An active consent already exists for this organization."],
         statusCode: HttpStatusCode.Conflict,
@@ -104,20 +110,8 @@ export class CreateEmulationConsent extends BaseHandler<
       expiresAt: input.expiresAt,
     });
 
-    try {
-      await this.repo.create(consent);
-    } catch (err: unknown) {
-      // PG unique violation (partial unique index on user_id + granted_to_org_id WHERE revoked_at IS NULL)
-      if (err instanceof Error && "code" in err && (err as { code: string }).code === "23505") {
-        return D2Result.fail({
-          messages: ["An active consent already exists for this organization."],
-          statusCode: HttpStatusCode.Conflict,
-          errorCode: ErrorCodes.CONFLICT,
-          traceId: this.traceId,
-        });
-      }
-      throw err;
-    }
+    const createResult = await this.createRecord.handleAsync({ consent });
+    if (!createResult.success) return D2Result.bubbleFail(createResult);
 
     return D2Result.ok({ data: { consent }, traceId: this.traceId });
   }

@@ -2,7 +2,10 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import type { Commands } from "@d2/geo-client";
-import type { IOrgContactRepository } from "../../../../interfaces/repository/org-contact-repository.js";
+import type {
+  IFindOrgContactByIdHandler,
+  IDeleteOrgContactRecordHandler,
+} from "../../../../interfaces/repository/handlers/index.js";
 
 export interface DeleteOrgContactInput {
   readonly id: string;
@@ -23,16 +26,19 @@ const schema = z.object({
  * deletes the Geo contact by ext key (best-effort), then deletes the junction.
  */
 export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteOrgContactOutput> {
-  private readonly repo: IOrgContactRepository;
+  private readonly findById: IFindOrgContactByIdHandler;
+  private readonly deleteRecord: IDeleteOrgContactRecordHandler;
   private readonly deleteContactsByExtKeys: Commands.IDeleteContactsByExtKeysHandler;
 
   constructor(
-    repo: IOrgContactRepository,
+    findById: IFindOrgContactByIdHandler,
+    deleteRecord: IDeleteOrgContactRecordHandler,
     context: IHandlerContext,
     deleteContactsByExtKeys: Commands.IDeleteContactsByExtKeysHandler,
   ) {
     super(context);
-    this.repo = repo;
+    this.findById = findById;
+    this.deleteRecord = deleteRecord;
     this.deleteContactsByExtKeys = deleteContactsByExtKeys;
   }
 
@@ -42,10 +48,12 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
-    const existing = await this.repo.findById(input.id);
-    if (!existing) {
+    const findResult = await this.findById.handleAsync({ id: input.id });
+    if (!findResult.success || !findResult.data) {
       return D2Result.notFound({ traceId: this.traceId });
     }
+
+    const existing = findResult.data.contact;
 
     // IDOR check: contact must belong to the caller's active org
     if (existing.organizationId !== input.organizationId) {
@@ -68,7 +76,8 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
     }
 
     // Delete the junction record
-    await this.repo.delete(input.id);
+    const deleteResult = await this.deleteRecord.handleAsync({ id: input.id });
+    if (!deleteResult.success) return D2Result.bubbleFail(deleteResult);
 
     return D2Result.ok({ data: {}, traceId: this.traceId });
   }

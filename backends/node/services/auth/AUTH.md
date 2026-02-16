@@ -84,7 +84,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | GetOrgContacts | Query | Org's contacts hydrated with full Geo contact data |
 | RecordSignInOutcome | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
 
-**DI pattern**: Manual factory functions — `createSignInEventHandlers(repo, context, memoryCache?)`, `createOrgContactHandlers(repo, context, geo)`, `createSignInThrottleHandlers(store, context, memoryCache?)` where `geo` is `{ createContacts, deleteContactsByExtKeys, updateContactsByExtKeys, getContactsByExtKeys }` from `@d2/geo-client`.
+**DI pattern**: Manual factory functions — `createSignInEventHandlers(repo, context, memoryCache?)`, `createOrgContactHandlers(repo, context, geo)`, `createSignInThrottleHandlers(store, context, memoryCache?)` where `repo` is a handler bundle type (`SignInEventRepoHandlers`, `EmulationConsentRepoHandlers`, `OrgContactRepoHandlers`) and `geo` is `{ createContacts, deleteContactsByExtKeys, updateContactsByExtKeys, getContactsByExtKeys }` from `@d2/geo-client`. Repo bundles are created by infra factory functions (`createXxxRepoHandlers(db, ctx)`).
 
 **Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["org_contact"]` and an `apiKey` for gRPC authentication.
 
@@ -107,7 +107,8 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | Hooks | `infra/src/auth/better-auth/hooks/` | ID generation (UUIDv7), org creation validation |
 | SignInThrottleStore | `infra/src/auth/sign-in-throttle-store.ts` | Redis-backed brute-force throttle state (uses `@d2/cache-redis` handlers) |
 | Drizzle Schema | `infra/src/repository/schema/` | `pgTable()` declarations for all 11 tables (8 BetterAuth + 3 custom) |
-| Repositories | `infra/src/repository/handlers/` | Drizzle-backed repos for custom tables |
+| Repo Handlers | `infra/src/repository/handlers/{c,r,u,d}/` | BaseHandler-based DB operations (14 handlers, TLC layout). Automatic OTel spans + D2Result error handling. PG 23505 → 409 in infra layer |
+| Repo Factories | `infra/src/repository/handlers/factories.ts` | `createSignInEventRepoHandlers(db, ctx)`, `createEmulationConsentRepoHandlers(db, ctx)`, `createOrgContactRepoHandlers(db, ctx)` |
 | Migrations | `infra/src/repository/migrations/` | Drizzle auto-generated SQL migrations (all tables + indexes) |
 | Migration runner | `infra/src/repository/migrate.ts` | Programmatic `runMigrations(pool)` for app startup + tests |
 | Mappers | `infra/src/mappers/` | BetterAuth record → domain entity conversion |
@@ -738,7 +739,7 @@ These are documented trade-offs and gaps identified during security audit. Items
 |---|-----|----------|---------|--------|
 | 9 | ~~**Rate limiting is single-instance (in-memory)**~~ | ~~LOW~~ | **RESOLVED.** Auth API uses `createDistributedRateLimitMiddleware` backed by `@d2/ratelimit` (Redis-backed sliding window via `@d2/interfaces`). Multi-instance safe. | Implemented in `distributed-rate-limit.ts` middleware + composition root. |
 | 10 | ~~**Session fingerprint fail-open on Redis error**~~ | ~~LOW~~ | **Not a gap.** Moved to Documented Assumptions — this is intentional (availability > security for defense-in-depth layer). | See Documented Assumptions. |
-| 11 | ~~**CreateEmulationConsent DB error not caught gracefully**~~ | ~~LOW~~ | **RESOLVED.** `repo.create()` wrapped in try-catch. PG unique violation (`23505`) maps to 409 Conflict. Non-PG errors re-thrown (caught by BaseHandler as 500 UNHANDLED_EXCEPTION). | Implemented in `create-emulation-consent.ts`. 2 tests added (PG 23505 → 409, non-PG → 500). |
+| 11 | ~~**CreateEmulationConsent DB error not caught gracefully**~~ | ~~LOW~~ | **RESOLVED.** PG unique violation (`23505`) handled in infra-layer repo handler (`CreateEmulationConsentRecord`) → returns D2Result.fail(409 Conflict). App handler (`CreateEmulationConsent`) uses `bubbleFail()` — no PG error codes in app layer. Non-PG errors propagate as thrown (BaseHandler wraps as 500 UNHANDLED_EXCEPTION). | Implemented in repo handler + app handler. 2 tests added (PG 23505 → 409 propagation, non-PG → 500). |
 | 12 | ~~**GetActiveConsents no default pagination**~~ | ~~LOW~~ | **RESOLVED.** Default `limit: 50`, `offset: 0` applied via `input.limit ?? 50`, `input.offset ?? 0`. Existing `.max(100)` on limit unchanged. | Implemented in `get-active-consents.ts`. 2 tests added (default values, custom passthrough). |
 | 13 | ~~**JWKS caching not explicitly configured on .NET gateway**~~ | ~~LOW~~ | **RESOLVED.** `JwtAuthOptions.JwksAutoRefreshInterval` (8h) and `JwksRefreshInterval` (5min) now explicit and configurable. Auth JWKS endpoint returns `Cache-Control: public, max-age=3600`. | Implemented in `JwtAuthOptions` + `JwtAuthExtensions` (.NET) and `auth-routes.ts` (Node.js). |
 
@@ -903,7 +904,9 @@ backends/node/services/auth/
 │       │           ├── c/               # Command handlers (7) — RecordSignInOutcome + 6 with Zod validation
 │       │           └── q/               # Query handlers (4) — CheckSignInThrottle + 3 with Zod validation
 │       ├── interfaces/
-│       │   └── repository/              # ISignInEventRepository, IEmulationConsentRepository, IOrgContactRepository, ISignInThrottleStore
+│       │   └── repository/
+│       │       ├── handlers/            # Repo handler interfaces (14) + bundle types (TLC: c/, r/, u/, d/)
+│       │       └── sign-in-throttle-store.ts  # ISignInThrottleStore (already delegates to cache handlers)
 │       └── index.ts                     # Re-exports + factory functions
 ├── infra/                               # @d2/auth-infra (TLC: mirrors Geo.Infra)
 │   └── src/
@@ -917,7 +920,13 @@ backends/node/services/auth/
 │       │   └── sign-in-throttle-store.ts # Redis-backed brute-force throttle (Exists, GetTtl, Set, Remove, Increment)
 │       ├── repository/
 │       │   ├── schema/                  # Drizzle pgTable declarations (better-auth-tables.ts, custom-tables.ts, types.ts)
-│       │   ├── handlers/                # Drizzle repos: SignInEvent, EmulationConsent, OrgContact
+│       │   ├── handlers/               # BaseHandler repo handlers (TLC layout)
+│       │   │   ├── c/                  # Create handlers (3): SignInEvent, EmulationConsent, OrgContact
+│       │   │   ├── r/                  # Read handlers (8): find/count/getLatest for all 3 aggregates
+│       │   │   ├── u/                  # Update handlers (2): RevokeEmulationConsent, UpdateOrgContact
+│       │   │   ├── d/                  # Delete handlers (1): DeleteOrgContact
+│       │   │   ├── factories.ts        # createXxxRepoHandlers(db, ctx) — 3 factory functions
+│       │   │   └── utils/pg-errors.ts  # isPgUniqueViolation helper
 │       │   ├── migrations/              # Auto-generated SQL (drizzle-kit generate)
 │       │   └── migrate.ts              # Programmatic migration runner
 │       ├── mappers/                     # BetterAuth → domain (user, org, member, invitation, session)

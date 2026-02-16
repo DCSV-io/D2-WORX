@@ -5,10 +5,58 @@ import type { IHandlerContext } from "@d2/handler";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { Commands, Queries, Complex } from "@d2/geo-client";
 
-// --- Interfaces (Repository) ---
-export type { ISignInEventRepository } from "./interfaces/repository/sign-in-event-repository.js";
-export type { IEmulationConsentRepository } from "./interfaces/repository/emulation-consent-repository.js";
-export type { IOrgContactRepository } from "./interfaces/repository/org-contact-repository.js";
+// --- Interfaces (Repository Handler Bundles) ---
+export type {
+  // Bundle types (used by factory functions + composition root)
+  SignInEventRepoHandlers,
+  EmulationConsentRepoHandlers,
+  OrgContactRepoHandlers,
+  // Individual handler types (used by app-layer handler constructors)
+  ICreateSignInEventHandler,
+  IFindSignInEventsByUserIdHandler,
+  ICountSignInEventsByUserIdHandler,
+  IGetLatestSignInEventDateHandler,
+  ICreateEmulationConsentRecordHandler,
+  IFindEmulationConsentByIdHandler,
+  IFindActiveConsentsByUserIdHandler,
+  IFindActiveConsentByUserIdAndOrgHandler,
+  IRevokeEmulationConsentRecordHandler,
+  ICreateOrgContactRecordHandler,
+  IFindOrgContactByIdHandler,
+  IFindOrgContactsByOrgIdHandler,
+  IUpdateOrgContactRecordHandler,
+  IDeleteOrgContactRecordHandler,
+  // Individual I/O types
+  CreateSignInEventInput,
+  CreateSignInEventOutput,
+  FindSignInEventsByUserIdInput,
+  FindSignInEventsByUserIdOutput,
+  CountSignInEventsByUserIdInput,
+  CountSignInEventsByUserIdOutput,
+  GetLatestSignInEventDateInput,
+  GetLatestSignInEventDateOutput,
+  CreateEmulationConsentRecordInput,
+  CreateEmulationConsentRecordOutput,
+  FindEmulationConsentByIdInput,
+  FindEmulationConsentByIdOutput,
+  FindActiveConsentsByUserIdInput,
+  FindActiveConsentsByUserIdOutput,
+  FindActiveConsentByUserIdAndOrgInput,
+  FindActiveConsentByUserIdAndOrgOutput,
+  RevokeEmulationConsentRecordInput,
+  RevokeEmulationConsentRecordOutput,
+  CreateOrgContactRecordInput,
+  CreateOrgContactRecordOutput,
+  FindOrgContactByIdInput,
+  FindOrgContactByIdOutput,
+  FindOrgContactsByOrgIdInput,
+  FindOrgContactsByOrgIdOutput,
+  UpdateOrgContactRecordInput,
+  UpdateOrgContactRecordOutput,
+  DeleteOrgContactRecordInput,
+  DeleteOrgContactRecordOutput,
+} from "./interfaces/repository/handlers/index.js";
+
 export type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 
 // --- Command Handlers ---
@@ -83,9 +131,11 @@ export type {
 
 // --- Factory Functions ---
 
-import type { ISignInEventRepository } from "./interfaces/repository/sign-in-event-repository.js";
-import type { IEmulationConsentRepository } from "./interfaces/repository/emulation-consent-repository.js";
-import type { IOrgContactRepository } from "./interfaces/repository/org-contact-repository.js";
+import type {
+  SignInEventRepoHandlers,
+  EmulationConsentRepoHandlers,
+  OrgContactRepoHandlers,
+} from "./interfaces/repository/handlers/index.js";
 import type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 import type { InMemoryCache } from "@d2/interfaces";
 import { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
@@ -102,7 +152,7 @@ import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contac
 
 /** Creates sign-in event handlers (mirrors .NET AddXxx() pattern). */
 export function createSignInEventHandlers(
-  repo: ISignInEventRepository,
+  repo: SignInEventRepoHandlers,
   context: IHandlerContext,
   memoryCache?: {
     get: InMemoryCache.IGetHandler<{ events: SignInEvent[]; total: number; latestDate: string | null }>;
@@ -110,21 +160,32 @@ export function createSignInEventHandlers(
   },
 ) {
   return {
-    record: new RecordSignInEvent(repo, context),
-    getByUser: new GetSignInEvents(repo, context, memoryCache),
+    record: new RecordSignInEvent(repo.create, context),
+    getByUser: new GetSignInEvents(
+      repo.findByUserId,
+      repo.countByUserId,
+      repo.getLatestEventDate,
+      context,
+      memoryCache,
+    ),
   };
 }
 
 /** Creates emulation consent handlers. */
 export function createEmulationConsentHandlers(
-  repo: IEmulationConsentRepository,
+  repo: EmulationConsentRepoHandlers,
   context: IHandlerContext,
   checkOrgExists: (orgId: string) => Promise<boolean>,
 ) {
   return {
-    create: new CreateEmulationConsent(repo, context, checkOrgExists),
-    revoke: new RevokeEmulationConsent(repo, context),
-    getActive: new GetActiveConsents(repo, context),
+    create: new CreateEmulationConsent(
+      repo.create,
+      repo.findActiveByUserIdAndOrg,
+      context,
+      checkOrgExists,
+    ),
+    revoke: new RevokeEmulationConsent(repo.findById, repo.revoke, context),
+    getActive: new GetActiveConsents(repo.findActiveByUserId, context),
   };
 }
 
@@ -138,15 +199,25 @@ export interface OrgContactGeoDeps {
 
 /** Creates org contact handlers. */
 export function createOrgContactHandlers(
-  repo: IOrgContactRepository,
+  repo: OrgContactRepoHandlers,
   context: IHandlerContext,
   geo: OrgContactGeoDeps,
 ) {
   return {
-    create: new CreateOrgContact(repo, context, geo.createContacts),
-    update: new UpdateOrgContactHandler(repo, context, geo.updateContactsByExtKeys),
-    delete: new DeleteOrgContact(repo, context, geo.deleteContactsByExtKeys),
-    getByOrg: new GetOrgContacts(repo, context, geo.getContactsByExtKeys),
+    create: new CreateOrgContact(repo.create, repo.delete, context, geo.createContacts),
+    update: new UpdateOrgContactHandler(
+      repo.findById,
+      repo.update,
+      context,
+      geo.updateContactsByExtKeys,
+    ),
+    delete: new DeleteOrgContact(
+      repo.findById,
+      repo.delete,
+      context,
+      geo.deleteContactsByExtKeys,
+    ),
+    getByOrg: new GetOrgContacts(repo.findByOrgId, context, geo.getContactsByExtKeys),
   };
 }
 

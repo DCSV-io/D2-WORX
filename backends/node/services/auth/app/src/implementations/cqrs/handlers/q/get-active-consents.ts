@@ -2,7 +2,7 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { EmulationConsent } from "@d2/auth-domain";
-import type { IEmulationConsentRepository } from "../../../../interfaces/repository/emulation-consent-repository.js";
+import type { IFindActiveConsentsByUserIdHandler } from "../../../../interfaces/repository/handlers/index.js";
 
 export interface GetActiveConsentsInput {
   readonly userId: string;
@@ -27,11 +27,14 @@ export class GetActiveConsents extends BaseHandler<
   GetActiveConsentsInput,
   GetActiveConsentsOutput
 > {
-  private readonly repo: IEmulationConsentRepository;
+  private readonly findActiveByUserId: IFindActiveConsentsByUserIdHandler;
 
-  constructor(repo: IEmulationConsentRepository, context: IHandlerContext) {
+  constructor(
+    findActiveByUserId: IFindActiveConsentsByUserIdHandler,
+    context: IHandlerContext,
+  ) {
     super(context);
-    this.repo = repo;
+    this.findActiveByUserId = findActiveByUserId;
   }
 
   protected async executeAsync(
@@ -40,11 +43,13 @@ export class GetActiveConsents extends BaseHandler<
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
-    const consents = await this.repo.findActiveByUserId(
-      input.userId,
-      input.limit ?? 50,
-      input.offset ?? 0,
-    );
+    const findResult = await this.findActiveByUserId.handleAsync({
+      userId: input.userId,
+      limit: input.limit ?? 50,
+      offset: input.offset ?? 0,
+    });
+
+    const consents = findResult.success ? (findResult.data?.consents ?? []) : [];
 
     return D2Result.ok({ data: { consents }, traceId: this.traceId });
   }

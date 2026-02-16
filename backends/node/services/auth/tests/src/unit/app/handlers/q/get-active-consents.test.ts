@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { HttpStatusCode } from "@d2/result";
+import { D2Result, HttpStatusCode } from "@d2/result";
 import { GetActiveConsents } from "@d2/auth-app";
-import type { IEmulationConsentRepository } from "@d2/auth-app";
+import type { IFindActiveConsentsByUserIdHandler } from "@d2/auth-app";
 import type { EmulationConsent } from "@d2/auth-domain";
 
 const VALID_USER_ID = "01234567-89ab-cdef-0123-456789abcdef";
@@ -20,13 +20,9 @@ function createTestContext() {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createMockRepo(): IEmulationConsentRepository {
+function createMockFindActiveByUserId() {
   return {
-    create: vi.fn().mockResolvedValue(undefined),
-    findById: vi.fn().mockResolvedValue(undefined),
-    findActiveByUserId: vi.fn().mockResolvedValue([]),
-    findActiveByUserIdAndOrg: vi.fn().mockResolvedValue(null),
-    revoke: vi.fn().mockResolvedValue(undefined),
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { consents: [] } })),
   };
 }
 
@@ -42,12 +38,15 @@ function createConsent(id: string): EmulationConsent {
 }
 
 describe("GetActiveConsents", () => {
-  let repo: ReturnType<typeof createMockRepo>;
+  let findActiveByUserId: ReturnType<typeof createMockFindActiveByUserId>;
   let handler: GetActiveConsents;
 
   beforeEach(() => {
-    repo = createMockRepo();
-    handler = new GetActiveConsents(repo, createTestContext());
+    findActiveByUserId = createMockFindActiveByUserId();
+    handler = new GetActiveConsents(
+      findActiveByUserId as unknown as IFindActiveConsentsByUserIdHandler,
+      createTestContext(),
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -62,7 +61,7 @@ describe("GetActiveConsents", () => {
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
     expect(result.inputErrors.length).toBeGreaterThanOrEqual(1);
-    expect(repo.findActiveByUserId).not.toHaveBeenCalled();
+    expect(findActiveByUserId.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when limit is negative", async () => {
@@ -75,7 +74,7 @@ describe("GetActiveConsents", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.findActiveByUserId).not.toHaveBeenCalled();
+    expect(findActiveByUserId.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when limit exceeds 100", async () => {
@@ -88,7 +87,7 @@ describe("GetActiveConsents", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.findActiveByUserId).not.toHaveBeenCalled();
+    expect(findActiveByUserId.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when offset is negative", async () => {
@@ -101,7 +100,7 @@ describe("GetActiveConsents", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.findActiveByUserId).not.toHaveBeenCalled();
+    expect(findActiveByUserId.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -110,34 +109,42 @@ describe("GetActiveConsents", () => {
 
   it("should return active consents for a user", async () => {
     const consents = [createConsent("c-1"), createConsent("c-2")];
-    repo.findActiveByUserId = vi.fn().mockResolvedValue(consents);
+    findActiveByUserId.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { consents } }));
 
     const result = await handler.handleAsync({ userId: VALID_USER_ID });
 
     expect(result.success).toBe(true);
     expect(result.data?.consents).toHaveLength(2);
-    expect(repo.findActiveByUserId).toHaveBeenCalledWith(VALID_USER_ID, 50, 0);
+    expect(findActiveByUserId.handleAsync).toHaveBeenCalledWith({
+      userId: VALID_USER_ID,
+      limit: 50,
+      offset: 0,
+    });
   });
 
   it("should apply default limit of 50 and offset of 0 when not provided", async () => {
-    repo.findActiveByUserId = vi.fn().mockResolvedValue([]);
-
     await handler.handleAsync({ userId: VALID_USER_ID });
 
-    expect(repo.findActiveByUserId).toHaveBeenCalledWith(VALID_USER_ID, 50, 0);
+    expect(findActiveByUserId.handleAsync).toHaveBeenCalledWith({
+      userId: VALID_USER_ID,
+      limit: 50,
+      offset: 0,
+    });
   });
 
   it("should use provided limit and offset when specified", async () => {
-    repo.findActiveByUserId = vi.fn().mockResolvedValue([]);
-
     await handler.handleAsync({ userId: VALID_USER_ID, limit: 10, offset: 20 });
 
-    expect(repo.findActiveByUserId).toHaveBeenCalledWith(VALID_USER_ID, 10, 20);
+    expect(findActiveByUserId.handleAsync).toHaveBeenCalledWith({
+      userId: VALID_USER_ID,
+      limit: 10,
+      offset: 20,
+    });
   });
 
   it("should return empty array when no active consents exist", async () => {
-    repo.findActiveByUserId = vi.fn().mockResolvedValue([]);
-
     const result = await handler.handleAsync({ userId: VALID_USER_ID });
 
     expect(result.success).toBe(true);

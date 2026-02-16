@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { HttpStatusCode } from "@d2/result";
+import { D2Result, HttpStatusCode } from "@d2/result";
 import { RecordSignInEvent } from "@d2/auth-app";
-import type { ISignInEventRepository } from "@d2/auth-app";
+import type { ICreateSignInEventHandler } from "@d2/auth-app";
 
 function createTestContext() {
   const request: IRequestContext = {
@@ -17,21 +17,20 @@ function createTestContext() {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createMockRepo(): ISignInEventRepository {
-  return {
-    create: vi.fn().mockResolvedValue(undefined),
-    findByUserId: vi.fn().mockResolvedValue([]),
-    countByUserId: vi.fn().mockResolvedValue(0),
-  };
+function createMockCreateRecord() {
+  return { handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })) };
 }
 
 describe("RecordSignInEvent", () => {
-  let repo: ReturnType<typeof createMockRepo>;
+  let createRecord: ReturnType<typeof createMockCreateRecord>;
   let handler: RecordSignInEvent;
 
   beforeEach(() => {
-    repo = createMockRepo();
-    handler = new RecordSignInEvent(repo, createTestContext());
+    createRecord = createMockCreateRecord();
+    handler = new RecordSignInEvent(
+      createRecord as unknown as ICreateSignInEventHandler,
+      createTestContext(),
+    );
   });
 
   it("should record a sign-in event and return success", async () => {
@@ -50,7 +49,7 @@ describe("RecordSignInEvent", () => {
     expect(result.data?.event.ipAddress).toBe("192.168.1.1");
     expect(result.data?.event.userAgent).toBe("Mozilla/5.0");
     expect(result.data?.event.whoIsId).toBe("abcdef0123456789abcdef0123456789");
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   it("should set whoIsId to null when not provided", async () => {
@@ -86,12 +85,12 @@ describe("RecordSignInEvent", () => {
       userAgent: "Bot/1.0",
     });
 
-    expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({
+    expect(createRecord.handleAsync).toHaveBeenCalledWith({
+      event: expect.objectContaining({
         userId: "abcdef01-2345-6789-abcd-ef0123456789",
         ipAddress: "172.16.0.1",
       }),
-    );
+    });
   });
 
   // -----------------------------------------------------------------------
@@ -109,7 +108,7 @@ describe("RecordSignInEvent", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when ipAddress exceeds 45 characters", async () => {
@@ -123,7 +122,7 @@ describe("RecordSignInEvent", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when userAgent exceeds 512 characters", async () => {
@@ -137,7 +136,27 @@ describe("RecordSignInEvent", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should bubble failure when repo create returns error", async () => {
+    createRecord.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.fail({
+        messages: ["connection lost"],
+        statusCode: HttpStatusCode.InternalServerError,
+      }),
+    );
+
+    const result = await handler.handleAsync({
+      userId: "01234567-89ab-cdef-0123-456789abcdef",
+      successful: true,
+      ipAddress: "10.0.0.1",
+      userAgent: "TestAgent",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.InternalServerError);
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   it("should accept valid input at max field lengths", async () => {
@@ -150,6 +169,6 @@ describe("RecordSignInEvent", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 });

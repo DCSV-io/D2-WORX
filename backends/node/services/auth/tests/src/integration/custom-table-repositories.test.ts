@@ -1,10 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { generateUuidV7 } from "@d2/utilities";
+import { HandlerContext, type IRequestContext } from "@d2/handler";
+import { createLogger } from "@d2/logging";
 import {
-  SignInEventRepository,
-  EmulationConsentRepository,
-  OrgContactRepository,
+  createSignInEventRepoHandlers,
+  createEmulationConsentRepoHandlers,
+  createOrgContactRepoHandlers,
 } from "@d2/auth-infra";
+import type {
+  SignInEventRepoHandlers,
+  EmulationConsentRepoHandlers,
+  OrgContactRepoHandlers,
+} from "@d2/auth-app";
 import type { SignInEvent, EmulationConsent, OrgContact } from "@d2/auth-domain";
 import {
   startPostgres,
@@ -13,15 +20,27 @@ import {
   cleanCustomTables,
 } from "./postgres-test-helpers.js";
 
+function createTestContext() {
+  const request: IRequestContext = {
+    traceId: "trace-integration",
+    isAuthenticated: true,
+    isAgentStaff: false,
+    isAgentAdmin: false,
+    isTargetingStaff: false,
+    isTargetingAdmin: false,
+  };
+  return new HandlerContext(request, createLogger({ level: "silent" as never }));
+}
+
 // ---------------------------------------------------------------------------
 // SignInEventRepository
 // ---------------------------------------------------------------------------
 describe("SignInEventRepository (integration)", () => {
-  let repo: SignInEventRepository;
+  let repo: SignInEventRepoHandlers;
 
   beforeAll(async () => {
     await startPostgres();
-    repo = new SignInEventRepository(getDb());
+    repo = createSignInEventRepoHandlers(getDb(), createTestContext());
   }, 120_000);
 
   afterAll(async () => {
@@ -47,89 +66,126 @@ describe("SignInEventRepository (integration)", () => {
 
   it("should create and retrieve a sign-in event", async () => {
     const event = makeEvent();
-    await repo.create(event);
+    await repo.create.handleAsync({ event });
 
-    const results = await repo.findByUserId(event.userId, 10, 0);
-    expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(event.id);
-    expect(results[0].userId).toBe(event.userId);
-    expect(results[0].successful).toBe(true);
-    expect(results[0].ipAddress).toBe("127.0.0.1");
-    expect(results[0].userAgent).toBe("test-agent");
-    expect(results[0].whoIsId).toBeNull();
+    const result = await repo.findByUserId.handleAsync({
+      userId: event.userId,
+      limit: 10,
+      offset: 0,
+    });
+    expect(result.success).toBe(true);
+    const events = result.data!.events;
+    expect(events).toHaveLength(1);
+    expect(events[0].id).toBe(event.id);
+    expect(events[0].userId).toBe(event.userId);
+    expect(events[0].successful).toBe(true);
+    expect(events[0].ipAddress).toBe("127.0.0.1");
+    expect(events[0].userAgent).toBe("test-agent");
+    expect(events[0].whoIsId).toBeNull();
   });
 
   it("should create an event with whoIsId", async () => {
     const event = makeEvent({ whoIsId: "abc123" });
-    await repo.create(event);
+    await repo.create.handleAsync({ event });
 
-    const results = await repo.findByUserId(event.userId, 10, 0);
-    expect(results[0].whoIsId).toBe("abc123");
+    const result = await repo.findByUserId.handleAsync({
+      userId: event.userId,
+      limit: 10,
+      offset: 0,
+    });
+    expect(result.data!.events[0].whoIsId).toBe("abc123");
   });
 
   it("should return events ordered by created_at desc", async () => {
     const older = makeEvent({ createdAt: new Date("2025-01-01") });
     const newer = makeEvent({ createdAt: new Date("2025-06-01") });
-    await repo.create(older);
-    await repo.create(newer);
+    await repo.create.handleAsync({ event: older });
+    await repo.create.handleAsync({ event: newer });
 
-    const results = await repo.findByUserId("user-1", 10, 0);
-    expect(results).toHaveLength(2);
-    expect(results[0].id).toBe(newer.id);
-    expect(results[1].id).toBe(older.id);
+    const result = await repo.findByUserId.handleAsync({
+      userId: "user-1",
+      limit: 10,
+      offset: 0,
+    });
+    const events = result.data!.events;
+    expect(events).toHaveLength(2);
+    expect(events[0].id).toBe(newer.id);
+    expect(events[1].id).toBe(older.id);
   });
 
   it("should paginate with limit and offset", async () => {
     for (let i = 0; i < 5; i++) {
-      await repo.create(makeEvent({ createdAt: new Date(2025, 0, i + 1) }));
+      await repo.create.handleAsync({
+        event: makeEvent({ createdAt: new Date(2025, 0, i + 1) }),
+      });
     }
 
-    const page1 = await repo.findByUserId("user-1", 2, 0);
-    const page2 = await repo.findByUserId("user-1", 2, 2);
-    expect(page1).toHaveLength(2);
-    expect(page2).toHaveLength(2);
-    expect(page1[0].id).not.toBe(page2[0].id);
+    const page1 = await repo.findByUserId.handleAsync({
+      userId: "user-1",
+      limit: 2,
+      offset: 0,
+    });
+    const page2 = await repo.findByUserId.handleAsync({
+      userId: "user-1",
+      limit: 2,
+      offset: 2,
+    });
+    expect(page1.data!.events).toHaveLength(2);
+    expect(page2.data!.events).toHaveLength(2);
+    expect(page1.data!.events[0].id).not.toBe(page2.data!.events[0].id);
   });
 
   it("should count events by user", async () => {
-    await repo.create(makeEvent());
-    await repo.create(makeEvent());
+    await repo.create.handleAsync({ event: makeEvent() });
+    await repo.create.handleAsync({ event: makeEvent() });
 
-    const count = await repo.countByUserId("user-1");
-    expect(count).toBe(2);
+    const result = await repo.countByUserId.handleAsync({ userId: "user-1" });
+    expect(result.success).toBe(true);
+    expect(result.data!.count).toBe(2);
   });
 
   it("should return 0 count for unknown user", async () => {
-    const count = await repo.countByUserId("nonexistent");
-    expect(count).toBe(0);
+    const result = await repo.countByUserId.handleAsync({ userId: "nonexistent" });
+    expect(result.success).toBe(true);
+    expect(result.data!.count).toBe(0);
   });
 
   it("should return latest event date", async () => {
     const d1 = new Date("2025-01-01T00:00:00Z");
     const d2 = new Date("2025-06-15T00:00:00Z");
-    await repo.create(makeEvent({ createdAt: d1 }));
-    await repo.create(makeEvent({ createdAt: d2 }));
+    await repo.create.handleAsync({ event: makeEvent({ createdAt: d1 }) });
+    await repo.create.handleAsync({ event: makeEvent({ createdAt: d2 }) });
 
-    const latest = await repo.getLatestEventDate("user-1");
-    expect(latest).toBeInstanceOf(Date);
-    expect(latest!.getTime()).toBe(d2.getTime());
+    const result = await repo.getLatestEventDate.handleAsync({ userId: "user-1" });
+    expect(result.success).toBe(true);
+    expect(result.data!.date).toBeInstanceOf(Date);
+    expect(result.data!.date!.getTime()).toBe(d2.getTime());
   });
 
   it("should return null latest date for unknown user", async () => {
-    const latest = await repo.getLatestEventDate("nonexistent");
-    expect(latest).toBeNull();
+    const result = await repo.getLatestEventDate.handleAsync({ userId: "nonexistent" });
+    expect(result.success).toBe(true);
+    expect(result.data!.date).toBeNull();
   });
 
   it("should not cross-contaminate between users", async () => {
-    await repo.create(makeEvent({ userId: "user-A" }));
-    await repo.create(makeEvent({ userId: "user-B" }));
+    await repo.create.handleAsync({ event: makeEvent({ userId: "user-A" }) });
+    await repo.create.handleAsync({ event: makeEvent({ userId: "user-B" }) });
 
-    const resultsA = await repo.findByUserId("user-A", 10, 0);
-    const resultsB = await repo.findByUserId("user-B", 10, 0);
-    expect(resultsA).toHaveLength(1);
-    expect(resultsB).toHaveLength(1);
-    expect(resultsA[0].userId).toBe("user-A");
-    expect(resultsB[0].userId).toBe("user-B");
+    const resultA = await repo.findByUserId.handleAsync({
+      userId: "user-A",
+      limit: 10,
+      offset: 0,
+    });
+    const resultB = await repo.findByUserId.handleAsync({
+      userId: "user-B",
+      limit: 10,
+      offset: 0,
+    });
+    expect(resultA.data!.events).toHaveLength(1);
+    expect(resultB.data!.events).toHaveLength(1);
+    expect(resultA.data!.events[0].userId).toBe("user-A");
+    expect(resultB.data!.events[0].userId).toBe("user-B");
   });
 });
 
@@ -137,11 +193,11 @@ describe("SignInEventRepository (integration)", () => {
 // EmulationConsentRepository
 // ---------------------------------------------------------------------------
 describe("EmulationConsentRepository (integration)", () => {
-  let repo: EmulationConsentRepository;
+  let repo: EmulationConsentRepoHandlers;
 
   beforeAll(async () => {
     await startPostgres();
-    repo = new EmulationConsentRepository(getDb());
+    repo = createEmulationConsentRepoHandlers(getDb(), createTestContext());
   }, 120_000);
 
   afterAll(async () => {
@@ -166,9 +222,11 @@ describe("EmulationConsentRepository (integration)", () => {
 
   it("should create and retrieve a consent by id", async () => {
     const consent = makeConsent();
-    await repo.create(consent);
+    await repo.create.handleAsync({ consent });
 
-    const found = await repo.findById(consent.id);
+    const result = await repo.findById.handleAsync({ id: consent.id });
+    expect(result.success).toBe(true);
+    const found = result.data!.consent;
     expect(found).toBeDefined();
     expect(found!.id).toBe(consent.id);
     expect(found!.userId).toBe(consent.userId);
@@ -176,9 +234,9 @@ describe("EmulationConsentRepository (integration)", () => {
     expect(found!.revokedAt).toBeNull();
   });
 
-  it("should return undefined for nonexistent id", async () => {
-    const found = await repo.findById("nonexistent");
-    expect(found).toBeUndefined();
+  it("should return not-found for nonexistent id", async () => {
+    const result = await repo.findById.handleAsync({ id: "nonexistent" });
+    expect(result.success).toBe(false);
   });
 
   it("should find active consents by user", async () => {
@@ -194,84 +252,119 @@ describe("EmulationConsentRepository (integration)", () => {
       revokedAt: new Date(),
     });
 
-    await repo.create(active);
-    await repo.create(expired);
-    await repo.create(revoked);
+    await repo.create.handleAsync({ consent: active });
+    await repo.create.handleAsync({ consent: expired });
+    await repo.create.handleAsync({ consent: revoked });
 
-    const results = await repo.findActiveByUserId("user-1");
-    expect(results).toHaveLength(1);
-    expect(results[0].id).toBe(active.id);
+    const result = await repo.findActiveByUserId.handleAsync({
+      userId: "user-1",
+      limit: 50,
+      offset: 0,
+    });
+    expect(result.success).toBe(true);
+    expect(result.data!.consents).toHaveLength(1);
+    expect(result.data!.consents[0].id).toBe(active.id);
   });
 
   it("should paginate active consents", async () => {
     for (let i = 0; i < 5; i++) {
-      await repo.create(
-        makeConsent({
+      await repo.create.handleAsync({
+        consent: makeConsent({
           id: generateUuidV7(),
           grantedToOrgId: `org-${i}`,
           createdAt: new Date(2025, 0, i + 1),
         }),
-      );
+      });
     }
 
-    const page = await repo.findActiveByUserId("user-1", 2, 0);
-    expect(page).toHaveLength(2);
+    const result = await repo.findActiveByUserId.handleAsync({
+      userId: "user-1",
+      limit: 2,
+      offset: 0,
+    });
+    expect(result.success).toBe(true);
+    expect(result.data!.consents).toHaveLength(2);
   });
 
   it("should find active consent by user and org", async () => {
     const consent = makeConsent();
-    await repo.create(consent);
+    await repo.create.handleAsync({ consent });
 
-    const found = await repo.findActiveByUserIdAndOrg("user-1", "org-1");
-    expect(found).not.toBeNull();
-    expect(found!.id).toBe(consent.id);
+    const result = await repo.findActiveByUserIdAndOrg.handleAsync({
+      userId: "user-1",
+      grantedToOrgId: "org-1",
+    });
+    expect(result.success).toBe(true);
+    expect(result.data!.consent).not.toBeNull();
+    expect(result.data!.consent!.id).toBe(consent.id);
   });
 
-  it("should return null for nonexistent user+org combo", async () => {
-    const found = await repo.findActiveByUserIdAndOrg("user-1", "org-999");
-    expect(found).toBeNull();
+  it("should return null consent for nonexistent user+org combo", async () => {
+    const result = await repo.findActiveByUserIdAndOrg.handleAsync({
+      userId: "user-1",
+      grantedToOrgId: "org-999",
+    });
+    expect(result.success).toBe(true);
+    expect(result.data!.consent).toBeNull();
   });
 
   it("should revoke a consent", async () => {
     const consent = makeConsent();
-    await repo.create(consent);
+    await repo.create.handleAsync({ consent });
 
-    await repo.revoke(consent.id);
+    await repo.revoke.handleAsync({ id: consent.id });
 
-    const found = await repo.findById(consent.id);
-    expect(found!.revokedAt).toBeInstanceOf(Date);
+    const findResult = await repo.findById.handleAsync({ id: consent.id });
+    expect(findResult.success).toBe(true);
+    expect(findResult.data!.consent!.revokedAt).toBeInstanceOf(Date);
 
-    const active = await repo.findActiveByUserId("user-1");
-    expect(active).toHaveLength(0);
+    const activeResult = await repo.findActiveByUserId.handleAsync({
+      userId: "user-1",
+      limit: 50,
+      offset: 0,
+    });
+    expect(activeResult.data!.consents).toHaveLength(0);
   });
 
   it("should enforce partial unique index on active consents", async () => {
     const consent1 = makeConsent();
-    await repo.create(consent1);
+    await repo.create.handleAsync({ consent: consent1 });
 
     const consent2 = makeConsent({ id: generateUuidV7() }); // same user+org
-    await expect(repo.create(consent2)).rejects.toThrow();
+    const result = await repo.create.handleAsync({ consent: consent2 });
+    expect(result.success).toBe(false);
   });
 
   it("should allow duplicate user+org after revocation", async () => {
     const consent1 = makeConsent();
-    await repo.create(consent1);
-    await repo.revoke(consent1.id);
+    await repo.create.handleAsync({ consent: consent1 });
+    await repo.revoke.handleAsync({ id: consent1.id });
 
     const consent2 = makeConsent({ id: generateUuidV7() });
-    await expect(repo.create(consent2)).resolves.not.toThrow();
+    const result = await repo.create.handleAsync({ consent: consent2 });
+    expect(result.success).toBe(true);
   });
 
   it("should not cross-contaminate between users", async () => {
-    await repo.create(makeConsent({ userId: "user-A" }));
-    await repo.create(makeConsent({ id: generateUuidV7(), userId: "user-B" }));
+    await repo.create.handleAsync({ consent: makeConsent({ userId: "user-A" }) });
+    await repo.create.handleAsync({
+      consent: makeConsent({ id: generateUuidV7(), userId: "user-B" }),
+    });
 
-    const resultsA = await repo.findActiveByUserId("user-A");
-    const resultsB = await repo.findActiveByUserId("user-B");
-    expect(resultsA).toHaveLength(1);
-    expect(resultsB).toHaveLength(1);
-    expect(resultsA[0].userId).toBe("user-A");
-    expect(resultsB[0].userId).toBe("user-B");
+    const resultA = await repo.findActiveByUserId.handleAsync({
+      userId: "user-A",
+      limit: 50,
+      offset: 0,
+    });
+    const resultB = await repo.findActiveByUserId.handleAsync({
+      userId: "user-B",
+      limit: 50,
+      offset: 0,
+    });
+    expect(resultA.data!.consents).toHaveLength(1);
+    expect(resultB.data!.consents).toHaveLength(1);
+    expect(resultA.data!.consents[0].userId).toBe("user-A");
+    expect(resultB.data!.consents[0].userId).toBe("user-B");
   });
 });
 
@@ -279,11 +372,11 @@ describe("EmulationConsentRepository (integration)", () => {
 // OrgContactRepository
 // ---------------------------------------------------------------------------
 describe("OrgContactRepository (integration)", () => {
-  let repo: OrgContactRepository;
+  let repo: OrgContactRepoHandlers;
 
   beforeAll(async () => {
     await startPostgres();
-    repo = new OrgContactRepository(getDb());
+    repo = createOrgContactRepoHandlers(getDb(), createTestContext());
   }, 120_000);
 
   afterAll(async () => {
@@ -308,9 +401,11 @@ describe("OrgContactRepository (integration)", () => {
 
   it("should create and retrieve a contact by id", async () => {
     const contact = makeContact();
-    await repo.create(contact);
+    await repo.create.handleAsync({ contact });
 
-    const found = await repo.findById(contact.id);
+    const result = await repo.findById.handleAsync({ id: contact.id });
+    expect(result.success).toBe(true);
+    const found = result.data!.contact;
     expect(found).toBeDefined();
     expect(found!.id).toBe(contact.id);
     expect(found!.organizationId).toBe(contact.organizationId);
@@ -318,9 +413,9 @@ describe("OrgContactRepository (integration)", () => {
     expect(found!.isPrimary).toBe(false);
   });
 
-  it("should return undefined for nonexistent id", async () => {
-    const found = await repo.findById("nonexistent");
-    expect(found).toBeUndefined();
+  it("should return not-found for nonexistent id", async () => {
+    const result = await repo.findById.handleAsync({ id: "nonexistent" });
+    expect(result.success).toBe(false);
   });
 
   it("should find contacts by org with primary first", async () => {
@@ -336,34 +431,45 @@ describe("OrgContactRepository (integration)", () => {
       createdAt: new Date("2025-06-01"),
     });
 
-    await repo.create(secondary);
-    await repo.create(primary);
+    await repo.create.handleAsync({ contact: secondary });
+    await repo.create.handleAsync({ contact: primary });
 
-    const results = await repo.findByOrgId("org-1");
-    expect(results).toHaveLength(2);
-    expect(results[0].isPrimary).toBe(true);
-    expect(results[0].label).toBe("HQ");
-    expect(results[1].isPrimary).toBe(false);
+    const result = await repo.findByOrgId.handleAsync({
+      organizationId: "org-1",
+      limit: 50,
+      offset: 0,
+    });
+    expect(result.success).toBe(true);
+    const contacts = result.data!.contacts;
+    expect(contacts).toHaveLength(2);
+    expect(contacts[0].isPrimary).toBe(true);
+    expect(contacts[0].label).toBe("HQ");
+    expect(contacts[1].isPrimary).toBe(false);
   });
 
   it("should paginate contacts by org", async () => {
     for (let i = 0; i < 5; i++) {
-      await repo.create(
-        makeContact({
+      await repo.create.handleAsync({
+        contact: makeContact({
           id: generateUuidV7(),
           label: `Contact ${i}`,
           createdAt: new Date(2025, 0, i + 1),
         }),
-      );
+      });
     }
 
-    const page = await repo.findByOrgId("org-1", 2, 0);
-    expect(page).toHaveLength(2);
+    const result = await repo.findByOrgId.handleAsync({
+      organizationId: "org-1",
+      limit: 2,
+      offset: 0,
+    });
+    expect(result.success).toBe(true);
+    expect(result.data!.contacts).toHaveLength(2);
   });
 
   it("should update label and isPrimary", async () => {
     const contact = makeContact();
-    await repo.create(contact);
+    await repo.create.handleAsync({ contact });
 
     const updated: OrgContact = {
       ...contact,
@@ -371,33 +477,46 @@ describe("OrgContactRepository (integration)", () => {
       isPrimary: true,
       updatedAt: new Date(),
     };
-    await repo.update(updated);
+    await repo.update.handleAsync({ contact: updated });
 
-    const found = await repo.findById(contact.id);
-    expect(found!.label).toBe("Updated Office");
-    expect(found!.isPrimary).toBe(true);
-    expect(found!.organizationId).toBe(contact.organizationId);
+    const result = await repo.findById.handleAsync({ id: contact.id });
+    const found = result.data!.contact!;
+    expect(found.label).toBe("Updated Office");
+    expect(found.isPrimary).toBe(true);
+    expect(found.organizationId).toBe(contact.organizationId);
   });
 
   it("should delete a contact", async () => {
     const contact = makeContact();
-    await repo.create(contact);
+    await repo.create.handleAsync({ contact });
 
-    await repo.delete(contact.id);
+    await repo.delete.handleAsync({ id: contact.id });
 
-    const found = await repo.findById(contact.id);
-    expect(found).toBeUndefined();
+    const result = await repo.findById.handleAsync({ id: contact.id });
+    expect(result.success).toBe(false);
   });
 
   it("should not cross-contaminate between orgs", async () => {
-    await repo.create(makeContact({ organizationId: "org-A" }));
-    await repo.create(makeContact({ id: generateUuidV7(), organizationId: "org-B" }));
+    await repo.create.handleAsync({
+      contact: makeContact({ organizationId: "org-A" }),
+    });
+    await repo.create.handleAsync({
+      contact: makeContact({ id: generateUuidV7(), organizationId: "org-B" }),
+    });
 
-    const resultsA = await repo.findByOrgId("org-A");
-    const resultsB = await repo.findByOrgId("org-B");
-    expect(resultsA).toHaveLength(1);
-    expect(resultsB).toHaveLength(1);
-    expect(resultsA[0].organizationId).toBe("org-A");
-    expect(resultsB[0].organizationId).toBe("org-B");
+    const resultA = await repo.findByOrgId.handleAsync({
+      organizationId: "org-A",
+      limit: 50,
+      offset: 0,
+    });
+    const resultB = await repo.findByOrgId.handleAsync({
+      organizationId: "org-B",
+      limit: 50,
+      offset: 0,
+    });
+    expect(resultA.data!.contacts).toHaveLength(1);
+    expect(resultB.data!.contacts).toHaveLength(1);
+    expect(resultA.data!.contacts[0].organizationId).toBe("org-A");
+    expect(resultB.data!.contacts[0].organizationId).toBe("org-B");
   });
 });

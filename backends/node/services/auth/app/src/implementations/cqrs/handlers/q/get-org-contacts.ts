@@ -2,8 +2,9 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ContactDTO } from "@d2/protos";
+import type { OrgContact } from "@d2/auth-domain";
 import type { Queries } from "@d2/geo-client";
-import type { IOrgContactRepository } from "../../../../interfaces/repository/org-contact-repository.js";
+import type { IFindOrgContactsByOrgIdHandler } from "../../../../interfaces/repository/handlers/index.js";
 
 /** A junction record hydrated with full Geo contact data. */
 export interface HydratedOrgContact {
@@ -43,16 +44,16 @@ const schema = z.object({
  * exists) are returned with geoContact: null.
  */
 export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgContactsOutput> {
-  private readonly repo: IOrgContactRepository;
+  private readonly findByOrgId: IFindOrgContactsByOrgIdHandler;
   private readonly getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler;
 
   constructor(
-    repo: IOrgContactRepository,
+    findByOrgId: IFindOrgContactsByOrgIdHandler,
     context: IHandlerContext,
     getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler,
   ) {
     super(context);
-    this.repo = repo;
+    this.findByOrgId = findByOrgId;
     this.getContactsByExtKeys = getContactsByExtKeys;
   }
 
@@ -62,11 +63,15 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
-    const junctions = await this.repo.findByOrgId(
-      input.organizationId,
-      input.limit,
-      input.offset,
-    );
+    const findResult = await this.findByOrgId.handleAsync({
+      organizationId: input.organizationId,
+      limit: input.limit,
+      offset: input.offset,
+    });
+
+    const junctions: OrgContact[] = findResult.success
+      ? (findResult.data?.contacts ?? [])
+      : [];
 
     if (junctions.length === 0) {
       return D2Result.ok({ data: { contacts: [] }, traceId: this.traceId });

@@ -2,7 +2,11 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
-import type { ISignInEventRepository } from "../../../../interfaces/repository/sign-in-event-repository.js";
+import type {
+  IFindSignInEventsByUserIdHandler,
+  ICountSignInEventsByUserIdHandler,
+  IGetLatestSignInEventDateHandler,
+} from "../../../../interfaces/repository/handlers/index.js";
 
 export interface GetSignInEventsInput {
   readonly userId: string;
@@ -34,14 +38,18 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
  * are stable as long as no new events exist).
  */
 export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignInEventsOutput> {
-  private readonly repo: ISignInEventRepository;
+  private readonly findByUserId: IFindSignInEventsByUserIdHandler;
+  private readonly countByUserId: ICountSignInEventsByUserIdHandler;
+  private readonly getLatestEventDate: IGetLatestSignInEventDateHandler;
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<CachedEvents>;
     set: InMemoryCache.ISetHandler<CachedEvents>;
   };
 
   constructor(
-    repo: ISignInEventRepository,
+    findByUserId: IFindSignInEventsByUserIdHandler,
+    countByUserId: ICountSignInEventsByUserIdHandler,
+    getLatestEventDate: IGetLatestSignInEventDateHandler,
     context: IHandlerContext,
     cache?: {
       get: InMemoryCache.IGetHandler<CachedEvents>;
@@ -49,7 +57,9 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
     },
   ) {
     super(context);
-    this.repo = repo;
+    this.findByUserId = findByUserId;
+    this.countByUserId = countByUserId;
+    this.getLatestEventDate = getLatestEventDate;
     this.cache = cache;
   }
 
@@ -68,8 +78,12 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
         const cached = cacheResult.data.value;
 
         // Verify staleness: check if latest event date still matches
-        const latestDate = await this.repo.getLatestEventDate(input.userId);
-        const latestStr = latestDate?.toISOString() ?? null;
+        const dateResult = await this.getLatestEventDate.handleAsync({
+          userId: input.userId,
+        });
+        const latestStr = dateResult.success
+          ? (dateResult.data?.date?.toISOString() ?? null)
+          : null;
 
         if (latestStr === cached.latestDate) {
           return D2Result.ok({
@@ -81,10 +95,13 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
     }
 
     // Cache miss or stale — query DB
-    const [events, total] = await Promise.all([
-      this.repo.findByUserId(input.userId, limit, offset),
-      this.repo.countByUserId(input.userId),
+    const [findResult, countResult] = await Promise.all([
+      this.findByUserId.handleAsync({ userId: input.userId, limit, offset }),
+      this.countByUserId.handleAsync({ userId: input.userId }),
     ]);
+
+    const events = findResult.success ? (findResult.data?.events ?? []) : [];
+    const total = countResult.success ? (countResult.data?.count ?? 0) : 0;
 
     // Populate cache
     if (this.cache) {

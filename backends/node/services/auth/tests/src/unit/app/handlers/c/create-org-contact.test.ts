@@ -3,7 +3,10 @@ import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { D2Result, HttpStatusCode } from "@d2/result";
 import { CreateOrgContact } from "@d2/auth-app";
-import type { IOrgContactRepository } from "@d2/auth-app";
+import type {
+  ICreateOrgContactRecordHandler,
+  IDeleteOrgContactRecordHandler,
+} from "@d2/auth-app";
 import type { ContactDTO } from "@d2/protos";
 import type { Commands } from "@d2/geo-client";
 
@@ -21,14 +24,12 @@ function createTestContext() {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createMockRepo(): IOrgContactRepository {
-  return {
-    create: vi.fn().mockResolvedValue(undefined),
-    findById: vi.fn().mockResolvedValue(undefined),
-    findByOrgId: vi.fn().mockResolvedValue([]),
-    update: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(undefined),
-  };
+function createMockCreateRecord() {
+  return { handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })) };
+}
+
+function createMockDeleteRecord() {
+  return { handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })) };
 }
 
 function createMockCreateContacts(): Commands.ICreateContactsHandler {
@@ -61,14 +62,21 @@ const VALID_CONTACT_INPUT = {
 };
 
 describe("CreateOrgContact", () => {
-  let repo: ReturnType<typeof createMockRepo>;
+  let createRecord: ReturnType<typeof createMockCreateRecord>;
+  let deleteRecord: ReturnType<typeof createMockDeleteRecord>;
   let createContacts: Commands.ICreateContactsHandler;
   let handler: CreateOrgContact;
 
   beforeEach(() => {
-    repo = createMockRepo();
+    createRecord = createMockCreateRecord();
+    deleteRecord = createMockDeleteRecord();
     createContacts = createMockCreateContacts();
-    handler = new CreateOrgContact(repo, createTestContext(), createContacts);
+    handler = new CreateOrgContact(
+      createRecord as unknown as ICreateOrgContactRecordHandler,
+      deleteRecord as unknown as IDeleteOrgContactRecordHandler,
+      createTestContext(),
+      createContacts,
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -87,7 +95,7 @@ describe("CreateOrgContact", () => {
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
     expect(result.inputErrors.length).toBeGreaterThanOrEqual(1);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
     expect(createContacts.handleAsync).not.toHaveBeenCalled();
   });
 
@@ -102,7 +110,7 @@ describe("CreateOrgContact", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when label exceeds 100 chars", async () => {
@@ -116,7 +124,7 @@ describe("CreateOrgContact", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when isPrimary is not a boolean", async () => {
@@ -131,7 +139,7 @@ describe("CreateOrgContact", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -146,7 +154,7 @@ describe("CreateOrgContact", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
     expect(createContacts.handleAsync).toHaveBeenCalledOnce();
 
     // Verify createContacts was called with contacts array containing contextKey
@@ -185,8 +193,8 @@ describe("CreateOrgContact", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.ServiceUnavailable);
     // Junction is created first, then rolled back on Geo failure
-    expect(repo.create).toHaveBeenCalledOnce();
-    expect(repo.delete).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
+    expect(deleteRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   // -----------------------------------------------------------------------
@@ -206,7 +214,7 @@ describe("CreateOrgContact", () => {
     expect(result.data?.contact.label).toBe("Billing");
     expect(result.data?.contact.isPrimary).toBe(false);
     expect(result.data?.geoContact).toBeDefined();
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   it("should set isPrimary when provided", async () => {
@@ -240,14 +248,17 @@ describe("CreateOrgContact", () => {
       contact: VALID_CONTACT_INPUT,
     });
 
-    expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({
+    expect(createRecord.handleAsync).toHaveBeenCalledWith({
+      contact: expect.objectContaining({
         organizationId: VALID_ORG_ID,
         label: "Support",
       }),
-    );
+    });
     // OrgContact no longer has contactId field
-    const calledWith = vi.mocked(repo.create).mock.calls[0][0] as Record<string, unknown>;
+    const calledWith = vi.mocked(createRecord.handleAsync).mock.calls[0][0].contact as Record<
+      string,
+      unknown
+    >;
     expect(calledWith).not.toHaveProperty("contactId");
   });
 
@@ -267,7 +278,7 @@ describe("CreateOrgContact", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when phone number exceeds 20 chars", async () => {
@@ -282,7 +293,7 @@ describe("CreateOrgContact", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when company name exceeds 255 chars", async () => {
@@ -297,7 +308,7 @@ describe("CreateOrgContact", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when country code exceeds 2 chars", async () => {
@@ -312,7 +323,7 @@ describe("CreateOrgContact", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should accept valid input at max field lengths", async () => {
@@ -343,7 +354,70 @@ describe("CreateOrgContact", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
+  });
+
+  // -----------------------------------------------------------------------
+  // Repo + rollback failure paths
+  // -----------------------------------------------------------------------
+
+  it("should bubble failure when repo createRecord returns error (Geo not called)", async () => {
+    createRecord.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.fail({
+        messages: ["connection lost"],
+        statusCode: HttpStatusCode.InternalServerError,
+      }),
+    );
+
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "Billing",
+      contact: VALID_CONTACT_INPUT,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.InternalServerError);
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
+    expect(createContacts.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should rollback junction when Geo returns success with empty data array", async () => {
+    createContacts.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.ok({ data: { data: [] } }),
+    );
+
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "Billing",
+      contact: VALID_CONTACT_INPUT,
+    });
+
+    expect(result.success).toBe(false);
+    // Junction was created then rolled back
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
+    expect(deleteRecord.handleAsync).toHaveBeenCalledOnce();
+  });
+
+  it("should still return Geo failure even when rollback delete throws", async () => {
+    createContacts.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.fail({
+        messages: ["Geo service unavailable."],
+        statusCode: HttpStatusCode.ServiceUnavailable,
+      }),
+    );
+    deleteRecord.handleAsync = vi.fn().mockRejectedValue(new Error("DB down"));
+
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "Billing",
+      contact: VALID_CONTACT_INPUT,
+    });
+
+    // Still returns the Geo failure, rollback error is swallowed
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.ServiceUnavailable);
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
+    expect(deleteRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   it("should forward contact details to createContacts handler", async () => {

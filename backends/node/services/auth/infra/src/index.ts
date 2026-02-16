@@ -38,10 +38,12 @@ export { toDomainSession } from "./mappers/session-mapper.js";
 export { toDomainMember } from "./mappers/member-mapper.js";
 export { toDomainInvitation } from "./mappers/invitation-mapper.js";
 
-// --- Repositories ---
-export { SignInEventRepository } from "./repository/handlers/sign-in-event-repository.js";
-export { EmulationConsentRepository } from "./repository/handlers/emulation-consent-repository.js";
-export { OrgContactRepository } from "./repository/handlers/org-contact-repository.js";
+// --- Repository Handler Factories ---
+export {
+  createSignInEventRepoHandlers,
+  createEmulationConsentRepoHandlers,
+  createOrgContactRepoHandlers,
+} from "./repository/handlers/factories.js";
 
 // --- Sign-In Throttle ---
 export { SignInThrottleStore } from "./auth/sign-in-throttle-store.js";

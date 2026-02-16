@@ -3,7 +3,10 @@ import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import { UpdateOrgContactHandler } from "@d2/auth-app";
-import type { IOrgContactRepository } from "@d2/auth-app";
+import type {
+  IFindOrgContactByIdHandler,
+  IUpdateOrgContactRecordHandler,
+} from "@d2/auth-app";
 import type { OrgContact } from "@d2/auth-domain";
 import type { ContactDTO } from "@d2/protos";
 import type { Complex } from "@d2/geo-client";
@@ -24,13 +27,15 @@ function createTestContext() {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createMockRepo(): IOrgContactRepository {
+function createMockFindById() {
   return {
-    create: vi.fn().mockResolvedValue(undefined),
-    findById: vi.fn().mockResolvedValue(undefined),
-    findByOrgId: vi.fn().mockResolvedValue([]),
-    update: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(undefined),
+    handleAsync: vi.fn().mockResolvedValue(D2Result.notFound()),
+  };
+}
+
+function createMockUpdateRecord() {
+  return {
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })),
   };
 }
 
@@ -67,14 +72,21 @@ function createExistingContact(overrides?: Partial<OrgContact>): OrgContact {
 }
 
 describe("UpdateOrgContactHandler", () => {
-  let repo: ReturnType<typeof createMockRepo>;
+  let findById: ReturnType<typeof createMockFindById>;
+  let updateRecord: ReturnType<typeof createMockUpdateRecord>;
   let updateContactsByExtKeys: Complex.IUpdateContactsByExtKeysHandler;
   let handler: UpdateOrgContactHandler;
 
   beforeEach(() => {
-    repo = createMockRepo();
+    findById = createMockFindById();
+    updateRecord = createMockUpdateRecord();
     updateContactsByExtKeys = createMockUpdateContactsByExtKeys();
-    handler = new UpdateOrgContactHandler(repo, createTestContext(), updateContactsByExtKeys);
+    handler = new UpdateOrgContactHandler(
+      findById as unknown as IFindOrgContactByIdHandler,
+      updateRecord as unknown as IUpdateOrgContactRecordHandler,
+      createTestContext(),
+      updateContactsByExtKeys,
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -93,7 +105,7 @@ describe("UpdateOrgContactHandler", () => {
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
     expect(result.inputErrors.length).toBeGreaterThanOrEqual(1);
-    expect(repo.findById).not.toHaveBeenCalled();
+    expect(findById.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when organizationId is not a valid UUID", async () => {
@@ -107,7 +119,7 @@ describe("UpdateOrgContactHandler", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.findById).not.toHaveBeenCalled();
+    expect(findById.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when no updates are provided", async () => {
@@ -121,7 +133,7 @@ describe("UpdateOrgContactHandler", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.findById).not.toHaveBeenCalled();
+    expect(findById.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -130,7 +142,9 @@ describe("UpdateOrgContactHandler", () => {
 
   it("should return Forbidden when contact belongs to a different organization", async () => {
     const existing = createExistingContact({ organizationId: OTHER_ORG_ID });
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,
@@ -141,7 +155,7 @@ describe("UpdateOrgContactHandler", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.Forbidden);
     expect(result.errorCode).toBe(ErrorCodes.FORBIDDEN);
-    expect(repo.update).not.toHaveBeenCalled();
+    expect(updateRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -150,7 +164,9 @@ describe("UpdateOrgContactHandler", () => {
 
   it("should update label and return success without calling Geo handlers", async () => {
     const existing = createExistingContact();
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,
@@ -163,12 +179,14 @@ describe("UpdateOrgContactHandler", () => {
     expect(result.data?.contact.isPrimary).toBe(false);
     expect(result.data?.geoContact).toBeUndefined();
     expect(updateContactsByExtKeys.handleAsync).not.toHaveBeenCalled();
-    expect(repo.update).toHaveBeenCalledOnce();
+    expect(updateRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   it("should update isPrimary and return success", async () => {
     const existing = createExistingContact();
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,
@@ -184,7 +202,9 @@ describe("UpdateOrgContactHandler", () => {
 
   it("should update both label and isPrimary", async () => {
     const existing = createExistingContact();
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,
@@ -203,7 +223,9 @@ describe("UpdateOrgContactHandler", () => {
 
   it("should call updateContactsByExtKeys when contact is provided", async () => {
     const existing = createExistingContact();
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,
@@ -229,7 +251,9 @@ describe("UpdateOrgContactHandler", () => {
 
   it("should bubble Geo failure when updateContactsByExtKeys fails", async () => {
     const existing = createExistingContact();
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
     updateContactsByExtKeys.handleAsync = vi.fn().mockResolvedValue(
       D2Result.fail({
         messages: ["Geo service unavailable."],
@@ -247,12 +271,14 @@ describe("UpdateOrgContactHandler", () => {
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.ServiceUnavailable);
-    expect(repo.update).not.toHaveBeenCalled();
+    expect(updateRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should update metadata AND replace contact in same call", async () => {
     const existing = createExistingContact();
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,
@@ -275,7 +301,7 @@ describe("UpdateOrgContactHandler", () => {
   // -----------------------------------------------------------------------
 
   it("should return NotFound when contact does not exist", async () => {
-    repo.findById = vi.fn().mockResolvedValue(undefined);
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.notFound());
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,
@@ -285,14 +311,61 @@ describe("UpdateOrgContactHandler", () => {
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.NotFound);
-    expect(repo.update).not.toHaveBeenCalled();
+    expect(updateRecord.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should bubble failure when repo updateRecord returns error", async () => {
+    const existing = createExistingContact();
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
+    updateRecord.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.fail({
+        messages: ["connection lost"],
+        statusCode: HttpStatusCode.InternalServerError,
+      }),
+    );
+
+    const result = await handler.handleAsync({
+      id: VALID_CONTACT_ID,
+      organizationId: VALID_ORG_ID,
+      updates: { label: "Shipping" },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.InternalServerError);
+    expect(updateRecord.handleAsync).toHaveBeenCalledOnce();
+  });
+
+  it("should bubble failure when Geo returns success with empty data array", async () => {
+    const existing = createExistingContact();
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
+    updateContactsByExtKeys.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.ok({ data: { data: [] } }),
+    );
+
+    const result = await handler.handleAsync({
+      id: VALID_CONTACT_ID,
+      organizationId: VALID_ORG_ID,
+      updates: {
+        contact: { personalDetails: { firstName: "New" } },
+      },
+    });
+
+    expect(result.success).toBe(false);
+    // Should not proceed to update the junction since Geo returned no contact
+    expect(updateRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should set updatedAt to a new date", async () => {
     const existing = createExistingContact({
       updatedAt: new Date("2026-01-01"),
     });
-    repo.findById = vi.fn().mockResolvedValue(existing);
+    findById.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,

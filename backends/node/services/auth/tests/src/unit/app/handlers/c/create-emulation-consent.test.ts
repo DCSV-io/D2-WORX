@@ -1,9 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { HttpStatusCode, ErrorCodes } from "@d2/result";
+import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import { CreateEmulationConsent } from "@d2/auth-app";
-import type { IEmulationConsentRepository } from "@d2/auth-app";
+import type {
+  ICreateEmulationConsentRecordHandler,
+  IFindActiveConsentByUserIdAndOrgHandler,
+} from "@d2/auth-app";
 import type { EmulationConsent } from "@d2/auth-domain";
 
 const VALID_USER_ID = "01234567-89ab-cdef-0123-456789abcdef";
@@ -21,25 +24,32 @@ function createTestContext() {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createMockRepo(): IEmulationConsentRepository {
+function createMockCreateRecord() {
+  return { handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })) };
+}
+
+function createMockFindActiveByUserIdAndOrg() {
   return {
-    create: vi.fn().mockResolvedValue(undefined),
-    findById: vi.fn().mockResolvedValue(undefined),
-    findActiveByUserId: vi.fn().mockResolvedValue([]),
-    findActiveByUserIdAndOrg: vi.fn().mockResolvedValue(null),
-    revoke: vi.fn().mockResolvedValue(undefined),
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { consent: null } })),
   };
 }
 
 describe("CreateEmulationConsent", () => {
-  let repo: ReturnType<typeof createMockRepo>;
+  let createRecord: ReturnType<typeof createMockCreateRecord>;
+  let findActiveByUserIdAndOrg: ReturnType<typeof createMockFindActiveByUserIdAndOrg>;
   let handler: CreateEmulationConsent;
   let checkOrgExists: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    repo = createMockRepo();
+    createRecord = createMockCreateRecord();
+    findActiveByUserIdAndOrg = createMockFindActiveByUserIdAndOrg();
     checkOrgExists = vi.fn().mockResolvedValue(true);
-    handler = new CreateEmulationConsent(repo, createTestContext(), checkOrgExists);
+    handler = new CreateEmulationConsent(
+      createRecord as unknown as ICreateEmulationConsentRecordHandler,
+      findActiveByUserIdAndOrg as unknown as IFindActiveConsentByUserIdAndOrgHandler,
+      createTestContext(),
+      checkOrgExists,
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -60,7 +70,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.data?.consent.userId).toBe(VALID_USER_ID);
     expect(result.data?.consent.grantedToOrgId).toBe(VALID_ORG_ID);
     expect(result.data?.consent.revokedAt).toBeNull();
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   it("should create consent when org type is admin", async () => {
@@ -74,7 +84,7 @@ describe("CreateEmulationConsent", () => {
 
     expect(result.success).toBe(true);
     expect(result.data?.consent).toBeDefined();
-    expect(repo.create).toHaveBeenCalledOnce();
+    expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
   it("should return Forbidden when org type is customer", async () => {
@@ -89,7 +99,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.Forbidden);
     expect(result.errorCode).toBe(ErrorCodes.FORBIDDEN);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return Forbidden when org type is third_party", async () => {
@@ -103,7 +113,7 @@ describe("CreateEmulationConsent", () => {
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.Forbidden);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return Forbidden when org type is affiliate", async () => {
@@ -117,7 +127,7 @@ describe("CreateEmulationConsent", () => {
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.Forbidden);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -138,7 +148,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
     expect(result.inputErrors.length).toBeGreaterThanOrEqual(1);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when grantedToOrgId is not a valid UUID", async () => {
@@ -154,7 +164,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when expiresAt is in the past", async () => {
@@ -170,7 +180,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should return validationFailed when expiresAt exceeds 30 days", async () => {
@@ -186,7 +196,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
     expect(result.inputErrors).toBeDefined();
     expect(Array.isArray(result.inputErrors)).toBe(true);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -208,7 +218,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.statusCode).toBe(HttpStatusCode.NotFound);
     expect(result.errorCode).toBe(ErrorCodes.NOT_FOUND);
     expect(checkOrgExists).toHaveBeenCalledWith(VALID_ORG_ID);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -224,7 +234,9 @@ describe("CreateEmulationConsent", () => {
       revokedAt: null,
       createdAt: new Date("2026-02-01"),
     };
-    repo.findActiveByUserIdAndOrg = vi.fn().mockResolvedValue(existingConsent);
+    findActiveByUserIdAndOrg.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { consent: existingConsent } }));
 
     const futureDate = new Date(Date.now() + 86_400_000);
     const result = await handler.handleAsync({
@@ -237,18 +249,25 @@ describe("CreateEmulationConsent", () => {
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.Conflict);
     expect(result.errorCode).toBe(ErrorCodes.CONFLICT);
-    expect(repo.findActiveByUserIdAndOrg).toHaveBeenCalledWith(VALID_USER_ID, VALID_ORG_ID);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(findActiveByUserIdAndOrg.handleAsync).toHaveBeenCalledWith({
+      userId: VALID_USER_ID,
+      grantedToOrgId: VALID_ORG_ID,
+    });
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
-  // DB unique constraint race condition (gap #11)
+  // DB unique constraint (via repo handler returning 409)
   // -----------------------------------------------------------------------
 
-  it("should return 409 Conflict when repo.create throws PG unique violation (23505)", async () => {
-    const pgError = new Error("duplicate key value violates unique constraint");
-    (pgError as unknown as { code: string }).code = "23505";
-    repo.create = vi.fn().mockRejectedValue(pgError);
+  it("should return 409 Conflict when repo.create returns conflict result", async () => {
+    createRecord.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.fail({
+        messages: ["Record already exists."],
+        statusCode: HttpStatusCode.Conflict,
+        errorCode: ErrorCodes.CONFLICT,
+      }),
+    );
 
     const futureDate = new Date(Date.now() + 86_400_000);
     const result = await handler.handleAsync({
@@ -263,8 +282,13 @@ describe("CreateEmulationConsent", () => {
     expect(result.errorCode).toBe(ErrorCodes.CONFLICT);
   });
 
-  it("should return 500 when repo.create throws a non-PG error", async () => {
-    repo.create = vi.fn().mockRejectedValue(new Error("connection lost"));
+  it("should return 500 when repo.create returns internal server error", async () => {
+    createRecord.handleAsync = vi.fn().mockResolvedValue(
+      D2Result.fail({
+        messages: ["connection lost"],
+        statusCode: HttpStatusCode.InternalServerError,
+      }),
+    );
 
     const futureDate = new Date(Date.now() + 86_400_000);
     const result = await handler.handleAsync({
@@ -274,7 +298,6 @@ describe("CreateEmulationConsent", () => {
       expiresAt: futureDate,
     });
 
-    // BaseHandler catches the re-thrown error and wraps it as UNHANDLED_EXCEPTION
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(HttpStatusCode.InternalServerError);
   });

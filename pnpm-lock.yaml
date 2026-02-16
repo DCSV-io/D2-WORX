@@ -144,12 +144,21 @@ importers:
 
   backends/node/services/auth/infra:
     dependencies:
+      '@d2/auth-app':
+        specifier: workspace:*
+        version: link:../app
       '@d2/auth-domain':
         specifier: workspace:*
         version: link:../domain
+      '@d2/handler':
+        specifier: workspace:*
+        version: link:../../../shared/handler
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../../../shared/result
       '@d2/utilities':
         specifier: workspace:*
         version: link:../../../shared/utilities
