@@ -40,7 +40,11 @@ export class GetActiveConsents extends BaseHandler<
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
-    const consents = await this.repo.findActiveByUserId(input.userId, input.limit, input.offset);
+    const consents = await this.repo.findActiveByUserId(
+      input.userId,
+      input.limit ?? 50,
+      input.offset ?? 0,
+    );
 
     return D2Result.ok({ data: { consents }, traceId: this.traceId });
   }

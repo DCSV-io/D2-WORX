@@ -104,7 +104,20 @@ export class CreateEmulationConsent extends BaseHandler<
       expiresAt: input.expiresAt,
     });
 
-    await this.repo.create(consent);
+    try {
+      await this.repo.create(consent);
+    } catch (err: unknown) {
+      // PG unique violation (partial unique index on user_id + granted_to_org_id WHERE revoked_at IS NULL)
+      if (err instanceof Error && "code" in err && (err as { code: string }).code === "23505") {
+        return D2Result.fail({
+          messages: ["An active consent already exists for this organization."],
+          statusCode: HttpStatusCode.Conflict,
+          errorCode: ErrorCodes.CONFLICT,
+          traceId: this.traceId,
+        });
+      }
+      throw err;
+    }
 
     return D2Result.ok({ data: { consent }, traceId: this.traceId });
   }

@@ -3,7 +3,7 @@ import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import { updateOrgContact, type OrgContact, type UpdateOrgContactInput } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
-import type { Complex } from "@d2/geo-client";
+import { contactInputSchema, type Complex } from "@d2/geo-client";
 import type { IOrgContactRepository } from "../../../../interfaces/repository/org-contact-repository.js";
 import type { ContactInput } from "./create-org-contact.js";
 
@@ -21,58 +21,6 @@ export type UpdateOrgContactOutput = {
   geoContact?: ContactDTO;
 };
 
-const contactSchema = z
-  .object({
-    contactMethods: z
-      .object({
-        emails: z
-          .array(z.object({ value: z.string().email(), labels: z.array(z.string()).optional() }))
-          .optional(),
-        phoneNumbers: z
-          .array(z.object({ value: z.string().min(1), labels: z.array(z.string()).optional() }))
-          .optional(),
-      })
-      .optional(),
-    personalDetails: z
-      .object({
-        title: z.string().optional(),
-        firstName: z.string().optional(),
-        preferredName: z.string().optional(),
-        middleName: z.string().optional(),
-        lastName: z.string().optional(),
-        generationalSuffix: z.string().optional(),
-        professionalCredentials: z.array(z.string()).optional(),
-        dateOfBirth: z.string().optional(),
-        biologicalSex: z.string().optional(),
-      })
-      .optional(),
-    professionalDetails: z
-      .object({
-        companyName: z.string().optional(),
-        jobTitle: z.string().optional(),
-        department: z.string().optional(),
-        companyWebsite: z.string().optional(),
-      })
-      .optional(),
-    location: z
-      .object({
-        coordinates: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
-        address: z
-          .object({
-            line1: z.string().optional(),
-            line2: z.string().optional(),
-            line3: z.string().optional(),
-          })
-          .optional(),
-        city: z.string().optional(),
-        postalCode: z.string().optional(),
-        subdivisionIso31662Code: z.string().optional(),
-        countryIso31661Alpha2Code: z.string().optional(),
-      })
-      .optional(),
-  })
-  .optional();
-
 const schema = z.object({
   id: zodGuid,
   organizationId: zodGuid,
@@ -80,7 +28,7 @@ const schema = z.object({
     .object({
       label: z.string().max(100).optional(),
       isPrimary: z.boolean().optional(),
-      contact: contactSchema,
+      contact: contactInputSchema.optional(),
     })
     .refine(
       (u) => u.label !== undefined || u.isPrimary !== undefined || u.contact !== undefined,

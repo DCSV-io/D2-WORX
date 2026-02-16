@@ -6,7 +6,7 @@
 
 namespace D2.Geo.Tests.Unit.App.Validators;
 
-using D2.Geo.App.Validators;
+using D2.Geo.Client.Validators;
 using D2.Geo.Domain.Entities;
 using D2.Geo.Domain.Exceptions;
 using D2.Geo.Domain.ValueObjects;

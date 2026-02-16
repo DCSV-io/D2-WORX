@@ -704,7 +704,7 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 
 | Token | Storage | Why |
 |-------|---------|-----|
-| Session cookie | HTTP-only, Secure | XSS-proof. `sameSite` should be explicitly set (see Known Security Gaps) |
+| Session cookie | HTTP-only, Secure, SameSite=Lax | XSS-proof. CSRF protection via `lax` (blocks cross-site POST) |
 | JWT | In-memory only (JavaScript variable) | Never localStorage/sessionStorage (XSS risk) |
 | JWKS private key | PostgreSQL (`jwks` table) | Auto-rotated, never exposed |
 
@@ -727,9 +727,9 @@ These are documented trade-offs and gaps identified during security audit. Items
 | # | Gap | Severity | Details | Mitigation |
 |---|-----|----------|---------|------------|
 | 4 | ~~**No per-account brute-force lockout**~~ | ~~MEDIUM~~ | **RESOLVED.** Progressive delay per (IP+fingerprint, email/username): 3 free attempts then escalating delays (5s → 15s → 30s → 1m → 5m → 15m max). Known-good identity bypass with local memory cache (0 Redis calls for legitimate users on known devices). Fail-open on Redis errors. Never hard-locks accounts. Both `/sign-in/email` and `/sign-in/username` protected. | `CheckSignInThrottle` (query) + `RecordSignInOutcome` (command) + `SignInThrottleStore` (infra). |
-| 5 | **`sameSite` cookie attribute not explicitly set** | MEDIUM | Relies on BetterAuth/browser defaults (likely `lax`). | Set `session.cookieCache.sameSite: "lax"` explicitly in BetterAuth config. |
-| 6 | **RecordSignInEvent missing Zod validation** | MEDIUM | Handler lacks `validateInput()`. Domain factory has basic null checks but no length/format validation on ipAddress and userAgent. | Add Zod schema with `.max()` on strings and UUID format on userId. |
-| 7 | **Contact handler string fields unbounded** | MEDIUM | Phone numbers, personal details (firstName, lastName, etc.), professional fields, and location fields lack `.max()` Zod constraints. `label` is correctly bounded at 100 chars. | Add `.max()` to all string fields: phone (20), names (100), addresses (200), country/subdivision codes (2-6). |
+| 5 | ~~**`sameSite` cookie attribute not explicitly set**~~ | ~~MEDIUM~~ | **RESOLVED.** `cookieOptions: { sameSite: "lax" }` set explicitly in BetterAuth config (`auth-factory.ts`). Protects against CSRF on POST while allowing link navigation. | Implemented in `auth-factory.ts`. |
+| 6 | ~~**RecordSignInEvent missing Zod validation**~~ | ~~MEDIUM~~ | **RESOLVED.** Zod schema validates `userId` (UUID), `ipAddress` (max 45), `userAgent` (max 512), `whoIsId` (max 64 nullable). `validateInput()` called at top of `executeAsync()`. | Implemented in `record-sign-in-event.ts`. 4 validation tests added. |
+| 7 | ~~**Contact handler string fields unbounded**~~ | ~~MEDIUM~~ | **RESOLVED.** Zod schemas centralized in `@d2/geo-client` (`contactInputSchema`) as single source of truth — Auth handlers import and compose. Limits match Geo's EF Core/FluentValidation: names (255), title (20), generationalSuffix (10), company/job/department (255), addresses (255), city (255), postalCode (16), email (254), phone (20), labels (50), country code (2), subdivision (6), website (2048). .NET side: `ContactToCreateValidator` moved from `Geo.App` to `Geo.Client` for the same reuse pattern. | 5 boundary tests in `create-org-contact.test.ts`. |
 | 8 | **`impersonatedBy` leaks admin identity in JWT** | MEDIUM | Admin user ID embedded in JWT when impersonating. JWT interception reveals which accounts have impersonation privileges. | Consider hashing the value or keeping it server-side only (session, not JWT). |
 
 ### Track for GA
@@ -738,8 +738,8 @@ These are documented trade-offs and gaps identified during security audit. Items
 |---|-----|----------|---------|--------|
 | 9 | ~~**Rate limiting is single-instance (in-memory)**~~ | ~~LOW~~ | **RESOLVED.** Auth API uses `createDistributedRateLimitMiddleware` backed by `@d2/ratelimit` (Redis-backed sliding window via `@d2/interfaces`). Multi-instance safe. | Implemented in `distributed-rate-limit.ts` middleware + composition root. |
 | 10 | ~~**Session fingerprint fail-open on Redis error**~~ | ~~LOW~~ | **Not a gap.** Moved to Documented Assumptions — this is intentional (availability > security for defense-in-depth layer). | See Documented Assumptions. |
-| 11 | **CreateEmulationConsent DB error not caught gracefully** | LOW | Race condition between check-then-insert caught by DB partial unique index, but handler doesn't catch `23505` (unique violation) — returns 500 instead of 409. | Wrap `repo.create()` in try-catch, map unique violation to 409 Conflict. |
-| 12 | **GetActiveConsents no default pagination** | LOW | `limit` is optional with `.max(100)` but no default applied when omitted — returns ALL rows. | Apply default limit (e.g., 50) when not provided. |
+| 11 | ~~**CreateEmulationConsent DB error not caught gracefully**~~ | ~~LOW~~ | **RESOLVED.** `repo.create()` wrapped in try-catch. PG unique violation (`23505`) maps to 409 Conflict. Non-PG errors re-thrown (caught by BaseHandler as 500 UNHANDLED_EXCEPTION). | Implemented in `create-emulation-consent.ts`. 2 tests added (PG 23505 → 409, non-PG → 500). |
+| 12 | ~~**GetActiveConsents no default pagination**~~ | ~~LOW~~ | **RESOLVED.** Default `limit: 50`, `offset: 0` applied via `input.limit ?? 50`, `input.offset ?? 0`. Existing `.max(100)` on limit unchanged. | Implemented in `get-active-consents.ts`. 2 tests added (default values, custom passthrough). |
 | 13 | ~~**JWKS caching not explicitly configured on .NET gateway**~~ | ~~LOW~~ | **RESOLVED.** `JwtAuthOptions.JwksAutoRefreshInterval` (8h) and `JwksRefreshInterval` (5min) now explicit and configurable. Auth JWKS endpoint returns `Cache-Control: public, max-age=3600`. | Implemented in `JwtAuthOptions` + `JwtAuthExtensions` (.NET) and `auth-routes.ts` (Node.js). |
 
 ### Documented Assumptions
@@ -849,7 +849,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `integration/migration.test.ts` | 14 | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index |
 | `integration/custom-table-repositories.test.ts` | 26 | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints) |
 | `integration/better-auth-tables.test.ts` | 8 | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance |
-| **Total auth-tests** | **586** | 538 unit + 48 integration (Testcontainers PostgreSQL 18) |
+| **Total auth-tests** | **599** | 551 unit + 48 integration (Testcontainers PostgreSQL 18) |
 
 ### Key Security Behaviors Verified by Tests
 
@@ -865,7 +865,10 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | Role hierarchy correctly computed (AtOrAbove) | `AuthPolicyTests.cs`, `role.test.ts` |
 | Emulation forced to auditor role | `emulation.test.ts` |
 | IDOR prevention (org ID from session, ownership check in handler) | `update-org-contact.test.ts`, `delete-org-contact.test.ts` |
-| Input validation (Zod schemas: UUID, string length, date range) | Handler test files (`create-*.test.ts`, `update-*.test.ts`, etc.) |
+| Input validation (Zod schemas: UUID, string length, date range) | Handler test files (`create-*.test.ts`, `update-*.test.ts`, `record-sign-in-event.test.ts`) |
+| PG unique violation (23505) → 409 Conflict (not 500) | `create-emulation-consent.test.ts` |
+| Default pagination (limit 50, offset 0) on list queries | `get-active-consents.test.ts` |
+| Contact string fields bounded (aligned with Geo: names ≤255, phone ≤20, company ≤255, etc.) | `create-org-contact.test.ts` |
 | Brute-force throttle blocks with 429 + Retry-After header | `auth-routes.test.ts` |
 | Brute-force throttle never blocks known-good identities (even during attack) | `check-sign-in-throttle.test.ts` |
 | Brute-force throttle fail-open on Redis/cache errors | `check-sign-in-throttle.test.ts`, `record-sign-in-outcome.test.ts` |
@@ -937,7 +940,7 @@ backends/node/services/auth/
 │       │   ├── org-contact-routes.ts    # Thin routes: visible auth middleware, handler delegation
 │       │   └── health.ts               # Health check
 │       └── index.ts
-├── tests/                               # @d2/auth-tests (586 tests)
+├── tests/                               # @d2/auth-tests (599 tests)
 │   └── src/
 │       ├── unit/
 │       │   ├── api/

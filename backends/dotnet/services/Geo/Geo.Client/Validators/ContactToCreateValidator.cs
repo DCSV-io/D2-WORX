@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Geo.App.Validators;
+namespace D2.Geo.Client.Validators;
 
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
@@ -12,12 +12,8 @@ using FluentValidation;
 
 /// <summary>
 /// Aggregate validator for <see cref="ContactToCreateDTO"/> proto messages.
-/// Mirrors every constraint enforced by domain factories
-/// (<see cref="Domain.Entities.Contact"/>,
-/// <see cref="Domain.ValueObjects.Personal"/>,
-/// <see cref="Domain.ValueObjects.Professional"/>,
-/// <see cref="Domain.ValueObjects.EmailAddress"/>,
-/// <see cref="Domain.ValueObjects.PhoneNumber"/>).
+/// Mirrors every constraint enforced by Geo domain factories
+/// (Contact, Personal, Professional, EmailAddress, PhoneNumber).
 /// </summary>
 /// <remarks>
 /// All rules must be at least as strict as the domain factories. If Fluent passes,

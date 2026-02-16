@@ -185,6 +185,16 @@ Single `IMemoryCache` instance. No TTL — contacts are immutable.
 
 ---
 
+## Validators
+
+Reusable FluentValidation validators for proto-generated DTOs, exported as single source of truth. Any service creating contacts via Geo should compose these via `.SetValidator()` instead of duplicating rules.
+
+| File Name                                                                | Description                                                                                      |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| [ContactToCreateValidator.cs](Validators/ContactToCreateValidator.cs)    | Aggregate validator for `ContactToCreateDTO`. Mirrors Geo domain factory constraints (names 255, company 255, website 2048, emails, phones). Supports indexed property names for bulk validation. |
+
+---
+
 ## .NET-Specific Notes
 
 - `AddContactHandlers` in `Extensions.cs` registers ext-key handlers and configures `CallCredentials` for the gRPC channel to inject `x-api-key` from `GeoClientOptions.ApiKey`
@@ -195,4 +205,4 @@ Single `IMemoryCache` instance. No TTL — contacts are immutable.
 
 ## TS Equivalent
 
-`@d2/geo-client` — same interface + handler structure, `RedactionSpec` for logging suppression, field-level masking on `FindWhoIs` inputs.
+`@d2/geo-client` — same interface + handler structure, `RedactionSpec` for logging suppression, field-level masking on `FindWhoIs` inputs. Zod schemas (`contactInputSchema` etc.) exported for the same reuse pattern.

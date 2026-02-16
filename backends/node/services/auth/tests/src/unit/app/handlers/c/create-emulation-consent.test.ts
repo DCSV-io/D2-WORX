@@ -240,4 +240,42 @@ describe("CreateEmulationConsent", () => {
     expect(repo.findActiveByUserIdAndOrg).toHaveBeenCalledWith(VALID_USER_ID, VALID_ORG_ID);
     expect(repo.create).not.toHaveBeenCalled();
   });
+
+  // -----------------------------------------------------------------------
+  // DB unique constraint race condition (gap #11)
+  // -----------------------------------------------------------------------
+
+  it("should return 409 Conflict when repo.create throws PG unique violation (23505)", async () => {
+    const pgError = new Error("duplicate key value violates unique constraint");
+    (pgError as unknown as { code: string }).code = "23505";
+    repo.create = vi.fn().mockRejectedValue(pgError);
+
+    const futureDate = new Date(Date.now() + 86_400_000);
+    const result = await handler.handleAsync({
+      userId: VALID_USER_ID,
+      grantedToOrgId: VALID_ORG_ID,
+      activeOrgType: "support",
+      expiresAt: futureDate,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.Conflict);
+    expect(result.errorCode).toBe(ErrorCodes.CONFLICT);
+  });
+
+  it("should return 500 when repo.create throws a non-PG error", async () => {
+    repo.create = vi.fn().mockRejectedValue(new Error("connection lost"));
+
+    const futureDate = new Date(Date.now() + 86_400_000);
+    const result = await handler.handleAsync({
+      userId: VALID_USER_ID,
+      grantedToOrgId: VALID_ORG_ID,
+      activeOrgType: "support",
+      expiresAt: futureDate,
+    });
+
+    // BaseHandler catches the re-thrown error and wraps it as UNHANDLED_EXCEPTION
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.InternalServerError);
+  });
 });

@@ -102,6 +102,9 @@ export function createAuth(
         maxAge: cookieCacheMaxAge,
         strategy: "compact",
       },
+      cookieOptions: {
+        sameSite: "lax",
+      },
       additionalFields: {
         [SESSION_FIELDS.ACTIVE_ORG_TYPE]: {
           type: "string",

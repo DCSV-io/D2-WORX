@@ -116,7 +116,23 @@ describe("GetActiveConsents", () => {
 
     expect(result.success).toBe(true);
     expect(result.data?.consents).toHaveLength(2);
-    expect(repo.findActiveByUserId).toHaveBeenCalledWith(VALID_USER_ID, undefined, undefined);
+    expect(repo.findActiveByUserId).toHaveBeenCalledWith(VALID_USER_ID, 50, 0);
+  });
+
+  it("should apply default limit of 50 and offset of 0 when not provided", async () => {
+    repo.findActiveByUserId = vi.fn().mockResolvedValue([]);
+
+    await handler.handleAsync({ userId: VALID_USER_ID });
+
+    expect(repo.findActiveByUserId).toHaveBeenCalledWith(VALID_USER_ID, 50, 0);
+  });
+
+  it("should use provided limit and offset when specified", async () => {
+    repo.findActiveByUserId = vi.fn().mockResolvedValue([]);
+
+    await handler.handleAsync({ userId: VALID_USER_ID, limit: 10, offset: 20 });
+
+    expect(repo.findActiveByUserId).toHaveBeenCalledWith(VALID_USER_ID, 10, 20);
   });
 
   it("should return empty array when no active consents exist", async () => {

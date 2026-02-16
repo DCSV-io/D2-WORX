@@ -154,6 +154,18 @@ Single `MemoryCacheStore` instance with LRU eviction (`contactCacheMaxEntries`).
 
 ---
 
+## Validation Schemas
+
+Reusable Zod schemas for contact input validation, exported as single source of truth. Limits match Geo's EF Core entity configs (`ContactConfig.cs`, `LocationConfig.cs`) and FluentValidation rules (`ContactToCreateValidator`). Any service creating or updating contacts via Geo should import these instead of defining local schemas.
+
+| File                                                               | Exports                                                                                            |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| [contact-schemas.ts](src/validation/contact-schemas.ts)            | `contactMethodsSchema`, `personalDetailsSchema`, `professionalDetailsSchema`, `locationInputSchema`, `contactInputSchema` |
+
+Compose into handler schemas: `z.object({ contact: contactInputSchema, label: z.string().max(100) })`.
+
+---
+
 ## .NET Equivalent
 
-`Geo.Client` — same interface + handler structure, `DefaultOptions` overrides for logging suppression, `[RedactData]` annotations on `FindWhoIsInput`.
+`Geo.Client` — same interface + handler structure, `DefaultOptions` overrides for logging suppression, `[RedactData]` annotations on `FindWhoIsInput`. `ContactToCreateValidator` (FluentValidation) exported from `Geo.Client/Validators/` for the same reuse pattern (`.SetValidator()` composition).

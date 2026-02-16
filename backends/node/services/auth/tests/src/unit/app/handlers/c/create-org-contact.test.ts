@@ -251,6 +251,101 @@ describe("CreateOrgContact", () => {
     expect(calledWith).not.toHaveProperty("contactId");
   });
 
+  // -----------------------------------------------------------------------
+  // String length bounds (gap #7)
+  // -----------------------------------------------------------------------
+
+  it("should return validationFailed when personal name exceeds 255 chars", async () => {
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "Test",
+      contact: {
+        personalDetails: { firstName: "x".repeat(256) },
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toBeDefined();
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it("should return validationFailed when phone number exceeds 20 chars", async () => {
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "Test",
+      contact: {
+        contactMethods: { phoneNumbers: [{ value: "1".repeat(21) }] },
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toBeDefined();
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it("should return validationFailed when company name exceeds 255 chars", async () => {
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "Test",
+      contact: {
+        professionalDetails: { companyName: "x".repeat(256) },
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toBeDefined();
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it("should return validationFailed when country code exceeds 2 chars", async () => {
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "Test",
+      contact: {
+        location: { countryIso31661Alpha2Code: "USA" },
+      },
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toBeDefined();
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it("should accept valid input at max field lengths", async () => {
+    const result = await handler.handleAsync({
+      organizationId: VALID_ORG_ID,
+      label: "x".repeat(100),
+      contact: {
+        personalDetails: {
+          firstName: "x".repeat(255),
+          lastName: "x".repeat(255),
+          title: "x".repeat(20),
+          generationalSuffix: "x".repeat(10),
+        },
+        professionalDetails: {
+          companyName: "x".repeat(255),
+          jobTitle: "x".repeat(255),
+        },
+        location: {
+          city: "x".repeat(255),
+          postalCode: "x".repeat(16),
+          countryIso31661Alpha2Code: "US",
+          subdivisionIso31662Code: "US-CA",
+        },
+        contactMethods: {
+          phoneNumbers: [{ value: "1".repeat(20) }],
+        },
+      },
+    });
+
+    expect(result.success).toBe(true);
+    expect(repo.create).toHaveBeenCalledOnce();
+  });
+
   it("should forward contact details to createContacts handler", async () => {
     await handler.handleAsync({
       organizationId: VALID_ORG_ID,

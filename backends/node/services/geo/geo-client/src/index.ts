@@ -1,4 +1,13 @@
 export { type GeoClientOptions, DEFAULT_GEO_CLIENT_OPTIONS } from "./geo-client-options.js";
+
+// Validation schemas (single source of truth for contact field constraints)
+export {
+  contactMethodsSchema,
+  personalDetailsSchema,
+  professionalDetailsSchema,
+  locationInputSchema,
+  contactInputSchema,
+} from "./validation/contact-schemas.js";
 export type { GeoRefDataUpdated } from "./messages/geo-ref-data-updated.js";
 
 // gRPC helpers

@@ -4,7 +4,7 @@ import { D2Result } from "@d2/result";
 import { generateUuidV7 } from "@d2/utilities";
 import { createOrgContact, type OrgContact } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
-import type { Commands } from "@d2/geo-client";
+import { contactInputSchema, type Commands } from "@d2/geo-client";
 import type { IOrgContactRepository } from "../../../../interfaces/repository/org-contact-repository.js";
 
 /** Contact details input shape (mirrors proto ContactToCreateDTO with optional nested fields). */
@@ -49,59 +49,11 @@ export interface CreateOrgContactInput {
 
 export type CreateOrgContactOutput = { contact: OrgContact; geoContact: ContactDTO };
 
-const contactMethodSchema = z.object({
-  emails: z
-    .array(z.object({ value: z.string().email(), labels: z.array(z.string()).optional() }))
-    .optional(),
-  phoneNumbers: z
-    .array(z.object({ value: z.string().min(1), labels: z.array(z.string()).optional() }))
-    .optional(),
-});
-
-const personalDetailsSchema = z.object({
-  title: z.string().optional(),
-  firstName: z.string().optional(),
-  preferredName: z.string().optional(),
-  middleName: z.string().optional(),
-  lastName: z.string().optional(),
-  generationalSuffix: z.string().optional(),
-  professionalCredentials: z.array(z.string()).optional(),
-  dateOfBirth: z.string().optional(),
-  biologicalSex: z.string().optional(),
-});
-
-const professionalDetailsSchema = z.object({
-  companyName: z.string().optional(),
-  jobTitle: z.string().optional(),
-  department: z.string().optional(),
-  companyWebsite: z.string().optional(),
-});
-
-const locationSchema = z.object({
-  coordinates: z.object({ latitude: z.number(), longitude: z.number() }).optional(),
-  address: z
-    .object({
-      line1: z.string().optional(),
-      line2: z.string().optional(),
-      line3: z.string().optional(),
-    })
-    .optional(),
-  city: z.string().optional(),
-  postalCode: z.string().optional(),
-  subdivisionIso31662Code: z.string().optional(),
-  countryIso31661Alpha2Code: z.string().optional(),
-});
-
 const schema = z.object({
   organizationId: zodGuid,
   label: zodNonEmptyString(100),
   isPrimary: z.boolean().optional(),
-  contact: z.object({
-    contactMethods: contactMethodSchema.optional(),
-    personalDetails: personalDetailsSchema.optional(),
-    professionalDetails: professionalDetailsSchema.optional(),
-    location: locationSchema.optional(),
-  }),
+  contact: contactInputSchema,
 });
 
 /**
