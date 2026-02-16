@@ -6,9 +6,7 @@ import type { Auth } from "@d2/auth-infra";
 /**
  * Creates a minimal mock Auth object with a controllable getSession implementation.
  */
-function mockAuth(
-  getSession: (opts: { headers: Headers }) => Promise<unknown>,
-): Auth {
+function mockAuth(getSession: (opts: { headers: Headers }) => Promise<unknown>): Auth {
   return {
     api: { getSession },
   } as unknown as Auth;

@@ -9,5 +9,7 @@ export interface FindEmulationConsentByIdOutput {
   readonly consent: EmulationConsent;
 }
 
-export type IFindEmulationConsentByIdHandler =
-  IHandler<FindEmulationConsentByIdInput, FindEmulationConsentByIdOutput>;
+export type IFindEmulationConsentByIdHandler = IHandler<
+  FindEmulationConsentByIdInput,
+  FindEmulationConsentByIdOutput
+>;

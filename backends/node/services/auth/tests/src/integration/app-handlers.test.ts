@@ -3,8 +3,9 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins/bearer";
 import { organization } from "better-auth/plugins/organization";
+import { username } from "better-auth/plugins/username";
 import { generateUuidV7 } from "@d2/utilities";
-import { generateId } from "@d2/auth-infra";
+import { generateId, ensureUsername } from "@d2/auth-infra";
 import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import * as CacheMemory from "@d2/cache-memory";
@@ -21,10 +22,7 @@ import {
   member as memberTable,
   invitation as invitationTable,
 } from "@d2/auth-infra";
-import {
-  createSignInEventHandlers,
-  createEmulationConsentHandlers,
-} from "@d2/auth-app";
+import { createSignInEventHandlers, createEmulationConsentHandlers } from "@d2/auth-app";
 import {
   startPostgres,
   stopPostgres,
@@ -235,8 +233,22 @@ describe("Emulation consent handlers (integration)", () => {
       emailAndPassword: { enabled: true, autoSignIn: true },
       database: drizzleAdapter(getDb(), { provider: "pg", schema }),
       advanced: { database: { generateId } },
+      databaseHooks: {
+        user: {
+          create: {
+            before: async (user) => {
+              let data = ensureUsername(user as Record<string, unknown>);
+              if (user.id) {
+                data = { ...data, id: user.id };
+              }
+              return { data };
+            },
+          },
+        },
+      },
       plugins: [
         bearer(),
+        username(),
         organization({
           creatorRole: "owner",
           allowUserToCreateOrganization: true,
@@ -246,10 +258,9 @@ describe("Emulation consent handlers (integration)", () => {
 
     // checkOrgExists: query real DB
     async function checkOrgExists(orgId: string): Promise<boolean> {
-      const result = await getPool().query(
-        "SELECT 1 FROM organization WHERE id = $1 LIMIT 1",
-        [orgId],
-      );
+      const result = await getPool().query("SELECT 1 FROM organization WHERE id = $1 LIMIT 1", [
+        orgId,
+      ]);
       return result.rows.length > 0;
     }
 

@@ -52,9 +52,7 @@ export async function checkBreachedPassword(
       });
 
       if (!response.ok) {
-        logger?.warn(
-          `HIBP API returned ${response.status} for prefix ${prefix} — failing open`,
-        );
+        logger?.warn(`HIBP API returned ${response.status} for prefix ${prefix} — failing open`);
         return { breached: false };
       }
 
@@ -91,10 +89,7 @@ export async function checkBreachedPassword(
  * - `verify` is a pass-through to BetterAuth's bcrypt verifier — no
  *   custom logic on login (we only validate on creation / reset).
  */
-export function createPasswordFunctions(
-  cache: PrefixCache,
-  logger?: Logger,
-): PasswordFunctions {
+export function createPasswordFunctions(cache: PrefixCache, logger?: Logger): PasswordFunctions {
   return {
     hash: async (password: string): Promise<string> => {
       // 1. Domain validation (sync — numeric-only, date-like, common blocklist)
@@ -107,7 +102,8 @@ export function createPasswordFunctions(
       const hibp = await checkBreachedPassword(password, cache, logger);
       if (hibp.breached) {
         throw new APIError("BAD_REQUEST", {
-          message: "This password has appeared in a data breach. Please choose a different password.",
+          message:
+            "This password has appeared in a data breach. Please choose a different password.",
         });
       }
 

@@ -7,5 +7,7 @@ export interface CreateEmulationConsentRecordInput {
 
 export interface CreateEmulationConsentRecordOutput {}
 
-export type ICreateEmulationConsentRecordHandler =
-  IHandler<CreateEmulationConsentRecordInput, CreateEmulationConsentRecordOutput>;
+export type ICreateEmulationConsentRecordHandler = IHandler<
+  CreateEmulationConsentRecordInput,
+  CreateEmulationConsentRecordOutput
+>;

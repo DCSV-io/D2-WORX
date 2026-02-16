@@ -18,5 +18,8 @@
   ],
   "dependencies": {
     "@d2/utilities": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.8"
   }
 }

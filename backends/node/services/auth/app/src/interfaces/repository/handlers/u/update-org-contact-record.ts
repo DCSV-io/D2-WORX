@@ -7,5 +7,7 @@ export interface UpdateOrgContactRecordInput {
 
 export interface UpdateOrgContactRecordOutput {}
 
-export type IUpdateOrgContactRecordHandler =
-  IHandler<UpdateOrgContactRecordInput, UpdateOrgContactRecordOutput>;
+export type IUpdateOrgContactRecordHandler = IHandler<
+  UpdateOrgContactRecordInput,
+  UpdateOrgContactRecordOutput
+>;

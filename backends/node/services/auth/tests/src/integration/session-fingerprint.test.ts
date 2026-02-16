@@ -1,12 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { Hono } from "hono";
 import { createSessionFingerprintMiddleware } from "@d2/auth-api";
-import {
-  startRedis,
-  stopRedis,
-  getRedis,
-  flushRedis,
-} from "./redis-test-helpers.js";
+import { startRedis, stopRedis, getRedis, flushRedis } from "./redis-test-helpers.js";
 
 const SESSION_FP_PREFIX = "session:fp:";
 const SESSION_FP_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days

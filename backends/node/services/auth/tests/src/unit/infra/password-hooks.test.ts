@@ -38,9 +38,7 @@ describe("checkBreachedPassword", () => {
       "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:1",
     ].join("\n");
 
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(responseBody, { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(responseBody, { status: 200 }));
 
     const result = await checkBreachedPassword(password, cache, mockLogger);
     expect(result.breached).toBe(true);
@@ -54,9 +52,7 @@ describe("checkBreachedPassword", () => {
       "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF:1",
     ].join("\n");
 
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(responseBody, { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(responseBody, { status: 200 }));
 
     const result = await checkBreachedPassword(password, cache, mockLogger);
     expect(result.breached).toBe(false);
@@ -66,9 +62,7 @@ describe("checkBreachedPassword", () => {
   it("should use cache hit and skip fetch", async () => {
     const password = "cachedTest!789";
     const prefix = hibpPrefix(password);
-    const responseBody = [
-      hibpSuffixAndCount(password, 10),
-    ].join("\n");
+    const responseBody = [hibpSuffixAndCount(password, 10)].join("\n");
 
     // Pre-populate cache
     cache.set(prefix, responseBody, PASSWORD_POLICY.HIBP_CACHE_TTL_MS);
@@ -84,9 +78,7 @@ describe("checkBreachedPassword", () => {
     const prefix = hibpPrefix(password);
     const responseBody = "0000000000000000000000000000000000A:5\n";
 
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(responseBody, { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response(responseBody, { status: 200 }));
 
     await checkBreachedPassword(password, cache, mockLogger);
 
@@ -96,9 +88,7 @@ describe("checkBreachedPassword", () => {
   });
 
   it("should fail-open on HIBP API error (non-200)", async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      new Response("Rate limited", { status: 429 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response("Rate limited", { status: 429 }));
 
     const result = await checkBreachedPassword("somePassword!!", cache, mockLogger);
     expect(result.breached).toBe(false);
@@ -119,16 +109,13 @@ describe("checkBreachedPassword", () => {
     const password = "testUrlCheck!1";
     const prefix = hibpPrefix(password);
 
-    vi.mocked(fetch).mockResolvedValue(
-      new Response("", { status: 200 }),
-    );
+    vi.mocked(fetch).mockResolvedValue(new Response("", { status: 200 }));
 
     await checkBreachedPassword(password, cache, mockLogger);
 
-    expect(fetch).toHaveBeenCalledWith(
-      `${PASSWORD_POLICY.HIBP_API_BASE}${prefix}`,
-      { headers: { "User-Agent": "D2-WORX-Auth" } },
-    );
+    expect(fetch).toHaveBeenCalledWith(`${PASSWORD_POLICY.HIBP_API_BASE}${prefix}`, {
+      headers: { "User-Agent": "D2-WORX-Auth" },
+    });
   });
 });
 
@@ -177,14 +164,10 @@ describe("createPasswordFunctions", () => {
     it("should throw for breached password", async () => {
       const password = "breachedButUnique!";
       const responseBody = hibpSuffixAndCount(password, 500) + "\n";
-      vi.mocked(fetch).mockResolvedValue(
-        new Response(responseBody, { status: 200 }),
-      );
+      vi.mocked(fetch).mockResolvedValue(new Response(responseBody, { status: 200 }));
 
       const { hash } = createPasswordFunctions(cache, mockLogger);
-      await expect(hash(password)).rejects.toThrow(
-        "This password has appeared in a data breach",
-      );
+      await expect(hash(password)).rejects.toThrow("This password has appeared in a data breach");
     });
 
     it("should succeed when HIBP is down (fail-open)", async () => {

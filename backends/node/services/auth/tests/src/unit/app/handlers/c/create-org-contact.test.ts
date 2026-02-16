@@ -3,10 +3,7 @@ import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { D2Result, HttpStatusCode } from "@d2/result";
 import { CreateOrgContact } from "@d2/auth-app";
-import type {
-  ICreateOrgContactRecordHandler,
-  IDeleteOrgContactRecordHandler,
-} from "@d2/auth-app";
+import type { ICreateOrgContactRecordHandler, IDeleteOrgContactRecordHandler } from "@d2/auth-app";
 import type { ContactDTO } from "@d2/protos";
 import type { Commands } from "@d2/geo-client";
 
@@ -382,9 +379,7 @@ describe("CreateOrgContact", () => {
   });
 
   it("should rollback junction when Geo returns success with empty data array", async () => {
-    createContacts.handleAsync = vi.fn().mockResolvedValue(
-      D2Result.ok({ data: { data: [] } }),
-    );
+    createContacts.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { data: [] } }));
 
     const result = await handler.handleAsync({
       organizationId: VALID_ORG_ID,

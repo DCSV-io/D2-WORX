@@ -18,9 +18,6 @@ public static class JwtClaimTypes
     /// <summary>User email address.</summary>
     public const string EMAIL = "email";
 
-    /// <summary>Display name.</summary>
-    public const string NAME = "name";
-
     /// <summary>Agent organization ID (user's actual org membership).</summary>
     public const string ORG_ID = "orgId";
 
@@ -50,6 +47,15 @@ public static class JwtClaimTypes
 
     /// <summary>Whether user impersonation is active (admin acting as another user).</summary>
     public const string IS_IMPERSONATING = "isImpersonating";
+
+    /// <summary>Login handle (unique, lowercase).</summary>
+    public const string USERNAME = "username";
+
+    /// <summary>Impersonator's email address (present during user impersonation).</summary>
+    public const string IMPERSONATING_EMAIL = "impersonatingEmail";
+
+    /// <summary>Impersonator's username (present during user impersonation).</summary>
+    public const string IMPERSONATING_USERNAME = "impersonatingUsername";
 
     /// <summary>JWT fingerprint hash (SHA-256 of User-Agent + Accept).</summary>
     public const string FINGERPRINT = "fp";

@@ -24,6 +24,7 @@ export interface IRequestContext {
   // User / Identity
   isAuthenticated: boolean;
   userId?: string;
+  email?: string;
   username?: string;
 
   // Agent Organization
@@ -41,6 +42,8 @@ export interface IRequestContext {
 
   // User Impersonation
   impersonatedBy?: string;
+  impersonatingEmail?: string;
+  impersonatingUsername?: string;
   isUserImpersonating: boolean;
 
   // Helpers (computed)

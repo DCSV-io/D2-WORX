@@ -94,10 +94,44 @@ describe("Drizzle migrations (integration)", () => {
     expect(columns).toContain("image");
     expect(columns).toContain("created_at");
     expect(columns).toContain("updated_at");
+    expect(columns).toContain("username");
+    expect(columns).toContain("display_username");
     expect(columns).toContain("role");
     expect(columns).toContain("banned");
     expect(columns).toContain("ban_reason");
     expect(columns).toContain("ban_expires");
+  });
+
+  it("should enforce username uniqueness constraint", async () => {
+    // Insert a user
+    await pool.query(`
+      INSERT INTO "user" (id, name, email, username, display_username, email_verified, created_at, updated_at)
+      VALUES ('u1', 'User One', 'one@example.com', 'testuser1', 'TestUser1', false, NOW(), NOW())
+    `);
+
+    // Attempt duplicate username
+    await expect(
+      pool.query(`
+        INSERT INTO "user" (id, name, email, username, display_username, email_verified, created_at, updated_at)
+        VALUES ('u2', 'User Two', 'two@example.com', 'testuser1', 'TestUser2', false, NOW(), NOW())
+      `),
+    ).rejects.toThrow(/unique/i);
+  });
+
+  it("should enforce display_username uniqueness constraint", async () => {
+    // Insert a user (may already exist from previous test, use different username)
+    await pool.query(`
+      INSERT INTO "user" (id, name, email, username, display_username, email_verified, created_at, updated_at)
+      VALUES ('u3', 'User Three', 'three@example.com', 'uniqueuser3', 'DisplayUser3', false, NOW(), NOW())
+    `);
+
+    // Attempt duplicate display_username
+    await expect(
+      pool.query(`
+        INSERT INTO "user" (id, name, email, username, display_username, email_verified, created_at, updated_at)
+        VALUES ('u4', 'User Four', 'four@example.com', 'uniqueuser4', 'DisplayUser3', false, NOW(), NOW())
+      `),
+    ).rejects.toThrow(/unique/i);
   });
 
   it("should create session table with custom fields", async () => {

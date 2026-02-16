@@ -5,7 +5,6 @@
 export const JWT_CLAIM_TYPES = {
   SUB: "sub",
   EMAIL: "email",
-  NAME: "name",
   ORG_ID: "orgId",
   ORG_NAME: "orgName",
   ORG_TYPE: "orgType",
@@ -16,6 +15,9 @@ export const JWT_CLAIM_TYPES = {
   IS_EMULATING: "isEmulating",
   IMPERSONATED_BY: "impersonatedBy",
   IS_IMPERSONATING: "isImpersonating",
+  USERNAME: "username",
+  IMPERSONATING_EMAIL: "impersonatingEmail",
+  IMPERSONATING_USERNAME: "impersonatingUsername",
   FINGERPRINT: "fp",
 } as const;
 

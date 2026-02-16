@@ -76,17 +76,124 @@ describe("createAuth() full integration", () => {
   });
 
   /** Helper: sign up and return user + session token. */
-  async function signUp(
-    email: string,
-    name: string,
-    password = "SecurePass123!@#",
-  ) {
+  async function signUp(email: string, name: string, password = "SecurePass123!@#") {
     const res = await auth.api.signUpEmail({
       body: { email, password, name },
     });
     const token = res.token ?? (res as Record<string, unknown>).session?.token;
     return { user: res.user, token: token as string, session: res.session };
   }
+
+  // -----------------------------------------------------------------------
+  // Full sign-up flow (end-to-end)
+  // -----------------------------------------------------------------------
+  describe("full sign-up flow", () => {
+    it("should create user, account, session, and valid JWT in one sign-up", async () => {
+      const { user, token } = await signUp("e2e@example.com", "E2E User");
+
+      // ---- 1. User row — every column populated correctly ----
+      const userRow = await getPool().query('SELECT * FROM "user" WHERE id = $1', [user.id]);
+      expect(userRow.rows).toHaveLength(1);
+      const u = userRow.rows[0];
+
+      expect(u.id).toBe(user.id);
+      expect(u.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      expect(u.email).toBe("e2e@example.com");
+      expect(u.name).toBe("E2E User");
+      expect(u.email_verified).toBe(false);
+      expect(u.created_at).toBeInstanceOf(Date);
+      expect(u.updated_at).toBeInstanceOf(Date);
+      expect(u.image).toBeNull();
+      expect(u.role).toBe("agent");
+      expect(u.banned).toBe(false);
+      expect(u.ban_reason).toBeNull();
+      expect(u.ban_expires).toBeNull();
+
+      // Username — auto-generated, lowercase, PascalCase display variant
+      expect(u.username).toBeDefined();
+      expect(u.username).toBe(u.username.toLowerCase());
+      expect(u.display_username).toBeDefined();
+      expect(u.username).toBe(u.display_username.toLowerCase());
+      expect(u.display_username).toMatch(/^[A-Z][a-z]+[A-Z][a-z]+\d{1,3}$/);
+
+      // ---- 2. Account row — credential provider linked ----
+      const accountRow = await getPool().query("SELECT * FROM account WHERE user_id = $1", [
+        user.id,
+      ]);
+      expect(accountRow.rows).toHaveLength(1);
+      const acct = accountRow.rows[0];
+
+      expect(acct.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+      expect(acct.provider_id).toBe("credential");
+      expect(acct.user_id).toBe(user.id);
+      expect(acct.password).toBeDefined();
+      expect(acct.password.length).toBeGreaterThan(0);
+      expect(acct.created_at).toBeInstanceOf(Date);
+
+      // ---- 3. Session row — created by autoSignIn ----
+      const sessionRow = await getPool().query(
+        "SELECT * FROM session WHERE user_id = $1 AND token = $2",
+        [user.id, token],
+      );
+      expect(sessionRow.rows).toHaveLength(1);
+      const sess = sessionRow.rows[0];
+
+      expect(sess.id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+      expect(sess.user_id).toBe(user.id);
+      expect(sess.token).toBe(token);
+      expect(sess.expires_at).toBeInstanceOf(Date);
+      expect(sess.created_at).toBeInstanceOf(Date);
+
+      // ---- 4. JWT — all claims present and correct ----
+      const tokenRes = await auth.api.getToken({
+        headers: new Headers({ Authorization: `Bearer ${token}` }),
+      });
+      expect(tokenRes.token).toBeDefined();
+
+      const parts = tokenRes.token.split(".");
+      const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+
+      // Standard JWT fields
+      expect(payload.iss).toBe("test-issuer");
+      expect(payload.aud).toBe("test-audience");
+      expect(payload.iat).toEqual(expect.any(Number));
+      expect(payload.exp).toEqual(expect.any(Number));
+      expect(payload.exp - payload.iat).toBe(900); // 15-minute expiry
+
+      // Identity claims — match DB values
+      expect(payload[JWT_CLAIM_TYPES.SUB]).toBe(user.id);
+      expect(payload[JWT_CLAIM_TYPES.EMAIL]).toBe("e2e@example.com");
+      expect(payload[JWT_CLAIM_TYPES.USERNAME]).toBe(u.username);
+
+      // Org claims — null (no org set)
+      expect(payload[JWT_CLAIM_TYPES.ORG_ID]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.ORG_TYPE]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.ROLE]).toBeNull();
+
+      // Emulation — inactive
+      expect(payload[JWT_CLAIM_TYPES.EMULATED_ORG_ID]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.IS_EMULATING]).toBe(false);
+
+      // Impersonation — inactive
+      expect(payload[JWT_CLAIM_TYPES.IMPERSONATED_BY]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.IS_IMPERSONATING]).toBe(false);
+      expect(payload[JWT_CLAIM_TYPES.IMPERSONATING_EMAIL]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.IMPERSONATING_USERNAME]).toBeNull();
+
+      // Fingerprint — null (no hook provided in test)
+      expect(payload[JWT_CLAIM_TYPES.FINGERPRINT]).toBeNull();
+
+      // ---- 5. onSignIn hook — fired by autoSignIn ----
+      await new Promise((r) => setTimeout(r, 100));
+      const signInCall = onSignInCalls.find((c) => c.userId === user.id);
+      expect(signInCall).toBeDefined();
+      expect(signInCall!.userId).toBe(user.id);
+    });
+  });
 
   // -----------------------------------------------------------------------
   // UUIDv7 + forceAllowId
@@ -147,11 +254,71 @@ describe("createAuth() full integration", () => {
   });
 
   // -----------------------------------------------------------------------
+  // User row completeness after sign-up
+  // -----------------------------------------------------------------------
+  describe("user row completeness", () => {
+    it("should populate all user columns correctly after sign-up", async () => {
+      const { user } = await signUp("complete@example.com", "Complete User");
+
+      const result = await getPool().query('SELECT * FROM "user" WHERE id = $1', [user.id]);
+      expect(result.rows).toHaveLength(1);
+      const row = result.rows[0];
+
+      // Identity
+      expect(row.id).toBe(user.id);
+      expect(row.email).toBe("complete@example.com");
+      expect(row.name).toBe("Complete User");
+
+      // Username — auto-generated, lowercase, matches displayUsername case-insensitively
+      expect(row.username).toBeDefined();
+      expect(row.username).toBe(row.username.toLowerCase());
+      expect(row.display_username).toBeDefined();
+      expect(row.username).toBe(row.display_username.toLowerCase());
+
+      // displayUsername format: PascalCase adjective + PascalCase noun + 1-3 digit suffix
+      expect(row.display_username).toMatch(/^[A-Z][a-z]+[A-Z][a-z]+\d{1,3}$/);
+
+      // Email verification
+      expect(row.email_verified).toBe(false);
+
+      // Timestamps
+      expect(row.created_at).toBeInstanceOf(Date);
+      expect(row.updated_at).toBeInstanceOf(Date);
+
+      // Admin plugin fields — defaultRole is "agent" (from admin() plugin config)
+      expect(row.role).toBe("agent");
+      expect(row.banned).toBe(false);
+      expect(row.ban_reason).toBeNull();
+      expect(row.ban_expires).toBeNull();
+
+      // Optional fields
+      expect(row.image).toBeNull();
+    });
+
+    it("should generate unique usernames for different users", async () => {
+      const { user: user1 } = await signUp("unique-user1@example.com", "Unique One");
+      const { user: user2 } = await signUp("unique-user2@example.com", "Unique Two");
+
+      const result = await getPool().query(
+        'SELECT username, display_username FROM "user" WHERE id IN ($1, $2)',
+        [user1.id, user2.id],
+      );
+      expect(result.rows).toHaveLength(2);
+      expect(result.rows[0].username).not.toBe(result.rows[1].username);
+      expect(result.rows[0].display_username).not.toBe(result.rows[1].display_username);
+    });
+  });
+
+  // -----------------------------------------------------------------------
   // JWT claims
   // -----------------------------------------------------------------------
   describe("JWT claims", () => {
-    it("should issue a JWT with correct sub, email, name claims", async () => {
-      const { token } = await signUp("jwt@example.com", "JWT User");
+    it("should issue a JWT with all identity claims populated", async () => {
+      const { user, token } = await signUp("jwt@example.com", "JWT User");
+
+      // Fetch the auto-generated username from DB for assertion
+      const dbRow = await getPool().query('SELECT username FROM "user" WHERE id = $1', [user.id]);
+      const dbUsername = dbRow.rows[0].username as string;
 
       const tokenRes = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
@@ -162,11 +329,34 @@ describe("createAuth() full integration", () => {
       const parts = tokenRes.token.split(".");
       const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString());
 
-      expect(payload[JWT_CLAIM_TYPES.SUB]).toBeDefined();
-      expect(payload[JWT_CLAIM_TYPES.EMAIL]).toBe("jwt@example.com");
-      expect(payload[JWT_CLAIM_TYPES.NAME]).toBe("JWT User");
+      // Standard JWT fields
       expect(payload.iss).toBe("test-issuer");
       expect(payload.aud).toBe("test-audience");
+      expect(payload.iat).toEqual(expect.any(Number));
+      expect(payload.exp).toEqual(expect.any(Number));
+
+      // Identity claims — all must be present and correct
+      expect(payload[JWT_CLAIM_TYPES.SUB]).toBe(user.id);
+      expect(payload[JWT_CLAIM_TYPES.EMAIL]).toBe("jwt@example.com");
+      expect(payload[JWT_CLAIM_TYPES.USERNAME]).toBe(dbUsername);
+
+      // Org claims — null when no active org
+      expect(payload[JWT_CLAIM_TYPES.ORG_ID]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.ORG_TYPE]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.ROLE]).toBeNull();
+
+      // Emulation claims — inactive
+      expect(payload[JWT_CLAIM_TYPES.EMULATED_ORG_ID]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.IS_EMULATING]).toBe(false);
+
+      // Impersonation claims — inactive
+      expect(payload[JWT_CLAIM_TYPES.IMPERSONATED_BY]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.IS_IMPERSONATING]).toBe(false);
+      expect(payload[JWT_CLAIM_TYPES.IMPERSONATING_EMAIL]).toBeNull();
+      expect(payload[JWT_CLAIM_TYPES.IMPERSONATING_USERNAME]).toBeNull();
+
+      // Fingerprint — null (no getFingerprintForCurrentRequest hook in test)
+      expect(payload[JWT_CLAIM_TYPES.FINGERPRINT]).toBeNull();
     });
 
     it("should include org context claims when session has active org", async () => {
@@ -207,10 +397,9 @@ describe("createAuth() full integration", () => {
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
 
-      const result = await getPool().query(
-        "SELECT org_type FROM organization WHERE id = $1",
-        [org.id],
-      );
+      const result = await getPool().query("SELECT org_type FROM organization WHERE id = $1", [
+        org.id,
+      ]);
       expect(result.rows[0].org_type).toBe("customer");
     });
 

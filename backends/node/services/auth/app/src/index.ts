@@ -155,8 +155,16 @@ export function createSignInEventHandlers(
   repo: SignInEventRepoHandlers,
   context: IHandlerContext,
   memoryCache?: {
-    get: InMemoryCache.IGetHandler<{ events: SignInEvent[]; total: number; latestDate: string | null }>;
-    set: InMemoryCache.ISetHandler<{ events: SignInEvent[]; total: number; latestDate: string | null }>;
+    get: InMemoryCache.IGetHandler<{
+      events: SignInEvent[];
+      total: number;
+      latestDate: string | null;
+    }>;
+    set: InMemoryCache.ISetHandler<{
+      events: SignInEvent[];
+      total: number;
+      latestDate: string | null;
+    }>;
   },
 ) {
   return {
@@ -211,12 +219,7 @@ export function createOrgContactHandlers(
       context,
       geo.updateContactsByExtKeys,
     ),
-    delete: new DeleteOrgContact(
-      repo.findById,
-      repo.delete,
-      context,
-      geo.deleteContactsByExtKeys,
-    ),
+    delete: new DeleteOrgContact(repo.findById, repo.delete, context, geo.deleteContactsByExtKeys),
     getByOrg: new GetOrgContacts(repo.findByOrgId, context, geo.getContactsByExtKeys),
   };
 }

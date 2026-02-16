@@ -8,5 +8,7 @@ export interface GetLatestSignInEventDateOutput {
   readonly date: Date | null;
 }
 
-export type IGetLatestSignInEventDateHandler =
-  IHandler<GetLatestSignInEventDateInput, GetLatestSignInEventDateOutput>;
+export type IGetLatestSignInEventDateHandler = IHandler<
+  GetLatestSignInEventDateInput,
+  GetLatestSignInEventDateOutput
+>;

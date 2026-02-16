@@ -2,13 +2,20 @@ import { describe, it, expect } from "vitest";
 import { createUser, updateUser, AuthValidationError } from "@d2/auth-domain";
 
 describe("User", () => {
-  const validInput = { email: "test@example.com", name: "John Doe" };
+  const validInput = {
+    email: "test@example.com",
+    name: "John Doe",
+    username: "swiftriver482",
+    displayUsername: "SwiftRiver482",
+  };
 
   describe("createUser", () => {
     it("should create a user with valid input", () => {
       const user = createUser(validInput);
       expect(user.email).toBe("test@example.com");
       expect(user.name).toBe("John Doe");
+      expect(user.username).toBe("swiftriver482");
+      expect(user.displayUsername).toBe("SwiftRiver482");
       expect(user.emailVerified).toBe(false);
       expect(user.image).toBeNull();
       expect(user.id).toHaveLength(36);
@@ -59,6 +66,16 @@ describe("User", () => {
       const user = createUser({ ...validInput, image: "https://example.com/photo.jpg" });
       expect(user.image).toBe("https://example.com/photo.jpg");
     });
+
+    it("should throw AuthValidationError for missing username", () => {
+      expect(() => createUser({ ...validInput, username: "" } as any)).toThrow(AuthValidationError);
+    });
+
+    it("should throw AuthValidationError for missing displayUsername", () => {
+      expect(() => createUser({ ...validInput, displayUsername: "" } as any)).toThrow(
+        AuthValidationError,
+      );
+    });
   });
 
   describe("updateUser", () => {
@@ -89,11 +106,19 @@ describe("User", () => {
       expect(() => updateUser(baseUser, { email: "bad" })).toThrow(Error);
     });
 
+    it("should update the username", () => {
+      const updated = updateUser(baseUser, { username: "newhandle", displayUsername: "NewHandle" });
+      expect(updated.username).toBe("newhandle");
+      expect(updated.displayUsername).toBe("NewHandle");
+    });
+
     it("should preserve unchanged fields", () => {
       const updated = updateUser(baseUser, { emailVerified: true });
       expect(updated.id).toBe(baseUser.id);
       expect(updated.name).toBe(baseUser.name);
       expect(updated.email).toBe(baseUser.email);
+      expect(updated.username).toBe(baseUser.username);
+      expect(updated.displayUsername).toBe(baseUser.displayUsername);
       expect(updated.emailVerified).toBe(true);
       expect(updated.createdAt).toBe(baseUser.createdAt);
     });

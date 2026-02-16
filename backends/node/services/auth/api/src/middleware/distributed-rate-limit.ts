@@ -8,9 +8,7 @@ import { REQUEST_INFO_KEY } from "./request-enrichment.js";
  * Creates Hono middleware that checks distributed rate limits.
  * Must run AFTER request enrichment middleware (needs requestInfo in context).
  */
-export function createDistributedRateLimitMiddleware(
-  checkHandler: RateLimit.ICheckHandler,
-) {
+export function createDistributedRateLimitMiddleware(checkHandler: RateLimit.ICheckHandler) {
   return createMiddleware(async (c, next) => {
     const requestInfo = c.get(REQUEST_INFO_KEY);
 

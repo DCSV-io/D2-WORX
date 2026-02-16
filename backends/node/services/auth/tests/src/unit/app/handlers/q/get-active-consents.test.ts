@@ -109,9 +109,7 @@ describe("GetActiveConsents", () => {
 
   it("should return active consents for a user", async () => {
     const consents = [createConsent("c-1"), createConsent("c-2")];
-    findActiveByUserId.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { consents } }));
+    findActiveByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { consents } }));
 
     const result = await handler.handleAsync({ userId: VALID_USER_ID });
 

@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { DeleteContactsByExtKeys, DEFAULT_GEO_CLIENT_OPTIONS, type GeoClientOptions } from "@d2/geo-client";
+import {
+  DeleteContactsByExtKeys,
+  DEFAULT_GEO_CLIENT_OPTIONS,
+  type GeoClientOptions,
+} from "@d2/geo-client";
 
 import type { GeoServiceClient, ContactDTO } from "@d2/protos";
 

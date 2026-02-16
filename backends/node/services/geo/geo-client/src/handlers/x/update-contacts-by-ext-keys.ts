@@ -40,7 +40,9 @@ export class UpdateContactsByExtKeys
     this.inputSchema = z
       .object({
         contacts: z.array(
-          z.object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) }).passthrough(),
+          z
+            .object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) })
+            .passthrough(),
         ),
       })
       .passthrough() as unknown as z.ZodType<Input>;
@@ -53,13 +55,10 @@ export class UpdateContactsByExtKeys
     const r = await handleGrpcCall(
       () =>
         new Promise<UpdateContactsByExtKeysResponse>((resolve, reject) => {
-          this.geoClient.updateContactsByExtKeys(
-            { contacts: input.contacts },
-            (err, res) => {
-              if (err) reject(err);
-              else resolve(res);
-            },
-          );
+          this.geoClient.updateContactsByExtKeys({ contacts: input.contacts }, (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+          });
         }),
       (res) => res.result!,
       (res) => ({ data: res.data }),

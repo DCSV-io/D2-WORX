@@ -11,5 +11,7 @@ export interface FindActiveConsentsByUserIdOutput {
   readonly consents: EmulationConsent[];
 }
 
-export type IFindActiveConsentsByUserIdHandler =
-  IHandler<FindActiveConsentsByUserIdInput, FindActiveConsentsByUserIdOutput>;
+export type IFindActiveConsentsByUserIdHandler = IHandler<
+  FindActiveConsentsByUserIdInput,
+  FindActiveConsentsByUserIdOutput
+>;

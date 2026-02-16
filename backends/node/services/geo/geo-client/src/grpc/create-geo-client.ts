@@ -11,9 +11,7 @@ export function createGeoServiceClient(
   apiKey: string,
   credentials?: grpc.ChannelCredentials,
 ): GeoServiceClient {
-  return new GeoServiceClientCtor(
-    address,
-    credentials ?? grpc.credentials.createInsecure(),
-    { interceptors: [createApiKeyInterceptor(apiKey)] },
-  ) as unknown as GeoServiceClient;
+  return new GeoServiceClientCtor(address, credentials ?? grpc.credentials.createInsecure(), {
+    interceptors: [createApiKeyInterceptor(apiKey)],
+  }) as unknown as GeoServiceClient;
 }

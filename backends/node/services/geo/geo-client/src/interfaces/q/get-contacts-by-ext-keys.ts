@@ -16,7 +16,9 @@ export const GET_CONTACTS_BY_EXT_KEYS_REDACTION: RedactionSpec = {
 };
 
 /** Handler for fetching Geo contacts by ext keys. Requires redaction (output contains PII). */
-export interface IGetContactsByExtKeysHandler
-  extends IHandler<GetContactsByExtKeysInput, GetContactsByExtKeysOutput> {
+export interface IGetContactsByExtKeysHandler extends IHandler<
+  GetContactsByExtKeysInput,
+  GetContactsByExtKeysOutput
+> {
   readonly redaction: RedactionSpec;
 }

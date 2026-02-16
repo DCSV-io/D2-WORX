@@ -33,18 +33,33 @@ public class RequestContextJwtTests
     }
 
     /// <summary>
-    /// Tests that name claim is extracted as Username.
+    /// Tests that username claim is extracted as Username.
     /// </summary>
     [Fact]
-    public void RequestContext_ExtractsNameClaim_AsUsername()
+    public void RequestContext_ExtractsUsernameClaim_AsUsername()
     {
         var context = CreateContextWithClaims(
             new Claim("sub", Guid.NewGuid().ToString()),
-            new Claim("name", "John Doe"));
+            new Claim("username", "swiftriver482"));
 
         var rc = new RequestContext(CreateAccessor(context));
 
-        rc.Username.Should().Be("John Doe");
+        rc.Username.Should().Be("swiftriver482");
+    }
+
+    /// <summary>
+    /// Tests that email claim is extracted as Email.
+    /// </summary>
+    [Fact]
+    public void RequestContext_ExtractsEmailClaim_AsEmail()
+    {
+        var context = CreateContextWithClaims(
+            new Claim("sub", Guid.NewGuid().ToString()),
+            new Claim("email", "test@example.com"));
+
+        var rc = new RequestContext(CreateAccessor(context));
+
+        rc.Email.Should().Be("test@example.com");
     }
 
     /// <summary>
@@ -230,6 +245,36 @@ public class RequestContextJwtTests
     }
 
     /// <summary>
+    /// Tests that impersonatingEmail claim is extracted.
+    /// </summary>
+    [Fact]
+    public void RequestContext_ExtractsImpersonatingEmailClaim()
+    {
+        var context = CreateContextWithClaims(
+            new Claim("sub", Guid.NewGuid().ToString()),
+            new Claim("impersonatingEmail", "admin@example.com"));
+
+        var rc = new RequestContext(CreateAccessor(context));
+
+        rc.ImpersonatingEmail.Should().Be("admin@example.com");
+    }
+
+    /// <summary>
+    /// Tests that impersonatingUsername claim is extracted.
+    /// </summary>
+    [Fact]
+    public void RequestContext_ExtractsImpersonatingUsernameClaim()
+    {
+        var context = CreateContextWithClaims(
+            new Claim("sub", Guid.NewGuid().ToString()),
+            new Claim("impersonatingUsername", "adminuser123"));
+
+        var rc = new RequestContext(CreateAccessor(context));
+
+        rc.ImpersonatingUsername.Should().Be("adminuser123");
+    }
+
+    /// <summary>
     /// Tests that missing user impersonation claims result in null/false.
     /// </summary>
     [Fact]
@@ -240,6 +285,8 @@ public class RequestContextJwtTests
         var rc = new RequestContext(CreateAccessor(context));
 
         rc.ImpersonatedBy.Should().BeNull();
+        rc.ImpersonatingEmail.Should().BeNull();
+        rc.ImpersonatingUsername.Should().BeNull();
         rc.IsUserImpersonating.Should().BeFalse();
     }
 
@@ -318,6 +365,8 @@ public class RequestContextJwtTests
 
         rc.IsAuthenticated.Should().BeFalse();
         rc.UserId.Should().BeNull();
+        rc.Email.Should().BeNull();
+        rc.Username.Should().BeNull();
         rc.AgentOrgId.Should().BeNull();
         rc.AgentOrgName.Should().BeNull();
         rc.AgentOrgType.Should().BeNull();
@@ -326,6 +375,8 @@ public class RequestContextJwtTests
         rc.TargetOrgType.Should().BeNull();
         rc.IsOrgEmulating.Should().BeFalse();
         rc.ImpersonatedBy.Should().BeNull();
+        rc.ImpersonatingEmail.Should().BeNull();
+        rc.ImpersonatingUsername.Should().BeNull();
         rc.IsUserImpersonating.Should().BeFalse();
         rc.IsAgentStaff.Should().BeFalse();
         rc.IsAgentAdmin.Should().BeFalse();

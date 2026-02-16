@@ -98,9 +98,7 @@ describe("CheckSignInThrottle", () => {
     });
 
     it("should return blocked=false from cache hit without calling store", async () => {
-      cache.get.handleAsync = vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { value: true } }));
+      cache.get.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { value: true } }));
       const handler = new CheckSignInThrottle(store, createTestContext(), cache);
 
       const result = await handler.handleAsync(INPUT);

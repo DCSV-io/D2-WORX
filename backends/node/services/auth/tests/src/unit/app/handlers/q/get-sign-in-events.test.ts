@@ -84,9 +84,7 @@ describe("GetSignInEvents", () => {
 
     it("should return events and total count", async () => {
       const events = [createEvent("evt-1"), createEvent("evt-2")];
-      repo.findByUserId.handleAsync = vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { events } }));
+      repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 5 } }));
@@ -137,9 +135,9 @@ describe("GetSignInEvents", () => {
     });
 
     it("should return empty events when findByUserId returns failure", async () => {
-      repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["DB error"] }),
-      );
+      repo.findByUserId.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.fail({ messages: ["DB error"] }));
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 5 } }));
@@ -153,12 +151,10 @@ describe("GetSignInEvents", () => {
 
     it("should return zero total when countByUserId returns failure", async () => {
       const events = [createEvent("evt-1")];
-      repo.findByUserId.handleAsync = vi
+      repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
+      repo.countByUserId.handleAsync = vi
         .fn()
-        .mockResolvedValue(D2Result.ok({ data: { events } }));
-      repo.countByUserId.handleAsync = vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["DB error"] }),
-      );
+        .mockResolvedValue(D2Result.fail({ messages: ["DB error"] }));
 
       const result = await handler.handleAsync({ userId: "user-123" });
 
@@ -294,9 +290,7 @@ describe("GetSignInEvents", () => {
         .mockResolvedValue(D2Result.ok({ data: { value: undefined } }));
 
       const events = [createEvent("evt-1")];
-      repo.findByUserId.handleAsync = vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { events } }));
+      repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 1 } }));
@@ -319,9 +313,7 @@ describe("GetSignInEvents", () => {
         .mockResolvedValue(D2Result.fail({ messages: ["Cache error"] }));
 
       const events = [createEvent("evt-1")];
-      repo.findByUserId.handleAsync = vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { events } }));
+      repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 1 } }));
@@ -340,9 +332,7 @@ describe("GetSignInEvents", () => {
 
       const eventDate = new Date("2026-02-10T12:00:00.000Z");
       const events = [createEvent("evt-1", eventDate)];
-      repo.findByUserId.handleAsync = vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { events } }));
+      repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 1 } }));

@@ -132,9 +132,7 @@ describe("GetOrgContacts", () => {
 
   it("should return hydrated contacts with Geo data", async () => {
     const contacts = [createContact("oc-1"), createContact("oc-2"), createContact("oc-3")];
-    findByOrgId.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contacts } }));
+    findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contacts } }));
 
     // Map keyed by "org_contact:{junction.id}" → ContactDTO[]
     const geoMap = new Map<string, ContactDTO[]>([
@@ -163,9 +161,7 @@ describe("GetOrgContacts", () => {
 
   it("should batch fetch all contacts in a single getContactsByExtKeys call", async () => {
     const contacts = [createContact("oc-1"), createContact("oc-2")];
-    findByOrgId.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contacts } }));
+    findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contacts } }));
 
     await handler.handleAsync({ organizationId: VALID_ORG_ID });
 
@@ -180,9 +176,7 @@ describe("GetOrgContacts", () => {
 
   it("should return geoContact: null for orphaned junctions (Geo contact missing)", async () => {
     const contacts = [createContact("oc-1"), createContact("oc-2")];
-    findByOrgId.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contacts } }));
+    findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contacts } }));
 
     // Only oc-1 is in the map — oc-2 is missing (orphaned)
     const geoMap = new Map<string, ContactDTO[]>([
@@ -201,9 +195,7 @@ describe("GetOrgContacts", () => {
 
   it("should return all contacts with geoContact: null when Geo call fails", async () => {
     const contacts = [createContact("oc-1")];
-    findByOrgId.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contacts } }));
+    findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contacts } }));
     getContactsByExtKeys.handleAsync = vi.fn().mockResolvedValue(
       D2Result.fail({
         messages: ["Geo service unavailable."],
@@ -233,9 +225,7 @@ describe("GetOrgContacts", () => {
 
   it("should treat empty Geo contact array for a key as orphaned (geoContact: null)", async () => {
     const contacts = [createContact("oc-1")];
-    findByOrgId.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contacts } }));
+    findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contacts } }));
 
     // Geo returns the key but with an empty array instead of a ContactDTO
     const geoMap = new Map<string, ContactDTO[]>([["org_contact:oc-1", []]]);
@@ -251,9 +241,7 @@ describe("GetOrgContacts", () => {
   });
 
   it("should return empty contacts when findByOrgId returns failure", async () => {
-    findByOrgId.handleAsync = vi.fn().mockResolvedValue(
-      D2Result.fail({ messages: ["DB error"] }),
-    );
+    findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.fail({ messages: ["DB error"] }));
 
     const result = await handler.handleAsync({ organizationId: VALID_ORG_ID });
 

@@ -42,7 +42,8 @@ public class RequestContext : IRequestContext
         // User / Identity — extracted from JWT claims.
         IsAuthenticated = ctx?.User.Identity?.IsAuthenticated ?? false;
         UserId = GetGuidClaim(ctx, JwtClaimTypes.SUB);
-        Username = GetStringClaim(ctx, JwtClaimTypes.NAME);
+        Email = GetStringClaim(ctx, JwtClaimTypes.EMAIL);
+        Username = GetStringClaim(ctx, JwtClaimTypes.USERNAME);
 
         // Agent Organization — the user's actual org membership.
         AgentOrgId = GetGuidClaim(ctx, JwtClaimTypes.ORG_ID);
@@ -72,6 +73,8 @@ public class RequestContext : IRequestContext
 
         // User Impersonation — admin acting as another user.
         ImpersonatedBy = GetGuidClaim(ctx, JwtClaimTypes.IMPERSONATED_BY);
+        ImpersonatingEmail = GetStringClaim(ctx, JwtClaimTypes.IMPERSONATING_EMAIL);
+        ImpersonatingUsername = GetStringClaim(ctx, JwtClaimTypes.IMPERSONATING_USERNAME);
         IsUserImpersonating = string.Equals(
             GetStringClaim(ctx, JwtClaimTypes.IS_IMPERSONATING),
             "true",
@@ -98,6 +101,9 @@ public class RequestContext : IRequestContext
 
     /// <inheritdoc/>
     public Guid? UserId { get; }
+
+    /// <inheritdoc/>
+    public string? Email { get; }
 
     /// <inheritdoc/>
     public string? Username { get; }
@@ -141,6 +147,12 @@ public class RequestContext : IRequestContext
 
     /// <inheritdoc/>
     public Guid? ImpersonatedBy { get; }
+
+    /// <inheritdoc/>
+    public string? ImpersonatingEmail { get; }
+
+    /// <inheritdoc/>
+    public string? ImpersonatingUsername { get; }
 
     /// <inheritdoc/>
     public bool IsUserImpersonating { get; }

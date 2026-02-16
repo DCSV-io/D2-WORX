@@ -9,5 +9,7 @@ export interface FindOrgContactByIdOutput {
   readonly contact: OrgContact;
 }
 
-export type IFindOrgContactByIdHandler =
-  IHandler<FindOrgContactByIdInput, FindOrgContactByIdOutput>;
+export type IFindOrgContactByIdHandler = IHandler<
+  FindOrgContactByIdInput,
+  FindOrgContactByIdOutput
+>;

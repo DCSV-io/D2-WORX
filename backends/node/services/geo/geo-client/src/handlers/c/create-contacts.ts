@@ -31,7 +31,9 @@ export class CreateContacts
     this.inputSchema = z
       .object({
         contacts: z.array(
-          z.object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) }).passthrough(),
+          z
+            .object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) })
+            .passthrough(),
         ),
       })
       .passthrough() as unknown as z.ZodType<Input>;
@@ -44,13 +46,10 @@ export class CreateContacts
     const r = await handleGrpcCall(
       () =>
         new Promise<CreateContactsResponse>((resolve, reject) => {
-          this.geoClient.createContacts(
-            { contactsToCreate: input.contacts },
-            (err, res) => {
-              if (err) reject(err);
-              else resolve(res);
-            },
-          );
+          this.geoClient.createContacts({ contactsToCreate: input.contacts }, (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+          });
         }),
       (res) => res.result!,
       (res) => ({ data: res.data }),
@@ -60,4 +59,7 @@ export class CreateContacts
   }
 }
 
-export type { CreateContactsInput, CreateContactsOutput } from "../../interfaces/c/create-contacts.js";
+export type {
+  CreateContactsInput,
+  CreateContactsOutput,
+} from "../../interfaces/c/create-contacts.js";

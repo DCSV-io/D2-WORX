@@ -8,10 +8,7 @@ import type {
 } from "@d2/auth-app";
 import { signInEvent } from "../../schema/custom-tables.js";
 
-export class CreateSignInEvent
-  extends BaseHandler<I, O>
-  implements ICreateSignInEventHandler
-{
+export class CreateSignInEvent extends BaseHandler<I, O> implements ICreateSignInEventHandler {
   private readonly db: NodePgDatabase;
 
   constructor(db: NodePgDatabase, context: IHandlerContext) {

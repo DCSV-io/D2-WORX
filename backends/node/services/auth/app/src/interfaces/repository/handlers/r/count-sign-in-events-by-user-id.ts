@@ -8,5 +8,7 @@ export interface CountSignInEventsByUserIdOutput {
   readonly count: number;
 }
 
-export type ICountSignInEventsByUserIdHandler =
-  IHandler<CountSignInEventsByUserIdInput, CountSignInEventsByUserIdOutput>;
+export type ICountSignInEventsByUserIdHandler = IHandler<
+  CountSignInEventsByUserIdInput,
+  CountSignInEventsByUserIdOutput
+>;

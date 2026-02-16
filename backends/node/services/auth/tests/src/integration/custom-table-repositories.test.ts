@@ -13,12 +13,7 @@ import type {
   OrgContactRepoHandlers,
 } from "@d2/auth-app";
 import type { SignInEvent, EmulationConsent, OrgContact } from "@d2/auth-domain";
-import {
-  startPostgres,
-  stopPostgres,
-  getDb,
-  cleanCustomTables,
-} from "./postgres-test-helpers.js";
+import { startPostgres, stopPostgres, getDb, cleanCustomTables } from "./postgres-test-helpers.js";
 
 function createTestContext() {
   const request: IRequestContext = {

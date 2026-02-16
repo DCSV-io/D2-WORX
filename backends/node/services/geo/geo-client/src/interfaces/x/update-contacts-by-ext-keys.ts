@@ -16,7 +16,9 @@ export const UPDATE_CONTACTS_BY_EXT_KEYS_REDACTION: RedactionSpec = {
 };
 
 /** Handler for replacing Geo contacts at given ext keys. Requires redaction (I/O contains PII). */
-export interface IUpdateContactsByExtKeysHandler
-  extends IHandler<UpdateContactsByExtKeysInput, UpdateContactsByExtKeysOutput> {
+export interface IUpdateContactsByExtKeysHandler extends IHandler<
+  UpdateContactsByExtKeysInput,
+  UpdateContactsByExtKeysOutput
+> {
   readonly redaction: RedactionSpec;
 }

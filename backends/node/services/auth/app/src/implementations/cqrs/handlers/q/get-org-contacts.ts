@@ -69,9 +69,7 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
       offset: input.offset,
     });
 
-    const junctions: OrgContact[] = findResult.success
-      ? (findResult.data?.contacts ?? [])
-      : [];
+    const junctions: OrgContact[] = findResult.success ? (findResult.data?.contacts ?? []) : [];
 
     if (junctions.length === 0) {
       return D2Result.ok({ data: { contacts: [] }, traceId: this.traceId });

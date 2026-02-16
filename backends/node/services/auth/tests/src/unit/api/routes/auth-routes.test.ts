@@ -29,7 +29,6 @@ function createMockThrottleHandlers(
     record: {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { recorded: true } })),
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
 }
 
@@ -38,7 +37,6 @@ function createMockThrottleHandlers(
  * mirroring the production composition root's middleware stack.
  */
 function createApp(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mockAuth: any,
   throttle?: SignInThrottleHandlers,
   requestInfo?: { clientIp?: string; serverFingerprint?: string },
@@ -135,7 +133,9 @@ describe("Auth routes", () => {
       const mockAuth = createMockAuth('{"session":"abc"}');
       const app = createApp(mockAuth);
 
-      const res = await app.request(postJson("/api/auth/sign-in/email", { email: "a@b.com", password: "x" }));
+      const res = await app.request(
+        postJson("/api/auth/sign-in/email", { email: "a@b.com", password: "x" }),
+      );
 
       expect(res.status).toBe(200);
       expect(res.headers.get("Cache-Control")).toBeNull();
@@ -423,18 +423,19 @@ describe("Auth routes", () => {
 
         // Send both username and email — only username should be used for the hash
         await app.request(
-          postJson("/api/auth/sign-in/username", { username: "jdoe", email: "ignored@test.com", password: "x" }),
+          postJson("/api/auth/sign-in/username", {
+            username: "jdoe",
+            email: "ignored@test.com",
+            password: "x",
+          }),
         );
 
         // Also send the same username via the email path for comparison
-        await app.request(
-          postJson("/api/auth/sign-in/email", { email: "jdoe", password: "x" }),
-        );
+        await app.request(postJson("/api/auth/sign-in/email", { email: "jdoe", password: "x" }));
 
         const usernameCall = (throttle.check.handleAsync as ReturnType<typeof vi.fn>).mock
           .calls[0][0];
-        const emailCall = (throttle.check.handleAsync as ReturnType<typeof vi.fn>).mock
-          .calls[1][0];
+        const emailCall = (throttle.check.handleAsync as ReturnType<typeof vi.fn>).mock.calls[1][0];
 
         // Username path should hash "jdoe", email path should also hash "jdoe"
         // → same identifierHash proves username path used "jdoe" (not "ignored@test.com")
@@ -456,8 +457,7 @@ describe("Auth routes", () => {
         );
 
         // Both check and record should receive the same hashes
-        const checkCall = (throttle.check.handleAsync as ReturnType<typeof vi.fn>).mock
-          .calls[0][0];
+        const checkCall = (throttle.check.handleAsync as ReturnType<typeof vi.fn>).mock.calls[0][0];
         await new Promise((r) => setTimeout(r, 10));
         const recordCall = (throttle.record.handleAsync as ReturnType<typeof vi.fn>).mock
           .calls[0][0];

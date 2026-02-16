@@ -3,10 +3,7 @@ import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import { DeleteOrgContact } from "@d2/auth-app";
-import type {
-  IFindOrgContactByIdHandler,
-  IDeleteOrgContactRecordHandler,
-} from "@d2/auth-app";
+import type { IFindOrgContactByIdHandler, IDeleteOrgContactRecordHandler } from "@d2/auth-app";
 import type { OrgContact } from "@d2/auth-domain";
 import type { Commands } from "@d2/geo-client";
 
@@ -111,9 +108,7 @@ describe("DeleteOrgContact", () => {
 
   it("should return Forbidden when contact belongs to a different organization", async () => {
     const existing = createExistingContact({ organizationId: OTHER_ORG_ID });
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_JUNCTION_ID,
@@ -132,9 +127,7 @@ describe("DeleteOrgContact", () => {
 
   it("should delete the junction and call deleteContactsByExtKeys.handleAsync", async () => {
     const existing = createExistingContact();
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
 
     const result = await handler.handleAsync({
       id: VALID_JUNCTION_ID,
@@ -150,9 +143,7 @@ describe("DeleteOrgContact", () => {
 
   it("should succeed even when deleteContactsByExtKeys.handleAsync throws (best-effort)", async () => {
     const existing = createExistingContact();
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
     deleteContactsByExtKeys.handleAsync = vi.fn().mockRejectedValue(new Error("Geo is down"));
 
     const result = await handler.handleAsync({
@@ -167,9 +158,7 @@ describe("DeleteOrgContact", () => {
 
   it("should succeed even when deleteContactsByExtKeys.handleAsync returns failure", async () => {
     const existing = createExistingContact();
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
     deleteContactsByExtKeys.handleAsync = vi.fn().mockResolvedValue(
       D2Result.fail({
         messages: ["Geo service error."],
@@ -188,9 +177,7 @@ describe("DeleteOrgContact", () => {
 
   it("should bubble failure when repo deleteRecord returns error", async () => {
     const existing = createExistingContact();
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
     deleteRecord.handleAsync = vi.fn().mockResolvedValue(
       D2Result.fail({
         messages: ["connection lost"],

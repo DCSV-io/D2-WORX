@@ -78,11 +78,15 @@ CREATE TABLE "user" (
 	"image" text,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"username" text NOT NULL,
+	"display_username" text NOT NULL,
 	"role" text,
 	"banned" boolean DEFAULT false,
 	"ban_reason" text,
 	"ban_expires" timestamp,
-	CONSTRAINT "user_email_unique" UNIQUE("email")
+	CONSTRAINT "user_email_unique" UNIQUE("email"),
+	CONSTRAINT "user_username_unique" UNIQUE("username"),
+	CONSTRAINT "user_display_username_unique" UNIQUE("display_username")
 );
 --> statement-breakpoint
 CREATE TABLE "verification" (

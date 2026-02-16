@@ -64,6 +64,8 @@ export type { SessionContext } from "./value-objects/session-context.js";
 
 // --- Data ---
 export { COMMON_PASSWORDS } from "./data/common-passwords.js";
+export { USERNAME_ADJECTIVES } from "./data/username-adjectives.js";
+export { USERNAME_NOUNS } from "./data/username-nouns.js";
 
 // --- Business Rules ---
 export { resolveSessionContext, canEmulate } from "./rules/emulation.js";
@@ -73,3 +75,4 @@ export { transitionInvitationStatus, isInvitationExpired } from "./rules/invitat
 export { validatePassword } from "./rules/password-rules.js";
 export type { PasswordValidationResult } from "./rules/password-rules.js";
 export { computeSignInDelay } from "./rules/sign-in-throttle-rules.js";
+export { generateUsername, USERNAME_RULES } from "./rules/username-rules.js";

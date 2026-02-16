@@ -57,7 +57,11 @@ describe("CreateContacts handler", () => {
       }),
     } as unknown as GeoServiceClient;
 
-    const handler = new CreateContacts(mockGeoClient, DEFAULT_GEO_CLIENT_OPTIONS, createTestContext());
+    const handler = new CreateContacts(
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
     const result = await handler.handleAsync({
       contacts: [
         {
@@ -89,7 +93,11 @@ describe("CreateContacts handler", () => {
       }),
     } as unknown as GeoServiceClient;
 
-    const handler = new CreateContacts(mockGeoClient, DEFAULT_GEO_CLIENT_OPTIONS, createTestContext());
+    const handler = new CreateContacts(
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
     const inputContacts = [
       {
         createdAt: new Date(),
@@ -110,7 +118,11 @@ describe("CreateContacts handler", () => {
       createContacts: mockGrpcMethodError(new Error("Connection refused")),
     } as unknown as GeoServiceClient;
 
-    const handler = new CreateContacts(mockGeoClient, DEFAULT_GEO_CLIENT_OPTIONS, createTestContext());
+    const handler = new CreateContacts(
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
     const result = await handler.handleAsync({
       contacts: [{ createdAt: new Date(), contextKey: "test", relatedEntityId: "x" } as never],
     });
@@ -133,7 +145,11 @@ describe("CreateContacts handler", () => {
       }),
     } as unknown as GeoServiceClient;
 
-    const handler = new CreateContacts(mockGeoClient, DEFAULT_GEO_CLIENT_OPTIONS, createTestContext());
+    const handler = new CreateContacts(
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
     const result = await handler.handleAsync({
       contacts: [{ createdAt: new Date(), contextKey: "test", relatedEntityId: "x" } as never],
     });

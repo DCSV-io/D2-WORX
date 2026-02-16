@@ -1,10 +1,4 @@
-import {
-  pgTable,
-  text,
-  boolean,
-  timestamp,
-  index,
-} from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, timestamp, index } from "drizzle-orm/pg-core";
 
 /**
  * Drizzle schema for BetterAuth-managed tables.
@@ -34,6 +28,9 @@ export const user = pgTable(
     image: text("image"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    // Username plugin
+    username: text("username").notNull().unique(),
+    displayUsername: text("display_username").notNull().unique(),
     // Admin plugin
     role: text("role"),
     banned: boolean("banned").default(false),

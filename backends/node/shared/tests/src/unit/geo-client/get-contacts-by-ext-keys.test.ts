@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { GetContactsByExtKeys, DEFAULT_GEO_CLIENT_OPTIONS, type GeoClientOptions } from "@d2/geo-client";
+import {
+  GetContactsByExtKeys,
+  DEFAULT_GEO_CLIENT_OPTIONS,
+  type GeoClientOptions,
+} from "@d2/geo-client";
 
 import type { GeoServiceClient, ContactDTO } from "@d2/protos";
 
@@ -18,7 +22,11 @@ function createTestContext(): IHandlerContext {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createMockContactDTO(id: string, contextKey = "org_contact", relatedEntityId = "related-1"): ContactDTO {
+function createMockContactDTO(
+  id: string,
+  contextKey = "org_contact",
+  relatedEntityId = "related-1",
+): ContactDTO {
   return {
     id,
     createdAt: new Date("2026-02-10"),

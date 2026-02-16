@@ -11,5 +11,7 @@ export interface FindSignInEventsByUserIdOutput {
   readonly events: SignInEvent[];
 }
 
-export type IFindSignInEventsByUserIdHandler =
-  IHandler<FindSignInEventsByUserIdInput, FindSignInEventsByUserIdOutput>;
+export type IFindSignInEventsByUserIdHandler = IHandler<
+  FindSignInEventsByUserIdInput,
+  FindSignInEventsByUserIdOutput
+>;

@@ -31,8 +31,14 @@ describe("SignInThrottleStore", () => {
     set = createMockHandler({} as Record<string, never>);
     remove = createMockHandler({} as Record<string, never>);
     increment = createMockHandler({ newValue: 1 });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    store = new SignInThrottleStore(exists as any, getTtl as any, set as any, remove as any, increment as any);
+
+    store = new SignInThrottleStore(
+      exists as any,
+      getTtl as any,
+      set as any,
+      remove as any,
+      increment as any,
+    );
   });
 
   // -----------------------------------------------------------------------
@@ -42,8 +48,14 @@ describe("SignInThrottleStore", () => {
   describe("isKnownGood", () => {
     it("should return true when key exists", async () => {
       exists = createMockHandler({ exists: true });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      store = new SignInThrottleStore(exists as any, getTtl as any, set as any, remove as any, increment as any);
+
+      store = new SignInThrottleStore(
+        exists as any,
+        getTtl as any,
+        set as any,
+        remove as any,
+        increment as any,
+      );
 
       const result = await store.isKnownGood(idHash, ipHash);
 
@@ -75,8 +87,14 @@ describe("SignInThrottleStore", () => {
   describe("getLockedTtlSeconds", () => {
     it("should return TTL in seconds when key exists", async () => {
       getTtl = createMockHandler({ timeToLiveMs: 30_000 });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      store = new SignInThrottleStore(exists as any, getTtl as any, set as any, remove as any, increment as any);
+
+      store = new SignInThrottleStore(
+        exists as any,
+        getTtl as any,
+        set as any,
+        remove as any,
+        increment as any,
+      );
 
       const result = await store.getLockedTtlSeconds(idHash, ipHash);
 
@@ -124,8 +142,14 @@ describe("SignInThrottleStore", () => {
   describe("incrementFailures", () => {
     it("should increment with attempt window TTL and return new value", async () => {
       increment = createMockHandler({ newValue: 3 });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      store = new SignInThrottleStore(exists as any, getTtl as any, set as any, remove as any, increment as any);
+
+      store = new SignInThrottleStore(
+        exists as any,
+        getTtl as any,
+        set as any,
+        remove as any,
+        increment as any,
+      );
 
       const result = await store.incrementFailures(idHash, ipHash);
 

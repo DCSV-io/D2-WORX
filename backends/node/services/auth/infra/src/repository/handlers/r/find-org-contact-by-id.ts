@@ -10,10 +10,7 @@ import type {
 } from "@d2/auth-app";
 import { orgContact } from "../../schema/custom-tables.js";
 
-export class FindOrgContactById
-  extends BaseHandler<I, O>
-  implements IFindOrgContactByIdHandler
-{
+export class FindOrgContactById extends BaseHandler<I, O> implements IFindOrgContactByIdHandler {
   private readonly db: NodePgDatabase;
 
   constructor(db: NodePgDatabase, context: IHandlerContext) {
@@ -22,10 +19,7 @@ export class FindOrgContactById
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
-    const [row] = await this.db
-      .select()
-      .from(orgContact)
-      .where(eq(orgContact.id, input.id));
+    const [row] = await this.db.select().from(orgContact).where(eq(orgContact.id, input.id));
 
     if (!row) {
       return D2Result.notFound({ traceId: this.traceId });

@@ -11,5 +11,7 @@ export interface FindOrgContactsByOrgIdOutput {
   readonly contacts: OrgContact[];
 }
 
-export type IFindOrgContactsByOrgIdHandler =
-  IHandler<FindOrgContactsByOrgIdInput, FindOrgContactsByOrgIdOutput>;
+export type IFindOrgContactsByOrgIdHandler = IHandler<
+  FindOrgContactsByOrgIdInput,
+  FindOrgContactsByOrgIdOutput
+>;

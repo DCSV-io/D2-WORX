@@ -6,12 +6,14 @@ import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import { username } from "better-auth/plugins/username";
 import type { SecondaryStorage } from "better-auth";
+import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { JWT_CLAIM_TYPES, SESSION_FIELDS } from "@d2/auth-domain";
 import type { AuthServiceConfig } from "./auth-config.js";
 import { AUTH_CONFIG_DEFAULTS } from "./auth-config.js";
 import { generateId } from "./hooks/id-hooks.js";
 import { beforeCreateOrganization } from "./hooks/org-hooks.js";
+import { ensureUsername } from "./hooks/username-hooks.js";
 import {
   ac,
   ownerPermissions,
@@ -139,11 +141,15 @@ export function createAuth(
       user: {
         create: {
           before: async (user) => {
+            // Ensure username fields are populated before persistence
+            let data = ensureUsername(user as Record<string, unknown>);
+
             // Ensure pre-generated IDs are preserved (forceAllowId pattern)
             if (user.id) {
-              return { data: { ...user, id: user.id } };
+              data = { ...data, id: user.id };
             }
-            return { data: user };
+
+            return { data };
           },
         },
       },
@@ -188,17 +194,46 @@ export function createAuth(
           expirationTime: `${jwtExpirationSeconds}s`,
           definePayload: async ({ user, session }) => {
             const s = session as Record<string, unknown>;
+            const u = user as Record<string, unknown>;
+
+            // Resolve impersonator details if impersonation is active
+            let impersonatingEmail: string | null = null;
+            let impersonatingUsername: string | null = null;
+            const impersonatedBy = (s["impersonatedBy"] as string) ?? null;
+
+            if (impersonatedBy) {
+              try {
+                const impersonator = await db
+                  .select({
+                    email: betterAuthSchema.user.email,
+                    username: betterAuthSchema.user.username,
+                  })
+                  .from(betterAuthSchema.user)
+                  .where(eq(betterAuthSchema.user.id, impersonatedBy))
+                  .limit(1);
+                const imp = impersonator[0];
+                if (imp) {
+                  impersonatingEmail = imp.email;
+                  impersonatingUsername = imp.username;
+                }
+              } catch {
+                // Non-critical — impersonator details are for audit only
+              }
+            }
+
             return {
               [JWT_CLAIM_TYPES.SUB]: user.id,
               [JWT_CLAIM_TYPES.EMAIL]: user.email,
-              [JWT_CLAIM_TYPES.NAME]: user.name,
+              [JWT_CLAIM_TYPES.USERNAME]: (u["username"] as string) ?? null,
               [JWT_CLAIM_TYPES.ORG_ID]: s[SESSION_FIELDS.ACTIVE_ORG_ID] ?? null,
               [JWT_CLAIM_TYPES.ORG_TYPE]: s[SESSION_FIELDS.ACTIVE_ORG_TYPE] ?? null,
               [JWT_CLAIM_TYPES.ROLE]: s[SESSION_FIELDS.ACTIVE_ORG_ROLE] ?? null,
               [JWT_CLAIM_TYPES.EMULATED_ORG_ID]: s[SESSION_FIELDS.EMULATED_ORG_ID] ?? null,
               [JWT_CLAIM_TYPES.IS_EMULATING]: !!s[SESSION_FIELDS.EMULATED_ORG_ID],
-              [JWT_CLAIM_TYPES.IMPERSONATED_BY]: (s["impersonatedBy"] as string) ?? null,
-              [JWT_CLAIM_TYPES.IS_IMPERSONATING]: !!(s["impersonatedBy"] as string),
+              [JWT_CLAIM_TYPES.IMPERSONATED_BY]: impersonatedBy,
+              [JWT_CLAIM_TYPES.IS_IMPERSONATING]: !!impersonatedBy,
+              [JWT_CLAIM_TYPES.IMPERSONATING_EMAIL]: impersonatingEmail,
+              [JWT_CLAIM_TYPES.IMPERSONATING_USERNAME]: impersonatingUsername,
               [JWT_CLAIM_TYPES.FINGERPRINT]: hooks?.getFingerprintForCurrentRequest?.() ?? null,
             };
           },

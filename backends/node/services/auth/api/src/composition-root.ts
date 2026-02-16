@@ -111,7 +111,13 @@ export async function createApp(config: AuthServiceConfig) {
   const redisExists = new CacheRedis.Exists(redis, handlerContext);
   const redisGetTtl = new CacheRedis.GetTtl(redis, handlerContext);
   const redisIncrement = new CacheRedis.Increment(redis, handlerContext);
-  const rateLimitCheck = new RateLimitCheck(redisGetTtl, redisIncrement, redisSet, {}, handlerContext);
+  const rateLimitCheck = new RateLimitCheck(
+    redisGetTtl,
+    redisIncrement,
+    redisSet,
+    {},
+    handlerContext,
+  );
 
   // Helper: checks whether an organization exists in BetterAuth's organization table.
   async function checkOrgExists(orgId: string): Promise<boolean> {

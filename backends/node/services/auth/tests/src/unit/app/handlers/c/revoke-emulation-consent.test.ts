@@ -100,9 +100,7 @@ describe("RevokeEmulationConsent", () => {
 
   it("should revoke an active consent owned by the user", async () => {
     const consent = createActiveConsent();
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { consent } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { consent } }));
 
     const result = await handler.handleAsync({
       consentId: VALID_CONSENT_ID,
@@ -132,9 +130,7 @@ describe("RevokeEmulationConsent", () => {
     const consent = createActiveConsent({
       userId: "11111111-1111-1111-1111-111111111111",
     });
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { consent } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { consent } }));
 
     const result = await handler.handleAsync({
       consentId: VALID_CONSENT_ID,
@@ -152,9 +148,7 @@ describe("RevokeEmulationConsent", () => {
       userId: VALID_USER_ID,
       revokedAt: new Date("2026-02-05"),
     });
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { consent } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { consent } }));
 
     const result = await handler.handleAsync({
       consentId: VALID_CONSENT_ID,
@@ -172,9 +166,7 @@ describe("RevokeEmulationConsent", () => {
       userId: VALID_USER_ID,
       expiresAt: new Date(Date.now() - 86_400_000),
     });
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { consent } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { consent } }));
 
     const result = await handler.handleAsync({
       consentId: VALID_CONSENT_ID,
@@ -188,9 +180,7 @@ describe("RevokeEmulationConsent", () => {
 
   it("should bubble failure when revokeRecord returns error", async () => {
     const consent = createActiveConsent();
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { consent } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { consent } }));
     revokeRecord.handleAsync = vi.fn().mockResolvedValue(
       D2Result.fail({
         messages: ["connection lost"],
@@ -214,9 +204,7 @@ describe("RevokeEmulationConsent", () => {
       userId: "11111111-1111-1111-1111-111111111111",
       revokedAt: new Date("2026-02-05"),
     });
-    findById.handleAsync = vi
-      .fn()
-      .mockResolvedValue(D2Result.ok({ data: { consent } }));
+    findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { consent } }));
 
     const result = await handler.handleAsync({
       consentId: VALID_CONSENT_ID,

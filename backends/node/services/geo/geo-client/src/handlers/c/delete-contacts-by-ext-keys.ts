@@ -35,7 +35,9 @@ export class DeleteContactsByExtKeys
     this.inputSchema = z
       .object({
         keys: z.array(
-          z.object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) }).passthrough(),
+          z
+            .object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) })
+            .passthrough(),
         ),
       })
       .passthrough() as unknown as z.ZodType<Input>;
@@ -48,13 +50,10 @@ export class DeleteContactsByExtKeys
     const r = await handleGrpcCall(
       () =>
         new Promise<DeleteContactsByExtKeysResponse>((resolve, reject) => {
-          this.geoClient.deleteContactsByExtKeys(
-            { keys: input.keys },
-            (err, res) => {
-              if (err) reject(err);
-              else resolve(res);
-            },
-          );
+          this.geoClient.deleteContactsByExtKeys({ keys: input.keys }, (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+          });
         }),
       (res) => res.result!,
       (res) => ({ deleted: res.deleted }),

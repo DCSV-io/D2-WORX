@@ -60,7 +60,12 @@ public interface IRequestContext
     Guid? UserId { get; }
 
     /// <summary>
-    /// Gets the username of the user.
+    /// Gets the user's email address.
+    /// </summary>
+    string? Email { get; }
+
+    /// <summary>
+    /// Gets the user's login handle (unique, lowercase).
     /// </summary>
     string? Username { get; }
 
@@ -125,6 +130,16 @@ public interface IRequestContext
     /// Present when a support/admin user is acting as another user.
     /// </summary>
     Guid? ImpersonatedBy { get; }
+
+    /// <summary>
+    /// Gets the impersonator's email address (present during user impersonation).
+    /// </summary>
+    string? ImpersonatingEmail { get; }
+
+    /// <summary>
+    /// Gets the impersonator's username (present during user impersonation).
+    /// </summary>
+    string? ImpersonatingUsername { get; }
 
     /// <summary>
     /// Gets a value indicating whether user impersonation is active.

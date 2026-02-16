@@ -7,7 +7,7 @@ export interface SetManyInput<TValue> {
 }
 
 /** Output for setting multiple values in the in-memory cache. */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+
 export interface SetManyOutput {}
 
 /** Handler for setting multiple values in the in-memory cache. */

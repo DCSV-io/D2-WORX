@@ -6,5 +6,7 @@ export interface RevokeEmulationConsentRecordInput {
 
 export interface RevokeEmulationConsentRecordOutput {}
 
-export type IRevokeEmulationConsentRecordHandler =
-  IHandler<RevokeEmulationConsentRecordInput, RevokeEmulationConsentRecordOutput>;
+export type IRevokeEmulationConsentRecordHandler = IHandler<
+  RevokeEmulationConsentRecordInput,
+  RevokeEmulationConsentRecordOutput
+>;

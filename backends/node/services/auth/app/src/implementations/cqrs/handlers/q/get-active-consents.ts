@@ -29,10 +29,7 @@ export class GetActiveConsents extends BaseHandler<
 > {
   private readonly findActiveByUserId: IFindActiveConsentsByUserIdHandler;
 
-  constructor(
-    findActiveByUserId: IFindActiveConsentsByUserIdHandler,
-    context: IHandlerContext,
-  ) {
+  constructor(findActiveByUserId: IFindActiveConsentsByUserIdHandler, context: IHandlerContext) {
     super(context);
     this.findActiveByUserId = findActiveByUserId;
   }

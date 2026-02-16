@@ -1,12 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
-import {
-  requireOrg,
-  requireOrgType,
-  requireRole,
-  requireStaff,
-  requireAdmin,
-} from "@d2/auth-api";
+import { requireOrg, requireOrgType, requireRole, requireStaff, requireAdmin } from "@d2/auth-api";
 import type { SessionVariables } from "@d2/auth-api";
 
 /**
@@ -72,7 +66,11 @@ describe("requireOrg", () => {
 
   it("should reject with 403 when orgType is invalid", async () => {
     const app = createApp(
-      { activeOrganizationId: "org-1", activeOrganizationType: "bogus", activeOrganizationRole: "owner" },
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "bogus",
+        activeOrganizationRole: "owner",
+      },
       requireOrg(),
     );
     const res = await app.request("/test");

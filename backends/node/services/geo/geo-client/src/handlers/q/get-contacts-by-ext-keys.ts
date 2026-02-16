@@ -39,7 +39,9 @@ export class GetContactsByExtKeys
     this.inputSchema = z
       .object({
         keys: z.array(
-          z.object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) }).passthrough(),
+          z
+            .object({ contextKey: validators.zodAllowedContextKey(options.allowedContextKeys) })
+            .passthrough(),
         ),
       })
       .passthrough() as unknown as z.ZodType<Input>;
@@ -76,13 +78,10 @@ export class GetContactsByExtKeys
     let response: GetContactsByExtKeysResponse;
     try {
       response = await new Promise<GetContactsByExtKeysResponse>((resolve, reject) => {
-        this.geoClient.getContactsByExtKeys(
-          { keys: missingKeys },
-          (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          },
-        );
+        this.geoClient.getContactsByExtKeys({ keys: missingKeys }, (err, res) => {
+          if (err) reject(err);
+          else resolve(res);
+        });
       });
     } catch {
       // Fail-open: return whatever was cached

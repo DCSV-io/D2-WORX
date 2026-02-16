@@ -6,5 +6,7 @@ export interface DeleteOrgContactRecordInput {
 
 export interface DeleteOrgContactRecordOutput {}
 
-export type IDeleteOrgContactRecordHandler =
-  IHandler<DeleteOrgContactRecordInput, DeleteOrgContactRecordOutput>;
+export type IDeleteOrgContactRecordHandler = IHandler<
+  DeleteOrgContactRecordInput,
+  DeleteOrgContactRecordOutput
+>;

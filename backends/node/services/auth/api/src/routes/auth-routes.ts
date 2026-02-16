@@ -24,10 +24,7 @@ function sha256(input: string): string {
  * Extracts the sign-in identifier from the request body.
  * Returns lowercase email or username, or undefined if not found.
  */
-function extractIdentifier(
-  body: Record<string, unknown> | null,
-  path: string,
-): string | undefined {
+function extractIdentifier(body: Record<string, unknown> | null, path: string): string | undefined {
   if (!body) return undefined;
   if (path.endsWith("/sign-in/email")) return (body.email as string)?.toLowerCase?.();
   if (path.endsWith("/sign-in/username")) return (body.username as string)?.toLowerCase?.();

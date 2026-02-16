@@ -16,6 +16,9 @@ export const CREATE_CONTACTS_REDACTION: RedactionSpec = {
 };
 
 /** Handler for creating Geo contacts via gRPC. Requires redaction (I/O contains PII). */
-export interface ICreateContactsHandler extends IHandler<CreateContactsInput, CreateContactsOutput> {
+export interface ICreateContactsHandler extends IHandler<
+  CreateContactsInput,
+  CreateContactsOutput
+> {
   readonly redaction: RedactionSpec;
 }

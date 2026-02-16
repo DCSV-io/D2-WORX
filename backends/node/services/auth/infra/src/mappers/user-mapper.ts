@@ -11,6 +11,8 @@ export function toDomainUser(raw: Record<string, unknown>): User {
     id: raw["id"] as string,
     email: raw["email"] as string,
     name: raw["name"] as string,
+    username: raw["username"] as string,
+    displayUsername: (raw["displayUsername"] ?? raw["display_username"]) as string,
     emailVerified: Boolean(raw["emailVerified"] ?? raw["email_verified"]),
     image: (raw["image"] as string | null) ?? null,
     createdAt: toDate(raw["createdAt"] ?? raw["created_at"]),
