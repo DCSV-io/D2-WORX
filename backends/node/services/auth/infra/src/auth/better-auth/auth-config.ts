@@ -38,6 +38,12 @@ export interface AuthServiceConfig {
   /** Cookie cache max age in seconds (default: 300 = 5 minutes) */
   readonly cookieCacheMaxAge?: number;
 
+  /** Minimum password length (default: 12). Enforced by BetterAuth natively. */
+  readonly passwordMinLength?: number;
+
+  /** Maximum password length (default: 128). Enforced by BetterAuth natively. */
+  readonly passwordMaxLength?: number;
+
   /** Application name for telemetry */
   readonly appName?: string;
 
@@ -52,5 +58,7 @@ export const AUTH_CONFIG_DEFAULTS = {
   sessionExpiresIn: 604800,
   sessionUpdateAge: 86400,
   cookieCacheMaxAge: 300,
+  passwordMinLength: 12,
+  passwordMaxLength: 128,
   appName: "auth-service",
 } as const;

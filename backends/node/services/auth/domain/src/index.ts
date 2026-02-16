@@ -6,6 +6,7 @@ export {
   SESSION_FIELDS,
   AUTH_POLICIES,
   REQUEST_HEADERS,
+  PASSWORD_POLICY,
 } from "./constants/auth-constants.js";
 
 // --- Enums ---
@@ -60,8 +61,13 @@ export type {
 // --- Value Objects ---
 export type { SessionContext } from "./value-objects/session-context.js";
 
+// --- Data ---
+export { COMMON_PASSWORDS } from "./data/common-passwords.js";
+
 // --- Business Rules ---
 export { resolveSessionContext, canEmulate } from "./rules/emulation.js";
 export { isLastOwner, isMemberOfOrg } from "./rules/membership.js";
 export { canCreateOrgType } from "./rules/org-creation.js";
 export { transitionInvitationStatus, isInvitationExpired } from "./rules/invitation.js";
+export { validatePassword } from "./rules/password-rules.js";
+export type { PasswordValidationResult } from "./rules/password-rules.js";

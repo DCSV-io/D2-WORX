@@ -685,7 +685,11 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 ### Password Security
 
 - Bcrypt hashing (BetterAuth default)
-- **NOT YET CONFIGURED**: Minimum password length, complexity rules, breached-password checks (see Known Security Gaps below)
+- Min 12 / max 128 characters (BetterAuth native enforcement)
+- HIBP k-anonymity breach check (SHA-1 prefix, 24h cached, fail-open)
+- Local common-password blocklist (~200 entries, always-on)
+- Numeric-only and date-pattern blocking
+- No composition rules (no "1 upper, 1 lower, 1 number, 1 special")
 
 ### Token Storage Rules
 
@@ -707,7 +711,7 @@ These are documented trade-offs and gaps identified during security audit. Items
 |---|-----|----------|---------|------------|
 | 1 | ~~**Fingerprint (`fp`) claim optional in JWT**~~ | ~~HIGH~~ | **RESOLVED.** `JwtFingerprintMiddleware` now requires `fp` claim for all non-trusted requests (returns 401 `MISSING_FINGERPRINT`). Trusted services (identified by `ServiceKeyMiddleware` via `X-Api-Key`) skip fingerprint validation entirely. | Implemented in `ServiceKeyMiddleware` + updated `JwtFingerprintMiddleware`. |
 | 2 | **Email verification not enforced** | HIGH | Users can sign up and immediately access the app with unverified email. Enables throwaway email abuse, weakens account recovery. | Configure `emailVerification.sendOnSignUp: true` in BetterAuth. Gate org creation/membership on `emailVerified: true`. Requires notification scaffold. |
-| 3 | **No password policy** | HIGH | BetterAuth defaults allow any password. No min length, complexity, or breached-password checks. | Configure `emailAndPassword.password.minLength` (min 10), add `beforePasswordSet` hook for complexity/HaveIBeenPwned check. |
+| 3 | ~~**No password policy**~~ | ~~HIGH~~ | **RESOLVED.** Min 12 / max 128 (BetterAuth native `minPasswordLength` / `maxPasswordLength`). HIBP k-anonymity check via SHA-1 prefix caching (24h TTL, fail-open). Local blocklist (~200 common passwords, always-on). Blocks numeric-only and date-pattern passwords. No composition rules. | Implemented in `password-rules.ts` (domain) + `password-hooks.ts` (infra). |
 
 ### Must Fix Before Beta
 

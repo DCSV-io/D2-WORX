@@ -50,3 +50,18 @@ export const REQUEST_HEADERS = {
   IDEMPOTENCY_KEY: "Idempotency-Key",
   CLIENT_FINGERPRINT: "X-Client-Fingerprint",
 } as const;
+
+/**
+ * Password policy constants.
+ *
+ * Min/max length is enforced by BetterAuth natively (before the hash hook).
+ * Domain rules (numeric-only, date-like, common blocklist) and HIBP checks
+ * are enforced inside the custom `hash` function.
+ */
+export const PASSWORD_POLICY = {
+  MIN_LENGTH: 12,
+  MAX_LENGTH: 128,
+  HIBP_CACHE_TTL_MS: 24 * 60 * 60 * 1000,
+  HIBP_API_BASE: "https://api.pwnedpasswords.com/range/",
+  HIBP_CACHE_MAX_ENTRIES: 10_000,
+} as const;

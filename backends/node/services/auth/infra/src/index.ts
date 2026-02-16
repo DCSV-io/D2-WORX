@@ -24,6 +24,12 @@ export { createSecondaryStorage } from "./auth/better-auth/secondary-storage.js"
 // --- Hooks ---
 export { generateId } from "./auth/better-auth/hooks/id-hooks.js";
 export { beforeCreateOrganization } from "./auth/better-auth/hooks/org-hooks.js";
+export { createPasswordFunctions, checkBreachedPassword } from "./auth/better-auth/hooks/password-hooks.js";
+export type {
+  PasswordFunctions,
+  BreachCheckResult,
+  PrefixCache,
+} from "./auth/better-auth/hooks/password-hooks.js";
 
 // --- Mappers ---
 export { toDomainUser } from "./mappers/user-mapper.js";

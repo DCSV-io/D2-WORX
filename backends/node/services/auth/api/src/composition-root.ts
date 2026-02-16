@@ -23,12 +23,14 @@ import { Check as RateLimitCheck } from "@d2/ratelimit";
 import {
   createAuth,
   createSecondaryStorage,
+  createPasswordFunctions,
   runMigrations,
   SignInEventRepository,
   EmulationConsentRepository,
   OrgContactRepository,
   type AuthServiceConfig,
 } from "@d2/auth-infra";
+import { PASSWORD_POLICY } from "@d2/auth-domain";
 import {
   createSignInEventHandlers,
   createEmulationConsentHandlers,
@@ -56,11 +58,12 @@ import { createHealthRoutes } from "./routes/health.js";
  *   1. Create singletons: pg.Pool, Redis, logger
  *   2. Run Drizzle migrations + create repos
  *   3. Create app-layer handlers: factory functions from auth-app
- *   4. Create AsyncLocalStorage for per-request fingerprint (JWT `fp` claim)
- *   5. Create BetterAuth: configured with all plugins + secondary storage
- *   6. Session fingerprint binding (stolen token detection)
- *   7. Build Hono app: CORS → body limit → enrichment → rate limit → fingerprint → session → CSRF → routes
- *   8. Return app + cleanup function
+ *   4. App-layer handlers wiring
+ *   5. Password policy: HIBP k-anonymity cache + domain validation
+ *   6. Create AsyncLocalStorage for per-request fingerprint (JWT `fp` claim)
+ *   7. Create BetterAuth: configured with all plugins + secondary storage
+ *   8. Session fingerprint binding (stolen token detection)
+ *   9. Build Hono app: CORS → body limit → enrichment → rate limit → fingerprint → session → CSRF → routes
  */
 export async function createApp(config: AuthServiceConfig) {
   // 1. Singletons
@@ -180,10 +183,16 @@ export async function createApp(config: AuthServiceConfig) {
     getContactsByExtKeys,
   });
 
-  // 5. AsyncLocalStorage for per-request fingerprint (used by JWT definePayload)
+  // 5. Password policy — HIBP k-anonymity cache + domain validation
+  const hibpCacheStore = new CacheMemory.MemoryCacheStore({
+    maxEntries: PASSWORD_POLICY.HIBP_CACHE_MAX_ENTRIES,
+  });
+  const passwordFns = createPasswordFunctions(hibpCacheStore, logger);
+
+  // 6. AsyncLocalStorage for per-request fingerprint (used by JWT definePayload)
   const fingerprintStorage = new AsyncLocalStorage<string>();
 
-  // 6. BetterAuth instance with app-layer callbacks
+  // 7. BetterAuth instance with app-layer callbacks
   const auth = createAuth(config, db, secondaryStorage, {
     onSignIn: async (data) => {
       await signInEventHandlers.record.handleAsync({
@@ -194,9 +203,10 @@ export async function createApp(config: AuthServiceConfig) {
       });
     },
     getFingerprintForCurrentRequest: () => fingerprintStorage.getStore(),
+    passwordFunctions: passwordFns,
   });
 
-  // 7. Session fingerprint binding (stolen token detection)
+  // 8. Session fingerprint binding (stolen token detection)
   const SESSION_FP_PREFIX = "session:fp:";
   const SESSION_FP_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 days (matches session expiry)
 
@@ -218,7 +228,7 @@ export async function createApp(config: AuthServiceConfig) {
     },
   });
 
-  // 8. Build Hono app
+  // 9. Build Hono app
   const app = new Hono();
 
   // Global middleware

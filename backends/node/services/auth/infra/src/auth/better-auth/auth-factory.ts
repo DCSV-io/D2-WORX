@@ -38,6 +38,14 @@ export interface AuthHooks {
    * Typically backed by `AsyncLocalStorage` in the composition root.
    */
   getFingerprintForCurrentRequest?: () => string | undefined;
+  /**
+   * Custom password hash/verify functions with domain validation + HIBP checks.
+   * Created by `createPasswordFunctions()` in the composition root.
+   */
+  passwordFunctions?: {
+    hash: (password: string) => Promise<string>;
+    verify: (data: { hash: string; password: string }) => Promise<boolean>;
+  };
 }
 
 /**
@@ -79,6 +87,9 @@ export function createAuth(
     emailAndPassword: {
       enabled: true,
       autoSignIn: true,
+      minPasswordLength: config.passwordMinLength ?? AUTH_CONFIG_DEFAULTS.passwordMinLength,
+      maxPasswordLength: config.passwordMaxLength ?? AUTH_CONFIG_DEFAULTS.passwordMaxLength,
+      password: hooks?.passwordFunctions,
     },
 
     session: {
