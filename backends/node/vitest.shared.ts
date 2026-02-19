@@ -33,6 +33,7 @@ export default defineConfig({
       "@d2/auth-infra": resolve(import.meta.dirname, "services/auth/infra/src/index.ts"),
       "@d2/auth-app": resolve(import.meta.dirname, "services/auth/app/src/index.ts"),
       "@d2/auth-api": resolve(import.meta.dirname, "services/auth/api/src/index.ts"),
+      "@d2/comms-domain": resolve(import.meta.dirname, "services/comms/domain/src/index.ts"),
     },
   },
   test: {

@@ -1,0 +1,16 @@
+{
+  "name": "@d2/comms-tests",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@d2/comms-domain": "workspace:*",
+    "@d2/testing": "workspace:*",
+    "@d2/utilities": "workspace:*",
+    "vitest": "3.1.1"
+  }
+}

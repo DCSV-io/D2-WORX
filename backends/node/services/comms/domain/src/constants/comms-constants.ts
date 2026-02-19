@@ -1,0 +1,46 @@
+/**
+ * Retry policy for delivery attempts.
+ * Delays are indexed by attempt number (attempt 1 → index 0, etc.).
+ * Overflow attempts use the last value in the array.
+ */
+export const RETRY_POLICY = {
+  MAX_ATTEMPTS: 10,
+  DELAYS_MS: [5_000, 10_000, 30_000, 60_000, 300_000] as readonly number[],
+} as const;
+
+/**
+ * Default values for delivery processing.
+ */
+export const DELIVERY_DEFAULTS = {
+  DEFAULT_CONTENT_FORMAT: "markdown",
+} as const;
+
+/**
+ * Default channel enablement for new preferences.
+ */
+export const CHANNEL_DEFAULTS = {
+  EMAIL_ENABLED: true,
+  SMS_ENABLED: true,
+} as const;
+
+/**
+ * Quiet hours validation bounds.
+ * Hours are 0–23, minutes are 0–59. Format: "HH:MM".
+ */
+export const QUIET_HOURS = {
+  MIN_HOUR: 0,
+  MAX_HOUR: 23,
+  MIN_MINUTE: 0,
+  MAX_MINUTE: 59,
+} as const;
+
+/**
+ * Constraints for threads, messages, attachments, and reactions.
+ */
+export const THREAD_CONSTRAINTS = {
+  MAX_TITLE_LENGTH: 255,
+  MAX_MESSAGE_LENGTH: 50_000,
+  MAX_ATTACHMENTS_PER_MESSAGE: 20,
+  MAX_FILE_SIZE_BYTES: 50 * 1024 * 1024, // 50 MB
+  MAX_REACTION_LENGTH: 64,
+} as const;
