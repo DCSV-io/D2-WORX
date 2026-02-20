@@ -2,6 +2,7 @@
 // Zero BetterAuth imports — this package is pure application logic.
 
 import type { IHandlerContext } from "@d2/handler";
+import type { IMessagePublisher } from "@d2/messaging";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { Commands, Queries, Complex } from "@d2/geo-client";
 
@@ -269,17 +270,22 @@ export function createSignInThrottleHandlers(
 export type SignInThrottleHandlers = ReturnType<typeof createSignInThrottleHandlers>;
 
 /**
- * Creates notification publisher handlers (stubbed — no RabbitMQ yet).
+ * Creates notification publisher handlers.
  *
- * When the notification service is built, these handlers will inject a real
- * publisher and publish messages to RabbitMQ. The composition root wires
- * BetterAuth callbacks (sendVerificationEmail, sendResetPassword,
- * sendInvitationEmail) to call these handlers.
+ * When a publisher is provided, verification and password-reset events are
+ * published to the `events.auth` RabbitMQ fanout exchange. Without a publisher,
+ * handlers log the request and return success (useful for local development).
+ *
+ * The composition root wires BetterAuth callbacks (sendVerificationEmail,
+ * sendResetPassword, sendInvitationEmail) to call these handlers.
  */
-export function createNotificationHandlers(context: IHandlerContext) {
+export function createNotificationHandlers(
+  context: IHandlerContext,
+  publisher?: IMessagePublisher,
+) {
   return {
-    publishVerificationEmail: new PublishVerificationEmail(context),
-    publishPasswordReset: new PublishPasswordReset(context),
+    publishVerificationEmail: new PublishVerificationEmail(context, publisher),
+    publishPasswordReset: new PublishPasswordReset(context, publisher),
     publishInvitationEmail: new PublishInvitationEmail(context),
   };
 }

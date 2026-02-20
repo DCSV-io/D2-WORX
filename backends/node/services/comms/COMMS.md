@@ -224,10 +224,10 @@ message_reaction
 
 ## Channels & Providers
 
-| Channel   | Protocol         | Provider (initial)         | Notes                                          |
+| Channel   | Protocol         | Provider                   | Notes                                          |
 |-----------|------------------|----------------------------|-------------------------------------------------|
-| Email     | SMTP or HTTP API | AWS SES or Resend          | HTML wrapper around sender's body               |
-| SMS       | HTTP API         | Twilio or AWS SNS          | Truncated body, no HTML                         |
+| Email     | HTTP API         | **Resend**                 | HTML wrapper around sender's body               |
+| SMS       | HTTP API         | **Twilio**                 | Truncated body, no HTML                         |
 | Push      | gRPC → SignalR   | SignalR gateway (.NET)     | Title + body, delivered to connected clients    |
 | In-App    | DB + Push        | Local PG + SignalR gateway | Stored in `notification` table, pushed if online|
 
@@ -469,7 +469,7 @@ await comms.notify({
 
 ### `D2.Comms.Client` (.NET)
 
-Same pattern for .NET services, publishing via raw AMQP with Protocol Buffer contracts.
+Same pattern for .NET services, publishing delivery requests via raw AMQP with Protocol Buffer contracts.
 
 ---
 
@@ -550,14 +550,18 @@ backends/node/services/comms/
 
 ---
 
+## Resolved Decisions
+
+- **Email provider**: **Resend** — best DX (clean TS SDK, `{ data, error }` pattern), 100/day free tier (never expires), $20/mo for 50K. Shared IP pool is well-managed. No dedicated IP needed at low volumes (would hurt deliverability). Trial mode for development.
+- **SMS provider**: **Twilio** — best docs/SDK in SMS space, $15 trial credit (~1,900 msgs), field service dispatch is their core vertical. Two-way SMS for worker replies. Trial mode (verified numbers only) until 10DLC registration. 10DLC requires EIN (free from IRS, no LLC needed) — deferred until closer to beta launch (~3 week lead time for carrier approval).
+- **Trial runway**: Both providers cover all development, integration testing, and small alpha (verified numbers) at $0 cost. First real spend: 10DLC registration (~$21 one-time + $2/mo) when sending SMS to unverified users.
+
 ## Open Questions
 
-- **Email provider**: Resend vs AWS SES vs SendGrid? Resend has the best DX, SES is cheapest at scale.
-- **SMS provider**: Twilio vs AWS SNS? Twilio has better DX, SNS is cheaper.
 - **Template format**: Handlebars/Mustache for simple interpolation, or React Email / MJML for richer templates?
 - **SignalR gateway**: Does it already exist in the Aspire stack, or is it a new service to build?
 - **File storage for attachments**: MinIO is in the Aspire stack — confirm it's the right choice for message attachments.
-- **Rate limiting on comms**: Should the delivery engine rate-limit itself per-provider (e.g., SES has sending limits)?
+- **Rate limiting on comms**: Should the delivery engine rate-limit itself per-provider (e.g., Resend has 100/day on free tier)?
 - **Unsubscribe / CAN-SPAM compliance**: Marketing emails need unsubscribe links. Transactional emails don't. How do we classify?
 
 ---

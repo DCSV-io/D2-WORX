@@ -10,6 +10,7 @@ describe("DeliveryAttempt", () => {
   const validInput = {
     requestId: "req-123",
     channel: "email" as const,
+    recipientAddress: "user@example.com",
     attemptNumber: 1,
   };
 
@@ -19,6 +20,7 @@ describe("DeliveryAttempt", () => {
       expect(attempt.status).toBe("pending");
       expect(attempt.requestId).toBe("req-123");
       expect(attempt.channel).toBe("email");
+      expect(attempt.recipientAddress).toBe("user@example.com");
       expect(attempt.attemptNumber).toBe(1);
       expect(attempt.id).toHaveLength(36);
       expect(attempt.createdAt).toBeInstanceOf(Date);
@@ -45,6 +47,12 @@ describe("DeliveryAttempt", () => {
     it("should throw when channel is invalid", () => {
       expect(() =>
         createDeliveryAttempt({ ...validInput, channel: "push" as never }),
+      ).toThrow(CommsValidationError);
+    });
+
+    it("should throw when recipientAddress is empty", () => {
+      expect(() =>
+        createDeliveryAttempt({ ...validInput, recipientAddress: "" }),
       ).toThrow(CommsValidationError);
     });
 

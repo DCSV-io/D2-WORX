@@ -16,6 +16,7 @@ export interface DeliveryAttempt {
   readonly id: string;
   readonly requestId: string;
   readonly channel: Channel;
+  readonly recipientAddress: string;
   readonly status: DeliveryStatus;
   readonly providerMessageId: string | null;
   readonly error: string | null;
@@ -27,6 +28,7 @@ export interface DeliveryAttempt {
 export interface CreateDeliveryAttemptInput {
   readonly requestId: string;
   readonly channel: Channel;
+  readonly recipientAddress: string;
   readonly attemptNumber: number;
   readonly id?: string;
 }
@@ -59,6 +61,15 @@ export function createDeliveryAttempt(input: CreateDeliveryAttemptInput): Delive
     );
   }
 
+  if (!input.recipientAddress) {
+    throw new CommsValidationError(
+      "DeliveryAttempt",
+      "recipientAddress",
+      input.recipientAddress,
+      "is required.",
+    );
+  }
+
   if (!Number.isInteger(input.attemptNumber) || input.attemptNumber < 1) {
     throw new CommsValidationError(
       "DeliveryAttempt",
@@ -72,6 +83,7 @@ export function createDeliveryAttempt(input: CreateDeliveryAttemptInput): Delive
     id: input.id ?? generateUuidV7(),
     requestId: input.requestId,
     channel: input.channel,
+    recipientAddress: input.recipientAddress,
     status: "pending",
     providerMessageId: null,
     error: null,

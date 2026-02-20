@@ -21,6 +21,7 @@
     "@d2/geo-client": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",
+    "@d2/messaging": "workspace:*",
     "@d2/protos": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/utilities": "workspace:*",

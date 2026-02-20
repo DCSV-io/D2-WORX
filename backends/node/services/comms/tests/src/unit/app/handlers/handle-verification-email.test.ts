@@ -1,0 +1,56 @@
+import { describe, it, expect, vi } from "vitest";
+import { D2Result } from "@d2/result";
+import { HandleVerificationEmail } from "@d2/comms-app";
+import { createMockContext } from "../helpers/mock-handlers.js";
+
+describe("HandleVerificationEmail", () => {
+  it("should call Deliver with correct parameters", async () => {
+    const mockDeliver = {
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.ok({ data: { messageId: "m1", requestId: "r1", attempts: [] } }),
+      ),
+    };
+
+    const handler = new HandleVerificationEmail(mockDeliver as any, createMockContext());
+
+    const result = await handler.handleAsync({
+      userId: "user-123",
+      email: "user@example.com",
+      name: "Test User",
+      verificationUrl: "https://example.com/verify?token=abc",
+      token: "abc",
+    });
+
+    expect(result.success).toBe(true);
+    expect(mockDeliver.handleAsync).toHaveBeenCalledOnce();
+
+    const deliverInput = mockDeliver.handleAsync.mock.calls[0][0];
+    expect(deliverInput.senderService).toBe("auth");
+    expect(deliverInput.sensitive).toBe(true);
+    expect(deliverInput.recipientUserId).toBe("user-123");
+    expect(deliverInput.channels).toEqual(["email"]);
+    expect(deliverInput.templateName).toBe("email-verification");
+    expect(deliverInput.content).toContain("user@example.com" === "user@example.com" ? "verify" : "");
+    expect(deliverInput.correlationId).toBeDefined();
+  });
+
+  it("should propagate Deliver failure", async () => {
+    const mockDeliver = {
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.fail({ messages: ["Delivery failed"], statusCode: 502 }),
+      ),
+    };
+
+    const handler = new HandleVerificationEmail(mockDeliver as any, createMockContext());
+
+    const result = await handler.handleAsync({
+      userId: "user-123",
+      email: "user@example.com",
+      name: "Test User",
+      verificationUrl: "https://example.com/verify?token=abc",
+      token: "abc",
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
