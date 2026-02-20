@@ -8,8 +8,6 @@ export {
   locationInputSchema,
   contactInputSchema,
 } from "./validation/contact-schemas.js";
-export type { GeoRefDataUpdated } from "./messages/geo-ref-data-updated.js";
-
 // gRPC helpers
 export { createApiKeyInterceptor } from "./grpc/api-key-interceptor.js";
 export { createGeoServiceClient } from "./grpc/create-geo-client.js";

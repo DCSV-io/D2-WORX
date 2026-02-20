@@ -1,49 +1,50 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="UpdatePublisher.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Geo.Infra.Messaging.MT.Publishers;
+namespace D2.Geo.Infra.Messaging.Publishers;
 
 using System.Net;
-using D2.Geo.Client.Messages;
+using D2.Events.Protos.V1;
+using D2.Shared.Messaging.RabbitMQ;
+using D2.Shared.Messaging.RabbitMQ.Conventions;
 using D2.Shared.Result;
-using MassTransit;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
-/// MassTransit publisher for geographic reference data updated messages.
+/// Publishes geographic reference data updated events via raw AMQP.
 /// </summary>
 public class UpdatePublisher
 {
-    private readonly IPublishEndpoint r_publishEndpoint;
+    private readonly ProtoPublisher r_publisher;
     private readonly ILogger<UpdatePublisher> r_logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdatePublisher"/> class.
     /// </summary>
     ///
-    /// <param name="publishEndpoint">
-    /// The MassTransit publish endpoint.
+    /// <param name="publisher">
+    /// The proto publisher.
     /// </param>
     /// <param name="logger">
     /// The logger.
     /// </param>
     public UpdatePublisher(
-        IPublishEndpoint publishEndpoint,
+        ProtoPublisher publisher,
         ILogger<UpdatePublisher> logger)
     {
-        r_publishEndpoint = publishEndpoint;
+        r_publisher = publisher;
         r_logger = logger;
     }
 
     /// <summary>
-    /// Publishes a geographic reference data updated message.
+    /// Publishes a geographic reference data updated event.
     /// </summary>
     ///
     /// <param name="message">
-    /// The message to publish.
+    /// The event to publish.
     /// </param>
     /// <param name="ct">
     /// The cancellation token.
@@ -53,15 +54,18 @@ public class UpdatePublisher
     /// A <see cref="Task"/> containing a <see cref="D2Result"/> indicating success or failure.
     /// </returns>
     public virtual async Task<D2Result> PublishAsync(
-        GeoRefDataUpdated message,
+        GeoRefDataUpdatedEvent message,
         CancellationToken ct = default)
     {
         try
         {
-            await r_publishEndpoint.Publish(message, ct);
+            await r_publisher.PublishAsync(
+                AmqpConventions.EventExchange("geo"),
+                message,
+                ct: ct);
 
             r_logger.LogInformation(
-                "Successfully published GeoRefDataUpdated message for version {Version}",
+                "Successfully published GeoRefDataUpdated event for version {Version}",
                 message.Version);
 
             return D2Result.Ok();
@@ -70,7 +74,7 @@ public class UpdatePublisher
         {
             r_logger.LogError(
                 ex,
-                "Failed to publish GeoRefDataUpdated message for version {Version}",
+                "Failed to publish GeoRefDataUpdated event for version {Version}",
                 message.Version);
 
             return D2Result.Fail(

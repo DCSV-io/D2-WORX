@@ -3,12 +3,14 @@ export interface MessageBusOptions {
   connectionName?: string;
 }
 
-export interface ConsumerConfig {
+export interface ConsumerConfig<T = unknown> {
   queue: string;
   queueOptions?: { durable?: boolean };
   prefetchCount?: number;
   exchanges?: Array<{ exchange: string; type: "topic" | "direct" | "fanout" }>;
   queueBindings?: Array<{ exchange: string; routingKey: string }>;
+  /** Optional deserializer for the raw message body. When provided, the raw JSON is passed through this function before reaching the handler. */
+  deserialize?: (raw: unknown) => T;
 }
 
 export interface PublisherConfig {

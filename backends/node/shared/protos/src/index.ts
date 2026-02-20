@@ -78,3 +78,21 @@ export {
 
 // Timestamp (well-known type)
 export type { Timestamp } from "./generated/google/protobuf/timestamp.js";
+
+// Events — Geo
+export type { GeoRefDataUpdatedEvent } from "./generated/events/v1/geo_events.js";
+
+export { GeoRefDataUpdatedEvent as GeoRefDataUpdatedEventFns } from "./generated/events/v1/geo_events.js";
+
+// Events — Auth
+export type {
+  SendVerificationEmailEvent,
+  SendPasswordResetEvent,
+  SendInvitationEmailEvent,
+} from "./generated/events/v1/auth_events.js";
+
+export {
+  SendVerificationEmailEvent as SendVerificationEmailEventFns,
+  SendPasswordResetEvent as SendPasswordResetEventFns,
+  SendInvitationEmailEvent as SendInvitationEmailEventFns,
+} from "./generated/events/v1/auth_events.js";

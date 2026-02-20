@@ -7,12 +7,12 @@
 namespace D2.Geo.Tests.Integration.Client;
 
 using System.Net;
+using D2.Events.Protos.V1;
 using D2.Geo.Client;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
-using D2.Geo.Client.Messages;
 using D2.Services.Protos.Geo.V1;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
@@ -288,7 +288,7 @@ public class GeoRefDataTests : IAsyncLifetime
         await redis.GetDatabase().KeyDeleteAsync(Constants.DIST_CACHE_KEY_GEO_REF_DATA);
 
         var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();
-        var message = new GeoRefDataUpdated("2.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "2.0.0" };
 
         // Act
         var result = await handler.HandleAsync(message, Ct);
@@ -321,7 +321,7 @@ public class GeoRefDataTests : IAsyncLifetime
             Ct);
 
         var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();
-        var message = new GeoRefDataUpdated("2.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "2.0.0" };
 
         // Act
         var result = await handler.HandleAsync(message, Ct);
@@ -357,7 +357,7 @@ public class GeoRefDataTests : IAsyncLifetime
         await setInMemHandler.HandleAsync(new(ClientTestHelpers.TestGeoRefData), Ct);
 
         var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();
-        var message = new GeoRefDataUpdated(ClientTestHelpers.TestGeoRefData.Version);
+        var message = new GeoRefDataUpdatedEvent { Version = ClientTestHelpers.TestGeoRefData.Version };
 
         // Act
         var result = await handler.HandleAsync(message, Ct);

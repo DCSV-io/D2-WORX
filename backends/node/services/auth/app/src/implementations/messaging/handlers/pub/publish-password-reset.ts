@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { SendPasswordReset } from "../../../../messages/send-password-reset.js";
+import type { SendPasswordReset } from "../../../../messages/index.js";
 import type {
   IPublishPasswordResetHandler,
   PublishPasswordResetOutput,

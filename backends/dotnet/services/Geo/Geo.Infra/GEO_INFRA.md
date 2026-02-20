@@ -1,12 +1,12 @@
 # Geo.Infra
 
-Infrastructure layer for the Geo microservice implementing Entity Framework Core persistence, MassTransit messaging, database configuration, seed data, and repository handlers.
+Infrastructure layer for the Geo microservice implementing Entity Framework Core persistence, raw AMQP messaging with Protocol Buffer contracts, database configuration, seed data, and repository handlers.
 
 ## Files
 
 | File Name                                | Description                                                                                                                                                                  |
 | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Extensions.cs](Extensions.cs)           | DI extension method AddGeoInfra registering GeoDbContext, MassTransit with RabbitMQ, repository handlers, messaging publisher handlers, and UpdatedConsumer from Geo.Client. |
+| [Extensions.cs](Extensions.cs)           | DI extension method AddGeoInfra registering GeoDbContext, RabbitMQ messaging (raw AMQP), repository handlers, messaging publisher handlers, and UpdatedConsumerService from Geo.Client. |
 | [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration including BatchSize for repository operations.                                                                                      |
 
 ---
@@ -19,23 +19,21 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > | File Name                                     | Description                                                                                        |
 > | --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-> | [Update.cs](Messaging/Handlers/Pub/Update.cs) | Handler for publishing GeoRefDataUpdated messages via UpdatePublisher when reference data changes. |
+> | [Update.cs](Messaging/Handlers/Pub/Update.cs) | Handler for publishing GeoRefDataUpdatedEvent via UpdatePublisher when reference data changes. |
 >
 > #### Sub (Subscribers)
 >
 > No subscriber handlers - shared subscribers (like Updated from Geo.Client) are registered via consumer services.
 >
-> ### MT (MassTransit)
+> ### Publishers
 >
-> #### Consumers
+> | File Name                                                        | Description                                                                                                                    |
+> | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+> | [UpdatePublisher.cs](Messaging/Publishers/UpdatePublisher.cs)    | AMQP publisher wrapping ProtoPublisher for GeoRefDataUpdatedEvent messages with error handling and logging.                    |
 >
-> No Geo-specific consumers - shared consumers (like UpdatedConsumer from Geo.Client) are registered via Extensions.cs.
+> ### Consumers
 >
-> #### Publishers
->
-> | File Name                                                        | Description                                                                                                     |
-> | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-> | [UpdatePublisher.cs](Messaging/MT/Publishers/UpdatePublisher.cs) | MassTransit publisher wrapping IPublishEndpoint for GeoRefDataUpdated messages with error handling and logging. |
+> No Geo-specific consumers — shared consumers (like UpdatedConsumerService from Geo.Client) are registered as hosted services via Extensions.cs.
 
 ---
 

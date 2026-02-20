@@ -49,7 +49,7 @@ Summary:
 - Geo infrastructure layer
   - Caching provider registration
   - EF Core + PostgreSQL repository pattern
-  - MassTransit + RabbitMQ messaging integration
+  - Raw AMQP + RabbitMQ messaging with Protocol Buffer event contracts
 - Geo service application layer
   - CQRS handlers for geographic reference data retrieval and update requests
 - Geo service gRPC API layer
@@ -240,7 +240,7 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Rate Limiting      | [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | [@d2/ratelimit](backends/node/shared/implementations/middleware/ratelimit/default/RATELIMIT.md)                            | Multi-dimensional sliding-window rate limiting       |
 > | Idempotency        | [Idempotency.Default](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                   | [@d2/idempotency](backends/node/shared/implementations/middleware/idempotency/default/IDEMPOTENCY.md)                      | Idempotency-Key header middleware (Redis-backed)     |
 >
-> _Messaging (Node.js only — .NET uses MassTransit directly):_
+> _Messaging:_
 >
 > | Component                                                    | Description                                            |
 > | ------------------------------------------------------------ | ------------------------------------------------------ |
@@ -308,7 +308,7 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
 ![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
 ![Serilog](https://img.shields.io/badge/Serilog-9.0-512BD4?logo=dotnet)
-![MassTransit](https://img.shields.io/badge/MassTransit-9.0-512BD4?logo=dotnet)
+![RabbitMQ.Client](https://img.shields.io/badge/RabbitMQ.Client-7.1-FF6600?logo=rabbitmq)
 
 #### Node.js Backend
 

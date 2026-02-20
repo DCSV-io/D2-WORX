@@ -74,20 +74,7 @@ No sticky sessions required. Session revocation propagates instantly via Redis.
 
 ## Blockers Fixed
 
-### 1. MassTransit `GeoRefDataUpdated` Competing Consumer
-
-**Problem:** `Geo.Infra/Extensions.cs` registered `UpdatedConsumer` with default MassTransit queue naming. With multiple Geo.API instances, `ConfigureEndpoints` creates a single named queue (`updated-consumer`) — MassTransit distributes messages across consumers (competing consumer pattern). Only ONE instance receives each `GeoRefDataUpdated` message, leaving other instances with stale reference data caches.
-
-**Fix:** Set `Temporary = true` on the consumer endpoint:
-
-```csharp
-x.AddConsumer<UpdatedConsumer>()
-    .Endpoint(e => e.Temporary = true);
-```
-
-This creates a unique auto-delete queue per instance (includes GUID in name, non-durable, removed on disconnect). All instances receive every broadcast — correct for cache invalidation signals.
-
-### 2. Auth Service In-Memory Rate Limiter
+### 1. Auth Service In-Memory Rate Limiter
 
 **Problem:** `rate-limit.ts` used a per-process `Map` for rate limit counters. With multiple auth instances, each has independent counters — an attacker rotating across instances gets N× the allowed rate.
 
@@ -147,7 +134,7 @@ Cloudflare Tunnels remain viable for multi-machine deployments:
 
 When adding a new service, verify:
 
-- [ ] **Cache invalidation broadcasts** — If using MassTransit for cache refresh signals, register consumers with `Endpoint(e => e.Temporary = true)` (fanout, not competing)
+- [ ] **Cache invalidation broadcasts** — Use fanout exchanges with exclusive auto-delete queues per instance (not competing consumers) for cache refresh signals
 - [ ] **Rate limiting** — Use `@d2/ratelimit` (Redis-backed) or `.NET RateLimit.Default`, never per-process Maps
 - [ ] **Session/auth** — Validate JWTs via JWKS (no instance affinity), sessions via Redis
 - [ ] **Idempotency** — Use Redis-backed `@d2/idempotency`, not in-memory dedup

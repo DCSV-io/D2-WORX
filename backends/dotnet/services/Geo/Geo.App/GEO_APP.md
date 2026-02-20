@@ -90,7 +90,7 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | File Name                                                            | Description                                                                    |
 > | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 > | [IPubs.cs](Interfaces/Messaging/Handlers/Pub/IPubs.cs)               | Partial interface defining publisher operations for geographic data messaging. |
-> | [IPubs.Update.cs](Interfaces/Messaging/Handlers/Pub/IPubs.Update.cs) | Extends IPubs with IUpdateHandler for publishing GeoRefDataUpdated messages.   |
+> | [IPubs.Update.cs](Interfaces/Messaging/Handlers/Pub/IPubs.Update.cs) | Extends IPubs with IUpdateHandler for publishing GeoRefDataUpdatedEvent events. |
 >
 > ##### Sub (Subscribers)
 >

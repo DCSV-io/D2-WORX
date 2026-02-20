@@ -471,7 +471,7 @@ refactor: simplify caching logic
 ### Communication Patterns
 
 - **Sync:** gRPC between services (HTTP/2)
-- **Async:** RabbitMQ events via MassTransit
+- **Async:** RabbitMQ events via raw AMQP with Protocol Buffer contracts
 - **Caching:** Memory → Redis → Database → Disk (fallback)
 
 ---

@@ -39,4 +39,4 @@ await publisher.publish("ref-data.updated", { version: 42 });
 
 ## .NET Equivalent
 
-MassTransit — .NET uses the full MassTransit framework with RabbitMQ transport. The Node.js version uses a thin wrapper since there's no equivalent TypeScript MassTransit.
+Messaging.RabbitMQ — .NET uses a shared `Messaging.RabbitMQ` library with `ProtoPublisher`/`ProtoConsumer<T>` for raw AMQP with proto canonical JSON serialization. Both sides now use the same transport and serialization format.

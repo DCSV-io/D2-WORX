@@ -1,5 +1,5 @@
 import type { IHandler } from "@d2/handler";
-import type { SendInvitationEmail } from "../../../../messages/send-invitation-email.js";
+import type { SendInvitationEmail } from "../../../../messages/index.js";
 
 export interface PublishInvitationEmailOutput {}
 

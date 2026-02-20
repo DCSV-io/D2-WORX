@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Updated.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -13,7 +13,7 @@ using D2.Shared.Handler;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using H = D2.Geo.Client.Interfaces.Messaging.Handlers.Sub.ISubs.IUpdatedHandler;
-using I = D2.Geo.Client.Messages.GeoRefDataUpdated;
+using I = D2.Events.Protos.V1.GeoRefDataUpdatedEvent;
 using O = D2.Geo.Client.Interfaces.Messaging.Handlers.Sub.ISubs.UpdatedOutput;
 
 /// <summary>

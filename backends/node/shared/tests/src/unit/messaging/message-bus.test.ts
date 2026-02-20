@@ -119,6 +119,43 @@ describe("MessageBus", () => {
       expect(handler).toHaveBeenCalledWith({ version: "1.0.0" });
     });
 
+    it("should apply deserialize function to message body when provided", async () => {
+      const bus = new MessageBus({ url: "amqp://localhost" });
+      const handler = vi.fn().mockResolvedValue(undefined);
+      const deserialize = vi.fn((raw: unknown) => ({
+        version: (raw as { version: string }).version.toUpperCase(),
+      }));
+
+      bus.subscribe({ queue: "q", deserialize }, handler);
+
+      const internalCallback = mockConnection.createConsumer.mock.calls[0][1] as (
+        msg: unknown,
+      ) => Promise<void>;
+      await internalCallback({ body: { version: "1.0.0" } });
+
+      expect(deserialize).toHaveBeenCalledWith({ version: "1.0.0" });
+      expect(handler).toHaveBeenCalledWith({ version: "1.0.0".toUpperCase() });
+    });
+
+    it("should propagate deserialize errors (nack path)", async () => {
+      const bus = new MessageBus({ url: "amqp://localhost" });
+      const handler = vi.fn();
+      const deserialize = vi.fn(() => {
+        throw new Error("Invalid proto JSON");
+      });
+
+      bus.subscribe({ queue: "q", deserialize }, handler);
+
+      const internalCallback = mockConnection.createConsumer.mock.calls[0][1] as (
+        msg: unknown,
+      ) => Promise<void>;
+
+      await expect(internalCallback({ body: { bad: "data" } })).rejects.toThrow(
+        "Invalid proto JSON",
+      );
+      expect(handler).not.toHaveBeenCalled();
+    });
+
     it("should return a consumer with close method", async () => {
       const bus = new MessageBus({ url: "amqp://localhost" });
       const consumer = bus.subscribe({ queue: "q" }, vi.fn());
@@ -177,6 +214,33 @@ describe("MessageBus", () => {
       await pub.close();
 
       expect(mockPublisher.close).toHaveBeenCalled();
+    });
+  });
+
+  describe("waitForConnection", () => {
+    it("should call onConnect with the given timeout", async () => {
+      mockConnection.onConnect = vi.fn().mockResolvedValue(undefined);
+      const bus = new MessageBus({ url: "amqp://localhost" });
+
+      await bus.waitForConnection(5000);
+
+      expect(mockConnection.onConnect).toHaveBeenCalledWith(5000, true);
+    });
+
+    it("should use default timeout of 10000ms when none provided", async () => {
+      mockConnection.onConnect = vi.fn().mockResolvedValue(undefined);
+      const bus = new MessageBus({ url: "amqp://localhost" });
+
+      await bus.waitForConnection();
+
+      expect(mockConnection.onConnect).toHaveBeenCalledWith(10_000, true);
+    });
+
+    it("should propagate errors from onConnect", async () => {
+      mockConnection.onConnect = vi.fn().mockRejectedValue(new Error("Connection timeout"));
+      const bus = new MessageBus({ url: "amqp://localhost" });
+
+      await expect(bus.waitForConnection(100)).rejects.toThrow("Connection timeout");
     });
   });
 

@@ -1,5 +1,5 @@
 import type { IHandler } from "@d2/handler";
-import type { SendPasswordReset } from "../../../../messages/send-password-reset.js";
+import type { SendPasswordReset } from "../../../../messages/index.js";
 
 export interface PublishPasswordResetOutput {}
 

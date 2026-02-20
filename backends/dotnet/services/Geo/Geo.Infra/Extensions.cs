@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Extensions.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -6,17 +6,16 @@
 
 namespace D2.Geo.Infra;
 
-using D2.Geo.Client.Messaging.MT.Consumers;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
-using D2.Geo.Infra.Messaging.MT.Publishers;
+using D2.Geo.Infra.Messaging.Publishers;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.C;
 using D2.Geo.Infra.Repository.Handlers.D;
 using D2.Geo.Infra.Repository.Handlers.R;
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.InMemoryCache.Default;
+using D2.Shared.Messaging.RabbitMQ;
 using D2.Shared.Transactions.Pg;
-using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -101,26 +100,9 @@ public static class Extensions
             // Messaging (publish) handlers.
             services.AddTransient<App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler, Update>();
 
-            // MassTransit publishers.
+            // RabbitMQ messaging (raw AMQP, proto-serialized).
+            services.AddRabbitMqMessaging(messageQueueConnectionString);
             services.AddTransient<UpdatePublisher>();
-
-            // Configure MassTransit with RabbitMQ.
-            services.AddMassTransit(x =>
-            {
-                // Add geographic reference data updated consumer.
-                // Temporary = true creates a unique auto-delete queue per instance,
-                // converting from competing-consumer (one gets it) to broadcast
-                // (all instances get it). Required for multi-instance cache refresh.
-                x.AddConsumer<UpdatedConsumer>()
-                    .Endpoint(e => e.Temporary = true);
-
-                // Configure RabbitMQ as the transport.
-                x.UsingRabbitMq((context, cfg) =>
-                {
-                    cfg.Host(messageQueueConnectionString);
-                    cfg.ConfigureEndpoints(context);
-                });
-            });
 
             return services;
         }

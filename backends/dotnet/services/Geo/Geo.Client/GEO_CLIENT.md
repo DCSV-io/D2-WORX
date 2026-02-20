@@ -8,7 +8,7 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | [Extensions.cs](Extensions.cs)             | DI extension methods: `AddGeoRefDataConsumer`, `AddGeoRefDataProvider`, `AddWhoIsCache`, `AddContactHandlers`.    |
 | [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, and `ApiKey` for gRPC authentication. |
-| [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and MassTransit.Abstractions. |
+| [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and Messaging.RabbitMQ.       |
 
 ---
 
@@ -47,14 +47,6 @@ public record FindWhoIsInput(
 ```
 
 This allows input logging to remain enabled (useful for debugging) while ensuring PII is masked in log output.
-
----
-
-## Messages
-
-| File Name                                             | Description                                                                  |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [GeoRefDataUpdated.cs](Messages/GeoRefDataUpdated.cs) | Record representing a geographic reference data update event with a Version. |
 
 ---
 
@@ -104,7 +96,7 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 > | File Name                                                              | Description                                                                                 |
 > | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 > | [ISubs.cs](Interfaces/Messaging/Handlers/Sub/ISubs.cs)                 | Partial interface defining subscription operations for geographic reference data messaging. |
-> | [ISubs.Updated.cs](Interfaces/Messaging/Handlers/Sub/ISubs.Updated.cs) | Extends ISubs with IUpdatedHandler for processing GeoRefDataUpdated messages.               |
+> | [ISubs.Updated.cs](Interfaces/Messaging/Handlers/Sub/ISubs.Updated.cs) | Extends ISubs with IUpdatedHandler for processing GeoRefDataUpdatedEvent events.             |
 
 ---
 
@@ -150,15 +142,13 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > | File Name                                       | Description                                                                                                      |
 > | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-> | [Updated.cs](Messaging/Handlers/Sub/Updated.cs) | Handler processing GeoRefDataUpdated messages by requesting fresh data from Geo service and updating all caches. |
+> | [Updated.cs](Messaging/Handlers/Sub/Updated.cs) | Handler processing GeoRefDataUpdatedEvent events by requesting fresh data from Geo service and updating all caches. |
 >
-> ### MT (MassTransit)
+> ### Consumers
 >
-> #### Consumers
->
-> | File Name                                                       | Description                                                                                                |
-> | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-> | [UpdatedConsumer.cs](Messaging/MT/Consumers/UpdatedConsumer.cs) | MassTransit IConsumer implementation that delegates GeoRefDataUpdated messages to the Updated sub handler. |
+> | File Name                                                                           | Description                                                                                                             |
+> | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+> | [UpdatedConsumerService.cs](Messaging/Consumers/UpdatedConsumerService.cs)           | BackgroundService hosting a ProtoConsumer<GeoRefDataUpdatedEvent> that delegates to the Updated sub handler.            |
 
 ---
 

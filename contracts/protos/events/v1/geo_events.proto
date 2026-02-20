@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package d2.events.v1;
+
+option csharp_namespace = "D2.Events.Protos.V1";
+
+// Event published when geographic reference data has been updated.
+message GeoRefDataUpdatedEvent {
+  string version = 1;
+}

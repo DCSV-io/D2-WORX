@@ -104,7 +104,7 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 
 | File Name                                                               | Description                                                                                                                |
 | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| [UpdatePublisherTests.cs](Unit/Infra/Messaging/UpdatePublisherTests.cs) | Tests for UpdatePublisher verifying IPublishEndpoint integration, exception handling, cancellation token propagation.      |
+| [UpdatePublisherTests.cs](Unit/Infra/Messaging/UpdatePublisherTests.cs) | Tests for UpdatePublisher verifying ProtoPublisher integration, exception handling, cancellation token propagation.        |
 | [UpdateTests.cs](Unit/Infra/Messaging/UpdateTests.cs)                   | Tests for Update handler verifying message publishing, version passthrough, success/failure handling via mocked publisher. |
 
 #### Repository

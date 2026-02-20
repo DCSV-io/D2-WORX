@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { SendVerificationEmail } from "../../../../messages/send-verification-email.js";
+import type { SendVerificationEmail } from "../../../../messages/index.js";
 import type {
   IPublishVerificationEmailHandler,
   PublishVerificationEmailOutput,

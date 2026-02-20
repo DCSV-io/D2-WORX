@@ -469,7 +469,7 @@ await comms.notify({
 
 ### `D2.Comms.Client` (.NET)
 
-Same pattern for .NET services, publishing via MassTransit.
+Same pattern for .NET services, publishing via raw AMQP with Protocol Buffer contracts.
 
 ---
 

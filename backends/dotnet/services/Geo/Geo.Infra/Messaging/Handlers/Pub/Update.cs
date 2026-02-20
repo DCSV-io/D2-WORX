@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Update.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -6,8 +6,8 @@
 
 namespace D2.Geo.Infra.Messaging.Handlers.Pub;
 
-using D2.Geo.Client.Messages;
-using D2.Geo.Infra.Messaging.MT.Publishers;
+using D2.Events.Protos.V1;
+using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
@@ -27,7 +27,7 @@ public class Update : BaseHandler<Update, I, O>, H
     /// </summary>
     ///
     /// <param name="publisher">
-    /// The MassTransit publisher for geographic reference data updates.
+    /// The publisher for geographic reference data updates.
     /// </param>
     /// <param name="context">
     /// The handler context.
@@ -59,14 +59,14 @@ public class Update : BaseHandler<Update, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        var message = new GeoRefDataUpdated(input.Version);
+        var message = new GeoRefDataUpdatedEvent { Version = input.Version };
 
         var result = await r_publisher.PublishAsync(message, ct);
 
         if (result.Failed)
         {
             Context.Logger.LogError(
-                "Failed to publish GeoRefDataUpdated message for version {Version}. TraceId: {TraceId}",
+                "Failed to publish GeoRefDataUpdated event for version {Version}. TraceId: {TraceId}",
                 input.Version,
                 TraceId);
 
@@ -77,7 +77,7 @@ public class Update : BaseHandler<Update, I, O>, H
         }
 
         Context.Logger.LogInformation(
-            "Published GeoRefDataUpdated message for version {Version}. TraceId: {TraceId}",
+            "Published GeoRefDataUpdated event for version {Version}. TraceId: {TraceId}",
             input.Version,
             TraceId);
 

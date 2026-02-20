@@ -49,7 +49,7 @@ Handler contract interfaces organized in TLC hierarchy, mirroring .NET `Geo.Clie
 >
 > | File                                        | Interface         | Description                           |
 > | ------------------------------------------- | ----------------- | ------------------------------------- |
-> | [updated.ts](src/interfaces/sub/updated.ts) | `IUpdatedHandler` | Process `GeoRefDataUpdated` messages. |
+> | [updated.ts](src/interfaces/sub/updated.ts) | `IUpdatedHandler` | Process `GeoRefDataUpdatedEvent` events. |
 
 ---
 
@@ -87,21 +87,13 @@ Handler implementations organized in TLC hierarchy. All extend `BaseHandler` and
 
 ---
 
-## Messages
-
-| File                                                            | Description                                                               |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [geo-ref-data-updated.ts](src/messages/geo-ref-data-updated.ts) | `GeoRefDataUpdated` message type (version number for cache invalidation). |
-
----
-
 ## Messaging
 
 > ### Handlers
 >
 > | File                                                | Class     | Description                                                                   |
 > | --------------------------------------------------- | --------- | ----------------------------------------------------------------------------- |
-> | [updated.ts](src/messaging/handlers/sub/updated.ts) | `Updated` | Processes `GeoRefDataUpdated` messages — requests fresh data, updates caches. |
+> | [updated.ts](src/messaging/handlers/sub/updated.ts) | `Updated` | Processes `GeoRefDataUpdatedEvent` events — requests fresh data, updates caches. |
 
 > ### Consumers
 >

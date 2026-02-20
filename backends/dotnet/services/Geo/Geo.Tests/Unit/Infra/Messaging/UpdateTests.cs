@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="UpdateTests.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -6,11 +6,12 @@
 
 namespace D2.Geo.Tests.Unit.Infra.Messaging;
 
+using D2.Events.Protos.V1;
 using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
-using D2.Geo.Client.Messages;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
-using D2.Geo.Infra.Messaging.MT.Publishers;
+using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Handler;
+using D2.Shared.Messaging.RabbitMQ;
 using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -31,7 +32,9 @@ public class UpdateTests
     public UpdateTests()
     {
         r_publisherMock = new Mock<UpdatePublisher>(
-            Mock.Of<MassTransit.IPublishEndpoint>(),
+            new Mock<ProtoPublisher>(
+                Mock.Of<global::RabbitMQ.Client.IConnection>(),
+                Mock.Of<ILogger<ProtoPublisher>>()).Object,
             Mock.Of<ILogger<UpdatePublisher>>());
         r_context = CreateHandlerContext();
     }
@@ -48,7 +51,7 @@ public class UpdateTests
     {
         // Arrange
         r_publisherMock
-            .Setup(x => x.PublishAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.PublishAsync(It.IsAny<GeoRefDataUpdatedEvent>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result.Ok());
 
         var handler = new Update(r_publisherMock.Object, r_context);
@@ -61,7 +64,7 @@ public class UpdateTests
         result.Success.Should().BeTrue();
         r_publisherMock.Verify(
             x => x.PublishAsync(
-                It.Is<GeoRefDataUpdated>(m => m.Version == "1.0.0"),
+                It.Is<GeoRefDataUpdatedEvent>(m => m.Version == "1.0.0"),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -78,7 +81,7 @@ public class UpdateTests
     {
         // Arrange
         r_publisherMock
-            .Setup(x => x.PublishAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
+            .Setup(x => x.PublishAsync(It.IsAny<GeoRefDataUpdatedEvent>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result.Fail(["Failed"], System.Net.HttpStatusCode.ServiceUnavailable));
 
         var handler = new Update(r_publisherMock.Object, r_context);
@@ -103,10 +106,10 @@ public class UpdateTests
     public async Task HandleAsync_PassesCorrectVersionToPublisher()
     {
         // Arrange
-        GeoRefDataUpdated? capturedMessage = null;
+        GeoRefDataUpdatedEvent? capturedMessage = null;
         r_publisherMock
-            .Setup(x => x.PublishAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .Callback<GeoRefDataUpdated, CancellationToken>((msg, _) => capturedMessage = msg)
+            .Setup(x => x.PublishAsync(It.IsAny<GeoRefDataUpdatedEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<GeoRefDataUpdatedEvent, CancellationToken>((msg, _) => capturedMessage = msg)
             .ReturnsAsync(D2Result.Ok());
 
         var handler = new Update(r_publisherMock.Object, r_context);

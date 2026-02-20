@@ -18,7 +18,7 @@ The D²-WORX backend follows a **hierarchical, three-tier categorization system*
 
 > **What:** Implementation detail or subdivision
 >
-> **Examples:** `Handlers`, `MassTransit`, `Entities`, `Migrations`
+> **Examples:** `Handlers`, `Publishers`, `Consumers`, `Entities`, `Migrations`
 
 ### 3LC (Third-Level Category)
 
@@ -81,13 +81,13 @@ CQRS/
 
 ### Messaging (Async Event-Driven Communication)
 
-Enables loosely-coupled service communication with pub-sub patterns using RabbitMQ/MassTransit.
+Enables loosely-coupled service communication with pub-sub patterns using raw AMQP (RabbitMQ) with Protocol Buffer event contracts.
 
 **Rationale:**
 
 - **Handlers → Pub & Sub:** Business logic remains framework-agnostic.
-- **MT → Publishers & Consumers:** MassTransit-specific adapters isolated from domain logic.
-- Separates MassTransit / RabbitMQ from business logic
+- **Publishers & Consumers:** AMQP infrastructure adapters isolated from domain logic.
+- Separates RabbitMQ transport from business logic
 - Enables use of interfaces to be defined by dependencies (App Layer / Contracts).
 
 **Structure:**
@@ -100,10 +100,8 @@ Messaging/
 |   |__ Pub/ -> Publisher handlers (send messages)
 |   |__ Sub/ -> Subscriber handlers (receive messages)
 |
-|__ MT/ -> MassTransit infrastructure
-    |
-    |__ Consumers/ -> MassTransit IConsumer implementations
-    |__ Publishers/ -> MassTransit publisher classes (if needed)
+|__ Publishers/ -> AMQP publisher implementations (ProtoPublisher wrappers)
+|__ Consumers/ -> AMQP consumer implementations (ProtoConsumer/BackgroundService)
 ```
 
 ### Repository (Data Access & Persistence)
@@ -263,7 +261,7 @@ ServiceName/ -> Root folder for the service
 |   |__ Messages/ -> Domain event POCOs consumed by other services
 |   |__ Interfaces/ -> Handler interfaces for consumers (CQRS, Messaging)
 |   |__ CQRS/Handlers/ -> Default handler implementations (cache, disk, gRPC)
-|   |__ Messaging/ -> Default messaging handlers and MassTransit consumers
+|   |__ Messaging/ -> Default messaging handlers and AMQP consumers
 |   |__ Extensions.cs -> DI registration for consumer services
 |
 |
@@ -348,13 +346,8 @@ ServiceName/ -> Root folder for the service
 |   |   |       |
 |   |   |       |__ SomeEvent.cs -> Subscriber implementation
 |   |   |
-|   |   |__ MT/ -> MassTransit consumers and publishers
-|   |       |
-|   |       |__ Consumers/ -> MassTransit consumer implementations
-|   |       |   |
-|   |       |   |__ SomeEventConsumer.cs -> MassTransit consumer implementation for SomeEvent
-|   |       |
-|   |       |__ Publishers/ -> MassTransit publisher implementations
+|   |   |__ Publishers/ -> AMQP publisher implementations (ProtoPublisher wrappers)
+|   |   |__ Consumers/ -> AMQP consumer implementations (BackgroundService + ProtoConsumer<T>)
 |   |
 |   |__ Repository/ -> Repository implementations
 |       |
@@ -399,7 +392,7 @@ ServiceName/ -> Root folder for the service
 **Add a 2LC when:**
 
 - You need to separate implementation details (e.g., `Entities`, `Migrations`)
-- Infrastructure adapters need isolation (e.g., `MassTransit`)
+- Infrastructure adapters need isolation (e.g., `Publishers`, `Consumers`)
 
 **Add a 3LC when:**
 
@@ -407,7 +400,7 @@ ServiceName/ -> Root folder for the service
 
 ### Naming Conventions
 
-- **Folders:** PascalCase (`Handlers`, `MassTransit`)
+- **Folders:** PascalCase (`Handlers`, `Publishers`, `Consumers`)
 - **TLC folders:** Match architectural concern (`CQRS`, `Messaging`, `Repository`)
 - **3LC folders:** Single-letter / abbreviations (`C`, `Q`, `R`) or clear terms (`Pub`, `Sub`)
 - **Files:**
@@ -455,7 +448,7 @@ File location tells you exactly what it does: `CQRS/Handlers/Q/GetSomeData.cs` i
 
 ### Testability
 
-Clear separation between business logic (Handlers) and infrastructure (MassTransit, EF Core) enables isolated testing.
+Clear separation between business logic (Handlers) and infrastructure (AMQP messaging, EF Core) enables isolated testing.
 
 ### Maintainability
 
@@ -473,19 +466,13 @@ services.AddTransient<ICommands.ISetInMemHandler, SetInMem>();
 services.AddTransient<IQueries.IGetFromMemHandler, GetFromMem>();
 ```
 
-### MassTransit Consumer Registration
+### RabbitMQ Messaging Registration
 
 ```csharp
 // In service Infra Extensions.cs
-services.AddMassTransit(x =>
-{
-    x.AddConsumer<UpdatedConsumer>();  // Register consumers
-    x.UsingRabbitMq((context, cfg) =>
-    {
-        cfg.Host(rabbitMqConnectionString);
-        cfg.ConfigureEndpoints(context);
-    });
-});
+services.AddRabbitMqMessaging(connectionString);       // Registers IConnection + ProtoPublisher
+services.AddTransient<UpdatePublisher>();               // Service-specific publisher
+services.AddHostedService<UpdatedConsumerService>();    // BackgroundService consumer
 ```
 
 ### Using Aliases for Clean Implementations
