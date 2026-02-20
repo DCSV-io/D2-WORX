@@ -28,7 +28,8 @@
     "@d2/utilities": "workspace:*",
     "drizzle-orm": "0.45.1",
     "pg": "8.18.0",
-    "resend": "4.5.1"
+    "resend": "4.5.1",
+    "twilio": "5.12.2"
   },
   "devDependencies": {
     "@types/pg": "8.16.0",
