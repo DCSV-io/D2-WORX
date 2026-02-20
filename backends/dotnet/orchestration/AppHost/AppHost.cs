@@ -267,10 +267,27 @@ var broker = builder.AddRabbitMQ("d2-rabbitmq", mqUsername, mqPassword, 15672)
  **************** Services ****************
  ******************************************/
 
-// Auth - Service.
-// var authService = builder.AddProject<Projects.Auth_API>("d2-auth")
-//     .WithIconName("PersonAccounts")
+// Auth - Service (Node.js / Hono).
+var authDb = db.AddDatabase("d2-services-auth");
+
+// TODO: Wire as AddNpmApp once auth has a runnable entrypoint (main.ts + dev script).
+// var authService = builder.AddNpmApp("d2-auth", "../../../../backends/node/services/auth/api")
+//     .WithPnpm()
+//     .WithReference(authDb)
 //     .DefaultInfraRefs(db, cache, broker)
+//     .WithOtelRefs()
+//     .WithEnvironment("AUTH_BASE_URL", "http://localhost:3100")
+//     .WithEnvironment("AUTH_CORS_ORIGIN", "http://localhost:5173");
+
+// Comms - Service (Node.js / headless consumer + gRPC).
+var commsDb = db.AddDatabase("d2-services-comms");
+
+// TODO: Wire as AddNpmApp once comms has a runnable entrypoint (main.ts + dev script).
+// var commsService = builder.AddNpmApp("d2-comms", "../../../../backends/node/services/comms/api")
+//     .WithPnpm()
+//     .WithReference(commsDb)
+//     .WithReference(broker)
+//     .WaitFor(broker)
 //     .WithOtelRefs();
 
 // Geo - Service.
