@@ -65,11 +65,11 @@ src/
 
 ## Middleware — Idempotency
 
-| File                       | Export             | Description                                                        |
-| -------------------------- | ------------------ | ------------------------------------------------------------------ |
-| `idempotency-state.ts`     | `IdempotencyState` | String union: `"acquired"`, `"in_flight"`, `"cached"`.             |
-| `cached-response.ts`       | `CachedResponse`   | Cached HTTP response shape (statusCode, headers, body).            |
-| `handlers/check.ts`        | `ICheckHandler`    | Handler interface for idempotency check + `CHECK_REDACTION`.       |
+| File                   | Export             | Description                                                  |
+| ---------------------- | ------------------ | ------------------------------------------------------------ |
+| `idempotency-state.ts` | `IdempotencyState` | String union: `"acquired"`, `"in_flight"`, `"cached"`.       |
+| `cached-response.ts`   | `CachedResponse`   | Cached HTTP response shape (statusCode, headers, body).      |
+| `handlers/check.ts`    | `ICheckHandler`    | Handler interface for idempotency check + `CHECK_REDACTION`. |
 
 ---
 

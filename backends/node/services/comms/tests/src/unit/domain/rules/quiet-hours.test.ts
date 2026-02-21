@@ -69,9 +69,7 @@ describe("isInQuietHours", () => {
       const now = new Date("2026-02-19T12:00:00Z");
       const result = isInQuietHours("08:00", "17:00", "UTC", now);
       expect(result.inQuietHours).toBe(true);
-      expect(result.quietHoursEndUtc!.getTime()).toBe(
-        new Date("2026-02-19T17:00:00Z").getTime(),
-      );
+      expect(result.quietHoursEndUtc!.getTime()).toBe(new Date("2026-02-19T17:00:00Z").getTime());
     });
 
     it("should compute correct end time for overnight window (before midnight)", () => {
@@ -79,9 +77,7 @@ describe("isInQuietHours", () => {
       const now = new Date("2026-02-19T23:00:00Z");
       const result = isInQuietHours("22:00", "07:00", "UTC", now);
       expect(result.inQuietHours).toBe(true);
-      expect(result.quietHoursEndUtc!.getTime()).toBe(
-        new Date("2026-02-20T07:00:00Z").getTime(),
-      );
+      expect(result.quietHoursEndUtc!.getTime()).toBe(new Date("2026-02-20T07:00:00Z").getTime());
     });
 
     it("should compute correct end time for overnight window (after midnight)", () => {
@@ -89,9 +85,7 @@ describe("isInQuietHours", () => {
       const now = new Date("2026-02-19T03:00:00Z");
       const result = isInQuietHours("22:00", "07:00", "UTC", now);
       expect(result.inQuietHours).toBe(true);
-      expect(result.quietHoursEndUtc!.getTime()).toBe(
-        new Date("2026-02-19T07:00:00Z").getTime(),
-      );
+      expect(result.quietHoursEndUtc!.getTime()).toBe(new Date("2026-02-19T07:00:00Z").getTime());
     });
   });
 

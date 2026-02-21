@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  THREAD_STATES,
-  THREAD_STATE_TRANSITIONS,
-  isValidThreadState,
-} from "@d2/comms-domain";
+import { THREAD_STATES, THREAD_STATE_TRANSITIONS, isValidThreadState } from "@d2/comms-domain";
 
 describe("ThreadState", () => {
   it("should have exactly 3 states", () => {

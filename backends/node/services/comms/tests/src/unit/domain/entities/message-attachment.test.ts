@@ -32,39 +32,39 @@ describe("MessageAttachment", () => {
     });
 
     it("should throw when messageId is empty", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, messageId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, messageId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileUrl is empty", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileUrl: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileUrl: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileName is empty", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileName: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileName: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileType is empty", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileType: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileType: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileSize is zero", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileSize: 0 }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileSize: 0 })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileSize is negative", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileSize: -100 }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileSize: -100 })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileSize exceeds 50MB", () => {
@@ -85,21 +85,21 @@ describe("MessageAttachment", () => {
     });
 
     it("should throw when fileSize is NaN", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileSize: NaN }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileSize: NaN })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileSize is Infinity", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileSize: Infinity }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileSize: Infinity })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when fileSize is -Infinity", () => {
-      expect(() =>
-        createMessageAttachment({ ...validInput, fileSize: -Infinity }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageAttachment({ ...validInput, fileSize: -Infinity })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should accept fractional fileSize (bytes are exact)", () => {

@@ -125,14 +125,14 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 **Email verification** (configured in auth-factory, not a plugin):
 
-| Setting                       | Value           | Purpose                                                |
-| ----------------------------- | --------------- | ------------------------------------------------------ |
-| `requireEmailVerification`    | `true`          | Blocks sign-in for unverified emails                   |
-| `autoSignIn`                  | `false`         | No session created at sign-up                          |
-| `sendOnSignUp`                | `true`          | Sends verification email on sign-up                    |
-| `sendOnSignIn`                | `true`          | Re-sends verification email on blocked sign-in attempt |
-| `autoSignInAfterVerification` | `true`          | Creates session after email verification               |
-| `sendVerificationEmail`       | Not yet wired   | Will be outbound RabbitMQ message via handler          |
+| Setting                       | Value         | Purpose                                                |
+| ----------------------------- | ------------- | ------------------------------------------------------ |
+| `requireEmailVerification`    | `true`        | Blocks sign-in for unverified emails                   |
+| `autoSignIn`                  | `false`       | No session created at sign-up                          |
+| `sendOnSignUp`                | `true`        | Sends verification email on sign-up                    |
+| `sendOnSignIn`                | `true`        | Re-sends verification email on blocked sign-in attempt |
+| `autoSignInAfterVerification` | `true`        | Creates session after email verification               |
+| `sendVerificationEmail`       | Not yet wired | Will be outbound RabbitMQ message via handler          |
 
 **Tested in**: `auth/tests/src/unit/infra/`
 
@@ -566,18 +566,18 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 
 These are handled by BetterAuth directly (not custom handlers):
 
-| Operation          | BetterAuth Method               | Notes                                                                                                                                               |
-| ------------------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first. No auto-sign-in — user must verify email. Verification email via RabbitMQ (not yet wired)         |
-| Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                                      |
-| Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                                        |
-| Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                                    |
-| Get session        | `getSession`                    | 3-tier lookup                                                                                                                                       |
-| Create org         | `organization.create`           | Validates orgType via `beforeCreateOrganization`                                                                                                    |
-| Invite member      | `organization.inviteMember`     | 48h expiry, default role = agent                                                                                                                    |
-| Accept invitation  | `organization.acceptInvitation` | State machine transition                                                                                                                            |
-| JWKS               | `/.well-known/jwks.json`        | Auto-rotated key pairs                                                                                                                              |
-| Impersonation      | `admin.impersonateUser`         | 1-hour session, requires admin                                                                                                                      |
+| Operation          | BetterAuth Method               | Notes                                                                                                                                      |
+| ------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first. No auto-sign-in — user must verify email. Verification email via RabbitMQ (not yet wired) |
+| Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                             |
+| Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                               |
+| Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                           |
+| Get session        | `getSession`                    | 3-tier lookup                                                                                                                              |
+| Create org         | `organization.create`           | Validates orgType via `beforeCreateOrganization`                                                                                           |
+| Invite member      | `organization.inviteMember`     | 48h expiry, default role = agent                                                                                                           |
+| Accept invitation  | `organization.acceptInvitation` | State machine transition                                                                                                                   |
+| JWKS               | `/.well-known/jwks.json`        | Auto-rotated key pairs                                                                                                                     |
+| Impersonation      | `admin.impersonateUser`         | 1-hour session, requires admin                                                                                                             |
 
 ---
 
@@ -737,11 +737,11 @@ These are documented trade-offs and gaps identified during security audit. Items
 
 ### Must Fix Before Production
 
-| #   | Gap                                              | Severity | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Mitigation                                                                       |
-| --- | ------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| 1   | ~~**Fingerprint (`fp`) claim optional in JWT**~~ | ~~HIGH~~ | **RESOLVED.** `JwtFingerprintMiddleware` now requires `fp` claim for all non-trusted requests (returns 401 `MISSING_FINGERPRINT`). Trusted services (identified by `ServiceKeyMiddleware` via `X-Api-Key`) skip fingerprint validation entirely.                                                                                                                                                                                                                                                                               | Implemented in `ServiceKeyMiddleware` + updated `JwtFingerprintMiddleware`.      |
-| 2   | ~~**Email verification not enforced**~~          | ~~HIGH~~ | **RESOLVED.** `requireEmailVerification: true` blocks sign-in for unverified emails. `autoSignIn: false` prevents session creation at sign-up. `sendOnSignIn: true` re-sends on blocked sign-in attempt. `autoSignInAfterVerification: true` creates session after verification. Actual email delivery will be outbound RabbitMQ message via handler (not yet wired). OAuth providers set `emailVerified: true` automatically — verification only affects email/password sign-ups.                                              | Implemented in `auth-factory.ts`. 3 integration tests in `auth-factory.test.ts`. |
-| 3   | ~~**No password policy**~~                       | ~~HIGH~~ | **RESOLVED.** Min 12 / max 128 (BetterAuth native `minPasswordLength` / `maxPasswordLength`). HIBP k-anonymity check via SHA-1 prefix caching (24h TTL, fail-open). Local blocklist (~200 common passwords, always-on). Blocks numeric-only and date-pattern passwords. No composition rules.                                                                                                                                                                                                                                  | Implemented in `password-rules.ts` (domain) + `password-hooks.ts` (infra).       |
+| #   | Gap                                              | Severity | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Mitigation                                                                       |
+| --- | ------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 1   | ~~**Fingerprint (`fp`) claim optional in JWT**~~ | ~~HIGH~~ | **RESOLVED.** `JwtFingerprintMiddleware` now requires `fp` claim for all non-trusted requests (returns 401 `MISSING_FINGERPRINT`). Trusted services (identified by `ServiceKeyMiddleware` via `X-Api-Key`) skip fingerprint validation entirely.                                                                                                                                                                                                                                   | Implemented in `ServiceKeyMiddleware` + updated `JwtFingerprintMiddleware`.      |
+| 2   | ~~**Email verification not enforced**~~          | ~~HIGH~~ | **RESOLVED.** `requireEmailVerification: true` blocks sign-in for unverified emails. `autoSignIn: false` prevents session creation at sign-up. `sendOnSignIn: true` re-sends on blocked sign-in attempt. `autoSignInAfterVerification: true` creates session after verification. Actual email delivery will be outbound RabbitMQ message via handler (not yet wired). OAuth providers set `emailVerified: true` automatically — verification only affects email/password sign-ups. | Implemented in `auth-factory.ts`. 3 integration tests in `auth-factory.test.ts`. |
+| 3   | ~~**No password policy**~~                       | ~~HIGH~~ | **RESOLVED.** Min 12 / max 128 (BetterAuth native `minPasswordLength` / `maxPasswordLength`). HIBP k-anonymity check via SHA-1 prefix caching (24h TTL, fail-open). Local blocklist (~200 common passwords, always-on). Blocks numeric-only and date-pattern passwords. No composition rules.                                                                                                                                                                                      | Implemented in `password-rules.ts` (domain) + `password-hooks.ts` (infra).       |
 
 ### Must Fix Before Beta
 

@@ -4,12 +4,12 @@ Idempotency-Key header middleware using Redis-backed SET NX + cached response re
 
 ## Files
 
-| File Name                                                    | Description                                                                         |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| [handlers/check.ts](src/handlers/check.ts)                   | `Check` handler — SET NX sentinel, detect in-flight/cached state. Fail-open.       |
-| [check-idempotency.ts](src/check-idempotency.ts)             | Framework-agnostic orchestrator returning `IdempotencyResult` with `storeResponse`/`removeLock` callbacks. |
-| [idempotency-options.ts](src/idempotency-options.ts)          | `IdempotencyOptions` + `DEFAULT_IDEMPOTENCY_OPTIONS` (24h cache, 30s lock, 1MB max body). |
-| [index.ts](src/index.ts)                                      | Barrel re-export of Check, checkIdempotency, IdempotencyOptions.                   |
+| File Name                                            | Description                                                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [handlers/check.ts](src/handlers/check.ts)           | `Check` handler — SET NX sentinel, detect in-flight/cached state. Fail-open.                               |
+| [check-idempotency.ts](src/check-idempotency.ts)     | Framework-agnostic orchestrator returning `IdempotencyResult` with `storeResponse`/`removeLock` callbacks. |
+| [idempotency-options.ts](src/idempotency-options.ts) | `IdempotencyOptions` + `DEFAULT_IDEMPOTENCY_OPTIONS` (24h cache, 30s lock, 1MB max body).                  |
+| [index.ts](src/index.ts)                             | Barrel re-export of Check, checkIdempotency, IdempotencyOptions.                                           |
 
 ## Flow
 
@@ -26,11 +26,11 @@ Idempotency-Key header middleware using Redis-backed SET NX + cached response re
 
 ## Options
 
-| Option           | Default   | Description                              |
-| ---------------- | --------- | ---------------------------------------- |
-| `cacheTtlMs`     | 86,400,000 | TTL for cached responses (24 hours)     |
-| `inFlightTtlMs`  | 30,000     | TTL for in-flight sentinel lock (30s)   |
-| `maxBodySizeBytes`| 1,048,576 | Max response body size to cache (1 MB)  |
+| Option             | Default    | Description                            |
+| ------------------ | ---------- | -------------------------------------- |
+| `cacheTtlMs`       | 86,400,000 | TTL for cached responses (24 hours)    |
+| `inFlightTtlMs`    | 30,000     | TTL for in-flight sentinel lock (30s)  |
+| `maxBodySizeBytes` | 1,048,576  | Max response body size to cache (1 MB) |
 
 ## Dependencies
 

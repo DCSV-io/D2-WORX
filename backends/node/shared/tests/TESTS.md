@@ -25,8 +25,8 @@ Centralized test suite for all shared Node.js packages. Mirrors .NET `D2.Shared.
 | `validators.test.ts`                             | @d2/handler            | 28    | Zod refinements: zodGuid, zodHashId, zodIpAddress, zodEmail, etc. |
 | `interfaces/in-memory-cache.test.ts`             | @d2/interfaces         | 5     | In-memory cache interface type checks.                            |
 | `interfaces/distributed-cache.test.ts`           | @d2/interfaces         | 6     | Distributed cache interface type checks.                          |
-| `result-extensions/d2-result-to-proto.test.ts`   | @d2/result-extensions  | 10    | D2Result → Proto conversion.                                     |
-| `result-extensions/d2-result-from-proto.test.ts` | @d2/result-extensions  | 10    | Proto → D2Result conversion.                                     |
+| `result-extensions/d2-result-to-proto.test.ts`   | @d2/result-extensions  | 10    | D2Result → Proto conversion.                                      |
+| `result-extensions/d2-result-from-proto.test.ts` | @d2/result-extensions  | 10    | Proto → D2Result conversion.                                      |
 | `result-extensions/handle-grpc-call.test.ts`     | @d2/result-extensions  | 12    | gRPC call wrapper error handling.                                 |
 | `cache-memory/memory-cache-store.test.ts`        | @d2/cache-memory       | 13    | MemoryCacheStore core operations.                                 |
 | `cache-memory/get.test.ts`                       | @d2/cache-memory       | 4     | Get handler.                                                      |
@@ -44,10 +44,10 @@ Centralized test suite for all shared Node.js packages. Mirrors .NET `D2.Shared.
 | `geo-client/updated.test.ts`                     | @d2/geo-client         | 6     | Updated message handler.                                          |
 | `geo-client/updated-consumer.test.ts`            | @d2/geo-client         | 5     | Consumer factory.                                                 |
 | `geo-client/create-contacts.test.ts`             | @d2/geo-client         | 7     | CreateContacts handler + allowedContextKeys validation.           |
-| `geo-client/get-contacts-by-ext-keys.test.ts`    | @d2/geo-client         | 10    | GetContactsByExtKeys cache-aside, fail-open, key validation.     |
-| `geo-client/delete-contacts-by-ext-keys.test.ts` | @d2/geo-client         | 9     | DeleteContactsByExtKeys gRPC + cache eviction + key validation.  |
-| `geo-client/update-contacts-by-ext-keys.test.ts` | @d2/geo-client         | 9     | UpdateContactsByExtKeys gRPC replace + cache eviction.           |
-| `idempotency/check.test.ts`                      | @d2/idempotency        | 13    | Idempotency check handler (SET NX, sentinel, replay).            |
+| `geo-client/get-contacts-by-ext-keys.test.ts`    | @d2/geo-client         | 10    | GetContactsByExtKeys cache-aside, fail-open, key validation.      |
+| `geo-client/delete-contacts-by-ext-keys.test.ts` | @d2/geo-client         | 9     | DeleteContactsByExtKeys gRPC + cache eviction + key validation.   |
+| `geo-client/update-contacts-by-ext-keys.test.ts` | @d2/geo-client         | 9     | UpdateContactsByExtKeys gRPC replace + cache eviction.            |
+| `idempotency/check.test.ts`                      | @d2/idempotency        | 13    | Idempotency check handler (SET NX, sentinel, replay).             |
 | `idempotency/check-idempotency.test.ts`          | @d2/idempotency        | 12    | Framework-agnostic orchestrator.                                  |
 | `request-enrichment/ip-resolver.test.ts`         | @d2/request-enrichment | 9     | IP resolution from headers.                                       |
 | `request-enrichment/fingerprint-builder.test.ts` | @d2/request-enrichment | 9     | Server fingerprint generation.                                    |
@@ -58,17 +58,17 @@ Centralized test suite for all shared Node.js packages. Mirrors .NET `D2.Shared.
 
 ## Integration Tests
 
-| Test File                                              | Package         | Tests | Infrastructure           |
-| ------------------------------------------------------ | --------------- | ----- | ------------------------ |
-| `cache-redis/get.test.ts`                              | @d2/cache-redis | 6     | @testcontainers/redis    |
-| `cache-redis/set.test.ts`                              | @d2/cache-redis | 4     | @testcontainers/redis    |
-| `cache-redis/remove.test.ts`                           | @d2/cache-redis | 2     | @testcontainers/redis    |
-| `cache-redis/exists.test.ts`                           | @d2/cache-redis | 2     | @testcontainers/redis    |
-| `cache-redis/get-ttl.test.ts`                          | @d2/cache-redis | 3     | @testcontainers/redis    |
-| `cache-redis/increment.test.ts`                        | @d2/cache-redis | 4     | @testcontainers/redis    |
-| `messaging/message-bus.integration.test.ts`            | @d2/messaging   | 3     | @testcontainers/rabbitmq |
-| `ratelimit/check.integration.test.ts`                  | @d2/ratelimit   | 5     | @testcontainers/redis    |
-| `idempotency/idempotency-integration.test.ts`          | @d2/idempotency | 12    | @testcontainers/redis    |
+| Test File                                     | Package         | Tests | Infrastructure           |
+| --------------------------------------------- | --------------- | ----- | ------------------------ |
+| `cache-redis/get.test.ts`                     | @d2/cache-redis | 6     | @testcontainers/redis    |
+| `cache-redis/set.test.ts`                     | @d2/cache-redis | 4     | @testcontainers/redis    |
+| `cache-redis/remove.test.ts`                  | @d2/cache-redis | 2     | @testcontainers/redis    |
+| `cache-redis/exists.test.ts`                  | @d2/cache-redis | 2     | @testcontainers/redis    |
+| `cache-redis/get-ttl.test.ts`                 | @d2/cache-redis | 3     | @testcontainers/redis    |
+| `cache-redis/increment.test.ts`               | @d2/cache-redis | 4     | @testcontainers/redis    |
+| `messaging/message-bus.integration.test.ts`   | @d2/messaging   | 3     | @testcontainers/rabbitmq |
+| `ratelimit/check.integration.test.ts`         | @d2/ratelimit   | 5     | @testcontainers/redis    |
+| `idempotency/idempotency-integration.test.ts` | @d2/idempotency | 12    | @testcontainers/redis    |
 
 ---
 

@@ -19,9 +19,7 @@ export function isValidThreadState(value: unknown): value is ThreadState {
  * Valid state transitions for threads.
  * "closed" is terminal — a closed thread cannot be reopened.
  */
-export const THREAD_STATE_TRANSITIONS: Readonly<
-  Record<ThreadState, readonly ThreadState[]>
-> = {
+export const THREAD_STATE_TRANSITIONS: Readonly<Record<ThreadState, readonly ThreadState[]>> = {
   active: ["archived", "closed"],
   archived: ["active", "closed"],
   closed: [],

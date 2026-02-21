@@ -2,10 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { D2Result } from "@d2/result";
 import { GetTemplate } from "@d2/comms-app";
 import { createTemplateWrapper } from "@d2/comms-domain";
-import {
-  createMockContext,
-  createMockTemplateRepo,
-} from "../helpers/mock-handlers.js";
+import { createMockContext, createMockTemplateRepo } from "../helpers/mock-handlers.js";
 
 function createMockCache() {
   return {

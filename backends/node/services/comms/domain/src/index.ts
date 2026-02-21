@@ -23,10 +23,7 @@ export type { DeliveryStatus } from "./enums/delivery-status.js";
 export { URGENCIES, isValidUrgency } from "./enums/urgency.js";
 export type { Urgency } from "./enums/urgency.js";
 
-export {
-  NOTIFICATION_POLICIES,
-  isValidNotificationPolicy,
-} from "./enums/notification-policy.js";
+export { NOTIFICATION_POLICIES, isValidNotificationPolicy } from "./enums/notification-policy.js";
 export type { NotificationPolicy } from "./enums/notification-policy.js";
 
 export { THREAD_TYPES, isValidThreadType } from "./enums/thread-type.js";
@@ -62,10 +59,7 @@ export {
   createDeliveryRequest,
   markDeliveryRequestProcessed,
 } from "./entities/delivery-request.js";
-export type {
-  DeliveryRequest,
-  CreateDeliveryRequestInput,
-} from "./entities/delivery-request.js";
+export type { DeliveryRequest, CreateDeliveryRequestInput } from "./entities/delivery-request.js";
 
 export {
   createDeliveryAttempt,
@@ -77,20 +71,14 @@ export type {
   TransitionDeliveryAttemptOptions,
 } from "./entities/delivery-attempt.js";
 
-export {
-  createChannelPreference,
-  updateChannelPreference,
-} from "./entities/channel-preference.js";
+export { createChannelPreference, updateChannelPreference } from "./entities/channel-preference.js";
 export type {
   ChannelPreference,
   CreateChannelPreferenceInput,
   UpdateChannelPreferenceInput,
 } from "./entities/channel-preference.js";
 
-export {
-  createTemplateWrapper,
-  updateTemplateWrapper,
-} from "./entities/template-wrapper.js";
+export { createTemplateWrapper, updateTemplateWrapper } from "./entities/template-wrapper.js";
 export type {
   TemplateWrapper,
   CreateTemplateWrapperInput,
@@ -102,11 +90,7 @@ export { createMessageReceipt } from "./entities/message-receipt.js";
 export type { MessageReceipt, CreateMessageReceiptInput } from "./entities/message-receipt.js";
 
 // --- Entities: Threads ---
-export {
-  createThread,
-  updateThread,
-  transitionThreadState,
-} from "./entities/thread.js";
+export { createThread, updateThread, transitionThreadState } from "./entities/thread.js";
 export type { Thread, CreateThreadInput, UpdateThreadInput } from "./entities/thread.js";
 
 export {
@@ -128,10 +112,7 @@ export type {
 } from "./entities/message-attachment.js";
 
 export { createMessageReaction } from "./entities/message-reaction.js";
-export type {
-  MessageReaction,
-  CreateMessageReactionInput,
-} from "./entities/message-reaction.js";
+export type { MessageReaction, CreateMessageReactionInput } from "./entities/message-reaction.js";
 
 // --- Value Objects ---
 export type { ResolvedChannels, QuietHoursResult } from "./value-objects/resolved-channels.js";

@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  hasValidRecipient,
-  describeRecipient,
-  createDeliveryRequest,
-} from "@d2/comms-domain";
+import { hasValidRecipient, describeRecipient, createDeliveryRequest } from "@d2/comms-domain";
 
 describe("Recipient Validation", () => {
   describe("hasValidRecipient", () => {

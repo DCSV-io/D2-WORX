@@ -1,0 +1,43 @@
+{
+  "name": "@d2/comms-api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@d2/comms-app": "workspace:*",
+    "@d2/comms-domain": "workspace:*",
+    "@d2/comms-infra": "workspace:*",
+    "@d2/cache-memory": "workspace:*",
+    "@d2/geo-client": "workspace:*",
+    "@d2/handler": "workspace:*",
+    "@d2/interfaces": "workspace:*",
+    "@d2/logging": "workspace:*",
+    "@d2/messaging": "workspace:*",
+    "@d2/protos": "workspace:*",
+    "@d2/result": "workspace:*",
+    "@d2/result-extensions": "workspace:*",
+    "@d2/service-defaults": "workspace:*",
+    "@grpc/grpc-js": "1.14.3",
+    "drizzle-orm": "0.45.1",
+    "pg": "8.18.0"
+  },
+  "devDependencies": {
+    "@types/pg": "8.16.0",
+    "tsx": "4.21.0"
+  }
+}

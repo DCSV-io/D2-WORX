@@ -238,7 +238,7 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 > | Request Enrichment | [RequestEnrichment.Default](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | [@d2/request-enrichment](backends/node/shared/implementations/middleware/request-enrichment/default/REQUEST_ENRICHMENT.md) | IP resolution, fingerprinting, and WhoIs geolocation |
 > | Rate Limiting      | [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | [@d2/ratelimit](backends/node/shared/implementations/middleware/ratelimit/default/RATELIMIT.md)                            | Multi-dimensional sliding-window rate limiting       |
-> | Idempotency        | [Idempotency.Default](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                   | [@d2/idempotency](backends/node/shared/implementations/middleware/idempotency/default/IDEMPOTENCY.md)                      | Idempotency-Key header middleware (Redis-backed)     |
+> | Idempotency        | [Idempotency.Default](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                    | [@d2/idempotency](backends/node/shared/implementations/middleware/idempotency/default/IDEMPOTENCY.md)                      | Idempotency-Key header middleware (Redis-backed)     |
 >
 > _Messaging:_
 >
@@ -250,10 +250,10 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 > _Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async)._
 >
-> | Service                                            | Platform | Status     | Description                                                                       |
-> | -------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------- |
-> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)                         | .NET    | ✅ Done        | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
-> | [Auth](backends/node/services/auth/AUTH.md)                                | Node.js | 🚧 Stage C     | Standalone Hono + BetterAuth + Drizzle — DDD layers done (485 tests), client libs next |
+> | Service                                            | Platform | Status     | Description                                                                            |
+> | -------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------- |
+> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching      |
+> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — DDD layers done (485 tests), client libs next |
 >
 > **Client Libraries:**
 >

@@ -83,6 +83,8 @@ export type {
   HandleVerificationEmailOutput,
   IHandlePasswordResetHandler,
   HandlePasswordResetOutput,
+  IHandleInvitationEmailHandler,
+  HandleInvitationEmailOutput,
 } from "./interfaces/messaging/handlers/sub/index.js";
 
 // --- Complex Handlers ---
@@ -124,6 +126,7 @@ export type {
 // --- Messaging Sub Handlers ---
 export { HandleVerificationEmail } from "./implementations/messaging/handlers/sub/handle-verification-email.js";
 export { HandlePasswordReset } from "./implementations/messaging/handlers/sub/handle-password-reset.js";
+export { HandleInvitationEmail } from "./implementations/messaging/handlers/sub/handle-invitation-email.js";
 
 // ---------------------------------------------------------------------------
 // Factory Functions
@@ -146,6 +149,7 @@ import { UpsertTemplate } from "./implementations/cqrs/handlers/c/upsert-templat
 import { GetTemplate } from "./implementations/cqrs/handlers/q/get-template.js";
 import { HandleVerificationEmail } from "./implementations/messaging/handlers/sub/handle-verification-email.js";
 import { HandlePasswordReset } from "./implementations/messaging/handlers/sub/handle-password-reset.js";
+import { HandleInvitationEmail } from "./implementations/messaging/handlers/sub/handle-invitation-email.js";
 
 /** Creates the delivery engine handlers (orchestrator + CRUD). */
 export function createDeliveryHandlers(
@@ -201,6 +205,7 @@ export function createDeliverySubHandlers(
   return {
     handleVerificationEmail: new HandleVerificationEmail(deliver, context),
     handlePasswordReset: new HandlePasswordReset(deliver, context),
+    handleInvitationEmail: new HandleInvitationEmail(deliver, context),
   };
 }
 

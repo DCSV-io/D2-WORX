@@ -2,10 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { D2Result } from "@d2/result";
 import { GetChannelPreference } from "@d2/comms-app";
 import { createChannelPreference } from "@d2/comms-domain";
-import {
-  createMockContext,
-  createMockChannelPrefRepo,
-} from "../helpers/mock-handlers.js";
+import { createMockContext, createMockChannelPrefRepo } from "../helpers/mock-handlers.js";
 
 function createMockCache() {
   return {
@@ -28,7 +25,11 @@ describe("GetChannelPreference", () => {
   });
 
   it("should fetch by userId from repo when no cache", async () => {
-    const pref = createChannelPreference({ userId: "user-1", emailEnabled: true, smsEnabled: false });
+    const pref = createChannelPreference({
+      userId: "user-1",
+      emailEnabled: true,
+      smsEnabled: false,
+    });
     const repo = createMockChannelPrefRepo();
     (repo.findByUserId.handleAsync as ReturnType<typeof vi.fn>).mockResolvedValue(
       D2Result.ok({ data: { pref } }),

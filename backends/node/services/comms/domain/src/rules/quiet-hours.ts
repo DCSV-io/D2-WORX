@@ -56,7 +56,7 @@ export function isInQuietHours(
     inWindow = nowMinutes >= startMinutes || nowMinutes < endMinutes;
     if (nowMinutes >= startMinutes) {
       // Before midnight: minutes until midnight + end minutes
-      minutesUntilEnd = (24 * 60 - nowMinutes) + endMinutes;
+      minutesUntilEnd = 24 * 60 - nowMinutes + endMinutes;
     } else {
       // After midnight: minutes until end
       minutesUntilEnd = endMinutes - nowMinutes;

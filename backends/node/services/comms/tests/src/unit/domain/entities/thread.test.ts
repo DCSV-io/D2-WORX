@@ -57,9 +57,7 @@ describe("Thread", () => {
 
     it("should throw when title exceeds max length", () => {
       const longTitle = "x".repeat(THREAD_CONSTRAINTS.MAX_TITLE_LENGTH + 1);
-      expect(() => createThread({ ...validInput, title: longTitle })).toThrow(
-        CommsValidationError,
-      );
+      expect(() => createThread({ ...validInput, title: longTitle })).toThrow(CommsValidationError);
     });
 
     it("should throw when slug contains uppercase", () => {
@@ -128,9 +126,7 @@ describe("Thread", () => {
 
     it("should throw when slug exceeds max length", () => {
       const longSlug = "a".repeat(THREAD_CONSTRAINTS.MAX_TITLE_LENGTH + 1);
-      expect(() => createThread({ ...validInput, slug: longSlug })).toThrow(
-        CommsValidationError,
-      );
+      expect(() => createThread({ ...validInput, slug: longSlug })).toThrow(CommsValidationError);
     });
 
     // --- Timestamp consistency ---

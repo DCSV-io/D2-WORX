@@ -44,12 +44,7 @@ export interface TransitionDeliveryAttemptOptions {
  */
 export function createDeliveryAttempt(input: CreateDeliveryAttemptInput): DeliveryAttempt {
   if (!input.requestId) {
-    throw new CommsValidationError(
-      "DeliveryAttempt",
-      "requestId",
-      input.requestId,
-      "is required.",
-    );
+    throw new CommsValidationError("DeliveryAttempt", "requestId", input.requestId, "is required.");
   }
 
   if (!isValidChannel(input.channel)) {

@@ -7,4 +7,7 @@ export interface CreateMessageRecordInput {
 
 export interface CreateMessageRecordOutput {}
 
-export type ICreateMessageRecordHandler = IHandler<CreateMessageRecordInput, CreateMessageRecordOutput>;
+export type ICreateMessageRecordHandler = IHandler<
+  CreateMessageRecordInput,
+  CreateMessageRecordOutput
+>;

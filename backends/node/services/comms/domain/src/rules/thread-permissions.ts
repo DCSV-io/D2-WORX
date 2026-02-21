@@ -23,7 +23,9 @@ function privilegeLevel(participant: ThreadParticipant): number {
  * Observers (role=0) cannot post.
  */
 export function canPostMessage(participant: ThreadParticipant): boolean {
-  return isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.participant;
+  return (
+    isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.participant
+  );
 }
 
 /**
@@ -71,7 +73,9 @@ export function canDeleteMessage(participant: ThreadParticipant, message: Messag
  * Requires at least "moderator" role + active.
  */
 export function canManageParticipants(participant: ThreadParticipant): boolean {
-  return isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.moderator;
+  return (
+    isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.moderator
+  );
 }
 
 /**
@@ -80,7 +84,9 @@ export function canManageParticipants(participant: ThreadParticipant): boolean {
  * Requires at least "moderator" role + active.
  */
 export function canManageThread(participant: ThreadParticipant): boolean {
-  return isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.moderator;
+  return (
+    isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.moderator
+  );
 }
 
 /**
@@ -89,5 +95,7 @@ export function canManageThread(participant: ThreadParticipant): boolean {
  * Requires at least "participant" role + active. Observers cannot react.
  */
 export function canAddReaction(participant: ThreadParticipant): boolean {
-  return isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.participant;
+  return (
+    isActive(participant) && privilegeLevel(participant) >= PARTICIPANT_ROLE_HIERARCHY.participant
+  );
 }

@@ -28,14 +28,10 @@ export function createUpdatedConsumer(
 
       if (result.failed) {
         logger.error(`Failed to process GeoRefDataUpdated event for version ${message.version}`);
-        throw new Error(
-          `Failed to process GeoRefDataUpdated event for version ${message.version}`,
-        );
+        throw new Error(`Failed to process GeoRefDataUpdated event for version ${message.version}`);
       }
 
-      logger.info(
-        `Successfully processed GeoRefDataUpdated event for version ${message.version}`,
-      );
+      logger.info(`Successfully processed GeoRefDataUpdated event for version ${message.version}`);
     },
   );
 }

@@ -28,15 +28,15 @@ describe("MessageReceipt", () => {
     });
 
     it("should throw when messageId is empty", () => {
-      expect(() =>
-        createMessageReceipt({ ...validInput, messageId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageReceipt({ ...validInput, messageId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when userId is empty", () => {
-      expect(() =>
-        createMessageReceipt({ ...validInput, userId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageReceipt({ ...validInput, userId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
   });
 });

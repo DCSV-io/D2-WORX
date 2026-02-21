@@ -177,22 +177,26 @@ describe("Message", () => {
     });
 
     it("should throw for invalid contentFormat", () => {
-      expect(() =>
-        createMessage({ ...validInput, contentFormat: "rtf" as never }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessage({ ...validInput, contentFormat: "rtf" as never })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw for invalid urgency", () => {
-      expect(() =>
-        createMessage({ ...validInput, urgency: "critical" as never }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessage({ ...validInput, urgency: "critical" as never })).toThrow(
+        CommsValidationError,
+      );
     });
 
     // --- Boundary conditions ---
 
     it("should accept content at exactly max length", () => {
       const maxContent = "x".repeat(THREAD_CONSTRAINTS.MAX_MESSAGE_LENGTH);
-      const msg = createMessage({ ...validInput, content: maxContent, plainTextContent: maxContent });
+      const msg = createMessage({
+        ...validInput,
+        content: maxContent,
+        plainTextContent: maxContent,
+      });
       expect(msg.content).toHaveLength(THREAD_CONSTRAINTS.MAX_MESSAGE_LENGTH);
     });
 
@@ -294,9 +298,7 @@ describe("Message", () => {
 
     it("should throw when new plainTextContent exceeds max length", () => {
       const longContent = "x".repeat(THREAD_CONSTRAINTS.MAX_MESSAGE_LENGTH + 1);
-      expect(() => editMessage(baseMessage, "content", longContent)).toThrow(
-        CommsValidationError,
-      );
+      expect(() => editMessage(baseMessage, "content", longContent)).toThrow(CommsValidationError);
     });
 
     it("should clean and trim content on edit", () => {

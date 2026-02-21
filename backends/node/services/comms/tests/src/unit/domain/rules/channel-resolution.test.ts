@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  resolveChannels,
-  createChannelPreference,
-} from "@d2/comms-domain";
+import { resolveChannels, createChannelPreference } from "@d2/comms-domain";
 import type { Message, ChannelPreference } from "@d2/comms-domain";
 
 /** Helper to create a partial message with just the fields channel resolution needs */
@@ -223,12 +220,7 @@ describe("resolveChannels", () => {
       // but if prefs somehow have partial quiet hours, it should be safe
       const prefs = createChannelPreference({ userId: "u1" });
       // prefs has all quiet hours null — no quiet hours check
-      const result = resolveChannels(
-        null,
-        prefs,
-        messageWith(),
-        new Date("2026-02-19T01:00:00Z"),
-      );
+      const result = resolveChannels(null, prefs, messageWith(), new Date("2026-02-19T01:00:00Z"));
       expect(result.inQuietHours).toBe(false);
     });
   });
@@ -241,12 +233,7 @@ describe("resolveChannels", () => {
         quietHoursEnd: "07:00",
         quietHoursTz: "UTC",
       });
-      const result = resolveChannels(
-        null,
-        prefs,
-        messageWith(),
-        new Date("2026-02-19T01:00:00Z"),
-      );
+      const result = resolveChannels(null, prefs, messageWith(), new Date("2026-02-19T01:00:00Z"));
       expect(result.inQuietHours).toBe(true);
       expect(result.quietHoursEndUtc).not.toBeNull();
       // Channels still resolved (app layer decides whether to delay)
@@ -260,24 +247,14 @@ describe("resolveChannels", () => {
         quietHoursEnd: "07:00",
         quietHoursTz: "UTC",
       });
-      const result = resolveChannels(
-        null,
-        prefs,
-        messageWith(),
-        new Date("2026-02-19T12:00:00Z"),
-      );
+      const result = resolveChannels(null, prefs, messageWith(), new Date("2026-02-19T12:00:00Z"));
       expect(result.inQuietHours).toBe(false);
       expect(result.quietHoursEndUtc).toBeNull();
     });
 
     it("should not check quiet hours when no quiet hours configured", () => {
       const prefs = createChannelPreference({ userId: "u1" });
-      const result = resolveChannels(
-        null,
-        prefs,
-        messageWith(),
-        new Date("2026-02-19T01:00:00Z"),
-      );
+      const result = resolveChannels(null, prefs, messageWith(), new Date("2026-02-19T01:00:00Z"));
       expect(result.inQuietHours).toBe(false);
     });
   });

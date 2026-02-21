@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import type { IMessagePublisher } from "@d2/messaging";
+import { SendInvitationEmailEventFns } from "@d2/protos";
 import type { SendInvitationEmail } from "../../../../messages/index.js";
 import type {
   IPublishInvitationEmailHandler,
@@ -21,15 +23,18 @@ const schema = z.object({
 /**
  * Publishes an organization invitation email notification via RabbitMQ.
  *
- * Currently stubbed — logs the request and returns success.
- * Will be wired to a real publisher when the notification service is built.
+ * Validates input via Zod, then publishes to the `events.auth` fanout exchange
+ * as JSON. The comms service consumes from this exchange.
  */
 export class PublishInvitationEmail
   extends BaseHandler<SendInvitationEmail, PublishInvitationEmailOutput>
   implements IPublishInvitationEmailHandler
 {
-  constructor(context: IHandlerContext) {
+  private readonly publisher: IMessagePublisher | undefined;
+
+  constructor(context: IHandlerContext, publisher?: IMessagePublisher) {
     super(context);
+    this.publisher = publisher;
   }
 
   protected async executeAsync(
@@ -38,10 +43,25 @@ export class PublishInvitationEmail
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
-    // TODO: Publish to RabbitMQ when notification service is built
-    this.context.logger.info(
-      `Invitation email requested for ${input.inviteeEmail} to org ${input.organizationName} (role: ${input.role}). TraceId: ${this.traceId}`,
-    );
+    if (this.publisher) {
+      await this.publisher.send(
+        { exchange: "events.auth", routingKey: "" },
+        SendInvitationEmailEventFns.toJSON({
+          invitationId: input.invitationId,
+          inviteeEmail: input.inviteeEmail,
+          organizationId: input.organizationId,
+          organizationName: input.organizationName,
+          role: input.role,
+          inviterName: input.inviterName,
+          inviterEmail: input.inviterEmail,
+          invitationUrl: input.invitationUrl,
+        }),
+      );
+    } else {
+      this.context.logger.info(
+        `Invitation email requested for ${input.inviteeEmail} to org ${input.organizationName} (role: ${input.role}). TraceId: ${this.traceId} [no publisher configured]`,
+      );
+    }
 
     return D2Result.ok({ data: {}, traceId: this.traceId });
   }

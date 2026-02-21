@@ -1,14 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { generateUuidV7 } from "@d2/utilities";
-import {
-  createMessage,
-  createDeliveryRequest,
-  type DeliveryRequest,
-} from "@d2/comms-domain";
-import {
-  createMessageRepoHandlers,
-  createDeliveryRequestRepoHandlers,
-} from "@d2/comms-infra";
+import { createMessage, createDeliveryRequest, type DeliveryRequest } from "@d2/comms-domain";
+import { createMessageRepoHandlers, createDeliveryRequestRepoHandlers } from "@d2/comms-infra";
 import type { MessageRepoHandlers, DeliveryRequestRepoHandlers } from "@d2/comms-app";
 import {
   startPostgres,

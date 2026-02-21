@@ -70,15 +70,15 @@ describe("DeliveryRequest", () => {
     // --- Validation errors ---
 
     it("should throw when messageId is empty", () => {
-      expect(() =>
-        createDeliveryRequest({ ...validInput, messageId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryRequest({ ...validInput, messageId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when correlationId is empty", () => {
-      expect(() =>
-        createDeliveryRequest({ ...validInput, correlationId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryRequest({ ...validInput, correlationId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when no recipient is provided", () => {

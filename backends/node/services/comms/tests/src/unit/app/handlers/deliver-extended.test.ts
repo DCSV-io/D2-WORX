@@ -86,9 +86,9 @@ describe("Deliver — extended coverage", () => {
     };
 
     const smsProvider = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.ok({ data: { providerMessageId: "twilio-123" } }),
-      ),
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { providerMessageId: "twilio-123" } })),
     };
 
     const resolver = new RecipientResolver(geoHandler as any, context);

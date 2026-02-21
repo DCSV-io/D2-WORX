@@ -1,10 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { D2Result } from "@d2/result";
 import { seedDefaultTemplates } from "@d2/comms-infra";
-import {
-  createMockContext,
-  createMockTemplateRepo,
-} from "../app/helpers/mock-handlers.js";
+import { createMockContext, createMockTemplateRepo } from "../app/helpers/mock-handlers.js";
 
 describe("seedDefaultTemplates", () => {
   it("should create 3 default templates when none exist", async () => {
@@ -19,7 +16,9 @@ describe("seedDefaultTemplates", () => {
     await seedDefaultTemplates(repo, createMockContext());
 
     const calls = (repo.create.handleAsync as ReturnType<typeof vi.fn>).mock.calls;
-    const names = calls.map((c: unknown[]) => (c[0] as { template: { name: string } }).template.name);
+    const names = calls.map(
+      (c: unknown[]) => (c[0] as { template: { name: string } }).template.name,
+    );
 
     expect(names).toContain("email-verification");
     expect(names).toContain("password-reset");

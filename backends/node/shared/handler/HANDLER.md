@@ -4,18 +4,18 @@ BaseHandler pattern with automatic OTel tracing, metrics, and structured logging
 
 ## Files
 
-| File Name                                                      | Description                                                                      |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [base-handler.ts](src/base-handler.ts)                         | `BaseHandler` abstract class with OTel spans, 4 metrics, input/output redaction. |
-| [i-handler.ts](src/i-handler.ts)                               | `IHandler<TInput, TOutput>` interface with optional `redaction` property.        |
-| [i-handler-context.ts](src/i-handler-context.ts)               | `IHandlerContext` interface bundling `IRequestContext` + `ILogger`.              |
-| [handler-context.ts](src/handler-context.ts)                   | `HandlerContext` implementation of `IHandlerContext`.                            |
-| [i-request-context.ts](src/i-request-context.ts)               | `IRequestContext` interface (traceId, userId, agentOrgId, targetOrgId).          |
-| [handler-options.ts](src/handler-options.ts)                   | `HandlerOptions` type + `DEFAULT_HANDLER_OPTIONS` constant.                      |
-| [redaction-spec.ts](src/redaction-spec.ts)                     | `RedactionSpec` type for declaring handler input/output redaction posture.       |
-| [validators.ts](src/validators.ts)                             | Shared Zod refinements (`zodGuid`, `zodHashId`, `zodIpAddress`, `zodEmail`, `zodPhoneE164`, `zodNonEmptyString`, `zodNonEmptyArray`, `zodAllowedContextKey`) + standalone validators. |
-| [org-type.ts](src/org-type.ts)                                 | `OrgType` enum (Admin, Support, Affiliate, Customer, CustomerClient).            |
-| [index.ts](src/index.ts)                                       | Barrel re-export of all types, interfaces, and classes.                          |
+| File Name                                        | Description                                                                                                                                                                           |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [base-handler.ts](src/base-handler.ts)           | `BaseHandler` abstract class with OTel spans, 4 metrics, input/output redaction.                                                                                                      |
+| [i-handler.ts](src/i-handler.ts)                 | `IHandler<TInput, TOutput>` interface with optional `redaction` property.                                                                                                             |
+| [i-handler-context.ts](src/i-handler-context.ts) | `IHandlerContext` interface bundling `IRequestContext` + `ILogger`.                                                                                                                   |
+| [handler-context.ts](src/handler-context.ts)     | `HandlerContext` implementation of `IHandlerContext`.                                                                                                                                 |
+| [i-request-context.ts](src/i-request-context.ts) | `IRequestContext` interface (traceId, userId, agentOrgId, targetOrgId).                                                                                                               |
+| [handler-options.ts](src/handler-options.ts)     | `HandlerOptions` type + `DEFAULT_HANDLER_OPTIONS` constant.                                                                                                                           |
+| [redaction-spec.ts](src/redaction-spec.ts)       | `RedactionSpec` type for declaring handler input/output redaction posture.                                                                                                            |
+| [validators.ts](src/validators.ts)               | Shared Zod refinements (`zodGuid`, `zodHashId`, `zodIpAddress`, `zodEmail`, `zodPhoneE164`, `zodNonEmptyString`, `zodNonEmptyArray`, `zodAllowedContextKey`) + standalone validators. |
+| [org-type.ts](src/org-type.ts)                   | `OrgType` enum (Admin, Support, Affiliate, Customer, CustomerClient).                                                                                                                 |
+| [index.ts](src/index.ts)                         | Barrel re-export of all types, interfaces, and classes.                                                                                                                               |
 
 ---
 

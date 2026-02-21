@@ -26,9 +26,7 @@ export class FindTemplateByNameAndChannel
     const rows = await this.db
       .select()
       .from(templateWrapper)
-      .where(
-        and(eq(templateWrapper.name, input.name), eq(templateWrapper.channel, input.channel)),
-      )
+      .where(and(eq(templateWrapper.name, input.name), eq(templateWrapper.channel, input.channel)))
       .limit(1);
 
     const row = rows[0];

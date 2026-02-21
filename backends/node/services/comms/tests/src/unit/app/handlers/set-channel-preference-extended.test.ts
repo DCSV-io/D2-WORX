@@ -2,10 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { D2Result } from "@d2/result";
 import { SetChannelPreference } from "@d2/comms-app";
 import { createChannelPreference } from "@d2/comms-domain";
-import {
-  createMockContext,
-  createMockChannelPrefRepo,
-} from "../helpers/mock-handlers.js";
+import { createMockContext, createMockChannelPrefRepo } from "../helpers/mock-handlers.js";
 
 const TEST_CONTACT_ID = "01961234-5678-7def-abcd-000000000002";
 

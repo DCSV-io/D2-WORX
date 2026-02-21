@@ -96,3 +96,65 @@ export {
   SendPasswordResetEvent as SendPasswordResetEventFns,
   SendInvitationEmailEvent as SendInvitationEmailEventFns,
 } from "./generated/events/v1/auth_events.js";
+
+// Comms service — DTOs
+export type {
+  PaginationRequest as CommsPaginationRequest,
+  ChannelPreferenceDTO,
+  TemplateWrapperDTO,
+  DeliveryRequestDTO,
+  DeliveryAttemptDTO,
+  ThreadDTO,
+  MessageDTO as CommsMessageDTO,
+  NotificationDTO,
+  ReactionDTO,
+  ParticipantDTO,
+} from "./generated/comms/v1/comms.js";
+
+// Comms service — request/response types + client/server
+export type {
+  GetChannelPreferenceRequest,
+  GetChannelPreferenceResponse,
+  SetChannelPreferenceRequest,
+  SetChannelPreferenceResponse,
+  GetTemplateRequest,
+  GetTemplateResponse,
+  UpsertTemplateRequest,
+  UpsertTemplateResponse,
+  GetDeliveryStatusRequest,
+  GetDeliveryStatusResponse,
+  GetNotificationsRequest,
+  GetNotificationsResponse,
+  MarkNotificationsReadRequest,
+  MarkNotificationsReadResponse,
+  CreateThreadRequest,
+  CreateThreadResponse,
+  GetThreadRequest,
+  GetThreadResponse,
+  GetThreadsRequest,
+  GetThreadsResponse,
+  PostMessageRequest,
+  PostMessageResponse,
+  EditMessageRequest,
+  EditMessageResponse,
+  DeleteMessageRequest,
+  DeleteMessageResponse,
+  GetThreadMessagesRequest,
+  GetThreadMessagesResponse,
+  AddReactionRequest,
+  AddReactionResponse,
+  RemoveReactionRequest,
+  RemoveReactionResponse,
+  AddParticipantRequest,
+  AddParticipantResponse,
+  RemoveParticipantRequest,
+  RemoveParticipantResponse,
+  CommsServiceClient,
+  CommsServiceServer,
+} from "./generated/comms/v1/comms.js";
+
+// Comms service — value exports (client constructor + service definition)
+export {
+  CommsServiceClient as CommsServiceClientCtor,
+  CommsServiceService,
+} from "./generated/comms/v1/comms.js";

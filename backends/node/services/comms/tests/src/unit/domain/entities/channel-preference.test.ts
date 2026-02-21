@@ -53,9 +53,9 @@ describe("ChannelPreference", () => {
     });
 
     it("should throw when quiet hours are partially set (start only)", () => {
-      expect(() =>
-        createChannelPreference({ ...validInput, quietHoursStart: "22:00" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createChannelPreference({ ...validInput, quietHoursStart: "22:00" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when quiet hours are partially set (start + end, no tz)", () => {
@@ -215,9 +215,9 @@ describe("ChannelPreference", () => {
     });
 
     it("should throw when quiet hours partially updated", () => {
-      expect(() =>
-        updateChannelPreference(basePref, { quietHoursStart: "22:00" }),
-      ).toThrow(CommsValidationError);
+      expect(() => updateChannelPreference(basePref, { quietHoursStart: "22:00" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should preserve existing quiet hours when updating only channel flags", () => {

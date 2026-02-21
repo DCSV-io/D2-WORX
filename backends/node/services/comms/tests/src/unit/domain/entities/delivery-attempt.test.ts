@@ -39,51 +39,51 @@ describe("DeliveryAttempt", () => {
     });
 
     it("should throw when requestId is empty", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, requestId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, requestId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when channel is invalid", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, channel: "push" as never }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, channel: "push" as never })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when recipientAddress is empty", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, recipientAddress: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, recipientAddress: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when attemptNumber is zero", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, attemptNumber: 0 }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, attemptNumber: 0 })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when attemptNumber is negative", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, attemptNumber: -1 }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, attemptNumber: -1 })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when attemptNumber is not integer", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, attemptNumber: 1.5 }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, attemptNumber: 1.5 })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when attemptNumber is NaN", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, attemptNumber: NaN }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, attemptNumber: NaN })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when attemptNumber is Infinity", () => {
-      expect(() =>
-        createDeliveryAttempt({ ...validInput, attemptNumber: Infinity }),
-      ).toThrow(CommsValidationError);
+      expect(() => createDeliveryAttempt({ ...validInput, attemptNumber: Infinity })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should accept a pre-generated ID", () => {

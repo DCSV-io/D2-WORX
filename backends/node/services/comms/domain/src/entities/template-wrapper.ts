@@ -64,9 +64,8 @@ export function createTemplateWrapper(input: CreateTemplateWrapperInput): Templa
     );
   }
 
-  const subjectTemplate = input.subjectTemplate != null
-    ? cleanStr(input.subjectTemplate) ?? null
-    : null;
+  const subjectTemplate =
+    input.subjectTemplate != null ? (cleanStr(input.subjectTemplate) ?? null) : null;
 
   const now = new Date();
 

@@ -110,9 +110,7 @@ describe("Deliver", () => {
   it("should return NOT_FOUND when no deliverable address", async () => {
     // Mock geo returning empty contacts
     const emptyGeo = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.ok({ data: { data: new Map() } }),
-      ),
+      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
     };
     const context = createMockContext();
     const resolver = new RecipientResolver(emptyGeo as any, context);

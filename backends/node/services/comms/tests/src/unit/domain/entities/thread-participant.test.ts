@@ -42,21 +42,21 @@ describe("ThreadParticipant", () => {
     });
 
     it("should throw when threadId is empty", () => {
-      expect(() =>
-        createThreadParticipant({ ...validInput, threadId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createThreadParticipant({ ...validInput, threadId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when no identity is provided", () => {
-      expect(() =>
-        createThreadParticipant({ threadId: "t-1", role: "participant" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createThreadParticipant({ threadId: "t-1", role: "participant" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when role is invalid", () => {
-      expect(() =>
-        createThreadParticipant({ ...validInput, role: "admin" as never }),
-      ).toThrow(CommsValidationError);
+      expect(() => createThreadParticipant({ ...validInput, role: "admin" as never })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it.each(["observer", "participant", "moderator", "creator"] as const)(
@@ -111,9 +111,9 @@ describe("ThreadParticipant", () => {
     });
 
     it("should throw for invalid role on update", () => {
-      expect(() =>
-        updateThreadParticipant(baseParticipant, { role: "owner" as never }),
-      ).toThrow(CommsValidationError);
+      expect(() => updateThreadParticipant(baseParticipant, { role: "owner" as never })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should clear lastReadAt by setting to null", () => {

@@ -17,8 +17,10 @@ import {
   GetContactsByExtKeys,
   UpdateContactsByExtKeys,
   DEFAULT_GEO_CLIENT_OPTIONS,
+  createGeoServiceClient,
   type GeoClientOptions,
 } from "@d2/geo-client";
+import type { IMessagePublisher } from "@d2/messaging";
 import { Check as RateLimitCheck } from "@d2/ratelimit";
 import {
   createAuth,
@@ -37,6 +39,7 @@ import {
   createEmulationConsentHandlers,
   createOrgContactHandlers,
   createSignInThrottleHandlers,
+  createNotificationHandlers,
 } from "@d2/auth-app";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createSessionMiddleware } from "./middleware/session.js";
@@ -67,7 +70,7 @@ import { createHealthRoutes } from "./routes/health.js";
  *   8. Session fingerprint binding (stolen token detection)
  *   9. Build Hono app: CORS → body limit → enrichment → rate limit → fingerprint → session → CSRF → routes
  */
-export async function createApp(config: AuthServiceConfig) {
+export async function createApp(config: AuthServiceConfig, publisher?: IMessagePublisher) {
   // 1. Singletons
   const pool = new pg.Pool({ connectionString: config.databaseUrl });
   const redis = new Redis(config.redisUrl);
@@ -126,15 +129,21 @@ export async function createApp(config: AuthServiceConfig) {
   }
 
   // Geo contact handlers via @d2/geo-client (gRPC-backed with local caching)
-  // TODO: Create actual gRPC client via createGeoServiceClient() when Geo service is available.
-  // For now, the handlers will fail with SERVICE_UNAVAILABLE (same as before).
   const geoOptions: GeoClientOptions = {
     ...DEFAULT_GEO_CLIENT_OPTIONS,
     allowedContextKeys: ["org_contact"],
     apiKey: config.geoApiKey ?? "",
   };
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
-  const geoClient = undefined as never; // Placeholder until Geo gRPC client is wired
+  if (!config.geoAddress || !config.geoApiKey) {
+    logger.warn(
+      "Geo gRPC client not configured (missing GEO_GRPC_ADDRESS or API key) — contact/WhoIs operations will fail",
+    );
+  }
+  const geoClient =
+    config.geoAddress && config.geoApiKey
+      ? createGeoServiceClient(config.geoAddress, config.geoApiKey)
+      : (undefined as never);
   const createContacts = new CreateContacts(geoClient, geoOptions, handlerContext);
   const deleteContactsByExtKeys = new DeleteContactsByExtKeys(
     contactCacheStore,
@@ -208,6 +217,10 @@ export async function createApp(config: AuthServiceConfig) {
     set: throttleCacheSet,
   });
 
+  // Notification handlers: publish auth events to RabbitMQ for the comms service.
+  // When publisher is absent (no RabbitMQ), handlers log the event and return success.
+  const notificationHandlers = createNotificationHandlers(handlerContext, publisher);
+
   // 5. Password policy — HIBP k-anonymity cache + domain validation
   const hibpCacheStore = new CacheMemory.MemoryCacheStore({
     maxEntries: PASSWORD_POLICY.HIBP_CACHE_MAX_ENTRIES,
@@ -229,6 +242,15 @@ export async function createApp(config: AuthServiceConfig) {
     },
     getFingerprintForCurrentRequest: () => fingerprintStorage.getStore(),
     passwordFunctions: passwordFns,
+    publishVerificationEmail: async (input) => {
+      await notificationHandlers.publishVerificationEmail.handleAsync(input);
+    },
+    publishPasswordReset: async (input) => {
+      await notificationHandlers.publishPasswordReset.handleAsync(input);
+    },
+    publishInvitationEmail: async (input) => {
+      await notificationHandlers.publishInvitationEmail.handleAsync(input);
+    },
   });
 
   // 8. Session fingerprint binding (stolen token detection)

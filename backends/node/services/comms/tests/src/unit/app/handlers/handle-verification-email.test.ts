@@ -6,9 +6,11 @@ import { createMockContext } from "../helpers/mock-handlers.js";
 describe("HandleVerificationEmail", () => {
   it("should call Deliver with correct parameters", async () => {
     const mockDeliver = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.ok({ data: { messageId: "m1", requestId: "r1", attempts: [] } }),
-      ),
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(
+          D2Result.ok({ data: { messageId: "m1", requestId: "r1", attempts: [] } }),
+        ),
     };
 
     const handler = new HandleVerificationEmail(mockDeliver as any, createMockContext());
@@ -30,15 +32,15 @@ describe("HandleVerificationEmail", () => {
     expect(deliverInput.recipientUserId).toBe("user-123");
     expect(deliverInput.channels).toEqual(["email"]);
     expect(deliverInput.templateName).toBe("email-verification");
-    expect(deliverInput.content).toContain("user@example.com" === "user@example.com" ? "verify" : "");
+    expect(deliverInput.content).toContain("verify");
     expect(deliverInput.correlationId).toBeDefined();
   });
 
   it("should propagate Deliver failure", async () => {
     const mockDeliver = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["Delivery failed"], statusCode: 502 }),
-      ),
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(D2Result.fail({ messages: ["Delivery failed"], statusCode: 502 })),
     };
 
     const handler = new HandleVerificationEmail(mockDeliver as any, createMockContext());

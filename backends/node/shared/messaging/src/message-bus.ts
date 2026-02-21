@@ -28,7 +28,10 @@ export class MessageBus {
    * Subscribe to messages on a queue.
    * Normal return = ACK. Throw = NACK (requeue/dead-letter per RabbitMQ policy).
    */
-  subscribe<T>(config: ConsumerConfig<T>, handler: (message: T) => Promise<void>): IMessageConsumer {
+  subscribe<T>(
+    config: ConsumerConfig<T>,
+    handler: (message: T) => Promise<void>,
+  ): IMessageConsumer {
     const consumer = this.connection.createConsumer(
       {
         queue: config.queue,

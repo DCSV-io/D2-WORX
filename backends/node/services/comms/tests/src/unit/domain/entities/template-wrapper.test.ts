@@ -51,21 +51,21 @@ describe("TemplateWrapper", () => {
     });
 
     it("should throw when name is empty", () => {
-      expect(() =>
-        createTemplateWrapper({ ...validInput, name: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createTemplateWrapper({ ...validInput, name: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when bodyTemplate is empty", () => {
-      expect(() =>
-        createTemplateWrapper({ ...validInput, bodyTemplate: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createTemplateWrapper({ ...validInput, bodyTemplate: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when channel is invalid", () => {
-      expect(() =>
-        createTemplateWrapper({ ...validInput, channel: "push" as never }),
-      ).toThrow(CommsValidationError);
+      expect(() => createTemplateWrapper({ ...validInput, channel: "push" as never })).toThrow(
+        CommsValidationError,
+      );
     });
   });
 

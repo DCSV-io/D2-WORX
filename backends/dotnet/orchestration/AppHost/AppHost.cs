@@ -267,35 +267,40 @@ var broker = builder.AddRabbitMQ("d2-rabbitmq", mqUsername, mqPassword, 15672)
  **************** Services ****************
  ******************************************/
 
-// Auth - Service (Node.js / Hono).
-var authDb = db.AddDatabase("d2-services-auth");
-
-// TODO: Wire as AddNpmApp once auth has a runnable entrypoint (main.ts + dev script).
-// var authService = builder.AddNpmApp("d2-auth", "../../../../backends/node/services/auth/api")
-//     .WithPnpm()
-//     .WithReference(authDb)
-//     .DefaultInfraRefs(db, cache, broker)
-//     .WithOtelRefs()
-//     .WithEnvironment("AUTH_BASE_URL", "http://localhost:3100")
-//     .WithEnvironment("AUTH_CORS_ORIGIN", "http://localhost:5173");
-
-// Comms - Service (Node.js / headless consumer + gRPC).
-var commsDb = db.AddDatabase("d2-services-comms");
-
-// TODO: Wire as AddNpmApp once comms has a runnable entrypoint (main.ts + dev script).
-// var commsService = builder.AddNpmApp("d2-comms", "../../../../backends/node/services/comms/api")
-//     .WithPnpm()
-//     .WithReference(commsDb)
-//     .WithReference(broker)
-//     .WaitFor(broker)
-//     .WithOtelRefs();
-
-// Geo - Service.
+// Geo - Service (.NET gRPC).
 var geoDb = db.AddDatabase("d2-services-geo");
 var geoService = builder.AddProject<Projects.Geo_API>("d2-geo")
     .WithIconName("Location")
     .WithReference(geoDb)
     .DefaultInfraRefs(db, cache, broker)
+    .WithOtelRefs();
+
+// Auth - Service (Node.js / Hono).
+var authDb = db.AddDatabase("d2-services-auth");
+var authService = builder.AddJavaScriptApp("d2-auth", "../../../../backends/node/services/auth/api", "dev")
+    .WithPnpm()
+    .WithIconName("ShieldPerson")
+    .WithReference(authDb)
+    .WaitFor(db)
+    .WaitFor(cache)
+    .WithReference(cache)
+    .WaitFor(broker)
+    .WithReference(broker)
+    .WaitFor(geoService)
+    .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "auth-http", isProxied: false)
+    .WithOtelRefs();
+
+// Comms - Service (Node.js / headless consumer + gRPC).
+var commsDb = db.AddDatabase("d2-services-comms");
+var commsService = builder.AddJavaScriptApp("d2-comms", "../../../../backends/node/services/comms/api", "dev")
+    .WithPnpm()
+    .WithIconName("Mail")
+    .WithReference(commsDb)
+    .WaitFor(db)
+    .WaitFor(broker)
+    .WithReference(broker)
+    .WaitFor(geoService)
+    .WithHttpEndpoint(port: 5200, targetPort: 5200, name: "comms-grpc", isProxied: false)
     .WithOtelRefs();
 
 // REST API - Gateway.

@@ -42,32 +42,17 @@ export function createMessageAttachment(input: CreateMessageAttachmentInput): Me
   }
 
   if (!input.fileUrl) {
-    throw new CommsValidationError(
-      "MessageAttachment",
-      "fileUrl",
-      input.fileUrl,
-      "is required.",
-    );
+    throw new CommsValidationError("MessageAttachment", "fileUrl", input.fileUrl, "is required.");
   }
 
   const fileName = cleanStr(input.fileName);
   if (!fileName) {
-    throw new CommsValidationError(
-      "MessageAttachment",
-      "fileName",
-      input.fileName,
-      "is required.",
-    );
+    throw new CommsValidationError("MessageAttachment", "fileName", input.fileName, "is required.");
   }
 
   const fileType = cleanStr(input.fileType);
   if (!fileType) {
-    throw new CommsValidationError(
-      "MessageAttachment",
-      "fileType",
-      input.fileType,
-      "is required.",
-    );
+    throw new CommsValidationError("MessageAttachment", "fileType", input.fileType, "is required.");
   }
 
   if (!Number.isFinite(input.fileSize) || input.fileSize <= 0) {

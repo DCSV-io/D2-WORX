@@ -81,15 +81,10 @@ function validateSlug(slug: string | null | undefined): string | null {
  */
 export function createThread(input: CreateThreadInput): Thread {
   if (!isValidThreadType(input.type)) {
-    throw new CommsValidationError(
-      "Thread",
-      "type",
-      input.type,
-      "is not a valid thread type.",
-    );
+    throw new CommsValidationError("Thread", "type", input.type, "is not a valid thread type.");
   }
 
-  const title = input.title != null ? cleanStr(input.title) ?? null : null;
+  const title = input.title != null ? (cleanStr(input.title) ?? null) : null;
   if (title && title.length > THREAD_CONSTRAINTS.MAX_TITLE_LENGTH) {
     throw new CommsValidationError(
       "Thread",
@@ -132,9 +127,12 @@ export function createThread(input: CreateThreadInput): Thread {
  * (use transitionThreadState for state changes).
  */
 export function updateThread(thread: Thread, updates: UpdateThreadInput): Thread {
-  const title = updates.title !== undefined
-    ? (updates.title != null ? cleanStr(updates.title) ?? null : null)
-    : thread.title;
+  const title =
+    updates.title !== undefined
+      ? updates.title != null
+        ? (cleanStr(updates.title) ?? null)
+        : null
+      : thread.title;
 
   if (title && title.length > THREAD_CONSTRAINTS.MAX_TITLE_LENGTH) {
     throw new CommsValidationError(

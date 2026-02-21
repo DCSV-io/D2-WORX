@@ -29,12 +29,7 @@ export interface CreateMessageReceiptInput {
  */
 export function createMessageReceipt(input: CreateMessageReceiptInput): MessageReceipt {
   if (!input.messageId) {
-    throw new CommsValidationError(
-      "MessageReceipt",
-      "messageId",
-      input.messageId,
-      "is required.",
-    );
+    throw new CommsValidationError("MessageReceipt", "messageId", input.messageId, "is required.");
   }
 
   if (!input.userId) {

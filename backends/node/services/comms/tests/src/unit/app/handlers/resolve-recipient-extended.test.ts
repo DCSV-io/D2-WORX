@@ -160,7 +160,10 @@ describe("RecipientResolver — extended coverage", () => {
     };
 
     const resolver = new RecipientResolver(geo as any, createMockContext());
-    const result = await resolver.handleAsync({ userId: "user-both", contactId: "contact-ignored" });
+    const result = await resolver.handleAsync({
+      userId: "user-both",
+      contactId: "contact-ignored",
+    });
 
     expect(result.success).toBe(true);
     expect(result.data!.email).toBe("user@both.com");

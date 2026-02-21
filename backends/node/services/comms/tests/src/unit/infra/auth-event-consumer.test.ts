@@ -18,10 +18,12 @@ describe("createAuthEventConsumer", () => {
     let capturedHandler: ((msg: unknown) => Promise<void>) | null = null;
 
     return {
-      subscribe: vi.fn().mockImplementation((_config: unknown, handler: (msg: unknown) => Promise<void>) => {
-        capturedHandler = handler;
-        return { close: vi.fn() };
-      }),
+      subscribe: vi
+        .fn()
+        .mockImplementation((_config: unknown, handler: (msg: unknown) => Promise<void>) => {
+          capturedHandler = handler;
+          return { close: vi.fn() };
+        }),
       getCapturedHandler: () => capturedHandler,
     };
   }

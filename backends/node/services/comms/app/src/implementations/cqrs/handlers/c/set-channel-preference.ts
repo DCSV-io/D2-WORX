@@ -3,22 +3,30 @@ import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { createChannelPreference, updateChannelPreference } from "@d2/comms-domain";
 import type { ChannelPreference } from "@d2/comms-domain";
-import type {
-  ChannelPreferenceRepoHandlers,
-} from "../../../../interfaces/repository/handlers/index.js";
+import type { ChannelPreferenceRepoHandlers } from "../../../../interfaces/repository/handlers/index.js";
 import type { InMemoryCache } from "@d2/interfaces";
 
-const schema = z.object({
-  userId: zodGuid.optional(),
-  contactId: zodGuid.optional(),
-  emailEnabled: z.boolean().optional(),
-  smsEnabled: z.boolean().optional(),
-  quietHoursStart: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
-  quietHoursEnd: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).nullable().optional(),
-  quietHoursTz: z.string().max(50).nullable().optional(),
-}).refine((d) => d.userId || d.contactId, {
-  message: "At least one of userId or contactId is required.",
-});
+const schema = z
+  .object({
+    userId: zodGuid.optional(),
+    contactId: zodGuid.optional(),
+    emailEnabled: z.boolean().optional(),
+    smsEnabled: z.boolean().optional(),
+    quietHoursStart: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+      .nullable()
+      .optional(),
+    quietHoursEnd: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+      .nullable()
+      .optional(),
+    quietHoursTz: z.string().max(50).nullable().optional(),
+  })
+  .refine((d) => d.userId || d.contactId, {
+    message: "At least one of userId or contactId is required.",
+  });
 
 export interface SetChannelPreferenceInput {
   readonly userId?: string;

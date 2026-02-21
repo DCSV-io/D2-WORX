@@ -103,7 +103,7 @@ export function createMessage(input: CreateMessageInput): Message {
     throw new CommsValidationError("Message", "urgency", urgency, "is not a valid urgency level.");
   }
 
-  const title = input.title != null ? cleanStr(input.title) ?? null : null;
+  const title = input.title != null ? (cleanStr(input.title) ?? null) : null;
   if (title && title.length > THREAD_CONSTRAINTS.MAX_TITLE_LENGTH) {
     throw new CommsValidationError(
       "Message",
@@ -152,11 +152,7 @@ export function createMessage(input: CreateMessageInput): Message {
 /**
  * Edits message content. Sets editedAt to track content modifications.
  */
-export function editMessage(
-  message: Message,
-  content: string,
-  plainTextContent: string,
-): Message {
+export function editMessage(message: Message, content: string, plainTextContent: string): Message {
   const cleaned = cleanStr(content);
   if (!cleaned) {
     throw new CommsValidationError("Message", "content", content, "is required.");
@@ -172,12 +168,7 @@ export function editMessage(
 
   const cleanedPlainText = cleanStr(plainTextContent);
   if (!cleanedPlainText) {
-    throw new CommsValidationError(
-      "Message",
-      "plainTextContent",
-      plainTextContent,
-      "is required.",
-    );
+    throw new CommsValidationError("Message", "plainTextContent", plainTextContent, "is required.");
   }
   if (cleanedPlainText.length > THREAD_CONSTRAINTS.MAX_MESSAGE_LENGTH) {
     throw new CommsValidationError(

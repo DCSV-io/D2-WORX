@@ -79,9 +79,9 @@ export function createMockTemplateRepo(): TemplateWrapperRepoHandlers {
 /** Creates a mock IEmailProvider. */
 export function createMockEmailProvider(): IEmailProvider {
   return {
-    handleAsync: vi.fn().mockResolvedValue(
-      D2Result.ok({ data: { providerMessageId: "resend-msg-123" } }),
-    ),
+    handleAsync: vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { providerMessageId: "resend-msg-123" } })),
   } as unknown as IEmailProvider;
 }
 

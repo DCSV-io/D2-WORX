@@ -40,12 +40,7 @@ export interface CreateDeliveryRequestInput {
  */
 export function createDeliveryRequest(input: CreateDeliveryRequestInput): DeliveryRequest {
   if (!input.messageId) {
-    throw new CommsValidationError(
-      "DeliveryRequest",
-      "messageId",
-      input.messageId,
-      "is required.",
-    );
+    throw new CommsValidationError("DeliveryRequest", "messageId", input.messageId, "is required.");
   }
 
   if (!input.correlationId) {

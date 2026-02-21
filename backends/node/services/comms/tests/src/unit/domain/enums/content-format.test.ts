@@ -13,12 +13,9 @@ describe("ContentFormat", () => {
   });
 
   describe("isValidContentFormat", () => {
-    it.each(["markdown", "plain", "html"])(
-      "should return true for valid format '%s'",
-      (format) => {
-        expect(isValidContentFormat(format)).toBe(true);
-      },
-    );
+    it.each(["markdown", "plain", "html"])("should return true for valid format '%s'", (format) => {
+      expect(isValidContentFormat(format)).toBe(true);
+    });
 
     it.each(["Markdown", "HTML", "richtext", "rtf", "", 42, null, undefined])(
       "should return false for invalid value '%s'",

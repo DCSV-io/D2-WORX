@@ -49,6 +49,42 @@ export interface AuthHooks {
     hash: (password: string) => Promise<string>;
     verify: (data: { hash: string; password: string }) => Promise<boolean>;
   };
+  /**
+   * Publishes a verification email event to RabbitMQ for the comms service.
+   * Called by BetterAuth's `emailVerification.sendVerificationEmail` callback.
+   */
+  publishVerificationEmail?: (input: {
+    userId: string;
+    email: string;
+    name: string;
+    verificationUrl: string;
+    token: string;
+  }) => Promise<void>;
+  /**
+   * Publishes a password reset email event to RabbitMQ for the comms service.
+   * Called by BetterAuth's `emailAndPassword.sendResetPassword` callback.
+   */
+  publishPasswordReset?: (input: {
+    userId: string;
+    email: string;
+    name: string;
+    resetUrl: string;
+    token: string;
+  }) => Promise<void>;
+  /**
+   * Publishes an invitation email event to RabbitMQ for the comms service.
+   * Called by BetterAuth's `organization.sendInvitationEmail` callback.
+   */
+  publishInvitationEmail?: (input: {
+    invitationId: string;
+    inviteeEmail: string;
+    organizationId: string;
+    organizationName: string;
+    role: string;
+    inviterName: string;
+    inviterEmail: string;
+    invitationUrl: string;
+  }) => Promise<void>;
 }
 
 /**
@@ -94,13 +130,34 @@ export function createAuth(
       minPasswordLength: config.passwordMinLength ?? AUTH_CONFIG_DEFAULTS.passwordMinLength,
       maxPasswordLength: config.passwordMaxLength ?? AUTH_CONFIG_DEFAULTS.passwordMaxLength,
       password: hooks?.passwordFunctions,
+      sendResetPassword: hooks?.publishPasswordReset
+        ? async ({ user, url, token }) => {
+            await hooks.publishPasswordReset!({
+              userId: user.id,
+              email: user.email,
+              name: user.name ?? "User",
+              resetUrl: url,
+              token,
+            });
+          }
+        : undefined,
     },
 
     emailVerification: {
       sendOnSignUp: true,
       sendOnSignIn: true,
       autoSignInAfterVerification: true,
-      // sendVerificationEmail: wired by composition root via RabbitMQ handler (not yet built)
+      sendVerificationEmail: hooks?.publishVerificationEmail
+        ? async ({ user, url, token }) => {
+            await hooks.publishVerificationEmail!({
+              userId: user.id,
+              email: user.email,
+              name: user.name ?? "User",
+              verificationUrl: url,
+              token,
+            });
+          }
+        : undefined,
     },
 
     session: {
@@ -258,6 +315,20 @@ export function createAuth(
         creatorRole: "owner",
         allowUserToCreateOrganization: true,
         invitationExpiresIn: 48 * 60 * 60, // 48 hours
+        sendInvitationEmail: hooks?.publishInvitationEmail
+          ? async ({ id, email, organization: org, inviter, invitation }) => {
+              await hooks.publishInvitationEmail!({
+                invitationId: id,
+                inviteeEmail: email,
+                organizationId: org.id,
+                organizationName: org.name,
+                role: invitation.role,
+                inviterName: inviter.user.name ?? "Someone",
+                inviterEmail: inviter.user.email,
+                invitationUrl: `${config.baseUrl}/api/auth/organization/accept-invitation?invitationId=${id}`,
+              });
+            }
+          : undefined,
         schema: {
           organization: {
             additionalFields: {

@@ -34,6 +34,7 @@ The **Comms** (Communications) service is a standalone Node.js service that hand
 ### 1. Delivery Engine (transactional notifications)
 
 System-to-person messages triggered by application events. Examples:
+
 - Email verification, password reset, invitation emails (from Auth)
 - Order confirmation, shipping updates (from future services)
 - System alerts, maintenance notices (from ops)
@@ -224,12 +225,12 @@ message_reaction
 
 ## Channels & Providers
 
-| Channel   | Protocol         | Provider                   | Notes                                          |
-|-----------|------------------|----------------------------|-------------------------------------------------|
-| Email     | HTTP API         | **Resend**                 | HTML wrapper around sender's body               |
-| SMS       | HTTP API         | **Twilio**                 | Truncated body, no HTML                         |
-| Push      | gRPC → SignalR   | SignalR gateway (.NET)     | Title + body, delivered to connected clients    |
-| In-App    | DB + Push        | Local PG + SignalR gateway | Stored in `notification` table, pushed if online|
+| Channel | Protocol       | Provider                   | Notes                                            |
+| ------- | -------------- | -------------------------- | ------------------------------------------------ |
+| Email   | HTTP API       | **Resend**                 | HTML wrapper around sender's body                |
+| SMS     | HTTP API       | **Twilio**                 | Truncated body, no HTML                          |
+| Push    | gRPC → SignalR | SignalR gateway (.NET)     | Title + body, delivered to connected clients     |
+| In-App  | DB + Push      | Local PG + SignalR gateway | Stored in `notification` table, pushed if online |
 
 ### SignalR Gateway
 
@@ -251,11 +252,11 @@ The gateway is a **dumb connection manager** — it maps "send to user X" or "se
 
 **Gateway gRPC API** (tiny surface):
 
-| RPC                    | Purpose                                       |
-|------------------------|-----------------------------------------------|
-| `SendToUser`           | Push to all of a user's active connections    |
-| `SendToConnection`     | Push to a specific anonymous connection       |
-| `SendToGroup`          | Push to all connections in a room/group       |
+| RPC                | Purpose                                    |
+| ------------------ | ------------------------------------------ |
+| `SendToUser`       | Push to all of a user's active connections |
+| `SendToConnection` | Push to a specific anonymous connection    |
+| `SendToGroup`      | Push to all connections in a room/group    |
 
 Group join/leave is handled client-side — when a user opens a thread, their SignalR client joins group `thread:{threadId}`. When they navigate away, they leave. The gateway manages group membership directly from client subscribe/unsubscribe events. Comms never manages connection state.
 
@@ -265,12 +266,12 @@ Group join/leave is handled client-side — when a user opens a thread, their Si
 
 ### Exchanges
 
-| Exchange                  | Type   | Purpose                                        |
-|---------------------------|--------|------------------------------------------------|
-| `comms.deliver`           | topic  | Inbound delivery requests from any service     |
-| `comms.deliver.dlx`       | topic  | Dead-letter exchange for failed deliveries     |
-| `comms.deliver.retry`     | topic  | Delayed retry (TTL per-message)                |
-| `comms.outcome`           | topic  | Delivery outcome callbacks (optional)          |
+| Exchange              | Type  | Purpose                                    |
+| --------------------- | ----- | ------------------------------------------ |
+| `comms.deliver`       | topic | Inbound delivery requests from any service |
+| `comms.deliver.dlx`   | topic | Dead-letter exchange for failed deliveries |
+| `comms.deliver.retry` | topic | Delayed retry (TTL per-message)            |
+| `comms.outcome`       | topic | Delivery outcome callbacks (optional)      |
 
 **Note:** Thread/conversational messaging does NOT use RabbitMQ. Thread operations go through gRPC (synchronous, user-initiated). RabbitMQ is only for transactional delivery (fire-and-forget side effects).
 
@@ -365,11 +366,11 @@ sequenceDiagram
 
 Because of the two paths, the Comms service exposes **both**:
 
-| Interface        | Transport  | Purpose                                               |
-|------------------|------------|-------------------------------------------------------|
-| RabbitMQ consumer| AMQP       | Consumes transactional delivery requests               |
-| gRPC server      | HTTP/2     | Serves conversational messaging RPCs from the gateway |
-| gRPC client      | HTTP/2     | Pushes real-time updates TO the SignalR gateway       |
+| Interface         | Transport | Purpose                                               |
+| ----------------- | --------- | ----------------------------------------------------- |
+| RabbitMQ consumer | AMQP      | Consumes transactional delivery requests              |
+| gRPC server       | HTTP/2    | Serves conversational messaging RPCs from the gateway |
+| gRPC client       | HTTP/2    | Pushes real-time updates TO the SignalR gateway       |
 
 ### Thread Messaging Flow (detailed)
 
@@ -500,7 +501,10 @@ backends/node/services/comms/
 │       └── index.ts
 ├── api/                  ← @d2/comms-api (gRPC server — NO HTTP)
 │   └── src/
+│       ├── mappers/       (proto ↔ domain mappers: channel pref, template, delivery)
 │       ├── services/      (gRPC service implementations — delivery, threads, notifications)
+│       ├── composition-root.ts  (DI wiring: repos, providers, handlers, caches, gRPC, RMQ)
+│       ├── main.ts        (entrypoint: gRPC server + RabbitMQ consumer)
 │       └── index.ts
 └── tests/                ← comms-tests (separate, mirrors auth-tests)
     └── src/
@@ -514,15 +518,24 @@ backends/node/services/comms/
 
 ### Phase 1: Delivery Engine (unblocks Auth sign-up flow)
 
-- [ ] Domain entities: DeliveryRequest, DeliveryAttempt, ChannelPreference, TemplateWrapper
-- [ ] Domain rules: channel resolution, sensitivity handling
-- [ ] App layer: Deliver handler (orchestrator), per-channel send handlers
-- [ ] Infra: Drizzle schema + migrations, RabbitMQ consumer for `comms.deliver.*`
-- [ ] Infra: Email provider (initial — likely Resend or SES)
+- [x] Domain entities: DeliveryRequest, DeliveryAttempt, ChannelPreference, TemplateWrapper
+- [x] Domain rules: channel resolution, sensitivity handling, recipient validation, message validation
+- [x] Domain entities (Phase 2-3 stubs): Notification, Thread, ThreadParticipant, Message, MessageAttachment, MessageReaction, MessageReceipt
+- [x] App layer: Deliver handler (orchestrator), per-channel send handlers, template + preference CQRS handlers
+- [x] App layer: Delivery sub-handlers for auth events (verification email, password reset, invitation)
+- [x] Infra: Drizzle schema + migrations, repo handlers (message, delivery request, delivery attempt, channel pref, template)
+- [x] Infra: Email provider (Resend API), SMS provider (Twilio API)
+- [x] Infra: RabbitMQ consumer for auth events (`createAuthEventConsumer`)
+- [x] Infra: Default template seeding (idempotent)
+- [x] Proto: `contracts/protos/comms/v1/comms.proto` — full Phase 1-3 gRPC service surface
+- [x] API: gRPC server (`@d2/comms-api`) — composition root, mappers, Phase 1 handlers wired, Phase 2-3 stubs return UNIMPLEMENTED
+- [x] API: `main.ts` entrypoint (gRPC server + RabbitMQ consumer)
+- [x] Aspire: Auth + Comms services wired via `AddJavaScriptApp` + `.WithPnpm()`
+- [x] CI: GitHub Actions jobs for comms unit + integration tests
+- [x] Tests: 550 unit tests passing (44 test files)
 - [ ] Client: `@d2/comms-client` (Node.js) — `notify()` publishes to RabbitMQ
 - [ ] Wire Auth's `PublishVerificationEmail`, `PublishPasswordReset`, `PublishInvitationEmail` to use comms-client
 - [ ] Template wrapper: default email HTML template (branded, wraps title+body)
-- [ ] Tests
 
 ### Phase 2: In-App Notifications + Push
 
@@ -568,16 +581,16 @@ backends/node/services/comms/
 
 ## Evolution from DeCAF v3
 
-| Aspect                 | DeCAF v3                                 | D2 Comms                                         |
-|------------------------|------------------------------------------|---------------------------------------------------|
-| Queue mechanism        | PG polling via Quartz cron               | RabbitMQ with dead-letter retry                   |
-| Retry scheduling       | `NextSendAttempt` column + cron          | Per-message TTL on DLX → retry exchange           |
-| Template compilation   | Provider interface (ITemplatingProvider) | Comms-owned wrapper templates (Handlebars/MJML)   |
-| Sender API             | `Context.Messaging.Commands.Notify`      | RabbitMQ message via `@d2/comms-client`           |
-| Recipient resolution   | Inline DB lookup in Notify handler       | geo-client lib for contact/user lookup            |
-| Channel preferences    | PG NotificationSettings per user/contact | Same concept, enhanced with quiet hours + timezone|
-| In-app notifications   | PG Notification table                    | Same + real-time push via SignalR gateway         |
-| Threads / chat         | PG Thread + Message model                | Same concept, org-scoped, real-time via SignalR   |
-| Non-user recipients    | Only via contactId                       | contactId, direct email/phone, or anonymous push  |
-| Real-time              | Not implemented                          | gRPC → SignalR gateway for all push               |
-| Service boundary       | Feature in monolith                      | Standalone Node.js microservice                   |
+| Aspect               | DeCAF v3                                 | D2 Comms                                           |
+| -------------------- | ---------------------------------------- | -------------------------------------------------- |
+| Queue mechanism      | PG polling via Quartz cron               | RabbitMQ with dead-letter retry                    |
+| Retry scheduling     | `NextSendAttempt` column + cron          | Per-message TTL on DLX → retry exchange            |
+| Template compilation | Provider interface (ITemplatingProvider) | Comms-owned wrapper templates (Handlebars/MJML)    |
+| Sender API           | `Context.Messaging.Commands.Notify`      | RabbitMQ message via `@d2/comms-client`            |
+| Recipient resolution | Inline DB lookup in Notify handler       | geo-client lib for contact/user lookup             |
+| Channel preferences  | PG NotificationSettings per user/contact | Same concept, enhanced with quiet hours + timezone |
+| In-app notifications | PG Notification table                    | Same + real-time push via SignalR gateway          |
+| Threads / chat       | PG Thread + Message model                | Same concept, org-scoped, real-time via SignalR    |
+| Non-user recipients  | Only via contactId                       | contactId, direct email/phone, or anonymous push   |
+| Real-time            | Not implemented                          | gRPC → SignalR gateway for all push                |
+| Service boundary     | Feature in monolith                      | Standalone Node.js microservice                    |

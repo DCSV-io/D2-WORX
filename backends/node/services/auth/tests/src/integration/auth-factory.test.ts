@@ -153,7 +153,6 @@ describe("createAuth() full integration", () => {
       expect(signInRes.user).toBeDefined();
       expect(signInRes.user.email).toBe("verified@example.com");
     });
-
   });
 
   // -----------------------------------------------------------------------

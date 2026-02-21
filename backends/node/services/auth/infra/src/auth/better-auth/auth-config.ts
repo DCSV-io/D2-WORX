@@ -11,6 +11,9 @@ export interface AuthServiceConfig {
   /** Redis connection URL (e.g., redis://host:6379) */
   readonly redisUrl: string;
 
+  /** RabbitMQ connection URL (optional — events are logged but not published when absent) */
+  readonly rabbitMqUrl?: string;
+
   /** Base URL of the auth service (e.g., http://localhost:3000) */
   readonly baseUrl: string;
 
@@ -46,6 +49,9 @@ export interface AuthServiceConfig {
 
   /** Application name for telemetry */
   readonly appName?: string;
+
+  /** Geo service gRPC address (e.g., localhost:5138) */
+  readonly geoAddress?: string;
 
   /** API key for Geo service gRPC authentication */
   readonly geoApiKey?: string;

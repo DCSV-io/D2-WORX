@@ -1,11 +1,7 @@
 import { Resend } from "resend";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type {
-  IEmailProvider,
-  SendEmailInput,
-  SendEmailOutput,
-} from "@d2/comms-app";
+import type { IEmailProvider, SendEmailInput, SendEmailOutput } from "@d2/comms-app";
 
 /**
  * Sends emails via the Resend API.

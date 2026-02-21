@@ -66,9 +66,7 @@ describe("seedDefaultTemplates (integration)", () => {
     expect(invitation.success).toBe(true);
     expect(invitation.data!.template).not.toBeNull();
     expect(invitation.data!.template!.name).toBe("invitation");
-    expect(invitation.data!.template!.subjectTemplate).toBe(
-      "You've been invited to {{orgName}}",
-    );
+    expect(invitation.data!.template!.subjectTemplate).toBe("You've been invited to {{orgName}}");
   });
 
   it("should be idempotent — running twice creates no duplicates", async () => {

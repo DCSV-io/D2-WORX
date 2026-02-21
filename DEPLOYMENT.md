@@ -8,16 +8,16 @@ This document captures the current multi-instance posture of the D²-WORX platfo
 
 D²-WORX is a microservices platform with the following topology:
 
-| Component          | Technology        | Communication               |
-| ------------------ | ----------------- | --------------------------- |
-| Geo Service        | .NET 10 / gRPC    | gRPC (sync), RabbitMQ (async) |
-| Auth Service       | Node.js / Hono    | HTTP (BetterAuth), gRPC (planned) |
-| REST Gateway       | .NET 10 / ASP.NET | HTTP → gRPC (reverse proxy) |
-| Web Client         | SvelteKit 5       | HTTP (SSR + client-side)    |
-| PostgreSQL         | 18                | Per-service databases       |
-| Redis              | 8.2               | Shared distributed cache    |
-| RabbitMQ           | 4.1               | Async messaging             |
-| Aspire AppHost     | .NET Aspire        | Orchestration + discovery   |
+| Component      | Technology        | Communication                     |
+| -------------- | ----------------- | --------------------------------- |
+| Geo Service    | .NET 10 / gRPC    | gRPC (sync), RabbitMQ (async)     |
+| Auth Service   | Node.js / Hono    | HTTP (BetterAuth), gRPC (planned) |
+| REST Gateway   | .NET 10 / ASP.NET | HTTP → gRPC (reverse proxy)       |
+| Web Client     | SvelteKit 5       | HTTP (SSR + client-side)          |
+| PostgreSQL     | 18                | Per-service databases             |
+| Redis          | 8.2               | Shared distributed cache          |
+| RabbitMQ       | 4.1               | Async messaging                   |
+| Aspire AppHost | .NET Aspire       | Orchestration + discovery         |
 
 **Service discovery:** Aspire injects connection strings and service URLs via environment variables at startup. Services do not hard-code peer addresses.
 
@@ -36,11 +36,11 @@ These components require **no code changes** to run multiple instances:
 
 ### Session Storage (3-Tier)
 
-| Tier           | Storage    | Multi-Instance Behavior                          |
-| -------------- | ---------- | ------------------------------------------------ |
-| Cookie cache   | In cookie  | Travels with the request — any instance can read |
-| Redis          | Shared     | Any instance queries the same Redis              |
-| PostgreSQL     | Shared     | Dual-write ensures durability across instances   |
+| Tier         | Storage   | Multi-Instance Behavior                          |
+| ------------ | --------- | ------------------------------------------------ |
+| Cookie cache | In cookie | Travels with the request — any instance can read |
+| Redis        | Shared    | Any instance queries the same Redis              |
+| PostgreSQL   | Shared    | Dual-write ensures durability across instances   |
 
 No sticky sessions required. Session revocation propagates instantly via Redis.
 

@@ -19,8 +19,8 @@ Shared proto definitions used across all services:
 
 Geographic reference data service definitions:
 
-| File Name                                                        | Description                                                                                                                                                                                                 |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File Name                                                        | Description                                                                                                                                                                                                                          |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [geo.proto](../../../../../../contracts/protos/geo/v1/geo.proto) | GeoService contract with 9 RPCs: reference data (Get, RequestUpdate), WhoIs (FindWhoIs), Contacts (GetByIds†, GetByExtKeys, Create, Delete†, DeleteByExtKeys, UpdateByExtKeys). † = internal only, not exposed via client libraries. |
 
 ## Generated Output

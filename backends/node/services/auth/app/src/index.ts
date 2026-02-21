@@ -286,7 +286,7 @@ export function createNotificationHandlers(
   return {
     publishVerificationEmail: new PublishVerificationEmail(context, publisher),
     publishPasswordReset: new PublishPasswordReset(context, publisher),
-    publishInvitationEmail: new PublishInvitationEmail(context),
+    publishInvitationEmail: new PublishInvitationEmail(context, publisher),
   };
 }
 

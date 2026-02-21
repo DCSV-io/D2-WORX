@@ -42,12 +42,7 @@ export interface UpdateThreadParticipantInput {
  */
 export function createThreadParticipant(input: CreateThreadParticipantInput): ThreadParticipant {
   if (!input.threadId) {
-    throw new CommsValidationError(
-      "ThreadParticipant",
-      "threadId",
-      input.threadId,
-      "is required.",
-    );
+    throw new CommsValidationError("ThreadParticipant", "threadId", input.threadId, "is required.");
   }
 
   const hasIdentity = !!input.userId || !!input.contactId;

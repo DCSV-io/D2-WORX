@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  createMessageReaction,
-  CommsValidationError,
-  THREAD_CONSTRAINTS,
-} from "@d2/comms-domain";
+import { createMessageReaction, CommsValidationError, THREAD_CONSTRAINTS } from "@d2/comms-domain";
 
 describe("MessageReaction", () => {
   const validInput = {
@@ -28,34 +24,34 @@ describe("MessageReaction", () => {
     });
 
     it("should throw when messageId is empty", () => {
-      expect(() =>
-        createMessageReaction({ ...validInput, messageId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageReaction({ ...validInput, messageId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when userId is empty", () => {
-      expect(() =>
-        createMessageReaction({ ...validInput, userId: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageReaction({ ...validInput, userId: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when reaction is empty", () => {
-      expect(() =>
-        createMessageReaction({ ...validInput, reaction: "" }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageReaction({ ...validInput, reaction: "" })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when reaction is whitespace only", () => {
-      expect(() =>
-        createMessageReaction({ ...validInput, reaction: "   " }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageReaction({ ...validInput, reaction: "   " })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should throw when reaction exceeds max length", () => {
       const longReaction = "x".repeat(THREAD_CONSTRAINTS.MAX_REACTION_LENGTH + 1);
-      expect(() =>
-        createMessageReaction({ ...validInput, reaction: longReaction }),
-      ).toThrow(CommsValidationError);
+      expect(() => createMessageReaction({ ...validInput, reaction: longReaction })).toThrow(
+        CommsValidationError,
+      );
     });
 
     it("should accept reaction at exactly max length", () => {

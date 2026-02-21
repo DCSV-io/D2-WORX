@@ -11,7 +11,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "dev": "tsx watch src/main.ts",
+    "start": "node dist/main.js"
   },
   "files": [
     "dist"
@@ -26,6 +28,7 @@
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/logging": "workspace:*",
+    "@d2/messaging": "workspace:*",
     "@d2/ratelimit": "workspace:*",
     "@d2/request-enrichment": "workspace:*",
     "@d2/result": "workspace:*",
@@ -38,6 +41,7 @@
     "pg": "8.18.0"
   },
   "devDependencies": {
-    "@types/pg": "8.16.0"
+    "@types/pg": "8.16.0",
+    "tsx": "4.21.0"
   }
 }

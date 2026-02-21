@@ -28,12 +28,7 @@ export interface CreateMessageReactionInput {
  */
 export function createMessageReaction(input: CreateMessageReactionInput): MessageReaction {
   if (!input.messageId) {
-    throw new CommsValidationError(
-      "MessageReaction",
-      "messageId",
-      input.messageId,
-      "is required.",
-    );
+    throw new CommsValidationError("MessageReaction", "messageId", input.messageId, "is required.");
   }
 
   if (!input.userId) {
@@ -42,12 +37,7 @@ export function createMessageReaction(input: CreateMessageReactionInput): Messag
 
   const reaction = cleanStr(input.reaction);
   if (!reaction) {
-    throw new CommsValidationError(
-      "MessageReaction",
-      "reaction",
-      input.reaction,
-      "is required.",
-    );
+    throw new CommsValidationError("MessageReaction", "reaction", input.reaction, "is required.");
   }
 
   if (reaction.length > THREAD_CONSTRAINTS.MAX_REACTION_LENGTH) {

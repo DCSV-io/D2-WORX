@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  createDeliveryHandlers,
-  createDeliverySubHandlers,
-} from "@d2/comms-app";
+import { createDeliveryHandlers, createDeliverySubHandlers } from "@d2/comms-app";
 import {
   createMockContext,
   createMockMessageRepo,

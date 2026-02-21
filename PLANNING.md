@@ -72,6 +72,15 @@
 - ✅ .NET shared tests — 565 passing (gateway auth, idempotency, retry, allowedContextKeys)
 - ✅ .NET Geo tests — 722 passing (contacts ext-key integration tests)
 - ✅ Context key validation refactored to built-in validateInput (Zod + FluentValidation)
+- ✅ Comms service — Phase 1 DDD layers: domain (entities, enums, rules), app (delivery handlers, sub-handlers), infra (Drizzle schema, Resend email, Twilio SMS, RabbitMQ consumer, template seeding)
+- ✅ Comms API — gRPC server (`@d2/comms-api`): composition root, proto ↔ domain mappers, Phase 1 handlers wired, Phase 2-3 stubs UNIMPLEMENTED
+- ✅ Comms proto contract — `contracts/protos/comms/v1/comms.proto` (full Phase 1-3 surface)
+- ✅ Auth entrypoint — `main.ts` with Hono HTTP server, optional RabbitMQ publisher
+- ✅ Aspire wiring — Auth + Comms services via `AddJavaScriptApp` + `.WithPnpm()` (databases, Redis, RabbitMQ refs)
+- ✅ CI — Comms unit + integration test jobs in GitHub Actions
+- ✅ Comms tests — 550 unit tests passing (44 test files)
+- ✅ Auth tests — 617 tests passing (52 test files, up from 437)
+- ✅ Shared tests — 636 tests passing (45 test files)
 
 ### Blocked By
 
@@ -474,23 +483,25 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 
 **Key changes:**
 
-| Aspect                       | Before (Kysely)                                     | After (Drizzle 0.45.x)                                                |
-| ---------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------- |
-| BetterAuth adapter           | Built-in Kysely (internal)                          | `drizzleAdapter(db, { provider: "pg", schema })`                       |
-| Custom table schema          | Hand-written `kysely-types.ts`                      | `pgTable()` declarations with `$inferSelect`/`$inferInsert`            |
-| BetterAuth table schema      | Managed internally by BetterAuth                    | Explicit `pgTable()` declarations matching BetterAuth CLI output       |
-| Migration generation         | Hand-written TS files                               | `drizzle-kit generate` from schema diffs                               |
-| Migration runner             | None (files existed but no runner)                  | Programmatic `runMigrations(pool)` for app startup + Testcontainers   |
-| Repository query builder     | `Kysely<AuthCustomDatabase>`                        | `NodePgDatabase` + Drizzle query builder                               |
-| Column naming                | snake_case (manual)                                 | camelCase JS props → snake_case DB columns (Drizzle convention)       |
-| Number of ORMs               | 2 (Kysely explicit + Kysely internal to BetterAuth) | 1 (Drizzle everywhere)                                                |
+| Aspect                   | Before (Kysely)                                     | After (Drizzle 0.45.x)                                              |
+| ------------------------ | --------------------------------------------------- | ------------------------------------------------------------------- |
+| BetterAuth adapter       | Built-in Kysely (internal)                          | `drizzleAdapter(db, { provider: "pg", schema })`                    |
+| Custom table schema      | Hand-written `kysely-types.ts`                      | `pgTable()` declarations with `$inferSelect`/`$inferInsert`         |
+| BetterAuth table schema  | Managed internally by BetterAuth                    | Explicit `pgTable()` declarations matching BetterAuth CLI output    |
+| Migration generation     | Hand-written TS files                               | `drizzle-kit generate` from schema diffs                            |
+| Migration runner         | None (files existed but no runner)                  | Programmatic `runMigrations(pool)` for app startup + Testcontainers |
+| Repository query builder | `Kysely<AuthCustomDatabase>`                        | `NodePgDatabase` + Drizzle query builder                            |
+| Column naming            | snake_case (manual)                                 | camelCase JS props → snake_case DB columns (Drizzle convention)     |
+| Number of ORMs           | 2 (Kysely explicit + Kysely internal to BetterAuth) | 1 (Drizzle everywhere)                                              |
 
 **Schema files:**
+
 - `infra/src/repository/schema/better-auth-tables.ts` — 8 BetterAuth tables (user, session, account, verification, jwks, organization, member, invitation)
 - `infra/src/repository/schema/custom-tables.ts` — 3 custom tables (sign_in_event, emulation_consent, org_contact)
 - `infra/drizzle.config.ts` — Points at both schema files, generates to `src/repository/migrations/`
 
 **Rationale:**
+
 - Single ORM eliminates the two-ORM complexity
 - Auto-generated migrations from schema diffs (no hand-written SQL)
 - Programmatic migration runner enables Testcontainers integration tests
@@ -537,40 +548,45 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 > Mirrors .NET shared project structure under `backends/node/shared/`. All packages use `@d2/` scope.
 > Workspace root is at project root (`D2-WORX/`) — SvelteKit and other clients can consume any `@d2/*` package.
 
-| Package                    | Status     | Location                                                                      | .NET Equivalent                           |
-| -------------------------- | ---------- | ----------------------------------------------------------------------------- | ----------------------------------------- |
-| **@d2/result**             | ✅ Done    | `backends/node/shared/result/`                                                | `D2.Shared.Result`                        |
-| **@d2/utilities**          | ✅ Done    | `backends/node/shared/utilities/`                                             | `D2.Shared.Utilities`                     |
-| **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                                | `Protos.DotNet`                           |
-| **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                               | `D2.Shared.Tests` (infra)                 |
-| **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                                 | `D2.Shared.Tests` (tests)                 |
-| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                               | `Microsoft.Extensions.Logging` (ILogger)  |
-| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                                      | `D2.Shared.ServiceDefaults`               |
-| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                               | `D2.Shared.Handler`                       |
-| **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                            | `D2.Shared.Interfaces`                    |
-| **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                                     | `D2.Shared.Result.Extensions`             |
-| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`             | `InMemoryCache.Default`                   |
-| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`             | `DistributedCache.Redis`                  |
-| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                             | Messaging.RabbitMQ (raw AMQP + proto JSON)|
-| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                                      | `Geo.Client` (full parity)                |
-| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`               |
-| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                       |
-| **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                     |
-| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/auth-client/`                                    | — (BFF client, HTTP — no .NET equivalent) |
-| **@d2/auth-sdk**           | 📋 Phase 2 | `backends/node/services/auth/auth-sdk/`                                       | `Auth.Client` (gRPC, service-to-service)  |
+| Package                    | Status     | Location                                                                      | .NET Equivalent                            |
+| -------------------------- | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| **@d2/result**             | ✅ Done    | `backends/node/shared/result/`                                                | `D2.Shared.Result`                         |
+| **@d2/utilities**          | ✅ Done    | `backends/node/shared/utilities/`                                             | `D2.Shared.Utilities`                      |
+| **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                                | `Protos.DotNet`                            |
+| **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                               | `D2.Shared.Tests` (infra)                  |
+| **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                                 | `D2.Shared.Tests` (tests)                  |
+| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                               | `Microsoft.Extensions.Logging` (ILogger)   |
+| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                                      | `D2.Shared.ServiceDefaults`                |
+| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                               | `D2.Shared.Handler`                        |
+| **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                            | `D2.Shared.Interfaces`                     |
+| **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                                     | `D2.Shared.Result.Extensions`              |
+| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`             | `InMemoryCache.Default`                    |
+| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`             | `DistributedCache.Redis`                   |
+| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                             | Messaging.RabbitMQ (raw AMQP + proto JSON) |
+| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                                      | `Geo.Client` (full parity)                 |
+| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`                |
+| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                        |
+| **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
+| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/auth-client/`                                    | — (BFF client, HTTP — no .NET equivalent)  |
+| **@d2/auth-sdk**           | 📋 Phase 2 | `backends/node/services/auth/auth-sdk/`                                       | `Auth.Client` (gRPC, service-to-service)   |
 
 ### Services
 
-| Service          | Status     | Notes                                                         |
-| ---------------- | ---------- | ------------------------------------------------------------- |
-| Geo.Domain       | ✅ Done    | Entities, value objects                                       |
-| Geo.App          | ✅ Done    | CQRS handlers, mappers                                        |
-| Geo.Infra        | ✅ Done    | Repository, messaging                                         |
-| Geo.API          | ✅ Done    | gRPC service                                                  |
-| Geo.Client       | ✅ Done    | Service-owned client library (messages, interfaces, handlers) |
-| Geo.Tests        | ✅ Done    | 708 tests passing                                             |
+| Service          | Status         | Notes                                                                                                            |
+| ---------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Geo.Domain       | ✅ Done        | Entities, value objects                                                                                          |
+| Geo.App          | ✅ Done        | CQRS handlers, mappers                                                                                           |
+| Geo.Infra        | ✅ Done        | Repository, messaging                                                                                            |
+| Geo.API          | ✅ Done        | gRPC service                                                                                                     |
+| Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
+| Geo.Tests        | ✅ Done        | 708 tests passing                                                                                                |
 | **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B (DDD layers) done: domain, app, infra, api |
-| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 437 tests passing |
+| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 617 tests passing                                    |
+| **Comms.Domain** | ✅ Done        | Entities, enums, rules, constants (`backends/node/services/comms/domain/`)                                       |
+| **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator, sub-handlers (`backends/node/services/comms/app/`)                         |
+| **Comms.Infra**  | ✅ Done        | Drizzle schema/migrations, Resend + Twilio providers, RabbitMQ consumer (`backends/node/services/comms/infra/`)  |
+| **Comms.API**    | ✅ Done        | gRPC server + composition root + mappers (`backends/node/services/comms/api/`)                                   |
+| **Comms.Tests**  | ✅ Done        | 550 unit tests passing (`backends/node/services/comms/tests/`)                                                   |
 
 ### Gateways
 
@@ -1300,12 +1316,12 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ## Technical Debt
 
-| Item                              | Priority   | Notes                                                                                            |
-| --------------------------------- | ---------- | ------------------------------------------------------------------------------------------------ |
-| **Validate redaction in OTEL**    | **High**   | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output |
-| **Geo location cleanup job**      | **Medium** | Background job to remove locations with zero references (no contacts or WhoIs). Geo-owned responsibility. Auth deletes contacts on org_contact deletion; Geo cleans up orphaned locations separately. |
-| Test container sharing            | Medium     | Could speed up integration tests                                                                 |
-| Standardize error codes           | Medium     | Ensure consistency across services                                                               |
+| Item                           | Priority   | Notes                                                                                                                                                                                                 |
+| ------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Validate redaction in OTEL** | **High**   | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output                                                                                                      |
+| **Geo location cleanup job**   | **Medium** | Background job to remove locations with zero references (no contacts or WhoIs). Geo-owned responsibility. Auth deletes contacts on org_contact deletion; Geo cleans up orphaned locations separately. |
+| Test container sharing         | Medium     | Could speed up integration tests                                                                                                                                                                      |
+| Standardize error codes        | Medium     | Ensure consistency across services                                                                                                                                                                    |
 
 ---
 

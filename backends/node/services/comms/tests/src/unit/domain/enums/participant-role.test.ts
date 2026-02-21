@@ -57,9 +57,7 @@ describe("ParticipantRole", () => {
       expect(PARTICIPANT_ROLE_HIERARCHY.participant).toBeLessThan(
         PARTICIPANT_ROLE_HIERARCHY.moderator,
       );
-      expect(PARTICIPANT_ROLE_HIERARCHY.moderator).toBeLessThan(
-        PARTICIPANT_ROLE_HIERARCHY.creator,
-      );
+      expect(PARTICIPANT_ROLE_HIERARCHY.moderator).toBeLessThan(PARTICIPANT_ROLE_HIERARCHY.creator);
     });
   });
 });

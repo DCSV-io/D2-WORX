@@ -4,12 +4,12 @@ D2-WORX uses **raw AMQP** with **Protocol Buffer** event contracts for cross-ser
 
 ## Transport
 
-| Concern     | Detail                                              |
-| ----------- | --------------------------------------------------- |
-| Broker      | RabbitMQ 4.1                                        |
-| Protocol    | AMQP 0-9-1                                          |
-| .NET client | `RabbitMQ.Client` 7.x (async API)                   |
-| Node client | `rabbitmq-client` via `@d2/messaging`                |
+| Concern       | Detail                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Broker        | RabbitMQ 4.1                                                                                |
+| Protocol      | AMQP 0-9-1                                                                                  |
+| .NET client   | `RabbitMQ.Client` 7.x (async API)                                                           |
+| Node client   | `rabbitmq-client` via `@d2/messaging`                                                       |
 | Serialization | Proto canonical JSON (`JsonFormatter`/`JsonParser` on .NET, `toJSON`/`fromJSON` on Node.js) |
 
 ## Event Contracts
@@ -21,28 +21,28 @@ Event types are defined in **Protocol Buffers** under `contracts/protos/events/v
 
 ### Current Events
 
-| Proto File            | Message Type                 | Publisher | Consumers          |
-| --------------------- | ---------------------------- | --------- | ------------------ |
-| `geo_events.proto`    | `GeoRefDataUpdatedEvent`     | Geo.Infra | Geo.Client, @d2/geo-client |
-| `auth_events.proto`   | `SendVerificationEmailEvent` | Auth      | Comms (planned)    |
-| `auth_events.proto`   | `SendPasswordResetEvent`     | Auth      | Comms (planned)    |
-| `auth_events.proto`   | `SendInvitationEmailEvent`   | Auth      | Comms (planned)    |
+| Proto File          | Message Type                 | Publisher | Consumers                  |
+| ------------------- | ---------------------------- | --------- | -------------------------- |
+| `geo_events.proto`  | `GeoRefDataUpdatedEvent`     | Geo.Infra | Geo.Client, @d2/geo-client |
+| `auth_events.proto` | `SendVerificationEmailEvent` | Auth      | Comms (planned)            |
+| `auth_events.proto` | `SendPasswordResetEvent`     | Auth      | Comms (planned)            |
+| `auth_events.proto` | `SendInvitationEmailEvent`   | Auth      | Comms (planned)            |
 
 ## Exchange Naming
 
-| Pattern              | Exchange Type | Example         | Use Case                       |
-| -------------------- | ------------- | --------------- | ------------------------------ |
+| Pattern              | Exchange Type | Example         | Use Case                          |
+| -------------------- | ------------- | --------------- | --------------------------------- |
 | `events.{service}`   | fanout        | `events.geo`    | Broadcast events to all consumers |
-| `commands.{service}` | topic         | `commands.auth` | Directed commands with routing |
+| `commands.{service}` | topic         | `commands.auth` | Directed commands with routing    |
 
 Naming convention is enforced by `AmqpConventions.EventExchange()` / `AmqpConventions.CommandExchange()` (.NET) and manual string construction (Node.js).
 
 ## Queue Naming
 
-| Pattern                   | Durability         | Use Case                     |
-| ------------------------- | ------------------ | ---------------------------- |
-| Exclusive + auto-delete   | Per-instance       | Broadcast consumers (each instance gets all events) |
-| Durable + shared name     | Survives restarts  | Competing consumers (work queue pattern) |
+| Pattern                 | Durability        | Use Case                                            |
+| ----------------------- | ----------------- | --------------------------------------------------- |
+| Exclusive + auto-delete | Per-instance      | Broadcast consumers (each instance gets all events) |
+| Durable + shared name   | Survives restarts | Competing consumers (work queue pattern)            |
 
 Broadcast consumers (e.g., cache invalidation via `GeoRefDataUpdatedEvent`) create **exclusive auto-delete queues** so each service instance receives every event. The queue name includes a random instance ID to avoid collisions.
 
@@ -50,12 +50,12 @@ Broadcast consumers (e.g., cache invalidation via `GeoRefDataUpdatedEvent`) crea
 
 Every published message includes:
 
-| Header          | Value                               | Example                              |
-| --------------- | ----------------------------------- | ------------------------------------ |
-| `content-type`  | `application/json`                  | `application/json`                   |
-| `x-proto-type`  | Fully-qualified proto type name     | `d2.events.v1.GeoRefDataUpdatedEvent` |
-| `message-id`    | UUID                                | `a1b2c3d4-...`                       |
-| `timestamp`     | Unix epoch (seconds)                | `1707300000`                         |
+| Header         | Value                           | Example                               |
+| -------------- | ------------------------------- | ------------------------------------- |
+| `content-type` | `application/json`              | `application/json`                    |
+| `x-proto-type` | Fully-qualified proto type name | `d2.events.v1.GeoRefDataUpdatedEvent` |
+| `message-id`   | UUID                            | `a1b2c3d4-...`                        |
+| `timestamp`    | Unix epoch (seconds)            | `1707300000`                          |
 
 ## Serialization
 

@@ -2,11 +2,7 @@ import twilio from "twilio";
 import type { Twilio } from "twilio";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type {
-  ISmsProvider,
-  SendSmsInput,
-  SendSmsOutput,
-} from "@d2/comms-app";
+import type { ISmsProvider, SendSmsInput, SendSmsOutput } from "@d2/comms-app";
 
 /**
  * Sends SMS via the Twilio API.
@@ -29,9 +25,7 @@ export class TwilioSmsProvider
     return { inputFields: ["body"] as const };
   }
 
-  protected async executeAsync(
-    input: SendSmsInput,
-  ): Promise<D2Result<SendSmsOutput | undefined>> {
+  protected async executeAsync(input: SendSmsInput): Promise<D2Result<SendSmsOutput | undefined>> {
     try {
       const message = await this.client.messages.create({
         from: this.from,
@@ -44,8 +38,7 @@ export class TwilioSmsProvider
         traceId: this.traceId,
       });
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown Twilio error";
+      const errorMessage = error instanceof Error ? error.message : "Unknown Twilio error";
 
       return D2Result.fail({
         messages: [errorMessage],

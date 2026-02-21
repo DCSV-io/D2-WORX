@@ -4,10 +4,10 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 
 ## Files
 
-| File Name                                | Description                                                                                                                                                                  |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File Name                                | Description                                                                                                                                                                             |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [Extensions.cs](Extensions.cs)           | DI extension method AddGeoInfra registering GeoDbContext, RabbitMQ messaging (raw AMQP), repository handlers, messaging publisher handlers, and UpdatedConsumerService from Geo.Client. |
-| [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration including BatchSize for repository operations.                                                                                      |
+| [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration including BatchSize for repository operations.                                                                                                 |
 
 ---
 
@@ -17,8 +17,8 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > #### Pub (Publishers)
 >
-> | File Name                                     | Description                                                                                        |
-> | --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+> | File Name                                     | Description                                                                                    |
+> | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 > | [Update.cs](Messaging/Handlers/Pub/Update.cs) | Handler for publishing GeoRefDataUpdatedEvent via UpdatePublisher when reference data changes. |
 >
 > #### Sub (Subscribers)
@@ -27,9 +27,9 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > ### Publishers
 >
-> | File Name                                                        | Description                                                                                                                    |
-> | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-> | [UpdatePublisher.cs](Messaging/Publishers/UpdatePublisher.cs)    | AMQP publisher wrapping ProtoPublisher for GeoRefDataUpdatedEvent messages with error handling and logging.                    |
+> | File Name                                                     | Description                                                                                                 |
+> | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+> | [UpdatePublisher.cs](Messaging/Publishers/UpdatePublisher.cs) | AMQP publisher wrapping ProtoPublisher for GeoRefDataUpdatedEvent messages with error handling and logging. |
 >
 > ### Consumers
 >

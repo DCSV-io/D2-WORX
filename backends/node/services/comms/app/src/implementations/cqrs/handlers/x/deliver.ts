@@ -80,9 +80,7 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     this.recipientResolver = recipientResolver;
   }
 
-  protected async executeAsync(
-    input: DeliverInput,
-  ): Promise<D2Result<DeliverOutput | undefined>> {
+  protected async executeAsync(input: DeliverInput): Promise<D2Result<DeliverOutput | undefined>> {
     // Step 0: Idempotency check via correlationId
     const existing = await this.requestRepo.findByCorrelationId.handleAsync({
       correlationId: input.correlationId,
@@ -197,7 +195,10 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
 
       // Render content
       const subject = template?.subjectTemplate
-        ? renderTemplate(template.subjectTemplate, { title: input.title, body: input.plainTextContent })
+        ? renderTemplate(template.subjectTemplate, {
+            title: input.title,
+            body: input.plainTextContent,
+          })
         : input.title;
       const html = template?.bodyTemplate
         ? renderTemplate(template.bodyTemplate, { title: input.title, body: input.content })
