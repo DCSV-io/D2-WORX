@@ -339,4 +339,158 @@ describe("Deliver", () => {
     expect(channelPrefRepo.findByUserId.handleAsync).not.toHaveBeenCalled();
     expect(channelPrefRepo.findByContactId.handleAsync).not.toHaveBeenCalled();
   });
+
+  // -------------------------------------------------------------------------
+  // Defensive / Security tests
+  // -------------------------------------------------------------------------
+
+  it("should return 503 when recipient resolver fails entirely", async () => {
+    const geoFailing = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Geo down"] })),
+    };
+    const geoIdsFailing = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Geo down"] })),
+    };
+
+    const context = createMockContext();
+    const failingResolver = new RecipientResolver(
+      geoFailing as any,
+      geoIdsFailing as any,
+      context,
+    );
+
+    const failDeliver = new Deliver(
+      {
+        message: messageRepo,
+        request: requestRepo,
+        attempt: attemptRepo,
+        channelPref: channelPrefRepo,
+        template: templateRepo,
+      },
+      { email: emailProvider },
+      failingResolver,
+      context,
+    );
+
+    const result = await failDeliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "test",
+      plainTextContent: "test",
+      recipientUserId: "user-123",
+      channels: ["email"],
+      correlationId: "corr-resolver-fail",
+    });
+
+    // Resolver returns empty data → no deliverable address → NOT_FOUND
+    expect(result.success).toBe(false);
+  });
+
+  it("should propagate message repo failure as a fail result", async () => {
+    // Override message create to fail
+    (messageRepo.create.handleAsync as ReturnType<typeof vi.fn>).mockResolvedValue(
+      D2Result.fail({ messages: ["DB write failed"], statusCode: 503 }),
+    );
+
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "test",
+      plainTextContent: "test",
+      recipientUserId: "user-123",
+      channels: ["email"],
+      correlationId: "corr-msg-fail",
+    });
+
+    expect(result.success).toBe(false);
+    // Should NOT attempt delivery if message creation failed
+    expect(emailProvider.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should propagate request repo failure as a fail result", async () => {
+    // Override request create to fail
+    (requestRepo.create.handleAsync as ReturnType<typeof vi.fn>).mockResolvedValue(
+      D2Result.fail({ messages: ["DB write failed"], statusCode: 503 }),
+    );
+
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "test",
+      plainTextContent: "test",
+      recipientUserId: "user-123",
+      channels: ["email"],
+      correlationId: "corr-req-fail",
+    });
+
+    expect(result.success).toBe(false);
+    expect(emailProvider.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should handle both email and sms channels in single request", async () => {
+    // Mock geo to return contact with both email and phone
+    const contactsWithBoth = new Map();
+    contactsWithBoth.set("auth_user:user-dual", [
+      {
+        id: "c-dual",
+        contextKey: "auth_user",
+        relatedEntityId: "user-dual",
+        contactMethods: {
+          emails: [{ value: "dual@example.com", labels: [] }],
+          phoneNumbers: [{ value: "+15551234567", labels: [] }],
+        },
+        personalDetails: undefined,
+        professionalDetails: undefined,
+        location: undefined,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const geoDual = {
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { data: contactsWithBoth } })),
+    };
+    const geoIdsEmpty = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
+    };
+
+    const context = createMockContext();
+    const dualResolver = new RecipientResolver(geoDual as any, geoIdsEmpty as any, context);
+
+    const mockSmsProvider = {
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.ok({ data: { providerMessageId: "twilio-123" } }),
+      ),
+    };
+
+    const dualDeliver = new Deliver(
+      {
+        message: messageRepo,
+        request: requestRepo,
+        attempt: attemptRepo,
+        channelPref: channelPrefRepo,
+        template: templateRepo,
+      },
+      { email: emailProvider, sms: mockSmsProvider as any },
+      dualResolver,
+      context,
+    );
+
+    const result = await dualDeliver.handleAsync({
+      senderService: "auth",
+      title: "Dual Channel",
+      content: "test",
+      plainTextContent: "test",
+      recipientUserId: "user-dual",
+      channels: ["email", "sms"],
+      correlationId: "corr-dual-channel",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data!.attempts).toHaveLength(2);
+    const channels = result.data!.attempts.map((a) => a.channel);
+    expect(channels).toContain("email");
+    expect(channels).toContain("sms");
+  });
 });

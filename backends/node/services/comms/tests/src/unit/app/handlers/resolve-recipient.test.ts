@@ -167,6 +167,137 @@ describe("RecipientResolver", () => {
     expect(result.data!.email).toBeUndefined();
   });
 
+  // -------------------------------------------------------------------------
+  // Defensive edge cases
+  // -------------------------------------------------------------------------
+
+  it("should treat empty string userId as falsy (skip Geo call)", async () => {
+    const geo = { handleAsync: vi.fn() };
+    const geoIds = { handleAsync: vi.fn() };
+    const resolver = new RecipientResolver(geo as any, geoIds as any, createMockContext());
+    const result = await resolver.handleAsync({ userId: "" });
+
+    expect(result.success).toBe(true);
+    // Empty string is falsy — should NOT call geo
+    expect(geo.handleAsync).not.toHaveBeenCalled();
+    expect(geoIds.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should treat empty string contactId as falsy (skip Geo call)", async () => {
+    const geo = { handleAsync: vi.fn() };
+    const geoIds = { handleAsync: vi.fn() };
+    const resolver = new RecipientResolver(geo as any, geoIds as any, createMockContext());
+    const result = await resolver.handleAsync({ contactId: "" });
+
+    expect(result.success).toBe(true);
+    expect(geo.handleAsync).not.toHaveBeenCalled();
+    expect(geoIds.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should handle contact with empty emails and phoneNumbers arrays", async () => {
+    const contacts = new Map();
+    contacts.set("auth_user:user-empty", [
+      {
+        id: "c-empty",
+        contextKey: "auth_user",
+        relatedEntityId: "user-empty",
+        contactMethods: {
+          emails: [],
+          phoneNumbers: [],
+        },
+        personalDetails: undefined,
+        professionalDetails: undefined,
+        location: undefined,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const geo = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contacts } })),
+    };
+    const geoIds = { handleAsync: vi.fn() };
+
+    const resolver = new RecipientResolver(geo as any, geoIds as any, createMockContext());
+    const result = await resolver.handleAsync({ userId: "user-empty" });
+
+    expect(result.success).toBe(true);
+    expect(result.data!.email).toBeUndefined();
+    expect(result.data!.phone).toBeUndefined();
+  });
+
+  it("should handle contact with undefined contactMethods", async () => {
+    const contacts = new Map();
+    contacts.set("auth_user:user-no-methods", [
+      {
+        id: "c-nomethods",
+        contextKey: "auth_user",
+        relatedEntityId: "user-no-methods",
+        contactMethods: undefined,
+        personalDetails: undefined,
+        professionalDetails: undefined,
+        location: undefined,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const geo = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contacts } })),
+    };
+    const geoIds = { handleAsync: vi.fn() };
+
+    const resolver = new RecipientResolver(geo as any, geoIds as any, createMockContext());
+    const result = await resolver.handleAsync({ userId: "user-no-methods" });
+
+    expect(result.success).toBe(true);
+    expect(result.data!.email).toBeUndefined();
+    expect(result.data!.phone).toBeUndefined();
+  });
+
+  it("should take first email from first contact with an email (multi-contact)", async () => {
+    const contacts = new Map();
+    contacts.set("auth_user:user-multi", [
+      {
+        id: "c-no-email",
+        contextKey: "auth_user",
+        relatedEntityId: "user-multi",
+        contactMethods: {
+          emails: [],
+          phoneNumbers: [{ value: "+15551111111", labels: [] }],
+        },
+        personalDetails: undefined,
+        professionalDetails: undefined,
+        location: undefined,
+        createdAt: new Date(),
+      },
+      {
+        id: "c-with-email",
+        contextKey: "auth_user",
+        relatedEntityId: "user-multi",
+        contactMethods: {
+          emails: [{ value: "second@example.com", labels: [] }],
+          phoneNumbers: [],
+        },
+        personalDetails: undefined,
+        professionalDetails: undefined,
+        location: undefined,
+        createdAt: new Date(),
+      },
+    ]);
+
+    const geo = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contacts } })),
+    };
+    const geoIds = { handleAsync: vi.fn() };
+
+    const resolver = new RecipientResolver(geo as any, geoIds as any, createMockContext());
+    const result = await resolver.handleAsync({ userId: "user-multi" });
+
+    expect(result.success).toBe(true);
+    // Phone from first contact, email from second
+    expect(result.data!.phone).toBe("+15551111111");
+    expect(result.data!.email).toBe("second@example.com");
+  });
+
   it("should prefer userId when both userId and contactId are provided", async () => {
     const contacts = new Map();
     contacts.set("auth_user:user-both", [

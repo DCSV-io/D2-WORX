@@ -110,6 +110,43 @@ describe("createSessionMiddleware", () => {
     expect(nextReached).toBe(false);
   });
 
+  it("should return 401 when getSession returns undefined", async () => {
+    const auth = mockAuth(async () => undefined);
+    const app = createApp(auth);
+
+    const res = await app.request("/test");
+
+    // undefined is falsy like null — must not reach route handler
+    expect(res.status).toBe(401);
+  });
+
+  it("should return 503 when getSession rejects with non-Error", async () => {
+    const auth = mockAuth(async () => {
+      throw "string error";
+    });
+    const app = createApp(auth);
+
+    const res = await app.request("/test");
+
+    // Non-Error throws still fail-closed (503, not 401)
+    expect(res.status).toBe(503);
+  });
+
+  it("should not leak infrastructure error details to client", async () => {
+    const auth = mockAuth(async () => {
+      throw new Error("pg: password authentication failed for user 'admin'");
+    });
+    const app = createApp(auth);
+
+    const res = await app.request("/test");
+    const body = await res.json();
+
+    expect(res.status).toBe(503);
+    // Must NOT contain internal error details
+    expect(JSON.stringify(body)).not.toContain("password authentication");
+    expect(JSON.stringify(body)).not.toContain("admin");
+  });
+
   it("should forward request headers to getSession", async () => {
     const getSession = vi.fn().mockResolvedValue({
       user: { id: "u-1", email: "t@t.com", name: "T" },

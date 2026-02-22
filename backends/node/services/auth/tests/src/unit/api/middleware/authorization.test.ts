@@ -196,6 +196,183 @@ describe("requireAdmin", () => {
   });
 });
 
+describe("requireOrg — defensive edge cases", () => {
+  it("should reject empty string orgType", async () => {
+    const app = createApp(
+      { activeOrganizationId: "org-1", activeOrganizationType: "", activeOrganizationRole: "owner" },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject empty string role", async () => {
+    const app = createApp(
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "customer",
+        activeOrganizationRole: "",
+      },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject PascalCase orgType (case sensitivity)", async () => {
+    const app = createApp(
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "Admin",
+        activeOrganizationRole: "owner",
+      },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject UPPERCASE orgType", async () => {
+    const app = createApp(
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "CUSTOMER",
+        activeOrganizationRole: "owner",
+      },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject PascalCase role (case sensitivity)", async () => {
+    const app = createApp(
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "customer",
+        activeOrganizationRole: "Owner",
+      },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject numeric orgType", async () => {
+    const app = createApp(
+      { activeOrganizationId: "org-1", activeOrganizationType: 1, activeOrganizationRole: "owner" },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject numeric role", async () => {
+    const app = createApp(
+      { activeOrganizationId: "org-1", activeOrganizationType: "customer", activeOrganizationRole: 3 },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject when orgId is present but orgType is undefined", async () => {
+    const app = createApp(
+      { activeOrganizationId: "org-1", activeOrganizationRole: "owner" },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject when orgId is present but role is undefined", async () => {
+    const app = createApp(
+      { activeOrganizationId: "org-1", activeOrganizationType: "customer" },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject null orgType", async () => {
+    const app = createApp(
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: null,
+        activeOrganizationRole: "owner",
+      },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject whitespace-only orgType", async () => {
+    const app = createApp(
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "  ",
+        activeOrganizationRole: "owner",
+      },
+      requireOrg(),
+    );
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("requireRole — defensive edge cases", () => {
+  it("should reject empty string role", async () => {
+    const app = createApp(sessionWith("org-1", "customer", ""), requireRole("auditor"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject PascalCase role when expecting lowercase", async () => {
+    const app = createApp(sessionWith("org-1", "customer", "Officer"), requireRole("officer"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject role with leading/trailing whitespace", async () => {
+    const app = createApp(sessionWith("org-1", "customer", " owner "), requireRole("officer"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject fabricated high-privilege role name", async () => {
+    const app = createApp(sessionWith("org-1", "customer", "superadmin"), requireRole("auditor"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject 'admin' as a role name (it is an orgType, not a role)", async () => {
+    const app = createApp(sessionWith("org-1", "customer", "admin"), requireRole("auditor"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("requireOrgType — defensive edge cases", () => {
+  it("should reject PascalCase orgType when expecting lowercase", async () => {
+    const app = createApp(sessionWith("org-1", "Admin", "owner"), requireOrgType("admin"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject empty string orgType", async () => {
+    const app = createApp(sessionWith("org-1", "", "owner"), requireOrgType("admin"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+
+  it("should reject orgType with trailing whitespace", async () => {
+    const app = createApp(sessionWith("org-1", "admin ", "owner"), requireOrgType("admin"));
+    const res = await app.request("/test");
+    expect(res.status).toBe(403);
+  });
+});
+
 describe("middleware composition", () => {
   it("should pass when all composed middleware checks succeed", async () => {
     const app = createApp(

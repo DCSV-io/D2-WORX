@@ -88,7 +88,10 @@
 - ✅ Shared tests — 671 tests passing (35 new DI tests: ServiceCollection, ServiceProvider, ServiceScope, traceId auto-injection)
 - ✅ Invitation email delivery — Custom `/api/invitations` route, `PublishInvitationEmail` handler, proto fields (`invitee_user_id`, `invitee_contact_id`), `GetContactsByIds` handler in geo-client, RecipientResolver dual-path (userId via ext-keys, contactId via direct ID lookup), `HandleInvitationEmail` fix (was passing email string as contactId)
 - ✅ E2E tests — 5 cross-service tests (verification email × 2, password reset, invitation for new user, invitation for existing user) via Testcontainers (PG × 3 + Redis + RabbitMQ) + .NET Geo child process
-- ✅ Auth tests — 777 passing (63 test files), Comms tests — 643 passing (54 test files), Shared tests — 726 passing (59 test files)
+- ✅ Defensive programming test sweep — 70 new security/edge-case tests across auth middleware, CSRF, session, scope, invitation route, emulation rules, comms handlers
+- ✅ Auth tests — 832 passing (63 test files), Comms tests — 658 passing (54 test files), Shared tests — 726 passing (59 test files)
+- ✅ Open question validation tests — 28 integration tests resolving Q1 (RS256 JWT), Q2 (session lifecycle), Q3 (additionalFields), Q4 (definePayload), Q6 (snake_case), Q7 (pre-generated IDs). Key finding: setActiveOrganization does NOT auto-populate custom session fields — app-layer hook needed
+- ✅ Auth tests — 860 passing (64 test files)
 
 ### Blocked By
 
@@ -237,8 +240,8 @@ blocked:{dimension}:{value}
 **Decision**:
 
 - Local memory cache packages for WhoIs data
-- `@d2/geo-cache` (Node.js), `D2.Geo.Cache` (C#)
-- LRU cache with 1-hour TTL, 1000 entry limit
+- `@d2/geo-client` FindWhoIs handler (Node.js), `D2.Geo.Cache` (C#)
+- LRU cache with configurable TTL, configurable entry limit
 - Cache miss → gRPC call to Geo service
 
 **Rationale**:
@@ -659,12 +662,12 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                   |
 | Geo.Tests        | ✅ Done        | 708 tests passing                                                                                               |
 | **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E    |
-| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 777 tests passing                                   |
+| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 860 tests passing                                   |
 | **Comms.Domain** | ✅ Done        | Entities, enums, rules, constants (`backends/node/services/comms/domain/`)                                      |
 | **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator, sub-handlers (`backends/node/services/comms/app/`)                        |
 | **Comms.Infra**  | ✅ Done        | Drizzle schema/migrations, Resend + Twilio providers, RabbitMQ consumer (`backends/node/services/comms/infra/`) |
 | **Comms.API**    | ✅ Done        | gRPC server + composition root + mappers (`backends/node/services/comms/api/`)                                  |
-| **Comms.Tests**  | ✅ Done        | 643 tests passing (`backends/node/services/comms/tests/`)                                                       |
+| **Comms.Tests**  | ✅ Done        | 658 tests passing (`backends/node/services/comms/tests/`)                                                       |
 
 ### Gateways
 
@@ -1125,9 +1128,9 @@ SessionContext (computed, not persisted)
 | `organization`      | BetterAuth  | Org plugin + custom `type` field                      |
 | `member`            | BetterAuth  | Org plugin; role stored as text                       |
 | `invitation`        | BetterAuth  | Org plugin                                            |
-| `org_contact`       | Us (Kysely) | Custom — address book junction → Geo Contact          |
-| `sign_in_event`     | Us (Kysely) | Custom — auth attempt audit log                       |
-| `emulation_consent` | Us (Kysely) | Custom — user-level impersonation consent             |
+| `org_contact`       | Us (Drizzle) | Custom — address book junction → Geo Contact          |
+| `sign_in_event`     | Us (Drizzle) | Custom — auth attempt audit log                       |
+| `emulation_consent` | Us (Drizzle) | Custom — user-level impersonation consent             |
 
 `verification` and `jwks` are pure BetterAuth infrastructure — they never leave auth-infra and are not represented in the domain model.
 
@@ -1431,19 +1434,19 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ## Open Questions
 
-1. **Verify RS256 JWT interop**: Need an early integration test that generates a JWT from BetterAuth (with `alg: "RS256"`) and validates it with .NET's `Microsoft.IdentityModel.Tokens` + JWKS. Confirm the JWT header says `"alg": "RS256"` (not `"RSA256"`).
+1. ✅ **RS256 JWT interop**: **Validated** (2026-02-22). JWT header contains `"alg": "RS256"` (confirmed, not `"RSA256"`). JWKS table stores RSA key pairs (`kty: "RSA"`, modulus + exponent present). JWT has valid `iss`, `aud`, `iat`, `exp` claims compatible with .NET `AddJwtBearer()`. `typ` field may be omitted (allowed per RFC 7519). Full .NET validation deferred to E2E test when gateway is wired.
 
-2. **BetterAuth session sync bugs**: Issues #6987, #6993, #5144 affect our 3-tier session architecture. Need to test the full session lifecycle (create → update → revoke → list) with `storeSessionInDatabase: true` + `secondaryStorage` early. Pin BetterAuth version and re-test after each upgrade.
+2. ✅ **Session lifecycle**: **Validated** (2026-02-22). Full lifecycle tested: create (sign-in → DB row), update (setActiveOrganization → `active_organization_id` updated), revoke (session removed from DB), list (returns active sessions), revoke-others (keeps current, removes rest), multiple concurrent sessions per user. All working with `storeSessionInDatabase: true` against real PostgreSQL. Secondary storage (Redis) tested separately in `secondary-storage.test.ts`. Re-test after BetterAuth upgrades.
 
-3. **Custom session fields + cookie cache**: Our 4 session extensions (orgType, role, emulation) need to survive BetterAuth's cookie cache. If `customSession` data isn't cached, we may need to store org context in the cookie cache manually or accept an extra DB/Redis lookup per request when cookie cache is stale.
+3. ✅ **Custom session fields + cookie cache**: **Partially validated** (2026-02-22). `additionalFields` columns exist in DB and can be written/read. `getSession` returns them correctly when populated. **KEY FINDING**: BetterAuth's `setActiveOrganization` ONLY sets `activeOrganizationId` — our custom fields (`activeOrganizationType`, `activeOrganizationRole`) are NOT auto-populated. App-layer code must update the session after org switch (e.g., hook or custom route wrapper that looks up org type + member role → updates session row). Cookie cache persistence of `additionalFields` requires BetterAuth version containing PR #5735 (merged Nov 2025 canary). **TODO**: Implement post-`setActiveOrganization` hook in Stage C.
 
-4. **`definePayload` session access**: Need to verify that `definePayload` can access session data (for org context in JWT) or if we need a workaround (e.g., custom endpoint that builds the JWT with session context).
+4. ✅ **`definePayload` session access**: **Validated** (2026-02-22). `definePayload` receives `({ user, session })` — both parameters confirmed working. `session` contains `activeOrganizationId` (BetterAuth OOTB) and our custom `additionalFields` (when populated). `user` contains `id`, `email`, `username`. JWT claims are correctly derived from both. Org context claims (`orgType`, `role`) in JWT depend on session fields being populated by app-layer code (see Q3).
 
 5. **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
 
-6. **`snake_case` + org/impersonation plugins**: Need early validation that `casing: "snake_case"` works correctly with our exact plugin set (bearer, jwt, organization, access, impersonation). First integration test priority.
+6. ✅ **`snake_case` + org/impersonation plugins**: **Validated** (2026-02-22). All 6 tables tested with explicit snake_case column queries: `user` (email_verified, created_at, display_username, ban_reason, ban_expires), `account` (user_id, provider_id, account_id, access_token, refresh_token, access_token_expires_at), `session` (user_id, ip_address, user_agent, active_organization_id, active_organization_type, active_organization_role, emulated_organization_id, emulated_organization_type), `organization` (org_type, created_at), `member` (user_id, organization_id, created_at), `invitation` (organization_id, inviter_id, expires_at). All pass with our plugin set (bearer, username, jwt, organization, admin).
 
-7. **`forceAllowId` request context passing**: Need to validate that the `databaseHooks.user.create.before` hook can access request-scoped data (the pre-generated userId) from Hono's `c.var`. The hook receives the user data but not the request context — may need AsyncLocalStorage or a module-level store to bridge the gap. Validate with an early integration test.
+7. ✅ **Pre-generated user ID**: **Validated** (2026-02-22). The `databaseHooks.user.create.before` hook sets `data.id` and returns `{ data }` — BetterAuth preserves the ID **without** needing `forceAllowId: true`. The hook-provided userId matches the created user's ID in DB. E2E sign-up tests (contact-before-user flow) also pass. No AsyncLocalStorage needed — the hook generates/reads the ID directly.
 
 8. **Geo location cleanup job**: ✅ **Decided** — Geo-owned background job removes locations with zero references (no contacts or WhoIs entries pointing to them). Contacts themselves are cleaned up by Auth on org_contact deletion. Still TODO: implement the actual Geo background job.
 

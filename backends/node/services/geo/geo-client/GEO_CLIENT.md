@@ -36,6 +36,7 @@ Handler contract interfaces organized in TLC hierarchy, mirroring .NET `Geo.Clie
 > | [get-from-dist.ts](src/interfaces/q/get-from-dist.ts)                       | `IGetFromDistHandler`          | `GET_FROM_DIST_REDACTION`            | Retrieve reference data from Redis.                                    |
 > | [get-from-disk.ts](src/interfaces/q/get-from-disk.ts)                       | `IGetFromDiskHandler`          | `GET_FROM_DISK_REDACTION`            | Retrieve reference data from disk storage.                             |
 > | [get-contacts-by-ext-keys.ts](src/interfaces/q/get-contacts-by-ext-keys.ts) | `IGetContactsByExtKeysHandler` | `GET_CONTACTS_BY_EXT_KEYS_REDACTION` | Fetch contacts by ext keys with local cache-aside (immutable, no TTL). |
+> | [get-contacts-by-ids.ts](src/interfaces/q/get-contacts-by-ids.ts)           | `IGetContactsByIdsHandler`     | `GET_CONTACTS_BY_IDS_REDACTION`      | Fetch contacts by direct Geo IDs (internal use — Comms recipient resolution). |
 
 > ### X (Complex)
 >
@@ -76,6 +77,7 @@ Handler implementations organized in TLC hierarchy. All extend `BaseHandler` and
 > | [get-from-dist.ts](src/handlers/q/get-from-dist.ts)                       | `GetFromDist`          | Retrieves and deserializes reference data from Redis.                                |
 > | [get-from-disk.ts](src/handlers/q/get-from-disk.ts)                       | `GetFromDisk`          | Reads and deserializes reference data from disk file.                                |
 > | [get-contacts-by-ext-keys.ts](src/handlers/q/get-contacts-by-ext-keys.ts) | `GetContactsByExtKeys` | Cache-aside contact retrieval by ext keys: local cache → gRPC for misses. Fail-open. |
+> | [get-contacts-by-ids.ts](src/handlers/q/get-contacts-by-ids.ts)           | `GetContactsByIds`     | Direct Geo contact ID lookup via gRPC. Used by Comms RecipientResolver for invitation contacts. |
 
 > ### X (Complex)
 >

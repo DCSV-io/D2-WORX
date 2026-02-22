@@ -263,6 +263,121 @@ describe("Scope Middleware", () => {
     });
   });
 
+  describe("buildRequestContext — defensive edge cases", () => {
+    it("should return undefined agentOrgType for unknown org type string", async () => {
+      const mock = createMockProvider();
+      const user = { id: "u1", email: "hack@test.com", name: "Hack" };
+      const session = {
+        [SESSION_FIELDS.ACTIVE_ORG_TYPE]: "hacker",
+        [SESSION_FIELDS.ACTIVE_ORG_ID]: "org-hack",
+      };
+      const app = createTestApp(mock, user, session);
+
+      const res = await get(app);
+      const ctx = (await res.json()) as IRequestContext;
+
+      // Unknown org type maps to undefined — downstream middleware must guard
+      expect(ctx.agentOrgType).toBeUndefined();
+      expect(ctx.isAgentStaff).toBe(false);
+      expect(ctx.isAgentAdmin).toBe(false);
+    });
+
+    it("should return undefined targetOrgType when emulated org type is unknown", async () => {
+      const mock = createMockProvider();
+      const user = { id: "u1", email: "admin@test.com", name: "Admin" };
+      const session = {
+        [SESSION_FIELDS.ACTIVE_ORG_TYPE]: "admin",
+        [SESSION_FIELDS.ACTIVE_ORG_ID]: "org-admin",
+        [SESSION_FIELDS.EMULATED_ORG_ID]: "org-evil",
+        [SESSION_FIELDS.EMULATED_ORG_TYPE]: "fake_type",
+      };
+      const app = createTestApp(mock, user, session);
+
+      const res = await get(app);
+      const ctx = (await res.json()) as IRequestContext;
+
+      expect(ctx.isOrgEmulating).toBe(true);
+      expect(ctx.agentOrgType).toBe("Admin");
+      // Emulated type doesn't map — undefined propagates
+      expect(ctx.targetOrgType).toBeUndefined();
+      expect(ctx.isTargetingStaff).toBe(false);
+      expect(ctx.isTargetingAdmin).toBe(false);
+    });
+
+    it("should NOT set isAgentStaff true for PascalCase 'Admin' org type", async () => {
+      const mock = createMockProvider();
+      const user = { id: "u1", email: "a@test.com", name: "A" };
+      const session = {
+        [SESSION_FIELDS.ACTIVE_ORG_TYPE]: "Admin",
+        [SESSION_FIELDS.ACTIVE_ORG_ID]: "org-1",
+      };
+      const app = createTestApp(mock, user, session);
+
+      const res = await get(app);
+      const ctx = (await res.json()) as IRequestContext;
+
+      // PascalCase "Admin" is NOT in ORG_TYPE_MAP (keys are lowercase)
+      expect(ctx.isAgentStaff).toBe(false);
+      expect(ctx.isAgentAdmin).toBe(false);
+      expect(ctx.agentOrgType).toBeUndefined();
+    });
+
+    it("should set isOrgEmulating false when emulatedOrgId is empty string", async () => {
+      const mock = createMockProvider();
+      const user = { id: "u1", email: "a@test.com", name: "A" };
+      const session = {
+        [SESSION_FIELDS.ACTIVE_ORG_TYPE]: "customer",
+        [SESSION_FIELDS.ACTIVE_ORG_ID]: "org-1",
+        [SESSION_FIELDS.EMULATED_ORG_ID]: "",
+        [SESSION_FIELDS.EMULATED_ORG_TYPE]: "admin",
+      };
+      const app = createTestApp(mock, user, session);
+
+      const res = await get(app);
+      const ctx = (await res.json()) as IRequestContext;
+
+      // Empty string is falsy — should NOT be treated as emulating
+      expect(ctx.isOrgEmulating).toBe(false);
+      expect(ctx.targetOrgId).toBe("org-1");
+    });
+
+    it("should handle session with all undefined org fields (no active org)", async () => {
+      const mock = createMockProvider();
+      const user = { id: "u1", email: "new@test.com", name: "New User" };
+      const session = {}; // Freshly created user with no org
+      const app = createTestApp(mock, user, session);
+
+      const res = await get(app);
+      const ctx = (await res.json()) as IRequestContext;
+
+      expect(ctx.isAuthenticated).toBe(true);
+      expect(ctx.agentOrgId).toBeUndefined();
+      expect(ctx.agentOrgType).toBeUndefined();
+      expect(ctx.targetOrgId).toBeUndefined();
+      expect(ctx.isAgentStaff).toBe(false);
+      expect(ctx.isAgentAdmin).toBe(false);
+      expect(ctx.isOrgEmulating).toBe(false);
+    });
+
+    it("should dispose scope even when route handler throws", async () => {
+      const mock = createMockProvider();
+      const app = new Hono();
+      app.use("*", createScopeMiddleware(mock.provider as any));
+      app.get("/test", () => {
+        throw new Error("Route handler exploded");
+      });
+
+      // The error handler may catch this; the important thing is dispose is called
+      try {
+        await app.request("/test", { method: "GET" });
+      } catch {
+        // Expected
+      }
+
+      expect(mock.disposeFn).toHaveBeenCalledOnce();
+    });
+  });
+
   describe("createScopeMiddleware lifecycle", () => {
     it("should dispose scope after request completes", async () => {
       const mock = createMockProvider();

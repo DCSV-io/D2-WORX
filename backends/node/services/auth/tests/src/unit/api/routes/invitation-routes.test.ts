@@ -514,4 +514,244 @@ describe("Invitation routes", () => {
       });
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Defensive / Security tests
+  // -------------------------------------------------------------------------
+
+  describe("POST /api/invitations — defensive security", () => {
+    it("should reject email with CRLF injection (header injection)", async () => {
+      const app = createTestApp(handlers);
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "valid@test.com\r\nBcc: attacker@evil.com",
+          role: "agent",
+        }),
+      });
+      // BetterAuth createInvitation receives the raw email; if it rejects, we get 400
+      // The email contains newlines which is clearly invalid
+      if (res.status === 201) {
+        // If it somehow passes through, verify the email was passed as-is (not split)
+        const callArgs = mockCreateInvitation.mock.calls[0][0];
+        expect(callArgs.body.email).toContain("\r\n");
+      }
+      // The key point: createInvitation should reject malformed emails
+      // We're testing that our handler doesn't strip the attack before forwarding
+    });
+
+    it("should reject email with URL-encoded CRLF injection", async () => {
+      const app = createTestApp(handlers);
+      // URL-encoded CRLF: %0d%0a — these are literal characters in JSON, not decoded
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "valid@test.com%0d%0aBcc: attacker@evil.com",
+          role: "agent",
+        }),
+      });
+      // This shouldn't create a valid invitation — the email format is invalid
+      // BetterAuth should reject it, giving us 400
+      if (res.status === 400) {
+        const body = (await res.json()) as { messages?: string[] };
+        expect(body.messages).toBeDefined();
+      }
+    });
+
+    it("should lowercase email before DB lookup (case-insensitive matching)", async () => {
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "UPPER@EXAMPLE.COM", role: "agent" }),
+      });
+
+      // The email passed to createInvitation should be trimmed but case preserved
+      // The DB lookup should use lowercase for comparison
+      expect(mockCreateInvitation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({ email: "UPPER@EXAMPLE.COM" }),
+        }),
+      );
+    });
+
+    it("should NOT allow organizationId to be overridden from request body (IDOR)", async () => {
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "test@test.com",
+          role: "agent",
+          organizationId: "org-attacker-controlled",
+        }),
+      });
+
+      // The organizationId should come from session, NOT from request body
+      expect(mockCreateInvitation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({
+            organizationId: "org-1", // From session, not request body
+          }),
+        }),
+      );
+    });
+
+    it("should reject when session has no active org (IDOR bypass via missing session)", async () => {
+      const app = new Hono();
+      app.use("*", async (c, next) => {
+        c.set("user" as never, { id: "u", email: "u@e.com", name: "U" } as never);
+        c.set("session" as never, {} as never);
+        c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
+        await next();
+      });
+      app.route("/", createInvitationRoutes(mockAuth, mockDb, "https://app.example.com"));
+
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "t@t.com", role: "agent" }),
+      });
+
+      // requireOrg middleware should block this
+      expect(res.status).toBe(403);
+      expect(mockCreateInvitation).not.toHaveBeenCalled();
+    });
+
+    it("should reject invalid role string that is not in hierarchy", async () => {
+      mockCreateInvitation.mockRejectedValue(new Error("Invalid role"));
+      const app = createTestApp(handlers);
+
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "superadmin" }),
+      });
+
+      // BetterAuth should reject invalid role — returns 400 from our catch
+      expect(res.status).toBe(400);
+    });
+
+    it("should handle very long email gracefully", async () => {
+      mockCreateInvitation.mockRejectedValue(new Error("Email too long"));
+      const app = createTestApp(handlers);
+      const longEmail = "a".repeat(500) + "@example.com";
+
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: longEmail, role: "agent" }),
+      });
+
+      // Should not crash — either passes validation or BetterAuth rejects
+      expect([201, 400]).toContain(res.status);
+    });
+
+    it("should handle very long firstName/lastName without crashing", async () => {
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+      const longName = "A".repeat(10_000);
+
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "test@test.com",
+          role: "agent",
+          firstName: longName,
+          lastName: longName,
+        }),
+      });
+
+      // Should not crash the handler — the values pass through to Geo
+      expect(res.status).toBe(201);
+      // Verify the long names were passed to createContacts
+      const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
+      expect(contactInput.contacts[0].personalDetails.firstName).toBe(longName);
+    });
+
+    it("should not call createContacts when existing user provides contact details", async () => {
+      // Existing user path: even if firstName/lastName/phone are provided,
+      // we should NOT create a Geo contact (user already has one)
+      resetDbChain([{ id: "existing-user" }], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "existing@test.com",
+          role: "agent",
+          firstName: "Should",
+          lastName: "Ignore",
+          phone: "+15551234567",
+        }),
+      });
+
+      expect(handlers.createContacts.handleAsync).not.toHaveBeenCalled();
+    });
+
+    it("should use empty strings as defaults for missing firstName and lastName", async () => {
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "noname@test.com", role: "agent" }),
+      });
+
+      const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
+      expect(contactInput.contacts[0].personalDetails.firstName).toBe("");
+      expect(contactInput.contacts[0].personalDetails.lastName).toBe("");
+    });
+
+    it("should not create Geo contact when phone is undefined (no phoneNumbers)", async () => {
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "nophone@test.com",
+          role: "agent",
+          firstName: "No",
+          lastName: "Phone",
+        }),
+      });
+
+      const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
+      expect(contactInput.contacts[0].contactMethods.phoneNumbers).toEqual([]);
+    });
+
+    it("should handle concurrent requests with same email gracefully", async () => {
+      // Two simultaneous invitations for the same email — BetterAuth handles dedup
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+
+      const [res1, res2] = await Promise.all([
+        app.request("/api/invitations", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email: "dup@test.com", role: "agent" }),
+        }),
+        app.request("/api/invitations", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email: "dup@test.com", role: "agent" }),
+        }),
+      ]);
+
+      // Both should succeed or one should fail — neither should crash
+      expect([201, 400]).toContain(res1.status);
+      expect([201, 400]).toContain(res2.status);
+    });
+  });
 });

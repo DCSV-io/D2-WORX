@@ -210,6 +210,65 @@ describe("Session fingerprint middleware", () => {
     expect(revoked).toHaveLength(0);
   });
 
+  it("should pass through when cookie value is empty string", async () => {
+    const app = createApp({ store, revoked });
+    const res = await app.request("/test", {
+      headers: { cookie: "better-auth.session_token=" },
+    });
+    // Empty token → extractToken returns null → pass through without storing
+    expect(res.status).toBe(200);
+    expect(store.size).toBe(0);
+  });
+
+  it("should pass through when Bearer header has empty token", async () => {
+    const app = createApp({ store, revoked });
+    const res = await app.request("/test", {
+      headers: { authorization: "Bearer " },
+    });
+    // "Bearer " → slice(7) is "" → falsy → returns null → pass through
+    expect(res.status).toBe(200);
+    expect(store.size).toBe(0);
+  });
+
+  it("should not match different sessions even if same UA (session isolation)", async () => {
+    const app = createApp({ store, revoked });
+    const headers = {
+      "user-agent": "Chrome/120",
+      accept: "text/html",
+    };
+
+    // Store fingerprint for session A
+    await app.request("/test", {
+      headers: { ...headers, cookie: "better-auth.session_token=session-a" },
+    });
+
+    // Tamper session B to have a DIFFERENT fingerprint stored
+    store.set("session-b", "tampered-fingerprint-value");
+
+    // Request with session B and same UA — should REJECT because stored fingerprint differs
+    const res = await app.request("/test", {
+      headers: { ...headers, cookie: "better-auth.session_token=session-b" },
+    });
+    expect(res.status).toBe(401);
+    expect(revoked).toContain("session-b");
+  });
+
+  it("should reject stolen token even when revocation fails (best-effort)", async () => {
+    // Store a fingerprint then use different client
+    store.set("stolen-tok", "original-fingerprint");
+    const app = createApp({ store, revoked, failRevoke: true });
+
+    const res = await app.request("/test", {
+      headers: {
+        cookie: "better-auth.session_token=stolen-tok",
+        "user-agent": "AttackerBrowser/1.0",
+      },
+    });
+
+    // Must still return 401 even though revocation failed
+    expect(res.status).toBe(401);
+  });
+
   it("should detect Accept header changes as fingerprint change", async () => {
     const app = createApp({ store, revoked });
 

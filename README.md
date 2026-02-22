@@ -62,9 +62,9 @@ Summary:
 - 1,287+ .NET tests (unit + integration) passing (565 shared + 722 Geo)
 - Node.js pnpm workspace with shared TypeScript config and Vitest
 - ESLint 9 + Prettier monorepo-wide code quality tooling
-- TypeScript shared infrastructure (Phase 1 complete — 17 `@d2/*` packages, 663 tests):
+- TypeScript shared infrastructure (Phase 1 complete — 18 `@d2/*` shared packages, 726 tests):
   - Layer 0: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing`, `@d2/messaging`
-  - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction)
+  - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction), `@d2/di` (DI container)
   - Layer 2: `@d2/interfaces`, `@d2/result-extensions`
   - Layer 3: `@d2/cache-memory`, `@d2/cache-redis`
   - Layer 4: `@d2/geo-client` (full .NET Geo.Client parity)
@@ -73,11 +73,16 @@ Summary:
 
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
-- Auth service Stage B (Node.js + Hono + BetterAuth):
-  - Domain model (entities, value objects, business rules) — 485 auth tests passing
-  - Application layer (9 CQRS handlers, interfaces)
+- Auth service Stage B (Node.js + Hono + BetterAuth) — 832 auth tests passing:
+  - Domain model (entities, value objects, business rules)
+  - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
+- Comms service Phase 1 (delivery engine) — 658 comms tests passing:
+  - Email delivery via Resend, SMS via Twilio
+  - RabbitMQ consumer for auth events (verification, password reset, invitation)
+  - gRPC API layer + Aspire wiring
+- E2E cross-service tests (Auth → Geo → Comms pipeline, 5 tests)
 
 **🚧 In Progress:**
 

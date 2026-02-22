@@ -520,7 +520,7 @@ backends/node/services/comms/
 ├── COMMS.md              ← this file
 ├── domain/               ← @d2/comms-domain
 │   └── src/
-│       ├── entities/      (DeliveryRequest, DeliveryAttempt, Notification, Thread, Message, etc.)
+│       ├── entities/      (DeliveryRequest, DeliveryAttempt, Thread, Message, MessageAttachment, MessageReaction, MessageReceipt, etc.)
 │       ├── enums/         (Channel, DeliveryStatus, ThreadType, ThreadState, Sensitivity, etc.)
 │       ├── rules/         (channel resolution, quiet hours, retry policy)
 │       └── index.ts
@@ -529,8 +529,9 @@ backends/node/services/comms/
 │       ├── interfaces/    (repository handlers, provider interfaces)
 │       ├── implementations/
 │       │   ├── cqrs/handlers/   (c/ q/ x/)
-│       │   └── messaging/handlers/ (sub/ pub/)
-│       ├── messages/      (RabbitMQ message contracts)
+│       │   └── messaging/handlers/ (sub/)
+│       ├── registration.ts (DI container registration)
+│       ├── service-keys.ts (DI service key definitions)
 │       └── index.ts
 ├── infra/                ← @d2/comms-infra
 │   └── src/
@@ -559,7 +560,7 @@ backends/node/services/comms/
 
 - [x] Domain entities: DeliveryRequest, DeliveryAttempt, ChannelPreference, TemplateWrapper
 - [x] Domain rules: channel resolution, sensitivity handling, recipient validation, message validation
-- [x] Domain entities (Phase 2-3 stubs): Notification, Thread, ThreadParticipant, Message, MessageAttachment, MessageReaction, MessageReceipt
+- [x] Domain entities (Phase 2-3): Thread, ThreadParticipant, Message, MessageAttachment, MessageReaction, MessageReceipt (fully implemented, not stubs)
 - [x] App layer: Deliver handler (orchestrator), per-channel send handlers, template + preference CQRS handlers
 - [x] App layer: Delivery sub-handlers for auth events (verification email, password reset, invitation)
 - [x] Infra: Drizzle schema + migrations, repo handlers (message, delivery request, delivery attempt, channel pref, template)
@@ -571,7 +572,7 @@ backends/node/services/comms/
 - [x] API: `main.ts` entrypoint (gRPC server + RabbitMQ consumer)
 - [x] Aspire: Auth + Comms services wired via `AddJavaScriptApp` + `.WithPnpm()`
 - [x] CI: GitHub Actions jobs for comms unit + integration tests
-- [x] Tests: 643 unit + integration tests passing (54 test files)
+- [x] Tests: 658 unit + integration tests passing (54 test files)
 - [x] RecipientResolver dual-path: userId via `GetContactsByExtKeys`, contactId via `GetContactsByIds`
 - [x] Auth integration: verification email, password reset, invitation email — all wired via RabbitMQ
 - [x] E2E tests: 5 cross-service tests (verification, password reset, invitation for new + existing users)
