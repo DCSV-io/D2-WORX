@@ -1,6 +1,7 @@
 // @d2/auth-api — Hono server entry point and DI composition root.
 
 export { createApp } from "./composition-root.js";
+export type { AppOverrides } from "./composition-root.js";
 export type { SessionVariables } from "./middleware/session.js";
 
 // Middleware factories (exported for testing)

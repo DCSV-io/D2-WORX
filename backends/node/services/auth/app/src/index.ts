@@ -116,6 +116,12 @@ export type {
   DeleteOrgContactOutput,
 } from "./implementations/cqrs/handlers/c/delete-org-contact.js";
 
+export { CreateUserContact } from "./implementations/cqrs/handlers/c/create-user-contact.js";
+export type {
+  CreateUserContactInput,
+  CreateUserContactOutput,
+} from "./implementations/cqrs/handlers/c/create-user-contact.js";
+
 export { RecordSignInOutcome } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
 export type {
   RecordSignInOutcomeInput,
@@ -176,6 +182,7 @@ import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contac
 import { PublishVerificationEmail } from "./implementations/messaging/handlers/pub/publish-verification-email.js";
 import { PublishPasswordReset } from "./implementations/messaging/handlers/pub/publish-password-reset.js";
 import { PublishInvitationEmail } from "./implementations/messaging/handlers/pub/publish-invitation-email.js";
+import { CreateUserContact } from "./implementations/cqrs/handlers/c/create-user-contact.js";
 
 /** Creates sign-in event handlers (mirrors .NET AddXxx() pattern). */
 export function createSignInEventHandlers(
@@ -292,3 +299,11 @@ export function createNotificationHandlers(
 
 /** Return type of createNotificationHandlers. */
 export type NotificationHandlers = ReturnType<typeof createNotificationHandlers>;
+
+/** Creates user contact handler for sign-up Geo contact creation. */
+export function createUserContactHandler(
+  createContacts: Commands.ICreateContactsHandler,
+  context: IHandlerContext,
+) {
+  return new CreateUserContact(createContacts, context);
+}

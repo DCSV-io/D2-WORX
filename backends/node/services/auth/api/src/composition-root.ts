@@ -32,6 +32,7 @@ import {
   createOrgContactRepoHandlers,
   SignInThrottleStore,
   type AuthServiceConfig,
+  type PasswordFunctions,
 } from "@d2/auth-infra";
 import { PASSWORD_POLICY } from "@d2/auth-domain";
 import {
@@ -40,6 +41,7 @@ import {
   createOrgContactHandlers,
   createSignInThrottleHandlers,
   createNotificationHandlers,
+  createUserContactHandler,
 } from "@d2/auth-app";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createSessionMiddleware } from "./middleware/session.js";
@@ -57,6 +59,15 @@ import { createOrgContactRoutes } from "./routes/org-contact-routes.js";
 import { createHealthRoutes } from "./routes/health.js";
 
 /**
+ * Optional overrides for the composition root.
+ * Primarily used by tests to replace infrastructure dependencies.
+ */
+export interface AppOverrides {
+  /** Custom password hash/verify — skips HIBP breach check when provided. */
+  passwordFunctions?: PasswordFunctions;
+}
+
+/**
  * Creates and wires the complete auth service application.
  *
  * This is the composition root (mirrors .NET Program.cs):
@@ -70,7 +81,11 @@ import { createHealthRoutes } from "./routes/health.js";
  *   8. Session fingerprint binding (stolen token detection)
  *   9. Build Hono app: CORS → body limit → enrichment → rate limit → fingerprint → session → CSRF → routes
  */
-export async function createApp(config: AuthServiceConfig, publisher?: IMessagePublisher) {
+export async function createApp(
+  config: AuthServiceConfig,
+  publisher?: IMessagePublisher,
+  overrides?: AppOverrides,
+) {
   // 1. Singletons
   const pool = new pg.Pool({ connectionString: config.databaseUrl });
   const redis = new Redis(config.redisUrl);
@@ -131,7 +146,7 @@ export async function createApp(config: AuthServiceConfig, publisher?: IMessageP
   // Geo contact handlers via @d2/geo-client (gRPC-backed with local caching)
   const geoOptions: GeoClientOptions = {
     ...DEFAULT_GEO_CLIENT_OPTIONS,
-    allowedContextKeys: ["org_contact"],
+    allowedContextKeys: ["org_contact", "user"],
     apiKey: config.geoApiKey ?? "",
   };
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
@@ -201,6 +216,14 @@ export async function createApp(config: AuthServiceConfig, publisher?: IMessageP
     getContactsByExtKeys,
   });
 
+  // User contact handler for sign-up → Geo contact creation.
+  // When Geo is configured, sign-up creates a contact before the user record.
+  // When Geo is not configured (local dev), sign-up proceeds without contact.
+  const userContactHandler =
+    config.geoAddress && config.geoApiKey
+      ? createUserContactHandler(createContacts, handlerContext)
+      : undefined;
+
   // Sign-in brute-force protection (Redis + local memory cache)
   const throttleStore = new SignInThrottleStore(
     redisExists,
@@ -222,10 +245,13 @@ export async function createApp(config: AuthServiceConfig, publisher?: IMessageP
   const notificationHandlers = createNotificationHandlers(handlerContext, publisher);
 
   // 5. Password policy — HIBP k-anonymity cache + domain validation
-  const hibpCacheStore = new CacheMemory.MemoryCacheStore({
-    maxEntries: PASSWORD_POLICY.HIBP_CACHE_MAX_ENTRIES,
-  });
-  const passwordFns = createPasswordFunctions(hibpCacheStore, logger);
+  //    (overridable for tests to skip HIBP API calls)
+  const passwordFns =
+    overrides?.passwordFunctions ??
+    createPasswordFunctions(
+      new CacheMemory.MemoryCacheStore({ maxEntries: PASSWORD_POLICY.HIBP_CACHE_MAX_ENTRIES }),
+      logger,
+    );
 
   // 6. AsyncLocalStorage for per-request fingerprint (used by JWT definePayload)
   const fingerprintStorage = new AsyncLocalStorage<string>();
@@ -251,6 +277,16 @@ export async function createApp(config: AuthServiceConfig, publisher?: IMessageP
     publishInvitationEmail: async (input) => {
       await notificationHandlers.publishInvitationEmail.handleAsync(input);
     },
+    createUserContact: userContactHandler
+      ? async (data) => {
+          const result = await userContactHandler.handleAsync(data);
+          if (!result.success) {
+            throw new Error(
+              `Failed to create Geo contact for user ${data.userId}: ${result.messages?.join(", ") ?? "unknown error"}`,
+            );
+          }
+        }
+      : undefined,
   });
 
   // 8. Session fingerprint binding (stolen token detection)

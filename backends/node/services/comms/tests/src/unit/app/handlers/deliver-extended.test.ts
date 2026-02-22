@@ -65,10 +65,10 @@ describe("Deliver — extended coverage", () => {
 
     // Contact with email + phone
     const contacts = new Map();
-    contacts.set("auth:user:user-123", [
+    contacts.set("user:user-123", [
       {
         id: "c1",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-123",
         contactMethods: {
           emails: [{ value: "user@example.com", labels: [] }],
@@ -223,10 +223,10 @@ describe("Deliver — extended coverage", () => {
 
   it("should use recipientContactId for channel preference lookup", async () => {
     const contacts = new Map();
-    contacts.set("auth:contact:contact-42", [
+    contacts.set("org_contact:contact-42", [
       {
         id: "c1",
-        contextKey: "auth:contact",
+        contextKey: "org_contact",
         relatedEntityId: "contact-42",
         contactMethods: {
           emails: [{ value: "contact@example.com", labels: [] }],

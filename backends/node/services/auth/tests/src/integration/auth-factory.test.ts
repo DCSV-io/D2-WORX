@@ -39,6 +39,7 @@ describe("createAuth() full integration", () => {
 
   let auth: ReturnType<typeof createAuth>;
   let onSignInCalls: Array<{ userId: string; ipAddress: string; userAgent: string }>;
+  let hooks: AuthHooks;
 
   /**
    * Mock HIBP cache — always returns empty response (no breaches found).
@@ -57,7 +58,7 @@ describe("createAuth() full integration", () => {
 
     const passwordFns = createPasswordFunctions(mockHibpCache);
 
-    const hooks: AuthHooks = {
+    hooks = {
       onSignIn: async (data) => {
         onSignInCalls.push(data);
       },
@@ -542,6 +543,75 @@ describe("createAuth() full integration", () => {
 
       expect(user).toBeDefined();
       expect(user.email).toBe("valid-pass@example.com");
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // createUserContact hook (Geo contact on sign-up)
+  // -----------------------------------------------------------------------
+  describe("createUserContact hook", () => {
+    it("should call createUserContact hook with userId and email on sign-up", async () => {
+      const createUserContactCalls: Array<{ userId: string; email: string; name: string }> = [];
+
+      const authWithHook = createAuth(testConfig, getDb(), undefined, {
+        ...hooks,
+        createUserContact: async (data) => {
+          createUserContactCalls.push(data);
+        },
+      });
+
+      await authWithHook.api.signUpEmail({
+        body: { email: "geo-test@example.com", password: "SecurePass123!@#", name: "Geo Test" },
+      });
+
+      expect(createUserContactCalls).toHaveLength(1);
+      expect(createUserContactCalls[0].email).toBe("geo-test@example.com");
+      expect(createUserContactCalls[0].name).toBe("Geo Test");
+      expect(createUserContactCalls[0].userId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      );
+    });
+
+    it("should fail sign-up when createUserContact hook throws", async () => {
+      const authWithFailingHook = createAuth(testConfig, getDb(), undefined, {
+        ...hooks,
+        createUserContact: async () => {
+          throw new Error("Geo unavailable");
+        },
+      });
+
+      await expect(
+        authWithFailingHook.api.signUpEmail({
+          body: { email: "fail@example.com", password: "SecurePass123!@#", name: "Fail Test" },
+        }),
+      ).rejects.toThrow();
+
+      // Verify no user was created (fail-fast)
+      const result = await getPool().query('SELECT * FROM "user" WHERE email = $1', [
+        "fail@example.com",
+      ]);
+      expect(result.rows).toHaveLength(0);
+    });
+
+    it("should pass the same userId to the hook and the created user record", async () => {
+      let hookUserId = "";
+
+      const authWithHook = createAuth(testConfig, getDb(), undefined, {
+        ...hooks,
+        createUserContact: async (data) => {
+          hookUserId = data.userId;
+        },
+      });
+
+      const res = await authWithHook.api.signUpEmail({
+        body: {
+          email: "id-match@example.com",
+          password: "SecurePass123!@#",
+          name: "ID Match",
+        },
+      });
+
+      expect(hookUserId).toBe(res.user.id);
     });
   });
 

@@ -4,12 +4,12 @@ import { RecipientResolver } from "@d2/comms-app";
 import { createMockContext } from "../helpers/mock-handlers.js";
 
 describe("RecipientResolver — extended coverage", () => {
-  it("should resolve by contactId using auth:contact context key", async () => {
+  it("should resolve by contactId using org_contact context key", async () => {
     const contacts = new Map();
-    contacts.set("auth:contact:contact-42", [
+    contacts.set("org_contact:contact-42", [
       {
         id: "c1",
-        contextKey: "auth:contact",
+        contextKey: "org_contact",
         relatedEntityId: "contact-42",
         contactMethods: {
           emails: [{ value: "contact@example.com", labels: [] }],
@@ -33,16 +33,16 @@ describe("RecipientResolver — extended coverage", () => {
     expect(result.data!.email).toBe("contact@example.com");
     expect(result.data!.phone).toBe("+15559876543");
     expect(geo.handleAsync).toHaveBeenCalledWith({
-      keys: [{ contextKey: "auth:contact", relatedEntityId: "contact-42" }],
+      keys: [{ contextKey: "org_contact", relatedEntityId: "contact-42" }],
     });
   });
 
   it("should handle contact with no contactMethods", async () => {
     const contacts = new Map();
-    contacts.set("auth:user:user-no-methods", [
+    contacts.set("user:user-no-methods", [
       {
         id: "c2",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-no-methods",
         contactMethods: undefined,
         personalDetails: undefined,
@@ -66,10 +66,10 @@ describe("RecipientResolver — extended coverage", () => {
 
   it("should resolve phone-only when email not available", async () => {
     const contacts = new Map();
-    contacts.set("auth:user:user-phone", [
+    contacts.set("user:user-phone", [
       {
         id: "c3",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-phone",
         contactMethods: {
           emails: [],
@@ -96,10 +96,10 @@ describe("RecipientResolver — extended coverage", () => {
 
   it("should pick first email/phone from multiple contacts", async () => {
     const contacts = new Map();
-    contacts.set("auth:user:user-multi", [
+    contacts.set("user:user-multi", [
       {
         id: "c4",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-multi",
         contactMethods: {
           emails: [],
@@ -112,7 +112,7 @@ describe("RecipientResolver — extended coverage", () => {
       },
       {
         id: "c5",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-multi",
         contactMethods: {
           emails: [{ value: "second@example.com", labels: [] }],
@@ -139,10 +139,10 @@ describe("RecipientResolver — extended coverage", () => {
 
   it("should prefer userId over contactId when both provided", async () => {
     const contacts = new Map();
-    contacts.set("auth:user:user-both", [
+    contacts.set("user:user-both", [
       {
         id: "c6",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-both",
         contactMethods: {
           emails: [{ value: "user@both.com", labels: [] }],
@@ -167,9 +167,9 @@ describe("RecipientResolver — extended coverage", () => {
 
     expect(result.success).toBe(true);
     expect(result.data!.email).toBe("user@both.com");
-    // Should have used auth:user context key, not auth:contact
+    // Should have used user context key, not org_contact
     expect(geo.handleAsync).toHaveBeenCalledWith({
-      keys: [{ contextKey: "auth:user", relatedEntityId: "user-both" }],
+      keys: [{ contextKey: "user", relatedEntityId: "user-both" }],
     });
   });
 

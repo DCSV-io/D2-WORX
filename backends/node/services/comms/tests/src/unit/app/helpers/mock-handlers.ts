@@ -88,10 +88,10 @@ export function createMockEmailProvider(): IEmailProvider {
 /** Creates a mock RecipientResolver-like geo handler. */
 export function createMockGetContactsByExtKeys() {
   const contacts = new Map();
-  contacts.set("auth:user:user-123", [
+  contacts.set("user:user-123", [
     {
       id: "contact-1",
-      contextKey: "auth:user",
+      contextKey: "user",
       relatedEntityId: "user-123",
       contactMethods: {
         emails: [{ value: "user@example.com", labels: [] }],

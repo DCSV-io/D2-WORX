@@ -85,6 +85,16 @@ export interface AuthHooks {
     inviterEmail: string;
     invitationUrl: string;
   }) => Promise<void>;
+  /**
+   * Creates a Geo contact for a newly registered user.
+   * Called in databaseHooks.user.create.before (Contact BEFORE User pattern).
+   * If this throws, sign-up fails entirely (fail-fast — no stale users).
+   */
+  createUserContact?: (data: {
+    userId: string;
+    email: string;
+    name: string;
+  }) => Promise<void>;
 }
 
 /**
@@ -209,9 +219,18 @@ export function createAuth(
             // Ensure username fields are populated before persistence
             let data = ensureUsername(user as Record<string, unknown>);
 
-            // Ensure pre-generated IDs are preserved (forceAllowId pattern)
-            if (user.id) {
-              data = { ...data, id: user.id };
+            // Ensure pre-generated IDs are preserved (forceAllowId pattern).
+            // When no ID is pre-set, generate one so the Geo contact gets a stable userId.
+            const userId = (user.id as string) ?? generateId();
+            data = { ...data, id: userId };
+
+            // Create Geo contact BEFORE user (fail-fast if Geo unavailable)
+            if (hooks?.createUserContact) {
+              await hooks.createUserContact({
+                userId,
+                email: user.email as string,
+                name: (user.name as string) ?? "",
+              });
             }
 
             return { data };

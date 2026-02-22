@@ -6,10 +6,10 @@ import { createMockContext } from "../helpers/mock-handlers.js";
 describe("RecipientResolver", () => {
   it("should resolve email and phone from userId", async () => {
     const contacts = new Map();
-    contacts.set("auth:user:user-123", [
+    contacts.set("user:user-123", [
       {
         id: "c1",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-123",
         contactMethods: {
           emails: [{ value: "user@example.com", labels: [] }],
@@ -70,10 +70,10 @@ describe("RecipientResolver", () => {
 
   it("should resolve email-only when phone not available", async () => {
     const contacts = new Map();
-    contacts.set("auth:user:user-456", [
+    contacts.set("user:user-456", [
       {
         id: "c2",
-        contextKey: "auth:user",
+        contextKey: "user",
         relatedEntityId: "user-456",
         contactMethods: {
           emails: [{ value: "only@email.com", labels: [] }],

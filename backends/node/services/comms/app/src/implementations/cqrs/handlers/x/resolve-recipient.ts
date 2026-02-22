@@ -37,7 +37,7 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
       return D2Result.ok({ data: {}, traceId: this.traceId });
     }
 
-    const contextKey = input.userId ? "auth:user" : "auth:contact";
+    const contextKey = input.userId ? "user" : "org_contact";
     const relatedEntityId = (input.userId ?? input.contactId)!;
 
     const result = await this.getContactsByExtKeys.handleAsync({
