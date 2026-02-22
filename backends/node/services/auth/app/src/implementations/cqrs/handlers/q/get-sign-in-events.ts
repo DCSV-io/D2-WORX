@@ -88,7 +88,6 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
         if (latestStr === cached.latestDate) {
           return D2Result.ok({
             data: { events: cached.events, total: cached.total },
-            traceId: this.traceId,
           });
         }
       }
@@ -118,6 +117,6 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
         .catch(() => {});
     }
 
-    return D2Result.ok({ data: { events, total }, traceId: this.traceId });
+    return D2Result.ok({ data: { events, total } });
   }
 }

@@ -10,7 +10,11 @@ import {
   getRabbitUrl,
 } from "../helpers/containers.js";
 import { startGeoService, stopGeoService } from "../helpers/geo-dotnet-service.js";
-import { startAuthService, stopAuthService, type AuthServiceHandle } from "../helpers/auth-service.js";
+import {
+  startAuthService,
+  stopAuthService,
+  type AuthServiceHandle,
+} from "../helpers/auth-service.js";
 import {
   startCommsService,
   stopCommsService,
@@ -80,10 +84,10 @@ describe("E2E: Auth sign-up → verification email delivery", () => {
     expect(signUpRes.user.email).toBe(email);
 
     // Wait for comms to process the event and deliver the email
-    await waitFor(
-      async () => commsHandle.stubEmail.sentCount() >= 1,
-      { timeout: 15_000, label: "verification email delivery" },
-    );
+    await waitFor(async () => commsHandle.stubEmail.sentCount() >= 1, {
+      timeout: 15_000,
+      label: "verification email delivery",
+    });
 
     // Assert: stub captured the email
     expect(commsHandle.stubEmail.sentCount()).toBeGreaterThanOrEqual(1);
@@ -123,10 +127,10 @@ describe("E2E: Auth sign-up → verification email delivery", () => {
     });
 
     // Wait for first delivery
-    await waitFor(
-      async () => commsHandle.stubEmail.sentCount() > initialCount,
-      { timeout: 15_000, label: "idempotent first delivery" },
-    );
+    await waitFor(async () => commsHandle.stubEmail.sentCount() > initialCount, {
+      timeout: 15_000,
+      label: "idempotent first delivery",
+    });
 
     const countAfterFirst = commsHandle.stubEmail.sentCount();
 

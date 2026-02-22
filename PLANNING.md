@@ -81,6 +81,11 @@
 - ✅ Comms tests — 550 unit tests passing (44 test files)
 - ✅ Auth tests — 617 tests passing (52 test files, up from 437)
 - ✅ Shared tests — 636 tests passing (45 test files)
+- ✅ `@d2/di` — Lightweight DI container: ServiceKey, ServiceCollection, ServiceProvider, ServiceScope (ADR-011)
+- ✅ DI refactoring — Auth + Comms composition roots refactored to use ServiceCollection with per-request/per-RPC/per-message scoping
+- ✅ Registration functions — `addAuthInfra()`, `addAuthApp()`, `addCommsInfra()`, `addCommsApp()` mirror .NET `services.AddXxx()`
+- ✅ BaseHandler traceId auto-injection — eliminates 174 occurrences of `traceId: this.traceId` boilerplate
+- ✅ Shared tests — 671 tests passing (35 new DI tests: ServiceCollection, ServiceProvider, ServiceScope, traceId auto-injection)
 
 ### Blocked By
 
@@ -512,6 +517,75 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 
 ---
 
+### ADR-010: Reserved
+
+---
+
+### ADR-011: Lightweight DI Container (`@d2/di`)
+
+**Status**: Implemented (2026-02-21)
+
+**Context**: The Node.js services used manual factory functions (`createXxxHandlers(deps, context)`) for dependency injection, as decided in the Phase 2 research (2026-02-07). While functional at small scale, this approach had growing pain points as auth and comms services expanded:
+
+- Composition roots manually wired 30+ handlers with explicit dependency threading
+- Per-request scoping required ad-hoc patterns (Hono `c.var`, function closures)
+- No lifetime management — no distinction between singleton, scoped, and transient services
+- Handler `traceId` boilerplate: every handler had to pass `traceId: this.traceId` to D2Result (174 occurrences)
+
+**Decision**: Build `@d2/di` — a lightweight DI container mirroring .NET's `IServiceCollection`/`IServiceProvider` with `ServiceKey<T>` branded tokens for type-safe resolution.
+
+**Core types:**
+
+| Type                | .NET Equivalent      | Purpose                                                                                               |
+| ------------------- | -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ServiceKey<T>`     | —                    | Branded runtime token (replaces erased TS interfaces as DI keys)                                      |
+| `ServiceCollection` | `IServiceCollection` | Registration builder — `addSingleton`, `addScoped`, `addTransient`, `addInstance`                     |
+| `ServiceProvider`   | `IServiceProvider`   | Immutable resolver — `resolve<T>(key)`, `tryResolve<T>(key)`, `createScope()`                         |
+| `ServiceScope`      | `IServiceScope`      | Per-request child scope — caches scoped services, `setInstance()` for overrides, `[Symbol.dispose]()` |
+| `Lifetime`          | `ServiceLifetime`    | Enum: `Singleton`, `Scoped`, `Transient`                                                              |
+
+**Resolution rules (matching .NET exactly):**
+
+- **Singleton**: Cached once in root, shared across all scopes. Factory receives root provider (captive dependency prevention)
+- **Scoped**: Cached per scope (typically per-request). Throws when resolved from root. Factory receives scope provider
+- **Transient**: New instance every `resolve()`. Factory receives current provider (root or scope)
+
+**Registration pattern:**
+
+Each service package exports an `addXxx(services, ...)` registration function that mirrors .NET's `services.AddXxx()`:
+
+- `addAuthInfra(services, db)` — 14 transient repo handlers
+- `addAuthApp(services, options)` — 17 transient CQRS + notification handlers
+- `addCommsInfra(services, db, providerConfig)` — infra handlers + email/SMS providers
+- `addCommsApp(services)` — delivery handlers + sub-handlers
+
+`ServiceKey` constants are co-located with their interfaces (e.g., `IRecordSignInEventKey` next to the handler interface in `@d2/auth-app`).
+
+**Scoping patterns:**
+
+- **Auth (HTTP)**: `createScopeMiddleware(provider)` on protected routes — builds `IRequestContext` from session data, sets `IHandlerContext` in scope. Routes resolve handlers via `c.get("scope").resolve(key)`. BetterAuth callbacks use `createCallbackScope()` (temporary scope with service-level context)
+- **Comms (gRPC)**: Per-RPC scope in gRPC service handlers — `createServiceScope(provider)` with fresh traceId
+- **Comms (RabbitMQ)**: Per-message scope in consumer callback — same `createServiceScope(provider)` pattern
+
+**BaseHandler traceId auto-injection:**
+
+`BaseHandler.handleAsync()` now automatically injects the ambient `traceId` from `IHandlerContext` into any `D2Result` that doesn't already have one. This eliminated 174 occurrences of `traceId: this.traceId` across all handler return sites.
+
+**Package location**: `backends/node/shared/di/` (`@d2/di`). Layer 0 — zero project dependencies.
+
+**Rationale:**
+
+- Mirrors .NET's DI patterns (reduces cognitive overhead for polyglot developers)
+- Lifetime management prevents captive dependency bugs (singleton depending on scoped)
+- `ServiceKey<T>` provides compile-time type safety without runtime reflection
+- Per-request scoping enables proper `IRequestContext` isolation (traceId, user context)
+- Registration functions (`addXxxApp`, `addXxxInfra`) provide the same composability as .NET extension methods
+- ~200 lines of code — no external dependencies, fully testable
+
+**Supersedes**: The manual factory function pattern from the Phase 2 DI research decision (2026-02-07). Factory functions are replaced by `ServiceCollection` registrations + `ServiceProvider` resolution.
+
+---
+
 ## Implementation Status
 
 ### Infrastructure
@@ -567,6 +641,7 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 | **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`                |
 | **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                        |
 | **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
+| **@d2/di**                 | ✅ Done    | `backends/node/shared/di/`                                                    | `Microsoft.Extensions.DependencyInjection` |
 | **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/auth-client/`                                    | — (BFF client, HTTP — no .NET equivalent)  |
 | **@d2/auth-sdk**           | 📋 Phase 2 | `backends/node/services/auth/auth-sdk/`                                       | `Auth.Client` (gRPC, service-to-service)   |
 
@@ -727,7 +802,7 @@ auth-infra/src/
 - **Auth-app defines interfaces** for auth operations (sign-up, sign-in, session management, token issuance). auth-infra implements these using BetterAuth under the hood.
 - **Abstraction boundary for consumers**: JWTs validated via JWKS are the inter-service boundary. Only the auth service itself depends on BetterAuth. .NET services validate JWTs statelessly via `AddJwtBearer()`.
 
-**Dependency injection**: **Manual factory functions** (decided 2026-02-07). Each package exports a `createXxxHandlers(deps, context)` factory that maps 1:1 to .NET's `services.AddXxx()` extension methods. Hono's `c.var` + middleware provides per-request scoping. No DI container library needed at current scale (~15 packages). If complexity grows beyond 30+ handlers with cross-cutting deps, evaluate `@snap/ts-inject` (Snap Inc., compile-time type-safe, composable containers, ESM-native, decorator-free). Avoid tsyringe/inversify (decorator-based, ESM issues).
+**Dependency injection**: **`@d2/di` container** (ADR-011, implemented 2026-02-21). Replaces the earlier manual factory function approach. Each package exports an `addXxx(services, ...)` registration function (mirrors .NET `services.AddXxx()`). `ServiceCollection` + `ServiceProvider` with `Singleton`/`Scoped`/`Transient` lifetimes. `ServiceKey<T>` branded tokens for type-safe resolution. Per-request scoping via `createScopeMiddleware(provider)` (HTTP) or `createServiceScope(provider)` (gRPC/RabbitMQ).
 
 #### Auth Domain Model (decided 2026-02-07)
 

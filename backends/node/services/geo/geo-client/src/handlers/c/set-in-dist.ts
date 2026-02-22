@@ -44,7 +44,7 @@ export class SetInDist extends BaseHandler<Input, Output> implements Commands.IS
     });
 
     if (setR.success) {
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     }
     return D2Result.bubbleFail(setR);
   }

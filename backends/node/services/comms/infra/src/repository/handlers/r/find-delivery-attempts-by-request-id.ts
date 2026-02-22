@@ -30,7 +30,6 @@ export class FindDeliveryAttemptsByRequestId
 
     return D2Result.ok({
       data: { attempts: rows.map(toDeliveryAttempt) },
-      traceId: this.traceId,
     });
   }
 }

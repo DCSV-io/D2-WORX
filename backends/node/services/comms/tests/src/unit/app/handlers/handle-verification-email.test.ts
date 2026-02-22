@@ -55,4 +55,33 @@ describe("HandleVerificationEmail", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("should escape HTML in content but not in plainTextContent", async () => {
+    const mockDeliver = {
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(
+          D2Result.ok({ data: { messageId: "m1", requestId: "r1", attempts: [] } }),
+        ),
+    };
+
+    const handler = new HandleVerificationEmail(mockDeliver as any, createMockContext());
+
+    await handler.handleAsync({
+      userId: "user-xss",
+      email: "xss@example.com",
+      name: '<script>alert("xss")</script>',
+      verificationUrl: "https://example.com/verify?token=abc",
+      token: "abc",
+    });
+
+    const deliverInput = mockDeliver.handleAsync.mock.calls[0][0];
+
+    // HTML content should have escaped characters
+    expect(deliverInput.content).toContain("&lt;script&gt;");
+    expect(deliverInput.content).not.toContain("<script>");
+
+    // Plain text content should NOT be escaped (it's not rendered as HTML)
+    expect(deliverInput.plainTextContent).toContain('<script>alert("xss")</script>');
+  });
 });

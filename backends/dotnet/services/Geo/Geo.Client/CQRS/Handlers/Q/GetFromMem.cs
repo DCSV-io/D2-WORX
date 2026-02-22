@@ -68,9 +68,9 @@ public class GetFromMem : BaseHandler<GetFromMem, I, O>, H
 
         if (getR.CheckSuccess(out var output))
         {
-            return D2Result<O?>.Ok(new(output!.Value), traceId: TraceId);
+            return D2Result<O?>.Ok(new(output!.Value));
         }
 
-        return D2Result<O?>.NotFound(traceId: TraceId);
+        return D2Result<O?>.NotFound();
     }
 }

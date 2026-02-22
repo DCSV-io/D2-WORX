@@ -31,14 +31,13 @@ export class CreateOrgContactRecord
         updatedAt: input.contact.updatedAt,
       });
 
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     } catch (err) {
       if (isPgUniqueViolation(err)) {
         return D2Result.fail({
           messages: ["Record already exists."],
           statusCode: HttpStatusCode.Conflict,
           errorCode: ErrorCodes.CONFLICT,
-          traceId: this.traceId,
         });
       }
       throw err;

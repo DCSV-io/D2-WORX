@@ -93,7 +93,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         var getR = await r_cacheGet.HandleAsync(new(cacheKey), ct);
         if (getR.CheckSuccess(out var cached) && cached?.Value is not null)
         {
-            return D2Result<O?>.Ok(new O(cached.Value), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(cached.Value));
         }
 
         // Cache miss — call Geo service.
@@ -125,13 +125,13 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
                 input,
                 TraceId);
 
-            return D2Result<O?>.Ok(new O(null), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(null));
         }
 
         if (!response.Result.Success || response.Data.Count == 0)
         {
             // No data found or request failed — return null (fail-open).
-            return D2Result<O?>.Ok(new O(null), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(null));
         }
 
         var whoIs = response.Data[0].Whois;
@@ -151,6 +151,6 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
                 TraceId);
         }
 
-        return D2Result<O?>.Ok(new O(whoIs), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(whoIs));
     }
 }

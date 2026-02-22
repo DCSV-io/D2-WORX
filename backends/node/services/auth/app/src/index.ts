@@ -307,3 +307,40 @@ export function createUserContactHandler(
 ) {
   return new CreateUserContact(createContacts, context);
 }
+
+// --- DI Registration ---
+export { addAuthApp, type AddAuthAppOptions } from "./registration.js";
+export {
+  // Infra-layer keys (interfaces defined here, implemented in auth-infra)
+  ICreateSignInEventKey,
+  IFindSignInEventsByUserIdKey,
+  ICountSignInEventsByUserIdKey,
+  IGetLatestSignInEventDateKey,
+  ICreateEmulationConsentRecordKey,
+  IFindEmulationConsentByIdKey,
+  IFindActiveConsentsByUserIdKey,
+  IFindActiveConsentByUserIdAndOrgKey,
+  IRevokeEmulationConsentRecordKey,
+  ICreateOrgContactRecordKey,
+  IFindOrgContactByIdKey,
+  IFindOrgContactsByOrgIdKey,
+  IUpdateOrgContactRecordKey,
+  IDeleteOrgContactRecordKey,
+  ISignInThrottleStoreKey,
+  // App-layer keys
+  IRecordSignInEventKey,
+  IRecordSignInOutcomeKey,
+  ICreateEmulationConsentKey,
+  IRevokeEmulationConsentKey,
+  ICreateOrgContactKey,
+  IUpdateOrgContactKey,
+  IDeleteOrgContactKey,
+  ICreateUserContactKey,
+  IGetSignInEventsKey,
+  IGetActiveConsentsKey,
+  IGetOrgContactsKey,
+  ICheckSignInThrottleKey,
+  IPublishVerificationEmailKey,
+  IPublishPasswordResetKey,
+  IPublishInvitationEmailKey,
+} from "./service-keys.js";

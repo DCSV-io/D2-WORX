@@ -60,18 +60,17 @@ public class GetMany<TValue> : BaseHandler<
         if (results.Count is 0)
         {
             return ValueTask.FromResult(
-                D2Result<S.GetManyOutput<TValue>?>.NotFound(traceId: TraceId));
+                D2Result<S.GetManyOutput<TValue>?>.NotFound());
         }
 
         if (results.Count < input.Keys.Count)
         {
             return ValueTask.FromResult(
-                D2Result<S.GetManyOutput<TValue>?>.SomeFound(new(results), traceId: TraceId));
+                D2Result<S.GetManyOutput<TValue>?>.SomeFound(new(results)));
         }
 
         return ValueTask.FromResult(
             D2Result<S.GetManyOutput<TValue>?>.Ok(
-                new S.GetManyOutput<TValue>(results),
-                traceId: TraceId));
+                new S.GetManyOutput<TValue>(results)));
     }
 }

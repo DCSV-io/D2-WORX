@@ -34,6 +34,6 @@ export class CreateDeliveryRequestRecord
       processedAt: r.processedAt,
     });
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

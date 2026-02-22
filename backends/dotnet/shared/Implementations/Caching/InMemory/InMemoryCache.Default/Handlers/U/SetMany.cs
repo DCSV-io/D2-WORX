@@ -60,6 +60,6 @@ public class SetMany<TValue> : BaseHandler<
         }
 
         return ValueTask.FromResult(
-            D2Result<S.SetManyOutput?>.Ok(new S.SetManyOutput(), traceId: TraceId));
+            D2Result<S.SetManyOutput?>.Ok(new S.SetManyOutput()));
     }
 }

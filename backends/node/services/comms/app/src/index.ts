@@ -210,3 +210,37 @@ export function createDeliverySubHandlers(
 }
 
 import type { DeliverySubHandlers } from "./interfaces/messaging/handlers/sub/index.js";
+
+// --- DI Registration ---
+export { addCommsApp } from "./registration.js";
+export {
+  // Infra keys
+  ICreateMessageRecordKey,
+  IFindMessageByIdKey,
+  ICreateDeliveryRequestRecordKey,
+  IFindDeliveryRequestByIdKey,
+  IFindDeliveryRequestByCorrelationIdKey,
+  IMarkDeliveryRequestProcessedKey,
+  ICreateDeliveryAttemptRecordKey,
+  IFindDeliveryAttemptsByRequestIdKey,
+  IUpdateDeliveryAttemptStatusKey,
+  ICreateChannelPreferenceRecordKey,
+  IFindChannelPreferenceByUserIdKey,
+  IFindChannelPreferenceByContactIdKey,
+  IUpdateChannelPreferenceRecordKey,
+  ICreateTemplateWrapperRecordKey,
+  IFindTemplateByNameAndChannelKey,
+  IUpdateTemplateWrapperRecordKey,
+  IEmailProviderKey,
+  ISmsProviderKey,
+  // App keys
+  IDeliverKey,
+  IRecipientResolverKey,
+  ISetChannelPreferenceKey,
+  IUpsertTemplateKey,
+  IGetChannelPreferenceKey,
+  IGetTemplateKey,
+  IHandleVerificationEmailKey,
+  IHandlePasswordResetKey,
+  IHandleInvitationEmailKey,
+} from "./service-keys.js";

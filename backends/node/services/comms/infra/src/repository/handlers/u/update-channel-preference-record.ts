@@ -34,6 +34,6 @@ export class UpdateChannelPreferenceRecord
       })
       .where(eq(channelPreference.id, p.id));
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

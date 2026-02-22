@@ -34,7 +34,7 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
     input: ResolveRecipientInput,
   ): Promise<D2Result<ResolveRecipientOutput | undefined>> {
     if (!input.userId && !input.contactId) {
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     }
 
     const contextKey = input.userId ? "user" : "org_contact";
@@ -45,14 +45,14 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
     });
 
     if (!result.success || !result.data) {
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     }
 
     const lookupKey = `${contextKey}:${relatedEntityId}`;
     const contacts = result.data.data.get(lookupKey);
 
     if (!contacts || contacts.length === 0) {
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     }
 
     // Extract email and phone from contacts' methods (ContactDTO → ContactMethodsDTO)
@@ -74,6 +74,6 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
       if (email && phone) break;
     }
 
-    return D2Result.ok({ data: { email, phone }, traceId: this.traceId });
+    return D2Result.ok({ data: { email, phone } });
   }
 }

@@ -61,7 +61,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         // If the request was empty, return early.
         if (input.Request.Keys.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Convert proto keys to domain tuples.
@@ -72,7 +72,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
 
         if (extKeys.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Fetch from repository.
@@ -82,19 +82,19 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         if (repoR.CheckSuccess(out var repoOutput))
         {
             var result = await ConvertToProtoDictAsync(repoOutput!.Contacts, ct);
-            return D2Result<O?>.Ok(new O(result), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(result));
         }
 
         // Handle specific error codes.
         switch (repoR.ErrorCode)
         {
             case ErrorCodes.NOT_FOUND:
-                return D2Result<O?>.NotFound(traceId: TraceId);
+                return D2Result<O?>.NotFound();
 
             case ErrorCodes.SOME_FOUND:
             {
                 var result = await ConvertToProtoDictAsync(repoOutput!.Contacts, ct);
-                return D2Result<O?>.SomeFound(new O(result), traceId: TraceId);
+                return D2Result<O?>.SomeFound(new O(result));
             }
 
             default:

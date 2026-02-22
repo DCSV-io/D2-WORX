@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 import { D2Result, HttpStatusCode } from "@d2/result";
-import { createOrgContactRoutes } from "@d2/auth-api";
+import {
+  ICreateOrgContactKey,
+  IUpdateOrgContactKey,
+  IDeleteOrgContactKey,
+  IGetOrgContactsKey,
+} from "@d2/auth-app";
+import { createOrgContactRoutes, SCOPE_KEY } from "@d2/auth-api";
 
 function createMockHandlers() {
   return {
@@ -24,6 +30,23 @@ function createMockHandlers() {
   };
 }
 
+/** Creates a mock DI scope that returns the mock handlers on resolve(). */
+function createMockScope(handlers: ReturnType<typeof createMockHandlers>) {
+  const keyMap = new Map<string, unknown>([
+    [ICreateOrgContactKey.id, handlers.create],
+    [IUpdateOrgContactKey.id, handlers.update],
+    [IDeleteOrgContactKey.id, handlers.delete],
+    [IGetOrgContactsKey.id, handlers.getByOrg],
+  ]);
+  return {
+    resolve: (key: { id: string }) => {
+      const handler = keyMap.get(key.id);
+      if (!handler) throw new Error(`No mock handler for key: ${key.id}`);
+      return handler;
+    },
+  };
+}
+
 function createTestApp(
   handlers: ReturnType<typeof createMockHandlers>,
   session: {
@@ -41,10 +64,12 @@ function createTestApp(
       activeOrganizationType: session.activeOrganizationType ?? "customer",
       activeOrganizationRole: session.activeOrganizationRole ?? "owner",
     });
+    // Mock DI scope — routes resolve handlers from c.get("scope")
+    c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
     await next();
   });
 
-  app.route("/", createOrgContactRoutes(handlers));
+  app.route("/", createOrgContactRoutes());
   return app;
 }
 
@@ -347,9 +372,10 @@ describe("Org contact routes", () => {
       app.use("*", async (c, next) => {
         c.set("user", { id: "user-123", email: "test@test.com", name: "Test" });
         c.set("session", {}); // No org fields
+        c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
         await next();
       });
-      app.route("/", createOrgContactRoutes(handlers));
+      app.route("/", createOrgContactRoutes());
 
       const res = await app.request("/api/org-contacts", {
         method: "POST",
@@ -366,9 +392,10 @@ describe("Org contact routes", () => {
       app.use("*", async (c, next) => {
         c.set("user", { id: "user-123", email: "test@test.com", name: "Test" });
         c.set("session", {});
+        c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
         await next();
       });
-      app.route("/", createOrgContactRoutes(handlers));
+      app.route("/", createOrgContactRoutes());
 
       const res = await app.request("/api/org-contacts");
       expect(res.status).toBe(403);

@@ -50,13 +50,13 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         // If the request was empty, return early.
         if (input.Contacts.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(), traceId: TraceId);
+            return D2Result<O?>.Ok(new O());
         }
 
         // Insert all contacts - they have GUID keys, so no duplicate checking needed.
         r_db.Contacts.AddRange(input.Contacts);
         await r_db.SaveChangesAsync(ct);
 
-        return D2Result<O?>.Ok(new O(), traceId: TraceId);
+        return D2Result<O?>.Ok(new O());
     }
 }

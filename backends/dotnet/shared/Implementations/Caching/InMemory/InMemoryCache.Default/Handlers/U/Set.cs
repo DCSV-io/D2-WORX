@@ -57,6 +57,6 @@ public class Set<TValue> : BaseHandler<
             r_memoryCache.Set(input.Key, input.Value);
         }
 
-        return ValueTask.FromResult(D2Result<S.SetOutput?>.Ok(new S.SetOutput(), traceId: TraceId));
+        return ValueTask.FromResult(D2Result<S.SetOutput?>.Ok(new S.SetOutput()));
     }
 }

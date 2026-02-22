@@ -55,8 +55,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         if (input.ContactExtKeys.Count == 0)
         {
             return D2Result<O?>.Ok(
-                new O([]),
-                traceId: TraceId);
+                new O([]));
         }
 
         // Deduplicate input keys.
@@ -102,14 +101,14 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         // Determine result status.
         if (results.Count == 0)
         {
-            return D2Result<O?>.NotFound(traceId: TraceId);
+            return D2Result<O?>.NotFound();
         }
 
         if (results.Count < uniqueKeys.Count)
         {
-            return D2Result<O?>.SomeFound(new O(results), traceId: TraceId);
+            return D2Result<O?>.SomeFound(new O(results));
         }
 
-        return D2Result<O?>.Ok(new O(results), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(results));
     }
 }

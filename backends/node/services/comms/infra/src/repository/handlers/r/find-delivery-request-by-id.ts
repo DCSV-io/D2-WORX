@@ -33,11 +33,10 @@ export class FindDeliveryRequestById
     if (!row) {
       return D2Result.notFound({
         messages: [`DeliveryRequest '${input.id}' not found.`],
-        traceId: this.traceId,
       });
     }
 
-    return D2Result.ok({ data: { request: toDeliveryRequest(row) }, traceId: this.traceId });
+    return D2Result.ok({ data: { request: toDeliveryRequest(row) } });
   }
 }
 

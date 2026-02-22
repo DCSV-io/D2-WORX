@@ -26,11 +26,10 @@ export class FindMessageById extends BaseHandler<I, O> implements IFindMessageBy
     if (!row) {
       return D2Result.notFound({
         messages: [`Message '${input.id}' not found.`],
-        traceId: this.traceId,
       });
     }
 
-    return D2Result.ok({ data: { message: toMessage(row) }, traceId: this.traceId });
+    return D2Result.ok({ data: { message: toMessage(row) } });
   }
 }
 

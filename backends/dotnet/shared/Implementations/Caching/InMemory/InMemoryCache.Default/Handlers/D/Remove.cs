@@ -44,6 +44,6 @@ public class Remove : BaseHandler<H, I, O>, H
         CancellationToken ct = default)
     {
         r_memoryCache.Remove(input.Key);
-        return ValueTask.FromResult(D2Result<O?>.Ok(new O(), traceId: TraceId));
+        return ValueTask.FromResult(D2Result<O?>.Ok(new O()));
     }
 }

@@ -48,7 +48,7 @@ public class CreateWhoIs : BaseHandler<CreateWhoIs, I, O>, H
         // If the request was empty, return early.
         if (input.WhoIsRecords.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(0), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(0));
         }
 
         // Validate each WhoIs record.
@@ -70,7 +70,7 @@ public class CreateWhoIs : BaseHandler<CreateWhoIs, I, O>, H
         if (allErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
         // Create in repository.
@@ -81,6 +81,6 @@ public class CreateWhoIs : BaseHandler<CreateWhoIs, I, O>, H
             return D2Result<O?>.BubbleFail(repoR);
         }
 
-        return D2Result<O?>.Ok(new O(repoOutput!.Created), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(repoOutput!.Created));
     }
 }

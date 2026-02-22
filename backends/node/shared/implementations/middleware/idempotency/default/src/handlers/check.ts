@@ -53,7 +53,6 @@ export class Check
         // Lock acquired — caller should proceed with request processing.
         return D2Result.ok({
           data: { state: "acquired" as const, cachedResponse: undefined },
-          traceId: this.traceId,
         });
       }
 
@@ -72,7 +71,6 @@ export class Check
         );
         return D2Result.ok({
           data: { state: "acquired" as const, cachedResponse: undefined },
-          traceId: this.traceId,
         });
       }
 
@@ -80,7 +78,6 @@ export class Check
       if (getResult.data.value === SENTINEL) {
         return D2Result.ok({
           data: { state: "in_flight" as const, cachedResponse: undefined },
-          traceId: this.traceId,
         });
       }
 
@@ -90,7 +87,6 @@ export class Check
         if (cachedResponse && typeof cachedResponse.statusCode === "number") {
           return D2Result.ok({
             data: { state: "cached" as const, cachedResponse },
-            traceId: this.traceId,
           });
         }
       } catch {
@@ -102,14 +98,12 @@ export class Check
       // Could not parse — fail-open: treat as acquired.
       return D2Result.ok({
         data: { state: "acquired" as const, cachedResponse: undefined },
-        traceId: this.traceId,
       });
     } catch {
       // Fail-open on all cache errors.
       this.context.logger.warn(`Idempotency check failed. Failing open. TraceId: ${this.traceId}`);
       return D2Result.ok({
         data: { state: "acquired" as const, cachedResponse: undefined },
-        traceId: this.traceId,
       });
     }
   }

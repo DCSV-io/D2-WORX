@@ -29,7 +29,6 @@ export class Set<TValue>
           messages: ["Value could not be serialized."],
           statusCode: HttpStatusCode.InternalServerError,
           errorCode: ErrorCodes.COULD_NOT_BE_SERIALIZED,
-          traceId: this.traceId,
         });
       }
 
@@ -39,13 +38,12 @@ export class Set<TValue>
         await this.redis.set(input.key, serialized);
       }
 
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     } catch {
       return D2Result.fail({
         messages: ["Unable to connect to Redis."],
         statusCode: HttpStatusCode.ServiceUnavailable,
         errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-        traceId: this.traceId,
       });
     }
   }

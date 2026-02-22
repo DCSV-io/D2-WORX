@@ -61,10 +61,10 @@ export class RecordSignInOutcome extends BaseHandler<
       }
 
       // Other status codes (e.g. 500) — no-op
-      return D2Result.ok({ data: { recorded: false }, traceId: this.traceId });
+      return D2Result.ok({ data: { recorded: false } });
     } catch {
       // Fail-open: swallow all store errors
-      return D2Result.ok({ data: { recorded: false }, traceId: this.traceId });
+      return D2Result.ok({ data: { recorded: false } });
     }
   }
 
@@ -88,7 +88,7 @@ export class RecordSignInOutcome extends BaseHandler<
         .catch(() => {});
     }
 
-    return D2Result.ok({ data: { recorded: true }, traceId: this.traceId });
+    return D2Result.ok({ data: { recorded: true } });
   }
 
   private async handleFailure(
@@ -102,6 +102,6 @@ export class RecordSignInOutcome extends BaseHandler<
       await this.store.setLocked(input.identifierHash, input.identityHash, delaySec);
     }
 
-    return D2Result.ok({ data: { recorded: true }, traceId: this.traceId });
+    return D2Result.ok({ data: { recorded: true } });
   }
 }

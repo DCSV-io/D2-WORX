@@ -72,7 +72,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
         this.options.clientFingerprintThreshold,
       );
       if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
+        return D2Result.ok({ data: result });
       }
     }
 
@@ -84,7 +84,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
         this.options.ipThreshold,
       );
       if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
+        return D2Result.ok({ data: result });
       }
     }
 
@@ -96,7 +96,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
         this.options.cityThreshold,
       );
       if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
+        return D2Result.ok({ data: result });
       }
     }
 
@@ -111,14 +111,13 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
         this.options.countryThreshold,
       );
       if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
+        return D2Result.ok({ data: result });
       }
     }
 
     // All dimensions passed.
     return D2Result.ok({
       data: { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined },
-      traceId: this.traceId,
     });
   }
 

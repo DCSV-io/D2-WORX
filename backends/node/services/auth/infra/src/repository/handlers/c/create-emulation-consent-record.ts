@@ -31,14 +31,13 @@ export class CreateEmulationConsentRecord
         createdAt: input.consent.createdAt,
       });
 
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     } catch (err) {
       if (isPgUniqueViolation(err)) {
         return D2Result.fail({
           messages: ["An active consent already exists for this user and organization."],
           statusCode: HttpStatusCode.Conflict,
           errorCode: ErrorCodes.CONFLICT,
-          traceId: this.traceId,
         });
       }
       throw err;

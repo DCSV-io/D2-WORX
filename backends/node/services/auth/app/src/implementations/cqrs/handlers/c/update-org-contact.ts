@@ -75,7 +75,7 @@ export class UpdateOrgContactHandler extends BaseHandler<
 
     const findResult = await this.findById.handleAsync({ id: input.id });
     if (!findResult.success || !findResult.data) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
     const existing = findResult.data.contact;
@@ -86,7 +86,6 @@ export class UpdateOrgContactHandler extends BaseHandler<
         messages: ["Not authorized to modify this contact."],
         statusCode: HttpStatusCode.Forbidden,
         errorCode: ErrorCodes.FORBIDDEN,
-        traceId: this.traceId,
       });
     }
 
@@ -132,7 +131,6 @@ export class UpdateOrgContactHandler extends BaseHandler<
 
     return D2Result.ok({
       data: { contact: updated, geoContact: newGeoContact },
-      traceId: this.traceId,
     });
   }
 }

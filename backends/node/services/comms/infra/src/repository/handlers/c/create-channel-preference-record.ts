@@ -34,6 +34,6 @@ export class CreateChannelPreferenceRecord
       updatedAt: p.updatedAt,
     });
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

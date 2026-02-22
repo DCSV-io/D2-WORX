@@ -72,7 +72,7 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
     const junctions: OrgContact[] = findResult.success ? (findResult.data?.contacts ?? []) : [];
 
     if (junctions.length === 0) {
-      return D2Result.ok({ data: { contacts: [] }, traceId: this.traceId });
+      return D2Result.ok({ data: { contacts: [] } });
     }
 
     // Batch fetch Geo contacts using ext keys
@@ -99,6 +99,6 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
       geoContact: geoContactMap.get(`org_contact:${j.id}`)?.[0] ?? null,
     }));
 
-    return D2Result.ok({ data: { contacts }, traceId: this.traceId });
+    return D2Result.ok({ data: { contacts } });
   }
 }

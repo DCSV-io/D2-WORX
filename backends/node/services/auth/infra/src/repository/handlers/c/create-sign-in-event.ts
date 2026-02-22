@@ -27,6 +27,6 @@ export class CreateSignInEvent extends BaseHandler<I, O> implements ICreateSignI
       createdAt: input.event.createdAt,
     });
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

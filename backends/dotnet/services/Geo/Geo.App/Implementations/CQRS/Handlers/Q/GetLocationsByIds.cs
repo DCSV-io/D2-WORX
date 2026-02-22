@@ -127,7 +127,7 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
                 }
 
                 // Otherwise, return (fail, NOT found).
-                return D2Result<O?>.NotFound(traceId: TraceId);
+                return D2Result<O?>.NotFound();
             }
 
             // If SOME locations were found, add to list, cache and return [fail, SOME found].
@@ -179,8 +179,8 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
     }
 
     private D2Result<O?> Success(Dictionary<string, Location> locations) =>
-        D2Result<O?>.Ok(new O(locations), traceId: TraceId);
+        D2Result<O?>.Ok(new O(locations));
 
     private D2Result<O?> SomeFound(Dictionary<string, Location> locations) =>
-        D2Result<O?>.SomeFound(new O(locations), traceId: TraceId);
+        D2Result<O?>.SomeFound(new O(locations));
 }

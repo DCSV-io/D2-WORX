@@ -90,11 +90,7 @@ export interface AuthHooks {
    * Called in databaseHooks.user.create.before (Contact BEFORE User pattern).
    * If this throws, sign-up fails entirely (fail-fast — no stale users).
    */
-  createUserContact?: (data: {
-    userId: string;
-    email: string;
-    name: string;
-  }) => Promise<void>;
+  createUserContact?: (data: { userId: string; email: string; name: string }) => Promise<void>;
 }
 
 /**

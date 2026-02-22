@@ -137,6 +137,6 @@ export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateO
       return D2Result.bubbleFail(geoResult);
     }
 
-    return D2Result.ok({ data: { contact, geoContact }, traceId: this.traceId });
+    return D2Result.ok({ data: { contact, geoContact } });
   }
 }

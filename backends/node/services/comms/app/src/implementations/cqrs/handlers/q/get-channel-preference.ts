@@ -40,7 +40,7 @@ export class GetChannelPreference extends BaseHandler<
     input: GetChannelPreferenceInput,
   ): Promise<D2Result<GetChannelPreferenceOutput | undefined>> {
     if (!input.userId && !input.contactId) {
-      return D2Result.ok({ data: { pref: null }, traceId: this.traceId });
+      return D2Result.ok({ data: { pref: null } });
     }
 
     const cacheKey = input.userId
@@ -51,7 +51,7 @@ export class GetChannelPreference extends BaseHandler<
     if (this.cache) {
       const cached = await this.cache.get.handleAsync({ key: cacheKey });
       if (cached.success && cached.data?.value !== undefined) {
-        return D2Result.ok({ data: { pref: cached.data.value }, traceId: this.traceId });
+        return D2Result.ok({ data: { pref: cached.data.value } });
       }
     }
 
@@ -70,6 +70,6 @@ export class GetChannelPreference extends BaseHandler<
       await this.cache.set.handleAsync({ key: cacheKey, value: pref, expirationMs: 900_000 });
     }
 
-    return D2Result.ok({ data: { pref }, traceId: this.traceId });
+    return D2Result.ok({ data: { pref } });
   }
 }

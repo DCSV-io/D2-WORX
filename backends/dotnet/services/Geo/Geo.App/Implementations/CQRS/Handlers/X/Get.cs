@@ -139,7 +139,7 @@ public class Get : BaseHandler<Get, I, O>, H
         if (memoryR.CheckSuccess(out var memoryOutput))
         {
             // If successful, return the data.
-            return D2Result<O?>.Ok(new O(memoryOutput!.Data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(memoryOutput!.Data));
         }
 
         // If that fails, try to get it from distributed cache.
@@ -153,7 +153,7 @@ public class Get : BaseHandler<Get, I, O>, H
             await SetOnDiskAsync(data, ct);
 
             // Then return the data.
-            return D2Result<O?>.Ok(new O(data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(data));
         }
 
         // If that failed, try to get it from the database.
@@ -172,7 +172,7 @@ public class Get : BaseHandler<Get, I, O>, H
             }
 
             // Then return the data.
-            return D2Result<O?>.Ok(new O(dbOutput.Data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(dbOutput.Data));
         }
 
         // If we failed to get it from the database, log the error.
@@ -198,11 +198,11 @@ public class Get : BaseHandler<Get, I, O>, H
             // database, a scheduled job will eventually reconcile it.
 
             // Then return the data.
-            return D2Result<O?>.Ok(new O(data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(data));
         }
 
         // If all attempts failed, return NotFound.
-        return D2Result<O?>.NotFound(traceId: TraceId);
+        return D2Result<O?>.NotFound();
     }
 
     /// <summary>
@@ -273,7 +273,7 @@ public class Get : BaseHandler<Get, I, O>, H
 
         if (setInDistR.Success)
         {
-            return D2Result.Ok(traceId: TraceId);
+            return D2Result.Ok();
         }
 
         Context.Logger.LogError(
@@ -281,8 +281,7 @@ public class Get : BaseHandler<Get, I, O>, H
             TraceId);
         return D2Result.Fail(
             ["Failed to set data in distributed cache."],
-            System.Net.HttpStatusCode.InternalServerError,
-            traceId: TraceId);
+            System.Net.HttpStatusCode.InternalServerError);
     }
 
     /// <summary>

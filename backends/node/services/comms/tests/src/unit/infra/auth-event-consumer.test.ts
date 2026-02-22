@@ -11,6 +11,9 @@ describe("createAuthEventConsumer", () => {
       handlePasswordReset: {
         handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })),
       },
+      handleInvitationEmail: {
+        handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })),
+      },
     };
   }
 
@@ -59,6 +62,7 @@ describe("createAuthEventConsumer", () => {
 
     expect(subHandlers.handleVerificationEmail.handleAsync).toHaveBeenCalledOnce();
     expect(subHandlers.handlePasswordReset.handleAsync).not.toHaveBeenCalled();
+    expect(subHandlers.handleInvitationEmail.handleAsync).not.toHaveBeenCalled();
 
     const event = subHandlers.handleVerificationEmail.handleAsync.mock.calls[0][0];
     expect(event.userId).toBe("user-1");
@@ -82,10 +86,39 @@ describe("createAuthEventConsumer", () => {
 
     expect(subHandlers.handlePasswordReset.handleAsync).toHaveBeenCalledOnce();
     expect(subHandlers.handleVerificationEmail.handleAsync).not.toHaveBeenCalled();
+    expect(subHandlers.handleInvitationEmail.handleAsync).not.toHaveBeenCalled();
 
     const event = subHandlers.handlePasswordReset.handleAsync.mock.calls[0][0];
     expect(event.userId).toBe("user-2");
     expect(event.resetUrl).toBe("https://example.com/reset/xyz");
+  });
+
+  it("should dispatch invitation email event by shape", async () => {
+    const bus = createMockMessageBus();
+    const subHandlers = createMockSubHandlers();
+
+    createAuthEventConsumer(bus as any, subHandlers as any);
+    const handler = bus.getCapturedHandler()!;
+
+    await handler({
+      invitationId: "inv-1",
+      inviteeEmail: "invitee@example.com",
+      organizationId: "org-1",
+      organizationName: "Acme Corp",
+      role: "agent",
+      inviterName: "Jane Doe",
+      inviterEmail: "jane@example.com",
+      invitationUrl: "https://example.com/accept?id=inv-1",
+    });
+
+    expect(subHandlers.handleInvitationEmail.handleAsync).toHaveBeenCalledOnce();
+    expect(subHandlers.handleVerificationEmail.handleAsync).not.toHaveBeenCalled();
+    expect(subHandlers.handlePasswordReset.handleAsync).not.toHaveBeenCalled();
+
+    const event = subHandlers.handleInvitationEmail.handleAsync.mock.calls[0][0];
+    expect(event.invitationId).toBe("inv-1");
+    expect(event.organizationName).toBe("Acme Corp");
+    expect(event.invitationUrl).toBe("https://example.com/accept?id=inv-1");
   });
 
   it("should silently ignore unknown event shapes", async () => {
@@ -95,7 +128,7 @@ describe("createAuthEventConsumer", () => {
     createAuthEventConsumer(bus as any, subHandlers as any);
     const handler = bus.getCapturedHandler()!;
 
-    // Unknown event shape — no verificationUrl or resetUrl
+    // Unknown event shape — no verificationUrl, resetUrl, or invitationUrl
     await handler({
       userId: "user-3",
       someOtherField: "value",
@@ -103,5 +136,31 @@ describe("createAuthEventConsumer", () => {
 
     expect(subHandlers.handleVerificationEmail.handleAsync).not.toHaveBeenCalled();
     expect(subHandlers.handlePasswordReset.handleAsync).not.toHaveBeenCalled();
+    expect(subHandlers.handleInvitationEmail.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should apply proto fromJSON deserialization before dispatching", async () => {
+    const bus = createMockMessageBus();
+    const subHandlers = createMockSubHandlers();
+
+    createAuthEventConsumer(bus as any, subHandlers as any);
+    const handler = bus.getCapturedHandler()!;
+
+    // Proto fromJSON normalizes field names and sets defaults for missing fields
+    await handler({
+      userId: "user-1",
+      email: "test@example.com",
+      name: "Test User",
+      verificationUrl: "https://example.com/verify/abc",
+      token: "tok-1",
+    });
+
+    const event = subHandlers.handleVerificationEmail.handleAsync.mock.calls[0][0];
+    // Verify all fields are present after fromJSON (proto sets defaults for empty strings)
+    expect(event).toHaveProperty("userId");
+    expect(event).toHaveProperty("email");
+    expect(event).toHaveProperty("name");
+    expect(event).toHaveProperty("verificationUrl");
+    expect(event).toHaveProperty("token");
   });
 });

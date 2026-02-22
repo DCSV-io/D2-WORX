@@ -55,6 +55,6 @@ export class RecordSignInEvent extends BaseHandler<
     const createResult = await this.createRecord.handleAsync({ event });
     if (!createResult.success) return D2Result.bubbleFail(createResult);
 
-    return D2Result.ok({ data: { event }, traceId: this.traceId });
+    return D2Result.ok({ data: { event } });
   }
 }

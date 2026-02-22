@@ -54,7 +54,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         // If the request was empty, return early.
         if (input.ContactIds.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(0), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(0));
         }
 
         // Validate: no empty GUIDs.
@@ -70,7 +70,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         if (allErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
         // Delete from repository.
@@ -97,7 +97,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
             }
         }
 
-        return D2Result<O?>.Ok(new O(repoOutput!.Deleted), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(repoOutput!.Deleted));
     }
 
     private static string GetCacheKey(Guid id) => $"GetContactsByIds:{id}";

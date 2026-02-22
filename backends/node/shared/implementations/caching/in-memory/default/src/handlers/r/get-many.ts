@@ -31,13 +31,13 @@ export class GetMany<TValue>
     }
 
     if (foundCount === 0) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
     if (foundCount < input.keys.length) {
-      return D2Result.someFound({ data: { values: found }, traceId: this.traceId });
+      return D2Result.someFound({ data: { values: found } });
     }
 
-    return D2Result.ok({ data: { values: found }, traceId: this.traceId });
+    return D2Result.ok({ data: { values: found } });
   }
 }

@@ -40,13 +40,11 @@ export class ResendEmailProvider
       return D2Result.fail({
         messages: [error.message],
         statusCode: 503,
-        traceId: this.traceId,
       });
     }
 
     return D2Result.ok({
       data: { providerMessageId: data!.id },
-      traceId: this.traceId,
     });
   }
 }

@@ -112,6 +112,6 @@ export class SetChannelPreference extends BaseHandler<
       await this.cache.set.handleAsync({ key: cacheKey, value: pref, expirationMs: 900_000 });
     }
 
-    return D2Result.ok({ data: { pref }, traceId: this.traceId });
+    return D2Result.ok({ data: { pref } });
   }
 }

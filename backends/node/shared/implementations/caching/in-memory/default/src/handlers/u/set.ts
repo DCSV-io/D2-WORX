@@ -18,6 +18,6 @@ export class Set<TValue>
     input: InMemoryCache.SetInput<TValue>,
   ): Promise<D2Result<InMemoryCache.SetOutput | undefined>> {
     this.store.set(input.key, input.value, input.expirationMs);
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

@@ -26,6 +26,6 @@ export class MarkDeliveryRequestProcessed
       .set({ processedAt: new Date() })
       .where(eq(deliveryRequest.id, input.id));
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

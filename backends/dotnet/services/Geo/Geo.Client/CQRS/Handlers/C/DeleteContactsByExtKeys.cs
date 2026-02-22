@@ -69,8 +69,7 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
             .HandleAsync(
                 r => r.Result,
                 r => r.Deleted,
-                Context.Logger,
-                TraceId);
+                Context.Logger);
 
         // Evict ext-key cache for each input key regardless of gRPC result.
         foreach (var key in input.Keys)

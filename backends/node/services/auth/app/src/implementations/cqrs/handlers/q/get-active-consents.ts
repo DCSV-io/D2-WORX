@@ -48,6 +48,6 @@ export class GetActiveConsents extends BaseHandler<
 
     const consents = findResult.success ? (findResult.data?.consents ?? []) : [];
 
-    return D2Result.ok({ data: { consents }, traceId: this.traceId });
+    return D2Result.ok({ data: { consents } });
   }
 }

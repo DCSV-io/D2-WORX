@@ -132,7 +132,7 @@ public class Get : BaseHandler<Get, I, O>, H
         if (memoryR.CheckSuccess(out var memoryOutput))
         {
             // If successful, return the data.
-            return D2Result<O?>.Ok(new O(memoryOutput!.Data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(memoryOutput!.Data));
         }
 
         // If that fails, try to get it from distributed cache.
@@ -145,7 +145,7 @@ public class Get : BaseHandler<Get, I, O>, H
             await SetInMemoryAndOnDiskAsync(data, ct);
 
             // Then return the data.
-            return D2Result<O?>.Ok(new O(data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(data));
         }
 
         // If that failed, tell the Geo service to update the distributed cache.
@@ -174,11 +174,11 @@ public class Get : BaseHandler<Get, I, O>, H
             }
 
             // Then return the data.
-            return D2Result<O?>.Ok(new O(data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(data));
         }
 
         // If all attempts failed, return NotFound.
-        return D2Result<O?>.NotFound(traceId: TraceId);
+        return D2Result<O?>.NotFound();
     }
 
     /// <summary>

@@ -71,13 +71,13 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
         {
             if (!File.Exists(r_filePath))
             {
-                return D2Result<O?>.NotFound(traceId: TraceId);
+                return D2Result<O?>.NotFound();
             }
 
             var bytes = await File.ReadAllBytesAsync(r_filePath, ct);
             var data = GeoRefData.Parser.ParseFrom(bytes);
 
-            return D2Result<O?>.Ok(new O(data), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(data));
         }
         catch (Google.Protobuf.InvalidProtocolBufferException ex)
         {
@@ -89,8 +89,7 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
             return D2Result<O?>.Fail(
                 ["Corrupted data on disk."],
                 HttpStatusCode.InternalServerError,
-                errorCode: ErrorCodes.COULD_NOT_BE_DESERIALIZED,
-                traceId: TraceId);
+                errorCode: ErrorCodes.COULD_NOT_BE_DESERIALIZED);
         }
         catch (IOException ex)
         {
@@ -101,8 +100,7 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
 
             return D2Result<O?>.Fail(
                 ["Unable to read from disk."],
-                HttpStatusCode.InternalServerError,
-                traceId: TraceId);
+                HttpStatusCode.InternalServerError);
         }
 
         // Let the base handler catch any other exceptions.

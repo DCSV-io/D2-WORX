@@ -77,7 +77,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         // If the request was empty, return early.
         if (input.HashIds.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // First, try to get WhoIs from in-memory cache.
@@ -133,7 +133,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
                 }
 
                 // Otherwise, return (fail, NOT found).
-                return D2Result<O?>.NotFound(traceId: TraceId);
+                return D2Result<O?>.NotFound();
             }
 
             // If SOME WhoIs were found, add to list, cache and return [fail, SOME found].
@@ -195,7 +195,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         var dtoDict = whoIsRecords.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
-        return D2Result<O?>.Ok(new O(dtoDict), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(dtoDict));
     }
 
     private async ValueTask<D2Result<O?>> SomeFoundAsync(
@@ -206,7 +206,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         var dtoDict = whoIsRecords.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
-        return D2Result<O?>.SomeFound(new O(dtoDict), traceId: TraceId);
+        return D2Result<O?>.SomeFound(new O(dtoDict));
     }
 
     private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(

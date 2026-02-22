@@ -85,7 +85,7 @@ public class Updated : BaseHandler<Updated, I, O>, H
         // If it is, return OK.
         if (isUpToDate)
         {
-            return D2Result<O?>.Ok(new O(), traceId: TraceId);
+            return D2Result<O?>.Ok(new O());
         }
 
         // If not, get the updated data from the distributed cache.
@@ -97,7 +97,7 @@ public class Updated : BaseHandler<Updated, I, O>, H
                 "Failed to get data from dist cache after update message. TraceId: {TraceId}",
                 TraceId);
 
-            return D2Result<O?>.NotFound(traceId: TraceId);
+            return D2Result<O?>.NotFound();
         }
 
         var data = output!.Data;
@@ -123,6 +123,6 @@ public class Updated : BaseHandler<Updated, I, O>, H
         }
 
         // Return OK.
-        return D2Result<O?>.Ok(new O(), traceId: TraceId);
+        return D2Result<O?>.Ok(new O());
     }
 }

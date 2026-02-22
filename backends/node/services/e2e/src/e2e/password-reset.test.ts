@@ -11,7 +11,11 @@ import {
   getRabbitUrl,
 } from "../helpers/containers.js";
 import { startGeoService, stopGeoService } from "../helpers/geo-dotnet-service.js";
-import { startAuthService, stopAuthService, type AuthServiceHandle } from "../helpers/auth-service.js";
+import {
+  startAuthService,
+  stopAuthService,
+  type AuthServiceHandle,
+} from "../helpers/auth-service.js";
 import {
   startCommsService,
   stopCommsService,
@@ -70,10 +74,10 @@ describe("E2E: Password reset → reset email delivery", () => {
     });
 
     // Wait for verification email first
-    await waitFor(
-      async () => commsHandle.stubEmail.sentCount() >= 1,
-      { timeout: 15_000, label: "verification email" },
-    );
+    await waitFor(async () => commsHandle.stubEmail.sentCount() >= 1, {
+      timeout: 15_000,
+      label: "verification email",
+    });
 
     // Step 2: Manually verify email
     await getAuthPool().query('UPDATE "user" SET email_verified = true WHERE id = $1', [
@@ -88,10 +92,10 @@ describe("E2E: Password reset → reset email delivery", () => {
     });
 
     // Step 4: Wait for comms to process the password reset event
-    await waitFor(
-      async () => commsHandle.stubEmail.sentCount() > beforeResetCount,
-      { timeout: 15_000, label: "password reset email delivery" },
-    );
+    await waitFor(async () => commsHandle.stubEmail.sentCount() > beforeResetCount, {
+      timeout: 15_000,
+      label: "password reset email delivery",
+    });
 
     // Assert: the last email is the password reset
     const sentEmail = commsHandle.stubEmail.getLastEmail();

@@ -34,7 +34,7 @@ export class FindOrgContactsByOrgId
 
     const rows = await query;
 
-    return D2Result.ok({ data: { contacts: rows.map(toOrgContact) }, traceId: this.traceId });
+    return D2Result.ok({ data: { contacts: rows.map(toOrgContact) } });
   }
 }
 

@@ -84,7 +84,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | GetOrgContacts         | Query   | Org's contacts hydrated with full Geo contact data                                   |
 | RecordSignInOutcome    | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
 
-**DI pattern**: Manual factory functions — `createSignInEventHandlers(repo, context, memoryCache?)`, `createOrgContactHandlers(repo, context, geo)`, `createSignInThrottleHandlers(store, context, memoryCache?)` where `repo` is a handler bundle type (`SignInEventRepoHandlers`, `EmulationConsentRepoHandlers`, `OrgContactRepoHandlers`) and `geo` is `{ createContacts, deleteContactsByExtKeys, updateContactsByExtKeys, getContactsByExtKeys }` from `@d2/geo-client`. Repo bundles are created by infra factory functions (`createXxxRepoHandlers(db, ctx)`).
+**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 17 CQRS + notification handlers as transient services, `addAuthInfra(services, db)` registers all 14 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. See ADR-011 in `PLANNING.md`.
 
 **Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["org_contact"]` and an `apiKey` for gRPC authentication.
 
@@ -138,15 +138,46 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 ### API (`@d2/auth-api`)
 
-**Who owns what**: HTTP layer — Hono app, middleware pipeline, route handlers, composition root.
+**Who owns what**: HTTP layer — Hono app, middleware pipeline, route handlers, composition root, DI scoping.
 
 | Component        | Location                      | Purpose                                                                          |
 | ---------------- | ----------------------------- | -------------------------------------------------------------------------------- |
-| Composition root | `api/src/composition-root.ts` | 8-step DI assembly                                                               |
+| Composition root | `api/src/composition-root.ts` | DI assembly via `ServiceCollection` + `ServiceProvider`                          |
+| Scope middleware | `api/src/middleware/scope.ts` | Per-request DI scope on protected routes                                         |
 | Middleware       | `api/src/middleware/`         | CSRF, request-enrichment, rate-limit, session, fingerprint, auth, error handling |
 | Routes           | `api/src/routes/`             | Thin routes with visible authorization (5-8 lines each)                          |
 
 **Thin routes pattern**: Route handlers are intentionally thin — they extract input from the request (body, session, query params), call the handler, and return the result. All validation, business logic, and IDOR checks live in app-layer handlers. Authorization is declared via middleware at route registration (`requireOrg()`, `requireStaff()`, `requireRole("officer")`), making security requirements visible at a glance.
+
+#### Dependency Injection Architecture
+
+The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `ServiceScope`) mirroring .NET's DI pattern. See ADR-011 in `PLANNING.md` for full rationale.
+
+**Composition root** (`api/src/composition-root.ts`):
+
+1. Create singletons: `pg.Pool`, Redis, logger
+2. Run Drizzle migrations + create Drizzle instance
+3. Register all services in `ServiceCollection` via `addAuthInfra(services, db)` and `addAuthApp(services, options)`
+4. Build immutable `ServiceProvider`
+5. Create pre-auth singletons (FindWhoIs, RateLimit, Throttle) — these remain outside DI with service-level context
+6. Create BetterAuth with scoped callbacks
+7. Build Hono app with scope middleware on protected routes
+
+**Service lifetimes:**
+
+| Category                             | Lifetime  | Why                                                                     |
+| ------------------------------------ | --------- | ----------------------------------------------------------------------- |
+| Logger, Redis, geo-client handlers   | Singleton | Shared infrastructure — one instance for application lifetime           |
+| `IHandlerContext`, `IRequestContext` | Scoped    | Per-request user/trace context — new per DI scope                       |
+| All CQRS handlers, repo handlers     | Transient | New instance per resolve — receive scoped `IHandlerContext` via factory |
+| Sign-in throttle store               | Singleton | Redis-backed state — shared across all requests                         |
+
+**Pre-auth singletons** (FindWhoIs, RateLimit.Check, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and therefore have no per-request user context. They use a service-level `HandlerContext` with a static anonymous `IRequestContext` and are NOT registered in the DI container. This is intentional — they need to function independently of the per-request scope.
+
+**Scoping patterns:**
+
+- **Protected routes**: `createScopeMiddleware(provider)` creates a `ServiceScope` per request, builds `IRequestContext` from session data (user ID, org context, emulation state), sets it on the scope alongside a fresh `IHandlerContext`. Routes resolve handlers via `c.get("scope").resolve(key)`. Scope is disposed after the request completes
+- **BetterAuth callbacks**: `createCallbackScope()` creates a temporary scope with an anonymous `IRequestContext` (no authenticated user) for handlers that fire during BetterAuth processing (e.g., `RecordSignInEvent` on sign-in, `CreateUserContact` on sign-up, notification publishers). Each callback gets its own scope with a unique traceId, disposed in a `try/finally` block
 
 **Tested in**: `auth/tests/src/unit/api/`
 
@@ -932,7 +963,9 @@ backends/node/services/auth/
 │       │   └── repository/
 │       │       ├── handlers/            # Repo handler interfaces (14) + bundle types (TLC: c/, r/, u/, d/)
 │       │       └── sign-in-throttle-store.ts  # ISignInThrottleStore (already delegates to cache handlers)
-│       └── index.ts                     # Re-exports + factory functions
+│       ├── service-keys.ts              # ServiceKey<T> constants for all handler interfaces
+│       ├── registration.ts              # addAuthApp(services, options) — DI registration
+│       └── index.ts                     # Re-exports + service keys
 ├── infra/                               # @d2/auth-infra (TLC: mirrors Geo.Infra)
 │   └── src/
 │       ├── auth/
@@ -955,14 +988,16 @@ backends/node/services/auth/
 │       │   ├── migrations/              # Auto-generated SQL (drizzle-kit generate)
 │       │   └── migrate.ts              # Programmatic migration runner
 │       ├── mappers/                     # BetterAuth → domain (user, org, member, invitation, session)
+│       ├── registration.ts              # addAuthInfra(services, db) — DI registration
 │       └── index.ts
 ├── api/                                 # @d2/auth-api
 │   └── src/
-│       ├── composition-root.ts          # 8-step DI assembly
+│       ├── composition-root.ts          # DI assembly via ServiceCollection + ServiceProvider
 │       ├── middleware/
 │       │   ├── authorization.ts         # requireOrg, requireOrgType, requireRole, requireStaff, requireAdmin
 │       │   ├── session.ts               # Session extraction (fail-closed)
 │       │   ├── session-fingerprint.ts   # Stolen token detection
+│       │   ├── scope.ts                 # Per-request DI scope (createScopeMiddleware)
 │       │   ├── csrf.ts                  # Content-Type + Origin validation
 │       │   ├── cors.ts                  # CORS middleware factory
 │       │   ├── request-enrichment.ts    # @d2/request-enrichment middleware

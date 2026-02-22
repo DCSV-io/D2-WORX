@@ -54,7 +54,7 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
     // Try cache first
     const cached = this.store.get<WhoIsDTO>(cacheKey);
     if (cached !== undefined) {
-      return D2Result.ok({ data: { whoIs: cached }, traceId: this.traceId });
+      return D2Result.ok({ data: { whoIs: cached } });
     }
 
     // Cache miss — call Geo service
@@ -73,11 +73,11 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
       // Fail-open: log warning and return undefined.
       // Do not log input.ipAddress directly — it bypasses BaseHandler's redaction.
       this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`);
-      return D2Result.ok({ data: { whoIs: undefined }, traceId: this.traceId });
+      return D2Result.ok({ data: { whoIs: undefined } });
     }
 
     if (!response.result?.success || response.data.length === 0) {
-      return D2Result.ok({ data: { whoIs: undefined }, traceId: this.traceId });
+      return D2Result.ok({ data: { whoIs: undefined } });
     }
 
     const whoIs = response.data[0]?.whois;
@@ -87,7 +87,7 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
       this.store.set(cacheKey, whoIs, this.options.whoIsCacheExpirationMs);
     }
 
-    return D2Result.ok({ data: { whoIs }, traceId: this.traceId });
+    return D2Result.ok({ data: { whoIs } });
   }
 }
 

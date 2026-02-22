@@ -47,7 +47,7 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
         // If the request was empty, return early.
         if (input.Locations.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Validate each location.
@@ -69,7 +69,7 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
         if (allErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
         // Create in repository.
@@ -81,6 +81,6 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
         }
 
         // Return the created locations.
-        return D2Result<O?>.Ok(new O(input.Locations), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(input.Locations));
     }
 }

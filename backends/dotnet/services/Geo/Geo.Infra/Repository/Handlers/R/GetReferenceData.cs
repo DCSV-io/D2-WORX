@@ -212,6 +212,6 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
         };
 
         // Return result.
-        return D2Result<O?>.Ok(new O(response), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(response));
     }
 }

@@ -76,7 +76,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
 
         if (input.Keys.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         var result = new Dictionary<string, List<ContactDTO>>();
@@ -100,7 +100,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         // All cached — return early.
         if (missingKeys.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(result), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(result));
         }
 
         // Fetch cache misses from Geo service.
@@ -119,7 +119,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
                 "gRPC call to Geo service failed for GetContactsByExtKeys. TraceId: {TraceId}",
                 TraceId);
 
-            return D2Result<O?>.Ok(new O(result), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(result));
         }
 
         if (response.Result is { Success: true })
@@ -148,6 +148,6 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
             }
         }
 
-        return D2Result<O?>.Ok(new O(result), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(result));
     }
 }

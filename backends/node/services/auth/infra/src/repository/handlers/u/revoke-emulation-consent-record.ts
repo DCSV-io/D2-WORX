@@ -26,6 +26,6 @@ export class RevokeEmulationConsentRecord
       .set({ revokedAt: new Date() })
       .where(eq(emulationConsent.id, input.id));
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

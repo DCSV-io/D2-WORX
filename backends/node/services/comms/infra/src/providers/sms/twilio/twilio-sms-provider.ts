@@ -35,7 +35,6 @@ export class TwilioSmsProvider
 
       return D2Result.ok({
         data: { providerMessageId: message.sid },
-        traceId: this.traceId,
       });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unknown Twilio error";
@@ -43,7 +42,6 @@ export class TwilioSmsProvider
       return D2Result.fail({
         messages: [errorMessage],
         statusCode: 503,
-        traceId: this.traceId,
       });
     }
   }

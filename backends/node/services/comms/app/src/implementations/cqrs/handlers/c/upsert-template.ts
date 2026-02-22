@@ -83,6 +83,6 @@ export class UpsertTemplate extends BaseHandler<UpsertTemplateInput, UpsertTempl
       await this.cache.set.handleAsync({ key: cacheKey, value: template, expirationMs: 1_800_000 });
     }
 
-    return D2Result.ok({ data: { template }, traceId: this.traceId });
+    return D2Result.ok({ data: { template } });
   }
 }

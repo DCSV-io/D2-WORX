@@ -35,7 +35,7 @@ export class Updated
     const isUpToDate = getR.success && getR.data?.data.version === input.version;
 
     if (isUpToDate) {
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     }
 
     // Get the updated data from the distributed cache
@@ -44,7 +44,7 @@ export class Updated
       this.context.logger.error(
         `Failed to get data from dist cache after update message. TraceId: ${this.traceId}`,
       );
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
     const data = distR.data!.data;
@@ -65,7 +65,7 @@ export class Updated
       );
     }
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }
 

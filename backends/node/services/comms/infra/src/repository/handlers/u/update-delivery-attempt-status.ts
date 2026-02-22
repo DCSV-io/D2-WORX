@@ -28,6 +28,6 @@ export class UpdateDeliveryAttemptStatus
 
     await this.db.update(deliveryAttempt).set(updates).where(eq(deliveryAttempt.id, input.id));
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

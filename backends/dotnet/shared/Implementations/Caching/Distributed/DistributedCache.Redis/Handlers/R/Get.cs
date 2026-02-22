@@ -61,7 +61,7 @@ public class Get<TValue> : BaseHandler<
             // If no value was retrieved, return NotFound.
             if (!redisValue.HasValue)
             {
-                return D2Result<S.GetOutput<TValue>?>.NotFound(traceId: TraceId);
+                return D2Result<S.GetOutput<TValue>?>.NotFound();
             }
 
             // Deserialize the value.
@@ -73,8 +73,7 @@ public class Get<TValue> : BaseHandler<
 
             // Return the result.
             return D2Result<S.GetOutput<TValue>?>.Ok(
-                new S.GetOutput<TValue>(value),
-                traceId: TraceId);
+                new S.GetOutput<TValue>(value));
         }
         catch (RedisException ex)
         {
@@ -87,8 +86,7 @@ public class Get<TValue> : BaseHandler<
             return D2Result<S.GetOutput<TValue>?>.Fail(
                 ["Unable to connect to Redis."],
                 HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
+                errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
         catch (JsonException ex)
         {
@@ -103,8 +101,7 @@ public class Get<TValue> : BaseHandler<
                 [err_msg],
                 HttpStatusCode.InternalServerError,
                 [[nameof(S.GetInput.Key), err_msg]],
-                ErrorCodes.COULD_NOT_BE_DESERIALIZED,
-                TraceId);
+                ErrorCodes.COULD_NOT_BE_DESERIALIZED);
         }
 
         // Let the base handler catch any other exceptions.

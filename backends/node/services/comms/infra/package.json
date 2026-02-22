@@ -21,6 +21,7 @@
   "dependencies": {
     "@d2/comms-app": "workspace:*",
     "@d2/comms-domain": "workspace:*",
+    "@d2/di": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/messaging": "workspace:*",
     "@d2/protos": "workspace:*",

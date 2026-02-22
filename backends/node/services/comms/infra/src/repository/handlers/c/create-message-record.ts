@@ -40,6 +40,6 @@ export class CreateMessageRecord extends BaseHandler<I, O> implements ICreateMes
       updatedAt: m.updatedAt,
     });
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

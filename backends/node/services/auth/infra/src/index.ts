@@ -77,3 +77,23 @@ export {
 
 // --- Migrations ---
 export { runMigrations } from "./repository/migrate.js";
+
+// --- DI Registration ---
+export { addAuthInfra } from "./registration.js";
+export {
+  ICreateSignInEventKey,
+  IFindSignInEventsByUserIdKey,
+  ICountSignInEventsByUserIdKey,
+  IGetLatestSignInEventDateKey,
+  ICreateEmulationConsentRecordKey,
+  IFindEmulationConsentByIdKey,
+  IFindActiveConsentsByUserIdKey,
+  IFindActiveConsentByUserIdAndOrgKey,
+  IRevokeEmulationConsentRecordKey,
+  ICreateOrgContactRecordKey,
+  IFindOrgContactByIdKey,
+  IFindOrgContactsByOrgIdKey,
+  IUpdateOrgContactRecordKey,
+  IDeleteOrgContactRecordKey,
+  ISignInThrottleStoreKey,
+} from "./service-keys.js";

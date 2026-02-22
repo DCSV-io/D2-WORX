@@ -84,7 +84,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
         // If the request was empty, return early.
         if (input.WhoIsRecords.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Step 1: Fetch IP details for each record.
@@ -101,7 +101,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
         // If no API results, return empty.
         if (apiResults.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Step 2: Resolve subdivision codes.
@@ -152,7 +152,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
             populatedRecords[hashId] = populatedWhoIs;
         }
 
-        return D2Result<O?>.Ok(new O(populatedRecords), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(populatedRecords));
     }
 
     private static Location? ExtractLocation(

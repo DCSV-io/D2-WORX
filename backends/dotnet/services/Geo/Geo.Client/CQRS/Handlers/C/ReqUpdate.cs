@@ -66,8 +66,7 @@ public class ReqUpdate : BaseHandler<ReqUpdate, I, O>, H
             .HandleAsync(
                 r => r.Result,
                 r => r.Data,
-                Context.Logger,
-                TraceId);
+                Context.Logger);
 
         return D2Result<O?>.Bubble(r, new(r.Data?.Version));
     }

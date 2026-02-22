@@ -2,30 +2,35 @@ import * as grpc from "@grpc/grpc-js";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { createLogger, type ILogger } from "@d2/logging";
-import { HandlerContext } from "@d2/handler";
+import { ILoggerKey } from "@d2/logging";
+import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
+import type { IRequestContext } from "@d2/handler";
+import { ServiceCollection, type ServiceProvider, type ServiceScope } from "@d2/di";
 import * as CacheMemory from "@d2/cache-memory";
 import {
   GetContactsByExtKeys,
+  IGetContactsByExtKeysKey,
   DEFAULT_GEO_CLIENT_OPTIONS,
   createGeoServiceClient,
   type GeoClientOptions,
 } from "@d2/geo-client";
 import { MessageBus } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
-import type { ChannelPreference, TemplateWrapper } from "@d2/comms-domain";
-import { createDeliveryHandlers, createDeliverySubHandlers } from "@d2/comms-app";
 import {
-  createMessageRepoHandlers,
-  createDeliveryRequestRepoHandlers,
-  createDeliveryAttemptRepoHandlers,
-  createChannelPreferenceRepoHandlers,
-  createTemplateWrapperRepoHandlers,
-  runMigrations,
-  ResendEmailProvider,
-  TwilioSmsProvider,
-  createAuthEventConsumer,
-  seedDefaultTemplates,
-} from "@d2/comms-infra";
+  SendVerificationEmailEventFns,
+  SendPasswordResetEventFns,
+  SendInvitationEmailEventFns,
+} from "@d2/protos";
+import {
+  addCommsApp,
+  IHandleVerificationEmailKey,
+  IHandlePasswordResetKey,
+  IHandleInvitationEmailKey,
+  ICreateTemplateWrapperRecordKey,
+  IFindTemplateByNameAndChannelKey,
+  IUpdateTemplateWrapperRecordKey,
+} from "@d2/comms-app";
+import { addCommsInfra, runMigrations, seedDefaultTemplates } from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
 
 export interface CommsServiceConfig {
@@ -41,12 +46,44 @@ export interface CommsServiceConfig {
   geoApiKey?: string;
 }
 
+/**
+ * Creates a disposable DI scope with a fresh traceId and no auth context.
+ * Used for per-RPC, per-message, and startup operations.
+ */
+function createServiceScope(provider: ServiceProvider): ServiceScope {
+  const scope = provider.createScope();
+  scope.setInstance<IRequestContext>(IRequestContextKey, {
+    traceId: crypto.randomUUID(),
+    isAuthenticated: false,
+    isAgentStaff: false,
+    isAgentAdmin: false,
+    isTargetingStaff: false,
+    isTargetingAdmin: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
+  });
+  return scope;
+}
+
+/**
+ * Creates and wires the complete comms service application.
+ *
+ * This is the composition root (mirrors .NET Program.cs):
+ *   1. Create singletons: pg.Pool, logger
+ *   2. Run Drizzle migrations
+ *   3. Register all services in ServiceCollection
+ *   4. Build ServiceProvider
+ *   5. Seed default templates (temporary scope)
+ *   6. Create gRPC server (per-RPC scope)
+ *   7. Create RabbitMQ consumer (per-message scope)
+ */
 export async function createCommsService(config: CommsServiceConfig) {
   // 1. Singletons: pg.Pool, logger
   const pool = new pg.Pool({ connectionString: config.databaseUrl });
   const logger: ILogger = createLogger({ serviceName: "comms-service" });
 
-  const handlerContext = new HandlerContext(
+  // Service-level HandlerContext for pre-scope operations (geo-client cache)
+  const serviceContext = new HandlerContext(
     {
       isAuthenticated: false,
       isAgentStaff: false,
@@ -63,39 +100,19 @@ export async function createCommsService(config: CommsServiceConfig) {
   await runMigrations(pool);
   const db = drizzle(pool);
 
-  // 3. Repository handler factories
-  const repos = {
-    message: createMessageRepoHandlers(db, handlerContext),
-    request: createDeliveryRequestRepoHandlers(db, handlerContext),
-    attempt: createDeliveryAttemptRepoHandlers(db, handlerContext),
-    channelPref: createChannelPreferenceRepoHandlers(db, handlerContext),
-    template: createTemplateWrapperRepoHandlers(db, handlerContext),
-  };
+  // 3. Build ServiceCollection (mirrors .NET Program.cs)
+  const services = new ServiceCollection();
 
-  // 4. Providers
-  const emailProvider =
-    config.resendApiKey && config.resendFromAddress
-      ? new ResendEmailProvider(config.resendApiKey, config.resendFromAddress, handlerContext)
-      : undefined;
+  // Logger — singleton (pre-built instance)
+  services.addInstance(ILoggerKey, logger);
 
-  const smsProvider =
-    config.twilioAccountSid && config.twilioAuthToken && config.twilioPhoneNumber
-      ? new TwilioSmsProvider(
-          config.twilioAccountSid,
-          config.twilioAuthToken,
-          config.twilioPhoneNumber,
-          handlerContext,
-        )
-      : undefined;
+  // IHandlerContext — scoped (new per request/message, built from IRequestContext + logger)
+  services.addScoped(
+    IHandlerContextKey,
+    (sp) => new HandlerContext(sp.resolve(IRequestContextKey), sp.resolve(ILoggerKey)),
+  );
 
-  if (!emailProvider) {
-    logger.warn("No Resend API key configured — email delivery disabled");
-  }
-  if (!smsProvider) {
-    logger.warn("No Twilio credentials configured — SMS delivery disabled");
-  }
-
-  // 5. Geo client for recipient resolution (GetContactsByExtKeys)
+  // Geo client for recipient resolution (GetContactsByExtKeys)
   const geoOptions: GeoClientOptions = {
     ...DEFAULT_GEO_CLIENT_OPTIONS,
     allowedContextKeys: ["user", "org_contact"],
@@ -115,45 +132,50 @@ export async function createCommsService(config: CommsServiceConfig) {
     contactCacheStore,
     geoClient,
     geoOptions,
-    handlerContext,
+    serviceContext,
   );
+  services.addInstance(IGetContactsByExtKeysKey, getContactsByExtKeys);
 
-  // 6. In-memory caches for channel prefs and templates
-  const prefCacheStore = new CacheMemory.MemoryCacheStore();
-  const tplCacheStore = new CacheMemory.MemoryCacheStore();
+  // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
+  addCommsInfra(services, db, {
+    resendApiKey: config.resendApiKey,
+    resendFromAddress: config.resendFromAddress,
+    twilioAccountSid: config.twilioAccountSid,
+    twilioAuthToken: config.twilioAuthToken,
+    twilioPhoneNumber: config.twilioPhoneNumber,
+  });
+  addCommsApp(services);
 
-  const cache = {
-    channelPref: {
-      get: new CacheMemory.Get<ChannelPreference>(prefCacheStore, handlerContext),
-      set: new CacheMemory.Set<ChannelPreference>(prefCacheStore, handlerContext),
-    },
-    template: {
-      get: new CacheMemory.Get<TemplateWrapper>(tplCacheStore, handlerContext),
-      set: new CacheMemory.Set<TemplateWrapper>(tplCacheStore, handlerContext),
-    },
-  };
+  if (!config.resendApiKey || !config.resendFromAddress) {
+    logger.warn("No Resend API key configured — email delivery disabled");
+  }
+  if (!config.twilioAccountSid || !config.twilioAuthToken || !config.twilioPhoneNumber) {
+    logger.warn("No Twilio credentials configured — SMS delivery disabled");
+  }
 
-  // 7. Delivery engine handlers
-  const deliveryHandlers = createDeliveryHandlers(
-    repos,
-    { email: emailProvider!, sms: smsProvider },
-    getContactsByExtKeys,
-    handlerContext,
-    cache,
-  );
+  // 4. Build ServiceProvider
+  const provider = services.build();
 
-  // 8. Seed default templates (idempotent)
-  await seedDefaultTemplates(repos.template, handlerContext);
+  // 5. Seed default templates (idempotent, uses temporary scope)
+  {
+    const seedScope = createServiceScope(provider);
+    try {
+      await seedDefaultTemplates(
+        {
+          create: seedScope.resolve(ICreateTemplateWrapperRecordKey),
+          findByNameAndChannel: seedScope.resolve(IFindTemplateByNameAndChannelKey),
+          update: seedScope.resolve(IUpdateTemplateWrapperRecordKey),
+        },
+        seedScope.resolve(IHandlerContextKey),
+      );
+    } finally {
+      seedScope.dispose();
+    }
+  }
 
-  // 9. gRPC server
+  // 6. gRPC server (per-RPC scope via createCommsGrpcService)
   const server = new grpc.Server();
-  server.addService(
-    CommsServiceService,
-    createCommsGrpcService(deliveryHandlers, {
-      request: repos.request,
-      attempt: repos.attempt,
-    }),
-  );
+  server.addService(CommsServiceService, createCommsGrpcService(provider));
 
   await new Promise<void>((resolve, reject) => {
     server.bindAsync(
@@ -170,23 +192,49 @@ export async function createCommsService(config: CommsServiceConfig) {
     );
   });
 
-  // 10. RabbitMQ consumer for auth events
+  // 7. RabbitMQ consumer for auth events (per-message scope)
   let messageBus: MessageBus | undefined;
   if (config.rabbitMqUrl) {
     messageBus = new MessageBus({ url: config.rabbitMqUrl, connectionName: "comms-service" });
     await messageBus.waitForConnection();
     logger.info("RabbitMQ connected");
 
-    const subHandlers = createDeliverySubHandlers(deliveryHandlers.deliver, handlerContext);
-    await createAuthEventConsumer(messageBus, subHandlers);
+    await messageBus.subscribe<unknown>(
+      {
+        queue: "comms.auth-events",
+        queueOptions: { durable: true },
+        exchanges: [{ exchange: "events.auth", type: "fanout" }],
+        queueBindings: [{ exchange: "events.auth", routingKey: "" }],
+      },
+      async (msg) => {
+        const body = msg as Record<string, unknown>;
+        const scope = createServiceScope(provider);
+        try {
+          if ("verificationUrl" in body) {
+            const event = SendVerificationEmailEventFns.fromJSON(body);
+            await scope.resolve(IHandleVerificationEmailKey).handleAsync(event);
+          } else if ("resetUrl" in body) {
+            const event = SendPasswordResetEventFns.fromJSON(body);
+            await scope.resolve(IHandlePasswordResetKey).handleAsync(event);
+          } else if ("invitationUrl" in body) {
+            const event = SendInvitationEmailEventFns.fromJSON(body);
+            await scope.resolve(IHandleInvitationEmailKey).handleAsync(event);
+          }
+          // Unknown event types are silently ignored (ACKed) to prevent queue buildup.
+        } finally {
+          scope.dispose();
+        }
+      },
+    );
     logger.info("Auth event consumer started");
   } else {
     logger.warn("No RabbitMQ URL configured — event consumption disabled");
   }
 
-  // 11. Shutdown
+  // 8. Shutdown
   async function shutdown() {
     if (messageBus) await messageBus.close();
+    provider.dispose();
     await pool.end();
   }
 

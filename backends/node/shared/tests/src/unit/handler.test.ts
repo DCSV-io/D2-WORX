@@ -71,7 +71,6 @@ class FailureHandler extends BaseHandler<{ value: string }, { result: string }> 
   }): Promise<D2Result<{ result: string } | undefined>> {
     return D2Result.fail({
       messages: ["Something went wrong"],
-      traceId: this.traceId,
     });
   }
 }

@@ -30,7 +30,7 @@ export class FindSignInEventsByUserId
       .limit(input.limit)
       .offset(input.offset);
 
-    return D2Result.ok({ data: { events: rows.map(toSignInEvent) }, traceId: this.traceId });
+    return D2Result.ok({ data: { events: rows.map(toSignInEvent) } });
   }
 }
 

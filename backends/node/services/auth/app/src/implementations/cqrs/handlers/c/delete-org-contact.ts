@@ -50,7 +50,7 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
 
     const findResult = await this.findById.handleAsync({ id: input.id });
     if (!findResult.success || !findResult.data) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
     const existing = findResult.data.contact;
@@ -61,7 +61,6 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
         messages: ["Not authorized to delete this contact."],
         statusCode: HttpStatusCode.Forbidden,
         errorCode: ErrorCodes.FORBIDDEN,
-        traceId: this.traceId,
       });
     }
 
@@ -79,6 +78,6 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
     const deleteResult = await this.deleteRecord.handleAsync({ id: input.id });
     if (!deleteResult.success) return D2Result.bubbleFail(deleteResult);
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

@@ -50,8 +50,7 @@ public class GetTtl : BaseHandler<S.IGetTtlHandler, S.GetTtlInput, S.GetTtlOutpu
             var ttl = await db.KeyTimeToLiveAsync(input.Key);
 
             return D2Result<S.GetTtlOutput?>.Ok(
-                new S.GetTtlOutput(ttl),
-                traceId: TraceId);
+                new S.GetTtlOutput(ttl));
         }
         catch (RedisException ex)
         {
@@ -64,8 +63,7 @@ public class GetTtl : BaseHandler<S.IGetTtlHandler, S.GetTtlInput, S.GetTtlOutpu
             return D2Result<S.GetTtlOutput?>.Fail(
                 ["Unable to connect to Redis."],
                 HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
+                errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
 
         // Let the base handler catch any other exceptions.

@@ -16,6 +16,6 @@ export class Remove extends BaseHandler<Input, Output> implements InMemoryCache.
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     this.store.delete(input.key);
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

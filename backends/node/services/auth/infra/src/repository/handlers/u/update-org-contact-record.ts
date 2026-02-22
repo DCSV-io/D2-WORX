@@ -30,6 +30,6 @@ export class UpdateOrgContactRecord
       })
       .where(eq(orgContact.id, input.contact.id));
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

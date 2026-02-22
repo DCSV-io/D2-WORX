@@ -42,7 +42,7 @@ export class GetTemplate extends BaseHandler<GetTemplateInput, GetTemplateOutput
     if (this.cache) {
       const cached = await this.cache.get.handleAsync({ key: cacheKey });
       if (cached.success && cached.data?.value !== undefined) {
-        return D2Result.ok({ data: { template: cached.data.value }, traceId: this.traceId });
+        return D2Result.ok({ data: { template: cached.data.value } });
       }
     }
 
@@ -59,6 +59,6 @@ export class GetTemplate extends BaseHandler<GetTemplateInput, GetTemplateOutput
       await this.cache.set.handleAsync({ key: cacheKey, value: template, expirationMs: 1_800_000 });
     }
 
-    return D2Result.ok({ data: { template }, traceId: this.traceId });
+    return D2Result.ok({ data: { template } });
   }
 }

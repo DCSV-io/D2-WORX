@@ -61,3 +61,13 @@ export type {
 export { Updated, type UpdatedDeps } from "./messaging/handlers/sub/updated.js";
 export type { UpdatedOutput } from "./interfaces/sub/updated.js";
 export { createUpdatedConsumer } from "./messaging/consumers/updated-consumer.js";
+
+// Service Keys (DI registration tokens)
+export {
+  IGeoServiceClientKey,
+  ICreateContactsKey,
+  IDeleteContactsByExtKeysKey,
+  IGetContactsByExtKeysKey,
+  IFindWhoIsKey,
+  IUpdateContactsByExtKeysKey,
+} from "./service-keys.js";

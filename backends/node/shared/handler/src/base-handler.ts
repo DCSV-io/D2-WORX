@@ -108,7 +108,11 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
         }
 
         // Execute the handler's logic
-        const result = await this.executeAsync(input);
+        const rawResult = await this.executeAsync(input);
+
+        // Auto-inject ambient traceId into result if handler didn't set it.
+        // This eliminates the need for every handler to pass `traceId: this.traceId`.
+        const result = this._injectTraceId(rawResult);
 
         // Stop timing
         const elapsedMs = performance.now() - startTime;
@@ -208,14 +212,31 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
   protected validateInput(schema: ZodType<TInput>, input: TInput): D2Result<void> {
     const result = schema.safeParse(input);
     if (result.success) {
-      return D2Result.ok({ traceId: this.traceId });
+      return D2Result.ok();
     }
 
     const inputErrors: InputError[] = (result as { error: ZodError }).error.issues.map((issue) => [
       issue.path.join("."),
       issue.message,
     ]);
-    return D2Result.validationFailed({ inputErrors, traceId: this.traceId });
+    return D2Result.validationFailed({ inputErrors });
+  }
+
+  /**
+   * Injects the ambient traceId into a result if the handler didn't set one.
+   * This enables handlers to omit `traceId: this.traceId` from every D2Result call.
+   */
+  private _injectTraceId<T>(result: D2Result<T>): D2Result<T> {
+    if (result.traceId || !this.traceId) return result;
+    return new D2Result({
+      success: result.success,
+      data: result.data,
+      messages: [...result.messages],
+      inputErrors: result.inputErrors.map((ie) => [...ie]),
+      statusCode: result.statusCode,
+      errorCode: result.errorCode,
+      traceId: this.traceId,
+    });
   }
 
   /** Replaces specified top-level fields with "[REDACTED]" for logging. */

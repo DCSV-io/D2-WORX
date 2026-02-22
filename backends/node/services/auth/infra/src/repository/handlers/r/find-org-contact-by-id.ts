@@ -22,10 +22,10 @@ export class FindOrgContactById extends BaseHandler<I, O> implements IFindOrgCon
     const [row] = await this.db.select().from(orgContact).where(eq(orgContact.id, input.id));
 
     if (!row) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
-    return D2Result.ok({ data: { contact: toOrgContact(row) }, traceId: this.traceId });
+    return D2Result.ok({ data: { contact: toOrgContact(row) } });
   }
 }
 

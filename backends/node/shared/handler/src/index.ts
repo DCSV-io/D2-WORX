@@ -22,3 +22,4 @@ export {
   zodNonEmptyArray,
   zodAllowedContextKey,
 } from "./validators.js";
+export { IRequestContextKey, IHandlerContextKey } from "./service-keys.js";

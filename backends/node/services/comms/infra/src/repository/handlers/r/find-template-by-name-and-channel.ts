@@ -32,7 +32,6 @@ export class FindTemplateByNameAndChannel
     const row = rows[0];
     return D2Result.ok({
       data: { template: row ? toTemplateWrapper(row) : null },
-      traceId: this.traceId,
     });
   }
 }

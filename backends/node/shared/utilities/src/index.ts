@@ -13,3 +13,4 @@ export {
   GEO_REF_DATA_FILE_NAME,
 } from "./constants.js";
 export { retryAsync, isTransientError, type RetryOptions } from "./retry.js";
+export { escapeHtml } from "./escape-html.js";

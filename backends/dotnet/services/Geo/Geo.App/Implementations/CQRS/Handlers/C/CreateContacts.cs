@@ -73,7 +73,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         // If the request was empty, return early.
         if (input.Request.ContactsToCreate.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Validate each ContactToCreateDTO.
@@ -96,7 +96,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         if (allErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
         // Step 1: Resolve LocationHashIds for each contact.
@@ -142,7 +142,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         if (domainErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: domainErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: domainErrors));
         }
 
         // Step 4: Create contacts in repository.
@@ -161,7 +161,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
             c.LocationHashId is not null && locationDict.TryGetValue(c.LocationHashId, out var loc)
                 ? loc
                 : null)).ToList();
-        return D2Result<O?>.Ok(new O(contactDTOs), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(contactDTOs));
     }
 
     /// <summary>

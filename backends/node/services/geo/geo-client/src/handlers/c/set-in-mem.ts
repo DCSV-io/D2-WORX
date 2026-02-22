@@ -24,7 +24,7 @@ export class SetInMem extends BaseHandler<Input, Output> implements Commands.ISe
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     this.store.set("GeoRefData", input.data);
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }
 

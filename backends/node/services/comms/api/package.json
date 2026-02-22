@@ -23,6 +23,7 @@
     "@d2/comms-domain": "workspace:*",
     "@d2/comms-infra": "workspace:*",
     "@d2/cache-memory": "workspace:*",
+    "@d2/di": "workspace:*",
     "@d2/geo-client": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",

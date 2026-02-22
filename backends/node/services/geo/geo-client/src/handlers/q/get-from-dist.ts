@@ -31,9 +31,9 @@ export class GetFromDist extends BaseHandler<Input, Output> implements Queries.I
 
     const value = getR.checkSuccess();
     if (value?.value !== undefined) {
-      return D2Result.ok({ data: { data: value.value }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: value.value } });
     }
-    return D2Result.notFound({ traceId: this.traceId });
+    return D2Result.notFound();
   }
 }
 

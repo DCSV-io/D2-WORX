@@ -55,4 +55,33 @@ describe("HandlePasswordReset", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it("should escape HTML in content but not in plainTextContent", async () => {
+    const mockDeliver = {
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(
+          D2Result.ok({ data: { messageId: "m1", requestId: "r1", attempts: [] } }),
+        ),
+    };
+
+    const handler = new HandlePasswordReset(mockDeliver as any, createMockContext());
+
+    await handler.handleAsync({
+      userId: "user-xss",
+      email: "xss@example.com",
+      name: '<img src=x onerror="alert(1)">',
+      resetUrl: "https://example.com/reset?token=xyz",
+      token: "xyz",
+    });
+
+    const deliverInput = mockDeliver.handleAsync.mock.calls[0][0];
+
+    // HTML content should have escaped characters
+    expect(deliverInput.content).toContain("&lt;img");
+    expect(deliverInput.content).not.toContain("<img");
+
+    // Plain text content should NOT be escaped
+    expect(deliverInput.plainTextContent).toContain("<img");
+  });
 });

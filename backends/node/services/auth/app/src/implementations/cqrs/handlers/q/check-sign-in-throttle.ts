@@ -58,7 +58,7 @@ export class CheckSignInThrottle extends BaseHandler<
       if (this.cache) {
         const cacheResult = await this.cache.get.handleAsync({ key: cacheKey });
         if (cacheResult.success && cacheResult.data?.value === true) {
-          return D2Result.ok({ data: { blocked: false }, traceId: this.traceId });
+          return D2Result.ok({ data: { blocked: false } });
         }
       }
 
@@ -79,22 +79,21 @@ export class CheckSignInThrottle extends BaseHandler<
             })
             .catch(() => {});
         }
-        return D2Result.ok({ data: { blocked: false }, traceId: this.traceId });
+        return D2Result.ok({ data: { blocked: false } });
       }
 
       // 4. Locked → return blocked with retry-after
       if (lockedTtlSec > 0) {
         return D2Result.ok({
           data: { blocked: true, retryAfterSec: Math.ceil(lockedTtlSec) },
-          traceId: this.traceId,
         });
       }
 
       // 5. Not known-good, not locked → allow
-      return D2Result.ok({ data: { blocked: false }, traceId: this.traceId });
+      return D2Result.ok({ data: { blocked: false } });
     } catch {
       // Fail-open: any error → allow the sign-in attempt
-      return D2Result.ok({ data: { blocked: false }, traceId: this.traceId });
+      return D2Result.ok({ data: { blocked: false } });
     }
   }
 }

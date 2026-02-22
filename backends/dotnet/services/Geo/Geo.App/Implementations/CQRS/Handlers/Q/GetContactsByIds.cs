@@ -77,7 +77,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         // If the request was empty, return early.
         if (input.Request.Ids.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Validate: all IDs must be valid, non-empty GUIDs.
@@ -98,7 +98,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         if (allErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
         // First, try to get Contacts from in-memory cache.
@@ -154,7 +154,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
                 }
 
                 // Otherwise, return (fail, NOT found).
-                return D2Result<O?>.NotFound(traceId: TraceId);
+                return D2Result<O?>.NotFound();
             }
 
             // If SOME Contacts were found, add to list, cache and return [fail, SOME found].
@@ -216,7 +216,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         var dtoDict = contacts.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
-        return D2Result<O?>.Ok(new O(dtoDict), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(dtoDict));
     }
 
     private async ValueTask<D2Result<O?>> SomeFoundAsync(
@@ -227,7 +227,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         var dtoDict = contacts.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
-        return D2Result<O?>.SomeFound(new O(dtoDict), traceId: TraceId);
+        return D2Result<O?>.SomeFound(new O(dtoDict));
     }
 
     private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(

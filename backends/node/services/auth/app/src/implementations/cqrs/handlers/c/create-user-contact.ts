@@ -31,7 +31,10 @@ const schema = z.object({
  * Fail-fast: if Geo is unavailable, sign-up fails entirely
  * (no stale users without contacts).
  */
-export class CreateUserContact extends BaseHandler<CreateUserContactInput, CreateUserContactOutput> {
+export class CreateUserContact extends BaseHandler<
+  CreateUserContactInput,
+  CreateUserContactOutput
+> {
   private readonly createContacts: Commands.ICreateContactsHandler;
 
   constructor(createContacts: Commands.ICreateContactsHandler, context: IHandlerContext) {
@@ -74,6 +77,6 @@ export class CreateUserContact extends BaseHandler<CreateUserContactInput, Creat
     const contact = result.data.data[0];
     if (!contact) return D2Result.bubbleFail(result);
 
-    return D2Result.ok({ data: { contact }, traceId: this.traceId });
+    return D2Result.ok({ data: { contact } });
   }
 }

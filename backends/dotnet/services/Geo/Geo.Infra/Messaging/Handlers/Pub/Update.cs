@@ -72,8 +72,7 @@ public class Update : BaseHandler<Update, I, O>, H
 
             return D2Result<O?>.Fail(
                 ["Failed to publish update notification."],
-                System.Net.HttpStatusCode.InternalServerError,
-                traceId: TraceId);
+                System.Net.HttpStatusCode.InternalServerError);
         }
 
         Context.Logger.LogInformation(
@@ -81,6 +80,6 @@ public class Update : BaseHandler<Update, I, O>, H
             input.Version,
             TraceId);
 
-        return D2Result<O?>.Ok(new O(), traceId: TraceId);
+        return D2Result<O?>.Ok(new O());
     }
 }

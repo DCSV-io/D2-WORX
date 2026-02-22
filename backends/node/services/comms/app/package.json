@@ -18,6 +18,7 @@
   ],
   "dependencies": {
     "@d2/comms-domain": "workspace:*",
+    "@d2/di": "workspace:*",
     "@d2/geo-client": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",

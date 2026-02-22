@@ -17,13 +17,12 @@ export class Remove extends BaseHandler<Input, Output> implements DistributedCac
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     try {
       await this.redis.del(input.key);
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     } catch {
       return D2Result.fail({
         messages: ["Unable to connect to Redis."],
         statusCode: HttpStatusCode.ServiceUnavailable,
         errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-        traceId: this.traceId,
       });
     }
   }

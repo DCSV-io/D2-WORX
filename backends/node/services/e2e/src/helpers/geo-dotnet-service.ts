@@ -126,10 +126,14 @@ export async function startGeoService(opts: {
     OTEL_SDK_DISABLED: "true",
   } as Record<string, string>;
 
-  geoProcess = spawn("dotnet", ["run", "--project", projectDir, "--no-build", "--no-launch-profile"], {
-    env,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
+  geoProcess = spawn(
+    "dotnet",
+    ["run", "--project", projectDir, "--no-build", "--no-launch-profile"],
+    {
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
 
   // Log stdout/stderr for debugging
   geoProcess.stdout?.on("data", (data: Buffer) => {

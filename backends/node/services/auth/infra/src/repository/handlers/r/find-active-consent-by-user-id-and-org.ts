@@ -36,7 +36,7 @@ export class FindActiveConsentByUserIdAndOrg
       );
 
     const consent: EmulationConsent | null = row ? toEmulationConsent(row) : null;
-    return D2Result.ok({ data: { consent }, traceId: this.traceId });
+    return D2Result.ok({ data: { consent } });
   }
 }
 

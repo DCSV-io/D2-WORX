@@ -32,7 +32,6 @@ export class FindChannelPreferenceByContactId
     const row = rows[0];
     return D2Result.ok({
       data: { pref: row ? toChannelPreference(row) : null },
-      traceId: this.traceId,
     });
   }
 }

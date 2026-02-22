@@ -18,6 +18,7 @@ export {
   type RevokeSession,
 } from "./middleware/session-fingerprint.js";
 export { handleError } from "./middleware/error-handler.js";
+export { SCOPE_KEY, createScopeMiddleware } from "./middleware/scope.js";
 export {
   requireOrg,
   requireOrgType,

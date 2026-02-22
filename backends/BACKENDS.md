@@ -460,11 +460,42 @@ Changes are localized - updating caching strategy only affects `Caching/` implem
 
 ### Handler Registration (DI)
 
+**.NET** — Uses `Microsoft.Extensions.DependencyInjection` directly:
+
 ```csharp
 // In Extensions.cs
 services.AddTransient<ICommands.ISetInMemHandler, SetInMem>();
 services.AddTransient<IQueries.IGetFromMemHandler, GetFromMem>();
 ```
+
+**Node.js** — Uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `ServiceScope`), mirroring the .NET pattern:
+
+```typescript
+// In registration.ts (mirrors Extensions.cs)
+import { ServiceCollection } from "@d2/di";
+
+export function addMyApp(services: ServiceCollection): void {
+  services.addTransient(
+    IMyHandlerKey,
+    (sp) => new MyHandler(sp.resolve(IMyRepoKey), sp.resolve(IHandlerContextKey)),
+  );
+}
+```
+
+```typescript
+// In composition-root.ts (mirrors Program.cs)
+const services = new ServiceCollection();
+services.addInstance(ILoggerKey, logger);
+services.addScoped(
+  IHandlerContextKey,
+  (sp) => new HandlerContext(sp.resolve(IRequestContextKey), sp.resolve(ILoggerKey)),
+);
+addMyInfra(services, db);
+addMyApp(services);
+const provider = services.build();
+```
+
+`ServiceKey<T>` branded tokens replace erased TypeScript interfaces as DI keys. They are co-located with their handler interfaces. See ADR-011 in `PLANNING.md` for full details.
 
 ### RabbitMQ Messaging Registration
 

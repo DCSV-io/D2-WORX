@@ -52,7 +52,7 @@ export class GetContactsByExtKeys
     if (!validation.success) return D2Result.bubbleFail(validation);
 
     if (input.keys.length === 0) {
-      return D2Result.ok({ data: { data: new Map() }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: new Map() } });
     }
 
     const result = new Map<string, ContactDTO[]>();
@@ -71,7 +71,7 @@ export class GetContactsByExtKeys
 
     // All cached — return early
     if (missingKeys.length === 0) {
-      return D2Result.ok({ data: { data: result }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: result } });
     }
 
     // Fetch cache misses from Geo service
@@ -88,7 +88,7 @@ export class GetContactsByExtKeys
       this.context.logger.warn(
         `gRPC call to Geo service failed for GetContactsByExtKeys. TraceId: ${this.traceId}`,
       );
-      return D2Result.ok({ data: { data: result }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: result } });
     }
 
     if (response.result?.success && response.data) {
@@ -103,7 +103,7 @@ export class GetContactsByExtKeys
       }
     }
 
-    return D2Result.ok({ data: { data: result }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: result } });
   }
 }
 

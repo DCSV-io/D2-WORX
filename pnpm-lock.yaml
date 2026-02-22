@@ -62,6 +62,9 @@ importers:
       '@d2/cache-redis':
         specifier: workspace:*
         version: link:../../../shared/implementations/caching/distributed/redis
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../../geo/geo-client
@@ -120,6 +123,9 @@ importers:
       '@d2/auth-domain':
         specifier: workspace:*
         version: link:../domain
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../../geo/geo-client
@@ -163,6 +169,9 @@ importers:
       '@d2/auth-domain':
         specifier: workspace:*
         version: link:../domain
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
@@ -281,6 +290,9 @@ importers:
       '@d2/comms-infra':
         specifier: workspace:*
         version: link:../infra
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../../geo/geo-client
@@ -330,6 +342,9 @@ importers:
       '@d2/comms-domain':
         specifier: workspace:*
         version: link:../domain
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../../geo/geo-client
@@ -370,6 +385,9 @@ importers:
       '@d2/comms-domain':
         specifier: workspace:*
         version: link:../domain
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
@@ -407,6 +425,9 @@ importers:
 
   backends/node/services/comms/tests:
     devDependencies:
+      '@d2/comms-api':
+        specifier: workspace:*
+        version: link:../api
       '@d2/comms-app':
         specifier: workspace:*
         version: link:../app
@@ -416,6 +437,9 @@ importers:
       '@d2/comms-infra':
         specifier: workspace:*
         version: link:../infra
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
@@ -431,12 +455,18 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../../../shared/result
+      '@d2/result-extensions':
+        specifier: workspace:*
+        version: link:../../../shared/result-extensions
       '@d2/testing':
         specifier: workspace:*
         version: link:../../../shared/testing
       '@d2/utilities':
         specifier: workspace:*
         version: link:../../../shared/utilities
+      '@grpc/grpc-js':
+        specifier: 1.14.3
+        version: 1.14.3
       '@testcontainers/postgresql':
         specifier: 10.18.0
         version: 10.18.0
@@ -554,6 +584,9 @@ importers:
       '@d2/cache-redis':
         specifier: workspace:*
         version: link:../../../shared/implementations/caching/distributed/redis
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
@@ -585,8 +618,13 @@ importers:
         specifier: 3.25.76
         version: 3.25.76
 
+  backends/node/shared/di: {}
+
   backends/node/shared/handler:
     dependencies:
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../di
       '@d2/logging':
         specifier: workspace:*
         version: link:../logging
@@ -602,6 +640,9 @@ importers:
 
   backends/node/shared/implementations/caching/distributed/redis:
     dependencies:
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../../di
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../../handler
@@ -617,6 +658,9 @@ importers:
 
   backends/node/shared/implementations/caching/in-memory/default:
     dependencies:
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../../di
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../../handler
@@ -686,6 +730,9 @@ importers:
 
   backends/node/shared/logging:
     dependencies:
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../di
       pino:
         specifier: 9.6.0
         version: 9.6.0
@@ -779,6 +826,9 @@ importers:
       '@d2/cache-redis':
         specifier: workspace:*
         version: link:../implementations/caching/distributed/redis
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../di
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../../services/geo/geo-client

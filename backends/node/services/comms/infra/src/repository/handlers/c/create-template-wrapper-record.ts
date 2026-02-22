@@ -32,6 +32,6 @@ export class CreateTemplateWrapperRecord
       updatedAt: t.updatedAt,
     });
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

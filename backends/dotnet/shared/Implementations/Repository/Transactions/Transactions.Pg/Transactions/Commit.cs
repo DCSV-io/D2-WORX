@@ -59,6 +59,6 @@ public class Commit : BaseHandler<Commit, I, O>, H
     {
         await r_db.Database.CommitTransactionAsync(ct);
 
-        return D2Result<O?>.Ok(traceId: TraceId);
+        return D2Result<O?>.Ok();
     }
 }

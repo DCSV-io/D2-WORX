@@ -20,13 +20,12 @@ export class GetTtl extends BaseHandler<Input, Output> implements DistributedCac
 
       // -2 = key doesn't exist, -1 = no expiry
       const timeToLiveMs = pttl > 0 ? pttl : undefined;
-      return D2Result.ok({ data: { timeToLiveMs }, traceId: this.traceId });
+      return D2Result.ok({ data: { timeToLiveMs } });
     } catch {
       return D2Result.fail({
         messages: ["Unable to connect to Redis."],
         statusCode: HttpStatusCode.ServiceUnavailable,
         errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-        traceId: this.traceId,
       });
     }
   }

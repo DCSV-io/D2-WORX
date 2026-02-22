@@ -75,7 +75,6 @@ export class CreateEmulationConsent extends BaseHandler<
         messages: [`Organization type "${input.activeOrgType}" is not allowed to emulate.`],
         statusCode: HttpStatusCode.Forbidden,
         errorCode: ErrorCodes.FORBIDDEN,
-        traceId: this.traceId,
       });
     }
 
@@ -86,7 +85,6 @@ export class CreateEmulationConsent extends BaseHandler<
         messages: ["Target organization not found."],
         statusCode: HttpStatusCode.NotFound,
         errorCode: ErrorCodes.NOT_FOUND,
-        traceId: this.traceId,
       });
     }
 
@@ -100,7 +98,6 @@ export class CreateEmulationConsent extends BaseHandler<
         messages: ["An active consent already exists for this organization."],
         statusCode: HttpStatusCode.Conflict,
         errorCode: ErrorCodes.CONFLICT,
-        traceId: this.traceId,
       });
     }
 
@@ -113,6 +110,6 @@ export class CreateEmulationConsent extends BaseHandler<
     const createResult = await this.createRecord.handleAsync({ consent });
     if (!createResult.success) return D2Result.bubbleFail(createResult);
 
-    return D2Result.ok({ data: { consent }, traceId: this.traceId });
+    return D2Result.ok({ data: { consent } });
   }
 }

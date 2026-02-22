@@ -90,7 +90,7 @@ public class Check : BaseHandler<Check, I, O>, H
         // Trusted services bypass all rate limiting.
         if (requestInfo.IsTrustedService)
         {
-            return D2Result<O?>.Ok(new O(false, null, null), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(false, null, null));
         }
 
         // Check dimensions in hierarchy order: fingerprint → IP → city → country.
@@ -107,7 +107,7 @@ public class Check : BaseHandler<Check, I, O>, H
 
             if (result.IsBlocked)
             {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
+                return D2Result<O?>.Ok(result);
             }
         }
 
@@ -122,7 +122,7 @@ public class Check : BaseHandler<Check, I, O>, H
 
             if (result.IsBlocked)
             {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
+                return D2Result<O?>.Ok(result);
             }
         }
 
@@ -137,7 +137,7 @@ public class Check : BaseHandler<Check, I, O>, H
 
             if (result.IsBlocked)
             {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
+                return D2Result<O?>.Ok(result);
             }
         }
 
@@ -153,12 +153,12 @@ public class Check : BaseHandler<Check, I, O>, H
 
             if (result.IsBlocked)
             {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
+                return D2Result<O?>.Ok(result);
             }
         }
 
         // All dimensions passed.
-        return D2Result<O?>.Ok(new O(false, null, null), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(false, null, null));
     }
 
     /// <summary>

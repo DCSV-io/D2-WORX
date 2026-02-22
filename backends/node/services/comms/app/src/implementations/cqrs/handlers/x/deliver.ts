@@ -96,7 +96,6 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
           requestId: existing.data.request.id,
           attempts: existingAttempts.data?.attempts ?? [],
         },
-        traceId: this.traceId,
       });
     }
 
@@ -137,7 +136,6 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       return D2Result.fail({
         messages: ["Failed to resolve recipient address."],
         statusCode: 503,
-        traceId: this.traceId,
       });
     }
 
@@ -177,7 +175,6 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     if (deliverableChannels.length === 0) {
       return D2Result.notFound({
         messages: ["No deliverable address found for any resolved channel."],
-        traceId: this.traceId,
       });
     }
 
@@ -291,7 +288,6 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
         requestId: request.id,
         attempts,
       },
-      traceId: this.traceId,
     });
   }
 }

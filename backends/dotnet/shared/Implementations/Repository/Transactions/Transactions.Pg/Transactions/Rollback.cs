@@ -59,6 +59,6 @@ public class Rollback : BaseHandler<Rollback, I, O>, H
     {
         await r_db.Database.RollbackTransactionAsync(ct);
 
-        return D2Result<O?>.Ok(traceId: TraceId);
+        return D2Result<O?>.Ok();
     }
 }

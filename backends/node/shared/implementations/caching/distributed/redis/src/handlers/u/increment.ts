@@ -25,13 +25,12 @@ export class Increment
         await this.redis.pexpire(input.key, input.expirationMs);
       }
 
-      return D2Result.ok({ data: { newValue }, traceId: this.traceId });
+      return D2Result.ok({ data: { newValue } });
     } catch {
       return D2Result.fail({
         messages: ["Unable to connect to Redis."],
         statusCode: HttpStatusCode.ServiceUnavailable,
         errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-        traceId: this.traceId,
       });
     }
   }

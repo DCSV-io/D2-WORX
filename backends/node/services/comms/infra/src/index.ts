@@ -44,3 +44,6 @@ export { createAuthEventConsumer } from "./messaging/consumers/auth-event-consum
 
 // --- Templates ---
 export { seedDefaultTemplates } from "./templates/default-templates.js";
+
+// --- DI Registration ---
+export { addCommsInfra, type CommsInfraConfig } from "./registration.js";

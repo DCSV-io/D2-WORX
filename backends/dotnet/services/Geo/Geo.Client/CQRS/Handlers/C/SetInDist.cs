@@ -67,7 +67,7 @@ public class SetInDist : BaseHandler<SetInDist, I, O>, H
             ct);
 
         return setR.Success
-            ? D2Result<O?>.Ok(traceId: TraceId)
+            ? D2Result<O?>.Ok()
             : D2Result<O?>.BubbleFail(setR);
     }
 }

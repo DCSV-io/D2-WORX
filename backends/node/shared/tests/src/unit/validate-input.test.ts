@@ -45,7 +45,7 @@ class ValidatingHandler extends BaseHandler<TestInput, string> {
     if (validation.failed) {
       return D2Result.bubbleFail(validation);
     }
-    return D2Result.ok({ data: `Hello, ${input.name}!`, traceId: this.traceId });
+    return D2Result.ok({ data: `Hello, ${input.name}!` });
   }
 }
 

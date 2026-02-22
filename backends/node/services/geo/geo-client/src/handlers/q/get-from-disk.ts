@@ -32,7 +32,7 @@ export class GetFromDisk extends BaseHandler<Input, Output> implements Queries.I
       bytes = await readFile(this.filePath);
     } catch (err: unknown) {
       if (isFileNotFound(err)) {
-        return D2Result.notFound({ traceId: this.traceId });
+        return D2Result.notFound();
       }
       this.context.logger.error(
         `IOException occurred while reading georeference data from disk. TraceId: ${this.traceId}`,
@@ -40,13 +40,12 @@ export class GetFromDisk extends BaseHandler<Input, Output> implements Queries.I
       return D2Result.fail({
         messages: ["Unable to read from disk."],
         statusCode: HttpStatusCode.InternalServerError,
-        traceId: this.traceId,
       });
     }
 
     try {
       const data = GeoRefDataCodec.decode(bytes);
-      return D2Result.ok({ data: { data }, traceId: this.traceId });
+      return D2Result.ok({ data: { data } });
     } catch {
       this.context.logger.error(
         `Failed to parse georeference data from disk. TraceId: ${this.traceId}`,
@@ -55,7 +54,6 @@ export class GetFromDisk extends BaseHandler<Input, Output> implements Queries.I
         messages: ["Corrupted data on disk."],
         statusCode: HttpStatusCode.InternalServerError,
         errorCode: ErrorCodes.COULD_NOT_BE_DESERIALIZED,
-        traceId: this.traceId,
       });
     }
   }

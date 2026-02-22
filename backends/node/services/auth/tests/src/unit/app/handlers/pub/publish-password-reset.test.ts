@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { HttpStatusCode } from "@d2/result";
@@ -15,6 +15,13 @@ function createTestContext() {
     isTargetingAdmin: false,
   };
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
+}
+
+function createMockPublisher() {
+  return {
+    send: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  };
 }
 
 const validInput: SendPasswordReset = {
@@ -83,5 +90,46 @@ describe("PublishPasswordReset", () => {
     });
 
     expect(result.success).toBe(true);
+  });
+
+  describe("with publisher", () => {
+    it("should call publisher.send with correct exchange and serialized proto", async () => {
+      const publisher = createMockPublisher();
+      const handlerWithPub = new PublishPasswordReset(createTestContext(), publisher);
+
+      const result = await handlerWithPub.handleAsync(validInput);
+
+      expect(result.success).toBe(true);
+      expect(publisher.send).toHaveBeenCalledOnce();
+
+      const [target, body] = publisher.send.mock.calls[0];
+      expect(target).toEqual({ exchange: "events.auth", routingKey: "" });
+      expect(body.userId).toBe(validInput.userId);
+      expect(body.email).toBe(validInput.email);
+      expect(body.name).toBe(validInput.name);
+      expect(body.resetUrl).toBe(validInput.resetUrl);
+      expect(body.token).toBe(validInput.token);
+    });
+
+    it("should return failure result when publisher throws", async () => {
+      const publisher = createMockPublisher();
+      publisher.send.mockRejectedValue(new Error("AMQP connection lost"));
+      const handlerWithPub = new PublishPasswordReset(createTestContext(), publisher);
+
+      const result = await handlerWithPub.handleAsync(validInput);
+
+      expect(result.success).toBe(false);
+      expect(result.statusCode).toBe(500);
+    });
+
+    it("should not call publisher when input validation fails", async () => {
+      const publisher = createMockPublisher();
+      const handlerWithPub = new PublishPasswordReset(createTestContext(), publisher);
+
+      const result = await handlerWithPub.handleAsync({ ...validInput, userId: "bad" });
+
+      expect(result.success).toBe(false);
+      expect(publisher.send).not.toHaveBeenCalled();
+    });
   });
 });

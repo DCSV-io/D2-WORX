@@ -44,7 +44,6 @@ export class StubEmailProvider
 
     return D2Result.ok({
       data: { providerMessageId },
-      traceId: this.traceId,
     });
   }
 

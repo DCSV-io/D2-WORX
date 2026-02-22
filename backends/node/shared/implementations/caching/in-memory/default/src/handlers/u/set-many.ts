@@ -20,6 +20,6 @@ export class SetMany<TValue>
     for (const [key, value] of Object.entries(input.values)) {
       this.store.set(key, value, input.expirationMs);
     }
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

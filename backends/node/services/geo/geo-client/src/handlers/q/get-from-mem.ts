@@ -26,9 +26,9 @@ export class GetFromMem extends BaseHandler<Input, Output> implements Queries.IG
   protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const value = this.store.get<GeoRefData>("GeoRefData");
     if (value === undefined) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
-    return D2Result.ok({ data: { data: value }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: value } });
   }
 }
 

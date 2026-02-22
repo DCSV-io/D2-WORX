@@ -73,8 +73,7 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
             .HandleAsync(
                 r => r.Result,
                 r => r.Data,
-                Context.Logger,
-                TraceId);
+                Context.Logger);
 
         // Evict ext-key cache for each input contact regardless of gRPC result.
         foreach (var contact in input.Contacts)

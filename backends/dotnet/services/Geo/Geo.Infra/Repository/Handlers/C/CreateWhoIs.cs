@@ -58,7 +58,7 @@ public class CreateWhoIs : BaseHandler<CreateWhoIs, I, O>, H
         // If the request was empty, return early.
         if (input.WhoIsRecords.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(0), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(0));
         }
 
         // Get all hash IDs from input.
@@ -87,6 +87,6 @@ public class CreateWhoIs : BaseHandler<CreateWhoIs, I, O>, H
             await r_db.SaveChangesAsync(ct);
         }
 
-        return D2Result<O?>.Ok(new O(newRecords.Count), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(newRecords.Count));
     }
 }
