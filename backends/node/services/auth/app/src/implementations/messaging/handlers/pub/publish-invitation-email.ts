@@ -3,6 +3,7 @@ import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { IMessagePublisher } from "@d2/messaging";
 import { SendInvitationEmailEventFns } from "@d2/protos";
+import { AUTH_MESSAGING } from "@d2/auth-domain";
 import type { SendInvitationEmail } from "../../../../messages/index.js";
 import type {
   IPublishInvitationEmailHandler,
@@ -18,6 +19,8 @@ const schema = z.object({
   inviterName: z.string().max(128),
   inviterEmail: z.string().email().max(254),
   invitationUrl: z.string().url().max(2048),
+  inviteeUserId: zodGuid.optional(),
+  inviteeContactId: zodGuid.optional(),
 });
 
 /**
@@ -45,7 +48,7 @@ export class PublishInvitationEmail
 
     if (this.publisher) {
       await this.publisher.send(
-        { exchange: "events.auth", routingKey: "" },
+        { exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, routingKey: "" },
         SendInvitationEmailEventFns.toJSON({
           invitationId: input.invitationId,
           inviteeEmail: input.inviteeEmail,
@@ -55,6 +58,8 @@ export class PublishInvitationEmail
           inviterName: input.inviterName,
           inviterEmail: input.inviterEmail,
           invitationUrl: input.invitationUrl,
+          inviteeUserId: input.inviteeUserId,
+          inviteeContactId: input.inviteeContactId,
         }),
       );
     } else {

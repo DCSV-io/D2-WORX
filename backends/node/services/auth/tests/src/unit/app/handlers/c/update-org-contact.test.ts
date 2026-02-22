@@ -45,7 +45,7 @@ function createMockUpdateContactsByExtKeys(): Complex.IUpdateContactsByExtKeysHa
             {
               id: "new-geo-contact-001",
               createdAt: new Date("2026-02-10"),
-              contextKey: "org_contact",
+              contextKey: "auth_org_contact",
               relatedEntityId: VALID_CONTACT_ID,
             } as ContactDTO,
           ],
@@ -232,7 +232,7 @@ describe("UpdateOrgContactHandler", () => {
     // Verify the call uses ext key pattern
     const call = vi.mocked(updateContactsByExtKeys.handleAsync).mock.calls[0][0];
     expect(call.contacts).toHaveLength(1);
-    expect(call.contacts[0].contextKey).toBe("org_contact");
+    expect(call.contacts[0].contextKey).toBe("auth_org_contact");
     expect(call.contacts[0].relatedEntityId).toBe(VALID_CONTACT_ID);
   });
 

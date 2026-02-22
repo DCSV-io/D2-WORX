@@ -2,6 +2,7 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
+import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import type { Commands } from "@d2/geo-client";
 
 export interface CreateUserContactInput {
@@ -24,7 +25,7 @@ const schema = z.object({
  * Creates a Geo contact for a newly registered user.
  *
  * Called during sign-up BEFORE the user record is persisted
- * (Contact BEFORE User pattern). Uses contextKey="user" and
+ * (Contact BEFORE User pattern). Uses contextKey="auth_user" and
  * relatedEntityId=userId so downstream services (comms) can
  * resolve the user's contact details via Geo.
  *
@@ -50,7 +51,7 @@ export class CreateUserContact extends BaseHandler<
 
     const contactToCreate: ContactToCreateDTO = {
       createdAt: new Date(),
-      contextKey: "user",
+      contextKey: GEO_CONTEXT_KEYS.USER,
       relatedEntityId: input.userId,
       contactMethods: {
         emails: [{ value: input.email, labels: [] }],

@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { SendInvitationEmailEvent } from "@d2/protos";
 import { generateUuidV7, escapeHtml } from "@d2/utilities";
+import { COMMS_MESSAGING, TEMPLATE_NAMES } from "@d2/comms-domain";
 import type {
   IHandleInvitationEmailHandler,
   HandleInvitationEmailOutput,
@@ -27,18 +28,15 @@ export class HandleInvitationEmail
     input: SendInvitationEmailEvent,
   ): Promise<D2Result<HandleInvitationEmailOutput | undefined>> {
     const result = await this.deliver.handleAsync({
-      senderService: "auth",
+      senderService: COMMS_MESSAGING.SENDER_AUTH,
       title: `You've been invited to ${input.organizationName}`,
       content: `<p>Hi,</p><p>${escapeHtml(input.inviterName)} (${escapeHtml(input.inviterEmail)}) has invited you to join <strong>${escapeHtml(input.organizationName)}</strong> as <strong>${escapeHtml(input.role)}</strong>.</p><p><a href="${escapeHtml(input.invitationUrl)}">Accept Invitation</a></p>`,
       plainTextContent: `${input.inviterName} (${input.inviterEmail}) has invited you to join ${input.organizationName} as ${input.role}. Accept: ${input.invitationUrl}`,
-      sensitive: false,
-      // TODO(Stage C): input.inviteeEmail is an email string, not a Geo Contact UUID.
-      // RecipientResolver expects a contactId for org_contact lookup, so this will
-      // never resolve. The invitation flow needs a Geo contact created for the
-      // invitee before the email can be sent. See MEMORY.md "Invitation flow (UNRESOLVED)".
-      recipientContactId: input.inviteeEmail,
+      sensitive: true,
+      recipientUserId: input.inviteeUserId,
+      recipientContactId: input.inviteeContactId,
       channels: ["email"],
-      templateName: "invitation",
+      templateName: TEMPLATE_NAMES.INVITATION,
       correlationId: generateUuidV7(),
     });
 

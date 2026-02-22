@@ -113,6 +113,46 @@ describe("PublishInvitationEmail", () => {
     expect(result.success).toBe(true);
   });
 
+  it("should accept input with inviteeUserId", async () => {
+    const result = await handler.handleAsync({
+      ...validInput,
+      inviteeUserId: "01234567-89ab-cdef-0123-456789abcdef",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("should accept input with inviteeContactId", async () => {
+    const result = await handler.handleAsync({
+      ...validInput,
+      inviteeContactId: "abcdef01-2345-6789-abcd-ef0123456789",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("should reject invalid inviteeUserId", async () => {
+    const result = await handler.handleAsync({
+      ...validInput,
+      inviteeUserId: "not-a-uuid",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toBeDefined();
+  });
+
+  it("should reject invalid inviteeContactId", async () => {
+    const result = await handler.handleAsync({
+      ...validInput,
+      inviteeContactId: "not-a-uuid",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toBeDefined();
+  });
+
   describe("with publisher", () => {
     it("should call publisher.send with correct exchange and serialized proto", async () => {
       const publisher = createMockPublisher();
@@ -133,6 +173,24 @@ describe("PublishInvitationEmail", () => {
       expect(body.inviterName).toBe(validInput.inviterName);
       expect(body.inviterEmail).toBe(validInput.inviterEmail);
       expect(body.invitationUrl).toBe(validInput.invitationUrl);
+    });
+
+    it("should include inviteeUserId and inviteeContactId in published message", async () => {
+      const publisher = createMockPublisher();
+      const handlerWithPub = new PublishInvitationEmail(createTestContext(), publisher);
+
+      const result = await handlerWithPub.handleAsync({
+        ...validInput,
+        inviteeUserId: "01234567-89ab-cdef-0123-456789abcdef",
+        inviteeContactId: "abcdef01-2345-6789-abcd-ef0123456789",
+      });
+
+      expect(result.success).toBe(true);
+      expect(publisher.send).toHaveBeenCalledOnce();
+
+      const [, body] = publisher.send.mock.calls[0];
+      expect(body.inviteeUserId).toBe("01234567-89ab-cdef-0123-456789abcdef");
+      expect(body.inviteeContactId).toBe("abcdef01-2345-6789-abcd-ef0123456789");
     });
 
     it("should return failure result when publisher throws", async () => {

@@ -1,4 +1,4 @@
-import { createTemplateWrapper } from "@d2/comms-domain";
+import { createTemplateWrapper, TEMPLATE_NAMES } from "@d2/comms-domain";
 import type { TemplateWrapperRepoHandlers } from "@d2/comms-app";
 import type { IHandlerContext } from "@d2/handler";
 
@@ -12,7 +12,7 @@ export async function seedDefaultTemplates(
 ): Promise<void> {
   const templates = [
     createTemplateWrapper({
-      name: "email-verification",
+      name: TEMPLATE_NAMES.EMAIL_VERIFICATION,
       channel: "email",
       subjectTemplate: "Verify your email address",
       bodyTemplate: `<!DOCTYPE html>
@@ -24,7 +24,7 @@ export async function seedDefaultTemplates(
 </body></html>`,
     }),
     createTemplateWrapper({
-      name: "password-reset",
+      name: TEMPLATE_NAMES.PASSWORD_RESET,
       channel: "email",
       subjectTemplate: "Reset your password",
       bodyTemplate: `<!DOCTYPE html>
@@ -36,7 +36,7 @@ export async function seedDefaultTemplates(
 </body></html>`,
     }),
     createTemplateWrapper({
-      name: "invitation",
+      name: TEMPLATE_NAMES.INVITATION,
       channel: "email",
       subjectTemplate: "You've been invited to {{orgName}}",
       bodyTemplate: `<!DOCTYPE html>

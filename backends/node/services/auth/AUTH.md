@@ -583,6 +583,15 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 | CreateOrgContact       | organizationId, label, isPrimary?, contact         | Creates `org_contact` junction → Geo contact via gRPC (ext key = junction ID) | zodGuid, zodNonEmptyString, contact sub-fields           | Junction created first; Geo contact uses ext key `(org_contact, junction.id)`. Rollback junction on Geo failure                                                                                            |
 | UpdateOrgContact       | id, organizationId, updates                        | Updates metadata or replaces contact via `updateContactsByExtKeys`            | zodGuid × 2, at-least-one-field refine, optional contact | IDOR check; if contact provided: atomic replace via Geo ext-key update                                                                                                                                     |
 | DeleteOrgContact       | id, organizationId                                 | Deletes junction + best-effort Geo contact cleanup via ext key                | zodGuid × 2                                              | IDOR check; Geo delete failure tolerated (orphan cleanup by Geo job)                                                                                                                                       |
+| CreateUserContact      | userId, firstName, lastName, email                 | Creates Geo contact via gRPC (`contextKey: auth_user`)                        | — (called from BetterAuth hook)                          | Pre-generates UUIDv7; Geo failure aborts sign-up entirely                                                                                                                                                  |
+
+#### Notification Publishers (Pub/)
+
+| Handler                  | Input                                                               | Side Effects          | Notes                                                                                      |
+| ------------------------ | ------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------ |
+| PublishVerificationEmail | userId, email, name, url, token                                     | Publishes to RabbitMQ | Fired from BetterAuth `sendVerificationEmail` callback                                     |
+| PublishPasswordReset     | userId, email, name, url, token                                     | Publishes to RabbitMQ | Fired from BetterAuth `sendResetPassword` callback                                         |
+| PublishInvitationEmail   | invitationId, inviteeEmail, orgId, orgName, role, inviter, url, IDs | Publishes to RabbitMQ | Fired from custom `/api/invitations` route. Includes `inviteeUserId` OR `inviteeContactId` |
 
 #### Queries (Q/)
 
@@ -597,18 +606,18 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 
 These are handled by BetterAuth directly (not custom handlers):
 
-| Operation          | BetterAuth Method               | Notes                                                                                                                                      |
-| ------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first. No auto-sign-in — user must verify email. Verification email via RabbitMQ (not yet wired) |
-| Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                             |
-| Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                               |
-| Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                           |
-| Get session        | `getSession`                    | 3-tier lookup                                                                                                                              |
-| Create org         | `organization.create`           | Validates orgType via `beforeCreateOrganization`                                                                                           |
-| Invite member      | `organization.inviteMember`     | 48h expiry, default role = agent                                                                                                           |
-| Accept invitation  | `organization.acceptInvitation` | State machine transition                                                                                                                   |
-| JWKS               | `/.well-known/jwks.json`        | Auto-rotated key pairs                                                                                                                     |
-| Impersonation      | `admin.impersonateUser`         | 1-hour session, requires admin                                                                                                             |
+| Operation          | BetterAuth Method               | Notes                                                                                                                                                         |
+| ------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first (`CreateUserContact` hook). No auto-sign-in — user must verify email. Verification email via RabbitMQ → Comms |
+| Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                                                |
+| Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                                                  |
+| Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                                              |
+| Get session        | `getSession`                    | 3-tier lookup                                                                                                                                                 |
+| Create org         | `organization.create`           | Validates orgType via `beforeCreateOrganization`                                                                                                              |
+| Create invitation  | `auth.api.createInvitation`     | Called by custom `/api/invitations` route (NOT exposed via BetterAuth HTTP). `sendInvitationEmail` callback disabled — our route handles publishing           |
+| Accept invitation  | `organization.acceptInvitation` | State machine transition                                                                                                                                      |
+| JWKS               | `/.well-known/jwks.json`        | Auto-rotated key pairs                                                                                                                                        |
+| Impersonation      | `admin.impersonateUser`         | 1-hour session, requires admin                                                                                                                                |
 
 ---
 
@@ -884,6 +893,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `routes/auth-routes.test.ts`                    | 27      | Cache-Control on .well-known, throttle guard (429/Retry-After/blocked/allowed), fire-and-forget record, edge cases, case-insensitive hashing, username path, requestInfo propagation |
 | `routes/emulation-routes.test.ts`               | 26      | Middleware auth (role + staff), input mapping, status codes, pagination                                                                                                              |
 | `routes/org-contact-routes.test.ts`             | 25      | Middleware auth (role), input mapping, status codes, pagination, no-org, contact details                                                                                             |
+| `routes/invitation-routes.test.ts`              | 20      | Role checks, input validation, non-existing user (Geo contact creation), existing user (userId path), createInvitation failure, org name fallback, publish event shape               |
 | **Domain Layer**                                |         |                                                                                                                                                                                      |
 | `domain/enums/*.test.ts`                        | —       | OrgType, Role, InvitationStatus validation + guards                                                                                                                                  |
 | `domain/entities/*.test.ts`                     | —       | Factory functions, immutability, validation                                                                                                                                          |
@@ -902,7 +912,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `integration/custom-table-repositories.test.ts` | 26      | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints)                                                                                                    |
 | `integration/auth-factory.test.ts`              | 18      | Email verification (3), full E2E flow, UUIDv7, session hooks, user row completeness, JWT claims (all 14), org+orgType, password validation, session fields                           |
 | `integration/better-auth-tables.test.ts`        | 8       | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance                                                                                                                 |
-| **Total auth-tests**                            | **693** | 641 unit + 52 integration (Testcontainers PostgreSQL 18)                                                                                                                             |
+| **Total auth-tests**                            | **777** | 725 unit + 52 integration (Testcontainers PostgreSQL 18)                                                                                                                             |
 
 ### Key Security Behaviors Verified by Tests
 
@@ -911,7 +921,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | Sign-up does NOT auto-sign-in (email unverified)                                            | `auth-factory.test.ts`                                                                      |
 | Sign-in blocked when email not verified                                                     | `auth-factory.test.ts`                                                                      |
 | Sign-in succeeds after email verification                                                   | `auth-factory.test.ts`                                                                      |
-| Verification email delivery via RabbitMQ (not yet wired — config ready)                     | `auth-factory.test.ts`                                                                      |
+| Verification email delivery via RabbitMQ → Comms                                            | `auth-factory.test.ts`                                                                      |
 | Session middleware fails closed (503, not 401) on infra errors                              | `session.test.ts`                                                                           |
 | JWT fingerprint mismatch returns 401                                                        | `JwtFingerprintMiddlewareTests.cs`                                                          |
 | Short fingerprint claims don't crash middleware                                             | `JwtFingerprintMiddlewareTests.cs`                                                          |
@@ -955,10 +965,12 @@ backends/node/services/auth/
 ├── app/                                 # @d2/auth-app (TLC: mirrors Geo.App)
 │   └── src/
 │       ├── implementations/
-│       │   └── cqrs/
-│       │       └── handlers/
-│       │           ├── c/               # Command handlers (7) — RecordSignInOutcome + 6 with Zod validation
-│       │           └── q/               # Query handlers (4) — CheckSignInThrottle + 3 with Zod validation
+│       │   ├── cqrs/
+│       │   │   └── handlers/
+│       │   │       ├── c/               # Command handlers (8) — RecordSignInOutcome, CreateUserContact + 6 with Zod validation
+│       │   │       └── q/               # Query handlers (4) — CheckSignInThrottle + 3 with Zod validation
+│       │   └── messaging/
+│       │       └── handlers/pub/        # Notification publishers (3) — Verification, PasswordReset, Invitation
 │       ├── interfaces/
 │       │   └── repository/
 │       │       ├── handlers/            # Repo handler interfaces (14) + bundle types (TLC: c/, r/, u/, d/)
@@ -1007,9 +1019,10 @@ backends/node/services/auth/
 │       │   ├── auth-routes.ts           # BetterAuth routes + sign-in throttle guard
 │       │   ├── emulation-routes.ts      # Thin routes: visible auth middleware, handler delegation
 │       │   ├── org-contact-routes.ts    # Thin routes: visible auth middleware, handler delegation
+│       │   ├── invitation-routes.ts     # Custom invitation route (requireOrg + requireRole(officer))
 │       │   └── health.ts               # Health check
 │       └── index.ts
-├── tests/                               # @d2/auth-tests (599 tests)
+├── tests/                               # @d2/auth-tests (777 tests)
 │   └── src/
 │       ├── unit/
 │       │   ├── api/

@@ -75,6 +75,33 @@ export const PASSWORD_POLICY = {
  * Known-good identities (IP + fingerprint that previously signed in successfully)
  * bypass throttling entirely.
  */
+/**
+ * Geo contact context keys used by the auth service.
+ *
+ * These prefixed keys avoid clashes with other services that also store
+ * contacts via the Geo ext-key API. Every contextKey sent to Geo from auth
+ * MUST use one of these constants.
+ */
+export const GEO_CONTEXT_KEYS = {
+  /** User's personal contact (1:1 with auth user, created during sign-up). */
+  USER: "auth_user",
+  /** Organization contact (via org_contact junction table). */
+  ORG_CONTACT: "auth_org_contact",
+  /** Invitation contact (created for non-existing invitees). */
+  ORG_INVITATION: "auth_org_invitation",
+} as const;
+
+/**
+ * Auth service messaging topology.
+ *
+ * The auth service publishes domain events to this fanout exchange.
+ * Consumers (e.g. comms) bind their own queues to it.
+ */
+export const AUTH_MESSAGING = {
+  /** RabbitMQ fanout exchange for auth domain events. */
+  EVENTS_EXCHANGE: "events.auth",
+} as const;
+
 export const SIGN_IN_THROTTLE = {
   /** Number of failed attempts before delays begin. */
   FREE_ATTEMPTS: 3,

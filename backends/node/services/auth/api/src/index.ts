@@ -31,4 +31,5 @@ export {
 export { createAuthRoutes } from "./routes/auth-routes.js";
 export { createEmulationRoutes } from "./routes/emulation-routes.js";
 export { createOrgContactRoutes } from "./routes/org-contact-routes.js";
+export { createInvitationRoutes } from "./routes/invitation-routes.js";
 export { createHealthRoutes } from "./routes/health.js";

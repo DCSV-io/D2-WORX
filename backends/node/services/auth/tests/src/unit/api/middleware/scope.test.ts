@@ -50,7 +50,11 @@ type Session = Record<string, unknown> | null;
 /**
  * Creates a Hono app with scope middleware and a test route that captures IRequestContext.
  */
-function createTestApp(mockProvider: ReturnType<typeof createMockProvider>, user: User, session: Session) {
+function createTestApp(
+  mockProvider: ReturnType<typeof createMockProvider>,
+  user: User,
+  session: Session,
+) {
   const app = new Hono();
 
   // Simulate session middleware (sets user/session vars)

@@ -9,11 +9,14 @@ import { ServiceCollection, type ServiceProvider, type ServiceScope } from "@d2/
 import * as CacheMemory from "@d2/cache-memory";
 import {
   GetContactsByExtKeys,
+  GetContactsByIds,
   IGetContactsByExtKeysKey,
+  IGetContactsByIdsKey,
   DEFAULT_GEO_CLIENT_OPTIONS,
   createGeoServiceClient,
   type GeoClientOptions,
 } from "@d2/geo-client";
+import { GEO_CONTEXT_KEYS, AUTH_MESSAGING } from "@d2/auth-domain";
 import { MessageBus } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
 import {
@@ -30,6 +33,7 @@ import {
   IFindTemplateByNameAndChannelKey,
   IUpdateTemplateWrapperRecordKey,
 } from "@d2/comms-app";
+import { COMMS_MESSAGING } from "@d2/comms-domain";
 import { addCommsInfra, runMigrations, seedDefaultTemplates } from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
 
@@ -115,7 +119,7 @@ export async function createCommsService(config: CommsServiceConfig) {
   // Geo client for recipient resolution (GetContactsByExtKeys)
   const geoOptions: GeoClientOptions = {
     ...DEFAULT_GEO_CLIENT_OPTIONS,
-    allowedContextKeys: ["user", "org_contact"],
+    allowedContextKeys: [GEO_CONTEXT_KEYS.USER, GEO_CONTEXT_KEYS.ORG_CONTACT],
     apiKey: config.geoApiKey ?? "",
   };
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
@@ -134,7 +138,9 @@ export async function createCommsService(config: CommsServiceConfig) {
     geoOptions,
     serviceContext,
   );
+  const getContactsByIds = new GetContactsByIds(contactCacheStore, geoClient, serviceContext);
   services.addInstance(IGetContactsByExtKeysKey, getContactsByExtKeys);
+  services.addInstance(IGetContactsByIdsKey, getContactsByIds);
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
   addCommsInfra(services, db, {
@@ -201,10 +207,10 @@ export async function createCommsService(config: CommsServiceConfig) {
 
     await messageBus.subscribe<unknown>(
       {
-        queue: "comms.auth-events",
+        queue: COMMS_MESSAGING.AUTH_EVENTS_QUEUE,
         queueOptions: { durable: true },
-        exchanges: [{ exchange: "events.auth", type: "fanout" }],
-        queueBindings: [{ exchange: "events.auth", routingKey: "" }],
+        exchanges: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, type: "fanout" }],
+        queueBindings: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, routingKey: "" }],
       },
       async (msg) => {
         const body = msg as Record<string, unknown>;

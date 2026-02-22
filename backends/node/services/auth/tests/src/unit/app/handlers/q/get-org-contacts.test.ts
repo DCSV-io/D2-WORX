@@ -50,7 +50,7 @@ function createContactDTO(id: string): ContactDTO {
   return {
     id,
     createdAt: new Date("2026-02-01"),
-    contextKey: "org_contact",
+    contextKey: "auth_org_contact",
     relatedEntityId: "some-oc-id",
     personalDetails: { firstName: "Test", lastName: "User" },
     contactMethods: { emails: [{ value: `${id}@example.com` }] },
@@ -134,11 +134,11 @@ describe("GetOrgContacts", () => {
     const contacts = [createContact("oc-1"), createContact("oc-2"), createContact("oc-3")];
     findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contacts } }));
 
-    // Map keyed by "org_contact:{junction.id}" → ContactDTO[]
+    // Map keyed by "auth_org_contact:{junction.id}" → ContactDTO[]
     const geoMap = new Map<string, ContactDTO[]>([
-      ["org_contact:oc-1", [createContactDTO("geo-1")]],
-      ["org_contact:oc-2", [createContactDTO("geo-2")]],
-      ["org_contact:oc-3", [createContactDTO("geo-3")]],
+      ["auth_org_contact:oc-1", [createContactDTO("geo-1")]],
+      ["auth_org_contact:oc-2", [createContactDTO("geo-2")]],
+      ["auth_org_contact:oc-3", [createContactDTO("geo-3")]],
     ]);
     getContactsByExtKeys.handleAsync = vi
       .fn()
@@ -168,8 +168,8 @@ describe("GetOrgContacts", () => {
     expect(getContactsByExtKeys.handleAsync).toHaveBeenCalledOnce();
     expect(getContactsByExtKeys.handleAsync).toHaveBeenCalledWith({
       keys: [
-        { contextKey: "org_contact", relatedEntityId: "oc-1" },
-        { contextKey: "org_contact", relatedEntityId: "oc-2" },
+        { contextKey: "auth_org_contact", relatedEntityId: "oc-1" },
+        { contextKey: "auth_org_contact", relatedEntityId: "oc-2" },
       ],
     });
   });
@@ -180,7 +180,7 @@ describe("GetOrgContacts", () => {
 
     // Only oc-1 is in the map — oc-2 is missing (orphaned)
     const geoMap = new Map<string, ContactDTO[]>([
-      ["org_contact:oc-1", [createContactDTO("geo-1")]],
+      ["auth_org_contact:oc-1", [createContactDTO("geo-1")]],
     ]);
     getContactsByExtKeys.handleAsync = vi
       .fn()
@@ -228,7 +228,7 @@ describe("GetOrgContacts", () => {
     findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contacts } }));
 
     // Geo returns the key but with an empty array instead of a ContactDTO
-    const geoMap = new Map<string, ContactDTO[]>([["org_contact:oc-1", []]]);
+    const geoMap = new Map<string, ContactDTO[]>([["auth_org_contact:oc-1", []]]);
     getContactsByExtKeys.handleAsync = vi
       .fn()
       .mockResolvedValue(D2Result.ok({ data: { data: geoMap } }));

@@ -7,6 +7,8 @@ export {
   CHANNEL_DEFAULTS,
   QUIET_HOURS,
   THREAD_CONSTRAINTS,
+  COMMS_MESSAGING,
+  TEMPLATE_NAMES,
 } from "./constants/comms-constants.js";
 
 // --- Enums ---

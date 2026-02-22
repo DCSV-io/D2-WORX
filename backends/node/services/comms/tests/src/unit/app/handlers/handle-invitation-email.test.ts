@@ -31,7 +31,7 @@ describe("HandleInvitationEmail", () => {
 
     const deliverInput = mockDeliver.handleAsync.mock.calls[0][0];
     expect(deliverInput.senderService).toBe("auth");
-    expect(deliverInput.sensitive).toBe(false);
+    expect(deliverInput.sensitive).toBe(true);
     expect(deliverInput.channels).toEqual(["email"]);
     expect(deliverInput.templateName).toBe("invitation");
     expect(deliverInput.content).toContain("Acme Corp");
@@ -39,7 +39,7 @@ describe("HandleInvitationEmail", () => {
     expect(deliverInput.correlationId).toBeDefined();
   });
 
-  it("should pass inviteeEmail as recipientContactId (known Stage C gap)", async () => {
+  it("should pass inviteeUserId when set", async () => {
     const mockDeliver = {
       handleAsync: vi
         .fn()
@@ -59,11 +59,40 @@ describe("HandleInvitationEmail", () => {
       inviterName: "Jane Doe",
       inviterEmail: "jane@example.com",
       invitationUrl: "https://example.com/accept?id=inv-123",
+      inviteeUserId: "user-abc",
     });
 
     const deliverInput = mockDeliver.handleAsync.mock.calls[0][0];
-    // Bug 3: email is passed where contactId is expected — tracked as Stage C TODO
-    expect(deliverInput.recipientContactId).toBe("invitee@example.com");
+    expect(deliverInput.recipientUserId).toBe("user-abc");
+    expect(deliverInput.recipientContactId).toBeUndefined();
+  });
+
+  it("should pass inviteeContactId when set", async () => {
+    const mockDeliver = {
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(
+          D2Result.ok({ data: { messageId: "m1", requestId: "r1", attempts: [] } }),
+        ),
+    };
+
+    const handler = new HandleInvitationEmail(mockDeliver as any, createMockContext());
+
+    await handler.handleAsync({
+      invitationId: "inv-123",
+      inviteeEmail: "invitee@example.com",
+      organizationId: "org-123",
+      organizationName: "Acme Corp",
+      role: "agent",
+      inviterName: "Jane Doe",
+      inviterEmail: "jane@example.com",
+      invitationUrl: "https://example.com/accept?id=inv-123",
+      inviteeContactId: "contact-xyz",
+    });
+
+    const deliverInput = mockDeliver.handleAsync.mock.calls[0][0];
+    expect(deliverInput.recipientContactId).toBe("contact-xyz");
+    expect(deliverInput.recipientUserId).toBeUndefined();
   });
 
   it("should propagate Deliver failure", async () => {

@@ -3,6 +3,7 @@ import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { IMessagePublisher } from "@d2/messaging";
 import { SendPasswordResetEventFns } from "@d2/protos";
+import { AUTH_MESSAGING } from "@d2/auth-domain";
 import type { SendPasswordReset } from "../../../../messages/index.js";
 import type {
   IPublishPasswordResetHandler,
@@ -42,7 +43,7 @@ export class PublishPasswordReset
 
     if (this.publisher) {
       await this.publisher.send(
-        { exchange: "events.auth", routingKey: "" },
+        { exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, routingKey: "" },
         SendPasswordResetEventFns.toJSON({
           userId: input.userId,
           email: input.email,

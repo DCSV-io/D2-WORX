@@ -2,7 +2,7 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { generateUuidV7 } from "@d2/utilities";
-import { createOrgContact, type OrgContact } from "@d2/auth-domain";
+import { createOrgContact, GEO_CONTEXT_KEYS, type OrgContact } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Commands } from "@d2/geo-client";
 import type {
@@ -65,7 +65,7 @@ const schema = z.object({
  *
  * The caller provides full contact details (not a contactId). This handler
  * pre-generates the org_contact ID, creates the junction, then creates the
- * Geo contact with contextKey="org_contact" and relatedEntityId=orgContact.id.
+ * Geo contact with contextKey="auth_org_contact" and relatedEntityId=orgContact.id.
  * If Geo creation fails, the junction is rolled back (deleted).
  */
 export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateOrgContactOutput> {
@@ -108,7 +108,7 @@ export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateO
     // Build ContactToCreateDTO using junction ID as relatedEntityId
     const contactToCreate = {
       createdAt: new Date(),
-      contextKey: "org_contact",
+      contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT,
       relatedEntityId: orgContactId,
       contactMethods: input.contact.contactMethods ?? undefined,
       personalDetails: input.contact.personalDetails ?? undefined,

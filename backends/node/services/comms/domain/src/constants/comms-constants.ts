@@ -37,6 +37,30 @@ export const QUIET_HOURS = {
 /**
  * Constraints for threads, messages, attachments, and reactions.
  */
+/**
+ * Comms service messaging topology.
+ *
+ * The comms service owns its consumer queues. The exchange name comes from
+ * AUTH_MESSAGING in @d2/auth-domain — these constants are for comms-internal use.
+ */
+export const COMMS_MESSAGING = {
+  /** Queue bound to the auth events fanout exchange. */
+  AUTH_EVENTS_QUEUE: "comms.auth-events",
+  /** Sender service identifier for auth-originated deliveries. */
+  SENDER_AUTH: "auth",
+} as const;
+
+/**
+ * Well-known template names for delivery sub-handlers.
+ *
+ * These must match the names in the seed data (default-templates.ts).
+ */
+export const TEMPLATE_NAMES = {
+  EMAIL_VERIFICATION: "email-verification",
+  PASSWORD_RESET: "password-reset",
+  INVITATION: "invitation",
+} as const;
+
 export const THREAD_CONSTRAINTS = {
   MAX_TITLE_LENGTH: 255,
   MAX_MESSAGE_LENGTH: 50_000,

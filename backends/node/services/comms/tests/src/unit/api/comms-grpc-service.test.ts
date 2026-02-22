@@ -2,7 +2,12 @@ import { describe, it, expect, vi } from "vitest";
 import * as grpc from "@grpc/grpc-js";
 import { D2Result } from "@d2/result";
 import { createCommsGrpcService } from "@d2/comms-api";
-import type { ChannelPreference, TemplateWrapper, DeliveryRequest, DeliveryAttempt } from "@d2/comms-domain";
+import type {
+  ChannelPreference,
+  TemplateWrapper,
+  DeliveryRequest,
+  DeliveryAttempt,
+} from "@d2/comms-domain";
 
 /** Creates a mock ServiceProvider that returns controllable scopes. */
 function createMockProvider(handlerMocks: Record<symbol, unknown> = {}) {
@@ -221,7 +226,17 @@ describe("createCommsGrpcService", () => {
       const callback = vi.fn();
 
       await service.setChannelPreference(
-        { request: { userId: "u1", contactId: "", emailEnabled: true, smsEnabled: false, quietHoursStart: "", quietHoursEnd: "", quietHoursTz: "" } } as any,
+        {
+          request: {
+            userId: "u1",
+            contactId: "",
+            emailEnabled: true,
+            smsEnabled: false,
+            quietHoursStart: "",
+            quietHoursEnd: "",
+            quietHoursTz: "",
+          },
+        } as any,
         callback,
       );
 
@@ -275,10 +290,7 @@ describe("createCommsGrpcService", () => {
       const service = createCommsGrpcService(provider as any);
       const callback = vi.fn();
 
-      await service.getTemplate(
-        { request: { name: "x", channel: "email" } } as any,
-        callback,
-      );
+      await service.getTemplate({ request: { name: "x", channel: "email" } } as any, callback);
 
       const [err] = callback.mock.calls[0];
       expect(err.code).toBe(grpc.status.INTERNAL);
@@ -327,10 +339,7 @@ describe("createCommsGrpcService", () => {
       const service = createCommsGrpcService(provider as any);
       const callback = vi.fn();
 
-      await service.getDeliveryStatus(
-        { request: { deliveryRequestId: "req-1" } } as any,
-        callback,
-      );
+      await service.getDeliveryStatus({ request: { deliveryRequestId: "req-1" } } as any, callback);
 
       expect(callback).toHaveBeenCalledOnce();
       const [err, response] = callback.mock.calls[0];
@@ -366,10 +375,7 @@ describe("createCommsGrpcService", () => {
       const service = createCommsGrpcService(provider as any);
       const callback = vi.fn();
 
-      await service.getDeliveryStatus(
-        { request: { deliveryRequestId: "req-1" } } as any,
-        callback,
-      );
+      await service.getDeliveryStatus({ request: { deliveryRequestId: "req-1" } } as any, callback);
 
       const [err] = callback.mock.calls[0];
       expect(err.code).toBe(grpc.status.INTERNAL);

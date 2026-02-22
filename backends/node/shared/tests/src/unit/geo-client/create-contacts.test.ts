@@ -21,7 +21,7 @@ function createMockContactDTO(id: string): ContactDTO {
   return {
     id,
     createdAt: new Date("2026-02-10"),
-    contextKey: "org_contact",
+    contextKey: "auth_org_contact",
     relatedEntityId: "related-1",
   } as ContactDTO;
 }
@@ -66,7 +66,7 @@ describe("CreateContacts handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "oc-1",
         } as never,
       ],
@@ -101,7 +101,7 @@ describe("CreateContacts handler", () => {
     const inputContacts = [
       {
         createdAt: new Date(),
-        contextKey: "org_contact",
+        contextKey: "auth_org_contact",
         relatedEntityId: "oc-1",
       } as never,
     ];
@@ -164,7 +164,7 @@ describe("CreateContacts handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new CreateContacts(mockGeoClient, restrictedOptions, createTestContext());
@@ -203,7 +203,7 @@ describe("CreateContacts handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new CreateContacts(mockGeoClient, restrictedOptions, createTestContext());
@@ -211,7 +211,7 @@ describe("CreateContacts handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "x",
         } as never,
       ],

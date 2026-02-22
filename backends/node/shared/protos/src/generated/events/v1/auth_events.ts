@@ -37,6 +37,8 @@ export interface SendInvitationEmailEvent {
   inviterName: string;
   inviterEmail: string;
   invitationUrl: string;
+  inviteeUserId?: string | undefined;
+  inviteeContactId?: string | undefined;
 }
 
 function createBaseSendVerificationEmailEvent(): SendVerificationEmailEvent {
@@ -313,6 +315,8 @@ function createBaseSendInvitationEmailEvent(): SendInvitationEmailEvent {
     inviterName: "",
     inviterEmail: "",
     invitationUrl: "",
+    inviteeUserId: undefined,
+    inviteeContactId: undefined,
   };
 }
 
@@ -341,6 +345,12 @@ export const SendInvitationEmailEvent: MessageFns<SendInvitationEmailEvent> = {
     }
     if (message.invitationUrl !== "") {
       writer.uint32(66).string(message.invitationUrl);
+    }
+    if (message.inviteeUserId !== undefined) {
+      writer.uint32(74).string(message.inviteeUserId);
+    }
+    if (message.inviteeContactId !== undefined) {
+      writer.uint32(82).string(message.inviteeContactId);
     }
     return writer;
   },
@@ -416,6 +426,22 @@ export const SendInvitationEmailEvent: MessageFns<SendInvitationEmailEvent> = {
           message.invitationUrl = reader.string();
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.inviteeUserId = reader.string();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.inviteeContactId = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -463,6 +489,16 @@ export const SendInvitationEmailEvent: MessageFns<SendInvitationEmailEvent> = {
         : isSet(object.invitation_url)
         ? globalThis.String(object.invitation_url)
         : "",
+      inviteeUserId: isSet(object.inviteeUserId)
+        ? globalThis.String(object.inviteeUserId)
+        : isSet(object.invitee_user_id)
+        ? globalThis.String(object.invitee_user_id)
+        : undefined,
+      inviteeContactId: isSet(object.inviteeContactId)
+        ? globalThis.String(object.inviteeContactId)
+        : isSet(object.invitee_contact_id)
+        ? globalThis.String(object.invitee_contact_id)
+        : undefined,
     };
   },
 
@@ -492,6 +528,12 @@ export const SendInvitationEmailEvent: MessageFns<SendInvitationEmailEvent> = {
     if (message.invitationUrl !== "") {
       obj.invitationUrl = message.invitationUrl;
     }
+    if (message.inviteeUserId !== undefined) {
+      obj.inviteeUserId = message.inviteeUserId;
+    }
+    if (message.inviteeContactId !== undefined) {
+      obj.inviteeContactId = message.inviteeContactId;
+    }
     return obj;
   },
 
@@ -508,6 +550,8 @@ export const SendInvitationEmailEvent: MessageFns<SendInvitationEmailEvent> = {
     message.inviterName = object.inviterName ?? "";
     message.inviterEmail = object.inviterEmail ?? "";
     message.invitationUrl = object.invitationUrl ?? "";
+    message.inviteeUserId = object.inviteeUserId ?? undefined;
+    message.inviteeContactId = object.inviteeContactId ?? undefined;
     return message;
   },
 };

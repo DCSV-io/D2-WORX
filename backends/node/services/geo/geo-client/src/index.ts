@@ -45,6 +45,11 @@ export type {
   GetContactsByExtKeysInput,
   GetContactsByExtKeysOutput,
 } from "./interfaces/q/get-contacts-by-ext-keys.js";
+export { GetContactsByIds } from "./handlers/q/get-contacts-by-ids.js";
+export type {
+  GetContactsByIdsInput,
+  GetContactsByIdsOutput,
+} from "./interfaces/q/get-contacts-by-ids.js";
 
 // Complex
 export { FindWhoIs } from "./handlers/x/find-whois.js";
@@ -68,6 +73,7 @@ export {
   ICreateContactsKey,
   IDeleteContactsByExtKeysKey,
   IGetContactsByExtKeysKey,
+  IGetContactsByIdsKey,
   IFindWhoIsKey,
   IUpdateContactsByExtKeysKey,
 } from "./service-keys.js";

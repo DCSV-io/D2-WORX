@@ -12,7 +12,7 @@ describe("escapeHtml", () => {
     expect(escapeHtml("Tom & Jerry")).toBe("Tom &amp; Jerry");
   });
 
-  it('should escape " and \' characters', () => {
+  it("should escape \" and ' characters", () => {
     expect(escapeHtml(`She said "hello" and it's fine`)).toBe(
       "She said &quot;hello&quot; and it&#x27;s fine",
     );

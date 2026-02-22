@@ -1,5 +1,7 @@
 import type { MessageBus } from "@d2/messaging";
 import type { DeliverySubHandlers } from "@d2/comms-app";
+import { COMMS_MESSAGING } from "@d2/comms-domain";
+import { AUTH_MESSAGING } from "@d2/auth-domain";
 import {
   SendVerificationEmailEventFns,
   SendPasswordResetEventFns,
@@ -16,10 +18,10 @@ import {
 export function createAuthEventConsumer(messageBus: MessageBus, subHandlers: DeliverySubHandlers) {
   return messageBus.subscribe<unknown>(
     {
-      queue: "comms.auth-events",
+      queue: COMMS_MESSAGING.AUTH_EVENTS_QUEUE,
       queueOptions: { durable: true },
-      exchanges: [{ exchange: "events.auth", type: "fanout" }],
-      queueBindings: [{ exchange: "events.auth", routingKey: "" }],
+      exchanges: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, type: "fanout" }],
+      queueBindings: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, routingKey: "" }],
     },
     async (msg) => {
       const body = msg as Record<string, unknown>;

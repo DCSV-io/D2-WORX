@@ -162,6 +162,7 @@ export function createDeliveryHandlers(
   },
   providers: { email: IEmailProvider; sms?: ISmsProvider },
   getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler,
+  getContactsByIds: Queries.IGetContactsByIdsHandler,
   context: IHandlerContext,
   cache?: {
     channelPref?: {
@@ -174,7 +175,7 @@ export function createDeliveryHandlers(
     };
   },
 ): DeliveryHandlers {
-  const recipientResolver = new RecipientResolver(getContactsByExtKeys, context);
+  const recipientResolver = new RecipientResolver(getContactsByExtKeys, getContactsByIds, context);
   const deliver = new Deliver(repos, providers, recipientResolver, context);
 
   return {

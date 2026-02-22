@@ -24,7 +24,7 @@ function createTestContext(): IHandlerContext {
 
 function createMockContactDTO(
   id: string,
-  contextKey = "org_contact",
+  contextKey = "auth_org_contact",
   relatedEntityId = "org-1",
 ): ContactDTO {
   return {
@@ -56,8 +56,8 @@ describe("UpdateContactsByExtKeys handler", () => {
   });
 
   it("should call gRPC updateContactsByExtKeys and return new contacts", async () => {
-    const newContact1 = createMockContactDTO("new-1", "org_contact", "org-1");
-    const newContact2 = createMockContactDTO("new-2", "org_contact", "org-2");
+    const newContact1 = createMockContactDTO("new-1", "auth_org_contact", "org-1");
+    const newContact2 = createMockContactDTO("new-2", "auth_org_contact", "org-2");
 
     const mockGeoClient = {
       updateContactsByExtKeys: mockGrpcMethod({
@@ -83,12 +83,12 @@ describe("UpdateContactsByExtKeys handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-1",
         } as ContactToCreateDTO,
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-2",
         } as ContactToCreateDTO,
       ],
@@ -124,7 +124,7 @@ describe("UpdateContactsByExtKeys handler", () => {
     const inputContacts = [
       {
         createdAt: new Date(),
-        contextKey: "org_contact",
+        contextKey: "auth_org_contact",
         relatedEntityId: "org-1",
       } as ContactToCreateDTO,
     ];
@@ -138,9 +138,9 @@ describe("UpdateContactsByExtKeys handler", () => {
 
   it("should evict ext-key cache for each input contact", async () => {
     // Pre-populate cache
-    store.set("contact-ext:org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
-    store.set("contact-ext:org_contact:org-2", [{ id: "old-2" } as ContactDTO]);
-    store.set("contact-ext:org_contact:org-3", [{ id: "old-3" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-2", [{ id: "old-2" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-3", [{ id: "old-3" } as ContactDTO]);
 
     const mockGeoClient = {
       updateContactsByExtKeys: mockGrpcMethod({
@@ -153,8 +153,8 @@ describe("UpdateContactsByExtKeys handler", () => {
           traceId: "",
         },
         data: [
-          createMockContactDTO("new-1", "org_contact", "org-1"),
-          createMockContactDTO("new-2", "org_contact", "org-2"),
+          createMockContactDTO("new-1", "auth_org_contact", "org-1"),
+          createMockContactDTO("new-2", "auth_org_contact", "org-2"),
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -169,25 +169,25 @@ describe("UpdateContactsByExtKeys handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-1",
         } as ContactToCreateDTO,
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-2",
         } as ContactToCreateDTO,
       ],
     });
 
     // org-1 and org-2 evicted, org-3 remains
-    expect(store.get("contact-ext:org_contact:org-1")).toBeUndefined();
-    expect(store.get("contact-ext:org_contact:org-2")).toBeUndefined();
-    expect(store.get("contact-ext:org_contact:org-3")).toBeDefined();
+    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
+    expect(store.get("contact-ext:auth_org_contact:org-2")).toBeUndefined();
+    expect(store.get("contact-ext:auth_org_contact:org-3")).toBeDefined();
   });
 
   it("should evict cache even on gRPC failure", async () => {
-    store.set("contact-ext:org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
 
     const mockGeoClient = {
       updateContactsByExtKeys: mockGrpcMethodError(new Error("Connection refused")),
@@ -203,14 +203,14 @@ describe("UpdateContactsByExtKeys handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-1",
         } as ContactToCreateDTO,
       ],
     });
 
     // Cache should still be evicted even though gRPC failed
-    expect(store.get("contact-ext:org_contact:org-1")).toBeUndefined();
+    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
   });
 
   it("should return failure on gRPC error", async () => {
@@ -228,7 +228,7 @@ describe("UpdateContactsByExtKeys handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-1",
         } as ContactToCreateDTO,
       ],
@@ -244,7 +244,7 @@ describe("UpdateContactsByExtKeys handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new UpdateContactsByExtKeys(
@@ -295,7 +295,7 @@ describe("UpdateContactsByExtKeys handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-1",
         } as ContactToCreateDTO,
       ],
@@ -305,7 +305,7 @@ describe("UpdateContactsByExtKeys handler", () => {
   });
 
   it("should allow request when context key is in allowedContextKeys", async () => {
-    const newContact = createMockContactDTO("new-1", "org_contact", "org-1");
+    const newContact = createMockContactDTO("new-1", "auth_org_contact", "org-1");
     const mockGeoClient = {
       updateContactsByExtKeys: mockGrpcMethod({
         result: {
@@ -322,7 +322,7 @@ describe("UpdateContactsByExtKeys handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new UpdateContactsByExtKeys(
@@ -335,7 +335,7 @@ describe("UpdateContactsByExtKeys handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-1",
         } as ContactToCreateDTO,
       ],
@@ -382,9 +382,9 @@ describe("UpdateContactsByExtKeys handler", () => {
   });
 
   it("should not repopulate cache with new contacts after eviction", async () => {
-    store.set("contact-ext:org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
 
-    const newContact = createMockContactDTO("new-1", "org_contact", "org-1");
+    const newContact = createMockContactDTO("new-1", "auth_org_contact", "org-1");
     const mockGeoClient = {
       updateContactsByExtKeys: mockGrpcMethod({
         result: {
@@ -409,13 +409,13 @@ describe("UpdateContactsByExtKeys handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "org-1",
         } as ContactToCreateDTO,
       ],
     });
 
     // Cache was evicted and NOT repopulated — next GetContactsByExtKeys will cache it
-    expect(store.get("contact-ext:org_contact:org-1")).toBeUndefined();
+    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
   });
 });

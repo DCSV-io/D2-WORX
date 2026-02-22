@@ -24,6 +24,10 @@ export const IGetContactsByExtKeysKey = createServiceKey<Queries.IGetContactsByE
   "Geo.GetContactsByExtKeys",
 );
 
+/** DI key for GetContactsByIds handler. */
+export const IGetContactsByIdsKey =
+  createServiceKey<Queries.IGetContactsByIdsHandler>("Geo.GetContactsByIds");
+
 // --- Complex ---
 
 /** DI key for FindWhoIs handler. */

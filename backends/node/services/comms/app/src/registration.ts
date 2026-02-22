@@ -1,6 +1,6 @@
 import type { ServiceCollection } from "@d2/di";
 import { IHandlerContextKey } from "@d2/handler";
-import { IGetContactsByExtKeysKey } from "@d2/geo-client";
+import { IGetContactsByExtKeysKey, IGetContactsByIdsKey } from "@d2/geo-client";
 import {
   // Infra keys
   ICreateMessageRecordKey,
@@ -54,7 +54,11 @@ export function addCommsApp(services: ServiceCollection): void {
   services.addTransient(
     IRecipientResolverKey,
     (sp) =>
-      new RecipientResolver(sp.resolve(IGetContactsByExtKeysKey), sp.resolve(IHandlerContextKey)),
+      new RecipientResolver(
+        sp.resolve(IGetContactsByExtKeysKey),
+        sp.resolve(IGetContactsByIdsKey),
+        sp.resolve(IHandlerContextKey),
+      ),
   );
 
   services.addTransient(

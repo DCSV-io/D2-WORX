@@ -32,4 +32,6 @@ message SendInvitationEmailEvent {
   string inviter_name = 6;
   string inviter_email = 7;
   string invitation_url = 8;
+  optional string invitee_user_id = 9;
+  optional string invitee_contact_id = 10;
 }

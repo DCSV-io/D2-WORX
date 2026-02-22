@@ -88,10 +88,10 @@ export function createMockEmailProvider(): IEmailProvider {
 /** Creates a mock RecipientResolver-like geo handler. */
 export function createMockGetContactsByExtKeys() {
   const contacts = new Map();
-  contacts.set("user:user-123", [
+  contacts.set("auth_user:user-123", [
     {
       id: "contact-1",
-      contextKey: "user",
+      contextKey: "auth_user",
       relatedEntityId: "user-123",
       contactMethods: {
         emails: [{ value: "user@example.com", labels: [] }],
@@ -103,6 +103,28 @@ export function createMockGetContactsByExtKeys() {
       createdAt: new Date(),
     },
   ]);
+
+  return {
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contacts } })),
+  };
+}
+
+/** Creates a mock GetContactsByIds handler. */
+export function createMockGetContactsByIds() {
+  const contacts = new Map();
+  contacts.set("contact-1", {
+    id: "contact-1",
+    contextKey: "auth_user",
+    relatedEntityId: "user-123",
+    contactMethods: {
+      emails: [{ value: "user@example.com", labels: [] }],
+      phoneNumbers: [{ value: "+15551234567", labels: [] }],
+    },
+    personalDetails: undefined,
+    professionalDetails: undefined,
+    location: undefined,
+    createdAt: new Date(),
+  });
 
   return {
     handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contacts } })),

@@ -29,7 +29,7 @@ function createMockCreateContacts(): Commands.ICreateContactsHandler {
             {
               id: "geo-contact-001",
               createdAt: new Date("2026-02-10"),
-              contextKey: "user",
+              contextKey: "auth_user",
               relatedEntityId: VALID_USER_ID,
             } as ContactDTO,
           ],
@@ -121,7 +121,7 @@ describe("CreateUserContact", () => {
 
     const call = vi.mocked(createContacts.handleAsync).mock.calls[0][0];
     expect(call.contacts).toHaveLength(1);
-    expect(call.contacts[0].contextKey).toBe("user");
+    expect(call.contacts[0].contextKey).toBe("auth_user");
     expect(call.contacts[0].relatedEntityId).toBe(VALID_USER_ID);
     expect(call.contacts[0].contactMethods?.emails).toHaveLength(1);
     expect(call.contacts[0].contactMethods?.emails[0].value).toBe("test@example.com");

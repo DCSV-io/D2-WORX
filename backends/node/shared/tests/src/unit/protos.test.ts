@@ -295,7 +295,7 @@ describe("Geo DTO interfaces", () => {
     const contact: ContactDTO = {
       id: "contact-1",
       createdAt: undefined,
-      contextKey: "user",
+      contextKey: "auth_user",
       relatedEntityId: "user-123",
       contactMethods: {
         emails: [{ value: "test@example.com", labels: ["primary"] }],

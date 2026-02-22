@@ -64,9 +64,9 @@ describe("DeleteContactsByExtKeys handler", () => {
     );
     const result = await handler.handleAsync({
       keys: [
-        { contextKey: "org_contact", relatedEntityId: "org-1" },
-        { contextKey: "org_contact", relatedEntityId: "org-2" },
-        { contextKey: "org_contact", relatedEntityId: "org-3" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-3" },
       ],
     });
 
@@ -96,8 +96,8 @@ describe("DeleteContactsByExtKeys handler", () => {
       createTestContext(),
     );
     const inputKeys = [
-      { contextKey: "org_contact", relatedEntityId: "org-1" },
-      { contextKey: "org_contact", relatedEntityId: "org-2" },
+      { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
+      { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
     ];
     await handler.handleAsync({ keys: inputKeys });
 
@@ -108,9 +108,9 @@ describe("DeleteContactsByExtKeys handler", () => {
 
   it("should evict ext-key cache for each input key", async () => {
     // Pre-populate cache
-    store.set("contact-ext:org_contact:org-1", [{ id: "c-1" } as ContactDTO]);
-    store.set("contact-ext:org_contact:org-2", [{ id: "c-2" } as ContactDTO]);
-    store.set("contact-ext:org_contact:org-3", [{ id: "c-3" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-1", [{ id: "c-1" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-2", [{ id: "c-2" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-3", [{ id: "c-3" } as ContactDTO]);
 
     const mockGeoClient = {
       deleteContactsByExtKeys: mockGrpcMethod({
@@ -134,19 +134,19 @@ describe("DeleteContactsByExtKeys handler", () => {
     );
     await handler.handleAsync({
       keys: [
-        { contextKey: "org_contact", relatedEntityId: "org-1" },
-        { contextKey: "org_contact", relatedEntityId: "org-2" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
       ],
     });
 
     // org-1 and org-2 evicted, org-3 remains
-    expect(store.get("contact-ext:org_contact:org-1")).toBeUndefined();
-    expect(store.get("contact-ext:org_contact:org-2")).toBeUndefined();
-    expect(store.get("contact-ext:org_contact:org-3")).toBeDefined();
+    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
+    expect(store.get("contact-ext:auth_org_contact:org-2")).toBeUndefined();
+    expect(store.get("contact-ext:auth_org_contact:org-3")).toBeDefined();
   });
 
   it("should evict cache even on gRPC failure", async () => {
-    store.set("contact-ext:org_contact:org-1", [{ id: "c-1" } as ContactDTO]);
+    store.set("contact-ext:auth_org_contact:org-1", [{ id: "c-1" } as ContactDTO]);
 
     const mockGeoClient = {
       deleteContactsByExtKeys: mockGrpcMethodError(new Error("Connection refused")),
@@ -159,11 +159,11 @@ describe("DeleteContactsByExtKeys handler", () => {
       createTestContext(),
     );
     await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     // Cache should still be evicted even though gRPC failed
-    expect(store.get("contact-ext:org_contact:org-1")).toBeUndefined();
+    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
   });
 
   it("should return failure on gRPC error", async () => {
@@ -178,7 +178,7 @@ describe("DeleteContactsByExtKeys handler", () => {
       createTestContext(),
     );
     const result = await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     expect(result.success).toBe(false);
@@ -191,7 +191,7 @@ describe("DeleteContactsByExtKeys handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new DeleteContactsByExtKeys(
@@ -228,7 +228,7 @@ describe("DeleteContactsByExtKeys handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new DeleteContactsByExtKeys(
@@ -238,7 +238,7 @@ describe("DeleteContactsByExtKeys handler", () => {
       createTestContext(),
     );
     const result = await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     expect(result.success).toBe(true);
@@ -296,7 +296,7 @@ describe("DeleteContactsByExtKeys handler", () => {
       createTestContext(),
     );
     const result = await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     expect(result.success).toBe(false);

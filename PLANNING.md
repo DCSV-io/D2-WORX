@@ -86,6 +86,9 @@
 - ✅ Registration functions — `addAuthInfra()`, `addAuthApp()`, `addCommsInfra()`, `addCommsApp()` mirror .NET `services.AddXxx()`
 - ✅ BaseHandler traceId auto-injection — eliminates 174 occurrences of `traceId: this.traceId` boilerplate
 - ✅ Shared tests — 671 tests passing (35 new DI tests: ServiceCollection, ServiceProvider, ServiceScope, traceId auto-injection)
+- ✅ Invitation email delivery — Custom `/api/invitations` route, `PublishInvitationEmail` handler, proto fields (`invitee_user_id`, `invitee_contact_id`), `GetContactsByIds` handler in geo-client, RecipientResolver dual-path (userId via ext-keys, contactId via direct ID lookup), `HandleInvitationEmail` fix (was passing email string as contactId)
+- ✅ E2E tests — 5 cross-service tests (verification email × 2, password reset, invitation for new user, invitation for existing user) via Testcontainers (PG × 3 + Redis + RabbitMQ) + .NET Geo child process
+- ✅ Auth tests — 777 passing (63 test files), Comms tests — 643 passing (54 test files), Shared tests — 726 passing (59 test files)
 
 ### Blocked By
 
@@ -647,21 +650,21 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 ### Services
 
-| Service          | Status         | Notes                                                                                                            |
-| ---------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Geo.Domain       | ✅ Done        | Entities, value objects                                                                                          |
-| Geo.App          | ✅ Done        | CQRS handlers, mappers                                                                                           |
-| Geo.Infra        | ✅ Done        | Repository, messaging                                                                                            |
-| Geo.API          | ✅ Done        | gRPC service                                                                                                     |
-| Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
-| Geo.Tests        | ✅ Done        | 708 tests passing                                                                                                |
-| **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B (DDD layers) done: domain, app, infra, api |
-| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 617 tests passing                                    |
-| **Comms.Domain** | ✅ Done        | Entities, enums, rules, constants (`backends/node/services/comms/domain/`)                                       |
-| **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator, sub-handlers (`backends/node/services/comms/app/`)                         |
-| **Comms.Infra**  | ✅ Done        | Drizzle schema/migrations, Resend + Twilio providers, RabbitMQ consumer (`backends/node/services/comms/infra/`)  |
-| **Comms.API**    | ✅ Done        | gRPC server + composition root + mappers (`backends/node/services/comms/api/`)                                   |
-| **Comms.Tests**  | ✅ Done        | 550 unit tests passing (`backends/node/services/comms/tests/`)                                                   |
+| Service          | Status         | Notes                                                                                                           |
+| ---------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| Geo.Domain       | ✅ Done        | Entities, value objects                                                                                         |
+| Geo.App          | ✅ Done        | CQRS handlers, mappers                                                                                          |
+| Geo.Infra        | ✅ Done        | Repository, messaging                                                                                           |
+| Geo.API          | ✅ Done        | gRPC service                                                                                                    |
+| Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                   |
+| Geo.Tests        | ✅ Done        | 708 tests passing                                                                                               |
+| **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E    |
+| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 777 tests passing                                   |
+| **Comms.Domain** | ✅ Done        | Entities, enums, rules, constants (`backends/node/services/comms/domain/`)                                      |
+| **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator, sub-handlers (`backends/node/services/comms/app/`)                        |
+| **Comms.Infra**  | ✅ Done        | Drizzle schema/migrations, Resend + Twilio providers, RabbitMQ consumer (`backends/node/services/comms/infra/`) |
+| **Comms.API**    | ✅ Done        | gRPC server + composition root + mappers (`backends/node/services/comms/api/`)                                  |
+| **Comms.Tests**  | ✅ Done        | 643 tests passing (`backends/node/services/comms/tests/`)                                                       |
 
 ### Gateways
 

@@ -1,6 +1,8 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import type { ContactDTO } from "@d2/protos";
 import type { Queries } from "@d2/geo-client";
+import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 
 export interface ResolveRecipientInput {
   readonly userId?: string;
@@ -13,21 +15,26 @@ export interface ResolveRecipientOutput {
 }
 
 /**
- * Resolves a recipient's email/phone from their userId or contactId
- * using geo-client's GetContactsByExtKeys.
+ * Resolves a recipient's email/phone from their userId or contactId.
+ *
+ * - userId path: Uses GetContactsByExtKeys (contextKey: "auth_user")
+ * - contactId path: Uses GetContactsByIds (direct Geo contact ID lookup)
  *
  * Uses geo-client's built-in LRU caching — contacts are immutable,
  * so no additional cache layer is needed.
  */
 export class RecipientResolver extends BaseHandler<ResolveRecipientInput, ResolveRecipientOutput> {
   private readonly getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler;
+  private readonly getContactsByIds: Queries.IGetContactsByIdsHandler;
 
   constructor(
     getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler,
+    getContactsByIds: Queries.IGetContactsByIdsHandler,
     context: IHandlerContext,
   ) {
     super(context);
     this.getContactsByExtKeys = getContactsByExtKeys;
+    this.getContactsByIds = getContactsByIds;
   }
 
   protected async executeAsync(
@@ -37,21 +44,35 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
       return D2Result.ok({ data: {} });
     }
 
-    const contextKey = input.userId ? "user" : "org_contact";
-    const relatedEntityId = (input.userId ?? input.contactId)!;
+    let contacts: ContactDTO[];
 
-    const result = await this.getContactsByExtKeys.handleAsync({
-      keys: [{ contextKey, relatedEntityId }],
-    });
+    if (input.userId) {
+      // User path: resolve via ext-key (contextKey: "auth_user", relatedEntityId: userId)
+      const result = await this.getContactsByExtKeys.handleAsync({
+        keys: [{ contextKey: GEO_CONTEXT_KEYS.USER, relatedEntityId: input.userId }],
+      });
 
-    if (!result.success || !result.data) {
-      return D2Result.ok({ data: {} });
+      if (!result.success || !result.data) {
+        return D2Result.ok({ data: {} });
+      }
+
+      const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${input.userId}`;
+      contacts = result.data.data.get(lookupKey) ?? [];
+    } else {
+      // ContactId path: resolve via direct Geo contact ID
+      const result = await this.getContactsByIds.handleAsync({
+        ids: [input.contactId!],
+      });
+
+      if (!result.success || !result.data) {
+        return D2Result.ok({ data: {} });
+      }
+
+      const contact = result.data.data.get(input.contactId!);
+      contacts = contact ? [contact] : [];
     }
 
-    const lookupKey = `${contextKey}:${relatedEntityId}`;
-    const contacts = result.data.data.get(lookupKey);
-
-    if (!contacts || contacts.length === 0) {
+    if (contacts.length === 0) {
       return D2Result.ok({ data: {} });
     }
 

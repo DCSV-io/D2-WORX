@@ -11,6 +11,7 @@ import {
   createMockTemplateRepo,
   createMockEmailProvider,
   createMockGetContactsByExtKeys,
+  createMockGetContactsByIds,
 } from "../helpers/mock-handlers.js";
 
 describe("Deliver — extended coverage", () => {
@@ -21,7 +22,10 @@ describe("Deliver — extended coverage", () => {
   let templateRepo: ReturnType<typeof createMockTemplateRepo>;
   let emailProvider: ReturnType<typeof createMockEmailProvider>;
 
-  function createDeliver(geoContacts?: Map<string, unknown[]>) {
+  function createDeliver(opts?: {
+    geoContacts?: Map<string, unknown[]>;
+    geoContactsById?: Map<string, unknown>;
+  }) {
     const context = createMockContext();
     messageRepo = createMockMessageRepo();
     requestRepo = createMockRequestRepo();
@@ -31,15 +35,26 @@ describe("Deliver — extended coverage", () => {
     emailProvider = createMockEmailProvider();
 
     let geoHandler;
-    if (geoContacts) {
+    if (opts?.geoContacts) {
       geoHandler = {
-        handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: geoContacts } })),
+        handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: opts.geoContacts } })),
       };
     } else {
       geoHandler = createMockGetContactsByExtKeys();
     }
 
-    const resolver = new RecipientResolver(geoHandler as any, context);
+    let geoByIdHandler;
+    if (opts?.geoContactsById) {
+      geoByIdHandler = {
+        handleAsync: vi
+          .fn()
+          .mockResolvedValue(D2Result.ok({ data: { data: opts.geoContactsById } })),
+      };
+    } else {
+      geoByIdHandler = createMockGetContactsByIds();
+    }
+
+    const resolver = new RecipientResolver(geoHandler as any, geoByIdHandler as any, context);
     return new Deliver(
       {
         message: messageRepo,
@@ -65,10 +80,10 @@ describe("Deliver — extended coverage", () => {
 
     // Contact with email + phone
     const contacts = new Map();
-    contacts.set("user:user-123", [
+    contacts.set("auth_user:user-123", [
       {
         id: "c1",
-        contextKey: "user",
+        contextKey: "auth_user",
         relatedEntityId: "user-123",
         contactMethods: {
           emails: [{ value: "user@example.com", labels: [] }],
@@ -91,7 +106,8 @@ describe("Deliver — extended coverage", () => {
         .mockResolvedValue(D2Result.ok({ data: { providerMessageId: "twilio-123" } })),
     };
 
-    const resolver = new RecipientResolver(geoHandler as any, context);
+    const geoByIdHandler = createMockGetContactsByIds();
+    const resolver = new RecipientResolver(geoHandler as any, geoByIdHandler as any, context);
     return {
       deliver: new Deliver(
         {
@@ -121,7 +137,10 @@ describe("Deliver — extended coverage", () => {
     templateRepo = createMockTemplateRepo();
     emailProvider = createMockEmailProvider();
 
-    const resolver = new RecipientResolver(failGeo as any, context);
+    const failGeoById = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Service down"] })),
+    };
+    const resolver = new RecipientResolver(failGeo as any, failGeoById as any, context);
     const deliver = new Deliver(
       {
         message: messageRepo,
@@ -222,24 +241,22 @@ describe("Deliver — extended coverage", () => {
   });
 
   it("should use recipientContactId for channel preference lookup", async () => {
-    const contacts = new Map();
-    contacts.set("org_contact:contact-42", [
-      {
-        id: "c1",
-        contextKey: "org_contact",
-        relatedEntityId: "contact-42",
-        contactMethods: {
-          emails: [{ value: "contact@example.com", labels: [] }],
-          phoneNumbers: [],
-        },
-        personalDetails: undefined,
-        professionalDetails: undefined,
-        location: undefined,
-        createdAt: new Date(),
+    const contactsById = new Map();
+    contactsById.set("contact-42", {
+      id: "contact-42",
+      contextKey: "auth_org_contact",
+      relatedEntityId: "contact-42",
+      contactMethods: {
+        emails: [{ value: "contact@example.com", labels: [] }],
+        phoneNumbers: [],
       },
-    ]);
+      personalDetails: undefined,
+      professionalDetails: undefined,
+      location: undefined,
+      createdAt: new Date(),
+    });
 
-    const deliver = createDeliver(contacts);
+    const deliver = createDeliver({ geoContactsById: contactsById });
 
     const result = await deliver.handleAsync({
       senderService: "auth",

@@ -278,6 +278,9 @@ importers:
 
   backends/node/services/comms/api:
     dependencies:
+      '@d2/auth-domain':
+        specifier: workspace:*
+        version: link:../../auth/domain
       '@d2/cache-memory':
         specifier: workspace:*
         version: link:../../../shared/implementations/caching/in-memory/default
@@ -339,6 +342,9 @@ importers:
 
   backends/node/services/comms/app:
     dependencies:
+      '@d2/auth-domain':
+        specifier: workspace:*
+        version: link:../../auth/domain
       '@d2/comms-domain':
         specifier: workspace:*
         version: link:../domain
@@ -379,6 +385,9 @@ importers:
 
   backends/node/services/comms/infra:
     dependencies:
+      '@d2/auth-domain':
+        specifier: workspace:*
+        version: link:../../auth/domain
       '@d2/comms-app':
         specifier: workspace:*
         version: link:../app

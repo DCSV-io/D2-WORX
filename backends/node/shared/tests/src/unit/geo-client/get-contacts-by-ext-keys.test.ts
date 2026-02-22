@@ -24,7 +24,7 @@ function createTestContext(): IHandlerContext {
 
 function createMockContactDTO(
   id: string,
-  contextKey = "org_contact",
+  contextKey = "auth_org_contact",
   relatedEntityId = "related-1",
 ): ContactDTO {
   return {
@@ -56,10 +56,10 @@ describe("GetContactsByExtKeys handler", () => {
   });
 
   it("should return all contacts from cache without gRPC call", async () => {
-    const contacts1 = [createMockContactDTO("c-1", "org_contact", "org-1")];
-    const contacts2 = [createMockContactDTO("c-2", "org_contact", "org-2")];
-    store.set("contact-ext:org_contact:org-1", contacts1);
-    store.set("contact-ext:org_contact:org-2", contacts2);
+    const contacts1 = [createMockContactDTO("c-1", "auth_org_contact", "org-1")];
+    const contacts2 = [createMockContactDTO("c-2", "auth_org_contact", "org-2")];
+    store.set("contact-ext:auth_org_contact:org-1", contacts1);
+    store.set("contact-ext:auth_org_contact:org-2", contacts2);
 
     const mockGeoClient = { getContactsByExtKeys: vi.fn() } as unknown as GeoServiceClient;
     const handler = new GetContactsByExtKeys(
@@ -70,21 +70,21 @@ describe("GetContactsByExtKeys handler", () => {
     );
     const result = await handler.handleAsync({
       keys: [
-        { contextKey: "org_contact", relatedEntityId: "org-1" },
-        { contextKey: "org_contact", relatedEntityId: "org-2" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
       ],
     });
 
     expect(result.success).toBe(true);
     expect(result.data?.data.size).toBe(2);
-    expect(result.data?.data.get("org_contact:org-1")).toEqual(contacts1);
-    expect(result.data?.data.get("org_contact:org-2")).toEqual(contacts2);
+    expect(result.data?.data.get("auth_org_contact:org-1")).toEqual(contacts1);
+    expect(result.data?.data.get("auth_org_contact:org-2")).toEqual(contacts2);
     expect(mockGeoClient.getContactsByExtKeys).not.toHaveBeenCalled();
   });
 
   it("should call gRPC for all keys on complete cache miss", async () => {
-    const contact1 = createMockContactDTO("c-1", "org_contact", "org-1");
-    const contact2 = createMockContactDTO("c-2", "org_contact", "org-2");
+    const contact1 = createMockContactDTO("c-1", "auth_org_contact", "org-1");
+    const contact2 = createMockContactDTO("c-2", "auth_org_contact", "org-2");
 
     const mockGeoClient = {
       getContactsByExtKeys: mockGrpcMethod({
@@ -98,11 +98,11 @@ describe("GetContactsByExtKeys handler", () => {
         },
         data: [
           {
-            key: { contextKey: "org_contact", relatedEntityId: "org-1" },
+            key: { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
             contacts: [contact1],
           },
           {
-            key: { contextKey: "org_contact", relatedEntityId: "org-2" },
+            key: { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
             contacts: [contact2],
           },
         ],
@@ -117,23 +117,23 @@ describe("GetContactsByExtKeys handler", () => {
     );
     const result = await handler.handleAsync({
       keys: [
-        { contextKey: "org_contact", relatedEntityId: "org-1" },
-        { contextKey: "org_contact", relatedEntityId: "org-2" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
       ],
     });
 
     expect(result.success).toBe(true);
     expect(result.data?.data.size).toBe(2);
-    expect(result.data?.data.get("org_contact:org-1")).toEqual([contact1]);
-    expect(result.data?.data.get("org_contact:org-2")).toEqual([contact2]);
+    expect(result.data?.data.get("auth_org_contact:org-1")).toEqual([contact1]);
+    expect(result.data?.data.get("auth_org_contact:org-2")).toEqual([contact2]);
     expect(mockGeoClient.getContactsByExtKeys).toHaveBeenCalledOnce();
   });
 
   it("should call gRPC for cache misses only (partial cache)", async () => {
-    const cachedContacts = [createMockContactDTO("c-cached", "org_contact", "org-1")];
-    store.set("contact-ext:org_contact:org-1", cachedContacts);
+    const cachedContacts = [createMockContactDTO("c-cached", "auth_org_contact", "org-1")];
+    store.set("contact-ext:auth_org_contact:org-1", cachedContacts);
 
-    const fetchedContact = createMockContactDTO("c-fetched", "org_contact", "org-2");
+    const fetchedContact = createMockContactDTO("c-fetched", "auth_org_contact", "org-2");
     const mockGeoClient = {
       getContactsByExtKeys: mockGrpcMethod({
         result: {
@@ -146,7 +146,7 @@ describe("GetContactsByExtKeys handler", () => {
         },
         data: [
           {
-            key: { contextKey: "org_contact", relatedEntityId: "org-2" },
+            key: { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
             contacts: [fetchedContact],
           },
         ],
@@ -161,24 +161,26 @@ describe("GetContactsByExtKeys handler", () => {
     );
     const result = await handler.handleAsync({
       keys: [
-        { contextKey: "org_contact", relatedEntityId: "org-1" },
-        { contextKey: "org_contact", relatedEntityId: "org-2" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
       ],
     });
 
     expect(result.success).toBe(true);
     expect(result.data?.data.size).toBe(2);
-    expect(result.data?.data.get("org_contact:org-1")).toEqual(cachedContacts);
-    expect(result.data?.data.get("org_contact:org-2")).toEqual([fetchedContact]);
+    expect(result.data?.data.get("auth_org_contact:org-1")).toEqual(cachedContacts);
+    expect(result.data?.data.get("auth_org_contact:org-2")).toEqual([fetchedContact]);
 
     // Should only request the missing key
     const grpcRequest = vi.mocked(mockGeoClient.getContactsByExtKeys).mock.calls[0][0];
-    expect(grpcRequest.keys).toEqual([{ contextKey: "org_contact", relatedEntityId: "org-2" }]);
+    expect(grpcRequest.keys).toEqual([
+      { contextKey: "auth_org_contact", relatedEntityId: "org-2" },
+    ]);
   });
 
   it("should fail-open: return cached data when gRPC fails", async () => {
-    const cachedContacts = [createMockContactDTO("c-cached", "org_contact", "org-1")];
-    store.set("contact-ext:org_contact:org-1", cachedContacts);
+    const cachedContacts = [createMockContactDTO("c-cached", "auth_org_contact", "org-1")];
+    store.set("contact-ext:auth_org_contact:org-1", cachedContacts);
 
     const mockGeoClient = {
       getContactsByExtKeys: mockGrpcMethodError(new Error("Connection refused")),
@@ -192,16 +194,16 @@ describe("GetContactsByExtKeys handler", () => {
     );
     const result = await handler.handleAsync({
       keys: [
-        { contextKey: "org_contact", relatedEntityId: "org-1" },
-        { contextKey: "org_contact", relatedEntityId: "org-missing" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
+        { contextKey: "auth_org_contact", relatedEntityId: "org-missing" },
       ],
     });
 
     // Fail-open: returns whatever was cached
     expect(result.success).toBe(true);
     expect(result.data?.data.size).toBe(1);
-    expect(result.data?.data.get("org_contact:org-1")).toEqual(cachedContacts);
-    expect(result.data?.data.has("org_contact:org-missing")).toBe(false);
+    expect(result.data?.data.get("auth_org_contact:org-1")).toEqual(cachedContacts);
+    expect(result.data?.data.has("auth_org_contact:org-missing")).toBe(false);
   });
 
   it("should return empty Map for empty keys input", async () => {
@@ -220,7 +222,7 @@ describe("GetContactsByExtKeys handler", () => {
   });
 
   it("should populate ext-key cache after gRPC fetch", async () => {
-    const contact = createMockContactDTO("c-new", "org_contact", "org-1");
+    const contact = createMockContactDTO("c-new", "auth_org_contact", "org-1");
     const mockGeoClient = {
       getContactsByExtKeys: mockGrpcMethod({
         result: {
@@ -233,7 +235,7 @@ describe("GetContactsByExtKeys handler", () => {
         },
         data: [
           {
-            key: { contextKey: "org_contact", relatedEntityId: "org-1" },
+            key: { contextKey: "auth_org_contact", relatedEntityId: "org-1" },
             contacts: [contact],
           },
         ],
@@ -247,11 +249,11 @@ describe("GetContactsByExtKeys handler", () => {
       createTestContext(),
     );
     await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     // Verify it was cached with the correct ext-key format
-    expect(store.get("contact-ext:org_contact:org-1")).toEqual([contact]);
+    expect(store.get("contact-ext:auth_org_contact:org-1")).toEqual([contact]);
   });
 
   it("should return validation error when context key is not in allowedContextKeys", async () => {
@@ -261,7 +263,7 @@ describe("GetContactsByExtKeys handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new GetContactsByExtKeys(
@@ -303,7 +305,7 @@ describe("GetContactsByExtKeys handler", () => {
       createTestContext(),
     );
     const result = await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     expect(result.success).toBe(true);
@@ -332,7 +334,7 @@ describe("GetContactsByExtKeys handler", () => {
       createTestContext(),
     );
     const result = await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     // Non-success result means data isn't processed — fail-open returns success with empty map
@@ -357,7 +359,7 @@ describe("GetContactsByExtKeys handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new GetContactsByExtKeys(
@@ -367,7 +369,7 @@ describe("GetContactsByExtKeys handler", () => {
       createTestContext(),
     );
     const result = await handler.handleAsync({
-      keys: [{ contextKey: "org_contact", relatedEntityId: "org-1" }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: "org-1" }],
     });
 
     expect(result.success).toBe(true);

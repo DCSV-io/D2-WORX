@@ -1,5 +1,6 @@
 import { MessageBus, type IMessagePublisher } from "@d2/messaging";
 import { createApp } from "@d2/auth-api";
+import { AUTH_MESSAGING } from "@d2/auth-domain";
 import { createPasswordFunctions, type AuthServiceConfig, type PrefixCache } from "@d2/auth-infra";
 
 let messageBus: MessageBus | undefined;
@@ -9,6 +10,8 @@ let shutdownFn: (() => Promise<void>) | undefined;
 export interface AuthServiceHandle {
   /** BetterAuth API for direct testing (no HTTP needed). */
   auth: Awaited<ReturnType<typeof createApp>>["auth"];
+  /** Hono app for HTTP route testing (invitation routes, etc.). */
+  app: Awaited<ReturnType<typeof createApp>>["app"];
 }
 
 /**
@@ -40,7 +43,7 @@ export async function startAuthService(opts: {
   await messageBus.waitForConnection();
 
   publisher = await messageBus.createPublisher({
-    exchanges: [{ exchange: "events.auth", type: "fanout" }],
+    exchanges: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, type: "fanout" }],
   });
 
   const config: AuthServiceConfig = {
@@ -60,10 +63,10 @@ export async function startAuthService(opts: {
   // Skip HIBP API in E2E tests — domain validation still runs
   const passwordFunctions = createPasswordFunctions(noBreachCache);
 
-  const { auth, shutdown } = await createApp(config, publisher, { passwordFunctions });
+  const { app, auth, shutdown } = await createApp(config, publisher, { passwordFunctions });
   shutdownFn = shutdown;
 
-  return { auth };
+  return { auth, app };
 }
 
 /** Race a promise against a timeout (resolves even if inner hangs). */

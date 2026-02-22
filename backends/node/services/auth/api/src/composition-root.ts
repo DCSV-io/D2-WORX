@@ -38,14 +38,13 @@ import {
   type AuthServiceConfig,
   type PasswordFunctions,
 } from "@d2/auth-infra";
-import { PASSWORD_POLICY } from "@d2/auth-domain";
+import { PASSWORD_POLICY, GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import {
   addAuthApp,
   ISignInThrottleStoreKey,
   IRecordSignInEventKey,
   IPublishVerificationEmailKey,
   IPublishPasswordResetKey,
-  IPublishInvitationEmailKey,
   ICreateUserContactKey,
   CheckSignInThrottle,
   RecordSignInOutcome,
@@ -64,6 +63,7 @@ import { handleError } from "./middleware/error-handler.js";
 import { createAuthRoutes } from "./routes/auth-routes.js";
 import { createEmulationRoutes } from "./routes/emulation-routes.js";
 import { createOrgContactRoutes } from "./routes/org-contact-routes.js";
+import { createInvitationRoutes } from "./routes/invitation-routes.js";
 import { createHealthRoutes } from "./routes/health.js";
 
 /**
@@ -161,7 +161,11 @@ export async function createApp(
   // Geo contact handlers (gRPC-backed with local caching)
   const geoOptions: GeoClientOptions = {
     ...DEFAULT_GEO_CLIENT_OPTIONS,
-    allowedContextKeys: ["org_contact", "user"],
+    allowedContextKeys: [
+      GEO_CONTEXT_KEYS.ORG_CONTACT,
+      GEO_CONTEXT_KEYS.USER,
+      GEO_CONTEXT_KEYS.ORG_INVITATION,
+    ],
     apiKey: config.geoApiKey ?? "",
   };
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
@@ -307,15 +311,6 @@ export async function createApp(
         scope.dispose();
       }
     },
-    publishInvitationEmail: async (input) => {
-      const scope = createCallbackScope();
-      try {
-        const handler = scope.resolve(IPublishInvitationEmailKey);
-        await handler.handleAsync(input);
-      } finally {
-        scope.dispose();
-      }
-    },
     createUserContact: geoConfigured
       ? async (data) => {
           const scope = createCallbackScope();
@@ -399,6 +394,7 @@ export async function createApp(
   protectedRoutes.use("*", createCsrfMiddleware(config.corsOrigin));
   protectedRoutes.route("/", createEmulationRoutes());
   protectedRoutes.route("/", createOrgContactRoutes());
+  protectedRoutes.route("/", createInvitationRoutes(auth, db, config.baseUrl));
   app.route("/", protectedRoutes);
 
   // Cleanup function for graceful shutdown

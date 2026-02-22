@@ -117,9 +117,10 @@ export async function startGeoService(opts: {
     // .NET StackExchange.Redis expects host:port, not redis://host:port
     "ConnectionStrings__d2-redis": redisUriToStackExchange(opts.redisUrl),
     "ConnectionStrings__d2-rabbitmq": formatRabbitUrl(opts.rabbitUrl),
-    // API key mapping: allow "user" and "org_contact" context keys
-    "GeoAppOptions__ApiKeyMappings__e2e-test-key__0": "user",
-    "GeoAppOptions__ApiKeyMappings__e2e-test-key__1": "org_contact",
+    // API key mapping: allow auth context keys for contacts
+    "GeoAppOptions__ApiKeyMappings__e2e-test-key__0": "auth_user",
+    "GeoAppOptions__ApiKeyMappings__e2e-test-key__1": "auth_org_contact",
+    "GeoAppOptions__ApiKeyMappings__e2e-test-key__2": "auth_org_invitation",
     // Run EF Core migrations on startup (creates tables in test container)
     AUTO_MIGRATE: "true",
     // Disable OTel in tests

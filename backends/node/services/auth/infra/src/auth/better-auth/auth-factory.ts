@@ -72,20 +72,6 @@ export interface AuthHooks {
     token: string;
   }) => Promise<void>;
   /**
-   * Publishes an invitation email event to RabbitMQ for the comms service.
-   * Called by BetterAuth's `organization.sendInvitationEmail` callback.
-   */
-  publishInvitationEmail?: (input: {
-    invitationId: string;
-    inviteeEmail: string;
-    organizationId: string;
-    organizationName: string;
-    role: string;
-    inviterName: string;
-    inviterEmail: string;
-    invitationUrl: string;
-  }) => Promise<void>;
-  /**
    * Creates a Geo contact for a newly registered user.
    * Called in databaseHooks.user.create.before (Contact BEFORE User pattern).
    * If this throws, sign-up fails entirely (fail-fast — no stale users).
@@ -330,20 +316,6 @@ export function createAuth(
         creatorRole: "owner",
         allowUserToCreateOrganization: true,
         invitationExpiresIn: 48 * 60 * 60, // 48 hours
-        sendInvitationEmail: hooks?.publishInvitationEmail
-          ? async ({ id, email, organization: org, inviter, invitation }) => {
-              await hooks.publishInvitationEmail!({
-                invitationId: id,
-                inviteeEmail: email,
-                organizationId: org.id,
-                organizationName: org.name,
-                role: invitation.role,
-                inviterName: inviter.user.name ?? "Someone",
-                inviterEmail: inviter.user.email,
-                invitationUrl: `${config.baseUrl}/api/auth/organization/accept-invitation?invitationId=${id}`,
-              });
-            }
-          : undefined,
         schema: {
           organization: {
             additionalFields: {

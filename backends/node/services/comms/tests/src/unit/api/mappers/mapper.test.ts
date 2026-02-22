@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import type { ChannelPreference, TemplateWrapper, DeliveryRequest, DeliveryAttempt } from "@d2/comms-domain";
+import type {
+  ChannelPreference,
+  TemplateWrapper,
+  DeliveryRequest,
+  DeliveryAttempt,
+} from "@d2/comms-domain";
 import {
   channelPreferenceToProto,
   templateWrapperToProto,

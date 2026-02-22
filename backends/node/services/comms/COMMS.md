@@ -223,6 +223,45 @@ message_reaction
 
 ---
 
+## Recipient Resolution
+
+The `RecipientResolver` resolves a recipient's email/phone from either a `userId` or `contactId`. It uses the `@d2/geo-client` library to look up Geo contacts.
+
+### Dual-Path Resolution
+
+| Path          | When                                    | Geo-Client Handler     | Lookup Key                                               |
+| ------------- | --------------------------------------- | ---------------------- | -------------------------------------------------------- |
+| **userId**    | `recipientUserId` is set                | `GetContactsByExtKeys` | `contextKey: "auth_user"`, `relatedEntityId: <userId>`   |
+| **contactId** | `recipientContactId` is set (no userId) | `GetContactsByIds`     | Direct Geo contact UUID lookup                           |
+| **neither**   | Both undefined                          | —                      | Returns empty (no resolution). Deliver returns NOT_FOUND |
+
+- **userId path**: Used for registered users. Auth creates a Geo contact on sign-up (`CreateUserContact` hook) with `contextKey: "auth_user"`. The resolver looks up contacts by this ext-key pair.
+- **contactId path**: Used for non-user recipients (e.g., org invitation invitees). Auth creates a temporary Geo contact with `contextKey: "auth_org_invitation"` and passes the resulting contact ID. The resolver fetches by direct Geo contact ID — no contextKey needed.
+
+### Context Key Prefixing
+
+All Geo contact context keys are feature-prefixed to avoid namespace collisions:
+
+| Context Key           | Owner | Created When                          |
+| --------------------- | ----- | ------------------------------------- |
+| `auth_user`           | Auth  | User sign-up (BetterAuth hook)        |
+| `auth_org_contact`    | Auth  | Org contact creation (junction table) |
+| `auth_org_invitation` | Auth  | Invitation for non-existing user      |
+
+### Channel Preference Lookup
+
+After resolving the recipient address, Deliver looks up channel preferences:
+
+- If `recipientUserId` → `findByUserId`
+- If `recipientContactId` → `findByContactId`
+- If neither → skipped (no preferences available)
+
+### Known Limitation: SMS Without Provider
+
+When `smsProvider` is undefined (not configured), SMS delivery attempts are created but remain in `"pending"` status indefinitely — no dispatch occurs. This is acceptable during development/alpha but should be addressed before enabling SMS channels in production.
+
+---
+
 ## Channels & Providers
 
 | Channel | Protocol       | Provider                   | Notes                                            |
@@ -532,9 +571,11 @@ backends/node/services/comms/
 - [x] API: `main.ts` entrypoint (gRPC server + RabbitMQ consumer)
 - [x] Aspire: Auth + Comms services wired via `AddJavaScriptApp` + `.WithPnpm()`
 - [x] CI: GitHub Actions jobs for comms unit + integration tests
-- [x] Tests: 550 unit tests passing (44 test files)
-- [ ] Client: `@d2/comms-client` (Node.js) — `notify()` publishes to RabbitMQ
-- [ ] Wire Auth's `PublishVerificationEmail`, `PublishPasswordReset`, `PublishInvitationEmail` to use comms-client
+- [x] Tests: 643 unit + integration tests passing (54 test files)
+- [x] RecipientResolver dual-path: userId via `GetContactsByExtKeys`, contactId via `GetContactsByIds`
+- [x] Auth integration: verification email, password reset, invitation email — all wired via RabbitMQ
+- [x] E2E tests: 5 cross-service tests (verification, password reset, invitation for new + existing users)
+- [ ] Client: `@d2/comms-client` (Node.js) — `notify()` publishes to RabbitMQ (currently Auth publishes directly)
 - [ ] Template wrapper: default email HTML template (branded, wraps title+body)
 
 ### Phase 2: In-App Notifications + Push

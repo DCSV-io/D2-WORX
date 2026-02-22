@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import type { Commands } from "@d2/geo-client";
 import type {
   IFindOrgContactByIdHandler,
@@ -68,7 +69,7 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
     // If this fails, Geo's background job handles orphan cleanup.
     try {
       await this.deleteContactsByExtKeys.handleAsync({
-        keys: [{ contextKey: "org_contact", relatedEntityId: existing.id }],
+        keys: [{ contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT, relatedEntityId: existing.id }],
       });
     } catch {
       // Swallow — Geo cleanup is non-critical

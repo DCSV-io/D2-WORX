@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
-import { updateOrgContact, type OrgContact, type UpdateOrgContactInput } from "@d2/auth-domain";
+import {
+  updateOrgContact,
+  GEO_CONTEXT_KEYS,
+  type OrgContact,
+  type UpdateOrgContactInput,
+} from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Complex } from "@d2/geo-client";
 import type {
@@ -95,7 +100,7 @@ export class UpdateOrgContactHandler extends BaseHandler<
     if (input.updates.contact) {
       const contactToCreate = {
         createdAt: new Date(),
-        contextKey: "org_contact",
+        contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT,
         relatedEntityId: existing.id,
         contactMethods: input.updates.contact.contactMethods ?? undefined,
         personalDetails: input.updates.contact.personalDetails ?? undefined,

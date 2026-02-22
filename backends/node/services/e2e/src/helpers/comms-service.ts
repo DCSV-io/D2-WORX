@@ -5,11 +5,13 @@ import { HandlerContext } from "@d2/handler";
 import * as CacheMemory from "@d2/cache-memory";
 import {
   GetContactsByExtKeys,
+  GetContactsByIds,
   DEFAULT_GEO_CLIENT_OPTIONS,
   createGeoServiceClient,
   type GeoClientOptions,
 } from "@d2/geo-client";
 import { MessageBus } from "@d2/messaging";
+import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import type { ChannelPreference, TemplateWrapper } from "@d2/comms-domain";
 import { createDeliveryHandlers, createDeliverySubHandlers } from "@d2/comms-app";
 import {
@@ -83,7 +85,11 @@ export async function startCommsService(opts: {
   // 4. Geo client for recipient resolution (real gRPC to test Geo instance)
   const geoOptions: GeoClientOptions = {
     ...DEFAULT_GEO_CLIENT_OPTIONS,
-    allowedContextKeys: ["user", "org_contact"],
+    allowedContextKeys: [
+      GEO_CONTEXT_KEYS.USER,
+      GEO_CONTEXT_KEYS.ORG_CONTACT,
+      GEO_CONTEXT_KEYS.ORG_INVITATION,
+    ],
     apiKey: opts.geoApiKey,
   };
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
@@ -94,6 +100,7 @@ export async function startCommsService(opts: {
     geoOptions,
     handlerContext,
   );
+  const getContactsByIds = new GetContactsByIds(contactCacheStore, geoClient, handlerContext);
 
   // 5. In-memory caches for channel prefs and templates
   const prefCacheStore = new CacheMemory.MemoryCacheStore();
@@ -114,6 +121,7 @@ export async function startCommsService(opts: {
     repos,
     { email: stubEmail },
     getContactsByExtKeys,
+    getContactsByIds,
     handlerContext,
     cache,
   );
