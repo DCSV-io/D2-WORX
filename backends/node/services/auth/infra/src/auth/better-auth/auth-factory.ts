@@ -6,7 +6,7 @@ import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import { username } from "better-auth/plugins/username";
 import type { SecondaryStorage } from "better-auth";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { JWT_CLAIM_TYPES, SESSION_FIELDS } from "@d2/auth-domain";
 import type { AuthServiceConfig } from "./auth-config.js";
@@ -220,6 +220,58 @@ export function createAuth(
         },
       },
       session: {
+        update: {
+          before: async (data, context) => {
+            const patch = data as Record<string, unknown>;
+            if (!("activeOrganizationId" in patch)) return;
+
+            const orgId = patch.activeOrganizationId as string | null;
+
+            // Clearing active org → clear custom fields too
+            if (!orgId) {
+              return {
+                data: {
+                  [SESSION_FIELDS.ACTIVE_ORG_TYPE]: null,
+                  [SESSION_FIELDS.ACTIVE_ORG_ROLE]: null,
+                },
+              };
+            }
+
+            // Extract userId from BetterAuth's endpoint context (set by orgSessionMiddleware)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const userId = (context as any)?.context?.session?.user?.id as string | undefined;
+            if (!userId) return;
+
+            try {
+              const [orgRow] = await db
+                .select({ orgType: betterAuthSchema.organization.orgType })
+                .from(betterAuthSchema.organization)
+                .where(eq(betterAuthSchema.organization.id, orgId))
+                .limit(1);
+
+              const [memberRow] = await db
+                .select({ role: betterAuthSchema.member.role })
+                .from(betterAuthSchema.member)
+                .where(
+                  and(
+                    eq(betterAuthSchema.member.organizationId, orgId),
+                    eq(betterAuthSchema.member.userId, userId),
+                  ),
+                )
+                .limit(1);
+
+              return {
+                data: {
+                  [SESSION_FIELDS.ACTIVE_ORG_TYPE]: orgRow?.orgType ?? null,
+                  [SESSION_FIELDS.ACTIVE_ORG_ROLE]: memberRow?.role ?? null,
+                },
+              };
+            } catch {
+              // DB error — don't block session update. Fields stay null.
+              return;
+            }
+          },
+        },
         create: {
           after: async (session) => {
             // Record sign-in event via app-layer callback

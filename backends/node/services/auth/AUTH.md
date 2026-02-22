@@ -224,7 +224,9 @@ BetterAuth sessions carry 4 custom fields (configured via `session.additionalFie
 | `emulatedOrganizationId`   | `SESSION_FIELDS.EMULATED_ORG_ID`   | string? | Emulated org (if emulating)          |
 | `emulatedOrganizationType` | `SESSION_FIELDS.EMULATED_ORG_TYPE` | string? | Emulated org type                    |
 
-**Verified by**: `auth/tests/src/unit/infra/mappers/session-mapper.test.ts`
+**Session enrichment**: BetterAuth's `setActiveOrganization` only sets `activeOrganizationId` natively. The `databaseHooks.session.update.before` hook in `auth-factory.ts` enriches the session patch with `activeOrganizationType` (from org table) and `activeOrganizationRole` (from member table) **before** BetterAuth writes to DB/Redis/cookie — eliminating any staleness window. Clearing the active org (`organizationId: null`) also clears both custom fields. All org-activation triggers (explicit setActive, org creation auto-activate, invitation acceptance, org deletion) flow through this hook.
+
+**Verified by**: `auth/tests/src/unit/infra/mappers/session-mapper.test.ts`, `auth/tests/src/integration/better-auth-behavior.test.ts`
 
 ### Organization Types
 
@@ -918,8 +920,8 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `integration/session-fingerprint.test.ts`       | 7       | Redis-backed fingerprint storage + revocation                                                                                                                                         |
 | `integration/sign-in-throttle-store.test.ts`    | 11      | Redis sign-in throttle store integration                                                                                                                                              |
 | `integration/app-handlers.test.ts`              | 9       | App handler integration with DB (repositories + domain)                                                                                                                               |
-| `integration/better-auth-behavior.test.ts`      | 28      | RS256 JWT structure, session lifecycle, additionalFields persistence, definePayload org context, snake_case columns, pre-generated UUIDv7 IDs                                        |
-| **Total auth-tests**                            | **860** | 728 unit + 132 integration (Testcontainers PostgreSQL 18 + Redis)                                                                                                                    |
+| `integration/better-auth-behavior.test.ts`      | 31      | RS256 JWT structure, session lifecycle, additionalFields auto-enrichment (`session.update.before` hook), definePayload org context, snake_case columns, pre-generated UUIDv7 IDs      |
+| **Total auth-tests**                            | **863** | 728 unit + 135 integration (Testcontainers PostgreSQL 18 + Redis)                                                                                                                    |
 
 ### Key Security Behaviors Verified by Tests
 

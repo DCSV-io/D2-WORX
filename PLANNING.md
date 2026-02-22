@@ -90,8 +90,9 @@
 - ✅ E2E tests — 5 cross-service tests (verification email × 2, password reset, invitation for new user, invitation for existing user) via Testcontainers (PG × 3 + Redis + RabbitMQ) + .NET Geo child process
 - ✅ Defensive programming test sweep — 70 new security/edge-case tests across auth middleware, CSRF, session, scope, invitation route, emulation rules, comms handlers
 - ✅ Auth tests — 832 passing (63 test files), Comms tests — 658 passing (54 test files), Shared tests — 726 passing (59 test files)
-- ✅ Open question validation tests — 28 integration tests resolving Q1 (RS256 JWT), Q2 (session lifecycle), Q3 (additionalFields), Q4 (definePayload), Q6 (snake_case), Q7 (pre-generated IDs). Key finding: setActiveOrganization does NOT auto-populate custom session fields — app-layer hook needed
-- ✅ Auth tests — 860 passing (64 test files)
+- ✅ Open question validation tests — 28 integration tests resolving Q1 (RS256 JWT), Q2 (session lifecycle), Q3 (additionalFields), Q4 (definePayload), Q6 (snake_case), Q7 (pre-generated IDs)
+- ✅ Session enrichment hook — `databaseHooks.session.update.before` auto-populates `activeOrganizationType` + `activeOrganizationRole` on org switch (eliminates the Q3 gap). 3 new tests (auto-populate, auto-activate on org creation, clear on deactivation)
+- ✅ Auth tests — 863 passing (64 test files)
 
 ### Blocked By
 
@@ -1438,9 +1439,9 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 2. ✅ **Session lifecycle**: **Validated** (2026-02-22). Full lifecycle tested: create (sign-in → DB row), update (setActiveOrganization → `active_organization_id` updated), revoke (session removed from DB), list (returns active sessions), revoke-others (keeps current, removes rest), multiple concurrent sessions per user. All working with `storeSessionInDatabase: true` against real PostgreSQL. Secondary storage (Redis) tested separately in `secondary-storage.test.ts`. Re-test after BetterAuth upgrades.
 
-3. ✅ **Custom session fields + cookie cache**: **Partially validated** (2026-02-22). `additionalFields` columns exist in DB and can be written/read. `getSession` returns them correctly when populated. **KEY FINDING**: BetterAuth's `setActiveOrganization` ONLY sets `activeOrganizationId` — our custom fields (`activeOrganizationType`, `activeOrganizationRole`) are NOT auto-populated. App-layer code must update the session after org switch (e.g., hook or custom route wrapper that looks up org type + member role → updates session row). Cookie cache persistence of `additionalFields` requires BetterAuth version containing PR #5735 (merged Nov 2025 canary). **TODO**: Implement post-`setActiveOrganization` hook in Stage C.
+3. ✅ **Custom session fields + cookie cache**: **Validated** (2026-02-22). `additionalFields` columns exist in DB and can be written/read. `getSession` returns them correctly when populated. BetterAuth's `setActiveOrganization` only sets `activeOrganizationId` natively — **resolved** via `databaseHooks.session.update.before` hook in `auth-factory.ts` that enriches the session patch with `activeOrganizationType` (from org table) + `activeOrganizationRole` (from member table) BEFORE BetterAuth writes to DB/Redis/cookie. All org-activation triggers (explicit setActive, org creation auto-activate, invitation acceptance, org deletion auto-clear) flow through this hook. Cookie cache persistence of `additionalFields` requires BetterAuth version containing PR #5735 (merged Nov 2025 canary). Tested: auto-populate on setActive, auto-enrich on org creation, clear on deactivation.
 
-4. ✅ **`definePayload` session access**: **Validated** (2026-02-22). `definePayload` receives `({ user, session })` — both parameters confirmed working. `session` contains `activeOrganizationId` (BetterAuth OOTB) and our custom `additionalFields` (when populated). `user` contains `id`, `email`, `username`. JWT claims are correctly derived from both. Org context claims (`orgType`, `role`) in JWT depend on session fields being populated by app-layer code (see Q3).
+4. ✅ **`definePayload` session access**: **Validated** (2026-02-22). `definePayload` receives `({ user, session })` — both parameters confirmed working. `session` contains `activeOrganizationId` (BetterAuth OOTB) and our custom `additionalFields` (auto-enriched by `session.update.before` hook — see Q3). `user` contains `id`, `email`, `username`. JWT claims are correctly derived from both. Org context claims (`orgType`, `role`) in JWT are automatically populated after `setActiveOrganization`.
 
 5. **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
 
@@ -1520,7 +1521,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
   - **No-org onboarding state**: New users must join or create an org before accessing features.
   - **SvelteKit UI sharding**: Route groups by org type — `(customer)/`, `(support)/`, `(admin)/`, etc.
   - **JWT includes org context**: activeOrganizationId, type, role, emulation state. Client re-fetches JWT on org switch.
-  - **BetterAuth org plugin gap analysis**: 75% OOTB fit. Gaps (org type, session fields, emulation, JWT+org) all bridgeable with hooks and custom fields.
+  - **BetterAuth org plugin gap analysis**: 75% OOTB fit. Gaps (org type, session fields, emulation, JWT+org) all bridged with hooks and custom fields. Session enrichment solved via `session.update.before` hook.
 - **Contact architecture decided**: Auth stores NO contact data. Geo's Contact references userId directly for users. For orgs, auth has a thin `org_contact` junction (id, orgId, label, isPrimary). Geo's Contact references `org_contact.id`. Keeps auth thin.
   - **Sign-in audit designed**: Flat `sign_in_event` table (userId, successful, ipAddress, userAgent, whoIsId). Leverages existing `FindWhoIs` for location context. Failed attempts with unknown users have null userId.
   - **Emulation consent model decided**: USER-level (not org-level). `emulation_consent` table (userId, grantedToOrgId, expiresAt, revokedAt). Support needs consent; admin bypasses. Org emulation (read-only) requires no consent at all.

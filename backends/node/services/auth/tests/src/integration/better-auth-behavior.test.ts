@@ -300,11 +300,10 @@ describe("BetterAuth behavioral integration", () => {
   // =========================================================================
   // Q3 — Session additionalFields behavior
   //
-  // KEY FINDING: BetterAuth's setActiveOrganization ONLY sets
-  // activeOrganizationId on the session. Our custom additionalFields
-  // (activeOrganizationType, activeOrganizationRole) are NOT auto-populated.
-  // App-layer code must update the session after setActiveOrganization
-  // (e.g., via a hook or custom route that looks up org type + member role).
+  // BetterAuth's setActiveOrganization only sets activeOrganizationId OOTB.
+  // Our databaseHooks.session.update.before hook enriches the patch with
+  // activeOrganizationType + activeOrganizationRole BEFORE BetterAuth
+  // writes to DB/Redis/cookie, eliminating any staleness window.
   // =========================================================================
   describe("session additionalFields persistence", () => {
     it("should set activeOrganizationId after setActiveOrganization", async () => {
@@ -324,7 +323,7 @@ describe("BetterAuth behavioral integration", () => {
       expect(sess.active_organization_id).toBe(org.id);
     });
 
-    it("should NOT auto-populate orgType and role from setActiveOrganization alone", async () => {
+    it("should auto-populate orgType and role after setActiveOrganization", async () => {
       const { user, token } = await signUpAndVerify("q3-fields@example.com", "Q3 Fields");
       await createOrgAndActivate(token, "Q3 Fields Org", "q3-fields-org");
 
@@ -336,47 +335,39 @@ describe("BetterAuth behavioral integration", () => {
       expect(sessions.rows).toHaveLength(1);
       const sess = sessions.rows[0];
 
-      // IMPORTANT: These are NULL because BetterAuth doesn't populate custom
-      // additionalFields automatically. App-layer code (e.g., a post-setActiveOrg
-      // hook) must look up org type + member role and update the session.
-      expect(sess.active_organization_type).toBeNull();
-      expect(sess.active_organization_role).toBeNull();
+      // session.update.before hook enriches the session patch with org type + member role
+      expect(sess.active_organization_type).toBe("customer");
+      expect(sess.active_organization_role).toBe("owner");
     });
 
-    it("should support updating custom session fields via direct DB update", async () => {
-      const { user, token } = await signUpAndVerify("q3-manual@example.com", "Q3 Manual");
-      const org = await createOrgAndActivate(token, "Q3 Manual Org", "q3-manual-org");
+    it("should enrich session on org creation (auto-activate)", async () => {
+      const { user, token } = await signUpAndVerify("q3-autocreate@example.com", "Q3 AutoCreate");
 
-      // Simulate what the app-layer hook would do: update session with org context
-      await getPool().query(
-        `UPDATE session
-         SET active_organization_type = $1, active_organization_role = $2
-         WHERE user_id = $3 AND token = $4`,
-        ["customer", "owner", user.id, token],
-      );
+      // createOrganization auto-activates (BetterAuth sets activeOrganizationId
+      // via internalAdapter.updateSession, which triggers our update.before hook)
+      const org = await auth.api.createOrganization({
+        body: { name: "Q3 AutoCreate Org", slug: "q3-autocreate-org" },
+        headers: new Headers({ Authorization: `Bearer ${token}` }),
+      });
 
-      // Verify the fields are now persisted
       const sessions = await getPool().query(
-        `SELECT active_organization_type, active_organization_role
+        `SELECT active_organization_id, active_organization_type, active_organization_role
          FROM session WHERE user_id = $1 AND token = $2`,
         [user.id, token],
       );
-      expect(sessions.rows[0].active_organization_type).toBe("customer");
-      expect(sessions.rows[0].active_organization_role).toBe("owner");
+      expect(sessions.rows).toHaveLength(1);
+      const sess = sessions.rows[0];
+
+      expect(sess.active_organization_id).toBe(org.id);
+      expect(sess.active_organization_type).toBe("customer");
+      expect(sess.active_organization_role).toBe("owner");
     });
 
     it("should return custom session fields via getSession when populated", async () => {
-      const { user, token } = await signUpAndVerify("q3-getsession@example.com", "Q3 GetSession");
+      const { token } = await signUpAndVerify("q3-getsession@example.com", "Q3 GetSession");
       await createOrgAndActivate(token, "Q3 Session Org", "q3-session-org");
 
-      // Manually populate custom fields (simulating app-layer hook)
-      await getPool().query(
-        `UPDATE session
-         SET active_organization_type = 'customer', active_organization_role = 'owner'
-         WHERE user_id = $1 AND token = $2`,
-        [user.id, token],
-      );
-
+      // Hook auto-populates — no manual DB update needed
       const sessionRes = await auth.api.getSession({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
@@ -385,6 +376,35 @@ describe("BetterAuth behavioral integration", () => {
       const session = sessionRes!.session as Record<string, unknown>;
       expect(session[SESSION_FIELDS.ACTIVE_ORG_TYPE]).toBe("customer");
       expect(session[SESSION_FIELDS.ACTIVE_ORG_ROLE]).toBe("owner");
+    });
+
+    it("should clear orgType and role when clearing active org", async () => {
+      const { user, token } = await signUpAndVerify("q3-clear@example.com", "Q3 Clear");
+      await createOrgAndActivate(token, "Q3 Clear Org", "q3-clear-org");
+
+      // Verify enrichment happened
+      const before = await getPool().query(
+        `SELECT active_organization_type, active_organization_role
+         FROM session WHERE user_id = $1 AND token = $2`,
+        [user.id, token],
+      );
+      expect(before.rows[0].active_organization_type).toBe("customer");
+      expect(before.rows[0].active_organization_role).toBe("owner");
+
+      // Clear active org
+      await auth.api.setActiveOrganization({
+        body: { organizationId: null },
+        headers: new Headers({ Authorization: `Bearer ${token}` }),
+      });
+
+      const after = await getPool().query(
+        `SELECT active_organization_id, active_organization_type, active_organization_role
+         FROM session WHERE user_id = $1 AND token = $2`,
+        [user.id, token],
+      );
+      expect(after.rows[0].active_organization_id).toBeNull();
+      expect(after.rows[0].active_organization_type).toBeNull();
+      expect(after.rows[0].active_organization_role).toBeNull();
     });
 
     it("should return emulation fields as null when not emulating", async () => {
@@ -405,8 +425,8 @@ describe("BetterAuth behavioral integration", () => {
   // Q4 — definePayload includes org context from session
   //
   // definePayload receives ({ user, session }) — confirmed working.
-  // However, orgType/role in JWT depend on session additionalFields being
-  // populated (see Q3). Without app-layer population, these are null.
+  // With session.update.before hook enriching the session, orgType/role
+  // in JWTs are automatically populated after setActiveOrganization.
   // =========================================================================
   describe("JWT definePayload with org context", () => {
     it("should include orgId in JWT from BetterAuth session (OOTB)", async () => {
@@ -427,23 +447,16 @@ describe("BetterAuth behavioral integration", () => {
       // BetterAuth populates activeOrganizationId — definePayload reads it
       expect(payload[JWT_CLAIM_TYPES.ORG_ID]).toBe(org.id);
 
-      // orgType and role are null without app-layer session population (see Q3)
-      expect(payload[JWT_CLAIM_TYPES.ORG_TYPE]).toBeNull();
-      expect(payload[JWT_CLAIM_TYPES.ROLE]).toBeNull();
+      // session.update.before hook enriches session — definePayload reads enriched values
+      expect(payload[JWT_CLAIM_TYPES.ORG_TYPE]).toBe("customer");
+      expect(payload[JWT_CLAIM_TYPES.ROLE]).toBe("owner");
     });
 
     it("should include orgType and role in JWT when session fields are populated", async () => {
-      const { user, token } = await signUpAndVerify("q4-full@example.com", "Q4 Full");
+      const { token } = await signUpAndVerify("q4-full@example.com", "Q4 Full");
       const org = await createOrgAndActivate(token, "Q4 Full Org", "q4-full-org");
 
-      // Simulate app-layer hook: populate custom session fields
-      await getPool().query(
-        `UPDATE session
-         SET active_organization_type = 'customer', active_organization_role = 'owner'
-         WHERE user_id = $1 AND token = $2`,
-        [user.id, token],
-      );
-
+      // Hook auto-populates — no manual DB update needed
       const tokenRes = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
@@ -451,7 +464,7 @@ describe("BetterAuth behavioral integration", () => {
         Buffer.from(tokenRes.token.split(".")[1], "base64url").toString(),
       );
 
-      // All org claims present when session fields are populated
+      // All org claims present — hook enriches session before cookie/DB write
       expect(payload[JWT_CLAIM_TYPES.ORG_ID]).toBe(org.id);
       expect(payload[JWT_CLAIM_TYPES.ORG_TYPE]).toBe("customer");
       expect(payload[JWT_CLAIM_TYPES.ROLE]).toBe("owner");
