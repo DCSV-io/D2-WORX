@@ -93,7 +93,7 @@ Summary:
 - SignalR Gateway (WebSocket to gRPC routing)
 - SvelteKit auth integration (proxy pattern to Auth Service)
 - OTEL alerting and notification integration
-- Kestra for scheduled task management
+- Scheduled job definitions via Dkron (infrastructure already running)
 - Much, much more...
 
 **📝 Internal Planning:**

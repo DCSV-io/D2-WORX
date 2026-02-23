@@ -609,6 +609,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | Redis 8.2     | ✅ Done    | Aspire-managed         |
 | RabbitMQ 4.1  | ✅ Done    | Aspire-managed         |
 | MinIO         | ✅ Done    | Aspire-managed         |
+| Dkron 4.0.9   | ✅ Done    | Aspire-managed, persistent container, dashboard on :8888 |
 | LGTM Stack    | ✅ Done    | Full observability     |
 | ~~Keycloak~~  | ❌ Removed | Replaced by BetterAuth |
 
@@ -798,7 +799,7 @@ Geo.Client / Geo.Domain / Geo.App / Geo.Infra / Geo.API / Geo.Tests
 
 - **Framework-agnostic by design**: BetterAuth is an infra concern only. Domain and app layers have zero BetterAuth imports. If BetterAuth is ever swapped, only auth-infra changes.
 - **Mappers in auth-app/auth-infra**: infra→domain (BetterAuth types → domain types, lives in auth-infra), domain→proto (domain types → gRPC responses, lives in auth-app). Similar to Geo's `LocationMapper`, `WhoIsMapper`, etc.
-- **SignInEvent purge**: Scheduled job + handler (like other retention-based cleanup). 90-day retention.
+- **SignInEvent purge**: Dkron scheduled job (daily). 90-day retention. See "Scheduled Jobs (Dkron)" section.
 - **Notifications service co-dependency**: Auth needs a notifications service scaffold for email verification, password reset, invitation emails. See "Notifications Service" section below.
 
 **TLC concerns within auth-infra:**
@@ -1402,12 +1403,37 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ---
 
+## Scheduled Jobs (Dkron)
+
+**Infrastructure**: Dkron v4.0.9 runs as a persistent Aspire container (dashboard: `:8888`). Jobs call service HTTP endpoints on a cron schedule. Use Redis `SET NX` distributed locks when only one instance should execute a job.
+
+| Job                              | Owner | Schedule    | Retention | Status              | Notes                                                                                            |
+| -------------------------------- | ----- | ----------- | --------- | ------------------- | ------------------------------------------------------------------------------------------------ |
+| **Sign-in event purge**          | Auth  | Daily       | 90 days   | Not implemented     | DELETE `sign_in_event` WHERE `created_at < NOW() - 90 days`                                      |
+| **Expired invitation cleanup**   | Auth  | Daily       | 7 days    | Not implemented     | DELETE expired invitations. Domain check `isInvitationExpired()` exists but no row deletion       |
+| **Expired emulation consent**    | Auth  | Weekly      | Per-grant | Not implemented     | DELETE WHERE `expires_at < NOW()` or `revoked_at IS NOT NULL`. Runtime filter works; rows accumulate |
+| **Geo orphaned location cleanup**| Geo   | Daily       | N/A       | Not implemented     | DELETE locations with zero contact/WhoIs references. Auth swallows Geo delete failures relying on this |
+| **Orphaned contacts**            | Geo   | Weekly      | N/A       | Not implemented     | DELETE contacts with `context_key = 'auth_user'` + no matching user. Low priority ("harmless noise") |
+| **Soft-deleted message cleanup** | Comms | Weekly      | 90 days   | Not implemented     | DELETE `message` WHERE `deleted_at < NOW() - 90 days`                                            |
+| **Delivery history retention**   | Comms | Monthly     | 1 year    | Not implemented     | Archive/DELETE old `delivery_request` + `delivery_attempt` rows                                  |
+| BetterAuth sessions (PG)         | Auth  | Weekly      | 7 days    | BetterAuth-managed? | Expired PG session rows may accumulate. Verify BetterAuth handles this                           |
+| BetterAuth verification tokens   | Auth  | Weekly      | Per-token | BetterAuth-managed? | Expired tokens functionally inert. Verify BetterAuth handles cleanup                            |
+
+**Already handled (no Dkron job needed):**
+- Idempotency keys: Redis TTL (24h)
+- Rate limit counters/blocks: Redis TTL
+- Redis cache entries: Redis TTL + LRU eviction
+- In-memory cache: Lazy TTL + LRU eviction
+- Comms delivery retries: RabbitMQ DLX + tier queue TTLs
+- JWKS key rotation: BetterAuth-managed
+
+---
+
 ## Technical Debt
 
 | Item                           | Priority   | Notes                                                                                                                                                                                                 |
 | ------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Validate redaction in OTEL** | **High**   | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output                                                                                                      |
-| **Geo location cleanup job**   | **Medium** | Background job to remove locations with zero references (no contacts or WhoIs). Geo-owned responsibility. Auth deletes contacts on org_contact deletion; Geo cleans up orphaned locations separately. |
 | Test container sharing         | Medium     | Could speed up integration tests                                                                                                                                                                      |
 | Standardize error codes        | Medium     | Ensure consistency across services                                                                                                                                                                    |
 
@@ -1455,7 +1481,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 7. ✅ **Pre-generated user ID**: **Validated** (2026-02-22). The `databaseHooks.user.create.before` hook sets `data.id` and returns `{ data }` — BetterAuth preserves the ID **without** needing `forceAllowId: true`. The hook-provided userId matches the created user's ID in DB. E2E sign-up tests (contact-before-user flow) also pass. No AsyncLocalStorage needed — the hook generates/reads the ID directly.
 
-8. **Geo location cleanup job**: ✅ **Decided** — Geo-owned background job removes locations with zero references (no contacts or WhoIs entries pointing to them). Contacts themselves are cleaned up by Auth on org_contact deletion. Still TODO: implement the actual Geo background job.
+8. **Geo location cleanup job**: ✅ **Decided** — Geo-owned background job removes locations with zero references (no contacts or WhoIs entries pointing to them). Contacts themselves are cleaned up by Auth on org_contact deletion. Scheduled via Dkron (daily). Still TODO: implement the actual job endpoint + Dkron job definition. See "Scheduled Jobs (Dkron)" section.
 
 ---
 

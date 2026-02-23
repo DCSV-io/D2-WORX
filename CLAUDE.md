@@ -471,13 +471,14 @@ refactor: simplify caching logic
 
 ### Services (via Aspire)
 
-| Service    | Version | Purpose               |
-| ---------- | ------- | --------------------- |
-| PostgreSQL | 18      | Per-service databases |
-| Redis      | 8.2     | Distributed cache     |
-| RabbitMQ   | 4.1     | Async messaging       |
-| MinIO      | Latest  | Object storage (S3)   |
-| LGTM Stack | Various | Observability         |
+| Service    | Version | Purpose                    |
+| ---------- | ------- | -------------------------- |
+| PostgreSQL | 18      | Per-service databases      |
+| Redis      | 8.2     | Distributed cache          |
+| RabbitMQ   | 4.1     | Async messaging            |
+| MinIO      | Latest  | Object storage (S3)        |
+| Dkron      | 4.0.9   | Distributed job scheduler  |
+| LGTM Stack | Various | Observability              |
 
 ### Communication Patterns
 

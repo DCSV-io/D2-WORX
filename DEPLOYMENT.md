@@ -139,5 +139,5 @@ When adding a new service, verify:
 - [ ] **Session/auth** — Validate JWTs via JWKS (no instance affinity), sessions via Redis
 - [ ] **Idempotency** — Use Redis-backed `@d2/idempotency`, not in-memory dedup
 - [ ] **Local caches** — Memory caches are per-instance (fine for read-heavy, TTL-bounded data). Ensure correctness doesn't depend on cache consistency across instances
-- [ ] **Background jobs** — Use distributed locks (Redis `SET NX`) if only one instance should run a job
+- [ ] **Background jobs** — Use Dkron for scheduled jobs (HTTP callback to service endpoints). Use distributed locks (Redis `SET NX`) if only one instance should run a job
 - [ ] **Connection strings** — Externalized via config/environment, not hardcoded
