@@ -572,7 +572,7 @@ backends/node/services/comms/
 - [x] API: `main.ts` entrypoint (gRPC server + RabbitMQ consumer)
 - [x] Aspire: Auth + Comms services wired via `AddJavaScriptApp` + `.WithPnpm()`
 - [x] CI: GitHub Actions jobs for comms unit + integration tests
-- [x] Tests: 658 unit + integration tests passing (54 test files)
+- [x] Tests: 729 unit + integration tests passing (57 test files)
 - [x] RecipientResolver dual-path: userId via `GetContactsByExtKeys`, contactId via `GetContactsByIds`
 - [x] Auth integration: verification email, password reset, invitation email — all wired via RabbitMQ
 - [x] E2E tests: 5 cross-service tests (verification, password reset, invitation for new + existing users)

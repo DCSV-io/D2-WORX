@@ -98,12 +98,12 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > | File Name                                                                                     | Description                                                                 |
 > | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-> | [CountrySeedData.cs](Repository/Seeding/CountrySeeding.cs)                                    | 249 countries with ISO codes, phone prefixes, and metadata.                 |
-> | [SubdivisionSeedData.cs](Repository/Seeding/SubdivisionSeeding.cs)                            | 183 subdivisions (US states, Canadian provinces, etc.).                     |
-> | [CurrencySeedData.cs](Repository/Seeding/CurrencySeeding.cs)                                  | Major world currencies with ISO 4217 codes and symbols.                     |
-> | [LanguageSeedData.cs](Repository/Seeding/LanguageSeeding.cs)                                  | Common languages with ISO 639-1 codes.                                      |
-> | [LocaleSeedData.cs](Repository/Seeding/LocaleSeeding.cs)                                      | 100+ locales with IETF BCP-47 tags.                                         |
-> | [GeopoliticalEntitySeedData.cs](Repository/Seeding/GeopoliticalEntitySeeding.cs)              | Organizations like NATO, EU, UN with member countries.                      |
+> | [CountrySeeding.cs](Repository/Seeding/CountrySeeding.cs)                                     | 249 countries with ISO codes, phone prefixes, and metadata.                 |
+> | [SubdivisionSeeding.cs](Repository/Seeding/SubdivisionSeeding.cs)                             | 183 subdivisions (US states, Canadian provinces, etc.).                     |
+> | [CurrencySeeding.cs](Repository/Seeding/CurrencySeeding.cs)                                   | Major world currencies with ISO 4217 codes and symbols.                     |
+> | [LanguageSeeding.cs](Repository/Seeding/LanguageSeeding.cs)                                   | Common languages with ISO 639-1 codes.                                      |
+> | [LocaleSeeding.cs](Repository/Seeding/LocaleSeeding.cs)                                       | 100+ locales with IETF BCP-47 tags.                                         |
+> | [GeopoliticalEntitySeeding.cs](Repository/Seeding/GeopoliticalEntitySeeding.cs)               | Organizations like NATO, EU, UN with member countries.                      |
 > | [ReferenceDataVersionSeeding.cs](Repository/Seeding/ReferenceDataVersionSeeding.cs)           | Initial version tracking for reference data.                                |
 > | [CountryCurrencySeeding.cs](Repository/Seeding/CountryCurrencySeeding.cs)                     | Many-to-many relationship data for country-currency associations.           |
 > | [CountryGeopoliticalEntitySeeding.cs](Repository/Seeding/CountryGeopoliticalEntitySeeding.cs) | Many-to-many relationship data for country-geopolitical entity memberships. |

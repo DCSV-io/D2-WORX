@@ -69,8 +69,8 @@
 - ✅ Ext-key-only contact API — Contacts accessed externally via contextKey+relatedEntityId (ID-based get/delete removed from client libs), API key authentication (gRPC metadata), allowedContextKeys defense-in-depth
 - ✅ Geo.Client ext-key handlers — GetContactsByExtKeys, DeleteContactsByExtKeys, UpdateContactsByExtKeys (both .NET and Node.js)
 - ✅ @d2/shared-tests — 663 tests (up from 507)
-- ✅ .NET shared tests — 565 passing (gateway auth, idempotency, retry, allowedContextKeys)
-- ✅ .NET Geo tests — 722 passing (contacts ext-key integration tests)
+- ✅ .NET shared tests — 585 passing (gateway auth, idempotency, retry, allowedContextKeys)
+- ✅ .NET Geo tests — 735 passing (contacts ext-key integration tests)
 - ✅ Context key validation refactored to built-in validateInput (Zod + FluentValidation)
 - ✅ Comms service — Phase 1 DDD layers: domain (entities, enums, rules), app (delivery handlers, sub-handlers), infra (Drizzle schema, Resend email, Twilio SMS, RabbitMQ consumer, template seeding)
 - ✅ Comms API — gRPC server (`@d2/comms-api`): composition root, proto ↔ domain mappers, Phase 1 handlers wired, Phase 2-3 stubs UNIMPLEMENTED
@@ -90,6 +90,12 @@
 - ✅ E2E tests — 5 cross-service tests (verification email × 2, password reset, invitation for new user, invitation for existing user) via Testcontainers (PG × 3 + Redis + RabbitMQ) + .NET Geo child process
 - ✅ Defensive programming test sweep — 70 new security/edge-case tests across auth middleware, CSRF, session, scope, invitation route, emulation rules, comms handlers
 - ✅ Auth tests — 832 passing (63 test files), Comms tests — 658 passing (54 test files), Shared tests — 726 passing (59 test files)
+- ✅ Deliver fail path fix — `D2Result.fail()` with `DELIVERY_FAILED` error code on retryable send failures (was returning `ok()`)
+- ✅ Event registry (`event-registry.ts`) — single source of truth for event detection, deserialization, and DI handler key resolution
+- ✅ Consumer dispatch rewrite — registry-based dispatch with DI scoping (replaces hardcoded if/else + pre-built sub-handler objects)
+- ✅ Retry topology fix — main queue declared before requeue exchange binding (first-time deploy bug)
+- ✅ Handler integration tests — 14 tests with real Postgres (Testcontainers), StubEmailProvider, mock geo-client covering full delivery pipeline
+- ✅ Comms tests — 729 passing (57 test files), E2E tests — 5 passing
 - ✅ Open question validation tests — 28 integration tests resolving Q1 (RS256 JWT), Q2 (session lifecycle), Q3 (additionalFields), Q4 (definePayload), Q6 (snake_case), Q7 (pre-generated IDs)
 - ✅ Session enrichment hook — `databaseHooks.session.update.before` auto-populates `activeOrganizationType` + `activeOrganizationRole` on org switch (eliminates the Q3 gap). 3 new tests (auto-populate, auto-activate on org creation, clear on deactivation)
 - ✅ Auth tests — 863 passing (64 test files)
@@ -622,6 +628,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | Batch.Pg                      | ✅ Done | `backends/dotnet/shared/Implementations/Repository/`                                            |
 | **RequestEnrichment.Default** | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/`                                            |
 | **RateLimit.Default**         | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (uses abstracted cache handlers)           |
+| **Handler.Extensions**        | ✅ Done | `backends/dotnet/shared/Handler.Extensions/` (JWT/auth extensions)                              |
 | **Geo.Client**                | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (includes WhoIs cache handler)                       |
 
 ### Shared Packages (Node.js)
@@ -661,14 +668,14 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | Geo.Infra        | ✅ Done        | Repository, messaging                                                                                           |
 | Geo.API          | ✅ Done        | gRPC service                                                                                                    |
 | Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                   |
-| Geo.Tests        | ✅ Done        | 708 tests passing                                                                                               |
+| Geo.Tests        | ✅ Done        | 735 tests passing                                                                                               |
 | **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E    |
-| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 860 tests passing                                   |
+| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 863 tests passing                                   |
 | **Comms.Domain** | ✅ Done        | Entities, enums, rules, constants (`backends/node/services/comms/domain/`)                                      |
 | **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator, sub-handlers (`backends/node/services/comms/app/`)                        |
 | **Comms.Infra**  | ✅ Done        | Drizzle schema/migrations, Resend + Twilio providers, RabbitMQ consumer (`backends/node/services/comms/infra/`) |
 | **Comms.API**    | ✅ Done        | gRPC server + composition root + mappers (`backends/node/services/comms/api/`)                                  |
-| **Comms.Tests**  | ✅ Done        | 658 tests passing (`backends/node/services/comms/tests/`)                                                       |
+| **Comms.Tests**  | ✅ Done        | 729 tests passing (`backends/node/services/comms/tests/`)                                                       |
 
 ### Gateways
 
@@ -734,7 +741,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 **Stage B — Auth Service (bottom-up DDD layers)**
 
 5. **auth-domain** — Domain types (User, Organization, Member, OrgType, Role, SessionContext, etc.). Pure types, no BetterAuth.
-6. **auth-infra** — BetterAuth config, Kysely adapter, secondary storage adapter (wraps `@d2/cache-redis`), hooks (`generateId` UUIDv7, `forceAllowId`), custom table migrations (`org_contact`, `sign_in_event`, `emulation_consent`).
+6. **auth-infra** — BetterAuth config, Drizzle adapter, secondary storage adapter (wraps `@d2/cache-redis`), hooks (`generateId` UUIDv7, `forceAllowId`), custom table migrations (`org_contact`, `sign_in_event`, `emulation_consent`).
 7. **auth-app** — Interfaces, CQRS handlers, mappers (BetterAuth→domain, domain→proto).
 8. **auth-api** — Hono entry point, route mounting, composition root, gRPC server. Wire idempotency middleware here.
 9. **auth-tests** — Unit + integration tests for all layers.
@@ -805,7 +812,7 @@ auth-infra/src/
 **Abstraction boundaries:**
 
 - **Caching (Redis secondary storage)**: Fully abstracted. BetterAuth's `secondaryStorage` interface (`get`, `set`, `delete`) implemented by wrapping `@d2/interfaces` distributed cache handlers (IDistributedCacheGet, Set, Remove). auth-infra never imports ioredis directly.
-- **Database (PostgreSQL)**: BetterAuth owns its DB connection via the built-in Kysely adapter with a dedicated `pg.Pool`. Give BetterAuth its own PG schema (`search_path=auth`). Accept BetterAuth's camelCase column naming internally — fighting it causes plugin compatibility issues (see Known Gotchas below). Custom `modelName` for table prefixes (e.g., `auth_users`, `auth_sessions`) is supported but has edge cases.
+- **Database (PostgreSQL)**: BetterAuth owns its DB connection via the Drizzle adapter (`drizzleAdapter(db, { provider: "pg", schema })`) with a dedicated `pg.Pool`. Uses `casing: "snake_case"` for PG conventions. Drizzle manages all tables (BetterAuth's 8 managed tables + 3 custom tables) with a single ORM. See ADR-009 for migration details.
 - **Auth-app defines interfaces** for auth operations (sign-up, sign-in, session management, token issuance). auth-infra implements these using BetterAuth under the hood.
 - **Abstraction boundary for consumers**: JWTs validated via JWKS are the inter-service boundary. Only the auth service itself depends on BetterAuth. .NET services validate JWTs statelessly via `AddJwtBearer()`.
 
@@ -1174,7 +1181,7 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 **Sign-in event retention:**
 
 - 90 days (matches WhoIs retention pattern)
-- Purge via scheduled job or Kysely query
+- Purge via scheduled job or Drizzle query
 
 **Invitation lifecycle:**
 
@@ -1228,12 +1235,11 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 #### Auth Service — Configuration
 
 - **Framework**: Hono + BetterAuth v1.4.x (pin exact version)
-- **Database adapter**: Built-in Kysely adapter with `pg.Pool` + dedicated PG schema (`search_path=auth`)
-  - Kysely is BetterAuth's native adapter — zero extra packages, CLI `migrate` works directly
-  - If issues arise, Drizzle adapter is the fallback (separate package, requires defining BA tables in Drizzle schema)
-  - BetterAuth manages its own connection pool; auth-api provides the `Pool` at startup
+- **Database adapter**: Drizzle adapter (`drizzleAdapter(db, { provider: "pg", schema })`) — see ADR-009
+  - Single ORM (Drizzle) for all tables: BetterAuth's 8 managed tables + 3 custom tables
   - `casing: "snake_case"` — matches our PG conventions
-  - For our custom auth tables (`org_contact`, `sign_in_event`, `emulation_consent`), use the same Kysely instance
+  - Drizzle Kit for migrations (`drizzle-kit generate` + `drizzle-kit migrate`)
+  - BetterAuth manages its own connection pool; auth-api provides the `Pool` at startup
 - **Secondary storage**: `SecondaryStorage` interface wrapping `@d2/interfaces` distributed cache handlers
   - Interface is minimal: `get(key): string | null`, `set(key, value, ttl?)`, `delete(key)`
   - TTL is in **seconds** (not milliseconds)
@@ -1504,8 +1510,8 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 ### 2026-02-07
 
 - **Phase 2 research completed**: DI patterns + BetterAuth customization deep-dive
-  - **DI decision: Manual factory functions** — each package exports `createXxxHandlers(deps, context)` matching .NET's `services.AddXxx()`. No DI library needed. Backup: `@snap/ts-inject` if complexity grows. Rejected: tsyringe, inversify (decorator-based), hono-netdi (too new + decorators).
-  - **BetterAuth database adapter: Kysely** (built-in) — NOT Drizzle. Kysely is BetterAuth's native adapter, supports CLI `migrate`, fewer edge cases. Dedicated PG schema (`search_path=auth`).
+  - **DI decision: Manual factory functions** — _(superseded by ADR-011: `@d2/di` container, 2026-02-21)_
+  - **BetterAuth database adapter: Kysely** (built-in) — _(superseded by ADR-009: Drizzle ORM, 2026-02-15)_
   - **BetterAuth casing: Use `casing: "snake_case"`** — matches PostgreSQL conventions. Known casing bugs (#5649) only affect SSO/OIDC plugins we don't use. Validate early with our plugin set. Own PG schema isolates any edge cases.
   - **Secondary storage: Wraps `@d2/interfaces`** — BetterAuth's `SecondaryStorage` is just `{ get, set, delete }`. Trivially wraps our distributed cache handlers.
   - **JWT algorithm: `"RS256"`** (standard JOSE name) — BetterAuth docs may show `"RSA256"` (typo). Code passes alg directly to jose which requires `"RS256"`. Need early interop test with .NET.
@@ -1532,7 +1538,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
   - **Two auth client libraries**: `@d2/auth-client` (BFF for SvelteKit, HTTP) + `@d2/auth-sdk` (backend for services, gRPC). Plus .NET `Auth.Client`.
   - **Proto contracts**: `contracts/protos/auth/v1/` — auth will have gRPC endpoints for inter-service communication.
   - **Notifications co-dependency**: Auth needs notifications scaffold for email verification, password reset, invitation emails.
-  - **Database**: Kysely (BetterAuth native) with `casing: "snake_case"`. Drizzle as fallback if issues arise.
+  - **Database**: Kysely (BetterAuth native) with `casing: "snake_case"` — _(superseded by ADR-009: Drizzle ORM, 2026-02-15)_
   - **Last-owner protection**: Blocked from leaving. Options: transfer ownership (email confirmation) or delete org (email confirmation).
   - **Type boundary**: Domain types internal to auth service + BFF. Backend clients (`@d2/auth-sdk`, .NET `Auth.Client`) only see proto-generated types. Proto contract is the public API.
   - **Notifications service shape**: Mirrors DeCAF notification hub (multi-channel Notify orchestrator, provider pattern, enqueue+retry). Phase 2 = email only. Foundation supports future SMS/push/in-app/SignalR.
@@ -1621,7 +1627,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 - **Phase ordering clarified**: TypeScript shared infra (ratelimit, geo-cache) BEFORE auth service
 - All 4 prior open questions resolved
 
-### 2025-02-04
+### 2026-02-04
 
 - Removed Keycloak from infrastructure
 - Decided on BetterAuth with standalone Auth Service
@@ -1631,4 +1637,4 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ---
 
-_Last updated: 2026-02-10_
+_Last updated: 2026-02-23_

@@ -15,6 +15,15 @@ Shared proto definitions used across all services:
 | [d2_result.proto](../../../../../../contracts/protos/common/v1/d2_result.proto) | D2ResultProto and InputErrorProto messages for standardized operation results with success status, messages, and errors. |
 | [ping.proto](../../../../../../contracts/protos/common/v1/ping.proto)           | Simple PingService for testing proto generation and gRPC connectivity with request/response messages.                    |
 
+### Events
+
+Cross-service async event definitions:
+
+| File Name                                                                            | Description                                                                                                                    |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| [geo_events.proto](../../../../../../contracts/protos/events/v1/geo_events.proto)    | `GeoRefDataUpdatedEvent` — broadcast when Geo reference data is refreshed from external sources.                               |
+| [auth_events.proto](../../../../../../contracts/protos/events/v1/auth_events.proto)  | `SendVerificationEmailEvent`, `SendPasswordResetEvent`, `SendInvitationEmailEvent` — auth-triggered email delivery via Comms.  |
+
 ### Geo
 
 Geographic reference data service definitions:
@@ -22,6 +31,14 @@ Geographic reference data service definitions:
 | File Name                                                        | Description                                                                                                                                                                                                                          |
 | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [geo.proto](../../../../../../contracts/protos/geo/v1/geo.proto) | GeoService contract with 9 RPCs: reference data (Get, RequestUpdate), WhoIs (FindWhoIs), Contacts (GetByIds†, GetByExtKeys, Create, Delete†, DeleteByExtKeys, UpdateByExtKeys). † = internal only, not exposed via client libraries. |
+
+### Comms
+
+Communication/delivery service definitions:
+
+| File Name                                                            | Description                                                                                                                                |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| [comms.proto](../../../../../../contracts/protos/comms/v1/comms.proto) | CommsService gRPC contract: Deliver, GetChannelPreference, SetChannelPreference, UpsertTemplate, GetTemplate, GetDeliveryHistory, GetDeliveryRequest. |
 
 ## Generated Output
 

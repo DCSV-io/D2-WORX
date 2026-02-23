@@ -2,7 +2,7 @@
 
 Centralized test suite for all shared Node.js packages. Mirrors .NET `D2.Shared.Tests` — test projects are separate from source packages (source packages have zero test dependencies).
 
-**Total:** 663 tests (unit + integration)
+**Total:** 744 tests (unit + integration)
 
 ---
 

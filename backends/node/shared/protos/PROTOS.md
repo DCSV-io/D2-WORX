@@ -27,6 +27,12 @@ Run `pnpm --filter @d2/protos generate` to regenerate.
 | `DeleteContactsByExtKeysRequest/Response` | `geo/v1/`        | Delete contacts by ext keys             |
 | `UpdateContactsByExtKeysRequest/Response` | `geo/v1/`        | Replace contacts at ext keys            |
 | `CountryDTO`, `LocationDTO`, etc.         | `geo/v1/`        | Geo domain DTOs                         |
+| `GeoRefDataUpdatedEvent`                  | `events/v1/`     | Geo reference data refresh event        |
+| `SendVerificationEmailEvent`              | `events/v1/`     | Auth → Comms: email verification        |
+| `SendPasswordResetEvent`                  | `events/v1/`     | Auth → Comms: password reset            |
+| `SendInvitationEmailEvent`                | `events/v1/`     | Auth → Comms: invitation email          |
+| `CommsServiceClient`                      | `comms/v1/`      | Comms service gRPC client               |
+| `DeliverRequest/Response`                 | `comms/v1/`      | Delivery orchestration messages         |
 | `Timestamp`                               | Well-known types | Google protobuf timestamp               |
 
 ## Dependencies

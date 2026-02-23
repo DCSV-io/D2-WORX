@@ -208,6 +208,8 @@ D2-WORX/
 │   └── protos/                       # Tech-agnostic Protocol Buffers
 │       ├── common/v1/                # Common types (D2Result, etc.)
 │       ├── auth/v1/                  # Auth service protos
+│       ├── comms/v1/                 # Comms service protos (gRPC)
+│       ├── events/v1/                # Cross-service async events
 │       └── geo/v1/                   # Geo service protos
 ├── backends/
 │   ├── dotnet/                       # .NET backends
@@ -220,6 +222,7 @@ D2-WORX/
 │   │   │   ├── Result/               # D2Result pattern
 │   │   │   ├── Result.Extensions/    # D2Result ↔ Proto conversions
 │   │   │   ├── ServiceDefaults/      # OpenTelemetry config
+│   │   │   ├── Handler.Extensions/    # JWT/auth extensions for BaseHandler
 │   │   │   ├── Tests/                # Shared test infrastructure
 │   │   │   ├── Utilities/            # Extensions & helpers
 │   │   │   └── protos/               # Generated C# protos
@@ -238,28 +241,34 @@ D2-WORX/
 │   │   ├── shared/                   # Shared TS packages (mirrors dotnet/shared/)
 │   │   │   ├── result/               # @d2/result
 │   │   │   ├── utilities/            # @d2/utilities
+│   │   │   ├── di/                   # @d2/di (DI container)
+│   │   │   ├── logging/              # @d2/logging (ILogger + Pino)
 │   │   │   ├── handler/              # @d2/handler (BaseHandler + OTel)
 │   │   │   ├── interfaces/           # @d2/interfaces (cache contracts)
 │   │   │   ├── result-extensions/    # @d2/result-extensions
+│   │   │   ├── messaging/            # @d2/messaging (RabbitMQ wrapper)
+│   │   │   ├── service-defaults/     # @d2/service-defaults (OTel bootstrap)
 │   │   │   ├── protos/               # @d2/protos (generated TS)
 │   │   │   └── implementations/      # Mirrors dotnet Implementations/
 │   │   │       ├── caching/
-│   │   │       │   ├── memory/       # @d2/cache-memory
-│   │   │       │   ├── redis/        # @d2/cache-redis
-│   │   │       │   └── geo/          # @d2/geo-cache
+│   │   │       │   ├── in-memory/default/   # @d2/cache-memory
+│   │   │       │   └── distributed/redis/   # @d2/cache-redis
 │   │   │       └── middleware/
-│   │   │           ├── request-enrichment/  # @d2/request-enrichment
-│   │   │           ├── ratelimit/    # @d2/ratelimit
-│   │   │           └── idempotency/  # @d2/idempotency
+│   │   │           ├── request-enrichment/default/  # @d2/request-enrichment
+│   │   │           ├── ratelimit/default/           # @d2/ratelimit
+│   │   │           └── idempotency/default/         # @d2/idempotency
 │   │   ├── testing/                  # @d2/testing (shared test infra)
-│   │   └── tests/                    # @d2/shared-tests (tests all shared pkgs)
-│   │       ├── vitest.config.ts
-│   │       ├── unit/
-│   │       └── integration/
-│   │
-│   └── services/
-│       ├── auth/                     # Auth service (BetterAuth)
-│       └── auth-tests/               # Auth service tests
+│   │   ├── tests/                    # @d2/shared-tests (tests all shared pkgs)
+│   │   └── services/
+│   │       ├── auth/                 # Auth service (BetterAuth)
+│   │       │   ├── domain/app/infra/api/  # DDD layers
+│   │       │   └── tests/            # Auth service tests
+│   │       ├── comms/                # Comms service (delivery engine)
+│   │       │   ├── domain/app/infra/api/  # DDD layers
+│   │       │   └── tests/            # Comms service tests
+│   │       ├── e2e/                  # Cross-service E2E tests
+│   │       └── geo/
+│   │           └── geo-client/       # @d2/geo-client (mirrors .NET Geo.Client)
 │   └── go/                           # Go backends
 │       ├── shared/                   # Shared Go packages
 │       └── services/
@@ -331,7 +340,7 @@ public required string ISO31661Alpha2Code { get; init; }
 
 ### TypeScript/Frontend Style
 
-See `SvelteKit_and_TypeScript_Conventions_for_Enterprise_Applications.md` for details.
+Conventions for TypeScript and SvelteKit development:
 
 - Strict TypeScript enabled
 - ESLint + Prettier enforced
@@ -396,7 +405,7 @@ Service.Tests/
 
 ### TypeScript Backend Tests
 
-**Frameworks:** Vitest 4.x, Testcontainers (PostgreSQL + Redis modules)
+**Frameworks:** Vitest 3.x, Testcontainers (PostgreSQL + Redis modules)
 
 **Key principle:** Test projects are **separate** from source packages (mirrors .NET). Source packages have zero test dependencies — all test deps live in dedicated test projects.
 
@@ -404,13 +413,15 @@ Service.Tests/
 | ------------------ | ---------------------------------------- | ------------------------- |
 | `@d2/testing`      | Shared test infra (matchers, containers) | `D2.Shared.Tests` (infra) |
 | `@d2/shared-tests` | Tests for all shared packages            | `D2.Shared.Tests` (tests) |
-| `auth-tests`       | Tests for Auth service                   | `Geo.Tests` (pattern)     |
+| `@d2/auth-tests`   | Tests for Auth service                   | `Geo.Tests` (pattern)     |
+| `@d2/comms-tests`  | Tests for Comms service                  | `Geo.Tests` (pattern)     |
+| `@d2/e2e-tests`    | Cross-service E2E tests                  | —                         |
 
 **Test stack mapping:**
 
 | Concern            | .NET                        | TypeScript                                 |
 | ------------------ | --------------------------- | ------------------------------------------ |
-| Test runner        | xUnit                       | Vitest 4.x                                 |
+| Test runner        | xUnit                       | Vitest 3.x                                 |
 | Assertions         | FluentAssertions            | Vitest `expect` + custom D2Result matchers |
 | Mocking            | Moq                         | `vi.mock`, `vi.fn`, `vi.spyOn`             |
 | Coverage           | —                           | `@vitest/coverage-v8`                      |
@@ -419,7 +430,7 @@ Service.Tests/
 
 **Vitest monorepo setup:**
 
-- Root `vitest.config.ts` with `projects` discovery (auto-finds all test configs)
+- Root `vitest.workspace.ts` with explicit project paths + `vitest.config.ts` for coverage
 - Shared `vitest.shared.ts` at `backends/node/` inherited by all test projects
 - Run from root: `pnpm vitest` (all) or `pnpm vitest --project shared-tests` (specific)
 - Coverage aggregated across all packages via `@vitest/coverage-v8`
@@ -471,7 +482,7 @@ refactor: simplify caching logic
 ### Communication Patterns
 
 - **Sync:** gRPC between services (HTTP/2)
-- **Async:** RabbitMQ events via raw AMQP with Protocol Buffer contracts
+- **Async:** RabbitMQ events via raw AMQP with JSON serialization (event schemas defined in Protocol Buffer contracts)
 - **Caching:** Memory → Redis → Database → Disk (fallback)
 
 ---
@@ -499,7 +510,7 @@ refactor: simplify caching logic
 
 1. **Check existing implementations** - look for similar handlers/patterns in the codebase
 2. **Read relevant documentation** - `*.md` files are authoritative references
-3. **Use existing utilities** - check `D2.Contracts.Utilities` before creating helpers
+3. **Use existing utilities** - check `D2.Shared.Utilities` before creating helpers
 4. **Follow naming conventions** - especially the field prefixes (`r_`, `s_`, `sr_`, `_`)
 
 ### Common Mistakes to Avoid
@@ -528,7 +539,7 @@ When adding routes or handlers, follow the full checklist in `backends/node/serv
 
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 485 tests (437 unit + 48 integration). .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done.
+Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 863+ tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms Phase 1 (delivery engine) is complete — 729+ tests. E2E cross-service tests passing (5 tests).
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
@@ -620,7 +631,7 @@ No sticky sessions required. Any instance can handle any request:
 
 ### Rate Limiting
 
-- **Packages**: `@d2/ratelimit` (Node.js - planned), `RateLimit.Default` (C# - done)
+- **Packages**: `@d2/ratelimit` (Node.js - done), `RateLimit.Default` (C# - done)
 - **Storage**: Redis via abstracted distributed cache handlers (GetTtl, Increment, Set)
 - **Dimensions**: ClientFingerprint (100/min), IP (5,000/min), City (25,000/min), Country (100,000/min)
 - **Algorithm**: Sliding window approximation (two fixed-window counters + weighted average)
@@ -640,7 +651,7 @@ No sticky sessions required. Any instance can handle any request:
 
 ### Geo Caching
 
-- **Packages**: `@d2/geo-cache` (Node.js - planned), Geo.Client `FindWhoIs` handler (C# - done)
+- **Packages**: `@d2/geo-client` (Node.js - done), Geo.Client `FindWhoIs` handler (C# - done)
 - Local memory cache for WhoIs data to avoid Geo service bombardment
 - TTL: 8 hours (configurable via `GeoClientOptions`), LRU eviction (10,000 entries)
 
@@ -660,13 +671,18 @@ See the **Project Structure** section above for the full tree. Key Node.js roots
 
 ```
 Layer 0 (no project deps):  @d2/result, @d2/utilities, @d2/protos
-Layer 1:  @d2/handler        → result
-Layer 2:  @d2/interfaces     → handler, protos, utilities
+Layer 1:  @d2/di             → (no @d2/* deps)
+          @d2/logging        → di
+          @d2/handler        → di, logging, result
           @d2/result-ext     → result, protos
-Layer 3:  @d2/cache-memory   → handler, interfaces
-          @d2/cache-redis    → interfaces, utilities
-Layer 4:  @d2/geo-cache      → handler, cache-memory, interfaces, result-ext, utilities
-Layer 5:  @d2/request-enrich → handler, geo-cache
+Layer 2:  @d2/interfaces     → handler
+          @d2/messaging      → (rabbitmq-client only)
+          @d2/service-defaults → (OTel SDK only)
+Layer 3:  @d2/cache-memory   → di, handler, interfaces, result
+          @d2/cache-redis    → di, handler, interfaces, result
+Layer 4:  @d2/geo-client     → di, cache-memory, cache-redis, handler, interfaces,
+                                logging, messaging, protos, result, result-ext, utilities
+Layer 5:  @d2/request-enrich → geo-client, handler, interfaces, logging, result
           @d2/ratelimit      → request-enrich, handler, result, interfaces
           @d2/idempotency    → handler, interfaces, result, logging
 ```
@@ -684,7 +700,7 @@ Layer 5:  @d2/request-enrich → handler, geo-cache
 ### Build Tooling
 
 - **Library packages** (`@d2/*`): Plain `tsc` — each package has its own `tsconfig.json` extending `backends/node/tsconfig.base.json`, compiles to `dist/` with `.js` + `.d.ts` output
-- **Service apps** (auth, etc.): TBD in Phase 2 (likely `tsup` or `tsx`)
+- **Service apps** (auth, comms): `tsx` for development (`tsx watch`), plain `node` for production
 - **Module format**: ESM only (`"type": "module"` in all `package.json` files)
 - **Package exports**: Each `package.json` uses `exports` field pointing to `dist/` (see any existing `@d2/*` package for the pattern)
 

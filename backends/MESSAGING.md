@@ -1,6 +1,6 @@
 # Messaging Architecture
 
-D2-WORX uses **raw AMQP** with **Protocol Buffer** event contracts for cross-service messaging. No framework envelope (e.g., MassTransit) is used — both .NET and Node.js speak the same wire format.
+D2-WORX uses **raw AMQP** with **Protocol Buffer** event contracts for cross-service messaging. Wire format is proto canonical JSON. No framework envelope (e.g., MassTransit) is used — both .NET and Node.js speak the same wire format.
 
 ## Transport
 
@@ -24,9 +24,9 @@ Event types are defined in **Protocol Buffers** under `contracts/protos/events/v
 | Proto File          | Message Type                 | Publisher | Consumers                  |
 | ------------------- | ---------------------------- | --------- | -------------------------- |
 | `geo_events.proto`  | `GeoRefDataUpdatedEvent`     | Geo.Infra | Geo.Client, @d2/geo-client |
-| `auth_events.proto` | `SendVerificationEmailEvent` | Auth      | Comms (planned)            |
-| `auth_events.proto` | `SendPasswordResetEvent`     | Auth      | Comms (planned)            |
-| `auth_events.proto` | `SendInvitationEmailEvent`   | Auth      | Comms (planned)            |
+| `auth_events.proto` | `SendVerificationEmailEvent` | Auth      | Comms                      |
+| `auth_events.proto` | `SendPasswordResetEvent`     | Auth      | Comms                      |
+| `auth_events.proto` | `SendInvitationEmailEvent`   | Auth      | Comms                      |
 
 ## Exchange Naming
 
@@ -73,8 +73,18 @@ Messages use **proto canonical JSON** (camelCase field names):
 ## Error Handling
 
 - **Success:** Message is ACKed automatically
-- **Handler failure:** Message is NACKed with requeue (RabbitMQ redelivers)
+- **Handler failure (retryable):** Message is republished to a DLX-based tier queue with escalating TTLs (5s → 10s → 30s → 60s → 300s). After TTL expires, RabbitMQ dead-letters back to the main consumer queue. Max 10 attempts before dropping.
+- **Handler failure (permanent):** Message is ACKed (no retry)
+- **Unknown event shape:** Message is ACKed silently (no dispatch)
 - **Publish failure:** Wrapped in `D2Result.Fail()` with `ServiceUnavailable` status
+
+### Comms Retry Topology
+
+The Comms service uses a DLX-based retry pattern (`comms.retry.*`):
+- 1 requeue exchange (`comms.retry.requeue`, direct, durable)
+- 5 tier queues (`comms.retry.tier-1` through `tier-5`) with escalating TTLs
+- Each tier queue dead-letters expired messages back to the main consumer queue via the requeue exchange
+- `getRetryTierQueue(retryCount)` maps retry count to the appropriate tier
 
 ## Contract Tests
 
