@@ -61,6 +61,26 @@ export const TEMPLATE_NAMES = {
   INVITATION: "invitation",
 } as const;
 
+/**
+ * Retry topology constants for DLX-based message retry.
+ *
+ * Messages that fail processing are re-published to a tier queue with an
+ * appropriate TTL. When the TTL expires, RabbitMQ dead-letters the message
+ * back to the main consumer queue via the requeue exchange.
+ */
+export const COMMS_RETRY = {
+  /** Header name tracking the current retry attempt number. */
+  RETRY_COUNT_HEADER: "x-retry-count",
+  /** Exchange that routes expired tier-queue messages back to the main queue. */
+  REQUEUE_EXCHANGE: "comms.retry.requeue",
+  /** Prefix for tier delay queues (appended with tier number). */
+  TIER_QUEUE_PREFIX: "comms.retry.tier-",
+  /** TTL per tier — indexed by tier (tier-1 = index 0). Matches RETRY_POLICY.DELAYS_MS. */
+  TIER_TTLS: [5_000, 10_000, 30_000, 60_000, 300_000] as readonly number[],
+  /** Domain-specific error code: at least one delivery channel failed with retry scheduled. */
+  DELIVERY_FAILED: "DELIVERY_FAILED",
+} as const;
+
 export const THREAD_CONSTRAINTS = {
   MAX_TITLE_LENGTH: 255,
   MAX_MESSAGE_LENGTH: 50_000,

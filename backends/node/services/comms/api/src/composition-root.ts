@@ -16,25 +16,22 @@ import {
   createGeoServiceClient,
   type GeoClientOptions,
 } from "@d2/geo-client";
-import { GEO_CONTEXT_KEYS, AUTH_MESSAGING } from "@d2/auth-domain";
+import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import { MessageBus } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
 import {
-  SendVerificationEmailEventFns,
-  SendPasswordResetEventFns,
-  SendInvitationEmailEventFns,
-} from "@d2/protos";
-import {
   addCommsApp,
-  IHandleVerificationEmailKey,
-  IHandlePasswordResetKey,
-  IHandleInvitationEmailKey,
   ICreateTemplateWrapperRecordKey,
   IFindTemplateByNameAndChannelKey,
   IUpdateTemplateWrapperRecordKey,
 } from "@d2/comms-app";
-import { COMMS_MESSAGING } from "@d2/comms-domain";
-import { addCommsInfra, runMigrations, seedDefaultTemplates } from "@d2/comms-infra";
+import {
+  addCommsInfra,
+  runMigrations,
+  seedDefaultTemplates,
+  createAuthEventConsumer,
+  declareRetryTopology,
+} from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
 
 export interface CommsServiceConfig {
@@ -79,7 +76,7 @@ function createServiceScope(provider: ServiceProvider): ServiceScope {
  *   4. Build ServiceProvider
  *   5. Seed default templates (temporary scope)
  *   6. Create gRPC server (per-RPC scope)
- *   7. Create RabbitMQ consumer (per-message scope)
+ *   7. Create RabbitMQ consumer (per-message scope + DLX retry topology)
  */
 export async function createCommsService(config: CommsServiceConfig) {
   // 1. Singletons: pg.Pool, logger
@@ -198,40 +195,27 @@ export async function createCommsService(config: CommsServiceConfig) {
     );
   });
 
-  // 7. RabbitMQ consumer for auth events (per-message scope)
+  // 7. RabbitMQ consumer for auth events (per-message scope + DLX retry topology)
   let messageBus: MessageBus | undefined;
   if (config.rabbitMqUrl) {
     messageBus = new MessageBus({ url: config.rabbitMqUrl, connectionName: "comms-service" });
     await messageBus.waitForConnection();
     logger.info("RabbitMQ connected");
 
-    await messageBus.subscribe<unknown>(
-      {
-        queue: COMMS_MESSAGING.AUTH_EVENTS_QUEUE,
-        queueOptions: { durable: true },
-        exchanges: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, type: "fanout" }],
-        queueBindings: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, routingKey: "" }],
-      },
-      async (msg) => {
-        const body = msg as Record<string, unknown>;
-        const scope = createServiceScope(provider);
-        try {
-          if ("verificationUrl" in body) {
-            const event = SendVerificationEmailEventFns.fromJSON(body);
-            await scope.resolve(IHandleVerificationEmailKey).handleAsync(event);
-          } else if ("resetUrl" in body) {
-            const event = SendPasswordResetEventFns.fromJSON(body);
-            await scope.resolve(IHandlePasswordResetKey).handleAsync(event);
-          } else if ("invitationUrl" in body) {
-            const event = SendInvitationEmailEventFns.fromJSON(body);
-            await scope.resolve(IHandleInvitationEmailKey).handleAsync(event);
-          }
-          // Unknown event types are silently ignored (ACKed) to prevent queue buildup.
-        } finally {
-          scope.dispose();
-        }
-      },
-    );
+    // Declare retry topology (tier queues + requeue exchange) before starting consumer
+    await declareRetryTopology(messageBus);
+    logger.info("Retry topology declared");
+
+    // Retry publisher for re-publishing failed messages to tier queues
+    const retryPublisher = messageBus.createPublisher();
+
+    createAuthEventConsumer({
+      messageBus,
+      provider,
+      createScope: createServiceScope,
+      retryPublisher,
+      logger,
+    });
     logger.info("Auth event consumer started");
   } else {
     logger.warn("No RabbitMQ URL configured — event consumption disabled");

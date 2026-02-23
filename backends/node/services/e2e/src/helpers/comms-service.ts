@@ -1,6 +1,6 @@
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { createLogger } from "@d2/logging";
+import { createLogger, type ILogger } from "@d2/logging";
 import { HandlerContext } from "@d2/handler";
 import * as CacheMemory from "@d2/cache-memory";
 import {
@@ -13,7 +13,15 @@ import {
 import { MessageBus } from "@d2/messaging";
 import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import type { ChannelPreference, TemplateWrapper } from "@d2/comms-domain";
-import { createDeliveryHandlers, createDeliverySubHandlers } from "@d2/comms-app";
+import {
+  createDeliveryHandlers,
+  createDeliverySubHandlers,
+  IHandleVerificationEmailKey,
+  IHandlePasswordResetKey,
+  IHandleInvitationEmailKey,
+} from "@d2/comms-app";
+import type { ServiceKey } from "@d2/di";
+import type { ServiceProvider, ServiceScope } from "@d2/di";
 import {
   createMessageRepoHandlers,
   createDeliveryRequestRepoHandlers,
@@ -22,6 +30,7 @@ import {
   createTemplateWrapperRepoHandlers,
   runMigrations,
   createAuthEventConsumer,
+  declareRetryTopology,
   seedDefaultTemplates,
 } from "@d2/comms-infra";
 import { StubEmailProvider } from "./stub-email-provider.js";
@@ -51,7 +60,7 @@ export async function startCommsService(opts: {
   geoAddress: string;
   geoApiKey: string;
 }): Promise<CommsServiceHandle> {
-  const logger = createLogger({ serviceName: "e2e-comms", level: "warn" as never });
+  const logger: ILogger = createLogger({ serviceName: "e2e-comms", level: "warn" as never });
   const handlerContext = new HandlerContext(
     {
       isAuthenticated: false,
@@ -133,8 +142,38 @@ export async function startCommsService(opts: {
   messageBus = new MessageBus({ url: opts.rabbitMqUrl, connectionName: "e2e-comms" });
   await messageBus.waitForConnection();
 
+  // Declare retry topology (tier queues + requeue exchange) before starting consumer
+  await declareRetryTopology(messageBus);
+
+  // Bridge factory-created sub-handlers into the new provider+scope consumer API.
+  // In production, the composition root uses real DI; in E2E we wrap pre-built handlers.
   const subHandlers = createDeliverySubHandlers(deliveryHandlers.deliver, handlerContext);
-  await createAuthEventConsumer(messageBus, subHandlers);
+  const handlerMap = new Map<string, unknown>([
+    [IHandleVerificationEmailKey.id, subHandlers.handleVerificationEmail],
+    [IHandlePasswordResetKey.id, subHandlers.handlePasswordReset],
+    [IHandleInvitationEmailKey.id, subHandlers.handleInvitationEmail],
+  ]);
+
+  const fakeProvider = {} as ServiceProvider;
+  const createScope = (): ServiceScope =>
+    ({
+      resolve: (key: ServiceKey<unknown>) => {
+        const handler = handlerMap.get(key.id);
+        if (!handler) throw new Error(`Service not registered: ${key.id}`);
+        return handler;
+      },
+      dispose: () => {},
+    }) as unknown as ServiceScope;
+
+  const retryPublisher = messageBus.createPublisher();
+
+  createAuthEventConsumer({
+    messageBus,
+    provider: fakeProvider,
+    createScope,
+    retryPublisher,
+    logger,
+  });
 
   return { stubEmail, pool };
 }

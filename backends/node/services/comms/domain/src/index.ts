@@ -8,6 +8,7 @@ export {
   QUIET_HOURS,
   THREAD_CONSTRAINTS,
   COMMS_MESSAGING,
+  COMMS_RETRY,
   TEMPLATE_NAMES,
 } from "./constants/comms-constants.js";
 

@@ -400,6 +400,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
+      '@d2/logging':
+        specifier: workspace:*
+        version: link:../../../shared/logging
       '@d2/messaging':
         specifier: workspace:*
         version: link:../../../shared/messaging
@@ -533,6 +536,9 @@ importers:
       '@d2/comms-infra':
         specifier: workspace:*
         version: link:../comms/infra
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../shared/di
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../geo/geo-client

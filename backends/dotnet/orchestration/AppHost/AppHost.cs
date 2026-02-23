@@ -263,6 +263,15 @@ var broker = builder.AddRabbitMQ("d2-rabbitmq", mqUsername, mqPassword, 15672)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithManagementPlugin();
 
+// Dkron - Distributed Job Scheduler.
+var dkron = builder.AddContainer("d2-dkron", "dkron/dkron", "4.0.9")
+    .WithContainerName("d2-dkron")
+    .WithIconName("CalendarClock")
+    .WithHttpEndpoint(port: 8888, targetPort: 8080, name: "dkron-dashboard")
+    .WithVolume("d2-dkron-data", "/dkron.data")
+    .WithArgs("agent", "--server", "--bootstrap-expect=1")
+    .WithLifetime(ContainerLifetime.Persistent);
+
 /******************************************
  **************** Services ****************
  ******************************************/

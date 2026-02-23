@@ -17,6 +17,7 @@
     "@d2/comms-app": "workspace:*",
     "@d2/comms-domain": "workspace:*",
     "@d2/comms-infra": "workspace:*",
+    "@d2/di": "workspace:*",
     "@d2/geo-client": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/logging": "workspace:*",

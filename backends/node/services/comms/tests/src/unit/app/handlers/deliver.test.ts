@@ -146,7 +146,7 @@ describe("Deliver", () => {
     expect(result.statusCode).toBe(404);
   });
 
-  it("should handle email send failure gracefully", async () => {
+  it("should return DELIVERY_FAILED when email send fails with retryable error", async () => {
     (emailProvider.handleAsync as ReturnType<typeof vi.fn>).mockResolvedValue(
       D2Result.fail({ messages: ["SMTP timeout"], statusCode: 502 }),
     );
@@ -162,10 +162,9 @@ describe("Deliver", () => {
       correlationId: "corr-fail",
     });
 
-    expect(result.success).toBe(true);
-    expect(result.data!.attempts).toHaveLength(1);
-    expect(result.data!.attempts[0].status).toBe("failed");
-    expect(result.data!.attempts[0].error).toBe("SMTP timeout");
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(503);
+    expect(result.errorCode).toBe("DELIVERY_FAILED");
   });
 
   it("should persist message and delivery request", async () => {

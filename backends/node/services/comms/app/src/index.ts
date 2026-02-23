@@ -212,6 +212,10 @@ export function createDeliverySubHandlers(
 
 import type { DeliverySubHandlers } from "./interfaces/messaging/handlers/sub/index.js";
 
+// --- Event Registry ---
+export { AUTH_EVENT_REGISTRY, matchEvent } from "./event-registry.js";
+export type { EventRegistration } from "./event-registry.js";
+
 // --- DI Registration ---
 export { addCommsApp } from "./registration.js";
 export {

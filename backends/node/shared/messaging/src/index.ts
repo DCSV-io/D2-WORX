@@ -1,4 +1,5 @@
 export { MessageBus } from "./message-bus.js";
+export { ConsumerResult } from "./types.js";
 export type {
   MessageBusOptions,
   ConsumerConfig,
@@ -6,4 +7,7 @@ export type {
   PublishTarget,
   IMessageConsumer,
   IMessagePublisher,
+  IncomingMessage,
+  EnrichedConsumerHandler,
+  TopologyConfig,
 } from "./types.js";

@@ -41,6 +41,8 @@ export { TwilioSmsProvider } from "./providers/sms/twilio/twilio-sms-provider.js
 
 // --- Messaging ---
 export { createAuthEventConsumer } from "./messaging/consumers/auth-event-consumer.js";
+export type { AuthEventConsumerDeps } from "./messaging/consumers/auth-event-consumer.js";
+export { declareRetryTopology, getRetryTierQueue } from "./messaging/retry-topology.js";
 
 // --- Templates ---
 export { seedDefaultTemplates } from "./templates/default-templates.js";

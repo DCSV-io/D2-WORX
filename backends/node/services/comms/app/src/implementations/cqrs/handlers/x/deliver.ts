@@ -9,6 +9,7 @@ import {
   resolveChannels,
   computeNextRetryAt,
   isMaxAttemptsReached,
+  COMMS_RETRY,
 } from "@d2/comms-domain";
 import type { Channel, DeliveryAttempt } from "@d2/comms-domain";
 import type {
@@ -270,6 +271,20 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       }
 
       attempts.push(attempt);
+    }
+
+    // Step 8b: Check for retryable delivery failures
+    const retryableFailures = attempts.filter(
+      (a) => a.status === "failed" && a.nextRetryAt !== null,
+    );
+    if (retryableFailures.length > 0) {
+      return D2Result.fail({
+        messages: [
+          `Delivery failed for ${retryableFailures.length} channel(s), retry scheduled.`,
+        ],
+        statusCode: 503,
+        errorCode: COMMS_RETRY.DELIVERY_FAILED,
+      });
     }
 
     // Step 9: If all attempts are terminal, mark request as processed

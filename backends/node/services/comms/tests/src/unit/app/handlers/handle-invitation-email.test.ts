@@ -118,6 +118,35 @@ describe("HandleInvitationEmail", () => {
     expect(result.success).toBe(false);
   });
 
+  it("should propagate DELIVERY_FAILED error code via bubbleFail", async () => {
+    const mockDeliver = {
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.fail({
+          messages: ["Delivery failed for 1 channel(s), retry scheduled."],
+          statusCode: 503,
+          errorCode: "DELIVERY_FAILED",
+        }),
+      ),
+    };
+
+    const handler = new HandleInvitationEmail(mockDeliver as any, createMockContext());
+
+    const result = await handler.handleAsync({
+      invitationId: "inv-123",
+      inviteeEmail: "invitee@example.com",
+      organizationId: "org-123",
+      organizationName: "Acme Corp",
+      role: "agent",
+      inviterName: "Jane Doe",
+      inviterEmail: "jane@example.com",
+      invitationUrl: "https://example.com/accept?id=inv-123",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errorCode).toBe("DELIVERY_FAILED");
+    expect(result.statusCode).toBe(503);
+  });
+
   // -------------------------------------------------------------------------
   // Defensive / Security tests
   // -------------------------------------------------------------------------

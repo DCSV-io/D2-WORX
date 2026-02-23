@@ -56,6 +56,58 @@ describe("HandleVerificationEmail", () => {
     expect(result.success).toBe(false);
   });
 
+  it("should propagate DELIVERY_FAILED error code via bubbleFail", async () => {
+    const mockDeliver = {
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.fail({
+          messages: ["Delivery failed for 1 channel(s), retry scheduled."],
+          statusCode: 503,
+          errorCode: "DELIVERY_FAILED",
+        }),
+      ),
+    };
+
+    const handler = new HandleVerificationEmail(mockDeliver as any, createMockContext());
+
+    const result = await handler.handleAsync({
+      userId: "user-123",
+      email: "user@example.com",
+      name: "Test User",
+      verificationUrl: "https://example.com/verify?token=abc",
+      token: "abc",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errorCode).toBe("DELIVERY_FAILED");
+    expect(result.statusCode).toBe(503);
+  });
+
+  it("should generate unique correlationId per invocation", async () => {
+    const correlationIds: string[] = [];
+    const mockDeliver = {
+      handleAsync: vi.fn().mockImplementation((input: { correlationId: string }) => {
+        correlationIds.push(input.correlationId);
+        return D2Result.ok({ data: { messageId: "m1", requestId: "r1", attempts: [] } });
+      }),
+    };
+
+    const handler = new HandleVerificationEmail(mockDeliver as any, createMockContext());
+
+    const baseInput = {
+      userId: "user-1",
+      email: "a@b.com",
+      name: "A",
+      verificationUrl: "https://example.com/verify",
+      token: "t",
+    };
+
+    await handler.handleAsync(baseInput);
+    await handler.handleAsync(baseInput);
+
+    expect(correlationIds).toHaveLength(2);
+    expect(correlationIds[0]).not.toBe(correlationIds[1]);
+  });
+
   it("should escape HTML in content but not in plainTextContent", async () => {
     const mockDeliver = {
       handleAsync: vi
