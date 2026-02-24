@@ -37,7 +37,7 @@ describe("withApiKeyAuth interceptor", () => {
   it("should reject with UNAUTHENTICATED when x-api-key header is missing", () => {
     const logger = createMockLogger();
     const service = createMockService();
-    const wrapped = withApiKeyAuth(service, VALID_KEY, logger);
+    const wrapped = withApiKeyAuth(service, new Set([VALID_KEY]), logger);
 
     const call = createMockCall(); // no key
     const callback = vi.fn();
@@ -55,7 +55,7 @@ describe("withApiKeyAuth interceptor", () => {
   it("should reject with UNAUTHENTICATED when x-api-key is invalid", () => {
     const logger = createMockLogger();
     const service = createMockService();
-    const wrapped = withApiKeyAuth(service, VALID_KEY, logger);
+    const wrapped = withApiKeyAuth(service, new Set([VALID_KEY]), logger);
 
     const call = createMockCall("wrong-key");
     const callback = vi.fn();
@@ -76,7 +76,7 @@ describe("withApiKeyAuth interceptor", () => {
     const service = {
       getPreferences: originalHandler as unknown as grpc.UntypedHandleCall,
     };
-    const wrapped = withApiKeyAuth(service, VALID_KEY, logger);
+    const wrapped = withApiKeyAuth(service, new Set([VALID_KEY]), logger);
 
     const call = createMockCall(VALID_KEY);
     const callback = vi.fn();
@@ -91,7 +91,7 @@ describe("withApiKeyAuth interceptor", () => {
   it("should wrap all methods in the service object", () => {
     const logger = createMockLogger();
     const service = createMockService();
-    const wrapped = withApiKeyAuth(service, VALID_KEY, logger);
+    const wrapped = withApiKeyAuth(service, new Set([VALID_KEY]), logger);
 
     expect(Object.keys(wrapped).sort()).toEqual(Object.keys(service).sort());
     for (const key of Object.keys(service)) {
@@ -102,7 +102,7 @@ describe("withApiKeyAuth interceptor", () => {
   it("should log warning when x-api-key is missing", () => {
     const logger = createMockLogger();
     const service = createMockService();
-    const wrapped = withApiKeyAuth(service, VALID_KEY, logger);
+    const wrapped = withApiKeyAuth(service, new Set([VALID_KEY]), logger);
 
     const call = createMockCall(); // no key
     const callback = vi.fn();
@@ -110,5 +110,75 @@ describe("withApiKeyAuth interceptor", () => {
     (wrapped.deliver as grpc.handleUnaryCall<unknown, unknown>)(call, callback);
 
     expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Missing x-api-key header on RPC deliver"));
+  });
+
+  it("should accept the first key in a multi-key set", () => {
+    const logger = createMockLogger();
+    const originalHandler = vi.fn();
+    const service = {
+      getPreferences: originalHandler as unknown as grpc.UntypedHandleCall,
+    };
+    const wrapped = withApiKeyAuth(service, new Set(["key-a", "key-b"]), logger);
+
+    const call = createMockCall("key-a");
+    const callback = vi.fn();
+
+    (wrapped.getPreferences as grpc.handleUnaryCall<unknown, unknown>)(call, callback);
+
+    expect(originalHandler).toHaveBeenCalledWith(call, callback);
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it("should accept the second key in a multi-key set", () => {
+    const logger = createMockLogger();
+    const originalHandler = vi.fn();
+    const service = {
+      getPreferences: originalHandler as unknown as grpc.UntypedHandleCall,
+    };
+    const wrapped = withApiKeyAuth(service, new Set(["key-a", "key-b"]), logger);
+
+    const call = createMockCall("key-b");
+    const callback = vi.fn();
+
+    (wrapped.getPreferences as grpc.handleUnaryCall<unknown, unknown>)(call, callback);
+
+    expect(originalHandler).toHaveBeenCalledWith(call, callback);
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  it("should reject an unknown key when multiple valid keys exist", () => {
+    const logger = createMockLogger();
+    const service = createMockService();
+    const wrapped = withApiKeyAuth(service, new Set(["key-a", "key-b"]), logger);
+
+    const call = createMockCall("key-c");
+    const callback = vi.fn();
+
+    (wrapped.getPreferences as grpc.handleUnaryCall<unknown, unknown>)(call, callback);
+
+    expect(callback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: grpc.status.UNAUTHENTICATED,
+        message: "Invalid API key.",
+      }),
+    );
+  });
+
+  it("should reject any key when the valid key set is empty", () => {
+    const logger = createMockLogger();
+    const service = createMockService();
+    const wrapped = withApiKeyAuth(service, new Set<string>(), logger);
+
+    const call = createMockCall("some-key");
+    const callback = vi.fn();
+
+    (wrapped.getPreferences as grpc.handleUnaryCall<unknown, unknown>)(call, callback);
+
+    expect(callback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: grpc.status.UNAUTHENTICATED,
+        message: "Invalid API key.",
+      }),
+    );
   });
 });

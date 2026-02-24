@@ -3,11 +3,11 @@ import type { ILogger } from "@d2/logging";
 
 /**
  * Wraps a CommsServiceServer implementation with API key validation.
- * Checks the `x-api-key` metadata header against the expected key
+ * Checks the `x-api-key` metadata header against the set of valid keys
  * and rejects with UNAUTHENTICATED if missing or invalid.
  *
- * Mirrors the .NET `ApiKeyInterceptor` in Geo.API but simplified
- * for Comms (single key, no context-key validation).
+ * Mirrors the .NET `ServiceKeyMiddleware` pattern — flat list of valid keys,
+ * one per calling service (no context-key mapping needed for Comms).
  *
  * @grpc/grpc-js does not have a first-class ServerInterceptor type,
  * so we wrap each handler at the service object level.
@@ -17,7 +17,7 @@ import type { ILogger } from "@d2/logging";
  */
 export function withApiKeyAuth<T extends Record<string, grpc.UntypedHandleCall>>(
   service: T,
-  expectedKey: string,
+  validKeys: ReadonlySet<string>,
   logger: ILogger,
 ): T {
   const wrapped = {} as Record<string, grpc.UntypedHandleCall>;
@@ -35,7 +35,7 @@ export function withApiKeyAuth<T extends Record<string, grpc.UntypedHandleCall>>
         return;
       }
 
-      if (apiKey !== expectedKey) {
+      if (!validKeys.has(apiKey as string)) {
         logger.warn(`Invalid API key on RPC ${method}`);
         callback({
           code: grpc.status.UNAUTHENTICATED,

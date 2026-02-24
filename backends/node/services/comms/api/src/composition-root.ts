@@ -35,7 +35,7 @@ export interface CommsServiceConfig {
   twilioPhoneNumber?: string;
   geoAddress?: string;
   geoApiKey?: string;
-  commsApiKey?: string;
+  commsApiKeys?: string[];
 }
 
 /**
@@ -146,12 +146,13 @@ export async function createCommsService(config: CommsServiceConfig) {
   const server = new grpc.Server();
   const grpcService = createCommsGrpcService(provider);
 
-  if (config.commsApiKey) {
-    server.addService(CommsServiceService, withApiKeyAuth(grpcService, config.commsApiKey, logger));
-    logger.info("Comms gRPC API key authentication enabled");
+  if (config.commsApiKeys?.length) {
+    const validKeys = new Set(config.commsApiKeys);
+    server.addService(CommsServiceService, withApiKeyAuth(grpcService, validKeys, logger));
+    logger.info(`Comms gRPC API key authentication enabled (${validKeys.size} key(s))`);
   } else {
     server.addService(CommsServiceService, grpcService);
-    logger.warn("No COMMS_API_KEY configured — gRPC API key authentication disabled");
+    logger.warn("No COMMS_API_KEYS configured — gRPC API key authentication disabled");
   }
 
   await new Promise<void>((resolve, reject) => {

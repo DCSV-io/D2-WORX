@@ -7,6 +7,21 @@ import { createCommsService } from "./composition-root.js";
 
 const logger = createLogger({ serviceName: "comms-service" });
 
+/**
+ * Parses indexed environment variables into an array.
+ * Reads `${prefix}__0`, `${prefix}__1`, ... until a gap is found.
+ * Matches .NET's indexed-array binding convention.
+ */
+function parseEnvArray(prefix: string): string[] {
+  const result: string[] = [];
+  for (let i = 0; ; i++) {
+    const value = process.env[`${prefix}__${i}`];
+    if (value === undefined) break;
+    result.push(value);
+  }
+  return result;
+}
+
 const config = {
   databaseUrl: process.env.ConnectionStrings__d2_services_comms ?? "",
   rabbitMqUrl: process.env.ConnectionStrings__d2_rabbitmq ?? "",
@@ -18,7 +33,7 @@ const config = {
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
   geoAddress: process.env.GEO_GRPC_ADDRESS,
   geoApiKey: process.env.COMMSGEOCLIENTOPTIONS_APIKEY,
-  commsApiKey: process.env.COMMS_API_KEY,
+  commsApiKeys: parseEnvArray("COMMS_API_KEYS"),
 };
 
 if (!config.databaseUrl) {
