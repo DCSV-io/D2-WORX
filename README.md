@@ -86,7 +86,7 @@ Summary:
 
 **🚧 In Progress:**
 
-- Auth service Stage C — client libraries (`@d2/auth-client` for SvelteKit BFF, `@d2/auth-sdk` for backend gRPC)
+- Auth service Stage C — client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC)
 
 **📋 Planned:**
 

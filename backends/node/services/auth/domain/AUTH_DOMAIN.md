@@ -6,8 +6,8 @@ Pure domain types for the D2-WORX Auth service. Zero infrastructure dependencies
 
 Defines the public contract for all auth data leaving the service. These types are consumed by:
 
-- `@d2/auth-client` (BFF for SvelteKit)
-- `@d2/auth-sdk` (backend gRPC client)
+- `@d2/auth-bff-client` (BFF for SvelteKit)
+- `@d2/auth-client` (backend gRPC client)
 - Auth service internals (app layer, infra layer)
 
 ## Design Decisions

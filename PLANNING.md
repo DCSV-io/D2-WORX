@@ -658,8 +658,8 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
 | **@d2/di**                 | ✅ Done    | `backends/node/shared/di/`                                                    | `Microsoft.Extensions.DependencyInjection` |
 | **@d2/comms-client**       | ✅ Done    | `backends/node/services/comms/client/`                                        | — (RabbitMQ notification publisher)        |
-| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/auth-client/`                                    | — (BFF client, HTTP — no .NET equivalent)  |
-| **@d2/auth-sdk**           | 📋 Phase 2 | `backends/node/services/auth/auth-sdk/`                                       | `Auth.Client` (gRPC, service-to-service)   |
+| **@d2/auth-bff-client**    | 📋 Phase 2 | `backends/node/services/auth/bff-client/`                                     | — (BFF client, HTTP — no .NET equivalent)  |
+| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/client/`                                         | `Auth.Client` (gRPC, service-to-service)   |
 
 ### Services
 
@@ -750,8 +750,8 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 **Stage C — Client Libraries**
 
-10. **@d2/auth-client** — BFF client for SvelteKit (proxy helper, JWT lifecycle, `createAuthClient`).
-11. **@d2/auth-sdk** — Backend gRPC client for other Node.js services.
+10. **@d2/auth-bff-client** — BFF client for SvelteKit (proxy helper, JWT lifecycle, `createAuthClient`).
+11. **@d2/auth-client** — Backend gRPC client for other Node.js services (mirrors `@d2/geo-client`).
 12. **.NET Auth.Client** — JWT validation via JWKS + `AddJwtBearer()`.
 
 **Stage D — Integration**
@@ -771,8 +771,8 @@ backends/node/services/auth/
 ├── infra/             # @d2/auth-infra — BetterAuth config, repos, mappers (TLC: auth/better-auth/, repository/, mappers/)
 ├── api/               # @d2/auth-api — Hono entry point, routes, composition root, geo gateway impl
 ├── tests/             # @d2/auth-tests — Tests (unit + integration)
-├── auth-client/       # @d2/auth-client — BFF client for SvelteKit (HTTP, proxy, JWT manager) [planned]
-└── auth-sdk/          # @d2/auth-sdk — Backend client for other services (gRPC, like Geo.Client) [planned]
+├── bff-client/        # @d2/auth-bff-client — BFF client for SvelteKit (HTTP, proxy, JWT manager) [planned]
+├── client/            # @d2/auth-client — Backend client for other services (gRPC, like Geo.Client) [planned]
 ```
 
 Mirrors .NET Geo:
@@ -785,11 +785,11 @@ Geo.Client / Geo.Domain / Geo.App / Geo.Infra / Geo.API / Geo.Tests
 
 | Client             | Package           | Consumers                    | Protocol | Purpose                                         |
 | ------------------ | ----------------- | ---------------------------- | -------- | ----------------------------------------------- |
-| **BFF Client**     | `@d2/auth-client` | SvelteKit                    | HTTP     | Auth proxy, session management, JWT lifecycle   |
-| **Backend Client** | `@d2/auth-sdk`    | .NET gateway, other services | gRPC     | User/org lookups, JWT validation, JWKS fetching |
+| **BFF Client**     | `@d2/auth-bff-client` | SvelteKit                    | HTTP     | Auth proxy, session management, JWT lifecycle   |
+| **Backend Client** | `@d2/auth-client`     | .NET gateway, other services | gRPC     | User/org lookups, JWT validation, JWKS fetching |
 
-- `@d2/auth-client`: BFF-oriented. Proxies BetterAuth endpoints (`/api/auth/*`), manages JWT obtain/store/refresh, exposes `createAuthClient()` for SvelteKit. Works with **domain types** (tightly coupled, same codebase).
-- `@d2/auth-sdk`: Service-oriented. gRPC stubs from `contracts/protos/auth/v1/`, handler-based (mirrors Geo.Client pattern). Works with **proto-generated types only** — no domain types exposed. Used by .NET services and future Node services that need auth data.
+- `@d2/auth-bff-client`: BFF-oriented. Proxies BetterAuth endpoints (`/api/auth/*`), manages JWT obtain/store/refresh, exposes `createAuthClient()` for SvelteKit. Works with **domain types** (tightly coupled, same codebase).
+- `@d2/auth-client`: Service-oriented. gRPC stubs from `contracts/protos/auth/v1/`, handler-based (mirrors Geo.Client pattern). Works with **proto-generated types only** — no domain types exposed. Used by .NET services and future Node services that need auth data.
 - **.NET side**: `Auth.Client` at `backends/dotnet/services/Auth/Auth.Client/` — gRPC client + JWT validation (`AddJwtBearer` + JWKS). Works with proto-generated C# types.
 
 **Type boundary principle**: Domain types are internal to the auth service (and BFF). Backend consumers only see proto-generated types via gRPC. This prevents leaking domain logic between services — the proto contract IS the public API. Same pattern as Geo: `Geo.Domain` types are internal, `Geo.API` maps to proto responses, `Geo.Client` consumers only see proto types.
@@ -1215,7 +1215,7 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 }
 ```
 
-**Important**: When a user switches orgs or starts/stops emulation, the client must request a new JWT. The old JWT remains valid until its 15-minute expiry but carries stale org context. `@d2/auth-client` handles this: `setActiveOrg()` → `refreshJwt()` atomically.
+**Important**: When a user switches orgs or starts/stops emulation, the client must request a new JWT. The old JWT remains valid until its 15-minute expiry but carries stale org context. `@d2/auth-bff-client` handles this: `setActiveOrg()` → `refreshJwt()` atomically.
 
 **BetterAuth organization plugin — gap analysis (75% fit):**
 
@@ -1302,7 +1302,7 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 - Auth proxy in `hooks.server.ts` (`/api/auth/*` → Auth Service)
 - Session population hook (forward cookie to Auth Service for validation, or decode cookie cache locally)
 - `createAuthClient` setup (no `baseURL` needed — same-origin proxy)
-- Client-side JWT manager (part of `@d2/auth-client` — obtain, store in memory, auto-refresh)
+- Client-side JWT manager (part of `@d2/auth-bff-client` — obtain, store in memory, auto-refresh)
 - CORS configuration for direct gateway access (Pattern C, ADR-005)
 
 **UI sharding by org type** (decided 2026-02-07):
@@ -1526,12 +1526,12 @@ clients/web/src/routes/
   - **Domain aggregates finalized**: User aggregate (accounts[], sessions[], memberships[], invitations[], signInEvents[], emulationConsents[]) and Organization aggregate (members[], invitations[], contacts[]). Member + Invitation bidirectional — Org is write owner, User has read navigation.
   - **Business rules decided**: Only `customer` orgs self-created, `third_party` via workflow, rest admin-only. 90-day sign-in event retention. 7-day invitation expiry. One account per provider. Member removal = immediate session termination.
   - **OrgType/Role as text in PG** (not PG enums) — avoids migration pain. TS string unions for compile-time safety.
-  - **Two auth client libraries**: `@d2/auth-client` (BFF for SvelteKit, HTTP) + `@d2/auth-sdk` (backend for services, gRPC). Plus .NET `Auth.Client`.
+  - **Two auth client libraries**: `@d2/auth-bff-client` (BFF for SvelteKit, HTTP) + `@d2/auth-client` (backend for services, gRPC). Plus .NET `Auth.Client`.
   - **Proto contracts**: `contracts/protos/auth/v1/` — auth will have gRPC endpoints for inter-service communication.
   - **Notifications co-dependency**: Auth needs notifications scaffold for email verification, password reset, invitation emails.
   - **Database**: Kysely (BetterAuth native) with `casing: "snake_case"` — _(superseded by ADR-009: Drizzle ORM, 2026-02-15)_
   - **Last-owner protection**: Blocked from leaving. Options: transfer ownership (email confirmation) or delete org (email confirmation).
-  - **Type boundary**: Domain types internal to auth service + BFF. Backend clients (`@d2/auth-sdk`, .NET `Auth.Client`) only see proto-generated types. Proto contract is the public API.
+  - **Type boundary**: Domain types internal to auth service + BFF. Backend clients (`@d2/auth-client`, .NET `Auth.Client`) only see proto-generated types. Proto contract is the public API.
   - **Notifications service shape**: Mirrors DeCAF notification hub (multi-channel Notify orchestrator, provider pattern, enqueue+retry). Phase 2 = email only. Foundation supports future SMS/push/in-app/SignalR.
   - **Invitation lifecycle**: 7-day expiry, accept or reject. Expired invitations cleaned up.
   - **Onboarding flow**: Signup (email/Google/LinkedIn) → email verify → create `customer` org or accept invite.

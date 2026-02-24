@@ -545,7 +545,7 @@ Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 St
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
-**Next:** Phase 2 Stage C — Auth client libraries (`@d2/auth-client` for SvelteKit BFF, `@d2/auth-sdk` for backend gRPC), SvelteKit auth integration
+**Next:** Phase 2 Stage C — Auth client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC), SvelteKit auth integration
 
 ### When in Doubt
 
