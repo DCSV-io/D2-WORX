@@ -112,7 +112,7 @@ export async function startCommsService(opts: {
   services.addInstance(IEmailProviderKey, stubEmail);
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
-  addCommsInfra(services, db, {});
+  addCommsInfra(services, db);
   addCommsApp(services);
 
   // 3. Build ServiceProvider

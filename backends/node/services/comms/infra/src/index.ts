@@ -41,4 +41,4 @@ export type { NotificationConsumerDeps } from "./messaging/consumers/notificatio
 export { declareRetryTopology, getRetryTierQueue } from "./messaging/retry-topology.js";
 
 // --- DI Registration ---
-export { addCommsInfra, type CommsInfraConfig } from "./registration.js";
+export { addCommsInfra } from "./registration.js";

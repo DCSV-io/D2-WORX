@@ -14,8 +14,6 @@ import {
   ICreateChannelPreferenceRecordKey,
   IFindChannelPreferenceByContactIdKey,
   IUpdateChannelPreferenceRecordKey,
-  IEmailProviderKey,
-  ISmsProviderKey,
 } from "@d2/comms-app";
 import { CreateMessageRecord } from "./repository/handlers/c/create-message-record.js";
 import { CreateDeliveryRequestRecord } from "./repository/handlers/c/create-delivery-request-record.js";
@@ -29,27 +27,18 @@ import { FindChannelPreferenceByContactId } from "./repository/handlers/r/find-c
 import { MarkDeliveryRequestProcessed } from "./repository/handlers/u/mark-delivery-request-processed.js";
 import { UpdateDeliveryAttemptStatus } from "./repository/handlers/u/update-delivery-attempt-status.js";
 import { UpdateChannelPreferenceRecord } from "./repository/handlers/u/update-channel-preference-record.js";
-import { ResendEmailProvider } from "./providers/email/resend/resend-email-provider.js";
-import { TwilioSmsProvider } from "./providers/sms/twilio/twilio-sms-provider.js";
-
-export interface CommsInfraConfig {
-  resendApiKey?: string;
-  resendFromAddress?: string;
-  twilioAccountSid?: string;
-  twilioAuthToken?: string;
-  twilioPhoneNumber?: string;
-}
 
 /**
- * Registers comms infrastructure services (repository handlers, providers)
+ * Registers comms infrastructure services (repository handlers)
  * with the DI container. Mirrors .NET's `services.AddCommsInfra()` pattern.
  *
- * All repo handlers are transient. Providers are singleton (hold client connections).
+ * All repo handlers are transient. Delivery providers (email, SMS) are
+ * registered as singleton instances in the composition root since they
+ * hold API client connections and need service-level HandlerContext.
  */
 export function addCommsInfra(
   services: ServiceCollection,
   db: NodePgDatabase,
-  config: CommsInfraConfig,
 ): void {
   // --- Message Repository ---
   services.addTransient(
@@ -107,29 +96,4 @@ export function addCommsInfra(
     (sp) => new UpdateChannelPreferenceRecord(db, sp.resolve(IHandlerContextKey)),
   );
 
-  // --- Providers (singleton — hold API client connections) ---
-  if (config.resendApiKey && config.resendFromAddress) {
-    services.addSingleton(
-      IEmailProviderKey,
-      (sp) =>
-        new ResendEmailProvider(
-          config.resendApiKey!,
-          config.resendFromAddress!,
-          sp.resolve(IHandlerContextKey),
-        ),
-    );
-  }
-
-  if (config.twilioAccountSid && config.twilioAuthToken && config.twilioPhoneNumber) {
-    services.addSingleton(
-      ISmsProviderKey,
-      (sp) =>
-        new TwilioSmsProvider(
-          config.twilioAccountSid!,
-          config.twilioAuthToken!,
-          config.twilioPhoneNumber!,
-          sp.resolve(IHandlerContextKey),
-        ),
-    );
-  }
 }

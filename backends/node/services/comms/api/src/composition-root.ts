@@ -14,12 +14,14 @@ import {
 } from "@d2/geo-client";
 import { MessageBus } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
-import { addCommsApp } from "@d2/comms-app";
+import { addCommsApp, IEmailProviderKey, ISmsProviderKey } from "@d2/comms-app";
 import {
   addCommsInfra,
   runMigrations,
   createNotificationConsumer,
   declareRetryTopology,
+  ResendEmailProvider,
+  TwilioSmsProvider,
 } from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
 import { withApiKeyAuth } from "./interceptors/api-key-interceptor.js";
@@ -123,19 +125,31 @@ export async function createCommsService(config: CommsServiceConfig) {
   services.addInstance(IGetContactsByIdsKey, getContactsByIds);
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
-  addCommsInfra(services, db, {
-    resendApiKey: config.resendApiKey,
-    resendFromAddress: config.resendFromAddress,
-    twilioAccountSid: config.twilioAccountSid,
-    twilioAuthToken: config.twilioAuthToken,
-    twilioPhoneNumber: config.twilioPhoneNumber,
-  });
+  addCommsInfra(services, db);
   addCommsApp(services);
 
-  if (!config.resendApiKey || !config.resendFromAddress) {
+  // Delivery providers — singleton instances with service-level context.
+  // Created here (not in addCommsInfra) because they hold API client connections
+  // and must use service-level HandlerContext, not a scoped one.
+  if (config.resendApiKey && config.resendFromAddress) {
+    services.addInstance(
+      IEmailProviderKey,
+      new ResendEmailProvider(config.resendApiKey, config.resendFromAddress, serviceContext),
+    );
+  } else {
     logger.warn("No Resend API key configured — email delivery disabled");
   }
-  if (!config.twilioAccountSid || !config.twilioAuthToken || !config.twilioPhoneNumber) {
+  if (config.twilioAccountSid && config.twilioAuthToken && config.twilioPhoneNumber) {
+    services.addInstance(
+      ISmsProviderKey,
+      new TwilioSmsProvider(
+        config.twilioAccountSid,
+        config.twilioAuthToken,
+        config.twilioPhoneNumber,
+        serviceContext,
+      ),
+    );
+  } else {
     logger.warn("No Twilio credentials configured — SMS delivery disabled");
   }
 
