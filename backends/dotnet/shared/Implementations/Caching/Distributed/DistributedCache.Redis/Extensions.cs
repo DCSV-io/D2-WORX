@@ -7,9 +7,11 @@
 namespace D2.Shared.DistributedCache.Redis;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
+using D2.Shared.DistributedCache.Redis.Handlers.C;
 using D2.Shared.DistributedCache.Redis.Handlers.D;
 using D2.Shared.DistributedCache.Redis.Handlers.R;
 using D2.Shared.DistributedCache.Redis.Handlers.U;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.C;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
@@ -53,6 +55,7 @@ public static class Extensions
             // The handlers for distributed cache operations.
             services.AddTransient(typeof(IRead.IGetHandler<>), typeof(Get<>));
             services.AddTransient(typeof(IUpdate.ISetHandler<>), typeof(Set<>));
+            services.AddTransient(typeof(ICreate.ISetNxHandler<>), typeof(SetNx<>));
             services.AddTransient<IDelete.IRemoveHandler, Remove>();
             services.AddTransient<IRead.IExistsHandler, Exists>();
             services.AddTransient<IRead.IGetTtlHandler, GetTtl>();
