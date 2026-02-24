@@ -12,8 +12,8 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "dev": "tsx watch src/main.ts",
-    "start": "node dist/main.js"
+    "dev": "tsx watch --import @d2/service-defaults/register src/main.ts",
+    "start": "node --import @d2/service-defaults/register dist/main.js"
   },
   "files": [
     "dist"

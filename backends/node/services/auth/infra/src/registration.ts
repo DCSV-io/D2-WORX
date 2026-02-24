@@ -2,6 +2,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { ServiceCollection } from "@d2/di";
 import { IHandlerContextKey } from "@d2/handler";
 import {
+  IPingDbKey,
   ICreateSignInEventKey,
   IFindSignInEventsByUserIdKey,
   ICountSignInEventsByUserIdKey,
@@ -31,6 +32,7 @@ import { FindOrgContactById } from "./repository/handlers/r/find-org-contact-by-
 import { FindOrgContactsByOrgId } from "./repository/handlers/r/find-org-contacts-by-org-id.js";
 import { UpdateOrgContactRecord } from "./repository/handlers/u/update-org-contact-record.js";
 import { DeleteOrgContactRecord } from "./repository/handlers/d/delete-org-contact-record.js";
+import { PingDb } from "./repository/handlers/q/ping-db.js";
 
 /**
  * Registers auth infrastructure services (repository handlers) with the DI container.
@@ -38,7 +40,15 @@ import { DeleteOrgContactRecord } from "./repository/handlers/d/delete-org-conta
  *
  * All repo handlers are transient — new instance per resolve, receiving scoped IHandlerContext.
  */
-export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void {
+export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase, pool?: import("pg").Pool): void {
+  // Health check handler (uses raw pool for lightweight SELECT 1)
+  if (pool) {
+    services.addTransient(
+      IPingDbKey,
+      (sp) => new PingDb(pool, sp.resolve(IHandlerContextKey)),
+    );
+  }
+
   // Sign-in event repo handlers
   services.addTransient(
     ICreateSignInEventKey,

@@ -51,6 +51,7 @@ public static class Extensions
             services.AddTransient<IGeoComplex.IUpdateContactsByExtKeysHandler, UpdateContactsByExtKeys>();
 
             // Query handlers.
+            services.AddTransient<IQueries.ICheckHealthHandler, CheckHealth>();
             services.AddTransient<IQueries.IGetLocationsByIdsHandler, GetLocationsByIds>();
             services.AddTransient<IQueries.IGetWhoIsByIdsHandler, GetWhoIsByIds>();
             services.AddTransient<IQueries.IGetContactsByIdsHandler, GetContactsByIds>();

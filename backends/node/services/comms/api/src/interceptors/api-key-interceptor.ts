@@ -19,10 +19,18 @@ export function withApiKeyAuth<T extends Record<string, grpc.UntypedHandleCall>>
   service: T,
   validKeys: ReadonlySet<string>,
   logger: ILogger,
+  /** Method names to pass through without API key validation (e.g. "checkHealth"). */
+  exempt?: ReadonlySet<string>,
 ): T {
   const wrapped = {} as Record<string, grpc.UntypedHandleCall>;
 
   for (const [method, handler] of Object.entries(service)) {
+    // Exempt methods pass through without API key checks.
+    if (exempt?.has(method)) {
+      wrapped[method] = handler;
+      continue;
+    }
+
     wrapped[method] = (call: grpc.ServerUnaryCall<unknown, unknown>, callback: grpc.sendUnaryData<unknown>) => {
       const apiKey = (call as grpc.ServerUnaryCall<unknown, unknown>).metadata?.get("x-api-key")?.[0];
 

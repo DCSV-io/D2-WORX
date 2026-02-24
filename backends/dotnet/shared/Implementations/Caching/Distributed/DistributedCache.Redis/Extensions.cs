@@ -59,6 +59,7 @@ public static class Extensions
             services.AddTransient<IDelete.IRemoveHandler, Remove>();
             services.AddTransient<IRead.IExistsHandler, Exists>();
             services.AddTransient<IRead.IGetTtlHandler, GetTtl>();
+            services.AddTransient<IRead.IPingHandler, Handlers.Q.Ping>();
             services.AddTransient<IUpdate.IIncrementHandler, Increment>();
 
             return services;

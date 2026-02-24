@@ -126,6 +126,9 @@ importers:
       '@d2/auth-domain':
         specifier: workspace:*
         version: link:../domain
+      '@d2/cache-redis':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/caching/distributed/redis
       '@d2/di':
         specifier: workspace:*
         version: link:../../../shared/di
@@ -138,6 +141,9 @@ importers:
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
+      '@d2/messaging':
+        specifier: workspace:*
+        version: link:../../../shared/messaging
       '@d2/protos':
         specifier: workspace:*
         version: link:../../../shared/protos
@@ -326,6 +332,9 @@ importers:
       '@grpc/grpc-js':
         specifier: 1.14.3
         version: 1.14.3
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
       drizzle-orm:
         specifier: 0.45.1
         version: 0.45.1(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.11)(pg@8.18.0)
@@ -357,6 +366,9 @@ importers:
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
+      '@d2/messaging':
+        specifier: workspace:*
+        version: link:../../../shared/messaging
       '@d2/result':
         specifier: workspace:*
         version: link:../../../shared/result
@@ -772,6 +784,18 @@ importers:
 
   backends/node/shared/messaging:
     dependencies:
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../di
+      '@d2/handler':
+        specifier: workspace:*
+        version: link:../handler
+      '@d2/interfaces':
+        specifier: workspace:*
+        version: link:../interfaces
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../result
       rabbitmq-client:
         specifier: 5.0.8
         version: 5.0.8
@@ -841,6 +865,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: 1.37.0
         version: 1.37.0
+      import-in-the-middle:
+        specifier: 1.14.4
+        version: 1.14.4
 
   backends/node/shared/testing:
     dependencies:

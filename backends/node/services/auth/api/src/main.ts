@@ -1,7 +1,3 @@
-import { setupTelemetry } from "@d2/service-defaults";
-
-setupTelemetry({ serviceName: "auth-service" });
-
 import { serve } from "@hono/node-server";
 import { MessageBus, type IMessagePublisher } from "@d2/messaging";
 import { createLogger } from "@d2/logging";
@@ -49,7 +45,7 @@ function parseRedisUrl(connectionString: string): string {
     return connectionString;
   }
 
-  const [hostPort, ...options] = connectionString.split(",");
+  const [hostPort = "", ...options] = connectionString.split(",");
   const params = new Map<string, string>();
   for (const opt of options) {
     const eq = opt.indexOf("=");
@@ -100,7 +96,7 @@ if (config.rabbitMqUrl) {
   logger.info("RabbitMQ connected");
 }
 
-const { app, shutdown } = await createApp(config, publisher);
+const { app, shutdown } = await createApp(config, publisher, undefined, messageBus);
 const port = parseInt(process.env.PORT ?? "3100", 10);
 
 const server = serve({ fetch: app.fetch, port }, (info) => {

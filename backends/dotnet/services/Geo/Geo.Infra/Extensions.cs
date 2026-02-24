@@ -76,6 +76,9 @@ public static class Extensions
             // Add support for transactions.
             services.AddPgTransactions();
 
+            // Repository (query) handlers.
+            services.AddTransient<App.Interfaces.Repository.Handlers.Q.IRead.IPingDbHandler, Repository.Handlers.Q.PingDb>();
+
             // Repository (read) handlers.
             services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetReferenceDataHandler, GetReferenceData>();
             services.AddTransient<App.Interfaces.Repository.Handlers.R.IRead.IGetLocationsByIdsHandler, GetLocationsByIds>();

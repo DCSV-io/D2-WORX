@@ -5,3 +5,4 @@ export type { SetInput, SetOutput, ISetHandler } from "./handlers/u/set.js";
 export type { IncrementInput, IncrementOutput, IIncrementHandler } from "./handlers/u/increment.js";
 export type { SetNxInput, SetNxOutput, ISetNxHandler } from "./handlers/c/set-nx.js";
 export type { RemoveInput, RemoveOutput, IRemoveHandler } from "./handlers/d/remove.js";
+export type { PingInput, PingOutput, IPingHandler } from "./handlers/q/ping.js";

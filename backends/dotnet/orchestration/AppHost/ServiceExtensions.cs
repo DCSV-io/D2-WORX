@@ -49,6 +49,9 @@ internal static class ServiceExtensions
             builder.WithEnvironment("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318/v1/traces");
             builder.WithEnvironment("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://localhost:4318/v1/logs");
             builder.WithEnvironment("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://localhost:4318/v1/metrics");
+
+            // Serilog Loki sink (direct push, not OTLP) — .NET services only.
+            builder.WithEnvironment("LOGS_URI", "http://localhost:3100/loki/api/v1/push");
             return builder;
         }
     }

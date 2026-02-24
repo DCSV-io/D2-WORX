@@ -55,6 +55,10 @@ export type {
   UpdateOrgContactRecordOutput,
   DeleteOrgContactRecordInput,
   DeleteOrgContactRecordOutput,
+  // Query (Q) — PingDb
+  PingDbInput,
+  PingDbOutput,
+  IPingDbHandler,
 } from "./interfaces/repository/handlers/index.js";
 
 export type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
@@ -257,6 +261,14 @@ export function createUserContactHandler(
   return new CreateUserContact(createContacts, context);
 }
 
+// --- Health Check Handler ---
+export { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
+export type {
+  CheckHealthInput,
+  CheckHealthOutput,
+  ComponentHealth,
+} from "./implementations/cqrs/handlers/q/check-health.js";
+
 // --- DI Registration ---
 export { addAuthApp, type AddAuthAppOptions } from "./registration.js";
 export {
@@ -289,4 +301,6 @@ export {
   IGetActiveConsentsKey,
   IGetOrgContactsKey,
   ICheckSignInThrottleKey,
+  IPingDbKey,
+  ICheckHealthKey,
 } from "./service-keys.js";

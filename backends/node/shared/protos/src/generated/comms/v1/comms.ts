@@ -19,6 +19,7 @@ import {
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
 import { D2ResultProto } from "../../common/v1/d2_result";
+import { CheckHealthRequest, CheckHealthResponse } from "../../common/v1/health";
 import { Timestamp } from "../../google/protobuf/timestamp";
 
 export const protobufPackage = "d2.comms.v1";
@@ -5954,6 +5955,16 @@ export const RemoveParticipantResponse: MessageFns<RemoveParticipantResponse> = 
 
 export type CommsServiceService = typeof CommsServiceService;
 export const CommsServiceService = {
+  /** Health check — pings all dependencies (DB, messaging). */
+  checkHealth: {
+    path: "/d2.comms.v1.CommsService/CheckHealth",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: CheckHealthRequest): Buffer => Buffer.from(CheckHealthRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CheckHealthRequest => CheckHealthRequest.decode(value),
+    responseSerialize: (value: CheckHealthResponse): Buffer => Buffer.from(CheckHealthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CheckHealthResponse => CheckHealthResponse.decode(value),
+  },
   /** Phase 1: Delivery Engine */
   getChannelPreference: {
     path: "/d2.comms.v1.CommsService/GetChannelPreference",
@@ -6144,6 +6155,8 @@ export const CommsServiceService = {
 } as const;
 
 export interface CommsServiceServer extends UntypedServiceImplementation {
+  /** Health check — pings all dependencies (DB, messaging). */
+  checkHealth: handleUnaryCall<CheckHealthRequest, CheckHealthResponse>;
   /** Phase 1: Delivery Engine */
   getChannelPreference: handleUnaryCall<GetChannelPreferenceRequest, GetChannelPreferenceResponse>;
   setChannelPreference: handleUnaryCall<SetChannelPreferenceRequest, SetChannelPreferenceResponse>;
@@ -6168,6 +6181,22 @@ export interface CommsServiceServer extends UntypedServiceImplementation {
 }
 
 export interface CommsServiceClient extends Client {
+  /** Health check — pings all dependencies (DB, messaging). */
+  checkHealth(
+    request: CheckHealthRequest,
+    callback: (error: ServiceError | null, response: CheckHealthResponse) => void,
+  ): ClientUnaryCall;
+  checkHealth(
+    request: CheckHealthRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: CheckHealthResponse) => void,
+  ): ClientUnaryCall;
+  checkHealth(
+    request: CheckHealthRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: CheckHealthResponse) => void,
+  ): ClientUnaryCall;
   /** Phase 1: Delivery Engine */
   getChannelPreference(
     request: GetChannelPreferenceRequest,

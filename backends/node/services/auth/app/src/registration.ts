@@ -36,6 +36,8 @@ import {
   IGetActiveConsentsKey,
   IGetOrgContactsKey,
   ICheckSignInThrottleKey,
+  IPingDbKey,
+  ICheckHealthKey,
 } from "./service-keys.js";
 import { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
 import { RecordSignInOutcome } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
@@ -49,6 +51,9 @@ import { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-e
 import { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
 import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 import { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
+import { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
+import { ICachePingKey } from "@d2/cache-redis";
+import { IMessageBusPingKey } from "@d2/messaging";
 export interface AddAuthAppOptions {
   checkOrgExists: (orgId: string) => Promise<boolean>;
 }
@@ -169,6 +174,17 @@ export function addAuthApp(services: ServiceCollection, options: AddAuthAppOptio
     ICheckSignInThrottleKey,
     (sp) =>
       new CheckSignInThrottle(sp.resolve(ISignInThrottleStoreKey), sp.resolve(IHandlerContextKey)),
+  );
+
+  services.addTransient(
+    ICheckHealthKey,
+    (sp) =>
+      new CheckHealth(
+        sp.resolve(IPingDbKey),
+        sp.resolve(ICachePingKey),
+        sp.resolve(IHandlerContextKey),
+        sp.tryResolve(IMessageBusPingKey),
+      ),
   );
 
 }

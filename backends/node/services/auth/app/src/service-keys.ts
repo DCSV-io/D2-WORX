@@ -1,6 +1,8 @@
 import { createServiceKey } from "@d2/di";
 
 // Import interface types for keys
+import type { IPingDbHandler } from "./interfaces/repository/handlers/index.js";
+import type { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
 import type {
   ICreateSignInEventHandler,
   IFindSignInEventsByUserIdHandler,
@@ -84,6 +86,10 @@ export const IDeleteOrgContactRecordKey = createServiceKey<IDeleteOrgContactReco
   "Auth.Repo.DeleteOrgContactRecord",
 );
 
+// --- Health Check Repository Handler ---
+
+export const IPingDbKey = createServiceKey<IPingDbHandler>("Auth.Repo.PingDb");
+
 // --- Sign-In Throttle Store ---
 
 export const ISignInThrottleStoreKey = createServiceKey<ISignInThrottleStore>(
@@ -127,4 +133,5 @@ export const IGetOrgContactsKey = createServiceKey<GetOrgContacts>("Auth.App.Get
 export const ICheckSignInThrottleKey = createServiceKey<CheckSignInThrottle>(
   "Auth.App.CheckSignInThrottle",
 );
+export const ICheckHealthKey = createServiceKey<CheckHealth>("Auth.App.CheckHealth");
 

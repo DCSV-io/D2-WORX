@@ -49,6 +49,10 @@ public static class Extensions
 
             services.AddSingleton<ProtoPublisher>();
 
+            services.AddTransient<
+                Interfaces.Messaging.Handlers.Q.IRead.IPingHandler,
+                Handlers.Q.Ping>();
+
             return services;
         }
     }

@@ -7,7 +7,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./register": "./dist/register.js"
   },
   "scripts": {
     "build": "tsc",
@@ -17,6 +18,7 @@
     "dist"
   ],
   "dependencies": {
+    "import-in-the-middle": "1.14.4",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/auto-instrumentations-node": "0.65.0",
     "@opentelemetry/exporter-logs-otlp-http": "0.206.0",

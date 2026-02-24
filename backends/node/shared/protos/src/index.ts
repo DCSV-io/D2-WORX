@@ -6,6 +6,19 @@ export {
   InputErrorProto as InputErrorProtoFns,
 } from "./generated/common/v1/d2_result.js";
 
+// Health check types (shared by all services)
+export type {
+  CheckHealthRequest,
+  CheckHealthResponse,
+  ComponentHealth,
+} from "./generated/common/v1/health.js";
+
+export {
+  CheckHealthRequest as CheckHealthRequestFns,
+  CheckHealthResponse as CheckHealthResponseFns,
+  ComponentHealth as ComponentHealthFns,
+} from "./generated/common/v1/health.js";
+
 // Ping service
 export type {
   PingRequest,

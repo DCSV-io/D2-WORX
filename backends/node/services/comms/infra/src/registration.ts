@@ -2,6 +2,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { ServiceCollection } from "@d2/di";
 import { IHandlerContextKey } from "@d2/handler";
 import {
+  IPingDbKey,
   ICreateMessageRecordKey,
   IFindMessageByIdKey,
   ICreateDeliveryRequestRecordKey,
@@ -27,6 +28,7 @@ import { FindChannelPreferenceByContactId } from "./repository/handlers/r/find-c
 import { MarkDeliveryRequestProcessed } from "./repository/handlers/u/mark-delivery-request-processed.js";
 import { UpdateDeliveryAttemptStatus } from "./repository/handlers/u/update-delivery-attempt-status.js";
 import { UpdateChannelPreferenceRecord } from "./repository/handlers/u/update-channel-preference-record.js";
+import { PingDb } from "./repository/handlers/q/ping-db.js";
 
 /**
  * Registers comms infrastructure services (repository handlers)
@@ -39,7 +41,16 @@ import { UpdateChannelPreferenceRecord } from "./repository/handlers/u/update-ch
 export function addCommsInfra(
   services: ServiceCollection,
   db: NodePgDatabase,
+  pool?: import("pg").Pool,
 ): void {
+  // Health check handler (uses raw pool for lightweight SELECT 1)
+  if (pool) {
+    services.addTransient(
+      IPingDbKey,
+      (sp) => new PingDb(pool, sp.resolve(IHandlerContextKey)),
+    );
+  }
+
   // --- Message Repository ---
   services.addTransient(
     ICreateMessageRecordKey,

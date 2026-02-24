@@ -161,6 +161,21 @@ export class MessageBus {
     }
   }
 
+  /**
+   * Check if the underlying connection is alive.
+   * Returns true if connected, false on failure/timeout.
+   */
+  async ping(timeout = 5_000): Promise<boolean> {
+    try {
+      // Attempt to wait for the connection within the timeout.
+      // If already connected, this resolves immediately.
+      await this.connection.onConnect(timeout, true);
+      return this.connection.ready;
+    } catch {
+      return false;
+    }
+  }
+
   /** Wait for the underlying connection to be established. */
   async waitForConnection(timeout = 10_000): Promise<void> {
     await this.connection.onConnect(timeout, true);

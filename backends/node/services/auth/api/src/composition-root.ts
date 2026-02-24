@@ -11,6 +11,7 @@ import { createLogger } from "@d2/logging";
 import { ILoggerKey } from "@d2/logging";
 import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
 import * as CacheRedis from "@d2/cache-redis";
+import { PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
 import * as CacheMemory from "@d2/cache-memory";
 import {
   CreateContacts,
@@ -90,6 +91,7 @@ export async function createApp(
   config: AuthServiceConfig,
   publisher?: IMessagePublisher,
   overrides?: AppOverrides,
+  messageBus?: import("@d2/messaging").MessageBus,
 ) {
   // 1. Singletons (infrastructure)
   const pool = new pg.Pool({ connectionString: config.databaseUrl });
@@ -204,9 +206,15 @@ export async function createApp(
   services.addInstance(IUpdateContactsByExtKeysKey, updateContactsByExtKeys);
 
   // Layer registrations (mirrors services.AddAuthInfra(), services.AddAuthApp())
-  addAuthInfra(services, db);
+  addAuthInfra(services, db, pool);
   addAuthApp(services, { checkOrgExists });
   addCommsClient(services, { publisher });
+
+  // Shared health check handlers (cache + messaging)
+  services.addInstance(CacheRedis.ICachePingKey, new CacheRedis.PingCache(redis, serviceContext));
+  if (messageBus) {
+    services.addInstance(IMessageBusPingKey, new PingMessageBus(messageBus, serviceContext));
+  }
 
   // 4. Build ServiceProvider
   const provider = services.build();
@@ -409,7 +417,7 @@ export async function createApp(
   app.onError(handleError);
 
   // Health (no auth required)
-  app.route("/", createHealthRoutes());
+  app.route("/", createHealthRoutes(provider));
 
   // BetterAuth routes (handles its own auth)
   // Fingerprint + AsyncLocalStorage for JWT `fp` claim

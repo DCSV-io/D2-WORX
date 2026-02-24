@@ -102,6 +102,13 @@ export type {
   IDeleteOrgContactRecordHandler,
 } from "./d/delete-org-contact-record.js";
 
+// --- Query (Q) ---
+export type {
+  PingDbInput,
+  PingDbOutput,
+  IPingDbHandler,
+} from "./q/ping-db.js";
+
 // ---------------------------------------------------------------------------
 // Bundle types — one per aggregate, used by app-layer factory functions
 // ---------------------------------------------------------------------------

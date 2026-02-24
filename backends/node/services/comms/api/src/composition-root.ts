@@ -12,7 +12,7 @@ import {
   IGetContactsByIdsKey,
   createGeoServiceClient,
 } from "@d2/geo-client";
-import { MessageBus } from "@d2/messaging";
+import { MessageBus, PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
 import { addCommsApp, IEmailProviderKey, ISmsProviderKey } from "@d2/comms-app";
 import {
@@ -125,7 +125,7 @@ export async function createCommsService(config: CommsServiceConfig) {
   services.addInstance(IGetContactsByIdsKey, getContactsByIds);
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
-  addCommsInfra(services, db);
+  addCommsInfra(services, db, pool);
   addCommsApp(services);
 
   // Delivery providers — singleton instances with service-level context.
@@ -153,16 +153,29 @@ export async function createCommsService(config: CommsServiceConfig) {
     logger.warn("No Twilio credentials configured — SMS delivery disabled");
   }
 
-  // 4. Build ServiceProvider
+  // 4. Connect MessageBus early (before provider build) so we can register PingMessageBus
+  let messageBus: MessageBus | undefined;
+  if (config.rabbitMqUrl) {
+    messageBus = new MessageBus({ url: config.rabbitMqUrl, connectionName: "comms-service" });
+    await messageBus.waitForConnection();
+    logger.info("RabbitMQ connected");
+
+    services.addInstance(IMessageBusPingKey, new PingMessageBus(messageBus, serviceContext));
+  } else {
+    logger.warn("No RabbitMQ URL configured — event consumption disabled");
+  }
+
+  // 5. Build ServiceProvider
   const provider = services.build();
 
-  // 5. gRPC server (per-RPC scope via createCommsGrpcService)
+  // 6. gRPC server (per-RPC scope via createCommsGrpcService)
   const server = new grpc.Server();
   const grpcService = createCommsGrpcService(provider);
 
   if (config.commsApiKeys?.length) {
     const validKeys = new Set(config.commsApiKeys);
-    server.addService(CommsServiceService, withApiKeyAuth(grpcService, validKeys, logger));
+    const publicRpcs = new Set(["checkHealth"]);
+    server.addService(CommsServiceService, withApiKeyAuth(grpcService, validKeys, logger, publicRpcs));
     logger.info(`Comms gRPC API key authentication enabled (${validKeys.size} key(s))`);
   } else {
     server.addService(CommsServiceService, grpcService);
@@ -184,13 +197,8 @@ export async function createCommsService(config: CommsServiceConfig) {
     );
   });
 
-  // 6. RabbitMQ notification consumer (per-message scope + DLX retry topology)
-  let messageBus: MessageBus | undefined;
-  if (config.rabbitMqUrl) {
-    messageBus = new MessageBus({ url: config.rabbitMqUrl, connectionName: "comms-service" });
-    await messageBus.waitForConnection();
-    logger.info("RabbitMQ connected");
-
+  // 7. RabbitMQ notification consumer (DLX retry topology + consumer)
+  if (messageBus) {
     // Declare retry topology (tier queues + requeue exchange) before starting consumer
     await declareRetryTopology(messageBus);
     logger.info("Retry topology declared");
@@ -206,16 +214,14 @@ export async function createCommsService(config: CommsServiceConfig) {
       logger,
     });
     logger.info("Notification consumer started");
-  } else {
-    logger.warn("No RabbitMQ URL configured — event consumption disabled");
   }
 
-  // 7. Shutdown
+  // 8. Shutdown
   async function shutdown() {
     if (messageBus) await messageBus.close();
     provider.dispose();
     await pool.end();
   }
 
-  return { server, shutdown };
+  return { server, provider, shutdown };
 }

@@ -1,6 +1,8 @@
 import { createServiceKey } from "@d2/di";
 
 // Import interface types for infra-level keys
+import type { IPingDbHandler } from "./interfaces/repository/handlers/index.js";
+import type { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
 import type {
   ICreateMessageRecordHandler,
   IFindMessageByIdHandler,
@@ -73,6 +75,9 @@ export const IUpdateChannelPreferenceRecordKey =
     "Comms.Repo.UpdateChannelPreferenceRecord",
   );
 
+// --- Health Check Repository Handler ---
+export const IPingDbKey = createServiceKey<IPingDbHandler>("Comms.Repo.PingDb");
+
 // --- Providers ---
 export const IEmailProviderKey = createServiceKey<IEmailProvider>("Comms.Infra.EmailProvider");
 export const ISmsProviderKey = createServiceKey<ISmsProvider>("Comms.Infra.SmsProvider");
@@ -96,3 +101,4 @@ export const ISetChannelPreferenceKey = createServiceKey<SetChannelPreference>(
 export const IGetChannelPreferenceKey = createServiceKey<GetChannelPreference>(
   "Comms.App.GetChannelPreference",
 );
+export const ICheckHealthKey = createServiceKey<CheckHealth>("Comms.App.CheckHealth");

@@ -4,6 +4,11 @@ import type { DistributedCache } from "@d2/interfaces";
 /** DI key for the Redis connection instance (singleton). */
 export const IRedisKey = createServiceKey<import("ioredis").default>("Redis");
 
+/** DI key for the Redis cache Ping handler. */
+export const ICachePingKey = createServiceKey<DistributedCache.IPingHandler>(
+  "DistributedCache.Ping",
+);
+
 /** DI key for a typed Redis cache Get handler. */
 export function createRedisGetKey<T>(
   qualifier: string,

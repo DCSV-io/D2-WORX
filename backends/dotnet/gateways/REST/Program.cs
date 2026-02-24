@@ -63,6 +63,9 @@ builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 256 * 1024);
 // Register idempotency middleware services.
 builder.Services.AddIdempotency(builder.Configuration);
 
+// Register gRPC clients + HTTP client for health endpoint fan-out.
+builder.Services.AddHealthEndpointDependencies(builder.Configuration);
+
 var app = builder.Build();
 app.UseExceptionHandler();
 app.UseStructuredRequestLogging();
@@ -84,6 +87,7 @@ app.MapDefaultEndpoints();
 
 // Map versioned API endpoints.
 app.MapGeoEndpointsV1();
+app.MapHealthEndpointsV1();
 
 try
 {

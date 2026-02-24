@@ -61,6 +61,10 @@ export type {
   UpdateDeliveryAttemptStatusOutput,
   UpdateChannelPreferenceRecordInput,
   UpdateChannelPreferenceRecordOutput,
+  // Query (Q) — PingDb
+  PingDbInput,
+  PingDbOutput,
+  IPingDbHandler,
 } from "./interfaces/repository/handlers/index.js";
 
 // --- Complex Handlers ---
@@ -147,6 +151,14 @@ export type DeliveryHandlers = {
   getChannelPreference: GetChannelPreference;
 };
 
+// --- Health Check Handler ---
+export { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
+export type {
+  CheckHealthInput,
+  CheckHealthOutput,
+  ComponentHealth,
+} from "./implementations/cqrs/handlers/q/check-health.js";
+
 // --- DI Registration ---
 export { addCommsApp } from "./registration.js";
 export {
@@ -170,4 +182,6 @@ export {
   IRecipientResolverKey,
   ISetChannelPreferenceKey,
   IGetChannelPreferenceKey,
+  IPingDbKey,
+  ICheckHealthKey,
 } from "./service-keys.js";

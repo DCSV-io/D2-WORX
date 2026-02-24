@@ -18,11 +18,13 @@
   ],
   "dependencies": {
     "@d2/auth-domain": "workspace:*",
+    "@d2/cache-redis": "workspace:*",
     "@d2/di": "workspace:*",
     "@d2/geo-client": "workspace:*",
     "@d2/handler": "workspace:*",
-    "@d2/protos": "workspace:*",
     "@d2/interfaces": "workspace:*",
+    "@d2/messaging": "workspace:*",
+    "@d2/protos": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/utilities": "workspace:*",
     "zod": "3.25.76"

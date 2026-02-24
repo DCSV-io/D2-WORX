@@ -8,6 +8,7 @@ namespace Geo.API.Services;
 
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
+using D2.Services.Protos.Common.V1;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Result.Extensions;
 using Geo.API.Interceptors;
@@ -21,6 +22,7 @@ using SB = D2.Services.Protos.Geo.V1.GeoService.GeoServiceBase;
 /// </summary>
 public class GeoService : SB
 {
+    private readonly IQueries.ICheckHealthHandler r_checkHealth;
     private readonly GeoRefDataComplex.IGetHandler r_get;
     private readonly GeoComplex.IFindWhoIsHandler r_findWhoIs;
     private readonly IQueries.IGetContactsByIdsHandler r_getContacts;
@@ -34,6 +36,9 @@ public class GeoService : SB
     /// Initializes a new instance of the <see cref="GeoService"/> class.
     /// </summary>
     ///
+    /// <param name="checkHealth">
+    /// The handler for checking service health.
+    /// </param>
     /// <param name="get">
     /// The handler for getting geographic reference data.
     /// </param>
@@ -59,6 +64,7 @@ public class GeoService : SB
     /// The handler for updating contacts by external keys.
     /// </param>
     public GeoService(
+        IQueries.ICheckHealthHandler checkHealth,
         GeoRefDataComplex.IGetHandler get,
         GeoComplex.IFindWhoIsHandler findWhoIs,
         IQueries.IGetContactsByIdsHandler getContacts,
@@ -68,6 +74,7 @@ public class GeoService : SB
         ICommands.IDeleteContactsByExtKeysHandler deleteContactsByExtKeys,
         GeoComplex.IUpdateContactsByExtKeysHandler updateContactsByExtKeys)
     {
+        r_checkHealth = checkHealth;
         r_get = get;
         r_findWhoIs = findWhoIs;
         r_getContacts = getContacts;
@@ -76,6 +83,36 @@ public class GeoService : SB
         r_deleteContacts = deleteContacts;
         r_deleteContactsByExtKeys = deleteContactsByExtKeys;
         r_updateContactsByExtKeys = updateContactsByExtKeys;
+    }
+
+    /// <inheritdoc/>
+    public override async Task<CheckHealthResponse> CheckHealth(
+        CheckHealthRequest request,
+        ServerCallContext context)
+    {
+        var result = await r_checkHealth.HandleAsync(
+            new IQueries.CheckHealthInput(), context.CancellationToken);
+
+        var response = new CheckHealthResponse
+        {
+            Status = result.Data?.Status ?? "unhealthy",
+            Timestamp = DateTime.UtcNow.ToString("o"),
+        };
+
+        if (result.Data?.Components is not null)
+        {
+            foreach (var (key, comp) in result.Data.Components)
+            {
+                response.Components.Add(key, new ComponentHealth
+                {
+                    Status = comp.Status,
+                    LatencyMs = comp.LatencyMs ?? 0,
+                    Error = comp.Error ?? string.Empty,
+                });
+            }
+        }
+
+        return response;
     }
 
     /// <inheritdoc/>

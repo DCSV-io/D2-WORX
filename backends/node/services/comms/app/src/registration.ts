@@ -22,11 +22,15 @@ import {
   IRecipientResolverKey,
   ISetChannelPreferenceKey,
   IGetChannelPreferenceKey,
+  IPingDbKey,
+  ICheckHealthKey,
 } from "./service-keys.js";
 import { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
 import { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
 import { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
 import { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
+import { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
+import { IMessageBusPingKey } from "@d2/messaging";
 
 /**
  * Registers comms application-layer services (CQRS handlers)
@@ -102,6 +106,16 @@ export function addCommsApp(services: ServiceCollection): void {
           update: sp.resolve(IUpdateChannelPreferenceRecordKey),
         },
         sp.resolve(IHandlerContextKey),
+      ),
+  );
+
+  services.addTransient(
+    ICheckHealthKey,
+    (sp) =>
+      new CheckHealth(
+        sp.resolve(IPingDbKey),
+        sp.resolve(IHandlerContextKey),
+        sp.tryResolve(IMessageBusPingKey),
       ),
   );
 }

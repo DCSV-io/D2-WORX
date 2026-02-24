@@ -1,7 +1,3 @@
-import { setupTelemetry } from "@d2/service-defaults";
-
-setupTelemetry({ serviceName: "comms-service" });
-
 import { createLogger } from "@d2/logging";
 import { createCommsService } from "./composition-root.js";
 

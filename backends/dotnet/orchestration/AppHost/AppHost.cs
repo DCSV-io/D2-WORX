@@ -320,6 +320,10 @@ var restGateway = builder.AddProject<Projects.REST>("d2-rest")
     .WaitFor(geoService)
     .WithReference(geoService)
 
+    // Auth + Comms service refs (for aggregated health check fan-out).
+    .WithReference(authService)
+    .WithReference(commsService)
+
     // Redis dependency for rate limiting.
     .WaitFor(cache)
     .WithReference(cache)

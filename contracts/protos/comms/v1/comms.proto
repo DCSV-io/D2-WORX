@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 import "common/v1/d2_result.proto";
+import "common/v1/health.proto";
 
 package d2.comms.v1;
 
@@ -12,6 +13,10 @@ option csharp_namespace = "D2.Services.Protos.Comms.V1";
 // *********************************
 
 service CommsService {
+  // Health check — pings all dependencies (DB, messaging).
+  rpc CheckHealth(d2.common.v1.CheckHealthRequest)
+      returns (d2.common.v1.CheckHealthResponse);
+
   // Phase 1: Delivery Engine
   rpc GetChannelPreference(GetChannelPreferenceRequest) returns (GetChannelPreferenceResponse);
   rpc SetChannelPreference(SetChannelPreferenceRequest) returns (SetChannelPreferenceResponse);

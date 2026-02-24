@@ -19,6 +19,7 @@ import {
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
 import { D2ResultProto } from "../../common/v1/d2_result";
+import { CheckHealthRequest, CheckHealthResponse } from "../../common/v1/health";
 import { Timestamp } from "../../google/protobuf/timestamp";
 
 export const protobufPackage = "d2.geo.v1";
@@ -6069,6 +6070,16 @@ export const ContactDTO: MessageFns<ContactDTO> = {
 
 export type GeoServiceService = typeof GeoServiceService;
 export const GeoServiceService = {
+  /** Health check — pings all dependencies (DB, cache, messaging). */
+  checkHealth: {
+    path: "/d2.geo.v1.GeoService/CheckHealth",
+    requestStream: false,
+    responseStream: false,
+    requestSerialize: (value: CheckHealthRequest): Buffer => Buffer.from(CheckHealthRequest.encode(value).finish()),
+    requestDeserialize: (value: Buffer): CheckHealthRequest => CheckHealthRequest.decode(value),
+    responseSerialize: (value: CheckHealthResponse): Buffer => Buffer.from(CheckHealthResponse.encode(value).finish()),
+    responseDeserialize: (value: Buffer): CheckHealthResponse => CheckHealthResponse.decode(value),
+  },
   getReferenceData: {
     path: "/d2.geo.v1.GeoService/GetReferenceData",
     requestStream: false,
@@ -6180,6 +6191,8 @@ export const GeoServiceService = {
 } as const;
 
 export interface GeoServiceServer extends UntypedServiceImplementation {
+  /** Health check — pings all dependencies (DB, cache, messaging). */
+  checkHealth: handleUnaryCall<CheckHealthRequest, CheckHealthResponse>;
   getReferenceData: handleUnaryCall<GetReferenceDataRequest, GetReferenceDataResponse>;
   requestReferenceDataUpdate: handleUnaryCall<RequestReferenceDataUpdateRequest, RequestReferenceDataUpdateResponse>;
   findWhoIs: handleUnaryCall<FindWhoIsRequest, FindWhoIsResponse>;
@@ -6201,6 +6214,22 @@ export interface GeoServiceServer extends UntypedServiceImplementation {
 }
 
 export interface GeoServiceClient extends Client {
+  /** Health check — pings all dependencies (DB, cache, messaging). */
+  checkHealth(
+    request: CheckHealthRequest,
+    callback: (error: ServiceError | null, response: CheckHealthResponse) => void,
+  ): ClientUnaryCall;
+  checkHealth(
+    request: CheckHealthRequest,
+    metadata: Metadata,
+    callback: (error: ServiceError | null, response: CheckHealthResponse) => void,
+  ): ClientUnaryCall;
+  checkHealth(
+    request: CheckHealthRequest,
+    metadata: Metadata,
+    options: Partial<CallOptions>,
+    callback: (error: ServiceError | null, response: CheckHealthResponse) => void,
+  ): ClientUnaryCall;
   getReferenceData(
     request: GetReferenceDataRequest,
     callback: (error: ServiceError | null, response: GetReferenceDataResponse) => void,
