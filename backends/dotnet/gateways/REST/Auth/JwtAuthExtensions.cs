@@ -48,6 +48,9 @@ public static class JwtAuthExtensions
                 .AddJwtBearer(jwt =>
                 {
                     // JWKS endpoint for automatic key retrieval and rotation.
+                    // Auth service is internal — never exposed to the internet.
+                    // TLS termination is handled by the reverse proxy in production.
+                    jwt.RequireHttpsMetadata = false;
                     jwt.Authority = options.AuthServiceBaseUrl;
                     jwt.MetadataAddress = $"{options.AuthServiceBaseUrl.TrimEnd('/')}/api/auth/.well-known/openid-configuration";
 

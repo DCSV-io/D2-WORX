@@ -38,14 +38,17 @@ internal static class ServiceExtensions
         }
 
         /// <summary>
-        /// Adds observability environment variables for traces and logs.
+        /// Adds observability environment variables for traces, logs, and metrics.
+        /// Uses standard OTel env var names so both .NET and Node.js SDKs pick them up.
+        /// All signals route through Alloy (OTLP HTTP on 4318) → Tempo / Loki / Mimir.
         /// </summary>
         /// <returns>A reference to the <see cref="IResourceBuilder{T}"/>.</returns>
         public IResourceBuilder<TProject> WithOtelRefs()
         {
             builder.WithEnvironment("OTEL_SERVICE_NAME", builder.Resource.Name);
-            builder.WithEnvironment("TRACES_URI", "http://localhost:4318/v1/traces");
-            builder.WithEnvironment("LOGS_URI", "http://localhost:3100");
+            builder.WithEnvironment("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", "http://localhost:4318/v1/traces");
+            builder.WithEnvironment("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", "http://localhost:4318/v1/logs");
+            builder.WithEnvironment("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT", "http://localhost:4318/v1/metrics");
             return builder;
         }
     }

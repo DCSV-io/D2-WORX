@@ -22,9 +22,39 @@ function parseEnvArray(prefix: string): string[] {
   return result;
 }
 
+/**
+ * Converts a .NET ADO.NET PostgreSQL connection string to a libpq URI.
+ * Passes through strings that are already URIs (standalone / test mode).
+ *
+ * ADO.NET: `Host=host;Port=port;Username=user;Password=pass;Database=db`
+ * URI:     `postgresql://user:pass@host:port/db`
+ */
+function parsePostgresUrl(connectionString: string): string {
+  if (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://")) {
+    return connectionString;
+  }
+
+  const params = new Map<string, string>();
+  for (const part of connectionString.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq === -1) continue;
+    params.set(part.slice(0, eq).trim().toLowerCase(), part.slice(eq + 1).trim());
+  }
+
+  const host = params.get("host") ?? "localhost";
+  const port = params.get("port") ?? "5432";
+  const user = encodeURIComponent(params.get("username") ?? "postgres");
+  const password = encodeURIComponent(params.get("password") ?? "");
+  const database = params.get("database") ?? "";
+
+  return `postgresql://${user}:${password}@${host}:${port}/${database}`;
+}
+
+// Aspire injects connection strings in .NET formats (ADO.NET for PG).
+// Parser converts to URI format for Node.js clients, passing through URIs unchanged.
 const config = {
-  databaseUrl: process.env.ConnectionStrings__d2_services_comms ?? "",
-  rabbitMqUrl: process.env.ConnectionStrings__d2_rabbitmq ?? "",
+  databaseUrl: parsePostgresUrl(process.env["ConnectionStrings__d2-services-comms"] ?? process.env.ConnectionStrings__d2_services_comms ?? ""),
+  rabbitMqUrl: process.env["ConnectionStrings__d2-rabbitmq"] ?? process.env.ConnectionStrings__d2_rabbitmq ?? "",
   grpcPort: parseInt(process.env.GRPC_PORT ?? "5200", 10),
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromAddress: process.env.RESEND_FROM_ADDRESS,

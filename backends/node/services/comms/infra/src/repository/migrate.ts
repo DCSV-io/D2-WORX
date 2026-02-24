@@ -13,6 +13,9 @@ import { resolve } from "node:path";
 export async function runMigrations(pool: Pool): Promise<void> {
   const db = drizzle(pool);
   await migrate(db, {
-    migrationsFolder: resolve(import.meta.dirname, "migrations"),
+    // Always resolve to src/repository/migrations — SQL files aren't copied
+    // to dist/ by tsc. Both src/repository/ and dist/repository/ are 2 levels
+    // deep from the package root, so "../.." reaches the package root either way.
+    migrationsFolder: resolve(import.meta.dirname, "..", "..", "src", "repository", "migrations"),
   });
 }
