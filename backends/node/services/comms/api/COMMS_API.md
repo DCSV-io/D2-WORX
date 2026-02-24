@@ -72,7 +72,7 @@ Returns `{ server, shutdown }` where `shutdown()` closes RabbitMQ, disposes prov
 | `twilioPhoneNumber`| `TWILIO_PHONE_NUMBER`                      | No       | --      |
 | `geoAddress`       | `GEO_GRPC_ADDRESS`                         | No       | --      |
 | `geoApiKey`        | `COMMSGEOCLIENTOPTIONS_APIKEY`             | No       | --      |
-| `commsApiKey`      | `COMMS_API_KEY`                            | No       | --      |
+| `commsApiKeys`     | `COMMS_API_KEYS__<index>`                  | No       | --      |
 
 ## gRPC Service
 
@@ -96,7 +96,7 @@ Returns `{ server, shutdown }` where `shutdown()` closes RabbitMQ, disposes prov
 
 ## Security — API Key Interceptor
 
-All gRPC RPCs require API key authentication via the `x-api-key` metadata header. The `withApiKeyAuth` wrapper validates the header against `COMMS_API_KEY` before delegating to the handler.
+All gRPC RPCs require API key authentication via the `x-api-key` metadata header. The `withApiKeyAuth` wrapper validates the header against a set of valid keys (`COMMS_API_KEYS__0`, `COMMS_API_KEYS__1`, etc.) before delegating to the handler.
 
 | Scenario                | Response           |
 | ----------------------- | ------------------ |
@@ -104,7 +104,7 @@ All gRPC RPCs require API key authentication via the `x-api-key` metadata header
 | Invalid API key         | `UNAUTHENTICATED`  |
 | Valid API key           | Pass-through       |
 
-Unlike Geo.API's `ApiKeyInterceptor` (which also validates context-key ownership), the Comms interceptor is simpler -- single key, no per-key context-key authorization. Mirrors the .NET pattern but adapted for `@grpc/grpc-js` (which lacks first-class server interceptors), so each handler is wrapped at the service object level.
+Unlike Geo.API's `ApiKeyInterceptor` (which also validates context-key ownership), the Comms interceptor is simpler -- flat key set, no per-key context-key authorization. Mirrors the .NET `ServiceKeyMiddleware` pattern (one key per calling service) but adapted for `@grpc/grpc-js` (which lacks first-class server interceptors), so each handler is wrapped at the service object level.
 
 ## Mappers
 

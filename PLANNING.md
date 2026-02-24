@@ -101,7 +101,7 @@
 - ✅ Auth tests — 825 passing (64 test files)
 - ✅ .NET Geo ext-key handlers — DeleteContactsByExtKeys (Command: repo + app + API), UpdateContactsByExtKeys (Complex: app + API, no longer stub)
 - ✅ Cross-service contact cache eviction — ContactsEvictedEvent via `events.geo.contacts` fan-out exchange. Publisher in Geo.Infra, consumers in Geo.Client (.NET) and geo-client (Node.js). Evicts matching IDs + ext-keys from local cache on delete/replace
-- ✅ Comms gRPC API key interceptor — `withApiKeyAuth` wrapper validates `x-api-key` metadata header against `COMMS_API_KEY` env var
+- ✅ Comms gRPC API key interceptor — `withApiKeyAuth` wrapper validates `x-api-key` metadata header against `COMMS_API_KEYS__<n>` indexed key set (multi-key, mirrors .NET ServiceKeyMiddleware pattern)
 - ✅ Proto contract updates — ContactReplacementKey, ContactReplacement, ContactsEvictedEvent, updated UpdateContactsByExtKeysResponse
 
 ### Blocked By
