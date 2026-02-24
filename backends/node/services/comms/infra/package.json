@@ -19,14 +19,13 @@
     "dist"
   ],
   "dependencies": {
-    "@d2/auth-domain": "workspace:*",
     "@d2/comms-app": "workspace:*",
+    "@d2/comms-client": "workspace:*",
     "@d2/comms-domain": "workspace:*",
     "@d2/logging": "workspace:*",
     "@d2/di": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/messaging": "workspace:*",
-    "@d2/protos": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/utilities": "workspace:*",
     "drizzle-orm": "0.45.1",

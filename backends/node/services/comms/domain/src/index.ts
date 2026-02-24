@@ -5,11 +5,9 @@ export {
   RETRY_POLICY,
   DELIVERY_DEFAULTS,
   CHANNEL_DEFAULTS,
-  QUIET_HOURS,
   THREAD_CONSTRAINTS,
   COMMS_MESSAGING,
   COMMS_RETRY,
-  TEMPLATE_NAMES,
 } from "./constants/comms-constants.js";
 
 // --- Enums ---
@@ -81,13 +79,6 @@ export type {
   UpdateChannelPreferenceInput,
 } from "./entities/channel-preference.js";
 
-export { createTemplateWrapper, updateTemplateWrapper } from "./entities/template-wrapper.js";
-export type {
-  TemplateWrapper,
-  CreateTemplateWrapperInput,
-  UpdateTemplateWrapperInput,
-} from "./entities/template-wrapper.js";
-
 // --- Entities: Read Tracking ---
 export { createMessageReceipt } from "./entities/message-receipt.js";
 export type { MessageReceipt, CreateMessageReceiptInput } from "./entities/message-receipt.js";
@@ -118,10 +109,9 @@ export { createMessageReaction } from "./entities/message-reaction.js";
 export type { MessageReaction, CreateMessageReactionInput } from "./entities/message-reaction.js";
 
 // --- Value Objects ---
-export type { ResolvedChannels, QuietHoursResult } from "./value-objects/resolved-channels.js";
+export type { ResolvedChannels } from "./value-objects/resolved-channels.js";
 
 // --- Business Rules ---
-export { isInQuietHours } from "./rules/quiet-hours.js";
 export { resolveChannels } from "./rules/channel-resolution.js";
 export {
   computeRetryDelay,
@@ -136,5 +126,3 @@ export {
   canManageThread,
   canAddReaction,
 } from "./rules/thread-permissions.js";
-export { hasValidRecipient, describeRecipient } from "./rules/recipient-validation.js";
-export { hasValidSender } from "./rules/message-validation.js";

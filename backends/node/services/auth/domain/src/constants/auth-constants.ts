@@ -91,17 +91,6 @@ export const GEO_CONTEXT_KEYS = {
   ORG_INVITATION: "auth_org_invitation",
 } as const;
 
-/**
- * Auth service messaging topology.
- *
- * The auth service publishes domain events to this fanout exchange.
- * Consumers (e.g. comms) bind their own queues to it.
- */
-export const AUTH_MESSAGING = {
-  /** RabbitMQ fanout exchange for auth domain events. */
-  EVENTS_EXCHANGE: "events.auth",
-} as const;
-
 export const SIGN_IN_THROTTLE = {
   /** Number of failed attempts before delays begin. */
   FREE_ATTEMPTS: 3,

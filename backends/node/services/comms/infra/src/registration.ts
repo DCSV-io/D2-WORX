@@ -12,12 +12,8 @@ import {
   IFindDeliveryAttemptsByRequestIdKey,
   IUpdateDeliveryAttemptStatusKey,
   ICreateChannelPreferenceRecordKey,
-  IFindChannelPreferenceByUserIdKey,
   IFindChannelPreferenceByContactIdKey,
   IUpdateChannelPreferenceRecordKey,
-  ICreateTemplateWrapperRecordKey,
-  IFindTemplateByNameAndChannelKey,
-  IUpdateTemplateWrapperRecordKey,
   IEmailProviderKey,
   ISmsProviderKey,
 } from "@d2/comms-app";
@@ -25,18 +21,14 @@ import { CreateMessageRecord } from "./repository/handlers/c/create-message-reco
 import { CreateDeliveryRequestRecord } from "./repository/handlers/c/create-delivery-request-record.js";
 import { CreateDeliveryAttemptRecord } from "./repository/handlers/c/create-delivery-attempt-record.js";
 import { CreateChannelPreferenceRecord } from "./repository/handlers/c/create-channel-preference-record.js";
-import { CreateTemplateWrapperRecord } from "./repository/handlers/c/create-template-wrapper-record.js";
 import { FindMessageById } from "./repository/handlers/r/find-message-by-id.js";
 import { FindDeliveryRequestById } from "./repository/handlers/r/find-delivery-request-by-id.js";
 import { FindDeliveryRequestByCorrelationId } from "./repository/handlers/r/find-delivery-request-by-correlation-id.js";
 import { FindDeliveryAttemptsByRequestId } from "./repository/handlers/r/find-delivery-attempts-by-request-id.js";
-import { FindChannelPreferenceByUserId } from "./repository/handlers/r/find-channel-preference-by-user-id.js";
 import { FindChannelPreferenceByContactId } from "./repository/handlers/r/find-channel-preference-by-contact-id.js";
-import { FindTemplateByNameAndChannel } from "./repository/handlers/r/find-template-by-name-and-channel.js";
 import { MarkDeliveryRequestProcessed } from "./repository/handlers/u/mark-delivery-request-processed.js";
 import { UpdateDeliveryAttemptStatus } from "./repository/handlers/u/update-delivery-attempt-status.js";
 import { UpdateChannelPreferenceRecord } from "./repository/handlers/u/update-channel-preference-record.js";
-import { UpdateTemplateWrapperRecord } from "./repository/handlers/u/update-template-wrapper-record.js";
 import { ResendEmailProvider } from "./providers/email/resend/resend-email-provider.js";
 import { TwilioSmsProvider } from "./providers/sms/twilio/twilio-sms-provider.js";
 
@@ -107,30 +99,12 @@ export function addCommsInfra(
     (sp) => new CreateChannelPreferenceRecord(db, sp.resolve(IHandlerContextKey)),
   );
   services.addTransient(
-    IFindChannelPreferenceByUserIdKey,
-    (sp) => new FindChannelPreferenceByUserId(db, sp.resolve(IHandlerContextKey)),
-  );
-  services.addTransient(
     IFindChannelPreferenceByContactIdKey,
     (sp) => new FindChannelPreferenceByContactId(db, sp.resolve(IHandlerContextKey)),
   );
   services.addTransient(
     IUpdateChannelPreferenceRecordKey,
     (sp) => new UpdateChannelPreferenceRecord(db, sp.resolve(IHandlerContextKey)),
-  );
-
-  // --- Template Wrapper Repository ---
-  services.addTransient(
-    ICreateTemplateWrapperRecordKey,
-    (sp) => new CreateTemplateWrapperRecord(db, sp.resolve(IHandlerContextKey)),
-  );
-  services.addTransient(
-    IFindTemplateByNameAndChannelKey,
-    (sp) => new FindTemplateByNameAndChannel(db, sp.resolve(IHandlerContextKey)),
-  );
-  services.addTransient(
-    IUpdateTemplateWrapperRecordKey,
-    (sp) => new UpdateTemplateWrapperRecord(db, sp.resolve(IHandlerContextKey)),
   );
 
   // --- Providers (singleton — hold API client connections) ---

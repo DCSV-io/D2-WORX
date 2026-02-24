@@ -8,9 +8,7 @@ import {
   createMockRequestRepo,
   createMockAttemptRepo,
   createMockChannelPrefRepo,
-  createMockTemplateRepo,
   createMockEmailProvider,
-  createMockGetContactsByExtKeys,
   createMockGetContactsByIds,
 } from "../helpers/mock-handlers.js";
 
@@ -20,7 +18,6 @@ describe("Deliver", () => {
   let requestRepo: ReturnType<typeof createMockRequestRepo>;
   let attemptRepo: ReturnType<typeof createMockAttemptRepo>;
   let channelPrefRepo: ReturnType<typeof createMockChannelPrefRepo>;
-  let templateRepo: ReturnType<typeof createMockTemplateRepo>;
   let emailProvider: ReturnType<typeof createMockEmailProvider>;
   let recipientResolver: RecipientResolver;
 
@@ -30,12 +27,10 @@ describe("Deliver", () => {
     requestRepo = createMockRequestRepo();
     attemptRepo = createMockAttemptRepo();
     channelPrefRepo = createMockChannelPrefRepo();
-    templateRepo = createMockTemplateRepo();
     emailProvider = createMockEmailProvider();
 
-    const geoHandler = createMockGetContactsByExtKeys();
     const geoByIdHandler = createMockGetContactsByIds();
-    recipientResolver = new RecipientResolver(geoHandler as any, geoByIdHandler as any, context);
+    recipientResolver = new RecipientResolver(geoByIdHandler as any, context);
 
     deliver = new Deliver(
       {
@@ -43,7 +38,6 @@ describe("Deliver", () => {
         request: requestRepo,
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
-        template: templateRepo,
       },
       { email: emailProvider },
       recipientResolver,
@@ -58,8 +52,7 @@ describe("Deliver", () => {
       content: "<p>Hello</p>",
       plainTextContent: "Hello",
       sensitive: true,
-      recipientUserId: "user-123",
-      channels: ["email"],
+      recipientContactId: "contact-1",
       correlationId: "corr-1",
     });
 
@@ -82,10 +75,7 @@ describe("Deliver", () => {
             id: "existing-req",
             messageId: "existing-msg",
             correlationId: "corr-dup",
-            recipientUserId: "user-123",
-            recipientContactId: null,
-            channels: ["email"],
-            templateName: null,
+            recipientContactId: "contact-1",
             callbackTopic: null,
             createdAt: new Date(),
             processedAt: null,
@@ -99,7 +89,7 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-123",
+      recipientContactId: "contact-1",
       correlationId: "corr-dup",
     });
 
@@ -111,21 +101,17 @@ describe("Deliver", () => {
 
   it("should return NOT_FOUND when no deliverable address", async () => {
     // Mock geo returning empty contacts
-    const emptyGeo = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
-    };
     const emptyGeoById = {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
     };
     const context = createMockContext();
-    const resolver = new RecipientResolver(emptyGeo as any, emptyGeoById as any, context);
+    const resolver = new RecipientResolver(emptyGeoById as any, context);
     const deliverNoAddr = new Deliver(
       {
         message: messageRepo,
         request: requestRepo,
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
-        template: templateRepo,
       },
       { email: emailProvider },
       resolver,
@@ -137,8 +123,7 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-999",
-      channels: ["email"],
+      recipientContactId: "contact-999",
       correlationId: "corr-no-addr",
     });
 
@@ -157,8 +142,7 @@ describe("Deliver", () => {
       content: "test",
       plainTextContent: "test",
       sensitive: true,
-      recipientUserId: "user-123",
-      channels: ["email"],
+      recipientContactId: "contact-1",
       correlationId: "corr-fail",
     });
 
@@ -173,45 +157,40 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-123",
-      channels: ["email"],
+      recipientContactId: "contact-1",
       correlationId: "corr-persist",
     });
 
     expect(messageRepo.create.handleAsync).toHaveBeenCalledOnce();
     expect(requestRepo.create.handleAsync).toHaveBeenCalledOnce();
-    expect(attemptRepo.create.handleAsync).toHaveBeenCalledOnce();
+    // contact-1 has both email + phone; non-sensitive normal → 2 channels (email + sms)
+    expect(attemptRepo.create.handleAsync).toHaveBeenCalledTimes(2);
   });
 
   it("should leave SMS attempt as pending when smsProvider is undefined", async () => {
     // Default Deliver has no SMS provider — only email
     // Mock geo to return a contact with phone
     const contactsWithPhone = new Map();
-    contactsWithPhone.set("auth_user:user-sms", [
-      {
-        id: "c-sms",
-        contextKey: "auth_user",
-        relatedEntityId: "user-sms",
-        contactMethods: {
-          emails: [],
-          phoneNumbers: [{ value: "+15551234567", labels: [] }],
-        },
-        personalDetails: undefined,
-        professionalDetails: undefined,
-        location: undefined,
-        createdAt: new Date(),
+    contactsWithPhone.set("contact-sms", {
+      id: "contact-sms",
+      contextKey: "auth_user",
+      relatedEntityId: "user-sms",
+      contactMethods: {
+        emails: [],
+        phoneNumbers: [{ value: "+15551234567", labels: [] }],
       },
-    ]);
+      personalDetails: undefined,
+      professionalDetails: undefined,
+      location: undefined,
+      createdAt: new Date(),
+    });
 
-    const geoWithPhone = {
+    const geoById = {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contactsWithPhone } })),
-    };
-    const geoByIdEmpty = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
     };
 
     const context = createMockContext();
-    const resolverSms = new RecipientResolver(geoWithPhone as any, geoByIdEmpty as any, context);
+    const resolverSms = new RecipientResolver(geoById as any, context);
 
     const smsDeliver = new Deliver(
       {
@@ -219,7 +198,6 @@ describe("Deliver", () => {
         request: requestRepo,
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
-        template: templateRepo,
       },
       { email: emailProvider }, // No sms provider
       resolverSms,
@@ -231,8 +209,7 @@ describe("Deliver", () => {
       title: "SMS Test",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-sms",
-      channels: ["sms"],
+      recipientContactId: "contact-sms",
       correlationId: "corr-sms-no-provider",
     });
 
@@ -243,7 +220,7 @@ describe("Deliver", () => {
     expect(result.data!.attempts[0].channel).toBe("sms");
   });
 
-  it("should look up channel prefs by contactId when recipientContactId is provided", async () => {
+  it("should look up channel prefs by contactId", async () => {
     const contactMap = new Map();
     contactMap.set("contact-pref", {
       id: "contact-pref",
@@ -259,15 +236,12 @@ describe("Deliver", () => {
       createdAt: new Date(),
     });
 
-    const geoEmpty = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
-    };
     const geoById = {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contactMap } })),
     };
 
     const context = createMockContext();
-    const resolverContact = new RecipientResolver(geoEmpty as any, geoById as any, context);
+    const resolverContact = new RecipientResolver(geoById as any, context);
 
     const contactDeliver = new Deliver(
       {
@@ -275,7 +249,6 @@ describe("Deliver", () => {
         request: requestRepo,
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
-        template: templateRepo,
       },
       { email: emailProvider },
       resolverContact,
@@ -288,55 +261,13 @@ describe("Deliver", () => {
       content: "test",
       plainTextContent: "test",
       recipientContactId: "contact-pref",
-      channels: ["email"],
       correlationId: "corr-contact-pref",
     });
 
-    // Should call findByContactId, not findByUserId
+    // Should call findByContactId
     expect(channelPrefRepo.findByContactId.handleAsync).toHaveBeenCalledWith({
       contactId: "contact-pref",
     });
-    expect(channelPrefRepo.findByUserId.handleAsync).not.toHaveBeenCalled();
-  });
-
-  it("should not look up channel prefs when neither userId nor contactId given", async () => {
-    // This path results in NOT_FOUND because there's no recipient to resolve
-    const geoEmpty = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
-    };
-    const geoByIdEmpty = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
-    };
-
-    const context = createMockContext();
-    const resolverEmpty = new RecipientResolver(geoEmpty as any, geoByIdEmpty as any, context);
-
-    const noRecipientDeliver = new Deliver(
-      {
-        message: messageRepo,
-        request: requestRepo,
-        attempt: attemptRepo,
-        channelPref: channelPrefRepo,
-        template: templateRepo,
-      },
-      { email: emailProvider },
-      resolverEmpty,
-      context,
-    );
-
-    // No recipient IDs → resolver returns empty → no deliverable address
-    const result = await noRecipientDeliver.handleAsync({
-      senderService: "auth",
-      title: "Test",
-      content: "test",
-      plainTextContent: "test",
-      channels: ["email"],
-      correlationId: "corr-no-recipient",
-    });
-
-    expect(result.success).toBe(false);
-    expect(channelPrefRepo.findByUserId.handleAsync).not.toHaveBeenCalled();
-    expect(channelPrefRepo.findByContactId.handleAsync).not.toHaveBeenCalled();
   });
 
   // -------------------------------------------------------------------------
@@ -344,19 +275,12 @@ describe("Deliver", () => {
   // -------------------------------------------------------------------------
 
   it("should return 503 when recipient resolver fails entirely", async () => {
-    const geoFailing = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Geo down"] })),
-    };
     const geoIdsFailing = {
       handleAsync: vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Geo down"] })),
     };
 
     const context = createMockContext();
-    const failingResolver = new RecipientResolver(
-      geoFailing as any,
-      geoIdsFailing as any,
-      context,
-    );
+    const failingResolver = new RecipientResolver(geoIdsFailing as any, context);
 
     const failDeliver = new Deliver(
       {
@@ -364,7 +288,6 @@ describe("Deliver", () => {
         request: requestRepo,
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
-        template: templateRepo,
       },
       { email: emailProvider },
       failingResolver,
@@ -376,12 +299,11 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-123",
-      channels: ["email"],
+      recipientContactId: "contact-1",
       correlationId: "corr-resolver-fail",
     });
 
-    // Resolver returns empty data → no deliverable address → NOT_FOUND
+    // Resolver returns empty data → no deliverable address
     expect(result.success).toBe(false);
   });
 
@@ -396,8 +318,7 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-123",
-      channels: ["email"],
+      recipientContactId: "contact-1",
       correlationId: "corr-msg-fail",
     });
 
@@ -417,8 +338,7 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-123",
-      channels: ["email"],
+      recipientContactId: "contact-1",
       correlationId: "corr-req-fail",
     });
 
@@ -428,34 +348,27 @@ describe("Deliver", () => {
 
   it("should handle both email and sms channels in single request", async () => {
     // Mock geo to return contact with both email and phone
-    const contactsWithBoth = new Map();
-    contactsWithBoth.set("auth_user:user-dual", [
-      {
-        id: "c-dual",
-        contextKey: "auth_user",
-        relatedEntityId: "user-dual",
-        contactMethods: {
-          emails: [{ value: "dual@example.com", labels: [] }],
-          phoneNumbers: [{ value: "+15551234567", labels: [] }],
-        },
-        personalDetails: undefined,
-        professionalDetails: undefined,
-        location: undefined,
-        createdAt: new Date(),
+    const contactMap = new Map();
+    contactMap.set("contact-dual", {
+      id: "contact-dual",
+      contextKey: "auth_user",
+      relatedEntityId: "user-dual",
+      contactMethods: {
+        emails: [{ value: "dual@example.com", labels: [] }],
+        phoneNumbers: [{ value: "+15551234567", labels: [] }],
       },
-    ]);
+      personalDetails: undefined,
+      professionalDetails: undefined,
+      location: undefined,
+      createdAt: new Date(),
+    });
 
-    const geoDual = {
-      handleAsync: vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { data: contactsWithBoth } })),
-    };
-    const geoIdsEmpty = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
+    const geoById = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contactMap } })),
     };
 
     const context = createMockContext();
-    const dualResolver = new RecipientResolver(geoDual as any, geoIdsEmpty as any, context);
+    const dualResolver = new RecipientResolver(geoById as any, context);
 
     const mockSmsProvider = {
       handleAsync: vi.fn().mockResolvedValue(
@@ -469,7 +382,6 @@ describe("Deliver", () => {
         request: requestRepo,
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
-        template: templateRepo,
       },
       { email: emailProvider, sms: mockSmsProvider as any },
       dualResolver,
@@ -481,8 +393,7 @@ describe("Deliver", () => {
       title: "Dual Channel",
       content: "test",
       plainTextContent: "test",
-      recipientUserId: "user-dual",
-      channels: ["email", "sms"],
+      recipientContactId: "contact-dual",
       correlationId: "corr-dual-channel",
     });
 

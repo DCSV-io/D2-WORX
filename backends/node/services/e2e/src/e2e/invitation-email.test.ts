@@ -189,12 +189,12 @@ describe("E2E: Invitation → invitation email delivery", () => {
     expect(attempts.rows[0].status).toBe("sent");
   });
 
-  it("should deliver invitation email to an existing user (userId path)", async () => {
+  it("should deliver invitation email to an existing user (ext-key contactId resolution)", async () => {
     // 1. Sign up invitee first (so they have a Geo contact)
     const inviteeEmail = "existing-invitee@example.com";
     const inviteeCountBefore = commsHandle.stubEmail.sentCount();
 
-    const inviteeSignUp = await authHandle.auth.api.signUpEmail({
+    await authHandle.auth.api.signUpEmail({
       body: { email: inviteeEmail, password: "SecurePass123!@#", name: "Existing Invitee" },
     });
 
@@ -246,12 +246,19 @@ describe("E2E: Invitation → invitation email delivery", () => {
     expect(sentEmail!.to).toBe(inviteeEmail);
     expect(sentEmail!.subject.toLowerCase()).toContain("invit");
 
-    // 7. Assert delivery records — existing user → uses recipientUserId
+    // 7. Assert delivery records — existing user now resolves contactId before calling comms
     const requests = await getCommsPool().query(
-      "SELECT * FROM delivery_request WHERE recipient_user_id = $1 ORDER BY created_at DESC",
-      [inviteeSignUp.user.id],
+      "SELECT * FROM delivery_request WHERE recipient_contact_id IS NOT NULL ORDER BY created_at DESC LIMIT 1",
     );
-    // Should have at least 2: verification + invitation
-    expect(requests.rows.length).toBeGreaterThanOrEqual(2);
+    expect(requests.rows.length).toBeGreaterThanOrEqual(1);
+
+    const requestId = requests.rows[0].id;
+    const attempts = await getCommsPool().query(
+      "SELECT * FROM delivery_attempt WHERE request_id = $1",
+      [requestId],
+    );
+    expect(attempts.rows.length).toBeGreaterThanOrEqual(1);
+    expect(attempts.rows[0].channel).toBe("email");
+    expect(attempts.rows[0].status).toBe("sent");
   });
 });

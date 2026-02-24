@@ -1,6 +1,6 @@
 import { MessageBus, type IMessagePublisher } from "@d2/messaging";
 import { createApp } from "@d2/auth-api";
-import { AUTH_MESSAGING } from "@d2/auth-domain";
+import { COMMS_EVENTS } from "@d2/comms-client";
 import { createPasswordFunctions, type AuthServiceConfig, type PrefixCache } from "@d2/auth-infra";
 
 let messageBus: MessageBus | undefined;
@@ -43,7 +43,7 @@ export async function startAuthService(opts: {
   await messageBus.waitForConnection();
 
   publisher = await messageBus.createPublisher({
-    exchanges: [{ exchange: AUTH_MESSAGING.EVENTS_EXCHANGE, type: "fanout" }],
+    exchanges: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, type: "fanout" }],
   });
 
   const config: AuthServiceConfig = {

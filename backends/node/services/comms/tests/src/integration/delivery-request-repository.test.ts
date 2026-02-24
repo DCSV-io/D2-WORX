@@ -43,7 +43,7 @@ describe("DeliveryRequestRepository (integration)", () => {
     const base = createDeliveryRequest({
       messageId: testMessageId,
       correlationId: generateUuidV7(),
-      recipientUserId: "user-1",
+      recipientContactId: "contact-1",
     });
     return overrides ? { ...base, ...overrides } : base;
   }
@@ -60,10 +60,7 @@ describe("DeliveryRequestRepository (integration)", () => {
     expect(found.id).toBe(req.id);
     expect(found.messageId).toBe(testMessageId);
     expect(found.correlationId).toBe(req.correlationId);
-    expect(found.recipientUserId).toBe("user-1");
-    expect(found.recipientContactId).toBeNull();
-    expect(found.channels).toBeNull();
-    expect(found.templateName).toBeNull();
+    expect(found.recipientContactId).toBe("contact-1");
     expect(found.callbackTopic).toBeNull();
     expect(found.processedAt).toBeNull();
     expect(found.createdAt).toBeInstanceOf(Date);
@@ -114,28 +111,14 @@ describe("DeliveryRequestRepository (integration)", () => {
     expect(result.success).toBe(false);
   });
 
-  it("should store jsonb channels array", async () => {
-    const req = makeRequest({
-      channels: ["email", "sms"] as const,
-    });
-    await repo.create.handleAsync({ request: req });
-
-    const result = await repo.findById.handleAsync({ id: req.id });
-    expect(result.data!.request.channels).toEqual(["email", "sms"]);
-  });
-
   it("should store optional fields when provided", async () => {
     const req = makeRequest({
-      recipientContactId: "contact-1",
-      templateName: "welcome-email",
       callbackTopic: "delivery.callback",
     });
     await repo.create.handleAsync({ request: req });
 
     const result = await repo.findById.handleAsync({ id: req.id });
     const found = result.data!.request;
-    expect(found.recipientContactId).toBe("contact-1");
-    expect(found.templateName).toBe("welcome-email");
     expect(found.callbackTopic).toBe("delivery.callback");
   });
 });

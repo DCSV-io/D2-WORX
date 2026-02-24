@@ -3,7 +3,6 @@ import {
   RETRY_POLICY,
   DELIVERY_DEFAULTS,
   CHANNEL_DEFAULTS,
-  QUIET_HOURS,
   THREAD_CONSTRAINTS,
 } from "@d2/comms-domain";
 
@@ -42,18 +41,6 @@ describe("Comms Constants", () => {
 
     it("should have sms enabled by default", () => {
       expect(CHANNEL_DEFAULTS.SMS_ENABLED).toBe(true);
-    });
-  });
-
-  describe("QUIET_HOURS", () => {
-    it("should have valid hour bounds", () => {
-      expect(QUIET_HOURS.MIN_HOUR).toBe(0);
-      expect(QUIET_HOURS.MAX_HOUR).toBe(23);
-    });
-
-    it("should have valid minute bounds", () => {
-      expect(QUIET_HOURS.MIN_MINUTE).toBe(0);
-      expect(QUIET_HOURS.MAX_MINUTE).toBe(59);
     });
   });
 

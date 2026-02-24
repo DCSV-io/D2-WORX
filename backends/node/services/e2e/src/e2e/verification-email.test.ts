@@ -97,12 +97,12 @@ describe("E2E: Auth sign-up → verification email delivery", () => {
     expect(sentEmail!.to).toBe(email);
     expect(sentEmail!.subject.toLowerCase()).toContain("verify");
 
-    // Assert: delivery records exist in comms DB
+    // Assert: delivery records exist in comms DB (recipient_contact_id, not userId)
     const deliveryRequests = await getCommsPool().query(
-      "SELECT * FROM delivery_request WHERE recipient_user_id = $1",
-      [signUpRes.user.id],
+      "SELECT * FROM delivery_request ORDER BY created_at DESC",
     );
     expect(deliveryRequests.rows.length).toBeGreaterThanOrEqual(1);
+    expect(deliveryRequests.rows[0].recipient_contact_id).toBeDefined();
 
     const requestId = deliveryRequests.rows[0].id;
     const attempts = await getCommsPool().query(

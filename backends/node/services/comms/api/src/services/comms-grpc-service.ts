@@ -1,22 +1,19 @@
 import * as grpc from "@grpc/grpc-js";
 import type { CommsServiceServer } from "@d2/protos";
 import type { ServiceProvider } from "@d2/di";
-import { IRequestContextKey } from "@d2/handler";
+import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
 import type { IRequestContext } from "@d2/handler";
+import { ILoggerKey } from "@d2/logging";
 import type { ServiceScope } from "@d2/di";
 import {
   IGetChannelPreferenceKey,
   ISetChannelPreferenceKey,
-  IGetTemplateKey,
-  IUpsertTemplateKey,
   IFindDeliveryRequestByIdKey,
   IFindDeliveryAttemptsByRequestIdKey,
 } from "@d2/comms-app";
 import { D2Result } from "@d2/result";
 import { d2ResultToProto } from "@d2/result-extensions";
-import type { Channel } from "@d2/comms-domain";
 import { channelPreferenceToProto } from "../mappers/channel-preference-mapper.js";
-import { templateWrapperToProto } from "../mappers/template-wrapper-mapper.js";
 import { deliveryRequestToProto, deliveryAttemptToProto } from "../mappers/delivery-mapper.js";
 
 /**
@@ -25,7 +22,7 @@ import { deliveryRequestToProto, deliveryAttemptToProto } from "../mappers/deliv
  */
 function createRpcScope(provider: ServiceProvider): ServiceScope {
   const scope = provider.createScope();
-  scope.setInstance<IRequestContext>(IRequestContextKey, {
+  const requestContext: IRequestContext = {
     traceId: crypto.randomUUID(),
     isAuthenticated: false,
     isAgentStaff: false,
@@ -34,7 +31,12 @@ function createRpcScope(provider: ServiceProvider): ServiceScope {
     isTargetingAdmin: false,
     isOrgEmulating: false,
     isUserImpersonating: false,
-  });
+  };
+  scope.setInstance(IRequestContextKey, requestContext);
+  scope.setInstance(
+    IHandlerContextKey,
+    new HandlerContext(requestContext, provider.resolve(ILoggerKey)),
+  );
   return scope;
 }
 
@@ -50,11 +52,10 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
     getChannelPreference: async (call, callback) => {
       const scope = createRpcScope(provider);
       try {
-        const { userId, contactId } = call.request;
+        const { contactId } = call.request;
         const handler = scope.resolve(IGetChannelPreferenceKey);
         const result = await handler.handleAsync({
-          userId: userId || undefined,
-          contactId: contactId || undefined,
+          contactId,
         });
 
         if (!result.success || !result.data?.pref) {
@@ -87,13 +88,9 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
         const req = call.request;
         const handler = scope.resolve(ISetChannelPreferenceKey);
         const result = await handler.handleAsync({
-          userId: req.userId || undefined,
-          contactId: req.contactId || undefined,
+          contactId: req.contactId,
           emailEnabled: req.emailEnabled,
           smsEnabled: req.smsEnabled,
-          quietHoursStart: req.quietHoursStart || undefined,
-          quietHoursEnd: req.quietHoursEnd || undefined,
-          quietHoursTz: req.quietHoursTz || undefined,
         });
 
         if (!result.success || !result.data) {
@@ -118,73 +115,12 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
       }
     },
 
-    getTemplate: async (call, callback) => {
-      const scope = createRpcScope(provider);
-      try {
-        const { name, channel } = call.request;
-        const handler = scope.resolve(IGetTemplateKey);
-        const result = await handler.handleAsync({
-          name,
-          channel: channel as Channel,
-        });
-
-        if (!result.success || !result.data?.template) {
-          callback(null, {
-            result: d2ResultToProto(
-              result.data?.template ? result : D2Result.notFound({ traceId: result.traceId }),
-            ),
-            data: undefined,
-          });
-          return;
-        }
-
-        callback(null, {
-          result: d2ResultToProto(result),
-          data: templateWrapperToProto(result.data.template),
-        });
-      } catch (err) {
-        callback({
-          code: grpc.status.INTERNAL,
-          message: err instanceof Error ? err.message : "Unknown error",
-        });
-      } finally {
-        scope.dispose();
-      }
+    // Template RPCs — no longer implemented (templates removed from architecture)
+    getTemplate: (_call, cb) => {
+      cb({ code: grpc.status.UNIMPLEMENTED, message: "Not implemented" });
     },
-
-    upsertTemplate: async (call, callback) => {
-      const scope = createRpcScope(provider);
-      try {
-        const req = call.request;
-        const handler = scope.resolve(IUpsertTemplateKey);
-        const result = await handler.handleAsync({
-          name: req.name,
-          channel: req.channel as Channel,
-          bodyTemplate: req.bodyTemplate,
-          subjectTemplate: req.subjectTemplate || undefined,
-          active: req.active,
-        });
-
-        if (!result.success || !result.data) {
-          callback(null, {
-            result: d2ResultToProto(result),
-            data: undefined,
-          });
-          return;
-        }
-
-        callback(null, {
-          result: d2ResultToProto(result),
-          data: templateWrapperToProto(result.data.template),
-        });
-      } catch (err) {
-        callback({
-          code: grpc.status.INTERNAL,
-          message: err instanceof Error ? err.message : "Unknown error",
-        });
-      } finally {
-        scope.dispose();
-      }
+    upsertTemplate: (_call, cb) => {
+      cb({ code: grpc.status.UNIMPLEMENTED, message: "Not implemented" });
     },
 
     getDeliveryStatus: async (call, callback) => {

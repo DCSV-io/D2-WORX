@@ -19,7 +19,7 @@ export async function declareRetryTopology(messageBus: MessageBus): Promise<void
     arguments: {
       "x-message-ttl": ttl,
       "x-dead-letter-exchange": COMMS_RETRY.REQUEUE_EXCHANGE,
-      "x-dead-letter-routing-key": COMMS_MESSAGING.AUTH_EVENTS_QUEUE,
+      "x-dead-letter-routing-key": COMMS_MESSAGING.NOTIFICATIONS_QUEUE,
     } as Record<string, unknown>,
   }));
 
@@ -27,14 +27,14 @@ export async function declareRetryTopology(messageBus: MessageBus): Promise<void
     exchanges: [{ exchange: COMMS_RETRY.REQUEUE_EXCHANGE, type: "direct", durable: true }],
     queues: [
       // Main queue must exist before we can bind to it
-      { queue: COMMS_MESSAGING.AUTH_EVENTS_QUEUE, durable: true },
+      { queue: COMMS_MESSAGING.NOTIFICATIONS_QUEUE, durable: true },
       ...tierQueues,
     ],
     bindings: [
       {
         exchange: COMMS_RETRY.REQUEUE_EXCHANGE,
-        queue: COMMS_MESSAGING.AUTH_EVENTS_QUEUE,
-        routingKey: COMMS_MESSAGING.AUTH_EVENTS_QUEUE,
+        queue: COMMS_MESSAGING.NOTIFICATIONS_QUEUE,
+        routingKey: COMMS_MESSAGING.NOTIFICATIONS_QUEUE,
       },
     ],
   });

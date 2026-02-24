@@ -7,7 +7,6 @@ export {
   createDeliveryRequestRepoHandlers,
   createDeliveryAttemptRepoHandlers,
   createChannelPreferenceRepoHandlers,
-  createTemplateWrapperRepoHandlers,
 } from "./repository/handlers/factories.js";
 
 // --- Drizzle Schema ---
@@ -16,7 +15,6 @@ export {
   deliveryRequest,
   deliveryAttempt,
   channelPreference,
-  templateWrapper,
 } from "./repository/schema/index.js";
 
 export type {
@@ -28,8 +26,6 @@ export type {
   NewDeliveryAttempt,
   ChannelPreferenceRow,
   NewChannelPreference,
-  TemplateWrapperRow,
-  NewTemplateWrapper,
 } from "./repository/schema/index.js";
 
 // --- Migrations ---
@@ -40,12 +36,9 @@ export { ResendEmailProvider } from "./providers/email/resend/resend-email-provi
 export { TwilioSmsProvider } from "./providers/sms/twilio/twilio-sms-provider.js";
 
 // --- Messaging ---
-export { createAuthEventConsumer } from "./messaging/consumers/auth-event-consumer.js";
-export type { AuthEventConsumerDeps } from "./messaging/consumers/auth-event-consumer.js";
+export { createNotificationConsumer } from "./messaging/consumers/notification-consumer.js";
+export type { NotificationConsumerDeps } from "./messaging/consumers/notification-consumer.js";
 export { declareRetryTopology, getRetryTierQueue } from "./messaging/retry-topology.js";
-
-// --- Templates ---
-export { seedDefaultTemplates } from "./templates/default-templates.js";
 
 // --- DI Registration ---
 export { addCommsInfra, type CommsInfraConfig } from "./registration.js";

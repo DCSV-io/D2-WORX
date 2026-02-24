@@ -114,7 +114,7 @@ describe("MessageRepository (integration)", () => {
   });
 
   it("should store all urgency levels", async () => {
-    for (const urgency of ["normal", "important", "urgent"] as const) {
+    for (const urgency of ["normal", "urgent"] as const) {
       const msg = makeMessage({
         id: generateUuidV7(),
         urgency,

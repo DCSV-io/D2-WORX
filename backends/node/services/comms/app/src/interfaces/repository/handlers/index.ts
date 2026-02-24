@@ -3,18 +3,14 @@ import type { ICreateMessageRecordHandler } from "./c/create-message-record.js";
 import type { ICreateDeliveryRequestRecordHandler } from "./c/create-delivery-request-record.js";
 import type { ICreateDeliveryAttemptRecordHandler } from "./c/create-delivery-attempt-record.js";
 import type { ICreateChannelPreferenceRecordHandler } from "./c/create-channel-preference-record.js";
-import type { ICreateTemplateWrapperRecordHandler } from "./c/create-template-wrapper-record.js";
 import type { IFindMessageByIdHandler } from "./r/find-message-by-id.js";
 import type { IFindDeliveryRequestByIdHandler } from "./r/find-delivery-request-by-id.js";
 import type { IFindDeliveryRequestByCorrelationIdHandler } from "./r/find-delivery-request-by-correlation-id.js";
 import type { IFindDeliveryAttemptsByRequestIdHandler } from "./r/find-delivery-attempts-by-request-id.js";
-import type { IFindChannelPreferenceByUserIdHandler } from "./r/find-channel-preference-by-user-id.js";
 import type { IFindChannelPreferenceByContactIdHandler } from "./r/find-channel-preference-by-contact-id.js";
-import type { IFindTemplateByNameAndChannelHandler } from "./r/find-template-by-name-and-channel.js";
 import type { IMarkDeliveryRequestProcessedHandler } from "./u/mark-delivery-request-processed.js";
 import type { IUpdateDeliveryAttemptStatusHandler } from "./u/update-delivery-attempt-status.js";
 import type { IUpdateChannelPreferenceRecordHandler } from "./u/update-channel-preference-record.js";
-import type { IUpdateTemplateWrapperRecordHandler } from "./u/update-template-wrapper-record.js";
 
 // --- Create (C) ---
 export type {
@@ -40,12 +36,6 @@ export type {
   CreateChannelPreferenceRecordOutput,
   ICreateChannelPreferenceRecordHandler,
 } from "./c/create-channel-preference-record.js";
-
-export type {
-  CreateTemplateWrapperRecordInput,
-  CreateTemplateWrapperRecordOutput,
-  ICreateTemplateWrapperRecordHandler,
-} from "./c/create-template-wrapper-record.js";
 
 // --- Read (R) ---
 export type {
@@ -73,22 +63,10 @@ export type {
 } from "./r/find-delivery-attempts-by-request-id.js";
 
 export type {
-  FindChannelPreferenceByUserIdInput,
-  FindChannelPreferenceByUserIdOutput,
-  IFindChannelPreferenceByUserIdHandler,
-} from "./r/find-channel-preference-by-user-id.js";
-
-export type {
   FindChannelPreferenceByContactIdInput,
   FindChannelPreferenceByContactIdOutput,
   IFindChannelPreferenceByContactIdHandler,
 } from "./r/find-channel-preference-by-contact-id.js";
-
-export type {
-  FindTemplateByNameAndChannelInput,
-  FindTemplateByNameAndChannelOutput,
-  IFindTemplateByNameAndChannelHandler,
-} from "./r/find-template-by-name-and-channel.js";
 
 // --- Update (U) ---
 export type {
@@ -108,12 +86,6 @@ export type {
   UpdateChannelPreferenceRecordOutput,
   IUpdateChannelPreferenceRecordHandler,
 } from "./u/update-channel-preference-record.js";
-
-export type {
-  UpdateTemplateWrapperRecordInput,
-  UpdateTemplateWrapperRecordOutput,
-  IUpdateTemplateWrapperRecordHandler,
-} from "./u/update-template-wrapper-record.js";
 
 // ---------------------------------------------------------------------------
 // Bundle types — one per aggregate, used by app-layer factory functions
@@ -139,13 +111,6 @@ export interface DeliveryAttemptRepoHandlers {
 
 export interface ChannelPreferenceRepoHandlers {
   create: ICreateChannelPreferenceRecordHandler;
-  findByUserId: IFindChannelPreferenceByUserIdHandler;
   findByContactId: IFindChannelPreferenceByContactIdHandler;
   update: IUpdateChannelPreferenceRecordHandler;
-}
-
-export interface TemplateWrapperRepoHandlers {
-  create: ICreateTemplateWrapperRecordHandler;
-  findByNameAndChannel: IFindTemplateByNameAndChannelHandler;
-  update: IUpdateTemplateWrapperRecordHandler;
 }

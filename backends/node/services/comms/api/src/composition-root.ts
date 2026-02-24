@@ -8,28 +8,17 @@ import type { IRequestContext } from "@d2/handler";
 import { ServiceCollection, type ServiceProvider, type ServiceScope } from "@d2/di";
 import * as CacheMemory from "@d2/cache-memory";
 import {
-  GetContactsByExtKeys,
   GetContactsByIds,
-  IGetContactsByExtKeysKey,
   IGetContactsByIdsKey,
-  DEFAULT_GEO_CLIENT_OPTIONS,
   createGeoServiceClient,
-  type GeoClientOptions,
 } from "@d2/geo-client";
-import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import { MessageBus } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
-import {
-  addCommsApp,
-  ICreateTemplateWrapperRecordKey,
-  IFindTemplateByNameAndChannelKey,
-  IUpdateTemplateWrapperRecordKey,
-} from "@d2/comms-app";
+import { addCommsApp } from "@d2/comms-app";
 import {
   addCommsInfra,
   runMigrations,
-  seedDefaultTemplates,
-  createAuthEventConsumer,
+  createNotificationConsumer,
   declareRetryTopology,
 } from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
@@ -53,7 +42,7 @@ export interface CommsServiceConfig {
  */
 function createServiceScope(provider: ServiceProvider): ServiceScope {
   const scope = provider.createScope();
-  scope.setInstance<IRequestContext>(IRequestContextKey, {
+  const requestContext: IRequestContext = {
     traceId: crypto.randomUUID(),
     isAuthenticated: false,
     isAgentStaff: false,
@@ -62,7 +51,12 @@ function createServiceScope(provider: ServiceProvider): ServiceScope {
     isTargetingAdmin: false,
     isOrgEmulating: false,
     isUserImpersonating: false,
-  });
+  };
+  scope.setInstance(IRequestContextKey, requestContext);
+  scope.setInstance(
+    IHandlerContextKey,
+    new HandlerContext(requestContext, provider.resolve(ILoggerKey)),
+  );
   return scope;
 }
 
@@ -74,9 +68,8 @@ function createServiceScope(provider: ServiceProvider): ServiceScope {
  *   2. Run Drizzle migrations
  *   3. Register all services in ServiceCollection
  *   4. Build ServiceProvider
- *   5. Seed default templates (temporary scope)
- *   6. Create gRPC server (per-RPC scope)
- *   7. Create RabbitMQ consumer (per-message scope + DLX retry topology)
+ *   5. Create gRPC server (per-RPC scope)
+ *   6. Create RabbitMQ consumer (per-message scope + DLX retry topology)
  */
 export async function createCommsService(config: CommsServiceConfig) {
   // 1. Singletons: pg.Pool, logger
@@ -113,12 +106,7 @@ export async function createCommsService(config: CommsServiceConfig) {
     (sp) => new HandlerContext(sp.resolve(IRequestContextKey), sp.resolve(ILoggerKey)),
   );
 
-  // Geo client for recipient resolution (GetContactsByExtKeys)
-  const geoOptions: GeoClientOptions = {
-    ...DEFAULT_GEO_CLIENT_OPTIONS,
-    allowedContextKeys: [GEO_CONTEXT_KEYS.USER, GEO_CONTEXT_KEYS.ORG_CONTACT],
-    apiKey: config.geoApiKey ?? "",
-  };
+  // Geo client for recipient resolution (GetContactsByIds)
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
   if (!config.geoAddress || !config.geoApiKey) {
     logger.warn(
@@ -129,14 +117,7 @@ export async function createCommsService(config: CommsServiceConfig) {
     config.geoAddress && config.geoApiKey
       ? createGeoServiceClient(config.geoAddress, config.geoApiKey)
       : (undefined as never);
-  const getContactsByExtKeys = new GetContactsByExtKeys(
-    contactCacheStore,
-    geoClient,
-    geoOptions,
-    serviceContext,
-  );
   const getContactsByIds = new GetContactsByIds(contactCacheStore, geoClient, serviceContext);
-  services.addInstance(IGetContactsByExtKeysKey, getContactsByExtKeys);
   services.addInstance(IGetContactsByIdsKey, getContactsByIds);
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
@@ -159,24 +140,7 @@ export async function createCommsService(config: CommsServiceConfig) {
   // 4. Build ServiceProvider
   const provider = services.build();
 
-  // 5. Seed default templates (idempotent, uses temporary scope)
-  {
-    const seedScope = createServiceScope(provider);
-    try {
-      await seedDefaultTemplates(
-        {
-          create: seedScope.resolve(ICreateTemplateWrapperRecordKey),
-          findByNameAndChannel: seedScope.resolve(IFindTemplateByNameAndChannelKey),
-          update: seedScope.resolve(IUpdateTemplateWrapperRecordKey),
-        },
-        seedScope.resolve(IHandlerContextKey),
-      );
-    } finally {
-      seedScope.dispose();
-    }
-  }
-
-  // 6. gRPC server (per-RPC scope via createCommsGrpcService)
+  // 5. gRPC server (per-RPC scope via createCommsGrpcService)
   const server = new grpc.Server();
   server.addService(CommsServiceService, createCommsGrpcService(provider));
 
@@ -195,7 +159,7 @@ export async function createCommsService(config: CommsServiceConfig) {
     );
   });
 
-  // 7. RabbitMQ consumer for auth events (per-message scope + DLX retry topology)
+  // 6. RabbitMQ notification consumer (per-message scope + DLX retry topology)
   let messageBus: MessageBus | undefined;
   if (config.rabbitMqUrl) {
     messageBus = new MessageBus({ url: config.rabbitMqUrl, connectionName: "comms-service" });
@@ -209,19 +173,19 @@ export async function createCommsService(config: CommsServiceConfig) {
     // Retry publisher for re-publishing failed messages to tier queues
     const retryPublisher = messageBus.createPublisher();
 
-    createAuthEventConsumer({
+    createNotificationConsumer({
       messageBus,
       provider,
       createScope: createServiceScope,
       retryPublisher,
       logger,
     });
-    logger.info("Auth event consumer started");
+    logger.info("Notification consumer started");
   } else {
     logger.warn("No RabbitMQ URL configured — event consumption disabled");
   }
 
-  // 8. Shutdown
+  // 7. Shutdown
   async function shutdown() {
     if (messageBus) await messageBus.close();
     provider.dispose();

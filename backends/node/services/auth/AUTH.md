@@ -60,7 +60,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | Entities      | `domain/src/entities/`      | Factory functions + types for User, Organization, Member, Invitation, SignInEvent, EmulationConsent, OrgContact |
 | Enums         | `domain/src/enums/`         | OrgType, Role, InvitationStatus — `as const` arrays + type guards                                               |
 | Rules         | `domain/src/rules/`         | emulation, membership, org-creation, invitation, sign-in-throttle (delay curve)                                 |
-| Constants     | `domain/src/constants/`     | JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, SIGN_IN_THROTTLE              |
+| Constants     | `domain/src/constants/`     | JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, GEO_CONTEXT_KEYS, SIGN_IN_THROTTLE |
 | Value Objects | `domain/src/value-objects/` | SessionContext                                                                                                  |
 | Exceptions    | `domain/src/exceptions/`    | AuthDomainError, AuthValidationError                                                                            |
 
@@ -83,10 +83,11 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | GetActiveConsents      | Query   | User's active emulation consents                                                     |
 | GetOrgContacts         | Query   | Org's contacts hydrated with full Geo contact data                                   |
 | RecordSignInOutcome    | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
+| CreateUserContact      | Command | Create Geo contact via gRPC (`contextKey: auth_user`) during sign-up hook             |
 
-**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 17 CQRS + notification handlers as transient services, `addAuthInfra(services, db)` registers all 14 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. See ADR-011 in `PLANNING.md`.
+**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 12 CQRS handlers (8 command + 4 query) as transient services, `addAuthInfra(services, db)` registers all 14 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. Notification publishing uses `@d2/comms-client` (configured in `@d2/auth-api` composition root via `addCommsClient(services, { publisher })`), not app-layer handlers. See ADR-011 in `PLANNING.md`.
 
-**Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["org_contact"]` and an `apiKey` for gRPC authentication.
+**Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["auth_org_contact", "auth_user", "auth_org_invitation"]` (from `GEO_CONTEXT_KEYS`) and an `apiKey` for gRPC authentication.
 
 **Contact immutability**: Contacts are create-only + delete. If contact info changes, the update handler calls `updateContactsByExtKeys` which atomically replaces contacts at the same ext key (Geo internally deletes old, creates new). Junction metadata (label, isPrimary) is mutable in place.
 
@@ -132,7 +133,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | `sendOnSignUp`                | `true`        | Sends verification email on sign-up                    |
 | `sendOnSignIn`                | `true`        | Re-sends verification email on blocked sign-in attempt |
 | `autoSignInAfterVerification` | `true`        | Creates session after email verification               |
-| `sendVerificationEmail`       | Not yet wired | Will be outbound RabbitMQ message via handler          |
+| `sendVerificationEmail`       | Wired         | Publishes notification via `@d2/comms-client`          |
 
 **Tested in**: `auth/tests/src/unit/infra/`
 
@@ -157,7 +158,7 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 
 1. Create singletons: `pg.Pool`, Redis, logger
 2. Run Drizzle migrations + create Drizzle instance
-3. Register all services in `ServiceCollection` via `addAuthInfra(services, db)` and `addAuthApp(services, options)`
+3. Register all services in `ServiceCollection` via `addAuthInfra(services, db)`, `addAuthApp(services, options)`, and `addCommsClient(services, { publisher })`
 4. Build immutable `ServiceProvider`
 5. Create pre-auth singletons (FindWhoIs, RateLimit, Throttle) — these remain outside DI with service-level context
 6. Create BetterAuth with scoped callbacks
@@ -177,7 +178,7 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 **Scoping patterns:**
 
 - **Protected routes**: `createScopeMiddleware(provider)` creates a `ServiceScope` per request, builds `IRequestContext` from session data (user ID, org context, emulation state), sets it on the scope alongside a fresh `IHandlerContext`. Routes resolve handlers via `c.get("scope").resolve(key)`. Scope is disposed after the request completes
-- **BetterAuth callbacks**: `createCallbackScope()` creates a temporary scope with an anonymous `IRequestContext` (no authenticated user) for handlers that fire during BetterAuth processing (e.g., `RecordSignInEvent` on sign-in, `CreateUserContact` on sign-up, notification publishers). Each callback gets its own scope with a unique traceId, disposed in a `try/finally` block
+- **BetterAuth callbacks**: `createCallbackScope()` creates a temporary scope with an anonymous `IRequestContext` (no authenticated user) for handlers that fire during BetterAuth processing (e.g., `RecordSignInEvent` on sign-in, `CreateUserContact` on sign-up, comms-client notifications). Each callback gets its own scope with a unique traceId, disposed in a `try/finally` block
 
 **Tested in**: `auth/tests/src/unit/api/`
 
@@ -587,13 +588,11 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 | DeleteOrgContact       | id, organizationId                                 | Deletes junction + best-effort Geo contact cleanup via ext key                | zodGuid × 2                                              | IDOR check; Geo delete failure tolerated (orphan cleanup by Geo job)                                                                                                                                       |
 | CreateUserContact      | userId, firstName, lastName, email                 | Creates Geo contact via gRPC (`contextKey: auth_user`)                        | — (called from BetterAuth hook)                          | Pre-generates UUIDv7; Geo failure aborts sign-up entirely                                                                                                                                                  |
 
-#### Notification Publishers (Pub/)
+#### Notification Publishing
 
-| Handler                  | Input                                                               | Side Effects          | Notes                                                                                      |
-| ------------------------ | ------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------ |
-| PublishVerificationEmail | userId, email, name, url, token                                     | Publishes to RabbitMQ | Fired from BetterAuth `sendVerificationEmail` callback                                     |
-| PublishPasswordReset     | userId, email, name, url, token                                     | Publishes to RabbitMQ | Fired from BetterAuth `sendResetPassword` callback                                         |
-| PublishInvitationEmail   | invitationId, inviteeEmail, orgId, orgName, role, inviter, url, IDs | Publishes to RabbitMQ | Fired from custom `/api/invitations` route. Includes `inviteeUserId` OR `inviteeContactId` |
+Auth uses `@d2/comms-client` (configured in `@d2/auth-api` composition root) for all notification publishing. The comms client publishes to the `comms.notifications` fanout exchange via RabbitMQ with a universal notification shape (title + content markdown + plain text). Auth resolves contactId before publishing (e.g., via `GetContactsByExtKeys` for user contacts, or uses the contactId directly for invitation recipients).
+
+Notifications are published from BetterAuth callbacks (`sendVerificationEmail`, `sendResetPassword`) and custom routes (invitation). No per-event publish handlers — the comms client is called directly.
 
 #### Queries (Q/)
 
@@ -610,7 +609,7 @@ These are handled by BetterAuth directly (not custom handlers):
 
 | Operation          | BetterAuth Method               | Notes                                                                                                                                                         |
 | ------------------ | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first (`CreateUserContact` hook). No auto-sign-in — user must verify email. Verification email via RabbitMQ → Comms |
+| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first (`CreateUserContact` hook). No auto-sign-in — user must verify email. Verification email via `@d2/comms-client` → Comms |
 | Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                                                |
 | Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                                                  |
 | Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                                              |
@@ -782,7 +781,7 @@ These are documented trade-offs and gaps identified during security audit. Items
 | #   | Gap                                              | Severity | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Mitigation                                                                       |
 | --- | ------------------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | 1   | ~~**Fingerprint (`fp`) claim optional in JWT**~~ | ~~HIGH~~ | **RESOLVED.** `JwtFingerprintMiddleware` now requires `fp` claim for all non-trusted requests (returns 401 `MISSING_FINGERPRINT`). Trusted services (identified by `ServiceKeyMiddleware` via `X-Api-Key`) skip fingerprint validation entirely.                                                                                                                                                                                                                                   | Implemented in `ServiceKeyMiddleware` + updated `JwtFingerprintMiddleware`.      |
-| 2   | ~~**Email verification not enforced**~~          | ~~HIGH~~ | **RESOLVED.** `requireEmailVerification: true` blocks sign-in for unverified emails. `autoSignIn: false` prevents session creation at sign-up. `sendOnSignIn: true` re-sends on blocked sign-in attempt. `autoSignInAfterVerification: true` creates session after verification. Actual email delivery will be outbound RabbitMQ message via handler (not yet wired). OAuth providers set `emailVerified: true` automatically — verification only affects email/password sign-ups. | Implemented in `auth-factory.ts`. 3 integration tests in `auth-factory.test.ts`. |
+| 2   | ~~**Email verification not enforced**~~          | ~~HIGH~~ | **RESOLVED.** `requireEmailVerification: true` blocks sign-in for unverified emails. `autoSignIn: false` prevents session creation at sign-up. `sendOnSignIn: true` re-sends on blocked sign-in attempt. `autoSignInAfterVerification: true` creates session after verification. Email delivery wired via `@d2/comms-client` → Comms service. OAuth providers set `emailVerified: true` automatically — verification only affects email/password sign-ups. | Implemented in `auth-factory.ts`. 3 integration tests in `auth-factory.test.ts`. |
 | 3   | ~~**No password policy**~~                       | ~~HIGH~~ | **RESOLVED.** Min 12 / max 128 (BetterAuth native `minPasswordLength` / `maxPasswordLength`). HIBP k-anonymity check via SHA-1 prefix caching (24h TTL, fail-open). Local blocklist (~200 common passwords, always-on). Blocks numeric-only and date-pattern passwords. No composition rules.                                                                                                                                                                                      | Implemented in `password-rules.ts` (domain) + `password-hooks.ts` (infra).       |
 
 ### Must Fix Before Beta
@@ -909,8 +908,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `infra/sign-in-throttle-store.test.ts`          | 11      | Redis key prefixes, handler delegation, TTL conversion, failure fallbacks                                                                                                            |
 | **App Layer**                                   |         |                                                                                                                                                                                      |
 | `app/handlers/c/*.test.ts`                      | 80      | All command handlers (create-emulation-consent, create-org-contact, delete-org-contact, update-org-contact, record-sign-in-event, record-sign-in-outcome)                             |
-| `app/handlers/q/*.test.ts`                      | 49      | All query handlers (check-sign-in-throttle, get-active-consents, get-org-contacts, get-sign-in-events, get-user-memberships)                                                         |
-| `app/handlers/pub/*.test.ts`                    | 39      | Notification publishers (publish-verification-email, publish-password-reset, publish-invitation-email)                                                                                |
+| `app/handlers/q/*.test.ts`                      | 49      | All query handlers (check-sign-in-throttle, get-active-consents, get-org-contacts, get-sign-in-events)                                                                               |
 | **Integration Tests**                           |         |                                                                                                                                                                                      |
 | `integration/migration.test.ts`                 | 16      | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index                                                                                             |
 | `integration/custom-table-repositories.test.ts` | 26      | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints)                                                                                                    |
@@ -921,7 +919,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | `integration/sign-in-throttle-store.test.ts`    | 11      | Redis sign-in throttle store integration                                                                                                                                              |
 | `integration/app-handlers.test.ts`              | 9       | App handler integration with DB (repositories + domain)                                                                                                                               |
 | `integration/better-auth-behavior.test.ts`      | 31      | RS256 JWT structure, session lifecycle, additionalFields auto-enrichment (`session.update.before` hook), definePayload org context, snake_case columns, pre-generated UUIDv7 IDs      |
-| **Total auth-tests**                            | **863** | 728 unit + 135 integration (Testcontainers PostgreSQL 18 + Redis)                                                                                                                    |
+| **Total auth-tests**                            | **825** | 690 unit + 135 integration (Testcontainers PostgreSQL 18 + Redis)                                                                                                                    |
 
 ### Key Security Behaviors Verified by Tests
 
@@ -930,7 +928,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | Sign-up does NOT auto-sign-in (email unverified)                                            | `auth-factory.test.ts`                                                                      |
 | Sign-in blocked when email not verified                                                     | `auth-factory.test.ts`                                                                      |
 | Sign-in succeeds after email verification                                                   | `auth-factory.test.ts`                                                                      |
-| Verification email delivery via RabbitMQ → Comms                                            | `auth-factory.test.ts`                                                                      |
+| Verification email delivery via `@d2/comms-client` → Comms                                  | `auth-factory.test.ts`                                                                      |
 | Session middleware fails closed (503, not 401) on infra errors                              | `session.test.ts`                                                                           |
 | JWT fingerprint mismatch returns 401                                                        | `JwtFingerprintMiddlewareTests.cs`                                                          |
 | Short fingerprint claims don't crash middleware                                             | `JwtFingerprintMiddlewareTests.cs`                                                          |
@@ -964,7 +962,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 backends/node/services/auth/
 ├── domain/                              # @d2/auth-domain
 │   └── src/
-│       ├── constants/auth-constants.ts  # JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, SIGN_IN_THROTTLE
+│       ├── constants/auth-constants.ts  # JWT_CLAIM_TYPES, SESSION_FIELDS, AUTH_POLICIES, REQUEST_HEADERS, PASSWORD_POLICY, GEO_CONTEXT_KEYS, SIGN_IN_THROTTLE
 │       ├── entities/                    # User, Organization, Member, Invitation, SignInEvent, EmulationConsent, OrgContact
 │       ├── enums/                       # OrgType, Role, InvitationStatus (+ type guards)
 │       ├── exceptions/                  # AuthDomainError, AuthValidationError
@@ -974,12 +972,10 @@ backends/node/services/auth/
 ├── app/                                 # @d2/auth-app (TLC: mirrors Geo.App)
 │   └── src/
 │       ├── implementations/
-│       │   ├── cqrs/
-│       │   │   └── handlers/
-│       │   │       ├── c/               # Command handlers (8) — RecordSignInOutcome, CreateUserContact + 6 with Zod validation
-│       │   │       └── q/               # Query handlers (4) — CheckSignInThrottle + 3 with Zod validation
-│       │   └── messaging/
-│       │       └── handlers/pub/        # Notification publishers (3) — Verification, PasswordReset, Invitation
+│       │   └── cqrs/
+│       │       └── handlers/
+│       │           ├── c/               # Command handlers (8) — RecordSignInOutcome, CreateUserContact + 6 with Zod validation
+│       │           └── q/               # Query handlers (4) — CheckSignInThrottle + 3 with Zod validation
 │       ├── interfaces/
 │       │   └── repository/
 │       │       ├── handlers/            # Repo handler interfaces (14) + bundle types (TLC: c/, r/, u/, d/)
@@ -1031,7 +1027,7 @@ backends/node/services/auth/
 │       │   ├── invitation-routes.ts     # Custom invitation route (requireOrg + requireRole(officer))
 │       │   └── health.ts               # Health check
 │       └── index.ts
-├── tests/                               # @d2/auth-tests (777 tests)
+├── tests/                               # @d2/auth-tests (825 tests)
 │   └── src/
 │       ├── unit/
 │       │   ├── api/

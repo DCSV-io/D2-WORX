@@ -29,6 +29,6 @@ export function getDb(): NodePgDatabase {
 
 export async function cleanAllTables(): Promise<void> {
   await pool.query(
-    "TRUNCATE delivery_attempt, delivery_request, message, channel_preference, template_wrapper CASCADE",
+    "TRUNCATE delivery_attempt, delivery_request, message, channel_preference CASCADE",
   );
 }

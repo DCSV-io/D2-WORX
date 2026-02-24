@@ -7,7 +7,7 @@ import type {
   FindDeliveryRequestByIdOutput as O,
   IFindDeliveryRequestByIdHandler,
 } from "@d2/comms-app";
-import type { DeliveryRequest, Channel } from "@d2/comms-domain";
+import type { DeliveryRequest } from "@d2/comms-domain";
 import { deliveryRequest } from "../../schema/tables.js";
 import type { DeliveryRequestRow } from "../../schema/types.js";
 
@@ -45,10 +45,7 @@ export function toDeliveryRequest(row: DeliveryRequestRow): DeliveryRequest {
     id: row.id,
     messageId: row.messageId,
     correlationId: row.correlationId,
-    recipientUserId: row.recipientUserId,
     recipientContactId: row.recipientContactId,
-    channels: row.channels as Channel[] | null,
-    templateName: row.templateName,
     callbackTopic: row.callbackTopic,
     createdAt: row.createdAt,
     processedAt: row.processedAt,

@@ -1,12 +1,11 @@
 /**
- * Message urgency level. Controls channel forcing and quiet hours bypass.
+ * Message urgency level. Controls channel forcing behaviour.
  *
- * - `normal` — respects all channel preferences + quiet hours
- * - `important` — forces email delivery (ignores email pref), SMS follows pref, respects quiet hours
- * - `urgent` — forces all channels (email + SMS), bypasses quiet hours
+ * - `normal` — respects all channel preferences
+ * - `urgent` — forces all channels (email + SMS), bypasses preferences
  */
 
-export const URGENCIES = ["normal", "important", "urgent"] as const;
+export const URGENCIES = ["normal", "urgent"] as const;
 
 export type Urgency = (typeof URGENCIES)[number];
 

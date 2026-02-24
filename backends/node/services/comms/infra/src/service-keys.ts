@@ -12,12 +12,8 @@ export {
   IFindDeliveryAttemptsByRequestIdKey,
   IUpdateDeliveryAttemptStatusKey,
   ICreateChannelPreferenceRecordKey,
-  IFindChannelPreferenceByUserIdKey,
   IFindChannelPreferenceByContactIdKey,
   IUpdateChannelPreferenceRecordKey,
-  ICreateTemplateWrapperRecordKey,
-  IFindTemplateByNameAndChannelKey,
-  IUpdateTemplateWrapperRecordKey,
   IEmailProviderKey,
   ISmsProviderKey,
 } from "@d2/comms-app";

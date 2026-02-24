@@ -75,30 +75,25 @@ export function createStubEmailProvider(context: IHandlerContext): StubEmailProv
 /**
  * Mock geo-client handlers for integration tests.
  *
- * Provides `getContactsByExtKeys` and `getContactsByIds` that return
- * pre-configured contact data. This avoids the need for a running Geo service
- * while still testing the real Deliver handler + RecipientResolver.
+ * Provides `getContactsByIds` that returns pre-configured contact data.
+ * This avoids the need for a running Geo service while still testing
+ * the real Deliver handler + RecipientResolver.
  */
 export interface MockGeoHandlers {
-  getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler;
   getContactsByIds: Queries.IGetContactsByIdsHandler;
-  /** Register a user → email mapping for the userId path. */
-  setUserEmail(userId: string, email: string, phone?: string): void;
-  /** Register a contactId → email mapping for the contactId path. */
+  /** Register a contactId -> email mapping for the contactId path. */
   setContactEmail(contactId: string, email: string, phone?: string): void;
   /** Clear all registered contacts. */
   reset(): void;
 }
 
 export function createMockGeoHandlers(): MockGeoHandlers {
-  // userId → contact data (for GetContactsByExtKeys)
-  const userContacts = new Map<string, ContactDTO>();
-  // contactId → contact data (for GetContactsByIds)
+  // contactId -> contact data (for GetContactsByIds)
   const idContacts = new Map<string, ContactDTO>();
 
-  function makeContact(email: string, phone?: string): ContactDTO {
+  function makeContact(contactId: string, email: string, phone?: string): ContactDTO {
     return {
-      id: generateUuidV7(),
+      id: contactId,
       firstName: "Test",
       lastName: "User",
       contactMethods: {
@@ -116,22 +111,6 @@ export function createMockGeoHandlers(): MockGeoHandlers {
     } as unknown as ContactDTO;
   }
 
-  const getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler = {
-    handleAsync: async (input: {
-      keys: Array<{ contextKey: string; relatedEntityId: string }>;
-    }) => {
-      const data = new Map<string, ContactDTO[]>();
-      for (const key of input.keys) {
-        const lookupKey = `${key.contextKey}:${key.relatedEntityId}`;
-        const contact = userContacts.get(key.relatedEntityId);
-        if (contact) {
-          data.set(lookupKey, [contact]);
-        }
-      }
-      return D2Result.ok({ data: { data } });
-    },
-  } as unknown as Queries.IGetContactsByExtKeysHandler;
-
   const getContactsByIds: Queries.IGetContactsByIdsHandler = {
     handleAsync: async (input: { ids: string[] }) => {
       const data = new Map<string, ContactDTO>();
@@ -146,16 +125,11 @@ export function createMockGeoHandlers(): MockGeoHandlers {
   } as unknown as Queries.IGetContactsByIdsHandler;
 
   return {
-    getContactsByExtKeys,
     getContactsByIds,
-    setUserEmail(userId: string, email: string, phone?: string) {
-      userContacts.set(userId, makeContact(email, phone));
-    },
     setContactEmail(contactId: string, email: string, phone?: string) {
-      idContacts.set(contactId, makeContact(email, phone));
+      idContacts.set(contactId, makeContact(contactId, email, phone));
     },
     reset() {
-      userContacts.clear();
       idContacts.clear();
     },
   };

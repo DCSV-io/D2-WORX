@@ -30,10 +30,6 @@ import type { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign
 import type { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
 import type { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 import type { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
-import type { PublishVerificationEmail } from "./implementations/messaging/handlers/pub/publish-verification-email.js";
-import type { PublishPasswordReset } from "./implementations/messaging/handlers/pub/publish-password-reset.js";
-import type { PublishInvitationEmail } from "./implementations/messaging/handlers/pub/publish-invitation-email.js";
-
 // =============================================================================
 // Infrastructure-layer keys (interfaces defined in auth-app, implemented in auth-infra)
 // =============================================================================
@@ -132,14 +128,3 @@ export const ICheckSignInThrottleKey = createServiceKey<CheckSignInThrottle>(
   "Auth.App.CheckSignInThrottle",
 );
 
-// --- Notification Publishers ---
-
-export const IPublishVerificationEmailKey = createServiceKey<PublishVerificationEmail>(
-  "Auth.App.PublishVerificationEmail",
-);
-export const IPublishPasswordResetKey = createServiceKey<PublishPasswordReset>(
-  "Auth.App.PublishPasswordReset",
-);
-export const IPublishInvitationEmailKey = createServiceKey<PublishInvitationEmail>(
-  "Auth.App.PublishInvitationEmail",
-);

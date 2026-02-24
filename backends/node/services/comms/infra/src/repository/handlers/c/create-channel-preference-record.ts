@@ -23,13 +23,9 @@ export class CreateChannelPreferenceRecord
     const p = input.pref;
     await this.db.insert(channelPreference).values({
       id: p.id,
-      userId: p.userId,
       contactId: p.contactId,
       emailEnabled: p.emailEnabled,
       smsEnabled: p.smsEnabled,
-      quietHoursStart: p.quietHoursStart,
-      quietHoursEnd: p.quietHoursEnd,
-      quietHoursTz: p.quietHoursTz,
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     });

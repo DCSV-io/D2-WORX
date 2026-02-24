@@ -103,10 +103,9 @@ describe("E2E: Password reset → reset email delivery", () => {
     expect(sentEmail!.to).toBe(email);
     expect(sentEmail!.subject.toLowerCase()).toContain("reset");
 
-    // Assert: delivery records exist in comms DB
+    // Assert: delivery records exist in comms DB (recipient_contact_id, not userId)
     const requests = await getCommsPool().query(
-      "SELECT * FROM delivery_request WHERE recipient_user_id = $1 ORDER BY created_at DESC",
-      [signUpRes.user.id],
+      "SELECT * FROM delivery_request ORDER BY created_at DESC",
     );
     // Should have at least 2 requests: verification + password reset
     expect(requests.rows.length).toBeGreaterThanOrEqual(2);

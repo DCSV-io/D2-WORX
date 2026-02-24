@@ -4,7 +4,6 @@ import type {
   deliveryRequest,
   deliveryAttempt,
   channelPreference,
-  templateWrapper,
 } from "./tables.js";
 
 export type MessageRow = InferSelectModel<typeof message>;
@@ -18,6 +17,3 @@ export type NewDeliveryAttempt = InferInsertModel<typeof deliveryAttempt>;
 
 export type ChannelPreferenceRow = InferSelectModel<typeof channelPreference>;
 export type NewChannelPreference = InferInsertModel<typeof channelPreference>;
-
-export type TemplateWrapperRow = InferSelectModel<typeof templateWrapper>;
-export type NewTemplateWrapper = InferInsertModel<typeof templateWrapper>;

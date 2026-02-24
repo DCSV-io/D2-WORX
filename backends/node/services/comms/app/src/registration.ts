@@ -1,6 +1,6 @@
 import type { ServiceCollection } from "@d2/di";
 import { IHandlerContextKey } from "@d2/handler";
-import { IGetContactsByExtKeysKey, IGetContactsByIdsKey } from "@d2/geo-client";
+import { IGetContactsByIdsKey } from "@d2/geo-client";
 import {
   // Infra keys
   ICreateMessageRecordKey,
@@ -13,37 +13,23 @@ import {
   IFindDeliveryAttemptsByRequestIdKey,
   IUpdateDeliveryAttemptStatusKey,
   ICreateChannelPreferenceRecordKey,
-  IFindChannelPreferenceByUserIdKey,
   IFindChannelPreferenceByContactIdKey,
   IUpdateChannelPreferenceRecordKey,
-  ICreateTemplateWrapperRecordKey,
-  IFindTemplateByNameAndChannelKey,
-  IUpdateTemplateWrapperRecordKey,
   IEmailProviderKey,
   ISmsProviderKey,
   // App keys
   IDeliverKey,
   IRecipientResolverKey,
   ISetChannelPreferenceKey,
-  IUpsertTemplateKey,
   IGetChannelPreferenceKey,
-  IGetTemplateKey,
-  IHandleVerificationEmailKey,
-  IHandlePasswordResetKey,
-  IHandleInvitationEmailKey,
 } from "./service-keys.js";
 import { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
 import { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
 import { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
-import { UpsertTemplate } from "./implementations/cqrs/handlers/c/upsert-template.js";
 import { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
-import { GetTemplate } from "./implementations/cqrs/handlers/q/get-template.js";
-import { HandleVerificationEmail } from "./implementations/messaging/handlers/sub/handle-verification-email.js";
-import { HandlePasswordReset } from "./implementations/messaging/handlers/sub/handle-password-reset.js";
-import { HandleInvitationEmail } from "./implementations/messaging/handlers/sub/handle-invitation-email.js";
 
 /**
- * Registers comms application-layer services (CQRS handlers, sub handlers)
+ * Registers comms application-layer services (CQRS handlers)
  * with the DI container. Mirrors .NET's `services.AddCommsApp()` pattern.
  *
  * All CQRS handlers are transient — new instance per resolve.
@@ -54,11 +40,7 @@ export function addCommsApp(services: ServiceCollection): void {
   services.addTransient(
     IRecipientResolverKey,
     (sp) =>
-      new RecipientResolver(
-        sp.resolve(IGetContactsByExtKeysKey),
-        sp.resolve(IGetContactsByIdsKey),
-        sp.resolve(IHandlerContextKey),
-      ),
+      new RecipientResolver(sp.resolve(IGetContactsByIdsKey), sp.resolve(IHandlerContextKey)),
   );
 
   services.addTransient(
@@ -83,14 +65,8 @@ export function addCommsApp(services: ServiceCollection): void {
           },
           channelPref: {
             create: sp.resolve(ICreateChannelPreferenceRecordKey),
-            findByUserId: sp.resolve(IFindChannelPreferenceByUserIdKey),
             findByContactId: sp.resolve(IFindChannelPreferenceByContactIdKey),
             update: sp.resolve(IUpdateChannelPreferenceRecordKey),
-          },
-          template: {
-            create: sp.resolve(ICreateTemplateWrapperRecordKey),
-            findByNameAndChannel: sp.resolve(IFindTemplateByNameAndChannelKey),
-            update: sp.resolve(IUpdateTemplateWrapperRecordKey),
           },
         },
         { email: sp.resolve(IEmailProviderKey), sms: sp.tryResolve(ISmsProviderKey) },
@@ -107,22 +83,8 @@ export function addCommsApp(services: ServiceCollection): void {
       new SetChannelPreference(
         {
           create: sp.resolve(ICreateChannelPreferenceRecordKey),
-          findByUserId: sp.resolve(IFindChannelPreferenceByUserIdKey),
           findByContactId: sp.resolve(IFindChannelPreferenceByContactIdKey),
           update: sp.resolve(IUpdateChannelPreferenceRecordKey),
-        },
-        sp.resolve(IHandlerContextKey),
-      ),
-  );
-
-  services.addTransient(
-    IUpsertTemplateKey,
-    (sp) =>
-      new UpsertTemplate(
-        {
-          create: sp.resolve(ICreateTemplateWrapperRecordKey),
-          findByNameAndChannel: sp.resolve(IFindTemplateByNameAndChannelKey),
-          update: sp.resolve(IUpdateTemplateWrapperRecordKey),
         },
         sp.resolve(IHandlerContextKey),
       ),
@@ -136,41 +98,10 @@ export function addCommsApp(services: ServiceCollection): void {
       new GetChannelPreference(
         {
           create: sp.resolve(ICreateChannelPreferenceRecordKey),
-          findByUserId: sp.resolve(IFindChannelPreferenceByUserIdKey),
           findByContactId: sp.resolve(IFindChannelPreferenceByContactIdKey),
           update: sp.resolve(IUpdateChannelPreferenceRecordKey),
         },
         sp.resolve(IHandlerContextKey),
       ),
-  );
-
-  services.addTransient(
-    IGetTemplateKey,
-    (sp) =>
-      new GetTemplate(
-        {
-          create: sp.resolve(ICreateTemplateWrapperRecordKey),
-          findByNameAndChannel: sp.resolve(IFindTemplateByNameAndChannelKey),
-          update: sp.resolve(IUpdateTemplateWrapperRecordKey),
-        },
-        sp.resolve(IHandlerContextKey),
-      ),
-  );
-
-  // --- Messaging Sub Handlers ---
-
-  services.addTransient(
-    IHandleVerificationEmailKey,
-    (sp) => new HandleVerificationEmail(sp.resolve(IDeliverKey), sp.resolve(IHandlerContextKey)),
-  );
-
-  services.addTransient(
-    IHandlePasswordResetKey,
-    (sp) => new HandlePasswordReset(sp.resolve(IDeliverKey), sp.resolve(IHandlerContextKey)),
-  );
-
-  services.addTransient(
-    IHandleInvitationEmailKey,
-    (sp) => new HandleInvitationEmail(sp.resolve(IDeliverKey), sp.resolve(IHandlerContextKey)),
   );
 }

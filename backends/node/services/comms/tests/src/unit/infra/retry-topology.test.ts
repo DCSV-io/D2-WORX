@@ -68,7 +68,7 @@ describe("declareRetryTopology", () => {
 
     // First queue is the main consumer queue (must exist before binding)
     expect(config.queues[0]).toEqual({
-      queue: "comms.auth-events",
+      queue: "comms.notifications",
       durable: true,
     });
 
@@ -80,7 +80,7 @@ describe("declareRetryTopology", () => {
         arguments: {
           "x-message-ttl": expectedTtls[i],
           "x-dead-letter-exchange": "comms.retry.requeue",
-          "x-dead-letter-routing-key": "comms.auth-events",
+          "x-dead-letter-routing-key": "comms.notifications",
         },
       });
     }
@@ -95,8 +95,8 @@ describe("declareRetryTopology", () => {
     expect(config.bindings).toEqual([
       {
         exchange: "comms.retry.requeue",
-        queue: "comms.auth-events",
-        routingKey: "comms.auth-events",
+        queue: "comms.notifications",
+        routingKey: "comms.notifications",
       },
     ]);
   });

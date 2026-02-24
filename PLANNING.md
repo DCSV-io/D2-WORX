@@ -72,8 +72,9 @@
 - ✅ .NET shared tests — 585 passing (gateway auth, idempotency, retry, allowedContextKeys)
 - ✅ .NET Geo tests — 735 passing (contacts ext-key integration tests)
 - ✅ Context key validation refactored to built-in validateInput (Zod + FluentValidation)
-- ✅ Comms service — Phase 1 DDD layers: domain (entities, enums, rules), app (delivery handlers, sub-handlers), infra (Drizzle schema, Resend email, Twilio SMS, RabbitMQ consumer, template seeding)
+- ✅ Comms service — Phase 1 DDD layers: domain (entities, enums, rules), app (delivery handlers), infra (Drizzle schema, Resend email, Twilio SMS, RabbitMQ consumer)
 - ✅ Comms API — gRPC server (`@d2/comms-api`): composition root, proto ↔ domain mappers, Phase 1 handlers wired, Phase 2-3 stubs UNIMPLEMENTED
+- ✅ `@d2/comms-client` — Thin RabbitMQ publishing client: `Notify` handler with universal message shape, contactId-only recipient, DI registration via `addCommsClient(services, { publisher })`
 - ✅ Comms proto contract — `contracts/protos/comms/v1/comms.proto` (full Phase 1-3 surface)
 - ✅ Auth entrypoint — `main.ts` with Hono HTTP server, optional RabbitMQ publisher
 - ✅ Aspire wiring — Auth + Comms services via `AddJavaScriptApp` + `.WithPnpm()` (databases, Redis, RabbitMQ refs)
@@ -86,19 +87,18 @@
 - ✅ Registration functions — `addAuthInfra()`, `addAuthApp()`, `addCommsInfra()`, `addCommsApp()` mirror .NET `services.AddXxx()`
 - ✅ BaseHandler traceId auto-injection — eliminates 174 occurrences of `traceId: this.traceId` boilerplate
 - ✅ Shared tests — 671 tests passing (35 new DI tests: ServiceCollection, ServiceProvider, ServiceScope, traceId auto-injection)
-- ✅ Invitation email delivery — Custom `/api/invitations` route, `PublishInvitationEmail` handler, proto fields (`invitee_user_id`, `invitee_contact_id`), `GetContactsByIds` handler in geo-client, RecipientResolver dual-path (userId via ext-keys, contactId via direct ID lookup), `HandleInvitationEmail` fix (was passing email string as contactId)
+- ✅ Invitation email delivery — Custom `/api/invitations` route, notification publishing via `@d2/comms-client`, `GetContactsByIds` handler in geo-client, RecipientResolver contactId-only resolution
 - ✅ E2E tests — 5 cross-service tests (verification email × 2, password reset, invitation for new user, invitation for existing user) via Testcontainers (PG × 3 + Redis + RabbitMQ) + .NET Geo child process
 - ✅ Defensive programming test sweep — 70 new security/edge-case tests across auth middleware, CSRF, session, scope, invitation route, emulation rules, comms handlers
-- ✅ Auth tests — 832 passing (63 test files), Comms tests — 658 passing (54 test files), Shared tests — 726 passing (59 test files)
+- ✅ Auth tests — 825 passing (64 test files), Comms tests — 510 passing (39 test files), Shared tests — 726 passing (59 test files)
 - ✅ Deliver fail path fix — `D2Result.fail()` with `DELIVERY_FAILED` error code on retryable send failures (was returning `ok()`)
-- ✅ Event registry (`event-registry.ts`) — single source of truth for event detection, deserialization, and DI handler key resolution
-- ✅ Consumer dispatch rewrite — registry-based dispatch with DI scoping (replaces hardcoded if/else + pre-built sub-handler objects)
+- ✅ Consumer dispatch simplification — all notifications dispatched directly to Deliver handler (no event-specific sub-handlers, no event registry)
 - ✅ Retry topology fix — main queue declared before requeue exchange binding (first-time deploy bug)
 - ✅ Handler integration tests — 14 tests with real Postgres (Testcontainers), StubEmailProvider, mock geo-client covering full delivery pipeline
-- ✅ Comms tests — 729 passing (57 test files), E2E tests — 5 passing
+- ✅ Comms tests — 510 passing (39 test files), E2E tests — 5 passing
 - ✅ Open question validation tests — 28 integration tests resolving Q1 (RS256 JWT), Q2 (session lifecycle), Q3 (additionalFields), Q4 (definePayload), Q6 (snake_case), Q7 (pre-generated IDs)
 - ✅ Session enrichment hook — `databaseHooks.session.update.before` auto-populates `activeOrganizationType` + `activeOrganizationRole` on org switch (eliminates the Q3 gap). 3 new tests (auto-populate, auto-activate on org creation, clear on deactivation)
-- ✅ Auth tests — 863 passing (64 test files)
+- ✅ Auth tests — 825 passing (64 test files)
 
 ### Blocked By
 
@@ -570,7 +570,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 - `addAuthInfra(services, db)` — 14 transient repo handlers
 - `addAuthApp(services, options)` — 17 transient CQRS + notification handlers
 - `addCommsInfra(services, db, providerConfig)` — infra handlers + email/SMS providers
-- `addCommsApp(services)` — delivery handlers + sub-handlers
+- `addCommsApp(services)` — delivery handlers
 
 `ServiceKey` constants are co-located with their interfaces (e.g., `IRecordSignInEventKey` next to the handler interface in `@d2/auth-app`).
 
@@ -657,6 +657,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                        |
 | **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
 | **@d2/di**                 | ✅ Done    | `backends/node/shared/di/`                                                    | `Microsoft.Extensions.DependencyInjection` |
+| **@d2/comms-client**       | ✅ Done    | `backends/node/services/comms/client/`                                        | — (RabbitMQ notification publisher)        |
 | **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/auth-client/`                                    | — (BFF client, HTTP — no .NET equivalent)  |
 | **@d2/auth-sdk**           | 📋 Phase 2 | `backends/node/services/auth/auth-sdk/`                                       | `Auth.Client` (gRPC, service-to-service)   |
 
@@ -671,12 +672,12 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                   |
 | Geo.Tests        | ✅ Done        | 735 tests passing                                                                                               |
 | **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E    |
-| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 863 tests passing                                   |
+| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 825 tests passing                                   |
 | **Comms.Domain** | ✅ Done        | Entities, enums, rules, constants (`backends/node/services/comms/domain/`)                                      |
-| **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator, sub-handlers (`backends/node/services/comms/app/`)                        |
+| **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator (`backends/node/services/comms/app/`)                                      |
 | **Comms.Infra**  | ✅ Done        | Drizzle schema/migrations, Resend + Twilio providers, RabbitMQ consumer (`backends/node/services/comms/infra/`) |
 | **Comms.API**    | ✅ Done        | gRPC server + composition root + mappers (`backends/node/services/comms/api/`)                                  |
-| **Comms.Tests**  | ✅ Done        | 729 tests passing (`backends/node/services/comms/tests/`)                                                       |
+| **Comms.Tests**  | ✅ Done        | 510 tests passing (`backends/node/services/comms/tests/`)                                                       |
 
 ### Gateways
 
@@ -757,7 +758,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 13. **SvelteKit integration** — Proxy in `hooks.server.ts`, session population, route groups, onboarding flow.
 14. **.NET gateway** — JWT validation middleware, CORS for SvelteKit origin.
-15. **Notifications pipes** — Auth publishes events to RabbitMQ (e.g., `auth.email.verification`, `auth.email.password-reset`, `auth.email.invitation`). Consumer/notification service is a later deliverable — the "pipes" (event emission + message contracts) are wired during auth service build so the events flow even if nothing consumes them yet.
+15. ~~**Notifications pipes**~~ — ✅ Done. Auth publishes notifications via `@d2/comms-client` to `comms.notifications` fanout exchange. Comms service consumes and delivers (email verification, password reset, invitations).
 
 #### Auth Service — DDD Structure
 
@@ -1334,45 +1335,9 @@ clients/web/src/routes/
 - CORS middleware for SvelteKit origin
 - JWKS caching with periodic refresh
 
-#### Notifications Service (Phase 2 co-dependency)
+#### ~~Notifications Service (Phase 2 co-dependency)~~ — RESOLVED
 
-Auth requires email sending for: verification, password reset, and invitation emails. Rather than building a throwaway email sender, we scaffold a notifications service with the right foundational shape so it can grow into a full multi-channel notification hub later.
-
-**Reference**: DeCAF's `DeCAF.Features.Messaging.Default` (`/old/DeCAF-DCSV/BE_NET/`)
-
-**DeCAF messaging pattern** (notification hub):
-
-```
-Notify (orchestrator)
-  ├─ Reads user notification preferences
-  ├─ Routes to enabled channels:
-  │  ├─ Email:  Notify → EnqueueEmail → TrySendEmail (with retry)
-  │  ├─ SMS:    Notify → EnqueueSms → TrySendSMS (with retry)
-  │  ├─ Push:   Notify → SendPushNotification
-  │  └─ In-app: Notify → CreateDirectMessage / SupportMessage
-  └─ Partial success (channels fail independently)
-
-Background retry: scheduled job finds "Retrying" messages, re-attempts delivery
-Message states: Pending → Sent | Retrying → Sent | Failed
-```
-
-**Phase 2 scaffold** (minimum viable for auth):
-
-- **Email channel only** — verification, password reset, invitation emails
-- **Provider abstraction** — `IEmailProvider` interface (swap SMTP/SendGrid/SES later)
-- **Template abstraction** — `ITemplateProvider` interface (compile templates with variables)
-- **Enqueue + retry** — persist to DB, attempt immediate send, background retry on failure
-- **Notification preferences** — user-level settings (at minimum: email enabled/disabled)
-
-**Foundational shape to preserve** (so we don't redo later):
-
-- Multi-channel `Notify` orchestrator entry point (even if only email is wired initially)
-- Channel-agnostic message envelope (recipient, channel, template, variables)
-- Provider pattern for each channel (pluggable implementations)
-- Retry with configurable max attempts and backoff intervals
-- RabbitMQ integration for async dispatch (auth publishes, notifications consumes)
-
-**NOT needed in Phase 2**: SMS, push notifications, in-app messaging, SignalR real-time, support chat. These are Phase 3+ features that plug into the existing foundation.
+> **Superseded by the Comms service** (`backends/node/services/comms/`). The Comms service Phase 1 implements the delivery engine originally planned here: multi-channel `Deliver` orchestrator, `IEmailProvider` + `ISmsProvider` abstractions, per-contact channel preferences, DLX-based retry via RabbitMQ tier queues, and `@d2/comms-client` for consumer services. Auth publishes via `@d2/comms-client` to `comms.notifications` fanout exchange. See `COMMS.md` for full details.
 
 ### Phase 3: Auth Features (Future)
 
@@ -1380,8 +1345,8 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 2. **Org emulation** (support/admin can view any org's data in read-only mode)
 3. **User impersonation** (escalated support — act as a specific user, audit-logged, time-limited)
 4. **Admin control panel** (cross-org visibility, user/org management, system diagnostics)
-5. **Admin alerting** (rate limit threshold alerts via notifications service)
-6. **Notifications expansion** — SMS, push, in-app messaging, SignalR real-time, support chat
+5. **Admin alerting** (rate limit threshold alerts via Comms service)
+6. **Comms expansion** — In-app notifications, push via SignalR, conversational messaging (Comms Phases 2-4)
 
 ### Completed Phases
 
@@ -1451,7 +1416,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 5. **Last-owner protection**: ✅ **Blocked from leaving**. Last owner presented two options: (a) transfer ownership to another member (email confirmation required, then original owner can leave), or (b) delete the org entirely (email confirmation required).
 
-6. **Notifications service scope**: ✅ **Foundational scaffold with email-only**. Shape mirrors DeCAF's notification hub pattern (multi-channel Notify orchestrator, provider abstraction, enqueue + retry, user preferences). Phase 2 wires email only; SMS/push/in-app/SignalR are Phase 3+ plugins into the same foundation.
+6. **Notifications service scope**: ✅ **Implemented as Comms service** (`backends/node/services/comms/`). Phase 1 delivery engine with Deliver orchestrator, email (Resend) + SMS (Twilio) providers, per-contact channel preferences, DLX retry, `@d2/comms-client` for publishers. In-app/push/SignalR are Phase 2-3.
 
 7. **Retry pattern**: ✅ **General-purpose utility, opt-in, exponential backoff** (1s→2s→4s→8s). Transient-only (5xx, timeout, 429). No retry on 4xx. Both platforms. See ADR-006.
 

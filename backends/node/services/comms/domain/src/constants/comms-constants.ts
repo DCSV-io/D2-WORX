@@ -1,6 +1,6 @@
 /**
  * Retry policy for delivery attempts.
- * Delays are indexed by attempt number (attempt 1 → index 0, etc.).
+ * Delays are indexed by attempt number (attempt 1 -> index 0, etc.).
  * Overflow attempts use the last value in the array.
  */
 export const RETRY_POLICY = {
@@ -24,41 +24,14 @@ export const CHANNEL_DEFAULTS = {
 } as const;
 
 /**
- * Quiet hours validation bounds.
- * Hours are 0–23, minutes are 0–59. Format: "HH:MM".
- */
-export const QUIET_HOURS = {
-  MIN_HOUR: 0,
-  MAX_HOUR: 23,
-  MIN_MINUTE: 0,
-  MAX_MINUTE: 59,
-} as const;
-
-/**
- * Constraints for threads, messages, attachments, and reactions.
- */
-/**
  * Comms service messaging topology.
  *
- * The comms service owns its consumer queues. The exchange name comes from
- * AUTH_MESSAGING in @d2/auth-domain — these constants are for comms-internal use.
+ * The comms service subscribes to the notifications fanout exchange.
+ * Publishers (e.g. @d2/comms-client) send to this exchange.
  */
 export const COMMS_MESSAGING = {
-  /** Queue bound to the auth events fanout exchange. */
-  AUTH_EVENTS_QUEUE: "comms.auth-events",
-  /** Sender service identifier for auth-originated deliveries. */
-  SENDER_AUTH: "auth",
-} as const;
-
-/**
- * Well-known template names for delivery sub-handlers.
- *
- * These must match the names in the seed data (default-templates.ts).
- */
-export const TEMPLATE_NAMES = {
-  EMAIL_VERIFICATION: "email-verification",
-  PASSWORD_RESET: "password-reset",
-  INVITATION: "invitation",
+  /** Queue bound to the notifications fanout exchange. */
+  NOTIFICATIONS_QUEUE: "comms.notifications",
 } as const;
 
 /**
@@ -75,7 +48,7 @@ export const COMMS_RETRY = {
   REQUEUE_EXCHANGE: "comms.retry.requeue",
   /** Prefix for tier delay queues (appended with tier number). */
   TIER_QUEUE_PREFIX: "comms.retry.tier-",
-  /** TTL per tier — indexed by tier (tier-1 = index 0). Matches RETRY_POLICY.DELAYS_MS. */
+  /** TTL per tier -- indexed by tier (tier-1 = index 0). Matches RETRY_POLICY.DELAYS_MS. */
   TIER_TTLS: [5_000, 10_000, 30_000, 60_000, 300_000] as readonly number[],
   /** Domain-specific error code: at least one delivery channel failed with retry scheduled. */
   DELIVERY_FAILED: "DELIVERY_FAILED",

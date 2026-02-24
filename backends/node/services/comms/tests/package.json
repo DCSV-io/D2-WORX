@@ -10,6 +10,7 @@
   "devDependencies": {
     "@d2/comms-api": "workspace:*",
     "@d2/comms-app": "workspace:*",
+    "@d2/comms-client": "workspace:*",
     "@d2/comms-domain": "workspace:*",
     "@d2/comms-infra": "workspace:*",
     "@d2/di": "workspace:*",

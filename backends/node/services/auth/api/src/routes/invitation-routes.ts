@@ -3,8 +3,8 @@ import { eq } from "drizzle-orm";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result, HttpStatusCode } from "@d2/result";
 import { SESSION_FIELDS, GEO_CONTEXT_KEYS } from "@d2/auth-domain";
-import { IPublishInvitationEmailKey } from "@d2/auth-app";
-import { ICreateContactsKey } from "@d2/geo-client";
+import { INotifyKey } from "@d2/comms-client";
+import { ICreateContactsKey, IGetContactsByExtKeysKey } from "@d2/geo-client";
 import type { Auth } from "@d2/auth-infra";
 import { user as userTable, organization as orgTable } from "@d2/auth-infra";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
@@ -124,23 +124,37 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
       .limit(1);
     const orgName = orgs[0]?.name ?? "the organization";
 
-    // 6. Publish invitation email event
-    const scope = c.get(SCOPE_KEY);
-    const publishHandler = scope.resolve(IPublishInvitationEmailKey);
+    // 6. Send invitation notification via comms-client
     const invitationUrl = `${baseUrl}/api/auth/organization/accept-invitation?invitationId=${invitationId}`;
+    const inviterName = inviter.name ?? "Someone";
 
-    await publishHandler.handleAsync({
-      invitationId,
-      inviteeEmail: email,
-      organizationId,
-      organizationName: orgName,
-      role,
-      inviterName: inviter.name ?? "Someone",
-      inviterEmail: inviter.email,
-      invitationUrl,
-      inviteeUserId: existingUser?.id,
-      inviteeContactId,
-    });
+    // Resolve the recipient contactId — either from the Geo contact we just created,
+    // or from the existing user's Geo contact (via ext-keys lookup)
+    let recipientContactId = inviteeContactId;
+    if (!recipientContactId && existingUser) {
+      // Existing user — look up their Geo contact via ext-keys
+      const scope2 = c.get(SCOPE_KEY);
+      const getContactsByExtKeys = scope2.resolve(IGetContactsByExtKeysKey);
+      const lookupResult = await getContactsByExtKeys.handleAsync({
+        keys: [{ contextKey: GEO_CONTEXT_KEYS.USER, relatedEntityId: existingUser.id }],
+      });
+      const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${existingUser.id}`;
+      recipientContactId = lookupResult.data?.data.get(lookupKey)?.[0]?.id;
+    }
+
+    if (recipientContactId) {
+      const scope3 = c.get(SCOPE_KEY);
+      const notifier = scope3.resolve(INotifyKey);
+      await notifier.handleAsync({
+        recipientContactId,
+        title: `You've been invited to join ${orgName}`,
+        content: `Hi,\n\n${inviterName} (${inviter.email}) has invited you to join **${orgName}** as **${role}**.\n\nClick below to accept:\n\n[Accept Invitation](${invitationUrl})`,
+        plaintext: `${inviterName} (${inviter.email}) has invited you to join ${orgName} as ${role}. Accept at: ${invitationUrl}`,
+        sensitive: true,
+        correlationId: invitationId,
+        senderService: "auth",
+      });
+    }
 
     return c.json(D2Result.ok({ data: { invitationId } }), 201 as ContentfulStatusCode);
   });

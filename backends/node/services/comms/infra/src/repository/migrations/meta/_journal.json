@@ -8,6 +8,13 @@
       "when": 1771622769621,
       "tag": "0000_solid_magik",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771858084969,
+      "tag": "0001_useful_mantis",
+      "breakpoints": true
     }
   ]
 }

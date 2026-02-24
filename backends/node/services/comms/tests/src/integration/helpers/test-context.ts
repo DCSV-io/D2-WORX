@@ -9,6 +9,8 @@ export function createTestContext(): HandlerContext {
     isAgentAdmin: false,
     isTargetingStaff: false,
     isTargetingAdmin: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
   };
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }

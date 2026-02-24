@@ -2,12 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import * as grpc from "@grpc/grpc-js";
 import { D2Result } from "@d2/result";
 import { createCommsGrpcService } from "@d2/comms-api";
-import type {
-  ChannelPreference,
-  TemplateWrapper,
-  DeliveryRequest,
-  DeliveryAttempt,
-} from "@d2/comms-domain";
+import type { ChannelPreference, DeliveryRequest, DeliveryAttempt } from "@d2/comms-domain";
 
 /** Creates a mock ServiceProvider that returns controllable scopes. */
 function createMockProvider(handlerMocks: Record<symbol, unknown> = {}) {
@@ -47,38 +42,20 @@ function throwHandler(msg = "Unexpected error") {
 
 const samplePref: ChannelPreference = {
   id: "pref-1",
-  userId: "user-1",
-  contactId: null,
+  contactId: "contact-1",
   emailEnabled: true,
   smsEnabled: false,
-  quietHoursStart: null,
-  quietHoursEnd: null,
-  quietHoursTz: null,
-  createdAt: "2026-01-01T00:00:00Z",
-  updatedAt: "2026-01-01T00:00:00Z",
-};
-
-const sampleTemplate: TemplateWrapper = {
-  id: "tpl-1",
-  name: "email-verification",
-  channel: "email",
-  subjectTemplate: "Verify your email",
-  bodyTemplate: "<p>Hi {{name}}</p>",
-  active: true,
-  createdAt: "2026-01-01T00:00:00Z",
-  updatedAt: "2026-01-01T00:00:00Z",
+  createdAt: new Date("2026-01-01"),
+  updatedAt: new Date("2026-01-01"),
 };
 
 const sampleRequest: DeliveryRequest = {
   id: "req-1",
   messageId: "msg-1",
   correlationId: "corr-1",
-  recipientUserId: "user-1",
-  recipientContactId: null,
-  channels: ["email"],
-  templateName: "email-verification",
+  recipientContactId: "contact-1",
   callbackTopic: null,
-  createdAt: "2026-01-01T00:00:00Z",
+  createdAt: new Date("2026-01-01"),
   processedAt: null,
 };
 
@@ -91,7 +68,7 @@ const sampleAttempt: DeliveryAttempt = {
   providerMessageId: "resend-123",
   error: null,
   attemptNumber: 1,
-  createdAt: "2026-01-01T00:00:00Z",
+  createdAt: new Date("2026-01-01"),
   nextRetryAt: null,
 };
 
@@ -110,7 +87,7 @@ describe("createCommsGrpcService", () => {
       const callback = vi.fn();
 
       await service.getChannelPreference(
-        { request: { userId: "user-1", contactId: "" } } as any,
+        { request: { contactId: "contact-1" } } as any,
         callback,
       );
 
@@ -130,7 +107,7 @@ describe("createCommsGrpcService", () => {
       const callback = vi.fn();
 
       await service.getChannelPreference(
-        { request: { userId: "user-1", contactId: "" } } as any,
+        { request: { contactId: "contact-1" } } as any,
         callback,
       );
 
@@ -148,7 +125,7 @@ describe("createCommsGrpcService", () => {
       const callback = vi.fn();
 
       await service.getChannelPreference(
-        { request: { userId: "user-1", contactId: "" } } as any,
+        { request: { contactId: "contact-1" } } as any,
         callback,
       );
 
@@ -171,13 +148,9 @@ describe("createCommsGrpcService", () => {
       await service.setChannelPreference(
         {
           request: {
-            userId: "user-1",
-            contactId: "",
+            contactId: "contact-1",
             emailEnabled: true,
             smsEnabled: false,
-            quietHoursStart: "",
-            quietHoursEnd: "",
-            quietHoursTz: "",
           },
         } as any,
         callback,
@@ -200,13 +173,9 @@ describe("createCommsGrpcService", () => {
       await service.setChannelPreference(
         {
           request: {
-            userId: "user-1",
-            contactId: "",
+            contactId: "contact-1",
             emailEnabled: true,
             smsEnabled: false,
-            quietHoursStart: "",
-            quietHoursEnd: "",
-            quietHoursTz: "",
           },
         } as any,
         callback,
@@ -228,13 +197,9 @@ describe("createCommsGrpcService", () => {
       await service.setChannelPreference(
         {
           request: {
-            userId: "u1",
-            contactId: "",
+            contactId: "contact-1",
             emailEnabled: true,
             smsEnabled: false,
-            quietHoursStart: "",
-            quietHoursEnd: "",
-            quietHoursTz: "",
           },
         } as any,
         callback,
@@ -242,87 +207,6 @@ describe("createCommsGrpcService", () => {
 
       const [err] = callback.mock.calls[0];
       expect(err.code).toBe(grpc.status.INTERNAL);
-    });
-  });
-
-  describe("getTemplate", () => {
-    it("should return template on success", async () => {
-      const handler = okHandler({ template: sampleTemplate });
-      const provider = createMockProvider();
-      provider.scope.resolve.mockReturnValue(handler);
-
-      const service = createCommsGrpcService(provider as any);
-      const callback = vi.fn();
-
-      await service.getTemplate(
-        { request: { name: "email-verification", channel: "email" } } as any,
-        callback,
-      );
-
-      expect(callback).toHaveBeenCalledOnce();
-      const [err, response] = callback.mock.calls[0];
-      expect(err).toBeNull();
-      expect(response.data.name).toBe("email-verification");
-    });
-
-    it("should return NOT_FOUND when no template exists", async () => {
-      const handler = okHandler({ template: null });
-      const provider = createMockProvider();
-      provider.scope.resolve.mockReturnValue(handler);
-
-      const service = createCommsGrpcService(provider as any);
-      const callback = vi.fn();
-
-      await service.getTemplate(
-        { request: { name: "nonexistent", channel: "email" } } as any,
-        callback,
-      );
-
-      const [, response] = callback.mock.calls[0];
-      expect(response.result.errorCode).toBe("NOT_FOUND");
-    });
-
-    it("should return INTERNAL error when handler throws", async () => {
-      const handler = throwHandler();
-      const provider = createMockProvider();
-      provider.scope.resolve.mockReturnValue(handler);
-
-      const service = createCommsGrpcService(provider as any);
-      const callback = vi.fn();
-
-      await service.getTemplate({ request: { name: "x", channel: "email" } } as any, callback);
-
-      const [err] = callback.mock.calls[0];
-      expect(err.code).toBe(grpc.status.INTERNAL);
-    });
-  });
-
-  describe("upsertTemplate", () => {
-    it("should return template on success", async () => {
-      const handler = okHandler({ template: sampleTemplate });
-      const provider = createMockProvider();
-      provider.scope.resolve.mockReturnValue(handler);
-
-      const service = createCommsGrpcService(provider as any);
-      const callback = vi.fn();
-
-      await service.upsertTemplate(
-        {
-          request: {
-            name: "email-verification",
-            channel: "email",
-            bodyTemplate: "<p>Hi</p>",
-            subjectTemplate: "",
-            active: true,
-          },
-        } as any,
-        callback,
-      );
-
-      expect(callback).toHaveBeenCalledOnce();
-      const [err, response] = callback.mock.calls[0];
-      expect(err).toBeNull();
-      expect(response.data.name).toBe("email-verification");
     });
   });
 
@@ -384,6 +268,8 @@ describe("createCommsGrpcService", () => {
 
   describe("stub RPCs", () => {
     const stubNames = [
+      "getTemplate",
+      "upsertTemplate",
       "getNotifications",
       "markNotificationsRead",
       "createThread",

@@ -5,7 +5,6 @@ import type {
   DeliveryRequestRepoHandlers,
   DeliveryAttemptRepoHandlers,
   ChannelPreferenceRepoHandlers,
-  TemplateWrapperRepoHandlers,
   IEmailProvider,
 } from "@d2/comms-app";
 import type { IHandlerContext } from "@d2/handler";
@@ -61,17 +60,7 @@ export function createMockAttemptRepo(): DeliveryAttemptRepoHandlers {
 export function createMockChannelPrefRepo(): ChannelPreferenceRepoHandlers {
   return {
     create: okHandler(),
-    findByUserId: okHandler({ pref: null }),
     findByContactId: okHandler({ pref: null }),
-    update: okHandler(),
-  };
-}
-
-/** Creates mock TemplateWrapperRepoHandlers. */
-export function createMockTemplateRepo(): TemplateWrapperRepoHandlers {
-  return {
-    create: okHandler(),
-    findByNameAndChannel: okHandler({ template: null }),
     update: okHandler(),
   };
 }
@@ -83,30 +72,6 @@ export function createMockEmailProvider(): IEmailProvider {
       .fn()
       .mockResolvedValue(D2Result.ok({ data: { providerMessageId: "resend-msg-123" } })),
   } as unknown as IEmailProvider;
-}
-
-/** Creates a mock RecipientResolver-like geo handler. */
-export function createMockGetContactsByExtKeys() {
-  const contacts = new Map();
-  contacts.set("auth_user:user-123", [
-    {
-      id: "contact-1",
-      contextKey: "auth_user",
-      relatedEntityId: "user-123",
-      contactMethods: {
-        emails: [{ value: "user@example.com", labels: [] }],
-        phoneNumbers: [{ value: "+15551234567", labels: [] }],
-      },
-      personalDetails: undefined,
-      professionalDetails: undefined,
-      location: undefined,
-      createdAt: new Date(),
-    },
-  ]);
-
-  return {
-    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: contacts } })),
-  };
 }
 
 /** Creates a mock GetContactsByIds handler. */

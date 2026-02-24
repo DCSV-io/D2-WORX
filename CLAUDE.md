@@ -264,6 +264,7 @@ D2-WORX/
 │   │       │   ├── domain/app/infra/api/  # DDD layers
 │   │       │   └── tests/            # Auth service tests
 │   │       ├── comms/                # Comms service (delivery engine)
+│   │       │   ├── client/           # @d2/comms-client (thin RabbitMQ publisher)
 │   │       │   ├── domain/app/infra/api/  # DDD layers
 │   │       │   └── tests/            # Comms service tests
 │   │       ├── e2e/                  # Cross-service E2E tests
@@ -540,7 +541,7 @@ When adding routes or handlers, follow the full checklist in `backends/node/serv
 
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 863+ tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms Phase 1 (delivery engine) is complete — 729+ tests. E2E cross-service tests passing (5 tests).
+Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 825+ tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms delivery engine simplified with `@d2/comms-client` — universal message shape, contactId-only resolution, no event-specific sub-handlers — 481+ tests. E2E cross-service tests passing (5 tests).
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
@@ -686,6 +687,7 @@ Layer 4:  @d2/geo-client     → di, cache-memory, cache-redis, handler, interfa
 Layer 5:  @d2/request-enrich → geo-client, handler, interfaces, logging, result
           @d2/ratelimit      → request-enrich, handler, result, interfaces
           @d2/idempotency    → handler, interfaces, result, logging
+          @d2/comms-client   → di, handler, messaging, result
 ```
 
 ### Design Principles

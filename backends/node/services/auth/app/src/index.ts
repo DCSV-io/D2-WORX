@@ -2,7 +2,6 @@
 // Zero BetterAuth imports — this package is pure application logic.
 
 import type { IHandlerContext } from "@d2/handler";
-import type { IMessagePublisher } from "@d2/messaging";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { Commands, Queries, Complex } from "@d2/geo-client";
 
@@ -60,24 +59,6 @@ export type {
 
 export type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 
-// --- Interfaces (Messaging Publisher Handlers) ---
-export type {
-  NotificationPublisherHandlers,
-  IPublishVerificationEmailHandler,
-  PublishVerificationEmailOutput,
-  IPublishPasswordResetHandler,
-  PublishPasswordResetOutput,
-  IPublishInvitationEmailHandler,
-  PublishInvitationEmailOutput,
-} from "./interfaces/messaging/handlers/pub/index.js";
-
-// --- Messages (RabbitMQ notification contracts) ---
-export type {
-  SendVerificationEmail,
-  SendPasswordReset,
-  SendInvitationEmail,
-} from "./messages/index.js";
-
 // --- Command Handlers ---
 export { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
 export type {
@@ -128,11 +109,6 @@ export type {
   RecordSignInOutcomeOutput,
 } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
 
-// --- Messaging Publisher Handlers ---
-export { PublishVerificationEmail } from "./implementations/messaging/handlers/pub/publish-verification-email.js";
-export { PublishPasswordReset } from "./implementations/messaging/handlers/pub/publish-password-reset.js";
-export { PublishInvitationEmail } from "./implementations/messaging/handlers/pub/publish-invitation-email.js";
-
 // --- Query Handlers ---
 export { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-events.js";
 export type {
@@ -179,9 +155,6 @@ import { CreateOrgContact } from "./implementations/cqrs/handlers/c/create-org-c
 import { UpdateOrgContactHandler } from "./implementations/cqrs/handlers/c/update-org-contact.js";
 import { DeleteOrgContact } from "./implementations/cqrs/handlers/c/delete-org-contact.js";
 import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
-import { PublishVerificationEmail } from "./implementations/messaging/handlers/pub/publish-verification-email.js";
-import { PublishPasswordReset } from "./implementations/messaging/handlers/pub/publish-password-reset.js";
-import { PublishInvitationEmail } from "./implementations/messaging/handlers/pub/publish-invitation-email.js";
 import { CreateUserContact } from "./implementations/cqrs/handlers/c/create-user-contact.js";
 
 /** Creates sign-in event handlers (mirrors .NET AddXxx() pattern). */
@@ -276,30 +249,6 @@ export function createSignInThrottleHandlers(
 /** Return type of createSignInThrottleHandlers. */
 export type SignInThrottleHandlers = ReturnType<typeof createSignInThrottleHandlers>;
 
-/**
- * Creates notification publisher handlers.
- *
- * When a publisher is provided, verification and password-reset events are
- * published to the `events.auth` RabbitMQ fanout exchange. Without a publisher,
- * handlers log the request and return success (useful for local development).
- *
- * The composition root wires BetterAuth callbacks (sendVerificationEmail,
- * sendResetPassword, sendInvitationEmail) to call these handlers.
- */
-export function createNotificationHandlers(
-  context: IHandlerContext,
-  publisher?: IMessagePublisher,
-) {
-  return {
-    publishVerificationEmail: new PublishVerificationEmail(context, publisher),
-    publishPasswordReset: new PublishPasswordReset(context, publisher),
-    publishInvitationEmail: new PublishInvitationEmail(context, publisher),
-  };
-}
-
-/** Return type of createNotificationHandlers. */
-export type NotificationHandlers = ReturnType<typeof createNotificationHandlers>;
-
 /** Creates user contact handler for sign-up Geo contact creation. */
 export function createUserContactHandler(
   createContacts: Commands.ICreateContactsHandler,
@@ -340,7 +289,4 @@ export {
   IGetActiveConsentsKey,
   IGetOrgContactsKey,
   ICheckSignInThrottleKey,
-  IPublishVerificationEmailKey,
-  IPublishPasswordResetKey,
-  IPublishInvitationEmailKey,
 } from "./service-keys.js";

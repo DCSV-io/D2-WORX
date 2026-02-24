@@ -3,7 +3,6 @@ export {
   deliveryRequest,
   deliveryAttempt,
   channelPreference,
-  templateWrapper,
 } from "./tables.js";
 
 export type {
@@ -15,6 +14,4 @@ export type {
   NewDeliveryAttempt,
   ChannelPreferenceRow,
   NewChannelPreference,
-  TemplateWrapperRow,
-  NewTemplateWrapper,
 } from "./types.js";

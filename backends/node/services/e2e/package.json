@@ -10,11 +10,11 @@
   "devDependencies": {
     "@d2/auth-api": "workspace:*",
     "@d2/auth-app": "workspace:*",
-    "@d2/auth-domain": "workspace:*",
     "@d2/auth-infra": "workspace:*",
     "@d2/cache-memory": "workspace:*",
     "@d2/cache-redis": "workspace:*",
     "@d2/comms-app": "workspace:*",
+    "@d2/comms-client": "workspace:*",
     "@d2/comms-domain": "workspace:*",
     "@d2/comms-infra": "workspace:*",
     "@d2/di": "workspace:*",

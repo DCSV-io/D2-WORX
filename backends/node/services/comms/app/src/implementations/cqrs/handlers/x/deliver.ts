@@ -1,3 +1,5 @@
+import { marked } from "marked";
+import DOMPurify from "isomorphic-dompurify";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import {
@@ -17,7 +19,6 @@ import type {
   DeliveryRequestRepoHandlers,
   DeliveryAttemptRepoHandlers,
   ChannelPreferenceRepoHandlers,
-  TemplateWrapperRepoHandlers,
 } from "../../../../interfaces/repository/handlers/index.js";
 import type { IEmailProvider, SendEmailInput } from "../../../../interfaces/providers/index.js";
 import type { ISmsProvider } from "../../../../interfaces/providers/index.js";
@@ -29,12 +30,10 @@ export interface DeliverInput {
   readonly content: string;
   readonly plainTextContent: string;
   readonly sensitive?: boolean;
-  readonly urgency?: "normal" | "important" | "urgent";
-  readonly recipientUserId?: string;
-  readonly recipientContactId?: string;
-  readonly channels?: readonly Channel[];
-  readonly templateName?: string;
+  readonly urgency?: "normal" | "urgent";
+  readonly recipientContactId: string;
   readonly correlationId: string;
+  readonly metadata?: Record<string, unknown>;
 }
 
 export interface DeliverOutput {
@@ -43,20 +42,36 @@ export interface DeliverOutput {
   readonly attempts: DeliveryAttempt[];
 }
 
+export interface EmailWrapperOptions {
+  /** HTML template with {{title}}, {{body}}, {{unsubscribeUrl}} placeholders. */
+  emailWrapper?: string;
+}
+
+/** Default email HTML wrapper. */
+const DEFAULT_EMAIL_WRAPPER = `<!DOCTYPE html>
+<html><body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h2>{{title}}</h2>
+  <div>{{body}}</div>
+  <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
+  <p style="color: #999; font-size: 12px;">This is an automated message from D2-WORX.
+  {{unsubscribeUrl}}</p>
+</body></html>`;
+
 /**
  * Core delivery orchestrator. Creates Message + DeliveryRequest, resolves
- * the recipient's address, determines channels, renders templates, and
- * dispatches via providers (Resend for email, Twilio for SMS).
+ * the recipient's address, determines channels, renders markdown to HTML,
+ * wraps in email template, and dispatches via providers (Resend for email,
+ * Twilio for SMS).
  */
 export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
   private readonly messageRepo: MessageRepoHandlers;
   private readonly requestRepo: DeliveryRequestRepoHandlers;
   private readonly attemptRepo: DeliveryAttemptRepoHandlers;
   private readonly channelPrefRepo: ChannelPreferenceRepoHandlers;
-  private readonly templateRepo: TemplateWrapperRepoHandlers;
   private readonly emailProvider: IEmailProvider;
   private readonly smsProvider: ISmsProvider | undefined;
   private readonly recipientResolver: RecipientResolver;
+  private readonly emailWrapper: string;
 
   constructor(
     repos: {
@@ -64,21 +79,21 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       request: DeliveryRequestRepoHandlers;
       attempt: DeliveryAttemptRepoHandlers;
       channelPref: ChannelPreferenceRepoHandlers;
-      template: TemplateWrapperRepoHandlers;
     },
     providers: { email: IEmailProvider; sms?: ISmsProvider },
     recipientResolver: RecipientResolver,
     context: IHandlerContext,
+    options?: EmailWrapperOptions,
   ) {
     super(context);
     this.messageRepo = repos.message;
     this.requestRepo = repos.request;
     this.attemptRepo = repos.attempt;
     this.channelPrefRepo = repos.channelPref;
-    this.templateRepo = repos.template;
     this.emailProvider = providers.email;
     this.smsProvider = providers.sms;
     this.recipientResolver = recipientResolver;
+    this.emailWrapper = options?.emailWrapper ?? DEFAULT_EMAIL_WRAPPER;
   }
 
   protected async executeAsync(input: DeliverInput): Promise<D2Result<DeliverOutput | undefined>> {
@@ -108,16 +123,14 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       plainTextContent: input.plainTextContent,
       sensitive: input.sensitive,
       urgency: input.urgency,
+      metadata: input.metadata,
     });
 
     // Step 2: Create domain DeliveryRequest
     const request = createDeliveryRequest({
       messageId: message.id,
       correlationId: input.correlationId,
-      recipientUserId: input.recipientUserId,
       recipientContactId: input.recipientContactId,
-      channels: input.channels,
-      templateName: input.templateName,
     });
 
     // Step 3: Persist message + request
@@ -129,7 +142,6 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
 
     // Step 4: Resolve recipient address
     const resolved = await this.recipientResolver.handleAsync({
-      userId: input.recipientUserId,
       contactId: input.recipientContactId,
     });
 
@@ -144,24 +156,15 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
 
     // Step 5: Resolve channel preferences
     let prefs = null;
-    if (input.recipientUserId) {
-      const prefResult = await this.channelPrefRepo.findByUserId.handleAsync({
-        userId: input.recipientUserId,
-      });
-      if (prefResult.success && prefResult.data) {
-        prefs = prefResult.data.pref;
-      }
-    } else if (input.recipientContactId) {
-      const prefResult = await this.channelPrefRepo.findByContactId.handleAsync({
-        contactId: input.recipientContactId,
-      });
-      if (prefResult.success && prefResult.data) {
-        prefs = prefResult.data.pref;
-      }
+    const prefResult = await this.channelPrefRepo.findByContactId.handleAsync({
+      contactId: input.recipientContactId,
+    });
+    if (prefResult.success && prefResult.data) {
+      prefs = prefResult.data.pref;
     }
 
     // Step 6: Resolve channels via domain rule
-    const channelsResult = resolveChannels(input.channels ?? null, prefs, message);
+    const channelsResult = resolveChannels(prefs, message);
 
     // Step 7: Check if we have addresses for resolved channels
     const deliverableChannels: Array<{ channel: Channel; address: string }> = [];
@@ -183,25 +186,6 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     const attempts: DeliveryAttempt[] = [];
 
     for (const { channel, address } of deliverableChannels) {
-      // Look up template
-      const templateName = input.templateName ?? "default";
-      const tplResult = await this.templateRepo.findByNameAndChannel.handleAsync({
-        name: templateName,
-        channel,
-      });
-      const template = tplResult.success ? tplResult.data?.template : null;
-
-      // Render content
-      const subject = template?.subjectTemplate
-        ? renderTemplate(template.subjectTemplate, {
-            title: input.title,
-            body: input.plainTextContent,
-          })
-        : input.title;
-      const html = template?.bodyTemplate
-        ? renderTemplate(template.bodyTemplate, { title: input.title, body: input.content })
-        : input.content;
-
       // Create attempt
       let attempt = createDeliveryAttempt({
         requestId: request.id,
@@ -212,9 +196,17 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
 
       // Dispatch
       if (channel === "email") {
+        // Render markdown content to HTML and wrap in email template
+        const renderedBody = renderMarkdownToHtml(input.content);
+        const html = renderTemplate(this.emailWrapper, {
+          title: input.title,
+          body: renderedBody,
+          unsubscribeUrl: "",
+        });
+
         const sendInput: SendEmailInput = {
           to: address,
-          subject: subject ?? input.title,
+          subject: input.title,
           html,
           plainText: input.plainTextContent,
         };
@@ -310,4 +302,13 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
 /** Simple {{key}} template interpolation. */
 function renderTemplate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
+}
+
+/**
+ * Renders markdown to sanitized HTML using `marked` + `isomorphic-dompurify`.
+ * Full CommonMark support with XSS protection via DOMPurify.
+ */
+function renderMarkdownToHtml(markdown: string): string {
+  const rawHtml = marked.parse(markdown, { async: false }) as string;
+  return DOMPurify.sanitize(rawHtml);
 }

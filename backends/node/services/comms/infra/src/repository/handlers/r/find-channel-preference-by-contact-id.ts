@@ -39,13 +39,9 @@ export class FindChannelPreferenceByContactId
 export function toChannelPreference(row: ChannelPreferenceRow): ChannelPreference {
   return {
     id: row.id,
-    userId: row.userId,
     contactId: row.contactId,
     emailEnabled: row.emailEnabled,
     smsEnabled: row.smsEnabled,
-    quietHoursStart: row.quietHoursStart,
-    quietHoursEnd: row.quietHoursEnd,
-    quietHoursTz: row.quietHoursTz,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };

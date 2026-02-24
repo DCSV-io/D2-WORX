@@ -73,15 +73,15 @@ Summary:
 
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
-- Auth service Stage B (Node.js + Hono + BetterAuth) — 832 auth tests passing:
+- Auth service Stage B (Node.js + Hono + BetterAuth) — 825 auth tests passing:
   - Domain model (entities, value objects, business rules)
   - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
-- Comms service Phase 1 (delivery engine) — 658 comms tests passing:
+- Comms service Phase 1 (delivery engine) — 510 comms tests passing:
   - Email delivery via Resend, SMS via Twilio
-  - RabbitMQ consumer for auth events (verification, password reset, invitation)
-  - gRPC API layer + Aspire wiring
+  - `@d2/comms-client` — thin RabbitMQ publishing client (universal notification shape)
+  - RabbitMQ consumer for notification requests, gRPC API layer + Aspire wiring
 - E2E cross-service tests (Auth → Geo → Comms pipeline, 5 tests)
 
 **🚧 In Progress:**
@@ -258,15 +258,17 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                            | Platform | Status     | Description                                                                            |
 > | -------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching      |
-> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — DDD layers done (485 tests), client libs next |
+> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — DDD layers done (825 tests), client libs next |
+> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (510 tests)                   |
 >
 > **Client Libraries:**
 >
 > _Service-owned client libraries for consumers. Each service publishes a client package so consumers don't need to know gRPC details._
 >
-> | Client     | .NET                                                                | Node.js                                                               | Description                    |
-> | ---------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------ |
-> | Geo Client | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md) | Service-owned consumer library |
+> | Client      | .NET                                                                | Node.js                                                                    | Description                    |
+> | ----------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------ |
+> | Geo Client  | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md)      | Service-owned consumer library |
+> | Comms Client | —                                                                   | [@d2/comms-client](backends/node/services/comms/client/COMMS_CLIENT.md) | RabbitMQ notification publisher |
 >
 > **Gateways:**
 >

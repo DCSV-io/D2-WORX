@@ -1,6 +1,5 @@
 import type { ServiceCollection } from "@d2/di";
 import { IHandlerContextKey } from "@d2/handler";
-import type { IMessagePublisher } from "@d2/messaging";
 import {
   ICreateContactsKey,
   IDeleteContactsByExtKeysKey,
@@ -37,9 +36,6 @@ import {
   IGetActiveConsentsKey,
   IGetOrgContactsKey,
   ICheckSignInThrottleKey,
-  IPublishVerificationEmailKey,
-  IPublishPasswordResetKey,
-  IPublishInvitationEmailKey,
 } from "./service-keys.js";
 import { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
 import { RecordSignInOutcome } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
@@ -53,12 +49,7 @@ import { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-e
 import { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
 import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 import { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
-import { PublishVerificationEmail } from "./implementations/messaging/handlers/pub/publish-verification-email.js";
-import { PublishPasswordReset } from "./implementations/messaging/handlers/pub/publish-password-reset.js";
-import { PublishInvitationEmail } from "./implementations/messaging/handlers/pub/publish-invitation-email.js";
-
 export interface AddAuthAppOptions {
-  publisher?: IMessagePublisher;
   checkOrgExists: (orgId: string) => Promise<boolean>;
 }
 
@@ -180,20 +171,4 @@ export function addAuthApp(services: ServiceCollection, options: AddAuthAppOptio
       new CheckSignInThrottle(sp.resolve(ISignInThrottleStoreKey), sp.resolve(IHandlerContextKey)),
   );
 
-  // --- Notification Publishers ---
-
-  services.addTransient(
-    IPublishVerificationEmailKey,
-    (sp) => new PublishVerificationEmail(sp.resolve(IHandlerContextKey), options.publisher),
-  );
-
-  services.addTransient(
-    IPublishPasswordResetKey,
-    (sp) => new PublishPasswordReset(sp.resolve(IHandlerContextKey), options.publisher),
-  );
-
-  services.addTransient(
-    IPublishInvitationEmailKey,
-    (sp) => new PublishInvitationEmail(sp.resolve(IHandlerContextKey), options.publisher),
-  );
 }

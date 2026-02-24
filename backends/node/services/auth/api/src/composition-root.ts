@@ -26,6 +26,7 @@ import {
   createGeoServiceClient,
   type GeoClientOptions,
 } from "@d2/geo-client";
+import { addCommsClient, INotifyKey } from "@d2/comms-client";
 import type { IMessagePublisher } from "@d2/messaging";
 import { Check as RateLimitCheck } from "@d2/ratelimit";
 import {
@@ -43,8 +44,6 @@ import {
   addAuthApp,
   ISignInThrottleStoreKey,
   IRecordSignInEventKey,
-  IPublishVerificationEmailKey,
-  IPublishPasswordResetKey,
   ICreateUserContactKey,
   CheckSignInThrottle,
   RecordSignInOutcome,
@@ -206,7 +205,8 @@ export async function createApp(
 
   // Layer registrations (mirrors services.AddAuthInfra(), services.AddAuthApp())
   addAuthInfra(services, db);
-  addAuthApp(services, { publisher, checkOrgExists });
+  addAuthApp(services, { checkOrgExists });
+  addCommsClient(services, { publisher });
 
   // 4. Build ServiceProvider
   const provider = services.build();
@@ -255,7 +255,7 @@ export async function createApp(
    */
   function createCallbackScope() {
     const scope = provider.createScope();
-    scope.setInstance(IRequestContextKey, {
+    const requestContext = {
       traceId: crypto.randomUUID(),
       isAuthenticated: false,
       isAgentStaff: false,
@@ -264,11 +264,9 @@ export async function createApp(
       isTargetingAdmin: false,
       isOrgEmulating: false,
       isUserImpersonating: false,
-    });
-    scope.setInstance(
-      IHandlerContextKey,
-      new HandlerContext(scope.resolve(IRequestContextKey), logger),
-    );
+    };
+    scope.setInstance(IRequestContextKey, requestContext);
+    scope.setInstance(IHandlerContextKey, new HandlerContext(requestContext, logger));
     return scope;
   }
 
@@ -296,8 +294,27 @@ export async function createApp(
     publishVerificationEmail: async (input) => {
       const scope = createCallbackScope();
       try {
-        const handler = scope.resolve(IPublishVerificationEmailKey);
-        await handler.handleAsync(input);
+        // Resolve contactId from userId via geo-client (cached)
+        const result = await getContactsByExtKeys.handleAsync({
+          keys: [{ contextKey: GEO_CONTEXT_KEYS.USER, relatedEntityId: input.userId }],
+        });
+        const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${input.userId}`;
+        const contactId = result.data?.data.get(lookupKey)?.[0]?.id;
+        if (!contactId) {
+          logger.error(`No Geo contact found for user ${input.userId} — cannot send verification email`);
+          return;
+        }
+
+        const notifier = scope.resolve(INotifyKey);
+        await notifier.handleAsync({
+          recipientContactId: contactId,
+          title: "Verify your email address",
+          content: `Hi ${input.name},\n\nPlease verify your email by clicking the link below:\n\n[Verify Email](${input.verificationUrl})`,
+          plaintext: `Hi ${input.name}, please verify your email by visiting: ${input.verificationUrl}`,
+          sensitive: true,
+          correlationId: crypto.randomUUID(),
+          senderService: "auth",
+        });
       } finally {
         scope.dispose();
       }
@@ -305,8 +322,27 @@ export async function createApp(
     publishPasswordReset: async (input) => {
       const scope = createCallbackScope();
       try {
-        const handler = scope.resolve(IPublishPasswordResetKey);
-        await handler.handleAsync(input);
+        // Resolve contactId from userId via geo-client (cached)
+        const result = await getContactsByExtKeys.handleAsync({
+          keys: [{ contextKey: GEO_CONTEXT_KEYS.USER, relatedEntityId: input.userId }],
+        });
+        const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${input.userId}`;
+        const contactId = result.data?.data.get(lookupKey)?.[0]?.id;
+        if (!contactId) {
+          logger.error(`No Geo contact found for user ${input.userId} — cannot send password reset`);
+          return;
+        }
+
+        const notifier = scope.resolve(INotifyKey);
+        await notifier.handleAsync({
+          recipientContactId: contactId,
+          title: "Reset your password",
+          content: `Hi ${input.name},\n\nYou requested a password reset. Click the link below to set a new password:\n\n[Reset Password](${input.resetUrl})\n\nIf you didn't request this, you can safely ignore this email.`,
+          plaintext: `Hi ${input.name}, reset your password by visiting: ${input.resetUrl}. If you didn't request this, ignore this email.`,
+          sensitive: true,
+          correlationId: crypto.randomUUID(),
+          senderService: "auth",
+        });
       } finally {
         scope.dispose();
       }

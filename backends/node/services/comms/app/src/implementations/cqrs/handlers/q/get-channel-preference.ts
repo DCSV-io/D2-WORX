@@ -5,8 +5,7 @@ import type { ChannelPreferenceRepoHandlers } from "../../../../interfaces/repos
 import type { InMemoryCache } from "@d2/interfaces";
 
 export interface GetChannelPreferenceInput {
-  readonly userId?: string;
-  readonly contactId?: string;
+  readonly contactId: string;
 }
 
 export interface GetChannelPreferenceOutput {
@@ -39,13 +38,11 @@ export class GetChannelPreference extends BaseHandler<
   protected async executeAsync(
     input: GetChannelPreferenceInput,
   ): Promise<D2Result<GetChannelPreferenceOutput | undefined>> {
-    if (!input.userId && !input.contactId) {
+    if (!input.contactId) {
       return D2Result.ok({ data: { pref: null } });
     }
 
-    const cacheKey = input.userId
-      ? `chan-pref:user:${input.userId}`
-      : `chan-pref:contact:${input.contactId}`;
+    const cacheKey = `chan-pref:contact:${input.contactId}`;
 
     // Check cache first
     if (this.cache) {
@@ -57,13 +54,8 @@ export class GetChannelPreference extends BaseHandler<
 
     // Fetch from DB
     let pref: ChannelPreference | null = null;
-    if (input.userId) {
-      const result = await this.repo.findByUserId.handleAsync({ userId: input.userId });
-      if (result.success && result.data) pref = result.data.pref;
-    } else if (input.contactId) {
-      const result = await this.repo.findByContactId.handleAsync({ contactId: input.contactId });
-      if (result.success && result.data) pref = result.data.pref;
-    }
+    const result = await this.repo.findByContactId.handleAsync({ contactId: input.contactId });
+    if (result.success && result.data) pref = result.data.pref;
 
     // Populate cache on miss
     if (this.cache && pref) {

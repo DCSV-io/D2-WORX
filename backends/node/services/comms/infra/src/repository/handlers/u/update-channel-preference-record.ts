@@ -27,9 +27,6 @@ export class UpdateChannelPreferenceRecord
       .set({
         emailEnabled: p.emailEnabled,
         smsEnabled: p.smsEnabled,
-        quietHoursStart: p.quietHoursStart,
-        quietHoursEnd: p.quietHoursEnd,
-        quietHoursTz: p.quietHoursTz,
         updatedAt: p.updatedAt,
       })
       .where(eq(channelPreference.id, p.id));

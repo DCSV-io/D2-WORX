@@ -9,7 +9,7 @@ describe("DeliveryRequest", () => {
   const validInput = {
     messageId: "msg-123",
     correlationId: "corr-456",
-    recipientUserId: "user-789",
+    recipientContactId: "contact-789",
   };
 
   describe("createDeliveryRequest", () => {
@@ -17,7 +17,7 @@ describe("DeliveryRequest", () => {
       const req = createDeliveryRequest(validInput);
       expect(req.messageId).toBe("msg-123");
       expect(req.correlationId).toBe("corr-456");
-      expect(req.recipientUserId).toBe("user-789");
+      expect(req.recipientContactId).toBe("contact-789");
       expect(req.id).toHaveLength(36);
       expect(req.createdAt).toBeInstanceOf(Date);
       expect(req.processedAt).toBeNull();
@@ -36,30 +36,7 @@ describe("DeliveryRequest", () => {
 
     it("should default nullable fields to null", () => {
       const req = createDeliveryRequest(validInput);
-      expect(req.recipientContactId).toBeNull();
-      expect(req.channels).toBeNull();
-      expect(req.templateName).toBeNull();
       expect(req.callbackTopic).toBeNull();
-    });
-
-    it("should accept recipientContactId", () => {
-      const req = createDeliveryRequest({
-        messageId: "msg-1",
-        correlationId: "corr-1",
-        recipientContactId: "contact-1",
-      });
-      expect(req.recipientContactId).toBe("contact-1");
-      expect(req.recipientUserId).toBeNull();
-    });
-
-    it("should accept explicit channels", () => {
-      const req = createDeliveryRequest({ ...validInput, channels: ["email"] });
-      expect(req.channels).toEqual(["email"]);
-    });
-
-    it("should accept templateName", () => {
-      const req = createDeliveryRequest({ ...validInput, templateName: "transactional" });
-      expect(req.templateName).toBe("transactional");
     });
 
     it("should accept callbackTopic", () => {
@@ -86,41 +63,9 @@ describe("DeliveryRequest", () => {
         createDeliveryRequest({
           messageId: "msg-1",
           correlationId: "corr-1",
+          recipientContactId: "",
         }),
       ).toThrow(CommsValidationError);
-    });
-
-    it("should throw when channels contains invalid value", () => {
-      expect(() =>
-        createDeliveryRequest({ ...validInput, channels: ["email", "push" as never] }),
-      ).toThrow(CommsValidationError);
-    });
-
-    it("should accept both recipientUserId and recipientContactId", () => {
-      const req = createDeliveryRequest({
-        messageId: "msg-1",
-        correlationId: "corr-1",
-        recipientUserId: "user-1",
-        recipientContactId: "contact-1",
-      });
-      expect(req.recipientUserId).toBe("user-1");
-      expect(req.recipientContactId).toBe("contact-1");
-    });
-
-    it("should accept empty channels array", () => {
-      const req = createDeliveryRequest({ ...validInput, channels: [] });
-      expect(req.channels).toEqual([]);
-    });
-
-    it("should treat null recipientUserId as no user recipient", () => {
-      const req = createDeliveryRequest({
-        messageId: "msg-1",
-        correlationId: "corr-1",
-        recipientUserId: null,
-        recipientContactId: "contact-1",
-      });
-      expect(req.recipientUserId).toBeNull();
-      expect(req.recipientContactId).toBe("contact-1");
     });
   });
 
