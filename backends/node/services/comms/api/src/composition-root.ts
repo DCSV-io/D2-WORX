@@ -125,7 +125,7 @@ export async function createCommsService(config: CommsServiceConfig) {
   services.addInstance(IGetContactsByIdsKey, getContactsByIds);
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
-  addCommsInfra(services, db, pool);
+  addCommsInfra(services, db);
   addCommsApp(services);
 
   // Delivery providers — singleton instances with service-level context.

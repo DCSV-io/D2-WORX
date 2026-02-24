@@ -206,7 +206,7 @@ export async function createApp(
   services.addInstance(IUpdateContactsByExtKeysKey, updateContactsByExtKeys);
 
   // Layer registrations (mirrors services.AddAuthInfra(), services.AddAuthApp())
-  addAuthInfra(services, db, pool);
+  addAuthInfra(services, db);
   addAuthApp(services, { checkOrgExists });
   addCommsClient(services, { publisher });
 

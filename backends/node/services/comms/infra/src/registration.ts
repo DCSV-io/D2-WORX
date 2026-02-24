@@ -41,15 +41,12 @@ import { PingDb } from "./repository/handlers/q/ping-db.js";
 export function addCommsInfra(
   services: ServiceCollection,
   db: NodePgDatabase,
-  pool?: import("pg").Pool,
 ): void {
-  // Health check handler (uses raw pool for lightweight SELECT 1)
-  if (pool) {
-    services.addTransient(
-      IPingDbKey,
-      (sp) => new PingDb(pool, sp.resolve(IHandlerContextKey)),
-    );
-  }
+  // Health check handler
+  services.addTransient(
+    IPingDbKey,
+    (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)),
+  );
 
   // --- Message Repository ---
   services.addTransient(

@@ -40,14 +40,12 @@ import { PingDb } from "./repository/handlers/q/ping-db.js";
  *
  * All repo handlers are transient — new instance per resolve, receiving scoped IHandlerContext.
  */
-export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase, pool?: import("pg").Pool): void {
-  // Health check handler (uses raw pool for lightweight SELECT 1)
-  if (pool) {
-    services.addTransient(
-      IPingDbKey,
-      (sp) => new PingDb(pool, sp.resolve(IHandlerContextKey)),
-    );
-  }
+export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void {
+  // Health check handler
+  services.addTransient(
+    IPingDbKey,
+    (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)),
+  );
 
   // Sign-in event repo handlers
   services.addTransient(
