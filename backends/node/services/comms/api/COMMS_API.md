@@ -35,6 +35,8 @@ src/
   composition-root.ts                   createCommsService(config) -- full app wiring
   services/
     comms-grpc-service.ts               createCommsGrpcService(provider) -- CommsServiceServer impl
+  interceptors/
+    api-key-interceptor.ts              withApiKeyAuth() -- wraps gRPC service with x-api-key validation
   mappers/
     channel-preference-mapper.ts        channelPreferenceToProto (domain -> proto)
     delivery-mapper.ts                  deliveryRequestToProto, deliveryAttemptToProto
@@ -70,6 +72,7 @@ Returns `{ server, shutdown }` where `shutdown()` closes RabbitMQ, disposes prov
 | `twilioPhoneNumber`| `TWILIO_PHONE_NUMBER`                      | No       | --      |
 | `geoAddress`       | `GEO_GRPC_ADDRESS`                         | No       | --      |
 | `geoApiKey`        | `COMMSGEOCLIENTOPTIONS_APIKEY`             | No       | --      |
+| `commsApiKey`      | `COMMS_API_KEY`                            | No       | --      |
 
 ## gRPC Service
 
@@ -90,6 +93,18 @@ Returns `{ server, shutdown }` where `shutdown()` closes RabbitMQ, disposes prov
 | --    | `getTemplate`, `upsertTemplate` (templates removed from architecture)                         |
 | 2     | `getNotifications`, `markNotificationsRead`                                                   |
 | 3     | `createThread`, `getThread`, `getThreads`, `postMessage`, `editMessage`, `deleteMessage`, `getThreadMessages`, `addReaction`, `removeReaction`, `addParticipant`, `removeParticipant` |
+
+## Security — API Key Interceptor
+
+All gRPC RPCs require API key authentication via the `x-api-key` metadata header. The `withApiKeyAuth` wrapper validates the header against `COMMS_API_KEY` before delegating to the handler.
+
+| Scenario                | Response           |
+| ----------------------- | ------------------ |
+| Missing `x-api-key`    | `UNAUTHENTICATED`  |
+| Invalid API key         | `UNAUTHENTICATED`  |
+| Valid API key           | Pass-through       |
+
+Unlike Geo.API's `ApiKeyInterceptor` (which also validates context-key ownership), the Comms interceptor is simpler -- single key, no per-key context-key authorization. Mirrors the .NET pattern but adapted for `@grpc/grpc-js` (which lacks first-class server interceptors), so each handler is wrapped at the service object level.
 
 ## Mappers
 

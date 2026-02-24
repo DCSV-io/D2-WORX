@@ -67,6 +67,8 @@ export type {
   DeleteContactsByExtKeysResponse,
   UpdateContactsByExtKeysRequest,
   UpdateContactsByExtKeysResponse,
+  ContactReplacementKey,
+  ContactReplacement,
   GeoServiceClient,
   GeoServiceServer,
 } from "./generated/geo/v1/geo.js";
@@ -80,9 +82,17 @@ export {
 export type { Timestamp } from "./generated/google/protobuf/timestamp.js";
 
 // Events — Geo
-export type { GeoRefDataUpdatedEvent } from "./generated/events/v1/geo_events.js";
+export type {
+  GeoRefDataUpdatedEvent,
+  EvictedContact,
+  ContactsEvictedEvent,
+} from "./generated/events/v1/geo_events.js";
 
-export { GeoRefDataUpdatedEvent as GeoRefDataUpdatedEventFns } from "./generated/events/v1/geo_events.js";
+export {
+  GeoRefDataUpdatedEvent as GeoRefDataUpdatedEventFns,
+  EvictedContact as EvictedContactFns,
+  ContactsEvictedEvent as ContactsEvictedEventFns,
+} from "./generated/events/v1/geo_events.js";
 
 // Events — Auth
 export type {

@@ -32,8 +32,8 @@ public partial interface IComplex
     /// Output for updating Geo contacts by ext keys.
     /// </summary>
     ///
-    /// <param name="Data">
-    /// The newly created replacement contacts.
+    /// <param name="Replacements">
+    /// The replacement mappings (old contact → new contact).
     /// </param>
-    public record UpdateContactsByExtKeysOutput(List<ContactDTO> Data);
+    public record UpdateContactsByExtKeysOutput(List<ContactReplacement> Replacements);
 }

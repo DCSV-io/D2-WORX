@@ -24,8 +24,8 @@ Defined in [geo.proto](../../../../../contracts/protos/geo/v1/geo.proto):
 | `DeleteContacts`             | `DeleteContactsRequest`             | `DeleteContactsResponse`             | Internal only — batch Contact deletion by IDs. Not exposed via client libraries.                                         |
 | `GetContactsByExtKeys`       | `GetContactsByExtKeysRequest`       | `GetContactsByExtKeysResponse`       | Contact lookup by ContextKey/RelatedEntityId pairs with nested Location data.                                            |
 | `CreateContacts`             | `CreateContactsRequest`             | `CreateContactsResponse`             | Batch Contact creation with embedded locations, returning ContactDTOs.                                                   |
-| `DeleteContactsByExtKeys`    | `DeleteContactsByExtKeysRequest`    | `DeleteContactsByExtKeysResponse`    | Delete Contacts by ContextKey/RelatedEntityId pairs.                                                                     |
-| `UpdateContactsByExtKeys`    | `UpdateContactsByExtKeysRequest`    | `UpdateContactsByExtKeysResponse`    | Replace Contacts at given ext keys (Geo internally deletes old, creates new).                                            |
+| `DeleteContactsByExtKeys`    | `DeleteContactsByExtKeysRequest`    | `DeleteContactsByExtKeysResponse`    | Delete Contacts by ContextKey/RelatedEntityId pairs. Returns count + publishes cache eviction event.                     |
+| `UpdateContactsByExtKeys`    | `UpdateContactsByExtKeysRequest`    | `UpdateContactsByExtKeysResponse`    | Replace Contacts at given ext keys (delete old, create new). Returns old-to-new mapping + publishes cache eviction event. |
 
 ## Security — API Key Interceptor
 

@@ -18,6 +18,7 @@ const config = {
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
   geoAddress: process.env.GEO_GRPC_ADDRESS,
   geoApiKey: process.env.COMMSGEOCLIENTOPTIONS_APIKEY,
+  commsApiKey: process.env.COMMS_API_KEY,
 };
 
 if (!config.databaseUrl) {

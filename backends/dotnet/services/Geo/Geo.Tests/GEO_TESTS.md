@@ -42,6 +42,12 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 
 ### Infra
 
+#### Messaging
+
+| File Name                                                                              | Description                                                                                                                                              |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [RabbitMqRoundTripTests.cs](Integration/Infra/Messaging/RabbitMqRoundTripTests.cs) | Integration tests using Testcontainers.RabbitMq to verify proto message round-trip (publish + consume) for GeoRefDataUpdatedEvent and ContactsEvictedEvent. |
+
 #### Repository
 
 | File Name                                                                                  | Description                                                                                                                                 |
@@ -97,6 +103,13 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | [GeoRefDataUnitTests.cs](Unit/Client/GeoRefDataUnitTests.cs)                         | Unit tests for Geo.Client handler implementations: SetInMem, GetFromMem, SetOnDisk, GetFromDisk, ReqUpdate, Get. |
 | [GetRefDataResSerializationTests.cs](Unit/Client/GetRefDataResSerializationTests.cs) | Tests verifying protobuf binary serialization/deserialization of GetReferenceDataResponse for Redis caching.     |
+
+### Messaging
+
+| File Name                                                                       | Description                                                                                                                                              |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [EventContractTests.cs](Unit/Messaging/EventContractTests.cs)                   | Contract tests validating JSON fixture deserialization into proto types and round-trip through JsonFormatter/JsonParser for cross-language compatibility. |
+| [AmqpConventionsTests.cs](Unit/Messaging/AmqpConventionsTests.cs)               | Unit tests for AmqpConventions verifying exchange naming conventions (EventExchange, ServiceExchange).                                                   |
 
 ### Infra
 

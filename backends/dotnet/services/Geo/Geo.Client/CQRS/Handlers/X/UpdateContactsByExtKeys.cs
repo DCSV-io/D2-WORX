@@ -72,7 +72,7 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
                 cancellationToken: ct)
             .HandleAsync(
                 r => r.Result,
-                r => r.Data,
+                r => r.Replacements,
                 Context.Logger);
 
         // Evict ext-key cache for each input contact regardless of gRPC result.

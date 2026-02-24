@@ -1,12 +1,12 @@
 import type { IHandler, RedactionSpec } from "@d2/handler";
-import type { ContactToCreateDTO, ContactDTO } from "@d2/protos";
+import type { ContactToCreateDTO, ContactReplacement } from "@d2/protos";
 
 export interface UpdateContactsByExtKeysInput {
   contacts: ContactToCreateDTO[];
 }
 
 export interface UpdateContactsByExtKeysOutput {
-  data: ContactDTO[];
+  replacements: ContactReplacement[];
 }
 
 /** Recommended redaction for UpdateContactsByExtKeys handlers. */

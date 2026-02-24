@@ -115,7 +115,8 @@ export class UpdateOrgContactHandler extends BaseHandler<
         return D2Result.bubbleFail(geoResult);
       }
 
-      newGeoContact = geoResult.data.data[0];
+      // We send exactly 1 contact, so we expect exactly 1 replacement entry.
+      newGeoContact = geoResult.data.replacements[0]?.newContact;
       if (!newGeoContact) {
         return D2Result.bubbleFail(geoResult);
       }

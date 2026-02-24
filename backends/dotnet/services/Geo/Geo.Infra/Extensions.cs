@@ -96,13 +96,16 @@ public static class Extensions
 
             // Repository (delete) handlers.
             services.AddTransient<App.Interfaces.Repository.Handlers.D.IDelete.IDeleteContactsHandler, DeleteContacts>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.D.IDelete.IDeleteContactsByExtKeysHandler, DeleteContactsByExtKeys>();
 
             // Messaging (publish) handlers.
             services.AddTransient<App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler, Update>();
+            services.AddTransient<App.Interfaces.Messaging.Handlers.Pub.IPubs.IContactEvictionHandler, ContactEviction>();
 
             // RabbitMQ messaging (raw AMQP, proto-serialized).
             services.AddRabbitMqMessaging(messageQueueConnectionString);
             services.AddTransient<UpdatePublisher>();
+            services.AddTransient<ContactEvictionPublisher>();
 
             return services;
         }

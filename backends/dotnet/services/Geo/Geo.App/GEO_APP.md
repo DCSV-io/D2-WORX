@@ -24,7 +24,8 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | [CreateLocations.cs](Implementations/CQRS/Handlers/C/CreateLocations.cs) | Command handler creating Locations via repository with cache population on success.                                    |
 > | [CreateWhoIs.cs](Implementations/CQRS/Handlers/C/CreateWhoIs.cs)         | Command handler creating WhoIs records via repository with cache population on success.                                |
 > | [CreateContacts.cs](Implementations/CQRS/Handlers/C/CreateContacts.cs)   | Command handler creating Contacts with embedded locations, returning ContactDTOs with nested Location data on success. |
-> | [DeleteContacts.cs](Implementations/CQRS/Handlers/C/DeleteContacts.cs)   | Command handler deleting Contacts via repository with cache invalidation for deleted IDs.                              |
+> | [DeleteContacts.cs](Implementations/CQRS/Handlers/C/DeleteContacts.cs)                   | Command handler deleting Contacts via repository with cache invalidation for deleted IDs.                                                                |
+> | [DeleteContactsByExtKeys.cs](Implementations/CQRS/Handlers/C/DeleteContactsByExtKeys.cs) | Command handler deleting Contacts by ext-key (ContextKey+RelatedEntityId) via repository, returns count of deleted contacts, publishes cache eviction event. |
 >
 > ##### Q (Queries)
 >
@@ -44,7 +45,8 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | File Name                                                    | Description                                                                                                                                                   |
 > | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 > | [Get.cs](Implementations/CQRS/Handlers/X/Get.cs)             | Publisher-side orchestrator implementing memory → Redis → DB → disk fallback with cache population and update notification on authoritative fetch.            |
-> | [FindWhoIs.cs](Implementations/CQRS/Handlers/X/FindWhoIs.cs) | Complex handler for WhoIs lookup by IP+fingerprint with cache check → external API → create flow, returning WhoIsDTOs with nested Location data when present. |
+> | [FindWhoIs.cs](Implementations/CQRS/Handlers/X/FindWhoIs.cs)                         | Complex handler for WhoIs lookup by IP+fingerprint with cache check → external API → create flow, returning WhoIsDTOs with nested Location data when present.              |
+> | [UpdateContactsByExtKeys.cs](Implementations/CQRS/Handlers/X/UpdateContactsByExtKeys.cs) | Complex handler replacing contacts at given ext-keys (deletes old, creates new), returns ContactReplacement list with old-to-new ID mappings, publishes cache eviction event. |
 
 ---
 
@@ -62,7 +64,8 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | [ICommands.CreateLocations.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateLocations.cs) | Extends ICommands with ICreateLocationsHandler for batch Location creation. |
 > | [ICommands.CreateWhoIs.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateWhoIs.cs)         | Extends ICommands with ICreateWhoIsHandler for batch WhoIs creation.        |
 > | [ICommands.CreateContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateContacts.cs)   | Extends ICommands with ICreateContactsHandler for batch Contact creation.   |
-> | [ICommands.DeleteContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContacts.cs)   | Extends ICommands with IDeleteContactsHandler for batch Contact deletion.   |
+> | [ICommands.DeleteContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContacts.cs)                   | Extends ICommands with IDeleteContactsHandler for batch Contact deletion.                                  |
+> | [ICommands.DeleteContactsByExtKeys.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContactsByExtKeys.cs) | Extends ICommands with IDeleteContactsByExtKeysHandler for Contact deletion by ext-key with eviction event. |
 >
 > ##### Q (Queries)
 >
@@ -79,7 +82,8 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | File Name                                                                 | Description                                                                             |
 > | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 > | [IComplex.cs](Interfaces/CQRS/Handlers/X/IComplex.cs)                     | Partial interface defining complex operations for CQRS handlers.                        |
-> | [IComplex.FindWhoIs.cs](Interfaces/CQRS/Handlers/X/IComplex.FindWhoIs.cs) | Extends IComplex with IFindWhoIsHandler for WhoIs lookup with external API integration. |
+> | [IComplex.FindWhoIs.cs](Interfaces/CQRS/Handlers/X/IComplex.FindWhoIs.cs)                         | Extends IComplex with IFindWhoIsHandler for WhoIs lookup with external API integration.                              |
+> | [IComplex.UpdateContactsByExtKeys.cs](Interfaces/CQRS/Handlers/X/IComplex.UpdateContactsByExtKeys.cs) | Extends IComplex with IUpdateContactsByExtKeysHandler for replacing contacts at ext-keys with old-to-new ID mapping. |
 >
 > ### Messaging
 >
@@ -90,7 +94,8 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | File Name                                                            | Description                                                                     |
 > | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 > | [IPubs.cs](Interfaces/Messaging/Handlers/Pub/IPubs.cs)               | Partial interface defining publisher operations for geographic data messaging.  |
-> | [IPubs.Update.cs](Interfaces/Messaging/Handlers/Pub/IPubs.Update.cs) | Extends IPubs with IUpdateHandler for publishing GeoRefDataUpdatedEvent events. |
+> | [IPubs.Update.cs](Interfaces/Messaging/Handlers/Pub/IPubs.Update.cs)                   | Extends IPubs with IUpdateHandler for publishing GeoRefDataUpdatedEvent events.           |
+> | [IPubs.ContactEviction.cs](Interfaces/Messaging/Handlers/Pub/IPubs.ContactEviction.cs) | Extends IPubs with IContactEvictionHandler for publishing ContactsEvictedEvent events.    |
 >
 > ##### Sub (Subscribers)
 >
@@ -114,7 +119,8 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | File Name                                                                               | Description                                                                    |
 > | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 > | [IDelete.cs](Interfaces/Repository/Handlers/D/IDelete.cs)                               | Partial interface defining delete operations for geographic repository access. |
-> | [IDelete.DeleteContacts.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteContacts.cs) | Extends IDelete with IDeleteContactsHandler for batch Contact deletion.        |
+> | [IDelete.DeleteContacts.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteContacts.cs)                   | Extends IDelete with IDeleteContactsHandler for batch Contact deletion.                                    |
+> | [IDelete.DeleteContactsByExtKeys.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteContactsByExtKeys.cs) | Extends IDelete with IDeleteContactsByExtKeysHandler for Contact deletion by ContextKey/RelatedEntityId.   |
 >
 > ##### R (Read)
 >

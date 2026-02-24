@@ -99,6 +99,10 @@
 - ✅ Open question validation tests — 28 integration tests resolving Q1 (RS256 JWT), Q2 (session lifecycle), Q3 (additionalFields), Q4 (definePayload), Q6 (snake_case), Q7 (pre-generated IDs)
 - ✅ Session enrichment hook — `databaseHooks.session.update.before` auto-populates `activeOrganizationType` + `activeOrganizationRole` on org switch (eliminates the Q3 gap). 3 new tests (auto-populate, auto-activate on org creation, clear on deactivation)
 - ✅ Auth tests — 825 passing (64 test files)
+- ✅ .NET Geo ext-key handlers — DeleteContactsByExtKeys (Command: repo + app + API), UpdateContactsByExtKeys (Complex: app + API, no longer stub)
+- ✅ Cross-service contact cache eviction — ContactsEvictedEvent via `events.geo.contacts` fan-out exchange. Publisher in Geo.Infra, consumers in Geo.Client (.NET) and geo-client (Node.js). Evicts matching IDs + ext-keys from local cache on delete/replace
+- ✅ Comms gRPC API key interceptor — `withApiKeyAuth` wrapper validates `x-api-key` metadata header against `COMMS_API_KEY` env var
+- ✅ Proto contract updates — ContactReplacementKey, ContactReplacement, ContactsEvictedEvent, updated UpdateContactsByExtKeysResponse
 
 ### Blocked By
 

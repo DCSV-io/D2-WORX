@@ -192,7 +192,20 @@ message UpdateContactsByExtKeysRequest {
 
 message UpdateContactsByExtKeysResponse {
   d2.common.v1.D2ResultProto result = 1;
-  repeated ContactDTO data = 2;
+  repeated ContactReplacement replacements = 2;
+}
+
+// Rich key identifying which old contact was replaced, with full ext-key context.
+message ContactReplacementKey {
+  string context_key = 1;
+  string related_entity_id = 2;
+  string old_contact_id = 3;
+}
+
+// One entry per old contact that was replaced.
+message ContactReplacement {
+  ContactReplacementKey key = 1;
+  ContactDTO new_contact = 2;
 }
 
 // ***********************

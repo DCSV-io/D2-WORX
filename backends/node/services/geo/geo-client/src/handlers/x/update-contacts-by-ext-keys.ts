@@ -61,7 +61,7 @@ export class UpdateContactsByExtKeys
           });
         }),
       (res) => res.result!,
-      (res) => ({ data: res.data }),
+      (res) => ({ replacements: res.replacements }),
     );
 
     // Evict ext-key cache for each input contact regardless of gRPC result

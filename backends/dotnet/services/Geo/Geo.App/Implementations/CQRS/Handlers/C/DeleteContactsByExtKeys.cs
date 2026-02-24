@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------
-// <copyright file="DeleteContacts.cs" company="DCSV">
+// <copyright file="DeleteContactsByExtKeys.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
 // -----------------------------------------------------------------------
@@ -12,31 +12,31 @@ using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using DeleteRepo = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
-using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.IDeleteContactsHandler;
-using I = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.DeleteContactsInput;
+using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.IDeleteContactsByExtKeysHandler;
+using I = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.DeleteContactsByExtKeysInput;
 using IPubs = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs;
-using O = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.DeleteContactsOutput;
+using O = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.DeleteContactsByExtKeysOutput;
 using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 
 /// <summary>
-/// Handler for deleting Contacts.
+/// Handler for deleting Contacts by their external keys (ContextKey + RelatedEntityId).
 /// </summary>
-public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
+public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O>, H
 {
-    private readonly ReadRepo.IGetContactsByIdsHandler r_getContactsByIds;
-    private readonly DeleteRepo.IDeleteContactsHandler r_deleteContactsFromRepo;
+    private readonly ReadRepo.IGetContactsByExtKeysHandler r_getByExtKeys;
+    private readonly DeleteRepo.IDeleteContactsByExtKeysHandler r_deleteFromRepo;
     private readonly IDelete.IRemoveHandler r_memoryCacheRemove;
     private readonly IPubs.IContactEvictionHandler r_evictionHandler;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DeleteContacts"/> class.
+    /// Initializes a new instance of the <see cref="DeleteContactsByExtKeys"/> class.
     /// </summary>
     ///
-    /// <param name="getContactsByIds">
-    /// The repository handler for getting Contacts by IDs (to read ext-keys before deletion).
+    /// <param name="getByExtKeys">
+    /// The repository handler for reading Contacts by ext-keys (to capture data before deletion).
     /// </param>
-    /// <param name="deleteContactsFromRepo">
-    /// The repository handler for deleting Contacts.
+    /// <param name="deleteFromRepo">
+    /// The repository handler for deleting Contacts by external keys.
     /// </param>
     /// <param name="memoryCacheRemove">
     /// The in-memory cache remove handler.
@@ -47,16 +47,16 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
     /// <param name="context">
     /// The handler context.
     /// </param>
-    public DeleteContacts(
-        ReadRepo.IGetContactsByIdsHandler getContactsByIds,
-        DeleteRepo.IDeleteContactsHandler deleteContactsFromRepo,
+    public DeleteContactsByExtKeys(
+        ReadRepo.IGetContactsByExtKeysHandler getByExtKeys,
+        DeleteRepo.IDeleteContactsByExtKeysHandler deleteFromRepo,
         IDelete.IRemoveHandler memoryCacheRemove,
         IPubs.IContactEvictionHandler evictionHandler,
         IHandlerContext context)
         : base(context)
     {
-        r_getContactsByIds = getContactsByIds;
-        r_deleteContactsFromRepo = deleteContactsFromRepo;
+        r_getByExtKeys = getByExtKeys;
+        r_deleteFromRepo = deleteFromRepo;
         r_memoryCacheRemove = memoryCacheRemove;
         r_evictionHandler = evictionHandler;
     }
@@ -67,18 +67,25 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         CancellationToken ct = default)
     {
         // If the request was empty, return early.
-        if (input.ContactIds.Count == 0)
+        if (input.Keys.Count == 0)
         {
             return D2Result<O?>.Ok(new O(0));
         }
 
-        // Validate: no empty GUIDs.
+        // Validate: no empty GUIDs or blank context keys.
         List<List<string>> allErrors = [];
-        for (var i = 0; i < input.ContactIds.Count; i++)
+        for (var i = 0; i < input.Keys.Count; i++)
         {
-            if (input.ContactIds[i] == Guid.Empty)
+            var (contextKey, relatedEntityId) = input.Keys[i];
+
+            if (string.IsNullOrWhiteSpace(contextKey))
             {
-                allErrors.Add([$"items[{i}]", "Contact ID must not be an empty GUID."]);
+                allErrors.Add([$"keys[{i}].contextKey", "Context key must not be empty."]);
+            }
+
+            if (relatedEntityId == Guid.Empty)
+            {
+                allErrors.Add([$"keys[{i}].relatedEntityId", "Related entity ID must not be an empty GUID."]);
             }
         }
 
@@ -88,13 +95,12 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
                 D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
-        // Read contacts first to capture ext-keys before deletion.
-        var getR = await r_getContactsByIds.HandleAsync(new(input.ContactIds), ct);
+        // Read contacts before deletion to capture data for eviction event.
+        var getR = await r_getByExtKeys.HandleAsync(new(input.Keys), ct);
         var foundContacts = getR.Data?.Contacts ?? [];
 
         // Delete from repository.
-        var repoR = await r_deleteContactsFromRepo.HandleAsync(
-            new(input.ContactIds), ct);
+        var repoR = await r_deleteFromRepo.HandleAsync(new(input.Keys), ct);
 
         if (repoR.CheckFailure(out var repoOutput))
         {
@@ -102,15 +108,15 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         }
 
         // Invalidate local cache for deleted contacts.
-        foreach (var id in input.ContactIds)
+        foreach (var id in repoOutput!.DeletedIds)
         {
             var removeR = await r_memoryCacheRemove.HandleAsync(
-                new(GetCacheKey(id)), ct);
+                new($"GetContactsByIds:{id}"), ct);
 
             if (removeR.Failed)
             {
                 Context.Logger.LogWarning(
-                    "Failed to remove Contact {ContactId} from memory cache after delete. TraceId: {TraceId}.",
+                    "Failed to remove Contact {ContactId} from memory cache after ext-key delete. TraceId: {TraceId}.",
                     id,
                     TraceId);
             }
@@ -120,17 +126,16 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         if (foundContacts.Count > 0)
         {
             var evictionEvent = new ContactsEvictedEvent();
-            evictionEvent.Contacts.AddRange(foundContacts.Values.Select(c => new EvictedContact
-            {
-                ContactId = c.Id.ToString(),
-                ContextKey = c.ContextKey,
-                RelatedEntityId = c.RelatedEntityId.ToString(),
-            }));
+            evictionEvent.Contacts.AddRange(
+                foundContacts.SelectMany(kvp => kvp.Value.Select(c => new EvictedContact
+                {
+                    ContactId = c.Id.ToString(),
+                    ContextKey = c.ContextKey,
+                    RelatedEntityId = c.RelatedEntityId.ToString(),
+                })));
             await r_evictionHandler.HandleAsync(new IPubs.ContactEvictionInput(evictionEvent), ct);
         }
 
-        return D2Result<O?>.Ok(new O(repoOutput!.Deleted));
+        return D2Result<O?>.Ok(new O(repoOutput.Deleted));
     }
-
-    private static string GetCacheKey(Guid id) => $"GetContactsByIds:{id}";
 }

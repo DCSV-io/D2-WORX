@@ -69,7 +69,10 @@ describe("UpdateContactsByExtKeys handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [newContact1, newContact2],
+        replacements: [
+          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact: newContact1 },
+          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-2", oldContactId: "old-2" }, newContact: newContact2 },
+        ],
       }),
     } as unknown as GeoServiceClient;
 
@@ -95,9 +98,9 @@ describe("UpdateContactsByExtKeys handler", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.data?.data).toHaveLength(2);
-    expect(result.data?.data[0].id).toBe("new-1");
-    expect(result.data?.data[1].id).toBe("new-2");
+    expect(result.data?.replacements).toHaveLength(2);
+    expect(result.data?.replacements[0].newContact?.id).toBe("new-1");
+    expect(result.data?.replacements[1].newContact?.id).toBe("new-2");
   });
 
   it("should pass contacts to gRPC request", async () => {
@@ -111,7 +114,9 @@ describe("UpdateContactsByExtKeys handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [createMockContactDTO("new-1")],
+        replacements: [
+          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact: createMockContactDTO("new-1") },
+        ],
       }),
     } as unknown as GeoServiceClient;
 
@@ -152,9 +157,9 @@ describe("UpdateContactsByExtKeys handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [
-          createMockContactDTO("new-1", "auth_org_contact", "org-1"),
-          createMockContactDTO("new-2", "auth_org_contact", "org-2"),
+        replacements: [
+          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact: createMockContactDTO("new-1", "auth_org_contact", "org-1") },
+          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-2", oldContactId: "old-2" }, newContact: createMockContactDTO("new-2", "auth_org_contact", "org-2") },
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -281,7 +286,7 @@ describe("UpdateContactsByExtKeys handler", () => {
           errorCode: "VALIDATION_FAILED",
           traceId: "",
         },
-        data: [],
+        replacements: [],
       }),
     } as unknown as GeoServiceClient;
 
@@ -316,7 +321,9 @@ describe("UpdateContactsByExtKeys handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [newContact],
+        replacements: [
+          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact },
+        ],
       }),
     } as unknown as GeoServiceClient;
 
@@ -357,7 +364,9 @@ describe("UpdateContactsByExtKeys handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [newContact],
+        replacements: [
+          { key: { contextKey: "any_key", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact },
+        ],
       }),
     } as unknown as GeoServiceClient;
 
@@ -395,7 +404,9 @@ describe("UpdateContactsByExtKeys handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [newContact],
+        replacements: [
+          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact },
+        ],
       }),
     } as unknown as GeoServiceClient;
 

@@ -19,7 +19,8 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > | File Name                                     | Description                                                                                    |
 > | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-> | [Update.cs](Messaging/Handlers/Pub/Update.cs) | Handler for publishing GeoRefDataUpdatedEvent via UpdatePublisher when reference data changes. |
+> | [Update.cs](Messaging/Handlers/Pub/Update.cs)                   | Handler for publishing GeoRefDataUpdatedEvent via UpdatePublisher when reference data changes.            |
+> | [ContactEviction.cs](Messaging/Handlers/Pub/ContactEviction.cs) | Handler for publishing ContactsEvictedEvent via ContactEvictionPublisher when contacts are deleted/replaced. |
 >
 > #### Sub (Subscribers)
 >
@@ -29,7 +30,8 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > | File Name                                                     | Description                                                                                                 |
 > | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-> | [UpdatePublisher.cs](Messaging/Publishers/UpdatePublisher.cs) | AMQP publisher wrapping ProtoPublisher for GeoRefDataUpdatedEvent messages with error handling and logging. |
+> | [UpdatePublisher.cs](Messaging/Publishers/UpdatePublisher.cs)                   | AMQP publisher wrapping ProtoPublisher for GeoRefDataUpdatedEvent messages with error handling and logging.                        |
+> | [ContactEvictionPublisher.cs](Messaging/Publishers/ContactEvictionPublisher.cs) | AMQP publisher wrapping ProtoPublisher for ContactsEvictedEvent messages to `events.geo.contacts` fan-out exchange. |
 >
 > ### Consumers
 >
@@ -76,7 +78,8 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > | File Name                                                    | Description                                                                                  |
 > | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-> | [DeleteContacts.cs](Repository/Handlers/D/DeleteContacts.cs) | Handler for batch deleting Contact entities by GUID IDs with OK/SOME_FOUND/NOT_FOUND status. |
+> | [DeleteContacts.cs](Repository/Handlers/D/DeleteContacts.cs)                   | Handler for batch deleting Contact entities by GUID IDs with OK/SOME_FOUND/NOT_FOUND status.                                |
+> | [DeleteContactsByExtKeys.cs](Repository/Handlers/D/DeleteContactsByExtKeys.cs) | Handler for deleting Contact entities by ContextKey/RelatedEntityId pairs, returns count of deleted contacts and ext-key list. |
 >
 > #### R (Read)
 >

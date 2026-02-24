@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
+using D2.Events.Protos.V1;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Domain.Entities;
@@ -24,6 +25,8 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 using DeleteContactsRepo = D2.Geo.Infra.Repository.Handlers.D.DeleteContacts;
+using GetContactsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByIds;
+using IPubs = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs;
 
 /// <summary>
 /// Integration tests for the <see cref="DeleteContacts"/> CQRS handler.
@@ -37,6 +40,8 @@ public class DeleteContactsTests : IAsyncLifetime
     private IHandlerContext _context = null!;
     private IOptions<GeoInfraOptions> _options = null!;
     private Mock<IDelete.IRemoveHandler> _mockCacheRemove = null!;
+    private Mock<IPubs.IContactEvictionHandler> _mockEviction = null!;
+    private IPubs.ContactEvictionInput? _capturedEvictionInput;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DeleteContactsTests"/> class.
@@ -64,6 +69,13 @@ public class DeleteContactsTests : IAsyncLifetime
         _mockCacheRemove
             .Setup(x => x.HandleAsync(It.IsAny<IDelete.RemoveInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
             .ReturnsAsync(D2Result<IDelete.RemoveOutput?>.Ok(new IDelete.RemoveOutput()));
+
+        _capturedEvictionInput = null;
+        _mockEviction = new Mock<IPubs.IContactEvictionHandler>();
+        _mockEviction
+            .Setup(x => x.HandleAsync(It.IsAny<IPubs.ContactEvictionInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .Callback<IPubs.ContactEvictionInput, CancellationToken, HandlerOptions?>((input, _, _) => _capturedEvictionInput = input)
+            .ReturnsAsync(D2Result<IPubs.ContactEvictionOutput?>.Ok(new IPubs.ContactEvictionOutput()));
         return ValueTask.CompletedTask;
     }
 
@@ -286,6 +298,130 @@ public class DeleteContactsTests : IAsyncLifetime
 
     #endregion
 
+    #region Eviction Event Content Tests
+
+    /// <summary>
+    /// Tests that the eviction event contains both contact IDs and ext-keys when deleting a single contact.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task DeleteContacts_EvictionEvent_ContainsContactIdAndExtKey()
+    {
+        // Arrange - Create a contact with known ext-key
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextKey = $"evict-ctx-{suffix}";
+        var relatedEntityId = Guid.NewGuid();
+        var contact = Contact.Create(
+            contextKey: contextKey,
+            relatedEntityId: relatedEntityId,
+            personalDetails: Personal.Create("Eviction", lastName: "Test"));
+        _db.Contacts.Add(contact);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsInput([contact.Id]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — handler succeeded
+        result.Success.Should().BeTrue($"ErrorCode: {result.ErrorCode}, Messages: {string.Join(", ", result.Messages)}");
+        result.Data!.Deleted.Should().Be(1);
+
+        // Assert — eviction event was published with correct content
+        _capturedEvictionInput.Should().NotBeNull("eviction event should have been published");
+        var evt = _capturedEvictionInput!.Event;
+
+        // Assert — single EvictedContact with all three fields
+        evt.Contacts.Should().HaveCount(1);
+        evt.Contacts[0].ContactId.Should().Be(contact.Id.ToString());
+        evt.Contacts[0].ContextKey.Should().Be(contextKey);
+        evt.Contacts[0].RelatedEntityId.Should().Be(relatedEntityId.ToString());
+    }
+
+    /// <summary>
+    /// Tests that the eviction event contains all contact IDs and ext-keys when deleting multiple contacts.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task DeleteContacts_MultipleContacts_EvictionEventContainsAll()
+    {
+        // Arrange - Create multiple contacts with distinct ext-keys
+        var suffix = Guid.NewGuid().ToString("N");
+        var ctx1 = $"evict-multi-1-{suffix}";
+        var ctx2 = $"evict-multi-2-{suffix}";
+        var rel1 = Guid.NewGuid();
+        var rel2 = Guid.NewGuid();
+        var contact1 = Contact.Create(contextKey: ctx1, relatedEntityId: rel1, personalDetails: Personal.Create("One", lastName: "Evict"));
+        var contact2 = Contact.Create(contextKey: ctx2, relatedEntityId: rel2, personalDetails: Personal.Create("Two", lastName: "Evict"));
+        _db.Contacts.AddRange(contact1, contact2);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsInput([contact1.Id, contact2.Id]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — handler succeeded
+        result.Success.Should().BeTrue($"ErrorCode: {result.ErrorCode}, Messages: {string.Join(", ", result.Messages)}");
+
+        // Assert — eviction event contains both contacts
+        _capturedEvictionInput.Should().NotBeNull();
+        var evt = _capturedEvictionInput!.Event;
+        evt.Contacts.Should().HaveCount(2);
+        evt.Contacts.Should().Contain(c => c.ContactId == contact1.Id.ToString() && c.ContextKey == ctx1 && c.RelatedEntityId == rel1.ToString());
+        evt.Contacts.Should().Contain(c => c.ContactId == contact2.Id.ToString() && c.ContextKey == ctx2 && c.RelatedEntityId == rel2.ToString());
+    }
+
+    /// <summary>
+    /// Tests that the eviction event only contains ext-keys for contacts that were actually found,
+    /// not for non-existent contact IDs in the input.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task DeleteContacts_MixedExistingAndNonExistent_EvictionEventOnlyContainsFound()
+    {
+        // Arrange - Create one contact, also pass a non-existent ID
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextKey = $"evict-mixed-{suffix}";
+        var relatedEntityId = Guid.NewGuid();
+        var contact = Contact.Create(contextKey: contextKey, relatedEntityId: relatedEntityId, personalDetails: Personal.Create("Found", lastName: "Only"));
+        _db.Contacts.Add(contact);
+        await _db.SaveChangesAsync(Ct);
+
+        var nonExistentId = Guid.NewGuid();
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsInput([contact.Id, nonExistentId]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — handler succeeded
+        result.Success.Should().BeTrue($"ErrorCode: {result.ErrorCode}, Messages: {string.Join(", ", result.Messages)}");
+
+        // Assert — eviction event was published
+        _capturedEvictionInput.Should().NotBeNull();
+        var evt = _capturedEvictionInput!.Event;
+
+        // Assert — only the found contact is in the eviction event (non-existent IDs are not included)
+        evt.Contacts.Should().HaveCount(1, "only found contacts produce EvictedContact entries");
+        evt.Contacts[0].ContactId.Should().Be(contact.Id.ToString());
+        evt.Contacts[0].ContextKey.Should().Be(contextKey);
+        evt.Contacts[0].RelatedEntityId.Should().Be(relatedEntityId.ToString());
+    }
+
+    #endregion
+
     #region Idempotency Tests
 
     /// <summary>
@@ -349,7 +485,8 @@ public class DeleteContactsTests : IAsyncLifetime
 
     private ICommands.IDeleteContactsHandler CreateHandler()
     {
+        var getContactsByIdsRepo = new GetContactsByIdsRepo(_db, _options, _context);
         var deleteContactsRepo = new DeleteContactsRepo(_db, _options, _context);
-        return new DeleteContacts(deleteContactsRepo, _mockCacheRemove.Object, _context);
+        return new DeleteContacts(getContactsByIdsRepo, deleteContactsRepo, _mockCacheRemove.Object, _mockEviction.Object, _context);
     }
 }

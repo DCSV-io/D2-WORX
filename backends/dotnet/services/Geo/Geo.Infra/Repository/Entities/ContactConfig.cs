@@ -141,7 +141,8 @@ public class ContactConfig : IEntityTypeConfiguration<Contact>
 
         // Indexes.
         builder.HasIndex(c => new { c.ContextKey, c.RelatedEntityId })
-            .HasDatabaseName("ix_contacts_context_key_related_entity_id");
+            .HasDatabaseName("ix_contacts_context_key_related_entity_id")
+            .IsUnique();
 
         // Note: GIN index on contact_methods JSONB should be added via raw SQL migration
         // since EF Core doesn't support indexing owned JSON types directly.

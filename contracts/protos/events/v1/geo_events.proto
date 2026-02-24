@@ -8,3 +8,16 @@ option csharp_namespace = "D2.Events.Protos.V1";
 message GeoRefDataUpdatedEvent {
   string version = 1;
 }
+
+// A single contact that was evicted (deleted or replaced).
+message EvictedContact {
+  string contact_id = 1;
+  string context_key = 2;
+  string related_entity_id = 3;
+}
+
+// Emitted by Geo when contacts are deleted or replaced.
+// All geo-client instances should evict matching cache entries.
+message ContactsEvictedEvent {
+  repeated EvictedContact contacts = 1;
+}

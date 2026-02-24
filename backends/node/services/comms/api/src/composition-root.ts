@@ -22,6 +22,7 @@ import {
   declareRetryTopology,
 } from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
+import { withApiKeyAuth } from "./interceptors/api-key-interceptor.js";
 
 export interface CommsServiceConfig {
   databaseUrl: string;
@@ -34,6 +35,7 @@ export interface CommsServiceConfig {
   twilioPhoneNumber?: string;
   geoAddress?: string;
   geoApiKey?: string;
+  commsApiKey?: string;
 }
 
 /**
@@ -142,7 +144,15 @@ export async function createCommsService(config: CommsServiceConfig) {
 
   // 5. gRPC server (per-RPC scope via createCommsGrpcService)
   const server = new grpc.Server();
-  server.addService(CommsServiceService, createCommsGrpcService(provider));
+  const grpcService = createCommsGrpcService(provider);
+
+  if (config.commsApiKey) {
+    server.addService(CommsServiceService, withApiKeyAuth(grpcService, config.commsApiKey, logger));
+    logger.info("Comms gRPC API key authentication enabled");
+  } else {
+    server.addService(CommsServiceService, grpcService);
+    logger.warn("No COMMS_API_KEY configured — gRPC API key authentication disabled");
+  }
 
   await new Promise<void>((resolve, reject) => {
     server.bindAsync(

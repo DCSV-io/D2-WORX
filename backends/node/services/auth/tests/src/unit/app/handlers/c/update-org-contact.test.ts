@@ -41,13 +41,20 @@ function createMockUpdateContactsByExtKeys(): Complex.IUpdateContactsByExtKeysHa
     handleAsync: vi.fn().mockResolvedValue(
       D2Result.ok({
         data: {
-          data: [
+          replacements: [
             {
-              id: "new-geo-contact-001",
-              createdAt: new Date("2026-02-10"),
-              contextKey: "auth_org_contact",
-              relatedEntityId: VALID_CONTACT_ID,
-            } as ContactDTO,
+              key: {
+                contextKey: "auth_org_contact",
+                relatedEntityId: VALID_CONTACT_ID,
+                oldContactId: "old-geo-contact-001",
+              },
+              newContact: {
+                id: "new-geo-contact-001",
+                createdAt: new Date("2026-02-10"),
+                contextKey: "auth_org_contact",
+                relatedEntityId: VALID_CONTACT_ID,
+              } as ContactDTO,
+            },
           ],
         },
       }),
@@ -323,7 +330,7 @@ describe("UpdateOrgContactHandler", () => {
     findById.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { contact: existing } }));
     updateContactsByExtKeys.handleAsync = vi
       .fn()
-      .mockResolvedValue(D2Result.ok({ data: { data: [] } }));
+      .mockResolvedValue(D2Result.ok({ data: { replacements: [] } }));
 
     const result = await handler.handleAsync({
       id: VALID_CONTACT_ID,

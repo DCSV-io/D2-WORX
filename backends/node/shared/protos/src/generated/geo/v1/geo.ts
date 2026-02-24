@@ -186,7 +186,20 @@ export interface UpdateContactsByExtKeysRequest {
 
 export interface UpdateContactsByExtKeysResponse {
   result: D2ResultProto | undefined;
-  data: ContactDTO[];
+  replacements: ContactReplacement[];
+}
+
+/** Rich key identifying which old contact was replaced, with full ext-key context. */
+export interface ContactReplacementKey {
+  contextKey: string;
+  relatedEntityId: string;
+  oldContactId: string;
+}
+
+/** One entry per old contact that was replaced. */
+export interface ContactReplacement {
+  key: ContactReplacementKey | undefined;
+  newContact: ContactDTO | undefined;
 }
 
 export interface ContactToCreateDTO {
@@ -2844,7 +2857,7 @@ export const UpdateContactsByExtKeysRequest: MessageFns<UpdateContactsByExtKeysR
 };
 
 function createBaseUpdateContactsByExtKeysResponse(): UpdateContactsByExtKeysResponse {
-  return { result: undefined, data: [] };
+  return { result: undefined, replacements: [] };
 }
 
 export const UpdateContactsByExtKeysResponse: MessageFns<UpdateContactsByExtKeysResponse> = {
@@ -2852,8 +2865,8 @@ export const UpdateContactsByExtKeysResponse: MessageFns<UpdateContactsByExtKeys
     if (message.result !== undefined) {
       D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
     }
-    for (const v of message.data) {
-      ContactDTO.encode(v!, writer.uint32(18).fork()).join();
+    for (const v of message.replacements) {
+      ContactReplacement.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -2878,7 +2891,7 @@ export const UpdateContactsByExtKeysResponse: MessageFns<UpdateContactsByExtKeys
             break;
           }
 
-          message.data.push(ContactDTO.decode(reader, reader.uint32()));
+          message.replacements.push(ContactReplacement.decode(reader, reader.uint32()));
           continue;
         }
       }
@@ -2893,7 +2906,9 @@ export const UpdateContactsByExtKeysResponse: MessageFns<UpdateContactsByExtKeys
   fromJSON(object: any): UpdateContactsByExtKeysResponse {
     return {
       result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
-      data: globalThis.Array.isArray(object?.data) ? object.data.map((e: any) => ContactDTO.fromJSON(e)) : [],
+      replacements: globalThis.Array.isArray(object?.replacements)
+        ? object.replacements.map((e: any) => ContactReplacement.fromJSON(e))
+        : [],
     };
   },
 
@@ -2902,8 +2917,8 @@ export const UpdateContactsByExtKeysResponse: MessageFns<UpdateContactsByExtKeys
     if (message.result !== undefined) {
       obj.result = D2ResultProto.toJSON(message.result);
     }
-    if (message.data?.length) {
-      obj.data = message.data.map((e) => ContactDTO.toJSON(e));
+    if (message.replacements?.length) {
+      obj.replacements = message.replacements.map((e) => ContactReplacement.toJSON(e));
     }
     return obj;
   },
@@ -2918,7 +2933,195 @@ export const UpdateContactsByExtKeysResponse: MessageFns<UpdateContactsByExtKeys
     message.result = (object.result !== undefined && object.result !== null)
       ? D2ResultProto.fromPartial(object.result)
       : undefined;
-    message.data = object.data?.map((e) => ContactDTO.fromPartial(e)) || [];
+    message.replacements = object.replacements?.map((e) => ContactReplacement.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseContactReplacementKey(): ContactReplacementKey {
+  return { contextKey: "", relatedEntityId: "", oldContactId: "" };
+}
+
+export const ContactReplacementKey: MessageFns<ContactReplacementKey> = {
+  encode(message: ContactReplacementKey, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.contextKey !== "") {
+      writer.uint32(10).string(message.contextKey);
+    }
+    if (message.relatedEntityId !== "") {
+      writer.uint32(18).string(message.relatedEntityId);
+    }
+    if (message.oldContactId !== "") {
+      writer.uint32(26).string(message.oldContactId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ContactReplacementKey {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseContactReplacementKey();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.contextKey = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.relatedEntityId = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.oldContactId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ContactReplacementKey {
+    return {
+      contextKey: isSet(object.contextKey)
+        ? globalThis.String(object.contextKey)
+        : isSet(object.context_key)
+        ? globalThis.String(object.context_key)
+        : "",
+      relatedEntityId: isSet(object.relatedEntityId)
+        ? globalThis.String(object.relatedEntityId)
+        : isSet(object.related_entity_id)
+        ? globalThis.String(object.related_entity_id)
+        : "",
+      oldContactId: isSet(object.oldContactId)
+        ? globalThis.String(object.oldContactId)
+        : isSet(object.old_contact_id)
+        ? globalThis.String(object.old_contact_id)
+        : "",
+    };
+  },
+
+  toJSON(message: ContactReplacementKey): unknown {
+    const obj: any = {};
+    if (message.contextKey !== "") {
+      obj.contextKey = message.contextKey;
+    }
+    if (message.relatedEntityId !== "") {
+      obj.relatedEntityId = message.relatedEntityId;
+    }
+    if (message.oldContactId !== "") {
+      obj.oldContactId = message.oldContactId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ContactReplacementKey>, I>>(base?: I): ContactReplacementKey {
+    return ContactReplacementKey.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ContactReplacementKey>, I>>(object: I): ContactReplacementKey {
+    const message = createBaseContactReplacementKey();
+    message.contextKey = object.contextKey ?? "";
+    message.relatedEntityId = object.relatedEntityId ?? "";
+    message.oldContactId = object.oldContactId ?? "";
+    return message;
+  },
+};
+
+function createBaseContactReplacement(): ContactReplacement {
+  return { key: undefined, newContact: undefined };
+}
+
+export const ContactReplacement: MessageFns<ContactReplacement> = {
+  encode(message: ContactReplacement, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.key !== undefined) {
+      ContactReplacementKey.encode(message.key, writer.uint32(10).fork()).join();
+    }
+    if (message.newContact !== undefined) {
+      ContactDTO.encode(message.newContact, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ContactReplacement {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseContactReplacement();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = ContactReplacementKey.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.newContact = ContactDTO.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ContactReplacement {
+    return {
+      key: isSet(object.key) ? ContactReplacementKey.fromJSON(object.key) : undefined,
+      newContact: isSet(object.newContact)
+        ? ContactDTO.fromJSON(object.newContact)
+        : isSet(object.new_contact)
+        ? ContactDTO.fromJSON(object.new_contact)
+        : undefined,
+    };
+  },
+
+  toJSON(message: ContactReplacement): unknown {
+    const obj: any = {};
+    if (message.key !== undefined) {
+      obj.key = ContactReplacementKey.toJSON(message.key);
+    }
+    if (message.newContact !== undefined) {
+      obj.newContact = ContactDTO.toJSON(message.newContact);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ContactReplacement>, I>>(base?: I): ContactReplacement {
+    return ContactReplacement.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ContactReplacement>, I>>(object: I): ContactReplacement {
+    const message = createBaseContactReplacement();
+    message.key = (object.key !== undefined && object.key !== null)
+      ? ContactReplacementKey.fromPartial(object.key)
+      : undefined;
+    message.newContact = (object.newContact !== undefined && object.newContact !== null)
+      ? ContactDTO.fromPartial(object.newContact)
+      : undefined;
     return message;
   },
 };

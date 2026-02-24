@@ -14,6 +14,21 @@ export interface GeoRefDataUpdatedEvent {
   version: string;
 }
 
+/** A single contact that was evicted (deleted or replaced). */
+export interface EvictedContact {
+  contactId: string;
+  contextKey: string;
+  relatedEntityId: string;
+}
+
+/**
+ * Emitted by Geo when contacts are deleted or replaced.
+ * All geo-client instances should evict matching cache entries.
+ */
+export interface ContactsEvictedEvent {
+  contacts: EvictedContact[];
+}
+
 function createBaseGeoRefDataUpdatedEvent(): GeoRefDataUpdatedEvent {
   return { version: "" };
 }
@@ -68,6 +83,172 @@ export const GeoRefDataUpdatedEvent: MessageFns<GeoRefDataUpdatedEvent> = {
   fromPartial<I extends Exact<DeepPartial<GeoRefDataUpdatedEvent>, I>>(object: I): GeoRefDataUpdatedEvent {
     const message = createBaseGeoRefDataUpdatedEvent();
     message.version = object.version ?? "";
+    return message;
+  },
+};
+
+function createBaseEvictedContact(): EvictedContact {
+  return { contactId: "", contextKey: "", relatedEntityId: "" };
+}
+
+export const EvictedContact: MessageFns<EvictedContact> = {
+  encode(message: EvictedContact, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.contactId !== "") {
+      writer.uint32(10).string(message.contactId);
+    }
+    if (message.contextKey !== "") {
+      writer.uint32(18).string(message.contextKey);
+    }
+    if (message.relatedEntityId !== "") {
+      writer.uint32(26).string(message.relatedEntityId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): EvictedContact {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseEvictedContact();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.contactId = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.contextKey = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.relatedEntityId = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): EvictedContact {
+    return {
+      contactId: isSet(object.contactId)
+        ? globalThis.String(object.contactId)
+        : isSet(object.contact_id)
+        ? globalThis.String(object.contact_id)
+        : "",
+      contextKey: isSet(object.contextKey)
+        ? globalThis.String(object.contextKey)
+        : isSet(object.context_key)
+        ? globalThis.String(object.context_key)
+        : "",
+      relatedEntityId: isSet(object.relatedEntityId)
+        ? globalThis.String(object.relatedEntityId)
+        : isSet(object.related_entity_id)
+        ? globalThis.String(object.related_entity_id)
+        : "",
+    };
+  },
+
+  toJSON(message: EvictedContact): unknown {
+    const obj: any = {};
+    if (message.contactId !== "") {
+      obj.contactId = message.contactId;
+    }
+    if (message.contextKey !== "") {
+      obj.contextKey = message.contextKey;
+    }
+    if (message.relatedEntityId !== "") {
+      obj.relatedEntityId = message.relatedEntityId;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<EvictedContact>, I>>(base?: I): EvictedContact {
+    return EvictedContact.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<EvictedContact>, I>>(object: I): EvictedContact {
+    const message = createBaseEvictedContact();
+    message.contactId = object.contactId ?? "";
+    message.contextKey = object.contextKey ?? "";
+    message.relatedEntityId = object.relatedEntityId ?? "";
+    return message;
+  },
+};
+
+function createBaseContactsEvictedEvent(): ContactsEvictedEvent {
+  return { contacts: [] };
+}
+
+export const ContactsEvictedEvent: MessageFns<ContactsEvictedEvent> = {
+  encode(message: ContactsEvictedEvent, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.contacts) {
+      EvictedContact.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ContactsEvictedEvent {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    const end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseContactsEvictedEvent();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.contacts.push(EvictedContact.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ContactsEvictedEvent {
+    return {
+      contacts: globalThis.Array.isArray(object?.contacts)
+        ? object.contacts.map((e: any) => EvictedContact.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: ContactsEvictedEvent): unknown {
+    const obj: any = {};
+    if (message.contacts?.length) {
+      obj.contacts = message.contacts.map((e) => EvictedContact.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ContactsEvictedEvent>, I>>(base?: I): ContactsEvictedEvent {
+    return ContactsEvictedEvent.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ContactsEvictedEvent>, I>>(object: I): ContactsEvictedEvent {
+    const message = createBaseContactsEvictedEvent();
+    message.contacts = object.contacts?.map((e) => EvictedContact.fromPartial(e)) || [];
     return message;
   },
 };

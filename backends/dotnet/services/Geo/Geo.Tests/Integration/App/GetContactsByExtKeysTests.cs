@@ -150,51 +150,35 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
 
     #endregion
 
-    #region Multiple Contacts Per Key Tests
+    #region Unique Constraint Tests
 
     /// <summary>
-    /// Tests that GetContactsByExtKeys returns multiple contacts for a single external key.
+    /// Tests that the unique constraint on (context_key, related_entity_id) prevents
+    /// inserting duplicate contacts at the same ext-key.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous operation.
     /// </returns>
     [Fact]
-    public async Task GetContactsByExtKeys_WithMultipleContactsSameKey_ReturnsAllContacts()
+    public async Task GetContactsByExtKeys_DuplicateExtKey_PreventsInsert()
     {
-        // Arrange - Create multiple contacts with the same external key (unique context)
+        // Arrange - Create a contact with a unique ext-key
         var suffix = Guid.NewGuid().ToString("N");
-        var contextKey = $"shared-context-{suffix}";
+        var contextKey = $"unique-ctx-{suffix}";
         var relatedEntityId = Guid.NewGuid();
         var contact1 = CreateTestContact(contextKey, relatedEntityId, "User", "One");
-        var contact2 = CreateTestContact(contextKey, relatedEntityId, "User", "Two");
-        var contact3 = CreateTestContact(contextKey, relatedEntityId, "User", "Three");
-        _db.Contacts.AddRange(contact1, contact2, contact3);
+        _db.Contacts.Add(contact1);
         await _db.SaveChangesAsync(Ct);
 
-        var handler = CreateHandler();
-        var request = new GetContactsByExtKeysRequest
-        {
-            Keys =
-            {
-                new GetContactsExtKeys
-                {
-                    ContextKey = contextKey,
-                    RelatedEntityId = relatedEntityId.ToString(),
-                },
-            },
-        };
-        var input = new IQueries.GetContactsByExtKeysInput(request);
+        // Act - Attempt to insert a second contact with the same ext-key
+        var contact2 = CreateTestContact(contextKey, relatedEntityId, "User", "Two");
+        _db.Contacts.Add(contact2);
 
-        // Act
-        var result = await handler.HandleAsync(input, Ct);
+        var act = () => _db.SaveChangesAsync(Ct);
 
-        // Assert
-        result.Success.Should().BeTrue();
-        result.Data!.Data.Should().HaveCount(1);
-
-        var contacts = result.Data.Data.Values.First();
-        contacts.Should().HaveCount(3);
+        // Assert - Should fail with unique constraint violation
+        await act.Should().ThrowAsync<Microsoft.EntityFrameworkCore.DbUpdateException>();
     }
 
     #endregion
