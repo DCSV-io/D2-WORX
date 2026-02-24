@@ -172,9 +172,10 @@ describe("PingServiceService", () => {
 // ---------------------------------------------------------------------------
 
 describe("GeoServiceService", () => {
-  it("has all 9 RPC methods", () => {
+  it("has all 10 RPC methods", () => {
     const methods = Object.keys(GeoServiceService);
     expect(methods).toEqual([
+      "checkHealth",
       "getReferenceData",
       "requestReferenceDataUpdate",
       "findWhoIs",

@@ -28,10 +28,12 @@ import { deliveryRequestToProto, deliveryAttemptToProto } from "../mappers/deliv
  */
 function extractGrpcTraceContext(call: grpc.ServerUnaryCall<unknown, unknown>) {
   const carrier: Record<string, string> = {};
-  const metadata = call.metadata.getMap();
-  for (const [key, value] of Object.entries(metadata)) {
-    if (typeof value === "string") {
-      carrier[key] = value;
+  const metadata = call.metadata?.getMap();
+  if (metadata) {
+    for (const [key, value] of Object.entries(metadata)) {
+      if (typeof value === "string") {
+        carrier[key] = value;
+      }
     }
   }
   return propagation.extract(context.active(), carrier);
@@ -78,9 +80,9 @@ function createRpcScope(
 function withTraceContext<TReq, TRes>(
   call: grpc.ServerUnaryCall<TReq, TRes>,
   fn: () => Promise<void>,
-): void {
+): Promise<void> {
   const parentCtx = extractGrpcTraceContext(call as grpc.ServerUnaryCall<unknown, unknown>);
-  void context.with(parentCtx, fn);
+  return context.with(parentCtx, fn);
 }
 
 /**
@@ -93,7 +95,7 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
     // ---- Health Check ----
 
     checkHealth: (call, callback) => {
-      withTraceContext(call, async () => {
+      return withTraceContext(call, async () => {
         const scope = createRpcScope(provider, call);
         try {
           const handler = scope.resolve(ICheckHealthKey);
@@ -129,7 +131,7 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
     // ---- Phase 1: Delivery Engine ----
 
     getChannelPreference: (call, callback) => {
-      withTraceContext(call, async () => {
+      return withTraceContext(call, async () => {
         const scope = createRpcScope(provider, call);
         try {
           const { contactId } = call.request;
@@ -164,7 +166,7 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
     },
 
     setChannelPreference: (call, callback) => {
-      withTraceContext(call, async () => {
+      return withTraceContext(call, async () => {
         const scope = createRpcScope(provider, call);
         try {
           const req = call.request;
@@ -207,7 +209,7 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
     },
 
     getDeliveryStatus: (call, callback) => {
-      withTraceContext(call, async () => {
+      return withTraceContext(call, async () => {
         const scope = createRpcScope(provider, call);
         try {
           const { deliveryRequestId } = call.request;

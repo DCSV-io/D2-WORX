@@ -20,6 +20,14 @@ export function getBus(): MessageBus {
   return bus;
 }
 
+/** Create a fresh MessageBus connected to the same container (avoids shared channel state). */
+export async function createFreshBus(): Promise<MessageBus> {
+  const url = `amqp://guest:guest@${container.getHost()}:${container.getMappedPort(5672)}`;
+  const fresh = new MessageBus({ url, connectionName: "integration-test-fresh" });
+  await fresh.waitForConnection();
+  return fresh;
+}
+
 /**
  * Wraps a promise with a timeout to avoid hanging on failure.
  */

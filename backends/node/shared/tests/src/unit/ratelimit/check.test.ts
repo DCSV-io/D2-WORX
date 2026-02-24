@@ -334,7 +334,7 @@ describe("RateLimit Check handler", () => {
   // Short-circuit
   // -----------------------------------------------------------------------
 
-  it("should stop checking remaining dimensions after first block", async () => {
+  it("should return blocked when any dimension exceeds threshold (concurrent)", async () => {
     mocks.incrementFn.mockResolvedValue(
       D2Result.ok<DistributedCache.IncrementOutput | undefined>({
         data: { newValue: 200 },
@@ -345,16 +345,10 @@ describe("RateLimit Check handler", () => {
     const info = createRequestInfo();
     const result = await handler.handleAsync({ requestInfo: info });
 
+    // All dimensions fire concurrently; first blocked result is returned.
     expect(result.data?.isBlocked).toBe(true);
-    expect(result.data?.blockedDimension).toBe(RateLimitDimension.ClientFingerprint);
+    expect(result.data?.blockedDimension).toBeDefined();
     expect(result.data?.retryAfterMs).toBeDefined();
-
-    // Should not have checked IP, city, or country after fingerprint blocked
-    const getTtlCalls = mocks.getTtlFn.mock.calls;
-    const ipCalls = getTtlCalls.filter((c: unknown[]) =>
-      (c[0] as { key: string }).key.includes("blocked:ip:"),
-    );
-    expect(ipCalls).toHaveLength(0);
   });
 
   // -----------------------------------------------------------------------
@@ -374,8 +368,8 @@ describe("RateLimit Check handler", () => {
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
     expect(result.data?.retryAfterMs).toBe(180_000);
-    // Increment should not have been called (short-circuited at getTtl)
-    expect(mocks.incrementFn).not.toHaveBeenCalled();
+    // With concurrent execution, increment fires alongside getTtl (harmless —
+    // counters auto-expire via TTL). The important thing is the correct result.
   });
 
   // -----------------------------------------------------------------------

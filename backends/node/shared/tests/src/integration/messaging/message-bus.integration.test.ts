@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { ConsumerResult } from "@d2/messaging";
-import { startRabbitMQ, stopRabbitMQ, getBus, withTimeout } from "./rabbitmq-test-helpers.js";
+import {
+  startRabbitMQ,
+  stopRabbitMQ,
+  getBus,
+  createFreshBus,
+  withTimeout,
+} from "./rabbitmq-test-helpers.js";
 
 describe("MessageBus integration (RabbitMQ)", () => {
   beforeAll(startRabbitMQ, 60_000);
@@ -213,11 +219,22 @@ describe("MessageBus integration (RabbitMQ)", () => {
   });
 
   describe("declareTopology", () => {
-    it("should declare exchanges, queues, and bindings", async () => {
-      const bus = getBus();
+    // Use a fresh MessageBus for topology tests to avoid shared channel state
+    // pollution from earlier subscribe/publish tests (rabbitmq-client's internal
+    // lazy channel can become unusable after heavy consumer/publisher churn).
+    let topoBus: ReturnType<typeof getBus>;
 
+    beforeAll(async () => {
+      topoBus = await createFreshBus();
+    }, 30_000);
+
+    afterAll(async () => {
+      await topoBus?.close();
+    });
+
+    it("should declare exchanges, queues, and bindings", async () => {
       // Should not throw
-      await bus.declareTopology({
+      await topoBus.declareTopology({
         exchanges: [{ exchange: "test-topo-exchange", type: "direct", durable: true }],
         queues: [{ queue: "test-topo-queue", durable: true }],
         bindings: [
@@ -235,15 +252,17 @@ describe("MessageBus integration (RabbitMQ)", () => {
         resolveReceived = resolve;
       });
 
-      const consumer = bus.subscribe<{ ok: boolean }>(
-        { queue: "test-topo-queue" },
+      // queueOptions must match declareTopology (durable: true) to avoid
+      // PRECONDITION_FAILED from re-declaring with different properties.
+      const consumer = topoBus.subscribe<{ ok: boolean }>(
+        { queue: "test-topo-queue", queueOptions: { durable: true } },
         async (msg) => {
           resolveReceived(msg);
         },
       );
       await consumer.ready;
 
-      const publisher = bus.createPublisher();
+      const publisher = topoBus.createPublisher();
       await publisher.send(
         { exchange: "test-topo-exchange", routingKey: "test-key" },
         { ok: true },
@@ -257,10 +276,8 @@ describe("MessageBus integration (RabbitMQ)", () => {
     });
 
     it("should support DLX queue with TTL that dead-letters to another queue", async () => {
-      const bus = getBus();
-
       // Set up: DLX queue → requeue exchange → destination queue
-      await bus.declareTopology({
+      await topoBus.declareTopology({
         exchanges: [{ exchange: "test-dlx-requeue", type: "direct", durable: true }],
         queues: [
           {
@@ -283,14 +300,14 @@ describe("MessageBus integration (RabbitMQ)", () => {
         ],
       });
 
-      // Subscribe to the destination queue
+      // Subscribe to the destination queue — durable must match declareTopology
       let resolveReceived: (msg: { ping: string }) => void;
       const received = new Promise<{ ping: string }>((resolve) => {
         resolveReceived = resolve;
       });
 
-      const consumer = bus.subscribe<{ ping: string }>(
-        { queue: "test-dlx-dest" },
+      const consumer = topoBus.subscribe<{ ping: string }>(
+        { queue: "test-dlx-dest", queueOptions: { durable: true } },
         async (msg) => {
           resolveReceived(msg);
         },
@@ -298,7 +315,7 @@ describe("MessageBus integration (RabbitMQ)", () => {
       await consumer.ready;
 
       // Publish directly to the tier queue (no consumer — TTL will expire and DLX)
-      const publisher = bus.createPublisher();
+      const publisher = topoBus.createPublisher();
       await publisher.send(
         { exchange: "", routingKey: "test-dlx-tier" },
         { ping: "dlx-test" },
