@@ -24,7 +24,7 @@ import {
   TwilioSmsProvider,
 } from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
-import { withApiKeyAuth } from "./interceptors/api-key-interceptor.js";
+import { withApiKeyAuth } from "@d2/service-defaults/grpc";
 
 export interface CommsServiceConfig {
   databaseUrl: string;
@@ -175,7 +175,10 @@ export async function createCommsService(config: CommsServiceConfig) {
   if (config.commsApiKeys?.length) {
     const validKeys = new Set(config.commsApiKeys);
     const publicRpcs = new Set(["checkHealth"]);
-    server.addService(CommsServiceService, withApiKeyAuth(grpcService, validKeys, logger, publicRpcs));
+    server.addService(
+      CommsServiceService,
+      withApiKeyAuth(grpcService, { validKeys, logger, exempt: publicRpcs }),
+    );
     logger.info(`Comms gRPC API key authentication enabled (${validKeys.size} key(s))`);
   } else {
     server.addService(CommsServiceService, grpcService);

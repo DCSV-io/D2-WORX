@@ -1,11 +1,7 @@
 import * as grpc from "@grpc/grpc-js";
-import { context, propagation, trace } from "@opentelemetry/api";
 import type { CommsServiceServer } from "@d2/protos";
 import type { ServiceProvider } from "@d2/di";
-import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
-import type { IRequestContext } from "@d2/handler";
-import { ILoggerKey } from "@d2/logging";
-import type { ServiceScope } from "@d2/di";
+import { createRpcScope, withTraceContext } from "@d2/service-defaults/grpc";
 import {
   ICheckHealthKey,
   IGetChannelPreferenceKey,
@@ -17,73 +13,6 @@ import { D2Result } from "@d2/result";
 import { d2ResultToProto } from "@d2/result-extensions";
 import { channelPreferenceToProto } from "../mappers/channel-preference-mapper.js";
 import { deliveryRequestToProto, deliveryAttemptToProto } from "../mappers/delivery-mapper.js";
-
-/**
- * Extracts the W3C trace context (traceparent) from incoming gRPC metadata.
- * Returns an OTel Context with the extracted parent span, enabling child spans
- * created within this context to be properly linked in the distributed trace.
- *
- * This is needed because `@opentelemetry/instrumentation-grpc` auto-instrumentation
- * does not reliably patch `@grpc/grpc-js` server-side context extraction in ESM.
- */
-function extractGrpcTraceContext(call: grpc.ServerUnaryCall<unknown, unknown>) {
-  const carrier: Record<string, string> = {};
-  const metadata = call.metadata?.getMap();
-  if (metadata) {
-    for (const [key, value] of Object.entries(metadata)) {
-      if (typeof value === "string") {
-        carrier[key] = value;
-      }
-    }
-  }
-  return propagation.extract(context.active(), carrier);
-}
-
-/**
- * Creates a disposable DI scope with trace context from the incoming gRPC call.
- * Uses the OTel traceId from the propagated context when available, falling back
- * to a fresh UUID for non-instrumented callers.
- */
-function createRpcScope(
-  provider: ServiceProvider,
-  call: grpc.ServerUnaryCall<unknown, unknown>,
-): ServiceScope {
-  const scope = provider.createScope();
-
-  // Use the OTel traceId from the incoming context when available.
-  const spanCtx = trace.getSpanContext(extractGrpcTraceContext(call));
-  const traceId = spanCtx?.traceId ?? crypto.randomUUID();
-
-  const requestContext: IRequestContext = {
-    traceId,
-    isAuthenticated: false,
-    isAgentStaff: false,
-    isAgentAdmin: false,
-    isTargetingStaff: false,
-    isTargetingAdmin: false,
-    isOrgEmulating: false,
-    isUserImpersonating: false,
-  };
-  scope.setInstance(IRequestContextKey, requestContext);
-  scope.setInstance(
-    IHandlerContextKey,
-    new HandlerContext(requestContext, provider.resolve(ILoggerKey)),
-  );
-  return scope;
-}
-
-/**
- * Runs an async RPC handler within the extracted gRPC trace context.
- * This ensures all child spans (BaseHandler, pg, dns, etc.) are properly
- * parented under the caller's trace.
- */
-function withTraceContext<TReq, TRes>(
-  call: grpc.ServerUnaryCall<TReq, TRes>,
-  fn: () => Promise<void>,
-): Promise<void> {
-  const parentCtx = extractGrpcTraceContext(call as grpc.ServerUnaryCall<unknown, unknown>);
-  return context.with(parentCtx, fn);
-}
 
 /**
  * Creates the CommsServiceServer implementation.

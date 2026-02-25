@@ -832,6 +832,18 @@ importers:
 
   backends/node/shared/service-defaults:
     dependencies:
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../di
+      '@d2/handler':
+        specifier: workspace:*
+        version: link:../handler
+      '@d2/logging':
+        specifier: workspace:*
+        version: link:../logging
+      '@grpc/grpc-js':
+        specifier: 1.14.3
+        version: 1.14.3
       '@opentelemetry/api':
         specifier: 1.9.0
         version: 1.9.0

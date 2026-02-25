@@ -18,6 +18,7 @@ export default defineConfig({
       "@d2/utilities": resolve(shared, "utilities/src/index.ts"),
       "@d2/protos": resolve(shared, "protos/src/index.ts"),
       "@d2/logging": resolve(shared, "logging/src/index.ts"),
+      "@d2/service-defaults/grpc": resolve(shared, "service-defaults/src/grpc/index.ts"),
       "@d2/service-defaults": resolve(shared, "service-defaults/src/index.ts"),
       "@d2/handler": resolve(shared, "handler/src/index.ts"),
       "@d2/interfaces": resolve(shared, "interfaces/src/index.ts"),

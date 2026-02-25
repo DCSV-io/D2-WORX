@@ -35,8 +35,6 @@ src/
   composition-root.ts                   createCommsService(config) -- full app wiring
   services/
     comms-grpc-service.ts               createCommsGrpcService(provider) -- CommsServiceServer impl
-  interceptors/
-    api-key-interceptor.ts              withApiKeyAuth() -- wraps gRPC service with x-api-key validation
   mappers/
     channel-preference-mapper.ts        channelPreferenceToProto (domain -> proto)
     delivery-mapper.ts                  deliveryRequestToProto, deliveryAttemptToProto
@@ -96,7 +94,7 @@ Returns `{ server, shutdown }` where `shutdown()` closes RabbitMQ, disposes prov
 
 ## Security — API Key Interceptor
 
-All gRPC RPCs require API key authentication via the `x-api-key` metadata header. The `withApiKeyAuth` wrapper validates the header against a set of valid keys (`COMMS_API_KEYS__0`, `COMMS_API_KEYS__1`, etc.) before delegating to the handler.
+All gRPC RPCs require API key authentication via the `x-api-key` metadata header. The `withApiKeyAuth` wrapper from `@d2/service-defaults/grpc` validates the header against a set of valid keys (`COMMS_API_KEYS__0`, `COMMS_API_KEYS__1`, etc.) before delegating to the handler.
 
 | Scenario                | Response           |
 | ----------------------- | ------------------ |
@@ -104,7 +102,7 @@ All gRPC RPCs require API key authentication via the `x-api-key` metadata header
 | Invalid API key         | `UNAUTHENTICATED`  |
 | Valid API key           | Pass-through       |
 
-Unlike Geo.API's `ApiKeyInterceptor` (which also validates context-key ownership), the Comms interceptor is simpler -- flat key set, no per-key context-key authorization. Mirrors the .NET `ServiceKeyMiddleware` pattern (one key per calling service) but adapted for `@grpc/grpc-js` (which lacks first-class server interceptors), so each handler is wrapped at the service object level.
+Unlike Geo.API's `ApiKeyInterceptor` (which also validates context-key ownership), the Comms usage is simpler -- flat key set, no per-key context-key authorization. The shared `withApiKeyAuth` in `@d2/service-defaults/grpc` mirrors the .NET `ServiceKeyMiddleware` pattern (one key per calling service) but adapted for `@grpc/grpc-js` (which lacks first-class server interceptors), so each handler is wrapped at the service object level.
 
 ## Mappers
 
@@ -144,7 +142,7 @@ src/unit/api/
 | `@d2/protos`           | CommsServiceService definition, proto DTOs     |
 | `@d2/result`           | D2Result for gRPC response construction        |
 | `@d2/result-extensions`| d2ResultToProto conversion                     |
-| `@d2/service-defaults` | setupTelemetry (OTel bootstrap)                |
+| `@d2/service-defaults` | setupTelemetry (OTel), gRPC utilities (createRpcScope, withTraceContext, withApiKeyAuth) |
 | `@grpc/grpc-js`        | gRPC server runtime                            |
 | `drizzle-orm`          | Drizzle ORM (passed to addCommsInfra)          |
 | `pg`                   | PostgreSQL driver (Pool creation)              |
