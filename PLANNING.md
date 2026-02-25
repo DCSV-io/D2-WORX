@@ -1403,8 +1403,10 @@ clients/web/src/routes/
 | Item                           | Priority   | Notes                                                                                                                                                                                                 |
 | ------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Validate redaction in OTEL** | **High**   | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output                                                                                                      |
-| Test container sharing         | Medium     | Could speed up integration tests                                                                                                                                                                      |
-| Standardize error codes        | Medium     | Ensure consistency across services                                                                                                                                                                    |
+| **OTel alerting rules**        | **Medium** | Define AlertManager/Grafana alert rules for key operational signals: error rate spikes, latency P99 thresholds, rate limit blocks, delivery failures. Rate limit admin alerting (via Comms) is Phase 3 |
+| **Service resilience/startup** | **Medium** | Auto-restart policies (Aspire/container health checks), graceful startup when deps aren't ready (RabbitMQ/Redis/PG retry-connect), readiness probes, circuit breakers for downstream failures          |
+| ~~Test container sharing~~     | ~~Medium~~ | ✅ Done                                                                                                                                                                                               |
+| ~~Standardize error codes~~    | ~~Medium~~ | ✅ Done                                                                                                                                                                                               |
 
 ---
 
