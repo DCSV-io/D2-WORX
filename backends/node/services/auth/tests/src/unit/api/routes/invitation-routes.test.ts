@@ -269,6 +269,141 @@ describe("Invitation routes", () => {
   });
 
   // -------------------------------------------------------------------------
+  // Role hierarchy enforcement
+  // -------------------------------------------------------------------------
+
+  describe("POST /api/invitations — role hierarchy", () => {
+    it("should reject officer trying to invite owner (403)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "officer" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "owner" }),
+      });
+      expect(res.status).toBe(403);
+      const body = (await res.json()) as { messages?: string[] };
+      expect(body.messages?.[0]).toContain('cannot invite role "owner"');
+      expect(mockCreateInvitation).not.toHaveBeenCalled();
+    });
+
+    it("should reject officer trying to invite officer (403)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "officer" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "officer" }),
+      });
+      expect(res.status).toBe(403);
+      const body = (await res.json()) as { messages?: string[] };
+      expect(body.messages?.[0]).toContain('cannot invite role "officer"');
+    });
+
+    it("should allow officer to invite agent (201)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "officer" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "agent" }),
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it("should allow officer to invite auditor (201)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "officer" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "auditor" }),
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it("should allow owner to invite officer (201)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "owner" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "officer" }),
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it("should allow owner to invite agent (201)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "owner" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "agent" }),
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it("should allow owner to invite auditor (201)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "owner" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "auditor" }),
+      });
+      expect(res.status).toBe(201);
+    });
+
+    it("should reject owner trying to invite owner (403)", async () => {
+      const app = createTestApp(handlers, { activeOrganizationRole: "owner" });
+      const res = await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "test@test.com", role: "owner" }),
+      });
+      expect(res.status).toBe(403);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Max-length validation
+  // -------------------------------------------------------------------------
+
+  describe("POST /api/invitations — max-length enforcement", () => {
+    it("should truncate phone to 30 characters", async () => {
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+      const longPhone = "+1" + "5".repeat(50);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "test@test.com",
+          role: "agent",
+          phone: longPhone,
+        }),
+      });
+
+      const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
+      expect(contactInput.contacts[0].contactMethods.phoneNumbers[0].value).toHaveLength(30);
+    });
+
+    it("should accept firstName exactly at max length (200)", async () => {
+      resetDbChain([], [{ name: "Acme" }]);
+      const app = createTestApp(handlers);
+      const name200 = "A".repeat(200);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: "test@test.com",
+          role: "agent",
+          firstName: name200,
+        }),
+      });
+
+      const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
+      expect(contactInput.contacts[0].personalDetails.firstName).toHaveLength(200);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Happy path — non-existing user (contactId path)
   // -------------------------------------------------------------------------
 
@@ -359,7 +494,8 @@ describe("Invitation routes", () => {
   describe("POST /api/invitations — existing user", () => {
     it("should skip Geo contact creation and look up contact via ext-keys", async () => {
       resetDbChain([{ id: "existing-user-id" }], [{ name: "Acme Corp" }]);
-      const app = createTestApp(handlers);
+      // Owner inviting officer — allowed by hierarchy
+      const app = createTestApp(handlers, { activeOrganizationRole: "owner" });
 
       const res = await app.request("/api/invitations", {
         method: "POST",
@@ -413,7 +549,7 @@ describe("Invitation routes", () => {
   // -------------------------------------------------------------------------
 
   describe("POST /api/invitations — createInvitation failure", () => {
-    it("should return 400 when createInvitation throws an Error", async () => {
+    it("should return 400 with generic message when createInvitation throws an Error", async () => {
       mockCreateInvitation.mockRejectedValue(new Error("User is already a member."));
       const app = createTestApp(handlers);
 
@@ -425,7 +561,9 @@ describe("Invitation routes", () => {
 
       expect(res.status).toBe(400);
       const body = (await res.json()) as { messages?: string[] };
-      expect(body.messages).toContain("User is already a member.");
+      // Must NOT leak internal error details — always generic message
+      expect(body.messages).toContain("Failed to create invitation.");
+      expect(body.messages).not.toContain("User is already a member.");
 
       // Should not attempt to notify
       expect(handlers.notify.handleAsync).not.toHaveBeenCalled();
@@ -444,6 +582,23 @@ describe("Invitation routes", () => {
       expect(res.status).toBe(400);
       const body = (await res.json()) as { messages?: string[] };
       expect(body.messages).toContain("Failed to create invitation.");
+    });
+
+    it("should log internal error for debugging via console.warn", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockCreateInvitation.mockRejectedValue(new Error("Internal BetterAuth error details"));
+      const app = createTestApp(handlers);
+
+      await app.request("/api/invitations", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(BASE_BODY),
+      });
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        "Invitation creation failed: Internal BetterAuth error details",
+      );
+      warnSpy.mockRestore();
     });
   });
 
@@ -576,7 +731,8 @@ describe("Invitation routes", () => {
 
     it("should include role and org name in content", async () => {
       resetDbChain([], [{ name: "Acme Corp" }]);
-      const app = createTestApp(handlers);
+      // Owner inviting officer — allowed by hierarchy
+      const app = createTestApp(handlers, { activeOrganizationRole: "owner" });
 
       await app.request("/api/invitations", {
         method: "POST",
@@ -701,8 +857,7 @@ describe("Invitation routes", () => {
       expect(mockCreateInvitation).not.toHaveBeenCalled();
     });
 
-    it("should reject invalid role string that is not in hierarchy", async () => {
-      mockCreateInvitation.mockRejectedValue(new Error("Invalid role"));
+    it("should reject invalid role string with 400 before reaching BetterAuth", async () => {
       const app = createTestApp(handlers);
 
       const res = await app.request("/api/invitations", {
@@ -711,8 +866,12 @@ describe("Invitation routes", () => {
         body: JSON.stringify({ email: "test@test.com", role: "superadmin" }),
       });
 
-      // BetterAuth should reject invalid role — returns 400 from our catch
+      // Our input validation rejects invalid roles — BetterAuth never called
       expect(res.status).toBe(400);
+      const body = (await res.json()) as { inputErrors?: string[][] };
+      expect(body.inputErrors).toBeDefined();
+      expect(body.inputErrors!.some((e: string[]) => e[0] === "role")).toBe(true);
+      expect(mockCreateInvitation).not.toHaveBeenCalled();
     });
 
     it("should handle very long email gracefully", async () => {
@@ -730,7 +889,7 @@ describe("Invitation routes", () => {
       expect([201, 400]).toContain(res.status);
     });
 
-    it("should handle very long firstName/lastName without crashing", async () => {
+    it("should truncate very long firstName/lastName to max 200 chars", async () => {
       resetDbChain([], [{ name: "Acme" }]);
       const app = createTestApp(handlers);
       const longName = "A".repeat(10_000);
@@ -746,11 +905,11 @@ describe("Invitation routes", () => {
         }),
       });
 
-      // Should not crash the handler — the values pass through to Geo
+      // Should not crash the handler — names are truncated before passing to Geo
       expect(res.status).toBe(201);
-      // Verify the long names were passed to createContacts
       const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
-      expect(contactInput.contacts[0].personalDetails.firstName).toBe(longName);
+      expect(contactInput.contacts[0].personalDetails.firstName).toHaveLength(200);
+      expect(contactInput.contacts[0].personalDetails.lastName).toHaveLength(200);
     });
 
     it("should not call createContacts when existing user provides contact details", async () => {

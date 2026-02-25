@@ -54,7 +54,7 @@ builder.Services.AddServiceKeyAuth(builder.Configuration);
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(builder.Configuration["CorsOrigin"] ?? "http://localhost:5173")
      .AllowCredentials()
-     .WithHeaders("Content-Type", "Authorization", "Idempotency-Key")
+     .WithHeaders("Content-Type", "Authorization", "Idempotency-Key", "X-Client-Fingerprint")
      .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")));
 
 // Request body size limit (256 KB — gateway payloads are small JSON).

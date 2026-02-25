@@ -1,0 +1,80 @@
+### Module 2: DI Container
+
+**Files reviewed**:
+
+| File | Path | Lines |
+|------|------|-------|
+| `service-key.ts` | `backends/node/shared/di/src/service-key.ts` | 20 |
+| `lifetime.ts` | `backends/node/shared/di/src/lifetime.ts` | 12 |
+| `service-collection.ts` | `backends/node/shared/di/src/service-collection.ts` | 83 |
+| `service-provider.ts` | `backends/node/shared/di/src/service-provider.ts` | 200 |
+| `index.ts` | `backends/node/shared/di/src/index.ts` | 4 |
+| `package.json` | `backends/node/shared/di/package.json` | 19 |
+| `DI.md` | `backends/node/shared/di/DI.md` | 88 |
+| `tsconfig.json` | `backends/node/shared/di/tsconfig.json` | 9 |
+| `service-collection.test.ts` | `backends/node/shared/tests/src/unit/di/service-collection.test.ts` | 65 |
+| `service-provider.test.ts` | `backends/node/shared/tests/src/unit/di/service-provider.test.ts` | 355 |
+| `traceid-auto-injection.test.ts` | `backends/node/shared/tests/src/unit/di/traceid-auto-injection.test.ts` | 133 |
+
+**Total source lines**: 319 (5 source files)
+**Total test lines**: 553 (3 test files)
+
+---
+
+**Assumptions documented**:
+
+1. **ServiceKey uniqueness is caller-enforced.** The `createServiceKey` function accepts any `string id`. Two calls with the same id but different type parameters (e.g., `createServiceKey<string>("foo")` and `createServiceKey<number>("foo")`) silently share the same registration slot, producing runtime type mismatches with zero compile-time or runtime warnings. The system assumes callers never reuse id strings across different types.
+
+2. **Singleton factories never return `undefined`.** Both `ServiceProvider._resolveDescriptor` (line 78) and `ServiceScope._resolveDescriptor` (line 176) use `cached !== undefined` to check the singleton cache. If a factory legitimately returns `undefined`, it will be re-invoked on every subsequent resolve, breaking the singleton guarantee. The same applies to scoped cache checks (line 183).
+
+3. **`setInstance` is only called for keys that have a descriptor registration.** `setInstance` puts a value into `_scopedCache`, but `resolve` first checks `_root._descriptors` and throws `Service not registered` if the key is missing. This means `setInstance` silently accepts unregistered keys but `resolve` will still throw. This is documented in MEMORY.md and is a known interaction pattern that real-world usage works around by always registering a scoped factory first.
+
+4. **Factories never throw.** There is no try/catch around `desc.factory!(this)` or `desc.factory!(this._root)` calls. If a factory throws, the exception propagates directly to the caller. For singletons, this is fine (no partial state cached), but it does mean there is no centralized error context (e.g., "while resolving key X").
+
+5. **Scoped factories receive a `ServiceScope` cast to `ServiceProvider` via `this as unknown as ServiceProvider`.** This works because `ServiceScope.resolve()` has the same signature as `ServiceProvider.resolve()`, but it is structurally typed duck-typing, not an actual interface contract. If `ServiceProvider` ever gains methods that `ServiceScope` does not have, factories could call them and get runtime errors.
+
+6. **No circular dependency detection.** If service A's factory resolves service B, and B's factory resolves A, the system will enter infinite recursion and stack overflow. There is no guard against this.
+
+7. **`ServiceCollection` can still be mutated after `build()`.** The `build()` method takes a snapshot of `_descriptors`, so post-build mutations to the collection are isolated. But there is no indication to callers that the collection has been built (no frozen/locked state). Multiple `build()` calls each produce independent providers.
+
+8. **`createScope()` from a scope creates a sibling, not a nested scope.** `ServiceScope.createScope()` delegates to `this._root.createScope()`, so the new scope is a direct child of the root with its own empty `_scopedCache`. It does NOT inherit `setInstance` values or scoped cache entries from the parent scope. This is documented behavior but could surprise callers expecting hierarchical scoping.
+
+---
+
+**Findings**:
+
+| # | Severity | Category | File:Line | Description |
+|---|----------|----------|-----------|-------------|
+| 1 | **High** | Bug | `service-provider.ts:78,176,183` | **`undefined` as a legitimate value breaks caching.** The singleton and scoped cache checks use `cached !== undefined`. If a factory returns `undefined` (which TypeScript allows if `T` is `undefined` or `T | undefined`), the result will never be cached -- the factory is re-invoked on every `resolve()`, violating singleton/scoped semantics. The `addInstance` pre-population at line 30 has the same issue: `addInstance(key, undefined)` skips pre-population entirely. **Fix**: use `Map.has()` instead of `!== undefined`, or use a sentinel value. |
+| 2 | **High** | Bug | `service-provider.ts:185,191` | **`ServiceScope` is not a `ServiceProvider` -- unsafe cast.** `this as unknown as ServiceProvider` is a double-assertion that bypasses type safety. Scoped and transient factories typed as `(sp: ServiceProvider) => T` receive a `ServiceScope` at runtime. If a factory calls any method unique to `ServiceProvider` (currently only `dispose()`, `_resolveDescriptor`, `_ensureNotDisposed`, or accesses `_singletons` directly), it would behave unexpectedly. While today both classes have identical public APIs (`resolve`, `tryResolve`, `createScope`), this is a fragile structural coupling with no shared interface to enforce it. |
+| 3 | **Medium** | Bug | `service-provider.ts:123-126` | **`setInstance` silently succeeds for unregistered keys, but `resolve` then throws.** Calling `scope.setInstance(key, value)` where `key` was never registered puts the value into `_scopedCache`, but `resolve` checks `_root._descriptors` first and throws `Service not registered`. This is a silent no-op that wastes the caller's time and can lead to confusing bugs. **Fix**: Either (a) have `setInstance` throw for unregistered keys, or (b) have `resolve` check `_scopedCache` before `_descriptors`. |
+| 4 | **Medium** | Bug | `service-provider.ts:74-91` | **No circular dependency detection.** Resolving service A whose factory resolves B whose factory resolves A will cause infinite recursion and a stack overflow. .NET detects this at resolution time. Even a simple `Set<string>` tracking in-progress resolutions would catch this. |
+| 5 | **Medium** | Security | `service-provider.ts:80,177-178` | **Non-null assertion on `desc.factory!`.** For `addInstance` registrations, `factory` is `undefined` but the singleton cache should be pre-populated. However, if `addInstance` is called with `undefined` as the value (Finding #1), the pre-population is skipped, and line 80 will attempt `desc.factory!(this)` which throws `TypeError: desc.factory is not a function`. This is a crash path, not a graceful error. |
+| 6 | **Low** | Performance | `service-provider.ts:28-33` | **Constructor iterates all descriptors to pre-populate instances.** This is O(n) on every `build()`. For the current codebase with ~20-30 registrations this is negligible, but it is worth noting for documentation. Not a real concern. |
+| 7 | **Low** | Consistency | `service-provider.ts:17-99,109-200` | **`ServiceProvider` and `ServiceScope` have identical public APIs but share no interface/base class.** Both have `resolve<T>`, `tryResolve<T>`, `createScope()`, and `dispose()`. Extracting an `IServiceProvider` interface would eliminate the unsafe cast in Finding #2 and allow factory types to be `(sp: IServiceProvider) => T`. This is also the pattern .NET uses (`IServiceProvider`). |
+| 8 | **Low** | Consistency | `service-key.ts:18-20` | **`createServiceKey` accepts empty string.** There is no validation that `id` is non-empty. An empty string `""` would work but would be confusing in error messages (`Service not registered: `). |
+| 9 | **Low** | Maintainability | `service-provider.ts:68-71` | **`dispose()` clears singletons but does not dispose them.** If singletons implement `Disposable` or have cleanup methods (e.g., database connections, Redis clients), `dispose()` just drops references without calling their cleanup. .NET's `ServiceProvider.Dispose()` disposes all `IDisposable` singletons. This is a known simplification documented nowhere. |
+| 10 | **Low** | Maintainability | `service-provider.ts:161-164` | **`ServiceScope.dispose()` clears cache but does not dispose scoped instances.** Same as Finding #9 but for scoped services. If a scoped service holds resources (e.g., a DB transaction), they leak. |
+| 11 | **Low** | Elegance | `service-collection.ts:29,43,56` | **Repeated `factory as (sp: ServiceProvider) => unknown` casts.** Each `add*` method casts the factory to erase the generic type. This is expected for the Map storage, but a helper like `asDescriptor()` could reduce repetition. Very minor. |
+| 12 | **Low** | Elegance | `service-provider.ts:155-158` | **`ServiceScope.createScope()` creates a sibling, not a child.** The JSDoc says "Create a child scope. Delegates to root." but it creates a peer scope, not a child. This is semantically correct for the .NET model but the word "child" in the comment is misleading -- it is a sibling scope from the root. |
+| 13 | **Low** | Consistency | `package.json` | **No `devDependencies` for TypeScript.** The `package.json` has zero dependencies (correct for zero-dep package), but `tsc` build relies on `typescript` being hoisted from a parent workspace. This works but is implicit. |
+
+---
+
+**Tests to add**:
+
+- [ ] Resolving a singleton that returns `undefined` — verify whether factory is re-invoked on second resolve (exposes Finding #1)
+- [ ] Resolving a scoped service that returns `undefined` — same for scoped lifetime
+- [ ] `setInstance` with a key not registered in `ServiceCollection` — verify `resolve` throws `Service not registered` even after `setInstance`
+- [ ] `setInstance` with `undefined` as the value — combined with Finding #1
+- [ ] Circular dependency detection — register A depending on B, B depending on A, verify behavior
+- [ ] `addInstance` with `undefined` as the value — verify crash path (Finding #5)
+- [ ] `resolve` after `dispose` on the root, from a still-alive scope — scope checks own `_disposed` but not root's
+- [ ] `createScope()` from a scope does not inherit `setInstance` values — document sibling behavior
+- [ ] Duplicate `ServiceKey` ids with different types — verify last-wins and silent type mismatch
+- [ ] `build()` called multiple times produces independent providers
+- [ ] `tryResolve` from scope for a scoped service (missing: only tested from root)
+
+**Tests to remove**:
+
+- [ ] `traceid-auto-injection.test.ts` — tests `BaseHandler` traceId behavior, not DI. Placed in `di/` test directory but imports from `@d2/handler` and `@d2/result`. Should be moved to `handler/` test directory for organizational clarity. Not redundant, but misplaced.

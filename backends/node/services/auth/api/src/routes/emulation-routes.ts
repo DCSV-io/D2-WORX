@@ -8,7 +8,8 @@ import {
   IGetActiveConsentsKey,
 } from "@d2/auth-app";
 import type { SessionVariables } from "../middleware/session.js";
-import { SCOPE_KEY, type ScopeVariables } from "../middleware/scope.js";
+import { type ScopeVariables } from "../middleware/scope.js";
+import { SCOPE_KEY, SESSION_KEY, USER_KEY } from "../context-keys.js";
 import { requireOrg, requireStaff, requireRole } from "../middleware/authorization.js";
 
 /** Default and maximum page sizes for list endpoints. */
@@ -34,9 +35,9 @@ export function createEmulationRoutes() {
       const body = await c.req.json();
       const handler = c.get(SCOPE_KEY).resolve(ICreateEmulationConsentKey);
       const result = await handler.handleAsync({
-        userId: c.get("user")!.id,
+        userId: c.get(USER_KEY)!.id,
         grantedToOrgId: body.grantedToOrgId,
-        activeOrgType: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_TYPE] as OrgType,
+        activeOrgType: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_TYPE] as OrgType,
         expiresAt: new Date(body.expiresAt),
       });
       const status = (
@@ -56,7 +57,7 @@ export function createEmulationRoutes() {
       const handler = c.get(SCOPE_KEY).resolve(IRevokeEmulationConsentKey);
       const result = await handler.handleAsync({
         consentId: c.req.param("id"),
-        userId: c.get("user")!.id,
+        userId: c.get(USER_KEY)!.id,
       });
       const status = (
         result.success ? HttpStatusCode.OK : (result.statusCode ?? HttpStatusCode.BadRequest)
@@ -77,7 +78,7 @@ export function createEmulationRoutes() {
 
     const handler = c.get(SCOPE_KEY).resolve(IGetActiveConsentsKey);
     const result = await handler.handleAsync({
-      userId: c.get("user")!.id,
+      userId: c.get(USER_KEY)!.id,
       limit,
       offset,
     });

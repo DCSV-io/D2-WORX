@@ -67,7 +67,7 @@ const config = {
   databaseUrl: parsePostgresUrl(process.env["ConnectionStrings__d2-services-auth"] ?? process.env.ConnectionStrings__d2_services_auth ?? ""),
   redisUrl: parseRedisUrl(process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis ?? ""),
   rabbitMqUrl: process.env["ConnectionStrings__d2-rabbitmq"] ?? process.env.ConnectionStrings__d2_rabbitmq,
-  baseUrl: process.env.AUTH_BASE_URL ?? "http://localhost:3100",
+  baseUrl: process.env.AUTH_BASE_URL ?? "http://localhost:5100",
   corsOrigin: process.env.AUTH_CORS_ORIGIN ?? "http://localhost:5173",
   jwtIssuer: process.env.AUTH_JWT_ISSUER ?? "d2-worx",
   jwtAudience: process.env.AUTH_JWT_AUDIENCE ?? "d2-services",
@@ -97,7 +97,7 @@ if (config.rabbitMqUrl) {
 }
 
 const { app, shutdown } = await createApp(config, publisher, undefined, messageBus);
-const port = parseInt(process.env.PORT ?? "3100", 10);
+const port = parseInt(process.env.PORT ?? "5100", 10);
 
 const server = serve({ fetch: app.fetch, port }, (info) => {
   logger.info(`Auth service listening on http://localhost:${info.port}`);

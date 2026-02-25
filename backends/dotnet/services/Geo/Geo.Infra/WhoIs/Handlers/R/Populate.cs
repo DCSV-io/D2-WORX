@@ -248,7 +248,11 @@ public class Populate : BaseHandler<Populate, I, O>, H
             mnc: null,
             asChanged: null,
             geoChanged: null,
-            isAnonymous: ipResponse.Privacy?.Relay,
+            isAnonymous: ipResponse.Privacy?.Vpn == true
+                || ipResponse.Privacy?.Proxy == true
+                || ipResponse.Privacy?.Tor == true
+                || ipResponse.Privacy?.Relay == true
+                || ipResponse.Privacy?.Hosting == true,
             isAnycast: null,
             isHosting: ipResponse.Privacy?.Hosting,
             isMobile: null,

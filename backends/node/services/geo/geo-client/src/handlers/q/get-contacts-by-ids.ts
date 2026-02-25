@@ -10,7 +10,11 @@ type Output = Queries.GetContactsByIdsOutput;
 /**
  * Handler for fetching Geo contacts by their direct IDs with local cache-aside.
  * Contacts are immutable, so cached entries never expire (only LRU eviction).
- * Fail-open: returns whatever was cached if gRPC fails.
+ *
+ * Return semantics (mirrors .NET GetContactsByIds):
+ * - `ok`        — all requested contacts found
+ * - `someFound` — partial results (some IDs not resolved); data still returned
+ * - `notFound`  — none of the requested contacts found
  */
 export class GetContactsByIds
   extends BaseHandler<Input, Output>
@@ -63,15 +67,15 @@ export class GetContactsByIds
         });
       });
     } catch {
-      // Fail-open: return whatever was cached
+      // gRPC failed — return whatever was cached with appropriate status
       this.context.logger.warn(
         `gRPC call to Geo service failed for GetContactsByIds. TraceId: ${this.traceId}`,
       );
-      return D2Result.ok({ data: { data: result } });
+      return this.resolveStatus(input.ids.length, result);
     }
 
-    if (response.result?.success && response.data) {
-      // Cache each fetched contact (no TTL — contacts are immutable, LRU evicts)
+    // Process data whenever present — server returns data even for SOME_FOUND
+    if (response.data) {
       for (const [id, contact] of Object.entries(response.data)) {
         const cacheKey = `contact:${id}`;
         this.store.set(cacheKey, contact);
@@ -79,7 +83,26 @@ export class GetContactsByIds
       }
     }
 
-    return D2Result.ok({ data: { data: result } });
+    return this.resolveStatus(input.ids.length, result);
+  }
+
+  /**
+   * Maps the collected result set to the correct D2Result status:
+   * - All found → ok
+   * - Some found → someFound (data attached)
+   * - None found → notFound
+   */
+  private resolveStatus(
+    requestedCount: number,
+    result: Map<string, ContactDTO>,
+  ): D2Result<Output | undefined> {
+    if (result.size === requestedCount) {
+      return D2Result.ok({ data: { data: result } });
+    }
+    if (result.size > 0) {
+      return D2Result.someFound({ data: { data: result } });
+    }
+    return D2Result.notFound();
   }
 }
 

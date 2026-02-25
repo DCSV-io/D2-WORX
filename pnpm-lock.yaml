@@ -730,6 +730,9 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../../../../result
+      zod:
+        specifier: 3.25.76
+        version: 3.25.76
 
   backends/node/shared/implementations/middleware/ratelimit/default:
     dependencies:
@@ -934,6 +937,9 @@ importers:
       '@d2/result-extensions':
         specifier: workspace:*
         version: link:../result-extensions
+      '@d2/service-defaults':
+        specifier: workspace:*
+        version: link:../service-defaults
       '@d2/testing':
         specifier: workspace:*
         version: link:../testing

@@ -12,6 +12,24 @@ import {
   createMockGetContactsByIds,
 } from "../helpers/mock-handlers.js";
 
+// Stable UUIDs for test data (deterministic, avoid random generation in tests)
+const CONTACT_1 = "a0000000-0000-0000-0000-000000000001";
+const CONTACT_SMS = "a0000000-0000-0000-0000-000000000002";
+const CONTACT_PREF = "a0000000-0000-0000-0000-000000000003";
+const CONTACT_DUAL = "a0000000-0000-0000-0000-000000000004";
+const CONTACT_999 = "a0000000-0000-0000-0000-000000000999";
+const CORR_1 = "b0000000-0000-0000-0000-000000000001";
+const CORR_DUP = "b0000000-0000-0000-0000-000000000002";
+const CORR_NO_ADDR = "b0000000-0000-0000-0000-000000000003";
+const CORR_FAIL = "b0000000-0000-0000-0000-000000000004";
+const CORR_PERSIST = "b0000000-0000-0000-0000-000000000005";
+const CORR_SMS = "b0000000-0000-0000-0000-000000000006";
+const CORR_CONTACT_PREF = "b0000000-0000-0000-0000-000000000007";
+const CORR_RESOLVER_FAIL = "b0000000-0000-0000-0000-000000000008";
+const CORR_MSG_FAIL = "b0000000-0000-0000-0000-000000000009";
+const CORR_REQ_FAIL = "b0000000-0000-0000-0000-00000000000a";
+const CORR_DUAL = "b0000000-0000-0000-0000-00000000000b";
+
 describe("Deliver", () => {
   let deliver: Deliver;
   let messageRepo: ReturnType<typeof createMockMessageRepo>;
@@ -52,8 +70,8 @@ describe("Deliver", () => {
       content: "<p>Hello</p>",
       plainTextContent: "Hello",
       sensitive: true,
-      recipientContactId: "contact-1",
-      correlationId: "corr-1",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_1,
     });
 
     expect(result.success).toBe(true);
@@ -74,8 +92,8 @@ describe("Deliver", () => {
           request: {
             id: "existing-req",
             messageId: "existing-msg",
-            correlationId: "corr-dup",
-            recipientContactId: "contact-1",
+            correlationId: CORR_DUP,
+            recipientContactId: CONTACT_1,
             callbackTopic: null,
             createdAt: new Date(),
             processedAt: null,
@@ -89,8 +107,8 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-1",
-      correlationId: "corr-dup",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_DUP,
     });
 
     expect(result.success).toBe(true);
@@ -123,8 +141,8 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-999",
-      correlationId: "corr-no-addr",
+      recipientContactId: CONTACT_999,
+      correlationId: CORR_NO_ADDR,
     });
 
     expect(result.success).toBe(false);
@@ -142,8 +160,8 @@ describe("Deliver", () => {
       content: "test",
       plainTextContent: "test",
       sensitive: true,
-      recipientContactId: "contact-1",
-      correlationId: "corr-fail",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_FAIL,
     });
 
     expect(result.success).toBe(false);
@@ -157,22 +175,23 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-1",
-      correlationId: "corr-persist",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_PERSIST,
     });
 
     expect(messageRepo.create.handleAsync).toHaveBeenCalledOnce();
     expect(requestRepo.create.handleAsync).toHaveBeenCalledOnce();
-    // contact-1 has both email + phone; non-sensitive normal → 2 channels (email + sms)
-    expect(attemptRepo.create.handleAsync).toHaveBeenCalledTimes(2);
+    // contact-1 has both email + phone; non-sensitive normal -> email + sms resolved,
+    // but SMS is skipped (no provider) so only email attempt is created
+    expect(attemptRepo.create.handleAsync).toHaveBeenCalledTimes(1);
   });
 
-  it("should leave SMS attempt as pending when smsProvider is undefined", async () => {
+  it("should skip SMS attempt entirely when smsProvider is undefined", async () => {
     // Default Deliver has no SMS provider — only email
-    // Mock geo to return a contact with phone
+    // Mock geo to return a contact with phone only (no email)
     const contactsWithPhone = new Map();
-    contactsWithPhone.set("contact-sms", {
-      id: "contact-sms",
+    contactsWithPhone.set(CONTACT_SMS, {
+      id: CONTACT_SMS,
       contextKey: "auth_user",
       relatedEntityId: "user-sms",
       contactMethods: {
@@ -209,21 +228,22 @@ describe("Deliver", () => {
       title: "SMS Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-sms",
-      correlationId: "corr-sms-no-provider",
+      recipientContactId: CONTACT_SMS,
+      correlationId: CORR_SMS,
     });
 
-    expect(result.success).toBe(true);
-    expect(result.data!.attempts).toHaveLength(1);
-    // Without an SMS provider, the attempt stays "pending" (no dispatch code runs)
-    expect(result.data!.attempts[0].status).toBe("pending");
-    expect(result.data!.attempts[0].channel).toBe("sms");
+    // SMS channel skipped entirely — no pending attempt created
+    // Since only SMS was resolved and it was skipped, no attempts at all
+    // The request still succeeds with empty attempts (all channels were skipped)
+    expect(result.data!.attempts).toHaveLength(0);
+    // No attempt persisted
+    expect(attemptRepo.create.handleAsync).not.toHaveBeenCalled();
   });
 
   it("should look up channel prefs by contactId", async () => {
     const contactMap = new Map();
-    contactMap.set("contact-pref", {
-      id: "contact-pref",
+    contactMap.set(CONTACT_PREF, {
+      id: CONTACT_PREF,
       contextKey: "auth_org_invitation",
       relatedEntityId: "inv-1",
       contactMethods: {
@@ -260,23 +280,127 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-pref",
-      correlationId: "corr-contact-pref",
+      recipientContactId: CONTACT_PREF,
+      correlationId: CORR_CONTACT_PREF,
     });
 
     // Should call findByContactId
     expect(channelPrefRepo.findByContactId.handleAsync).toHaveBeenCalledWith({
-      contactId: "contact-pref",
+      contactId: CONTACT_PREF,
     });
+  });
+
+  // -------------------------------------------------------------------------
+  // Input Validation tests
+  // -------------------------------------------------------------------------
+
+  it("should reject missing correlationId with validation failure", async () => {
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "test",
+      plainTextContent: "test",
+      recipientContactId: CONTACT_1,
+      correlationId: undefined as any,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
+    expect(result.inputErrors.length).toBeGreaterThan(0);
+    // Should NOT attempt any repo operations
+    expect(messageRepo.create.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should reject non-UUID correlationId with validation failure", async () => {
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "test",
+      plainTextContent: "test",
+      recipientContactId: CONTACT_1,
+      correlationId: "not-a-uuid",
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
+    expect(result.inputErrors.length).toBeGreaterThan(0);
+    const fields = result.inputErrors.map(([field]) => field);
+    expect(fields).toContain("correlationId");
+    expect(messageRepo.create.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should reject non-UUID recipientContactId with validation failure", async () => {
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "test",
+      plainTextContent: "test",
+      recipientContactId: "not-a-uuid",
+      correlationId: CORR_1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
+    const fields = result.inputErrors.map(([field]) => field);
+    expect(fields).toContain("recipientContactId");
+  });
+
+  it("should reject empty title with validation failure", async () => {
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "",
+      content: "test",
+      plainTextContent: "test",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
+    const fields = result.inputErrors.map(([field]) => field);
+    expect(fields).toContain("title");
+  });
+
+  it("should reject empty content with validation failure", async () => {
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "",
+      plainTextContent: "test",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
+    const fields = result.inputErrors.map(([field]) => field);
+    expect(fields).toContain("content");
+  });
+
+  it("should pass validation with valid UUID inputs", async () => {
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Valid Test",
+      content: "valid content",
+      plainTextContent: "valid content",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_1,
+    });
+
+    // Validation passes, delivery proceeds
+    expect(result.success).toBe(true);
+    expect(result.data).toBeDefined();
   });
 
   // -------------------------------------------------------------------------
   // Defensive / Security tests
   // -------------------------------------------------------------------------
 
-  it("should return 503 when recipient resolver fails entirely", async () => {
+  it("should propagate resolver failure (e.g. geo 503) to caller", async () => {
     const geoIdsFailing = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Geo down"] })),
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.fail({ messages: ["Geo down"], statusCode: 503 }),
+      ),
     };
 
     const context = createMockContext();
@@ -299,12 +423,13 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-1",
-      correlationId: "corr-resolver-fail",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_RESOLVER_FAIL,
     });
 
-    // Resolver returns empty data → no deliverable address
+    // Resolver bubbles geo failure through — Deliver propagates it
     expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(503);
   });
 
   it("should propagate message repo failure as a fail result", async () => {
@@ -318,8 +443,8 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-1",
-      correlationId: "corr-msg-fail",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_MSG_FAIL,
     });
 
     expect(result.success).toBe(false);
@@ -338,8 +463,8 @@ describe("Deliver", () => {
       title: "Test",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-1",
-      correlationId: "corr-req-fail",
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_REQ_FAIL,
     });
 
     expect(result.success).toBe(false);
@@ -349,8 +474,8 @@ describe("Deliver", () => {
   it("should handle both email and sms channels in single request", async () => {
     // Mock geo to return contact with both email and phone
     const contactMap = new Map();
-    contactMap.set("contact-dual", {
-      id: "contact-dual",
+    contactMap.set(CONTACT_DUAL, {
+      id: CONTACT_DUAL,
       contextKey: "auth_user",
       relatedEntityId: "user-dual",
       contactMethods: {
@@ -393,8 +518,8 @@ describe("Deliver", () => {
       title: "Dual Channel",
       content: "test",
       plainTextContent: "test",
-      recipientContactId: "contact-dual",
-      correlationId: "corr-dual-channel",
+      recipientContactId: CONTACT_DUAL,
+      correlationId: CORR_DUAL,
     });
 
     expect(result.success).toBe(true);

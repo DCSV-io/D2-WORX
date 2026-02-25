@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { Hono } from "hono";
-import { createSessionMiddleware } from "@d2/auth-api";
+import { createSessionMiddleware, USER_KEY, SESSION_KEY } from "@d2/auth-api";
 import type { Auth } from "@d2/auth-infra";
 
 /**
@@ -18,7 +18,7 @@ function mockAuth(getSession: (opts: { headers: Headers }) => Promise<unknown>):
 function createApp(auth: Auth) {
   const app = new Hono();
   app.use("*", createSessionMiddleware(auth));
-  app.get("/test", (c) => c.json({ ok: true, user: c.get("user"), session: c.get("session") }));
+  app.get("/test", (c) => c.json({ ok: true, user: c.get(USER_KEY), session: c.get(SESSION_KEY) }));
   return app;
 }
 

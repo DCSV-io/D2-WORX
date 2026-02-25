@@ -18,6 +18,7 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
   readonly isHosting: boolean | undefined;
   userId: string | undefined;
   isAuthenticated: boolean;
+  isTrustedService: boolean;
 
   constructor(params: {
     clientIp: string;
@@ -33,6 +34,7 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
     isHosting?: boolean;
     userId?: string;
     isAuthenticated?: boolean;
+    isTrustedService?: boolean;
   }) {
     this.clientIp = params.clientIp;
     this.serverFingerprint = params.serverFingerprint;
@@ -47,5 +49,6 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
     this.isHosting = params.isHosting;
     this.userId = params.userId;
     this.isAuthenticated = params.isAuthenticated ?? false;
+    this.isTrustedService = params.isTrustedService ?? false;
   }
 }

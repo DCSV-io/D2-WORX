@@ -296,7 +296,7 @@ var authService = builder.AddJavaScriptApp("d2-auth", "../../../../backends/node
     .WaitFor(broker)
     .WithReference(broker)
     .WaitFor(geoService)
-    .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "auth-http", isProxied: false)
+    .WithHttpEndpoint(port: 5100, targetPort: 5100, name: "auth-http", isProxied: false)
     .WithOtelRefs();
 
 // Comms - Service (Node.js / headless consumer + gRPC).

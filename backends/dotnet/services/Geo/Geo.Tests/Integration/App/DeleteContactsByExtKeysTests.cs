@@ -426,6 +426,257 @@ public class DeleteContactsByExtKeysTests : IAsyncLifetime
 
     #endregion
 
+    #region Cross-Product False Positive Tests
+
+    /// <summary>
+    /// Tests that deleting cross-product pairs (contextA, entityB) does NOT delete contacts stored
+    /// under (contextA, entityA) or (contextB, entityB). This verifies pair-wise matching in the
+    /// delete query.
+    /// </summary>
+    ///
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task CrossProductPairs_DoNotDeleteUnrelatedContacts()
+    {
+        // Arrange — Create two contacts with distinct (contextKey, relatedEntityId) pairs.
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextA = $"xdel-a-{suffix}";
+        var contextB = $"xdel-b-{suffix}";
+        var entityA = Guid.NewGuid();
+        var entityB = Guid.NewGuid();
+
+        var contactA = CreateTestContact(contextA, entityA, "Alice", "Safe");
+        var contactB = CreateTestContact(contextB, entityB, "Bob", "Safe");
+        _db.Contacts.AddRange(contactA, contactB);
+        await _db.SaveChangesAsync(Ct);
+
+        // Act — Attempt to delete cross-product pairs that should NOT match either contact.
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsByExtKeysInput([(contextA, entityB), (contextB, entityA)]);
+
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — Nothing should be deleted.
+        result.Success.Should().BeTrue();
+        result.Data!.Deleted.Should().Be(0);
+
+        // Verify both original contacts still exist in the database.
+        var remaining = await _db.Contacts
+            .Where(c => c.Id == contactA.Id || c.Id == contactB.Id)
+            .ToListAsync(Ct);
+        remaining.Should().HaveCount(2);
+    }
+
+    #endregion
+
+    #region Mixed Existing / Non-Existing
+
+    /// <summary>
+    /// Tests that when some keys match contacts and some do not, only the matching
+    /// contacts are deleted and the correct count is returned.
+    /// </summary>
+    ///
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task MixedExistingAndNonExisting_DeletesOnlyExistingAndReturnsCorrectCount()
+    {
+        // Arrange — Create 2 contacts; a third key will have no match.
+        var suffix = Guid.NewGuid().ToString("N");
+        var ctx1 = $"mix-1-{suffix}";
+        var ctx2 = $"mix-2-{suffix}";
+        var ctxMissing = $"mix-none-{suffix}";
+        var rel1 = Guid.NewGuid();
+        var rel2 = Guid.NewGuid();
+        var relMissing = Guid.NewGuid();
+
+        var contact1 = CreateTestContact(ctx1, rel1, "Found", "One");
+        var contact2 = CreateTestContact(ctx2, rel2, "Found", "Two");
+        _db.Contacts.AddRange(contact1, contact2);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsByExtKeysInput(
+            [(ctx1, rel1), (ctxMissing, relMissing), (ctx2, rel2)]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — Only the 2 existing contacts should be deleted.
+        result.Success.Should().BeTrue();
+        result.Data!.Deleted.Should().Be(2);
+
+        var remaining = await _db.Contacts
+            .Where(c => c.Id == contact1.Id || c.Id == contact2.Id)
+            .ToListAsync(Ct);
+        remaining.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region Duplicate Keys
+
+    /// <summary>
+    /// Tests that duplicate keys in the input are deduplicated and only one
+    /// delete occurs per distinct (contextKey, relatedEntityId) pair.
+    /// </summary>
+    ///
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task DuplicateKeys_StillDeletesSingleContact()
+    {
+        // Arrange — Create one contact, pass its key twice.
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextKey = $"dup-{suffix}";
+        var relatedEntityId = Guid.NewGuid();
+        var contact = CreateTestContact(contextKey, relatedEntityId, "Once", "Only");
+        _db.Contacts.Add(contact);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsByExtKeysInput(
+            [(contextKey, relatedEntityId), (contextKey, relatedEntityId)]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — Should deduplicate and delete exactly 1.
+        result.Success.Should().BeTrue();
+        result.Data!.Deleted.Should().Be(1);
+
+        var dbContact = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == contact.Id, Ct);
+        dbContact.Should().BeNull();
+    }
+
+    #endregion
+
+    #region Same ContextKey, Different RelatedEntityIds
+
+    /// <summary>
+    /// Tests that when two contacts share the same context key but have different
+    /// related entity IDs, deleting one does not affect the other.
+    /// </summary>
+    ///
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task SameContextKeyDifferentEntities_DeletesOnlyTargeted()
+    {
+        // Arrange
+        var suffix = Guid.NewGuid().ToString("N");
+        var sharedContext = $"same-ctx-{suffix}";
+        var entityTarget = Guid.NewGuid();
+        var entitySurvivor = Guid.NewGuid();
+
+        var target = CreateTestContact(sharedContext, entityTarget, "Target", "Delete");
+        var survivor = CreateTestContact(sharedContext, entitySurvivor, "Survivor", "Keep");
+        _db.Contacts.AddRange(target, survivor);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsByExtKeysInput([(sharedContext, entityTarget)]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.Deleted.Should().Be(1);
+
+        var targetDb = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == target.Id, Ct);
+        targetDb.Should().BeNull();
+
+        var survivorDb = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == survivor.Id, Ct);
+        survivorDb.Should().NotBeNull();
+    }
+
+    #endregion
+
+    #region Same RelatedEntityId, Different ContextKeys
+
+    /// <summary>
+    /// Tests that when two contacts share the same related entity ID but have different
+    /// context keys, deleting one does not affect the other.
+    /// </summary>
+    ///
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task SameEntityDifferentContextKeys_DeletesOnlyTargeted()
+    {
+        // Arrange
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextTarget = $"ctx-target-{suffix}";
+        var contextSurvivor = $"ctx-survivor-{suffix}";
+        var sharedEntity = Guid.NewGuid();
+
+        var target = CreateTestContact(contextTarget, sharedEntity, "Target", "Delete");
+        var survivor = CreateTestContact(contextSurvivor, sharedEntity, "Survivor", "Keep");
+        _db.Contacts.AddRange(target, survivor);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsByExtKeysInput([(contextTarget, sharedEntity)]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.Deleted.Should().Be(1);
+
+        var targetDb = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == target.Id, Ct);
+        targetDb.Should().BeNull();
+
+        var survivorDb = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == survivor.Id, Ct);
+        survivorDb.Should().NotBeNull();
+    }
+
+    #endregion
+
+    #region Eviction Event With Mixed Results
+
+    /// <summary>
+    /// Tests that when some keys exist and some do not, the eviction event only
+    /// contains the contacts that were actually found and deleted.
+    /// </summary>
+    ///
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Fact]
+    public async Task EvictionEvent_OnlyContainsDeletedContacts_NotMissingKeys()
+    {
+        // Arrange — Create one contact; the second key has no match.
+        var suffix = Guid.NewGuid().ToString("N");
+        var ctxFound = $"evict-found-{suffix}";
+        var ctxMissing = $"evict-missing-{suffix}";
+        var relFound = Guid.NewGuid();
+        var relMissing = Guid.NewGuid();
+
+        var contact = CreateTestContact(ctxFound, relFound, "Evict", "Found");
+        _db.Contacts.Add(contact);
+        await _db.SaveChangesAsync(Ct);
+
+        var handler = CreateHandler();
+        var input = new ICommands.DeleteContactsByExtKeysInput(
+            [(ctxFound, relFound), (ctxMissing, relMissing)]);
+
+        // Act
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.Deleted.Should().Be(1);
+
+        _capturedEvictionInput.Should().NotBeNull();
+        var evt = _capturedEvictionInput!.Event;
+
+        // Only the found contact should be in the eviction event.
+        evt.Contacts.Should().HaveCount(1);
+        evt.Contacts.Should().Contain(c =>
+            c.ContactId == contact.Id.ToString()
+            && c.ContextKey == ctxFound
+            && c.RelatedEntityId == relFound.ToString());
+    }
+
+    #endregion
+
     #region Helpers
 
     private static IHandlerContext CreateHandlerContext()

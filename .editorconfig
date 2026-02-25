@@ -57,3 +57,6 @@ dotnet_diagnostic.SA1311.severity = none
 # CA2007: Do not directly await a Task without ConfigureAwait
 # Not needed in ASP.NET Core (no sync context)
 dotnet_diagnostic.CA2007.severity = none
+
+# SA1118: Parameter should not span multiple lines
+dotnet_diagnostic.SA1118.severity = none

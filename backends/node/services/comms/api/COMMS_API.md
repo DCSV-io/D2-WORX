@@ -23,7 +23,7 @@ Consumed directly by Aspire orchestration (`AddJavaScriptApp`) and integration t
 | Per-message DI scope             | RabbitMQ consumer creates a scope per notification message                          |
 | Mappers in api layer             | Domain-to-proto conversion lives here, not in domain (keeps domain proto-free)     |
 | Conditional infra wiring         | Missing geo/resend/twilio/rabbitmq config logs warnings but does not crash          |
-| OTel bootstrap in main.ts        | `setupTelemetry` called before any imports to ensure instrumentation hooks early    |
+| OTel bootstrap via `--import`    | `@d2/service-defaults/register` loaded via Node.js `--import` flag in package.json scripts, not in main.ts — ESM loader hooks must be installed before any application imports |
 | Stubs for Phase 2/3 RPCs         | Thread/notification RPCs return UNIMPLEMENTED -- schema ready, handlers pending     |
 
 ## Package Structure
@@ -49,7 +49,7 @@ src/
 | 1    | Create singletons                         | pg.Pool, ILogger (Pino), service-level HandlerContext |
 | 2    | Run migrations                            | `runMigrations(pool)` via Drizzle migrator           |
 | 3    | Build ServiceCollection                   | Logger, HandlerContext (scoped), GetContactsByIds     |
-| 4    | Register layers                           | `addCommsInfra(services, db, config)` then `addCommsApp(services)` |
+| 4    | Register layers                           | `addCommsInfra(services, db)` then `addCommsApp(services)` |
 | 5    | Build ServiceProvider                     | `services.build()` -- frozen, ready for resolution   |
 | 6    | Start gRPC server                         | `grpc.Server` with `CommsServiceService`             |
 | 7    | Start RabbitMQ consumer                   | `declareRetryTopology` then `createNotificationConsumer` |

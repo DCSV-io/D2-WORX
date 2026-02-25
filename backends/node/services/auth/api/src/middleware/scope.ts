@@ -1,17 +1,13 @@
 import { createMiddleware } from "hono/factory";
 import type { ServiceProvider, ServiceScope } from "@d2/di";
-import { IRequestContextKey, IHandlerContextKey } from "@d2/handler";
-import { HandlerContext } from "@d2/handler";
+import { IRequestContextKey, IHandlerContextKey, HandlerContext, OrgType } from "@d2/handler";
 import { ILoggerKey } from "@d2/logging";
-import type { IRequestContext, OrgType } from "@d2/handler";
+import type { IRequestContext } from "@d2/handler";
 import { SESSION_FIELDS } from "@d2/auth-domain";
+import { SCOPE_KEY, USER_KEY, SESSION_KEY } from "../context-keys.js";
 import type { SessionVariables } from "./session.js";
 
-/**
- * Hono context variable key for the DI scope.
- * Use this constant instead of the magic string "scope" everywhere.
- */
-export const SCOPE_KEY = "scope" as const;
+export { SCOPE_KEY };
 
 /**
  * Hono Variables set by the scope middleware.
@@ -24,11 +20,11 @@ export interface ScopeVariables {
  * Maps auth-domain org type strings (lowercase) to handler OrgType enum values.
  */
 const ORG_TYPE_MAP: Record<string, OrgType> = {
-  admin: "Admin" as OrgType,
-  support: "Support" as OrgType,
-  customer: "Customer" as OrgType,
-  third_party: "ThirdParty" as OrgType,
-  affiliate: "Affiliate" as OrgType,
+  admin: OrgType.Admin,
+  support: OrgType.Support,
+  customer: OrgType.Customer,
+  third_party: OrgType.ThirdParty,
+  affiliate: OrgType.Affiliate,
 };
 
 function toHandlerOrgType(domainOrgType: string | undefined): OrgType | undefined {
@@ -93,8 +89,8 @@ export function createScopeMiddleware(provider: ServiceProvider) {
     const scope = provider.createScope();
     try {
       // Build IRequestContext from session data (populated by session middleware upstream)
-      const user = c.get("user") as SessionVariables["user"] | undefined;
-      const session = c.get("session") as SessionVariables["session"] | undefined;
+      const user = c.get(USER_KEY) as SessionVariables["user"] | undefined;
+      const session = c.get(SESSION_KEY) as SessionVariables["session"] | undefined;
       const requestContext = buildRequestContext(user ?? null, session ?? null);
 
       scope.setInstance(IRequestContextKey, requestContext);

@@ -2,8 +2,9 @@ import { createMiddleware } from "hono/factory";
 import { enrichRequest, type RequestEnrichmentOptions } from "@d2/request-enrichment";
 import type { FindWhoIs } from "@d2/geo-client";
 import type { ILogger } from "@d2/logging";
+import { REQUEST_INFO_KEY } from "../context-keys.js";
 
-export const REQUEST_INFO_KEY = "requestInfo";
+export { REQUEST_INFO_KEY };
 
 /**
  * Creates Hono middleware that enriches every request with client info.

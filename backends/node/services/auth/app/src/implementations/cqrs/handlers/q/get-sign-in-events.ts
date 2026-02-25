@@ -94,24 +94,27 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
     }
 
     // Cache miss or stale — query DB
-    const [findResult, countResult] = await Promise.all([
+    const [findResult, countResult, latestDateResult] = await Promise.all([
       this.findByUserId.handleAsync({ userId: input.userId, limit, offset }),
       this.countByUserId.handleAsync({ userId: input.userId }),
+      this.getLatestEventDate.handleAsync({ userId: input.userId }),
     ]);
 
     const events = findResult.success ? (findResult.data?.events ?? []) : [];
     const total = countResult.success ? (countResult.data?.count ?? 0) : 0;
 
-    // Populate cache
+    // Populate cache with the globally most-recent event date (not the page's first event).
+    // This ensures the staleness check works for ALL pages, including those with offset > 0.
     if (this.cache) {
-      const firstEvent = events[0];
-      const latestDate = firstEvent ? firstEvent.createdAt.toISOString() : null;
+      const globalLatestDate = latestDateResult.success
+        ? (latestDateResult.data?.date?.toISOString() ?? null)
+        : null;
       const cacheKey = `sign-in-events:${input.userId}:${limit}:${offset}`;
       // Fire-and-forget — don't block response on cache write
       this.cache.set
         .handleAsync({
           key: cacheKey,
-          value: { events, total, latestDate },
+          value: { events, total, latestDate: globalLatestDate },
           expirationMs: CACHE_TTL_MS,
         })
         .catch(() => {});

@@ -4,6 +4,17 @@ import { HandlerContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { generateUuidV7 } from "@d2/utilities";
 import { createDeliveryHandlers, type DeliveryHandlers } from "@d2/comms-app";
+
+/** Generates a fresh UUID to use as a contactId in tests. */
+const newContactId = () => generateUuidV7();
+
+// Stable UUIDs for tests that don't need fresh IDs per run
+const CONTACT_1 = "c0000000-0000-0000-0000-000000000001";
+const CONTACT_2 = "c0000000-0000-0000-0000-000000000002";
+const CONTACT_IDEM = "c0000000-0000-0000-0000-000000000003";
+const CONTACT_FAIL = "c0000000-0000-0000-0000-000000000004";
+const CONTACT_NOEXIST = "c0000000-0000-0000-0000-000000000005";
+const CONTACT_PROC = "c0000000-0000-0000-0000-000000000006";
 import {
   createMessageRepoHandlers,
   createDeliveryRequestRepoHandlers,
@@ -90,7 +101,7 @@ describe("Deliver handler (integration)", () => {
   // ---------------------------------------------------------------------------
 
   it("should create message, request, and attempt records in the database", async () => {
-    mockGeo.setContactEmail("contact-1", "user@example.com");
+    mockGeo.setContactEmail(CONTACT_1, "user@example.com");
 
     const result = await handlers.deliver.handleAsync({
       senderService: "auth",
@@ -98,7 +109,7 @@ describe("Deliver handler (integration)", () => {
       content: "<p>Hello</p>",
       plainTextContent: "Hello",
       sensitive: true,
-      recipientContactId: "contact-1",
+      recipientContactId: CONTACT_1,
       correlationId: generateUuidV7(),
     });
 
@@ -128,7 +139,7 @@ describe("Deliver handler (integration)", () => {
       .where(eq(deliveryRequestTable.id, requestId));
     expect(reqRow).toBeDefined();
     expect(reqRow.messageId).toBe(messageId);
-    expect(reqRow.recipientContactId).toBe("contact-1");
+    expect(reqRow.recipientContactId).toBe(CONTACT_1);
 
     const attemptRows = await db
       .select()
@@ -141,14 +152,14 @@ describe("Deliver handler (integration)", () => {
   });
 
   it("should send email via stub provider with correct content", async () => {
-    mockGeo.setContactEmail("contact-2", "verify@example.com");
+    mockGeo.setContactEmail(CONTACT_2, "verify@example.com");
 
     await handlers.deliver.handleAsync({
       senderService: "auth",
       title: "Verify email",
       content: "<p>Click to verify</p>",
       plainTextContent: "Click to verify",
-      recipientContactId: "contact-2",
+      recipientContactId: CONTACT_2,
       correlationId: generateUuidV7(),
     });
 
@@ -159,7 +170,7 @@ describe("Deliver handler (integration)", () => {
   });
 
   it("should enforce idempotency via correlationId — same ID returns existing data", async () => {
-    mockGeo.setContactEmail("contact-idem", "idem@example.com");
+    mockGeo.setContactEmail(CONTACT_IDEM, "idem@example.com");
 
     const correlationId = generateUuidV7();
     const first = await handlers.deliver.handleAsync({
@@ -167,7 +178,7 @@ describe("Deliver handler (integration)", () => {
       title: "Idempotent",
       content: "<p>First call</p>",
       plainTextContent: "First call",
-      recipientContactId: "contact-idem",
+      recipientContactId: CONTACT_IDEM,
       correlationId,
     });
 
@@ -179,7 +190,7 @@ describe("Deliver handler (integration)", () => {
       title: "Idempotent — should be ignored",
       content: "<p>Should not be created</p>",
       plainTextContent: "Should not be created",
-      recipientContactId: "contact-idem",
+      recipientContactId: CONTACT_IDEM,
       correlationId,
     });
 
@@ -191,7 +202,7 @@ describe("Deliver handler (integration)", () => {
   });
 
   it("should return DELIVERY_FAILED when email provider fails", async () => {
-    mockGeo.setContactEmail("contact-fail", "fail@example.com");
+    mockGeo.setContactEmail(CONTACT_FAIL, "fail@example.com");
 
     // Create a failing email provider by overriding executeAsync
     const failingEmail = createStubEmailProvider(context);
@@ -218,7 +229,7 @@ describe("Deliver handler (integration)", () => {
       title: "Will Fail",
       content: "<p>Fail</p>",
       plainTextContent: "Fail",
-      recipientContactId: "contact-fail",
+      recipientContactId: CONTACT_FAIL,
       correlationId: generateUuidV7(),
     });
 
@@ -241,7 +252,7 @@ describe("Deliver handler (integration)", () => {
       title: "No recipient",
       content: "<p>Nowhere to send</p>",
       plainTextContent: "Nowhere to send",
-      recipientContactId: "contact-nonexistent",
+      recipientContactId: CONTACT_NOEXIST,
       correlationId: generateUuidV7(),
     });
 
@@ -250,14 +261,14 @@ describe("Deliver handler (integration)", () => {
   });
 
   it("should mark delivery request as processed on success", async () => {
-    mockGeo.setContactEmail("contact-proc", "proc@example.com");
+    mockGeo.setContactEmail(CONTACT_PROC, "proc@example.com");
 
     const result = await handlers.deliver.handleAsync({
       senderService: "auth",
       title: "Processed",
       content: "<p>Done</p>",
       plainTextContent: "Done",
-      recipientContactId: "contact-proc",
+      recipientContactId: CONTACT_PROC,
       correlationId: generateUuidV7(),
     });
 

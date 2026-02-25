@@ -719,10 +719,10 @@ All auth constants are defined in two mirror locations and MUST stay in sync:
 | `"admin"`             | `ADMIN`                | `OrgType.Admin`          |
 | `"support"`           | `SUPPORT`              | `OrgType.Support`        |
 | `"customer"`          | `CUSTOMER`             | `OrgType.Customer`       |
-| `"third_party"`       | `THIRD_PARTY`          | `OrgType.CustomerClient` |
+| `"third_party"`       | `THIRD_PARTY`          | `OrgType.ThirdParty`     |
 | `"affiliate"`         | `AFFILIATE`            | `OrgType.Affiliate`      |
 
-**Note**: `"third_party"` maps to `OrgType.CustomerClient` in .NET (pre-existing naming difference).
+**Note**: `"third_party"` maps to `OrgType.ThirdParty` in the handler layer.
 
 ### Role Values
 

@@ -205,6 +205,79 @@ describe("HandlerOptions", () => {
 });
 
 // ---------------------------------------------------------------------------
+// safeStringify (tested indirectly via debug logging)
+// ---------------------------------------------------------------------------
+
+describe("safeStringify", () => {
+  it("truncates large input in debug log", async () => {
+    const logger = createLogger({ level: "debug" as never });
+    const debugSpy = vi.spyOn(logger, "debug");
+    const context = new HandlerContext(createTestRequestContext(), logger);
+    const handler = new SuccessHandler(context);
+
+    // Create an input with a very large value (>10k chars when serialized)
+    const largeValue = "x".repeat(15_000);
+    await handler.handleAsync({ value: largeValue });
+
+    const inputLogCalls = debugSpy.mock.calls.filter((c) =>
+      (c[0] as string).includes("received input"),
+    );
+    expect(inputLogCalls).toHaveLength(1);
+    const logMessage = inputLogCalls[0][0] as string;
+    expect(logMessage).toContain("...[truncated,");
+    expect(logMessage.length).toBeLessThan(15_000);
+  });
+
+  it("does not truncate small input in debug log", async () => {
+    const logger = createLogger({ level: "debug" as never });
+    const debugSpy = vi.spyOn(logger, "debug");
+    const context = new HandlerContext(createTestRequestContext(), logger);
+    const handler = new SuccessHandler(context);
+
+    await handler.handleAsync({ value: "short" });
+
+    const inputLogCalls = debugSpy.mock.calls.filter((c) =>
+      (c[0] as string).includes("received input"),
+    );
+    expect(inputLogCalls).toHaveLength(1);
+    const logMessage = inputLogCalls[0][0] as string;
+    expect(logMessage).not.toContain("...[truncated,");
+    expect(logMessage).toContain('"short"');
+  });
+
+  it("handles circular references gracefully in debug log", async () => {
+    const logger = createLogger({ level: "debug" as never });
+    const debugSpy = vi.spyOn(logger, "debug");
+    const context = new HandlerContext(createTestRequestContext(), logger);
+
+    // Create a handler that returns a circular object
+    class CircularHandler extends BaseHandler<Record<string, unknown>, void> {
+      constructor(ctx: IHandlerContext) {
+        super(ctx);
+      }
+      protected async executeAsync(
+        _input: Record<string, unknown>,
+      ): Promise<D2Result<void | undefined>> {
+        return D2Result.ok();
+      }
+    }
+
+    const circularHandler = new CircularHandler(context);
+    const circularInput: Record<string, unknown> = { name: "test" };
+    circularInput.self = circularInput;
+
+    await circularHandler.handleAsync(circularInput);
+
+    const inputLogCalls = debugSpy.mock.calls.filter((c) =>
+      (c[0] as string).includes("received input"),
+    );
+    expect(inputLogCalls).toHaveLength(1);
+    const logMessage = inputLogCalls[0][0] as string;
+    expect(logMessage).toContain("[unserializable]");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // HandlerContext
 // ---------------------------------------------------------------------------
 
@@ -229,7 +302,7 @@ describe("OrgType", () => {
     expect(OrgType.Support).toBe("Support");
     expect(OrgType.Affiliate).toBe("Affiliate");
     expect(OrgType.Customer).toBe("Customer");
-    expect(OrgType.CustomerClient).toBe("CustomerClient");
+    expect(OrgType.ThirdParty).toBe("ThirdParty");
   });
 
   it("has exactly 5 members", () => {

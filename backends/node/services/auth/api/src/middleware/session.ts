@@ -2,6 +2,7 @@ import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result } from "@d2/result";
 import type { Auth } from "@d2/auth-infra";
+import { USER_KEY, SESSION_KEY } from "../context-keys.js";
 
 /**
  * Hono Variables set by the session middleware.
@@ -43,8 +44,8 @@ export function createSessionMiddleware(auth: Auth) {
       return c.json(D2Result.unauthorized(), 401 as ContentfulStatusCode);
     }
 
-    c.set("user", session.user as SessionVariables["user"]);
-    c.set("session", session.session as unknown as Record<string, unknown>);
+    c.set(USER_KEY, session.user as SessionVariables["user"]);
+    c.set(SESSION_KEY, session.session as unknown as Record<string, unknown>);
 
     await next();
   });

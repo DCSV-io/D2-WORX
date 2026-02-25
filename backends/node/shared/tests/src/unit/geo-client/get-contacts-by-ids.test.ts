@@ -124,7 +124,7 @@ describe("GetContactsByIds handler", () => {
     expect(grpcRequest.ids).toEqual(["c-fetched"]);
   });
 
-  it("should fail-open: return cached data when gRPC fails", async () => {
+  it("should return someFound with cached data when gRPC fails and some IDs were cached", async () => {
     const cachedContact = createMockContactDTO("c-cached");
     store.set("contact:c-cached", cachedContact);
 
@@ -135,11 +135,25 @@ describe("GetContactsByIds handler", () => {
     const handler = new GetContactsByIds(store, mockGeoClient, createTestContext());
     const result = await handler.handleAsync({ ids: ["c-cached", "c-missing"] });
 
-    // Fail-open: returns whatever was cached
-    expect(result.success).toBe(true);
+    // Partial result — cached data returned with SOME_FOUND status
+    expect(result.success).toBe(false);
+    expect(result.errorCode).toBe("SOME_FOUND");
     expect(result.data?.data.size).toBe(1);
     expect(result.data?.data.get("c-cached")).toEqual(cachedContact);
     expect(result.data?.data.has("c-missing")).toBe(false);
+  });
+
+  it("should return notFound when gRPC fails and nothing was cached", async () => {
+    const mockGeoClient = {
+      getContacts: mockGrpcMethodError(new Error("Connection refused")),
+    } as unknown as GeoServiceClient;
+
+    const handler = new GetContactsByIds(store, mockGeoClient, createTestContext());
+    const result = await handler.handleAsync({ ids: ["c-1"] });
+
+    expect(result.success).toBe(false);
+    expect(result.errorCode).toBe("NOT_FOUND");
+    expect(result.data).toBeUndefined();
   });
 
   it("should return empty Map for empty ids input", async () => {
@@ -175,7 +189,7 @@ describe("GetContactsByIds handler", () => {
     expect(store.get("contact:c-new")).toEqual(contact);
   });
 
-  it("should return empty Map when gRPC result indicates failure (fail-open)", async () => {
+  it("should return notFound when gRPC response indicates failure with no data", async () => {
     const mockGeoClient = {
       getContacts: mockGrpcMethod({
         result: {
@@ -193,8 +207,35 @@ describe("GetContactsByIds handler", () => {
     const handler = new GetContactsByIds(store, mockGeoClient, createTestContext());
     const result = await handler.handleAsync({ ids: ["c-1"] });
 
-    // Non-success result means data isn't processed — fail-open returns success with empty map
-    expect(result.success).toBe(true);
-    expect(result.data?.data.size).toBe(0);
+    expect(result.success).toBe(false);
+    expect(result.errorCode).toBe("NOT_FOUND");
+  });
+
+  it("should process data from SOME_FOUND gRPC response and return someFound", async () => {
+    const contact1 = createMockContactDTO("c-1");
+    const mockGeoClient = {
+      getContacts: mockGrpcMethod({
+        result: {
+          success: false,
+          statusCode: 200,
+          messages: [],
+          inputErrors: [],
+          errorCode: "SOME_FOUND",
+          traceId: "",
+        },
+        data: { "c-1": contact1 },
+      }),
+    } as unknown as GeoServiceClient;
+
+    const handler = new GetContactsByIds(store, mockGeoClient, createTestContext());
+    const result = await handler.handleAsync({ ids: ["c-1", "c-2"] });
+
+    // Server returned SOME_FOUND with c-1 data — handler processes data and returns someFound
+    expect(result.success).toBe(false);
+    expect(result.errorCode).toBe("SOME_FOUND");
+    expect(result.data?.data.size).toBe(1);
+    expect(result.data?.data.get("c-1")).toEqual(contact1);
+    // c-1 should be cached
+    expect(store.get("contact:c-1")).toEqual(contact1);
   });
 });

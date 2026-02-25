@@ -14,7 +14,7 @@ BaseHandler pattern with automatic OTel tracing, metrics, and structured logging
 | [handler-options.ts](src/handler-options.ts)     | `HandlerOptions` type + `DEFAULT_HANDLER_OPTIONS` constant.                                                                                                                           |
 | [redaction-spec.ts](src/redaction-spec.ts)       | `RedactionSpec` type for declaring handler input/output redaction posture.                                                                                                            |
 | [validators.ts](src/validators.ts)               | Shared Zod refinements (`zodGuid`, `zodHashId`, `zodIpAddress`, `zodEmail`, `zodPhoneE164`, `zodNonEmptyString`, `zodNonEmptyArray`, `zodAllowedContextKey`) + standalone validators. |
-| [org-type.ts](src/org-type.ts)                   | `OrgType` enum (Admin, Support, Affiliate, Customer, CustomerClient).                                                                                                                 |
+| [org-type.ts](src/org-type.ts)                   | `OrgType` enum (Admin, Support, Affiliate, Customer, ThirdParty).                                                                                                                     |
 | [service-keys.ts](src/service-keys.ts)           | DI keys for `IRequestContext` (`IRequestContextKey`) and `IHandlerContext` (`IHandlerContextKey`).                                                                                    |
 | [index.ts](src/index.ts)                         | Barrel re-export of all types, interfaces, and classes.                                                                                                                               |
 

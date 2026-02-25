@@ -1,6 +1,7 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { DistributedCache, Idempotency } from "@d2/interfaces";
+import { z } from "zod";
 import { DEFAULT_IDEMPOTENCY_OPTIONS, type IdempotencyOptions } from "../idempotency-options.js";
 
 type CheckInput = Idempotency.CheckInput;
@@ -22,6 +23,10 @@ export class Check
   extends BaseHandler<CheckInput, CheckOutput>
   implements Idempotency.ICheckHandler
 {
+  private static readonly checkSchema = z.object({
+    idempotencyKey: z.string().min(1).max(256),
+  }) as unknown as z.ZodType<CheckInput>;
+
   private readonly setNx: DistributedCache.ISetNxHandler<string>;
   private readonly get: DistributedCache.IGetHandler<string>;
   private readonly options: IdempotencyOptions;
@@ -39,6 +44,12 @@ export class Check
   }
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
+    // Validate input.
+    const validation = this.validateInput(Check.checkSchema, input);
+    if (validation.failed) {
+      return D2Result.bubbleFail(validation);
+    }
+
     const cacheKey = `${KEY_PREFIX}${input.idempotencyKey}`;
 
     try {

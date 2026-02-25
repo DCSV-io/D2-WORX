@@ -25,6 +25,7 @@ function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
     isHosting: false,
     userId: undefined,
     isAuthenticated: false,
+    isTrustedService: false,
     ...overrides,
   };
 }

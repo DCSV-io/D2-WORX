@@ -33,7 +33,20 @@ describe("RecipientResolver", () => {
     expect(geoIds.handleAsync).toHaveBeenCalledWith({ ids: ["contact-xyz"] });
   });
 
-  it("should return empty when no contact found for given id", async () => {
+  it("should propagate notFound when geo returns NOT_FOUND", async () => {
+    const geoIds = {
+      handleAsync: vi.fn().mockResolvedValue(D2Result.notFound()),
+    };
+
+    const resolver = new RecipientResolver(geoIds as any, createMockContext());
+    const result = await resolver.handleAsync({ contactId: "contact-missing" });
+
+    expect(result.success).toBe(false);
+    expect(result.errorCode).toBe("NOT_FOUND");
+  });
+
+  it("should return empty when contact found but not in result map", async () => {
+    // Edge case: geo returns ok with empty map (e.g. empty IDs were requested)
     const geoIds = {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { data: new Map() } })),
     };
@@ -46,16 +59,34 @@ describe("RecipientResolver", () => {
     expect(result.data!.phone).toBeUndefined();
   });
 
-  it("should handle geo failure gracefully", async () => {
+  it("should propagate geo failure via bubbleFail", async () => {
     const geoIds = {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Geo timeout"] })),
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.fail({ messages: ["Geo timeout"], statusCode: 503 }),
+      ),
     };
 
     const resolver = new RecipientResolver(geoIds as any, createMockContext());
     const result = await resolver.handleAsync({ contactId: "contact-err" });
 
-    expect(result.success).toBe(true);
-    expect(result.data!.email).toBeUndefined();
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(503);
+    expect(result.messages).toContain("Geo timeout");
+  });
+
+  it("should propagate geo 400 failure without masking status code", async () => {
+    const geoIds = {
+      handleAsync: vi.fn().mockResolvedValue(
+        D2Result.fail({ messages: ["Invalid contact ID format"], statusCode: 400 }),
+      ),
+    };
+
+    const resolver = new RecipientResolver(geoIds as any, createMockContext());
+    const result = await resolver.handleAsync({ contactId: "contact-err" });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
+    expect(result.messages).toContain("Invalid contact ID format");
   });
 
   // -------------------------------------------------------------------------

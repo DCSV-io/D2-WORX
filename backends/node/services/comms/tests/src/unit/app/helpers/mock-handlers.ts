@@ -74,11 +74,14 @@ export function createMockEmailProvider(): IEmailProvider {
   } as unknown as IEmailProvider;
 }
 
+/** Stable UUID used as the default contact ID in mock geo data. */
+const MOCK_CONTACT_1 = "a0000000-0000-0000-0000-000000000001";
+
 /** Creates a mock GetContactsByIds handler. */
 export function createMockGetContactsByIds() {
   const contacts = new Map();
-  contacts.set("contact-1", {
-    id: "contact-1",
+  contacts.set(MOCK_CONTACT_1, {
+    id: MOCK_CONTACT_1,
     contextKey: "auth_user",
     relatedEntityId: "user-123",
     contactMethods: {

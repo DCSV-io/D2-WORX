@@ -21,6 +21,7 @@
     "@d2/ratelimit": "workspace:*",
     "@d2/request-enrichment": "workspace:*",
     "@d2/result": "workspace:*",
+    "@d2/service-defaults": "workspace:*",
     "@d2/result-extensions": "workspace:*",
     "@d2/testing": "workspace:*",
     "@d2/utilities": "workspace:*",

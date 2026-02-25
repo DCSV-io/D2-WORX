@@ -1,3 +1,16 @@
+// NOTE: OpenTelemetry is bootstrapped via the `--import @d2/service-defaults/register`
+// Node.js loader flag in package.json scripts (dev + start). The register module:
+//   1. Calls `createAddHookMessageChannel()` + `register()` to install ESM loader hooks
+//      BEFORE any application code loads, enabling auto-instrumentation of Pino, pg,
+//      @grpc/grpc-js, etc.
+//   2. Calls `setupTelemetry({ serviceName })` using OTEL_SERVICE_NAME from env vars
+//      (set by Aspire's `WithOtelRefs()`).
+//
+// This means OTel is fully active before this file even executes. There is no need
+// for an explicit `setupTelemetry()` call here. The `--import` approach is required
+// for ESM environments (vs. the older `--require` for CJS) so that instrumentation
+// patches are applied before module imports are resolved.
+
 import { createLogger } from "@d2/logging";
 import { createCommsService } from "./composition-root.js";
 

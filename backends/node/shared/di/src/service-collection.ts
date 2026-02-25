@@ -1,12 +1,12 @@
 import { Lifetime } from "./lifetime.js";
-import { ServiceProvider } from "./service-provider.js";
+import { ServiceProvider, type ServiceResolver } from "./service-provider.js";
 import type { ServiceKey } from "./service-key.js";
 
 /** Internal registration descriptor. */
 export interface ServiceDescriptor<T = unknown> {
   key: ServiceKey<T>;
   lifetime: Lifetime;
-  factory?: (sp: ServiceProvider) => T;
+  factory?: (sp: ServiceResolver) => T;
   instance?: T;
 }
 
@@ -22,11 +22,11 @@ export class ServiceCollection {
    * Register a singleton service created by a factory on first resolve.
    * The factory receives the root provider and can only depend on other singletons.
    */
-  addSingleton<T>(key: ServiceKey<T>, factory: (sp: ServiceProvider) => T): this {
+  addSingleton<T>(key: ServiceKey<T>, factory: (sp: ServiceResolver) => T): this {
     this._descriptors.set(key.id, {
       key,
       lifetime: Lifetime.Singleton,
-      factory: factory as (sp: ServiceProvider) => unknown,
+      factory: factory as (sp: ServiceResolver) => unknown,
     });
     return this;
   }
@@ -35,11 +35,11 @@ export class ServiceCollection {
    * Register a scoped service created by a factory once per scope.
    * The factory receives the scope provider and can depend on singletons + other scoped services.
    */
-  addScoped<T>(key: ServiceKey<T>, factory: (sp: ServiceProvider) => T): this {
+  addScoped<T>(key: ServiceKey<T>, factory: (sp: ServiceResolver) => T): this {
     this._descriptors.set(key.id, {
       key,
       lifetime: Lifetime.Scoped,
-      factory: factory as (sp: ServiceProvider) => unknown,
+      factory: factory as (sp: ServiceResolver) => unknown,
     });
     return this;
   }
@@ -48,11 +48,11 @@ export class ServiceCollection {
    * Register a transient service created anew on every resolve.
    * The factory receives the current provider (root or scope).
    */
-  addTransient<T>(key: ServiceKey<T>, factory: (sp: ServiceProvider) => T): this {
+  addTransient<T>(key: ServiceKey<T>, factory: (sp: ServiceResolver) => T): this {
     this._descriptors.set(key.id, {
       key,
       lifetime: Lifetime.Transient,
-      factory: factory as (sp: ServiceProvider) => unknown,
+      factory: factory as (sp: ServiceResolver) => unknown,
     });
     return this;
   }

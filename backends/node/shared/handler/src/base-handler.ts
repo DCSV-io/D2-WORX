@@ -103,7 +103,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
             ? this.redactForLogging(input, this.redaction.inputFields)
             : input;
           this.context.logger.debug(
-            `Handler ${handlerName} received input: ${JSON.stringify(inputToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} received input: ${BaseHandler.safeStringify(inputToLog)}. TraceId: ${this.context.request.traceId}.`,
           );
         }
 
@@ -124,7 +124,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
               ? { ...result, data: this.redactForLogging(result.data, this.redaction.outputFields) }
               : result;
           this.context.logger.debug(
-            `Handler ${handlerName} produced result: ${JSON.stringify(resultToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} produced result: ${BaseHandler.safeStringify(resultToLog)}. TraceId: ${this.context.request.traceId}.`,
           );
         }
 
@@ -237,6 +237,19 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
       errorCode: result.errorCode,
       traceId: this.traceId,
     });
+  }
+
+  /** Safely serializes a value to JSON with size limiting and circular reference protection. */
+  private static safeStringify(value: unknown, maxLength = 10_000): string {
+    try {
+      const json = JSON.stringify(value);
+      if (json.length > maxLength) {
+        return json.slice(0, maxLength) + `...[truncated, ${json.length} total chars]`;
+      }
+      return json;
+    } catch {
+      return "[unserializable]";
+    }
   }
 
   /** Replaces specified top-level fields with "[REDACTED]" for logging. */

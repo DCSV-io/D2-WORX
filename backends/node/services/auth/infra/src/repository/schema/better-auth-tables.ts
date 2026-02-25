@@ -121,6 +121,7 @@ export const organization = pgTable(
     slug: text("slug").notNull().unique(),
     logo: text("logo"),
     createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
     metadata: text("metadata"),
     // Custom organization field (additionalFields in auth-factory.ts)
     orgType: text("org_type").default("customer"),

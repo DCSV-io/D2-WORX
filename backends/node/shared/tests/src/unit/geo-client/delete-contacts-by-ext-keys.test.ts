@@ -41,6 +41,33 @@ describe("DeleteContactsByExtKeys handler", () => {
     store = new MemoryCacheStore({ maxEntries: 100 });
   });
 
+  it("should return ok with zero deleted for empty keys input", async () => {
+    const mockGeoClient = {
+      deleteContactsByExtKeys: mockGrpcMethod({
+        result: {
+          success: true,
+          statusCode: 200,
+          messages: [],
+          inputErrors: [],
+          errorCode: "",
+          traceId: "",
+        },
+        deleted: 0,
+      }),
+    } as unknown as GeoServiceClient;
+
+    const handler = new DeleteContactsByExtKeys(
+      store,
+      mockGeoClient,
+      DEFAULT_GEO_CLIENT_OPTIONS,
+      createTestContext(),
+    );
+    const result = await handler.handleAsync({ keys: [] });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.deleted).toBe(0);
+  });
+
   it("should call gRPC deleteContactsByExtKeys and return deleted count", async () => {
     const mockGeoClient = {
       deleteContactsByExtKeys: mockGrpcMethod({

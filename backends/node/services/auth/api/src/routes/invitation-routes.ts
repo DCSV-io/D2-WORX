@@ -2,15 +2,34 @@ import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result, HttpStatusCode } from "@d2/result";
-import { SESSION_FIELDS, GEO_CONTEXT_KEYS } from "@d2/auth-domain";
+import { SESSION_FIELDS, GEO_CONTEXT_KEYS, ROLES, type Role } from "@d2/auth-domain";
 import { INotifyKey } from "@d2/comms-client";
 import { ICreateContactsKey, IGetContactsByExtKeysKey } from "@d2/geo-client";
 import type { Auth } from "@d2/auth-infra";
 import { user as userTable, organization as orgTable } from "@d2/auth-infra";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { SessionVariables } from "../middleware/session.js";
-import { SCOPE_KEY, type ScopeVariables } from "../middleware/scope.js";
+import { type ScopeVariables } from "../middleware/scope.js";
+import { SCOPE_KEY, SESSION_KEY, USER_KEY } from "../context-keys.js";
 import { requireOrg, requireRole } from "../middleware/authorization.js";
+
+/** Roles that may be assigned via invitation. */
+const INVITABLE_ROLES = new Set<Role>(ROLES);
+
+/**
+ * Maps each inviter role to the set of roles they are allowed to assign.
+ * - Owners can invite: officer, agent, auditor (NOT other owners)
+ * - Officers can invite: agent, auditor (NOT owners or other officers)
+ */
+const INVITATION_HIERARCHY: Readonly<Partial<Record<Role, readonly Role[]>>> = {
+  owner: ["officer", "agent", "auditor"],
+  officer: ["agent", "auditor"],
+};
+
+/** Max lengths for string input fields (security: prevent unbounded strings). */
+const MAX_FIRST_NAME = 200;
+const MAX_LAST_NAME = 200;
+const MAX_PHONE = 30;
 
 /**
  * Custom invitation route that replaces BetterAuth's `sendInvitationEmail` callback.
@@ -32,16 +51,40 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     // 1. Validate input
     const email = (body.email as string | undefined)?.trim();
     const role = body.role as string | undefined;
+    const firstName = ((body.firstName as string) ?? "").slice(0, MAX_FIRST_NAME);
+    const lastName = ((body.lastName as string) ?? "").slice(0, MAX_LAST_NAME);
+    const phone = ((body.phone as string) ?? "").slice(0, MAX_PHONE);
+
     if (!email || !role) {
       const inputErrors: [string, ...string[]][] = [];
       if (!email) inputErrors.push(["email", "Email is required."]);
       if (!role) inputErrors.push(["role", "Role is required."]);
       return c.json(D2Result.validationFailed({ inputErrors }), 400 as ContentfulStatusCode);
     }
+    if (!INVITABLE_ROLES.has(role as Role)) {
+      return c.json(
+        D2Result.validationFailed({ inputErrors: [["role", `Invalid role. Allowed: ${ROLES.join(", ")}.`]] }),
+        400 as ContentfulStatusCode,
+      );
+    }
 
-    const session = c.get("session")!;
+    const session = c.get(SESSION_KEY)!;
     const organizationId = session[SESSION_FIELDS.ACTIVE_ORG_ID] as string;
-    const inviter = c.get("user")!;
+    const inviter = c.get(USER_KEY)!;
+
+    // 1b. Enforce role hierarchy — inviter can only assign subordinate roles
+    // Safe cast: requireRole("officer") middleware already validated this is a valid Role.
+    const inviterRole = session[SESSION_FIELDS.ACTIVE_ORG_ROLE] as Role;
+    const allowedRoles = INVITATION_HIERARCHY[inviterRole];
+    if (!allowedRoles || !allowedRoles.includes(role as Role)) {
+      return c.json(
+        D2Result.fail({
+          messages: [`Role "${inviterRole}" cannot invite role "${role}".`],
+          statusCode: HttpStatusCode.Forbidden,
+        }),
+        403 as ContentfulStatusCode,
+      );
+    }
 
     // 2. Look up user by email
     const existingUsers = await db
@@ -64,10 +107,13 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
       })) as { id: string };
       invitationId = invitationResult.id;
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create invitation.";
+      // Log the actual error for debugging but never expose internal details to clients
+      if (err instanceof Error) {
+        console.warn(`Invitation creation failed: ${err.message}`);
+      }
       return c.json(
         D2Result.fail({
-          messages: [message],
+          messages: ["Failed to create invitation."],
           statusCode: HttpStatusCode.BadRequest,
         }),
         400 as ContentfulStatusCode,
@@ -77,10 +123,6 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     // 4. If user NOT found, create a Geo contact for the invitee
     let inviteeContactId: string | undefined;
     if (!existingUser) {
-      const firstName = (body.firstName as string) ?? "";
-      const lastName = (body.lastName as string) ?? "";
-      const phone = (body.phone as string) ?? "";
-
       const scope = c.get(SCOPE_KEY);
       const createContacts = scope.resolve(ICreateContactsKey);
 

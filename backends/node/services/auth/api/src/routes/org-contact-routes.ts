@@ -9,7 +9,8 @@ import {
   IGetOrgContactsKey,
 } from "@d2/auth-app";
 import type { SessionVariables } from "../middleware/session.js";
-import { SCOPE_KEY, type ScopeVariables } from "../middleware/scope.js";
+import { type ScopeVariables } from "../middleware/scope.js";
+import { SCOPE_KEY, SESSION_KEY } from "../context-keys.js";
 import { requireOrg, requireRole } from "../middleware/authorization.js";
 
 /** Default and maximum page sizes for list endpoints. */
@@ -31,7 +32,7 @@ export function createOrgContactRoutes() {
     const body = await c.req.json();
     const handler = c.get(SCOPE_KEY).resolve(ICreateOrgContactKey);
     const result = await handler.handleAsync({
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
       label: body.label,
       isPrimary: body.isPrimary,
       contact: body.contact ?? {},
@@ -49,7 +50,7 @@ export function createOrgContactRoutes() {
     const handler = c.get(SCOPE_KEY).resolve(IUpdateOrgContactKey);
     const result = await handler.handleAsync({
       id: c.req.param("id"),
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
       updates: { label: body.label, isPrimary: body.isPrimary, contact: body.contact },
     });
     const status = (
@@ -63,7 +64,7 @@ export function createOrgContactRoutes() {
     const handler = c.get(SCOPE_KEY).resolve(IDeleteOrgContactKey);
     const result = await handler.handleAsync({
       id: c.req.param("id"),
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
     });
     const status = (
       result.success ? HttpStatusCode.OK : (result.statusCode ?? HttpStatusCode.BadRequest)
@@ -83,7 +84,7 @@ export function createOrgContactRoutes() {
 
     const handler = c.get(SCOPE_KEY).resolve(IGetOrgContactsKey);
     const result = await handler.handleAsync({
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
       limit,
       offset,
     });

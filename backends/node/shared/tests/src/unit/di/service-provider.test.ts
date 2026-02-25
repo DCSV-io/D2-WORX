@@ -268,6 +268,109 @@ describe("ServiceProvider", () => {
     });
   });
 
+  describe("undefined value caching", () => {
+    it("should call singleton factory only once when it returns undefined", () => {
+      const key = createServiceKey<undefined>("singleton-undefined");
+      const services = new ServiceCollection();
+      let callCount = 0;
+      services.addSingleton(key, () => {
+        callCount++;
+        return undefined;
+      });
+      const provider = services.build();
+
+      const first = provider.resolve(key);
+      const second = provider.resolve(key);
+
+      expect(first).toBeUndefined();
+      expect(second).toBeUndefined();
+      expect(callCount).toBe(1);
+      provider.dispose();
+    });
+
+    it("should call scoped factory only once per scope when it returns undefined", () => {
+      const key = createServiceKey<undefined>("scoped-undefined");
+      const services = new ServiceCollection();
+      let callCount = 0;
+      services.addScoped(key, () => {
+        callCount++;
+        return undefined;
+      });
+      const provider = services.build();
+      const scope = provider.createScope();
+
+      const first = scope.resolve(key);
+      const second = scope.resolve(key);
+
+      expect(first).toBeUndefined();
+      expect(second).toBeUndefined();
+      expect(callCount).toBe(1);
+      scope.dispose();
+      provider.dispose();
+    });
+
+    it("should call singleton factory only once when resolved from scope and returns undefined", () => {
+      const key = createServiceKey<undefined>("singleton-undefined-via-scope");
+      const services = new ServiceCollection();
+      let callCount = 0;
+      services.addSingleton(key, () => {
+        callCount++;
+        return undefined;
+      });
+      const provider = services.build();
+      const scope = provider.createScope();
+
+      const first = scope.resolve(key);
+      const second = scope.resolve(key);
+
+      expect(first).toBeUndefined();
+      expect(second).toBeUndefined();
+      expect(callCount).toBe(1);
+      scope.dispose();
+      provider.dispose();
+    });
+  });
+
+  describe("scoped factory resolution from scope", () => {
+    it("should allow scoped factory to resolve other scoped services", () => {
+      const depKey = createServiceKey<{ value: string }>("scoped-dep");
+      const consumerKey = createServiceKey<{ combined: string }>("scoped-consumer");
+
+      const services = new ServiceCollection();
+      services.addScoped(depKey, () => ({ value: "dep-value" }));
+      services.addScoped(consumerKey, (sp) => ({
+        combined: `got-${sp.resolve(depKey).value}`,
+      }));
+      const provider = services.build();
+      const scope = provider.createScope();
+
+      const result = scope.resolve(consumerKey);
+
+      expect(result.combined).toBe("got-dep-value");
+      scope.dispose();
+      provider.dispose();
+    });
+
+    it("should allow transient factory to resolve scoped services from scope", () => {
+      const scopedKey = createServiceKey<{ id: string }>("scoped-for-transient");
+      const transientKey = createServiceKey<{ ref: string }>("transient-uses-scoped");
+
+      const services = new ServiceCollection();
+      services.addScoped(scopedKey, () => ({ id: "scoped-instance" }));
+      services.addTransient(transientKey, (sp) => ({
+        ref: sp.resolve(scopedKey).id,
+      }));
+      const provider = services.build();
+      const scope = provider.createScope();
+
+      const result = scope.resolve(transientKey);
+
+      expect(result.ref).toBe("scoped-instance");
+      scope.dispose();
+      provider.dispose();
+    });
+  });
+
   describe("captive dependency prevention", () => {
     it("should throw when singleton factory tries to resolve scoped", () => {
       const scopedKey = createServiceKey<{ requestId: string }>("scoped-dep");

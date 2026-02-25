@@ -3,6 +3,15 @@ import type { ServiceDescriptor } from "./service-collection.js";
 import type { ServiceKey } from "./service-key.js";
 
 /**
+ * Shared resolution interface implemented by both ServiceProvider and ServiceScope.
+ * Used as the factory parameter type in ServiceDescriptor to avoid unsafe casts.
+ */
+export interface ServiceResolver {
+  resolve<T>(key: ServiceKey<T>): T;
+  tryResolve<T>(key: ServiceKey<T>): T | undefined;
+}
+
+/**
  * Root service provider mirroring .NET's IServiceProvider.
  *
  * Resolution rules (matching .NET exactly):
@@ -14,7 +23,7 @@ import type { ServiceKey } from "./service-key.js";
  * (can only depend on other singletons). Scoped factories receive the scope provider
  * (can depend on singletons + scoped).
  */
-export class ServiceProvider {
+export class ServiceProvider implements ServiceResolver {
   /** @internal */
   readonly _descriptors: ReadonlyMap<string, ServiceDescriptor>;
   /** @internal Singleton cache (shared across all scopes). */
@@ -74,8 +83,7 @@ export class ServiceProvider {
   _resolveDescriptor(desc: ServiceDescriptor): unknown {
     switch (desc.lifetime) {
       case Lifetime.Singleton: {
-        const cached = this._singletons.get(desc.key.id);
-        if (cached !== undefined) return cached;
+        if (this._singletons.has(desc.key.id)) return this._singletons.get(desc.key.id);
         // Factory receives root provider (captive dependency prevention).
         const instance = desc.factory!(this);
         this._singletons.set(desc.key.id, instance);
@@ -106,7 +114,7 @@ export class ServiceProvider {
  *
  * Supports TC39 explicit resource management via `[Symbol.dispose]()`.
  */
-export class ServiceScope {
+export class ServiceScope implements ServiceResolver {
   private readonly _root: ServiceProvider;
   private readonly _scopedCache = new Map<string, unknown>();
   private _disposed = false;
@@ -172,23 +180,21 @@ export class ServiceScope {
     switch (desc.lifetime) {
       case Lifetime.Singleton: {
         // Singletons always resolve from root cache.
-        const cached = this._root._singletons.get(desc.key.id);
-        if (cached !== undefined) return cached;
+        if (this._root._singletons.has(desc.key.id)) return this._root._singletons.get(desc.key.id);
         const instance = desc.factory!(this._root);
         this._root._singletons.set(desc.key.id, instance);
         return instance;
       }
       case Lifetime.Scoped: {
-        const cached = this._scopedCache.get(desc.key.id);
-        if (cached !== undefined) return cached;
+        if (this._scopedCache.has(desc.key.id)) return this._scopedCache.get(desc.key.id);
         // Scoped factory receives the scope (can depend on singletons + scoped).
-        const instance = desc.factory!(this as unknown as ServiceProvider);
+        const instance = desc.factory!(this);
         this._scopedCache.set(desc.key.id, instance);
         return instance;
       }
       case Lifetime.Transient:
         // Transient factory receives the scope (can depend on singletons + scoped).
-        return desc.factory!(this as unknown as ServiceProvider);
+        return desc.factory!(this);
     }
   }
 

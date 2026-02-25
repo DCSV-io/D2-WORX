@@ -26,7 +26,7 @@ Implements the repository and provider interfaces defined in `@d2/comms-app`. Ow
 ```
 src/
   index.ts                              Barrel exports
-  registration.ts                       addCommsInfra(services, db, config) DI registration
+  registration.ts                       addCommsInfra(services, db) DI registration
   service-keys.ts                       Re-exports from @d2/comms-app (for internal use)
   repository/
     migrate.ts                          runMigrations(pool) -- Drizzle migrator (idempotent)
@@ -152,26 +152,14 @@ Each tier queue dead-letters to `comms.retry.requeue` (direct exchange), which r
 ## Registration
 
 ```ts
-import { addCommsInfra, type CommsInfraConfig } from "@d2/comms-infra";
+import { addCommsInfra } from "@d2/comms-infra";
 
-addCommsInfra(services, db, {
-  resendApiKey: "re_...",
-  resendFromAddress: "noreply@example.com",
-  twilioAccountSid: "AC...",
-  twilioAuthToken: "...",
-  twilioPhoneNumber: "+1...",
-});
+addCommsInfra(services, db);
 ```
 
-| Config Field          | Required | Purpose                                |
-| --------------------- | -------- | -------------------------------------- |
-| `resendApiKey`        | No       | Resend API key (email disabled if missing) |
-| `resendFromAddress`   | No       | Sender email address                   |
-| `twilioAccountSid`    | No       | Twilio account SID (SMS disabled if missing) |
-| `twilioAuthToken`     | No       | Twilio auth token                      |
-| `twilioPhoneNumber`   | No       | Twilio sender phone number             |
+`addCommsInfra` registers **only** the 12 repository handlers + PingDb health-check handler as **transient**.
 
-All 12 repo handlers are registered as **transient**. Providers are registered as **singleton** (conditionally, based on config).
+Delivery providers (Resend email, Twilio SMS) are registered as **singleton instances** in the composition root (`@d2/comms-api`), not here -- they hold API client connections and use service-level HandlerContext. See `COMMS_API.md` for provider wiring.
 
 ## Tests
 

@@ -53,6 +53,13 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
   }) as unknown as z.ZodType<CheckInput>;
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
+    // Trusted services bypass all rate limiting (mirrors .NET Check handler).
+    if (input.requestInfo.isTrustedService) {
+      return D2Result.ok({
+        data: { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined },
+      });
+    }
+
     // Validate input.
     const validation = this.validateInput(Check.checkSchema, input);
     if (validation.failed) {

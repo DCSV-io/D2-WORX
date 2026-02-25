@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.R;
 
+using System.Linq.Expressions;
 using D2.Geo.Domain.Entities;
 using D2.Shared.Handler;
 using D2.Shared.Result;
@@ -67,26 +68,26 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         // Query in batches to avoid large IN clauses.
         foreach (var batch in uniqueKeys.Chunk(r_options.RepoQueryBatchSize))
         {
-            // Build a query that matches any of the (ContextKey, RelatedEntityId) pairs.
-            // Since we can't use tuples directly in EF, we need to build the predicate.
-            var contextKeys = batch.Select(k => k.ContextKey).Distinct().ToList();
-            var relatedEntityIds = batch.Select(k => k.RelatedEntityId).Distinct().ToList();
+            // Build an OR predicate for exact (ContextKey, RelatedEntityId) pair matching.
+            // This avoids the cross-product false positives from separate IN clauses.
+            Expression<Func<Contact, bool>>? predicate = null;
+            foreach (var (contextKey, relatedEntityId) in batch)
+            {
+                var k = contextKey;
+                var e = relatedEntityId;
+                Expression<Func<Contact, bool>> pair = c => c.ContextKey == k && c.RelatedEntityId == e;
+                predicate = predicate is null ? pair : PredicateBuilder.Or(predicate, pair);
+            }
 
             var contacts = await r_db.Contacts
                 .AsNoTracking()
-                .Where(c => contextKeys.Contains(c.ContextKey) && relatedEntityIds.Contains(c.RelatedEntityId))
+                .Where(predicate!)
                 .ToListAsync(ct);
 
             // Group by the exact (ContextKey, RelatedEntityId) pairs that were requested.
             foreach (var contact in contacts)
             {
                 var key = (contact.ContextKey, contact.RelatedEntityId);
-
-                // Only include if this key was actually requested.
-                if (!batch.Contains(key))
-                {
-                    continue;
-                }
 
                 if (!results.TryGetValue(key, out var list))
                 {

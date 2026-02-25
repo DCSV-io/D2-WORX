@@ -1,6 +1,7 @@
+import { z } from "zod";
 import { marked } from "marked";
 import DOMPurify from "isomorphic-dompurify";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import {
   createMessage,
@@ -46,6 +47,18 @@ export interface EmailWrapperOptions {
   /** HTML template with {{title}}, {{body}}, {{unsubscribeUrl}} placeholders. */
   emailWrapper?: string;
 }
+
+const deliverSchema = z.object({
+  correlationId: zodGuid,
+  recipientContactId: zodGuid,
+  title: z.string().min(1).max(500),
+  content: z.string().min(1).max(50000),
+  plainTextContent: z.string().max(50000),
+  sensitive: z.boolean().optional(),
+  urgency: z.enum(["normal", "urgent"]).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  senderService: z.string().min(1).max(100),
+});
 
 /** Default email HTML wrapper. */
 const DEFAULT_EMAIL_WRAPPER = `<!DOCTYPE html>
@@ -97,7 +110,11 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
   }
 
   protected async executeAsync(input: DeliverInput): Promise<D2Result<DeliverOutput | undefined>> {
-    // Step 0: Idempotency check via correlationId
+    // Step 0a: Validate input
+    const validation = this.validateInput(deliverSchema, input);
+    if (!validation.success) return D2Result.bubbleFail(validation);
+
+    // Step 0b: Idempotency check via correlationId
     const existing = await this.requestRepo.findByCorrelationId.handleAsync({
       correlationId: input.correlationId,
     });
@@ -146,10 +163,7 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     });
 
     if (!resolved.success || !resolved.data) {
-      return D2Result.fail({
-        messages: ["Failed to resolve recipient address."],
-        statusCode: 503,
-      });
+      return D2Result.bubbleFail(resolved);
     }
 
     const { email, phone } = resolved.data;
@@ -186,6 +200,14 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     const attempts: DeliveryAttempt[] = [];
 
     for (const { channel, address } of deliverableChannels) {
+      // If no SMS provider configured, fail fast — do not persist a pending attempt
+      if (channel === "sms" && !this.smsProvider) {
+        this.context.logger.warn(
+          `SMS channel requested but no SMS provider configured. Skipping SMS delivery. TraceId: ${this.traceId}`,
+        );
+        continue;
+      }
+
       // Create attempt
       let attempt = createDeliveryAttempt({
         requestId: request.id,

@@ -20,8 +20,7 @@ service CommsService {
   // Phase 1: Delivery Engine
   rpc GetChannelPreference(GetChannelPreferenceRequest) returns (GetChannelPreferenceResponse);
   rpc SetChannelPreference(SetChannelPreferenceRequest) returns (SetChannelPreferenceResponse);
-  rpc GetTemplate(GetTemplateRequest) returns (GetTemplateResponse);
-  rpc UpsertTemplate(UpsertTemplateRequest) returns (UpsertTemplateResponse);
+  // GetTemplate and UpsertTemplate removed — templates dropped from architecture.
   rpc GetDeliveryStatus(GetDeliveryStatusRequest) returns (GetDeliveryStatusResponse);
 
   // Phase 2: In-App Notifications (stubs)
@@ -57,37 +56,25 @@ message PaginationRequest {
 
 message ChannelPreferenceDTO {
   string id = 1;
-  optional string user_id = 2;           // set if user-scoped
-  optional string contact_id = 3;        // set if contact-scoped
+  string contact_id = 3;
   bool email_enabled = 4;
   bool sms_enabled = 5;
-  optional string quiet_hours_start = 6; // HH:MM
-  optional string quiet_hours_end = 7;   // HH:MM
-  optional string quiet_hours_tz = 8;    // IANA timezone
+  reserved 2, 6, 7, 8; // user_id, quiet_hours_start, quiet_hours_end, quiet_hours_tz
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp updated_at = 10;
 }
 
-message TemplateWrapperDTO {
-  string id = 1;
-  string name = 2;
-  string channel = 3;                      // "email" | "sms"
-  optional string subject_template = 4;    // not applicable for SMS
-  string body_template = 5;
-  bool active = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
-}
+// TemplateWrapperDTO removed — templates dropped from architecture.
+// Message type reserved for backward compatibility.
 
 message DeliveryRequestDTO {
   string id = 1;
   string message_id = 2;
   string correlation_id = 3;
-  optional string recipient_user_id = 4;
-  optional string recipient_contact_id = 5;
+  string recipient_contact_id = 5;
   repeated string channels = 6;
-  optional string template_name = 7;
   optional string callback_topic = 8;
+  reserved 4, 7; // recipient_user_id, template_name
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp processed_at = 10;
 }
@@ -175,8 +162,8 @@ message ParticipantDTO {
 // ****************************************
 
 message GetChannelPreferenceRequest {
-  string user_id = 1;
   string contact_id = 2;
+  reserved 1; // user_id
 }
 
 message GetChannelPreferenceResponse {
@@ -189,13 +176,10 @@ message GetChannelPreferenceResponse {
 // ****************************************
 
 message SetChannelPreferenceRequest {
-  string user_id = 1;
   string contact_id = 2;
   bool email_enabled = 3;
   bool sms_enabled = 4;
-  string quiet_hours_start = 5;
-  string quiet_hours_end = 6;
-  string quiet_hours_tz = 7;
+  reserved 1, 5, 6, 7; // user_id, quiet_hours_start, quiet_hours_end, quiet_hours_tz
 }
 
 message SetChannelPreferenceResponse {
@@ -203,36 +187,8 @@ message SetChannelPreferenceResponse {
   ChannelPreferenceDTO data = 2;
 }
 
-// ****************************************
-// ***** Phase 1: GetTemplate *************
-// ****************************************
-
-message GetTemplateRequest {
-  string name = 1;
-  string channel = 2;
-}
-
-message GetTemplateResponse {
-  d2.common.v1.D2ResultProto result = 1;
-  TemplateWrapperDTO data = 2;
-}
-
-// ****************************************
-// ***** Phase 1: UpsertTemplate **********
-// ****************************************
-
-message UpsertTemplateRequest {
-  string name = 1;
-  string channel = 2;
-  string body_template = 3;
-  string subject_template = 4;
-  bool active = 5;
-}
-
-message UpsertTemplateResponse {
-  d2.common.v1.D2ResultProto result = 1;
-  TemplateWrapperDTO data = 2;
-}
+// GetTemplateRequest/Response and UpsertTemplateRequest/Response removed —
+// templates dropped from architecture.
 
 // ****************************************
 // ***** Phase 1: GetDeliveryStatus *******

@@ -471,6 +471,119 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
 
     #endregion
 
+    #region Cross-Product False Positive Tests
+
+    /// <summary>
+    /// Tests that querying with (keyA, entityB) does NOT return a contact stored under (keyA, entityA)
+    /// when (keyB, entityB) also exists. This verifies pair-wise matching instead of cross-product
+    /// matching via separate IN clauses.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetContactsByExtKeys_DifferentPairs_DoesNotCrossMatch()
+    {
+        // Arrange — Create two contacts with distinct (contextKey, relatedEntityId) pairs.
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextA = $"cross-a-{suffix}";
+        var contextB = $"cross-b-{suffix}";
+        var entityA = Guid.NewGuid();
+        var entityB = Guid.NewGuid();
+
+        var contactA = CreateTestContact(contextA, entityA, "Alice", "A");
+        var contactB = CreateTestContact(contextB, entityB, "Bob", "B");
+        _db.Contacts.AddRange(contactA, contactB);
+        await _db.SaveChangesAsync(Ct);
+
+        // Act — Query for the cross-product pairs that should NOT match either contact.
+        var handler = CreateHandler();
+        var request = new GetContactsByExtKeysRequest
+        {
+            Keys =
+            {
+                new GetContactsExtKeys
+                {
+                    ContextKey = contextA,
+                    RelatedEntityId = entityB.ToString(),
+                },
+                new GetContactsExtKeys
+                {
+                    ContextKey = contextB,
+                    RelatedEntityId = entityA.ToString(),
+                },
+            },
+        };
+        var input = new IQueries.GetContactsByExtKeysInput(request);
+
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — Neither cross-product pair exists, so the result should be NOT_FOUND.
+        result.Failed.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCodes.NOT_FOUND);
+    }
+
+    /// <summary>
+    /// Tests that querying for one valid pair and one cross-product pair returns only the valid pair.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetContactsByExtKeys_MixedValidAndCrossProduct_ReturnsOnlyValidPair()
+    {
+        // Arrange — Create two contacts with distinct pairs.
+        var suffix = Guid.NewGuid().ToString("N");
+        var contextA = $"mix-a-{suffix}";
+        var contextB = $"mix-b-{suffix}";
+        var entityA = Guid.NewGuid();
+        var entityB = Guid.NewGuid();
+
+        var contactA = CreateTestContact(contextA, entityA, "Alice", "Valid");
+        var contactB = CreateTestContact(contextB, entityB, "Bob", "Other");
+        _db.Contacts.AddRange(contactA, contactB);
+        await _db.SaveChangesAsync(Ct);
+
+        // Act — Query for one valid pair (contextA, entityA) and one cross-product (contextA, entityB).
+        var handler = CreateHandler();
+        var request = new GetContactsByExtKeysRequest
+        {
+            Keys =
+            {
+                new GetContactsExtKeys
+                {
+                    ContextKey = contextA,
+                    RelatedEntityId = entityA.ToString(),
+                },
+                new GetContactsExtKeys
+                {
+                    ContextKey = contextA,
+                    RelatedEntityId = entityB.ToString(),
+                },
+            },
+        };
+        var input = new IQueries.GetContactsByExtKeysInput(request);
+
+        var result = await handler.HandleAsync(input, Ct);
+
+        // Assert — Should return SOME_FOUND: only the valid pair matches.
+        result.Failed.Should().BeTrue();
+        result.ErrorCode.Should().Be(ErrorCodes.SOME_FOUND);
+        result.Data!.Data.Should().HaveCount(1);
+
+        var key = result.Data.Data.Keys.First();
+        key.ContextKey.Should().Be(contextA);
+        key.RelatedEntityId.Should().Be(entityA.ToString());
+
+        var contacts = result.Data.Data[key];
+        contacts.Should().HaveCount(1);
+        contacts[0].PersonalDetails!.FirstName.Should().Be("Alice");
+    }
+
+    #endregion
+
     private static IHandlerContext CreateHandlerContext()
     {
         var requestContext = new Mock<IRequestContext>();
@@ -499,9 +612,28 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
 
     private IQueries.IGetContactsByExtKeysHandler CreateHandler()
     {
+        // Mock cache handlers that always return NOT_FOUND (forcing repo lookup for ext-keys).
+        var mockCacheGetMany = new Mock<IRead.IGetManyHandler<List<Contact>>>();
+        mockCacheGetMany
+            .Setup(x => x.HandleAsync(It.IsAny<IRead.GetManyInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IRead.GetManyOutput<List<Contact>>?>.NotFound());
+
+        var mockCacheSetMany = new Mock<IUpdate.ISetManyHandler<List<Contact>>>();
+        mockCacheSetMany
+            .Setup(x => x.HandleAsync(It.IsAny<IUpdate.SetManyInput<List<Contact>>>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IUpdate.SetManyOutput?>.Ok(new IUpdate.SetManyOutput()));
+
         var getContactsRepo = new GetContactsByExtKeysRepo(_db, _options, _context);
         var getLocationsByIds = CreateGetLocationsByIdsHandler();
-        return new GetContactsByExtKeys(getContactsRepo, getLocationsByIds, _context);
+        var appOptions = Options.Create(new GeoAppOptions());
+
+        return new GetContactsByExtKeys(
+            mockCacheGetMany.Object,
+            mockCacheSetMany.Object,
+            getContactsRepo,
+            getLocationsByIds,
+            appOptions,
+            _context);
     }
 
     private IQueries.IGetLocationsByIdsHandler CreateGetLocationsByIdsHandler()

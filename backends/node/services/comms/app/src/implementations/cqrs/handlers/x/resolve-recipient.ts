@@ -38,7 +38,7 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
     });
 
     if (!result.success || !result.data) {
-      return D2Result.ok({ data: {} });
+      return D2Result.bubbleFail(result);
     }
 
     const contact = result.data.data.get(input.contactId);
