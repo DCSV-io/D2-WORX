@@ -38,6 +38,8 @@ export interface CommsServiceConfig {
   geoAddress?: string;
   geoApiKey?: string;
   commsApiKeys?: string[];
+  /** When true, allow startup without API key auth. Default false. */
+  allowUnauthenticated?: boolean;
 }
 
 /**
@@ -180,9 +182,13 @@ export async function createCommsService(config: CommsServiceConfig) {
       withApiKeyAuth(grpcService, { validKeys, logger, exempt: publicRpcs }),
     );
     logger.info(`Comms gRPC API key authentication enabled (${validKeys.size} key(s))`);
-  } else {
+  } else if (config.allowUnauthenticated) {
     server.addService(CommsServiceService, grpcService);
-    logger.warn("No COMMS_API_KEYS configured — gRPC API key authentication disabled");
+    logger.warn("No COMMS_API_KEYS configured — gRPC API key authentication disabled (allowUnauthenticated=true)");
+  } else {
+    throw new Error(
+      "COMMS_API_KEYS not configured. Set COMMS_API_KEYS environment variable or pass allowUnauthenticated=true for local development.",
+    );
   }
 
   await new Promise<void>((resolve, reject) => {

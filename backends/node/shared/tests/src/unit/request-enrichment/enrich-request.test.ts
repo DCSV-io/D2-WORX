@@ -118,7 +118,7 @@ describe("enrichRequest", () => {
     );
 
     const info = await enrichRequest(
-      { "x-real-ip": "1.2.3.4", "user-agent": "Mozilla/5.0" },
+      { "cf-connecting-ip": "1.2.3.4", "user-agent": "Mozilla/5.0" },
       handler,
       undefined,
       mockLogger,
@@ -139,7 +139,7 @@ describe("enrichRequest", () => {
       D2Result.fail<FindWhoIsOutput | undefined>({ messages: ["service down"] }),
     );
 
-    const info = await enrichRequest({ "x-real-ip": "1.2.3.4" }, handler, undefined, mockLogger);
+    const info = await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
 
     expect(info.clientIp).toBe("1.2.3.4");
     expect(info.city).toBeUndefined();
@@ -151,7 +151,7 @@ describe("enrichRequest", () => {
       handleAsync: vi.fn().mockRejectedValue(new Error("connection refused")),
     } as unknown as FindWhoIs;
 
-    const info = await enrichRequest({ "x-real-ip": "1.2.3.4" }, handler, undefined, mockLogger);
+    const info = await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
 
     expect(info.clientIp).toBe("1.2.3.4");
     expect(info.city).toBeUndefined();
@@ -163,7 +163,7 @@ describe("enrichRequest", () => {
       D2Result.ok<FindWhoIsOutput | undefined>({ data: { whoIs: undefined } }),
     );
 
-    const info = await enrichRequest({ "x-real-ip": "1.2.3.4" }, handler, undefined, mockLogger);
+    const info = await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
 
     expect(info.whoIsHashId).toBeUndefined();
     expect(info.city).toBeUndefined();
@@ -183,7 +183,7 @@ describe("enrichRequest", () => {
   it("should skip WhoIs lookup when enableWhoIsLookup is false", async () => {
     const handler = createMockFindWhoIs();
 
-    const info = await enrichRequest({ "x-real-ip": "1.2.3.4" }, handler, {
+    const info = await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, {
       enableWhoIsLookup: false,
     });
 
@@ -219,7 +219,7 @@ describe("enrichRequest", () => {
       D2Result.ok<FindWhoIsOutput | undefined>({ data: { whoIs } }),
     );
 
-    await enrichRequest({ "x-real-ip": "1.2.3.4" }, handler, undefined, mockLogger);
+    await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
 
     // user-agent is undefined → fingerprint should be ""
     expect(handler.handleAsync).toHaveBeenCalledWith(expect.objectContaining({ fingerprint: "" }));
@@ -232,7 +232,7 @@ describe("enrichRequest", () => {
     );
 
     await enrichRequest(
-      { "x-real-ip": "1.2.3.4", "user-agent": [] },
+      { "cf-connecting-ip": "1.2.3.4", "user-agent": [] },
       handler,
       undefined,
       mockLogger,
@@ -260,7 +260,7 @@ describe("enrichRequest", () => {
     );
 
     const info = await enrichRequest(
-      { "x-real-ip": "1.2.3.4", "user-agent": "Mozilla/5.0" },
+      { "cf-connecting-ip": "1.2.3.4", "user-agent": "Mozilla/5.0" },
       handler,
       undefined,
       mockLogger,
@@ -280,7 +280,7 @@ describe("enrichRequest", () => {
     );
 
     await enrichRequest(
-      { "x-real-ip": "1.2.3.4", "user-agent": ["Agent/1.0", "Agent/2.0"] },
+      { "cf-connecting-ip": "1.2.3.4", "user-agent": ["Agent/1.0", "Agent/2.0"] },
       handler,
       undefined,
       mockLogger,

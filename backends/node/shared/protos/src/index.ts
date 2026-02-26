@@ -107,19 +107,6 @@ export {
   ContactsEvictedEvent as ContactsEvictedEventFns,
 } from "./generated/events/v1/geo_events.js";
 
-// Events — Auth
-export type {
-  SendVerificationEmailEvent,
-  SendPasswordResetEvent,
-  SendInvitationEmailEvent,
-} from "./generated/events/v1/auth_events.js";
-
-export {
-  SendVerificationEmailEvent as SendVerificationEmailEventFns,
-  SendPasswordResetEvent as SendPasswordResetEventFns,
-  SendInvitationEmailEvent as SendInvitationEmailEventFns,
-} from "./generated/events/v1/auth_events.js";
-
 // Comms service — DTOs
 export type {
   PaginationRequest as CommsPaginationRequest,

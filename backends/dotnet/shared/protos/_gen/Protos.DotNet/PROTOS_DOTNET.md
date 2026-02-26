@@ -19,10 +19,9 @@ Shared proto definitions used across all services:
 
 Cross-service async event definitions:
 
-| File Name                                                                            | Description                                                                                                                    |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| [geo_events.proto](../../../../../../contracts/protos/events/v1/geo_events.proto)    | `GeoRefDataUpdatedEvent` — broadcast when Geo reference data is refreshed from external sources.                               |
-| [auth_events.proto](../../../../../../contracts/protos/events/v1/auth_events.proto)  | `SendVerificationEmailEvent`, `SendPasswordResetEvent`, `SendInvitationEmailEvent` — auth-triggered email delivery via Comms.  |
+| File Name                                                                         | Description                                                                      |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [geo_events.proto](../../../../../../contracts/protos/events/v1/geo_events.proto) | `GeoRefDataUpdatedEvent` — broadcast when Geo reference data is refreshed.       |
 
 ### Geo
 

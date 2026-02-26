@@ -74,7 +74,7 @@ describe("E2E: Auth sign-up → verification email delivery", () => {
     // Sign up — this should:
     // 1. Create Geo contact (via createUserContact hook)
     // 2. Create BetterAuth user
-    // 3. Publish SendVerificationEmailEvent to RabbitMQ
+    // 3. Publish verification notification to RabbitMQ via @d2/comms-client
     // 4. Comms consumer picks up → Deliver → StubEmailProvider captures email
     const signUpRes = await authHandle.auth.api.signUpEmail({
       body: { email, password, name },

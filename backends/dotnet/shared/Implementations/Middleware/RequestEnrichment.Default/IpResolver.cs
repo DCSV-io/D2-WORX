@@ -30,26 +30,33 @@ public static class IpResolver
 
     /// <summary>
     /// Resolves the client IP address from the HTTP context.
+    /// Only proxy headers listed in <paramref name="trustedHeaders"/> are checked.
     /// </summary>
     ///
     /// <param name="context">
     /// The HTTP context to resolve the IP from.
+    /// </param>
+    /// <param name="trustedHeaders">
+    /// The set of proxy headers to trust. If null, defaults to Cloudflare only.
     /// </param>
     ///
     /// <returns>
     /// The resolved client IP address, or "unknown" if it cannot be determined.
     /// </returns>
     /// <remarks>
-    /// Priority chain:
+    /// Priority chain (when trusted):
     /// 1. CF-Connecting-IP (Cloudflare — trusted, single IP)
     /// 2. X-Real-IP (Nginx/reverse proxy)
     /// 3. X-Forwarded-For (first entry = original client)
     /// 4. HttpContext.Connection.RemoteIpAddress (direct connection fallback).
     /// </remarks>
-    public static string Resolve(HttpContext context)
+    public static string Resolve(HttpContext context, HashSet<TrustedProxyHeader>? trustedHeaders = null)
     {
+        trustedHeaders ??= [TrustedProxyHeader.CfConnectingIp];
+
         // 1. Cloudflare header — most trusted if present.
-        if (context.Request.Headers.TryGetValue(_CF_CONNECTING_IP, out var cfIp))
+        if (trustedHeaders.Contains(TrustedProxyHeader.CfConnectingIp) &&
+            context.Request.Headers.TryGetValue(_CF_CONNECTING_IP, out var cfIp))
         {
             var ip = cfIp.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(ip))
@@ -59,7 +66,8 @@ public static class IpResolver
         }
 
         // 2. X-Real-IP — Nginx/reverse proxy.
-        if (context.Request.Headers.TryGetValue(_X_REAL_IP, out var realIp))
+        if (trustedHeaders.Contains(TrustedProxyHeader.XRealIp) &&
+            context.Request.Headers.TryGetValue(_X_REAL_IP, out var realIp))
         {
             var ip = realIp.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(ip))
@@ -69,7 +77,8 @@ public static class IpResolver
         }
 
         // 3. X-Forwarded-For — first entry is the original client.
-        if (context.Request.Headers.TryGetValue(_X_FORWARDED_FOR, out var forwardedFor))
+        if (trustedHeaders.Contains(TrustedProxyHeader.XForwardedFor) &&
+            context.Request.Headers.TryGetValue(_X_FORWARDED_FOR, out var forwardedFor))
         {
             var forwardedValue = forwardedFor.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(forwardedValue))

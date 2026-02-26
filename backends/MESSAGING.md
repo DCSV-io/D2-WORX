@@ -21,12 +21,13 @@ Event types are defined in **Protocol Buffers** under `contracts/protos/events/v
 
 ### Current Events
 
-| Proto File          | Message Type                 | Publisher | Consumers                  |
-| ------------------- | ---------------------------- | --------- | -------------------------- |
-| `geo_events.proto`  | `GeoRefDataUpdatedEvent`     | Geo.Infra | Geo.Client, @d2/geo-client |
-| `auth_events.proto` | `SendVerificationEmailEvent` | Auth      | Comms                      |
-| `auth_events.proto` | `SendPasswordResetEvent`     | Auth      | Comms                      |
-| `auth_events.proto` | `SendInvitationEmailEvent`   | Auth      | Comms                      |
+| Proto File         | Message Type             | Publisher | Consumers                  |
+| ------------------ | ------------------------ | --------- | -------------------------- |
+| `geo_events.proto` | `GeoRefDataUpdatedEvent` | Geo.Infra | Geo.Client, @d2/geo-client |
+
+> **Note:** Auth → Comms notifications use the universal `@d2/comms-client` message shape
+> (JSON over RabbitMQ), not proto-defined event types. The old `auth_events.proto` was
+> removed as dead code — Comms receives generic notification payloads instead.
 
 ## Exchange Naming
 

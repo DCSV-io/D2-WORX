@@ -160,6 +160,24 @@
 | 12 | 23 | `GeoInfraOptions.cs:25` | **IpInfoAccessToken defaults to empty string.** Missing config results in unauthenticated rate-limited IPinfo requests rather than a clear startup failure. |
 | 13 | 8 | `grpc/api-key-interceptor.ts:11` | **API key transmitted in cleartext metadata.** Combined with `grpc.credentials.createInsecure()` default. Acceptable for dev, security issue in production without TLS. |
 
+#### Medium Security Fix Status (2026-02-25)
+
+| # | Status | Fix Summary |
+|---|--------|-------------|
+| 1 | **FIXED** | Added `trustedProxies` option to IP resolver + `.NET IpResolverOptions.TrustedNetworks` (done in prior commit) |
+| 2 | **FIXED** | Added user/org scoping to idempotency cache key + `IdempotencyOptions` parity with .NET (done in prior commit) |
+| 3 | **FIXED** | Startup now throws when `COMMS_API_KEYS` not configured unless `allowUnauthenticated=true` is explicitly set |
+| 4 | **FALSE POSITIVE** | Handler has full Zod validation (`zodGuid`, future date check) — route delegates to handler |
+| 5 | **FALSE POSITIVE** | Handler has full Zod validation + `contactInputSchema` — route delegates to handler |
+| 6 | **FIXED** | Deleted dead `auth_events.proto` + all generated code, fixtures, and test references. Auth uses `@d2/comms-client` universal message shape (no tokens in proto events) |
+| 7 | **FIXED** | Same as #6 — dead proto removed. PII now handled by comms-client with RedactionSpec |
+| 8 | **FIXED** | Added `RedactionSpec` to Notify handler: `inputFields: ["content", "plaintext"]` |
+| 9 | **FIXED** | User ID span attributes only set when non-empty + PII documentation comment added |
+| 10 | **FIXED** | Changed `z.string().max(200)` to `zodNonEmptyString(200)` in `CreateUserContact` schema |
+| 11 | **FIXED** | Replaced hardcoded Docker ranges (172.17-20) with RFC 1918 private ranges (10/8 + 172.16/12 + 192.168/16) |
+| 12 | **FIXED** | Added startup warning log in `IpInfoClientWrapper` when `IpInfoAccessToken` is empty |
+| 13 | **FIXED** | Added JSDoc documenting TLS requirement for production deployments |
+
 ### Bugs (Medium)
 
 | # | Module(s) | File | Description |

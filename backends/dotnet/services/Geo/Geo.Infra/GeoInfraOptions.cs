@@ -21,6 +21,8 @@ public class GeoInfraOptions
     /// </summary>
     /// <remarks>
     /// This should be stored securely via dotnet secrets or environment variables.
+    /// When empty, IPinfo requests use unauthenticated (rate-limited) access.
+    /// A warning is logged at startup if not configured.
     /// </remarks>
     public string IpInfoAccessToken { get; set; } = string.Empty;
 }

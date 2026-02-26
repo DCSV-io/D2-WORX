@@ -18,7 +18,7 @@ export interface CreateUserContactOutput {
 const schema = z.object({
   userId: zodGuid,
   email: zodNonEmptyString(320), // RFC 5321 max
-  name: z.string().max(200),
+  name: zodNonEmptyString(200),
 });
 
 /**

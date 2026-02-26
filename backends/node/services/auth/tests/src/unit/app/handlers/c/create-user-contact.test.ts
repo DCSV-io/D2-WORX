@@ -139,16 +139,17 @@ describe("CreateUserContact", () => {
     expect(result.data?.contact.id).toBe("geo-contact-001");
   });
 
-  it("should accept empty name", async () => {
+  it("should return validationFailed when name is empty", async () => {
     const result = await handler.handleAsync({
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "",
     });
 
-    expect(result.success).toBe(true);
-    const call = vi.mocked(createContacts.handleAsync).mock.calls[0][0];
-    expect(call.contacts[0].personalDetails?.firstName).toBe("");
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toBeDefined();
+    expect(createContacts.handleAsync).not.toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------

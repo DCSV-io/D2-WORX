@@ -66,8 +66,8 @@ public class RequestEnrichmentMiddleware
         HttpContext context,
         IComplex.IFindWhoIsHandler whoIsHandler)
     {
-        // 1. Resolve client IP.
-        var clientIp = IpResolver.Resolve(context);
+        // 1. Resolve client IP (only trusting configured proxy headers).
+        var clientIp = IpResolver.Resolve(context, r_options.TrustedProxyHeaders);
 
         // 2. Compute server fingerprint (for logging).
         var serverFingerprint = FingerprintBuilder.Build(context);

@@ -82,12 +82,16 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     BaseHandler.instruments!.invocations.add(1, attrs);
 
     return BaseHandler.tracer.startActiveSpan(handlerName, async (span) => {
-      // Set span tags (mirrors .NET activity tags exactly)
+      // Set span tags (mirrors .NET activity tags exactly).
+      // Note: user.id, agent.org.id, target.org.id are PII — only set when
+      // present to avoid leaking empty-string placeholders to external
+      // observability backends. Production deployments should configure
+      // OTel exporters to redact or filter these attributes as needed.
       span.setAttribute("handler.type", handlerName);
       span.setAttribute("trace.id", this.context.request.traceId ?? "");
-      span.setAttribute("user.id", this.context.request.userId ?? "");
-      span.setAttribute("agent.org.id", this.context.request.agentOrgId ?? "");
-      span.setAttribute("target.org.id", this.context.request.targetOrgId ?? "");
+      if (this.context.request.userId) span.setAttribute("user.id", this.context.request.userId);
+      if (this.context.request.agentOrgId) span.setAttribute("agent.org.id", this.context.request.agentOrgId);
+      if (this.context.request.targetOrgId) span.setAttribute("target.org.id", this.context.request.targetOrgId);
 
       const startTime = performance.now();
 

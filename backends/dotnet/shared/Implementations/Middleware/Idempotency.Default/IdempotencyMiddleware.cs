@@ -117,6 +117,14 @@ public class IdempotencyMiddleware
             return;
         }
 
+        // 3b. Scope key to authenticated user to prevent cross-user collisions.
+        // Auth runs before idempotency in the pipeline, so User.Identity is available.
+        var userId = context.User?.FindFirst("sub")?.Value;
+        if (userId is not null)
+        {
+            idempotencyKey = $"{userId}:{idempotencyKey}";
+        }
+
         // 4. Check idempotency state.
         IIdempotency.CheckOutput? checkOutput = null;
         try

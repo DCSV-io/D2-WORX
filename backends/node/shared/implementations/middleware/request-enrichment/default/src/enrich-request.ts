@@ -29,8 +29,8 @@ export async function enrichRequest(
 ): Promise<RequestEnrichment.IRequestInfo> {
   const opts = { ...DEFAULT_REQUEST_ENRICHMENT_OPTIONS, ...options };
 
-  // 1. Resolve client IP.
-  const clientIp = resolveIp(headers);
+  // 1. Resolve client IP (only trusting configured proxy headers).
+  const clientIp = resolveIp(headers, opts.trustedProxyHeaders);
 
   // 2. Compute server fingerprint.
   const serverFingerprint = buildServerFingerprint(headers);

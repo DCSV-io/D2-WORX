@@ -1,7 +1,0 @@
-{
-  "userId": "019500aa-bbcc-7def-8901-234567890abc",
-  "email": "test@example.com",
-  "name": "Test User",
-  "verificationUrl": "https://app.example.com/verify?token=abc123",
-  "token": "abc123"
-}
