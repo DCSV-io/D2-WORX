@@ -153,11 +153,7 @@ describe("Auth CheckHealth", () => {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: undefined })),
     } as unknown as IPingDbHandler;
 
-    const handler = new CheckHealth(
-      pingDb,
-      createMockPingCache(true),
-      createTestContext(),
-    );
+    const handler = new CheckHealth(pingDb, createMockPingCache(true), createTestContext());
 
     const result = await handler.handleAsync({});
 

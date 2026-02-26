@@ -409,7 +409,9 @@ export async function createApp(
   app.use("*", createRequestEnrichmentMiddleware(findWhoIs, undefined, logger));
   if (config.authApiKeys?.length) {
     app.use("*", createServiceKeyMiddleware(new Set(config.authApiKeys)));
-    logger.info(`Auth API service key authentication enabled (${config.authApiKeys.length} key(s))`);
+    logger.info(
+      `Auth API service key authentication enabled (${config.authApiKeys.length} key(s))`,
+    );
   }
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);

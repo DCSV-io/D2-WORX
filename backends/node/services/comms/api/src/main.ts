@@ -71,8 +71,7 @@ const config = {
     process.env["ConnectionStrings__d2-rabbitmq"] ??
     process.env.ConnectionStrings__d2_rabbitmq ??
     "",
-  redisUrl:
-    process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis,
+  redisUrl: process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis,
   grpcPort: parseInt(process.env.GRPC_PORT ?? "5200", 10),
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromAddress: process.env.RESEND_FROM_ADDRESS,

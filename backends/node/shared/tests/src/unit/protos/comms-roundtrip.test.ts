@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  ChannelPreferenceDTOFns,
-  DeliveryRequestDTOFns,
-  DeliveryAttemptDTOFns,
-} from "@d2/protos";
+import { ChannelPreferenceDTOFns, DeliveryRequestDTOFns, DeliveryAttemptDTOFns } from "@d2/protos";
 
 describe("Comms proto roundtrip tests", () => {
   describe("ChannelPreferenceDTO", () => {

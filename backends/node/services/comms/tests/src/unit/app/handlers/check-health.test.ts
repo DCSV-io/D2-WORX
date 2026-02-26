@@ -131,10 +131,7 @@ describe("Comms CheckHealth", () => {
   });
 
   it("should return healthy when both optional components are omitted", async () => {
-    const handler = new CheckHealth(
-      createMockPingDb(true),
-      createTestContext(),
-    );
+    const handler = new CheckHealth(createMockPingDb(true), createTestContext());
 
     const result = await handler.handleAsync({});
 
