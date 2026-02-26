@@ -298,7 +298,7 @@
 | 50  | **FIXED**    | Excluded non-applicable auto-instrumentations (MySQL, MongoDB, Express, etc.) from OTel setup — only relevant instrumentations loaded |
 | 51  | **FIXED**    | Cached `MethodInfo` for protobuf parser/parseFrom in static `ConcurrentDictionary` — eliminates per-call reflection                   |
 | 52  | **FIXED**    | Cached `typeof(THandler).Name` in private static readonly field `sr_handlerName`                                                      |
-| 53  | **DEFERRED** | `_injectTraceId` copy cost — needs further discussion on tradeoffs (see Deferred Items section)                                       |
+| 53  | **BY DESIGN** | D2Result immutability is intentional. The "copy" is a shallow memberwise clone (~100-200 bytes of short-lived Gen0 garbage per call) — negligible for SMB SaaS workloads. Making traceId mutable would compromise the frozen-result guarantee for no measured gain. |
 
 ### Maintainability (Medium)
 
@@ -503,12 +503,6 @@ Prioritized list of all tests to add across all modules.
 
 Items intentionally deferred from the medium-severity sweep. Each includes rationale and recommended action for future sprints.
 
-### Performance
-
-| #   | Finding                                                   | Rationale                                                                                                                                                                                                                           | Recommended Action                                                                                                                                   |
-| --- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 53  | `_injectTraceId` creates full D2Result copy on every call | BaseHandler's `_injectTraceId` allocates a new object + two array copies + re-freezing per handler invocation. The copy ensures immutability of the result object. Removing it would require a different traceId injection strategy. | Profile actual impact in production-like load. If measurable, consider making traceId a mutable slot on D2Result or injecting at construction time. |
-
 ### Test Coverage Gaps
 
 | #   | Finding                                        | Rationale                                                                                                                                                                   | Recommended Action                                                                                      |
@@ -522,8 +516,13 @@ Items intentionally deferred from the medium-severity sweep. Each includes ratio
 
 ### Summary
 
-| Category    | Deferred | Risk Level | Notes                                                                 |
-| ----------- | -------- | ---------- | --------------------------------------------------------------------- |
-| Performance | 1        | Low        | #53 — micro-optimization, no measured impact yet                      |
-| Test Gaps   | 6        | Medium     | #62-67 — core infrastructure untested but stable; prioritize #64, #65 |
-| **Total**   | **7**    |            |                                                                       |
+| Category  | Deferred | Risk Level | Notes                                                                 |
+| --------- | -------- | ---------- | --------------------------------------------------------------------- |
+| Test Gaps | 6        | Medium     | #62-67 — core infrastructure untested but stable; prioritize #64, #65 |
+| **Total** | **6**    |            |                                                                       |
+
+### Closed — By Design
+
+| #   | Finding                                                   | Decision                                                                                                                                                                                                                                                                                                                 |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 53  | `_injectTraceId` creates full D2Result copy on every call | **Won't fix.** D2Result immutability is intentional. The "copy" is a shallow memberwise clone (~100-200 bytes of short-lived Gen0/young-gen garbage per call) — all fields are reference types so the clone just copies pointers. Negligible for SMB SaaS workloads. Making traceId mutable would compromise the frozen-result guarantee for no measured gain. Revisit only if profiling shows measurable GC pressure. |
