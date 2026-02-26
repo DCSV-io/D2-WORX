@@ -362,10 +362,11 @@ public class FindWhoIsHandlerTests
         // Act
         await handler.HandleAsync(input, Ct);
 
-        // Assert - Verify cache key format
+        // Assert - Verify cache key format (UA hashed to SHA-256 fingerprint)
+        var expectedKey = CacheKeys.WhoIs("1.2.3.4", "CustomUA/1.0");
         r_cacheGetMock.Verify(
             x => x.HandleAsync(
-                It.Is<IRead.GetInput>(i => i.Key == "geo:whois:1.2.3.4:CustomUA/1.0"),
+                It.Is<IRead.GetInput>(i => i.Key == expectedKey),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()),
             Times.Once);

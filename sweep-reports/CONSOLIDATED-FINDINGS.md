@@ -236,7 +236,7 @@
 | 27  | **FIXED**     | Added `rowCount === 0` → `D2Result.notFound()` checks to `RevokeEmulationConsentRecord`, `UpdateOrgContactRecord`, `DeleteOrgContactRecord`    |
 | 28  | **FIXED**     | Added `D2Result.Cancelled()` factory + check `ct.IsCancellationRequested` before first attempt in `D2RetryHelper.RetryResultAsync`             |
 | 29  | **FIXED**     | Extracted `NOTIFICATIONS_EXCHANGE_TYPE: "fanout" as const` to `COMMS_EVENTS` constants — consumer references constant instead of inline string |
-| 30  | **DEFERRED**  | .NET Geo.Client — requires .NET-side change to hash UA into fingerprint key (see Deferred Items section)                                       |
+| 30  | **FIXED**     | `CacheKeys.WhoIs()` now hashes UserAgent to SHA-256 fingerprint internally — cache key format: `geo:whois:{ip}:{64-char-hex}`, matching Node.js |
 | 31  | **FIXED**     | Standardized all cache keys to descriptive data-centric format (`geo:contact:{id}`, `geo:whois:{ip}:{ua}`) + centralized into `CacheKeys.cs`/`cache-keys.ts` per service |
 | 32  | **FIXED**     | Replaced separate `incrby` + `pexpire` with Lua script for atomic increment-with-TTL in both Node.js and .NET Redis Increment handlers         |
 | 33  | **NO ACTION** | Leave as-is — evicting on gRPC failure is safer than allowing stale/garbage data in cache                                                      |
@@ -503,12 +503,6 @@ Prioritized list of all tests to add across all modules.
 
 Items intentionally deferred from the medium-severity sweep. Each includes rationale and recommended action for future sprints.
 
-### Bugs
-
-| #   | Finding                                         | Rationale                                                                                                                                                                                                                                                                   | Recommended Action                                                                                                               |
-| --- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 30  | .NET WhoIs cache key uses raw UserAgent (500+ chars) | Node.js already uses SHA-256 fingerprint of UA for cache keys. .NET Geo.Client `FindWhoIs.cs` still uses raw `ip:userAgent` string, bloating in-memory cache. Requires .NET-side code change to hash UA into a fingerprint before building the cache key.                  | Hash UA to SHA-256 fingerprint in .NET `FindWhoIs` handler, matching Node.js `find-whois.ts` pattern. Update `CacheKeys.WhoIs`. |
-
 ### Performance
 
 | #   | Finding                                                   | Rationale                                                                                                                                                                                                                           | Recommended Action                                                                                                                                   |
@@ -528,9 +522,8 @@ Items intentionally deferred from the medium-severity sweep. Each includes ratio
 
 ### Summary
 
-| Category   | Deferred | Risk Level | Notes                                                                 |
-| ---------- | -------- | ---------- | --------------------------------------------------------------------- |
-| Bugs       | 1        | Low        | #30 — cache bloat, not a correctness issue                            |
-| Performance | 1       | Low        | #53 — micro-optimization, no measured impact yet                      |
-| Test Gaps  | 6        | Medium     | #62-67 — core infrastructure untested but stable; prioritize #64, #65 |
-| **Total**  | **8**    |            |                                                                       |
+| Category    | Deferred | Risk Level | Notes                                                                 |
+| ----------- | -------- | ---------- | --------------------------------------------------------------------- |
+| Performance | 1        | Low        | #53 — micro-optimization, no measured impact yet                      |
+| Test Gaps   | 6        | Medium     | #62-67 — core infrastructure untested but stable; prioritize #64, #65 |
+| **Total**   | **7**    |            |                                                                       |
