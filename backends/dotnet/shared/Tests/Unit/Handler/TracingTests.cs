@@ -6,6 +6,7 @@
 
 namespace D2.Shared.Tests.Unit.Handler;
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using D2.Shared.Handler;
 using D2.Shared.Result;
@@ -16,6 +17,11 @@ using Moq;
 /// <summary>
 /// Unit tests for <see cref="BaseHandler{THandler,TInput,TOutput}"/> tracing (Activity/span) behavior.
 /// </summary>
+/// <remarks>
+/// Handler types are uniquely prefixed ("Tracing_") so that the global <see cref="ActivityListener"/>
+/// can filter by <see cref="Activity.OperationName"/> without colliding with handlers created by
+/// other test classes running in parallel (e.g. <see cref="DefaultOptionsTests"/>).
+/// </remarks>
 public class TracingTests
 {
     /// <summary>
@@ -27,25 +33,12 @@ public class TracingTests
     public async Task SuccessfulHandler_CreatesActivityWithHandlerName()
     {
         // Arrange
-        Activity? stoppedActivity = null;
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source => source.Name == "D2.Shared.Handler",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = activity => stoppedActivity = activity,
-        };
-        ActivitySource.AddActivityListener(listener);
-
-        var context = CreateContext();
-        var handler = new PlainHandler(context);
-
-        // Act
-        await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
+        var activity = await RunWithActivityCapture<Tracing_PlainHandler>(
+            CreateContext());
 
         // Assert
-        stoppedActivity.Should().NotBeNull();
-        stoppedActivity!.OperationName.Should().Be("PlainHandler");
+        activity.Should().NotBeNull();
+        activity!.OperationName.Should().Be(nameof(Tracing_PlainHandler));
     }
 
     /// <summary>
@@ -61,33 +54,21 @@ public class TracingTests
         var agentOrgId = Guid.NewGuid();
         var targetOrgId = Guid.NewGuid();
 
-        Activity? stoppedActivity = null;
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source => source.Name == "D2.Shared.Handler",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = activity => stoppedActivity = activity,
-        };
-        ActivitySource.AddActivityListener(listener);
-
         var context = CreateContext(
             traceId: "trace-abc",
             userId: userId,
             agentOrgId: agentOrgId,
             targetOrgId: targetOrgId);
-        var handler = new PlainHandler(context);
 
-        // Act
-        await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
+        var activity = await RunWithActivityCapture<Tracing_TagsHandler>(context);
 
         // Assert
-        stoppedActivity.Should().NotBeNull();
-        stoppedActivity!.GetTagItem("handler.type").Should().Be(typeof(PlainHandler).FullName);
-        stoppedActivity.GetTagItem("trace.id").Should().Be("trace-abc");
-        stoppedActivity.GetTagItem("user.id").Should().Be(userId);
-        stoppedActivity.GetTagItem("agent.org.id").Should().Be(agentOrgId);
-        stoppedActivity.GetTagItem("target.org.id").Should().Be(targetOrgId);
+        activity.Should().NotBeNull();
+        activity!.GetTagItem("handler.type").Should().Be(typeof(Tracing_TagsHandler).FullName);
+        activity.GetTagItem("trace.id").Should().Be("trace-abc");
+        activity.GetTagItem("user.id").Should().Be(userId);
+        activity.GetTagItem("agent.org.id").Should().Be(agentOrgId);
+        activity.GetTagItem("target.org.id").Should().Be(targetOrgId);
     }
 
     /// <summary>
@@ -99,28 +80,15 @@ public class TracingTests
     public async Task SuccessfulHandler_SetsSuccessStatusAndTags()
     {
         // Arrange
-        Activity? stoppedActivity = null;
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source => source.Name == "D2.Shared.Handler",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = activity => stoppedActivity = activity,
-        };
-        ActivitySource.AddActivityListener(listener);
-
-        var context = CreateContext();
-        var handler = new PlainHandler(context);
-
-        // Act
-        await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
+        var activity = await RunWithActivityCapture<Tracing_SuccessHandler>(
+            CreateContext());
 
         // Assert
-        stoppedActivity.Should().NotBeNull();
-        stoppedActivity!.GetTagItem("handler.success").Should().Be(true);
-        stoppedActivity.GetTagItem("handler.status.code").Should().Be(HttpStatusCode.OK);
-        stoppedActivity.GetTagItem("handler.elapsed.ms").Should().NotBeNull();
-        stoppedActivity.Status.Should().Be(ActivityStatusCode.Ok);
+        activity.Should().NotBeNull();
+        activity!.GetTagItem("handler.success").Should().Be(true);
+        activity.GetTagItem("handler.status.code").Should().Be(HttpStatusCode.OK);
+        activity.GetTagItem("handler.elapsed.ms").Should().NotBeNull();
+        activity.Status.Should().Be(ActivityStatusCode.Ok);
     }
 
     /// <summary>
@@ -132,26 +100,13 @@ public class TracingTests
     public async Task FailedHandler_SetsErrorStatus()
     {
         // Arrange
-        Activity? stoppedActivity = null;
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source => source.Name == "D2.Shared.Handler",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = activity => stoppedActivity = activity,
-        };
-        ActivitySource.AddActivityListener(listener);
-
-        var context = CreateContext();
-        var handler = new FailingHandler(context);
-
-        // Act
-        await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
+        var activity = await RunWithActivityCapture<Tracing_FailingHandler>(
+            CreateContext());
 
         // Assert
-        stoppedActivity.Should().NotBeNull();
-        stoppedActivity!.Status.Should().Be(ActivityStatusCode.Error);
-        stoppedActivity.GetTagItem("handler.success").Should().Be(false);
+        activity.Should().NotBeNull();
+        activity!.Status.Should().Be(ActivityStatusCode.Error);
+        activity.GetTagItem("handler.success").Should().Be(false);
     }
 
     /// <summary>
@@ -163,28 +118,15 @@ public class TracingTests
     public async Task ThrowingHandler_SetsErrorStatusAndAddsException()
     {
         // Arrange
-        Activity? stoppedActivity = null;
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source => source.Name == "D2.Shared.Handler",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = activity => stoppedActivity = activity,
-        };
-        ActivitySource.AddActivityListener(listener);
-
-        var context = CreateContext();
-        var handler = new ThrowingHandler(context);
-
-        // Act
-        await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
+        var activity = await RunWithActivityCapture<Tracing_ThrowingHandler>(
+            CreateContext());
 
         // Assert
-        stoppedActivity.Should().NotBeNull();
-        stoppedActivity!.Status.Should().Be(ActivityStatusCode.Error);
+        activity.Should().NotBeNull();
+        activity!.Status.Should().Be(ActivityStatusCode.Error);
 
         // AddException records an ActivityEvent with name "exception"
-        var exceptionEvent = stoppedActivity.Events
+        var exceptionEvent = activity.Events
             .FirstOrDefault(e => e.Name == "exception");
         exceptionEvent.Name.Should().Be("exception");
         exceptionEvent.Tags
@@ -205,7 +147,7 @@ public class TracingTests
     {
         // Arrange
         var context = CreateContext(traceId: "auto-injected-trace");
-        var handler = new NoTraceIdHandler(context);
+        var handler = new Tracing_NoTraceIdHandler(context);
 
         // Act
         var result = await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
@@ -224,7 +166,7 @@ public class TracingTests
     {
         // Arrange
         var context = CreateContext(traceId: "ambient-trace");
-        var handler = new ExplicitTraceIdHandler(context);
+        var handler = new Tracing_ExplicitTraceIdHandler(context);
 
         // Act
         var result = await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
@@ -234,6 +176,32 @@ public class TracingTests
     }
 
     #region Test Helpers
+
+    /// <summary>
+    /// Runs a handler of the specified type while capturing activities from the shared
+    /// <c>D2.Shared.Handler</c> ActivitySource. Returns the activity matching the handler's
+    /// OperationName, filtering out activities from other handlers running in parallel.
+    /// </summary>
+    private static async Task<Activity?> RunWithActivityCapture<THandler>(
+        IHandlerContext context)
+        where THandler : BaseHandler<THandler, string, string>
+    {
+        var stoppedActivities = new ConcurrentBag<Activity>();
+        using var listener = new ActivityListener
+        {
+            ShouldListenTo = source => source.Name == "D2.Shared.Handler",
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
+                ActivitySamplingResult.AllDataAndRecorded,
+            ActivityStopped = activity => stoppedActivities.Add(activity),
+        };
+        ActivitySource.AddActivityListener(listener);
+
+        var handler = (THandler)Activator.CreateInstance(typeof(THandler), context)!;
+        await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
+
+        return stoppedActivities.FirstOrDefault(a =>
+            a.OperationName == typeof(THandler).Name);
+    }
 
     private static IHandlerContext CreateContext(
         ILogger? logger = null,
@@ -254,9 +222,11 @@ public class TracingTests
         return mockContext.Object;
     }
 
-    private class PlainHandler : BaseHandler<PlainHandler, string, string>
+    // Each handler type has a unique "Tracing_" prefix so that its Activity.OperationName
+    // is distinguishable from handlers created by other parallel test classes.
+    private class Tracing_PlainHandler : BaseHandler<Tracing_PlainHandler, string, string>
     {
-        public PlainHandler(IHandlerContext context)
+        public Tracing_PlainHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -266,9 +236,33 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class ThrowingHandler : BaseHandler<ThrowingHandler, string, string>
+    private class Tracing_TagsHandler : BaseHandler<Tracing_TagsHandler, string, string>
     {
-        public ThrowingHandler(IHandlerContext context)
+        public Tracing_TagsHandler(IHandlerContext context)
+            : base(context)
+        {
+        }
+
+        protected override ValueTask<D2Result<string?>> ExecuteAsync(
+            string input, CancellationToken ct = default)
+            => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
+    }
+
+    private class Tracing_SuccessHandler : BaseHandler<Tracing_SuccessHandler, string, string>
+    {
+        public Tracing_SuccessHandler(IHandlerContext context)
+            : base(context)
+        {
+        }
+
+        protected override ValueTask<D2Result<string?>> ExecuteAsync(
+            string input, CancellationToken ct = default)
+            => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
+    }
+
+    private class Tracing_ThrowingHandler : BaseHandler<Tracing_ThrowingHandler, string, string>
+    {
+        public Tracing_ThrowingHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -278,9 +272,9 @@ public class TracingTests
             => throw new InvalidOperationException("Boom!");
     }
 
-    private class NoTraceIdHandler : BaseHandler<NoTraceIdHandler, string, string>
+    private class Tracing_NoTraceIdHandler : BaseHandler<Tracing_NoTraceIdHandler, string, string>
     {
-        public NoTraceIdHandler(IHandlerContext context)
+        public Tracing_NoTraceIdHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -290,9 +284,9 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input));
     }
 
-    private class ExplicitTraceIdHandler : BaseHandler<ExplicitTraceIdHandler, string, string>
+    private class Tracing_ExplicitTraceIdHandler : BaseHandler<Tracing_ExplicitTraceIdHandler, string, string>
     {
-        public ExplicitTraceIdHandler(IHandlerContext context)
+        public Tracing_ExplicitTraceIdHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -302,9 +296,9 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input, traceId: "explicit-trace"));
     }
 
-    private class FailingHandler : BaseHandler<FailingHandler, string, string>
+    private class Tracing_FailingHandler : BaseHandler<Tracing_FailingHandler, string, string>
     {
-        public FailingHandler(IHandlerContext context)
+        public Tracing_FailingHandler(IHandlerContext context)
             : base(context)
         {
         }
