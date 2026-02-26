@@ -422,28 +422,28 @@ Prioritized list of all tests to add across all modules.
 
 ### Priority 2: Medium (Validation + Coverage)
 
-| Package            | Test Description                                                                     | Module | Status                                                                                               |
-| ------------------ | ------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------- |
-| `comms-app`        | Deliver handler Zod input validation tests                                           | 13, 15 | **FIXED** — +204 lines (commit `daf1343a`, finding #5)                                               |
-| `auth-app`         | `GetSignInEvents` cache for offset > 0 (staleness bug)                               | 17     | **FIXED** — +100 lines (commit `af5367db`, finding #11)                                              |
-| `auth-app`         | `RecordSignInOutcome`, `CheckSignInThrottle`, `GetSignInEvents` Zod validation       | 17     | **FIXED** — Zod schemas added to all 3 handlers (commit `af5367db`, finding #38)                     |
-| `auth-api`         | Invitation route invalid role, error message leakage, max-length                     | 18     | **FIXED** — +181 lines (commit `daf1343a`, finding #3)                                               |
-| `auth-api`         | Emulation consent route Zod validation                                               | 18     | **N/A** — Handler has full Zod validation; route delegates correctly (false positive)                |
-| `auth-api`         | Org-contact route Zod validation                                                     | 18     | **N/A** — Handler has full Zod validation + `contactInputSchema` (false positive)                    |
-| `comms-infra`      | Channel preference repository integration test                                       | 14, 15 | **FIXED** — 5 dedicated integration tests (`channel-preference-repository.test.ts`): create+retrieve, not found, update, isolation, defaults |
-| `comms-infra`      | PingDb handler test                                                                  | 14, 15 | **FIXED** — 5 PingDb tests (`ping-db.test.ts`, commit `e98da040`)                                    |
-| `comms-infra`      | Notification consumer: missing fields, malformed body                                | 14, 15 | **FIXED** — Zod schema validation added (commit `af5367db`, finding #24)                             |
-| `@d2/protos`       | CommsServiceService roundtrip encode/decode tests                                    | 4      | **FIXED** — 8 roundtrip tests for 3 DTOs (`comms-roundtrip.test.ts`, commit `e98da040`)              |
-| `@d2/protos`       | ContactsEvictedEvent contract test                                                   | 4      | **FIXED** — Covered in `event-contract.test.ts` + `contacts-evicted.test.ts`                         |
-| `@d2/utilities`    | `generateUuidV7` tests (format, uniqueness)                                          | 1, 11  | **FIXED** — 16 tests (`generate-uuid-v7.test.ts`, commit `e98da040`)                                 |
-| `@d2/handler`      | `zodAllowedContextKey`, `zodEmail`, `zodPhoneE164` direct tests                      | 11     | **FIXED** — Already covered in `validators.test.ts` (lines 73-100+)                                  |
-| `@d2/result`       | `retryAsync`/`retryResultAsync` with `maxAttempts: 0`                                | 1      | **FIXED** — Guard + test added (commit `af5367db`, finding #15)                                      |
-| `@d2/di`           | Singleton returning `undefined`, circular dependency, `setInstance` unregistered key | 2      | **FIXED** — All 3 scenarios tested (commits `daf1343a` + `af5367db`, findings #6,7,16,17)            |
-| `.NET Redis`       | Direct SetNx, GetTtl, Increment integration tests                                    | 22     | **FIXED** — 13 integration tests (`RedisDistributedCacheTests.cs`, commit `e98da040`)                |
-| `.NET REST`        | ResultExtensions unit tests (status code mapping)                                    | 22     | **N/A** — 2-line wrapper over `ToD2Result` (already tested) + `Results.Json` (framework)             |
-| `.NET BaseHandler` | Tracing span creation, TraceId propagation                                           | 22     | **FIXED** — 7 tracing tests (`TracingTests.cs`, commit `e98da040`, parallelism fix `52258132`)       |
+| Package            | Test Description                                                                     | Module | Status                                                                                                                                                                                                                                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `comms-app`        | Deliver handler Zod input validation tests                                           | 13, 15 | **FIXED** — +204 lines (commit `daf1343a`, finding #5)                                                                                                                                                                                                                                                                               |
+| `auth-app`         | `GetSignInEvents` cache for offset > 0 (staleness bug)                               | 17     | **FIXED** — +100 lines (commit `af5367db`, finding #11)                                                                                                                                                                                                                                                                              |
+| `auth-app`         | `RecordSignInOutcome`, `CheckSignInThrottle`, `GetSignInEvents` Zod validation       | 17     | **FIXED** — Zod schemas added to all 3 handlers (commit `af5367db`, finding #38)                                                                                                                                                                                                                                                     |
+| `auth-api`         | Invitation route invalid role, error message leakage, max-length                     | 18     | **FIXED** — +181 lines (commit `daf1343a`, finding #3)                                                                                                                                                                                                                                                                               |
+| `auth-api`         | Emulation consent route Zod validation                                               | 18     | **N/A** — Handler has full Zod validation; route delegates correctly (false positive)                                                                                                                                                                                                                                                |
+| `auth-api`         | Org-contact route Zod validation                                                     | 18     | **N/A** — Handler has full Zod validation + `contactInputSchema` (false positive)                                                                                                                                                                                                                                                    |
+| `comms-infra`      | Channel preference repository integration test                                       | 14, 15 | **FIXED** — 5 dedicated integration tests (`channel-preference-repository.test.ts`): create+retrieve, not found, update, isolation, defaults                                                                                                                                                                                         |
+| `comms-infra`      | PingDb handler test                                                                  | 14, 15 | **FIXED** — 5 PingDb tests (`ping-db.test.ts`, commit `e98da040`)                                                                                                                                                                                                                                                                    |
+| `comms-infra`      | Notification consumer: missing fields, malformed body                                | 14, 15 | **FIXED** — Zod schema validation added (commit `af5367db`, finding #24)                                                                                                                                                                                                                                                             |
+| `@d2/protos`       | CommsServiceService roundtrip encode/decode tests                                    | 4      | **FIXED** — 8 roundtrip tests for 3 DTOs (`comms-roundtrip.test.ts`, commit `e98da040`)                                                                                                                                                                                                                                              |
+| `@d2/protos`       | ContactsEvictedEvent contract test                                                   | 4      | **FIXED** — Covered in `event-contract.test.ts` + `contacts-evicted.test.ts`                                                                                                                                                                                                                                                         |
+| `@d2/utilities`    | `generateUuidV7` tests (format, uniqueness)                                          | 1, 11  | **FIXED** — 16 tests (`generate-uuid-v7.test.ts`, commit `e98da040`)                                                                                                                                                                                                                                                                 |
+| `@d2/handler`      | `zodAllowedContextKey`, `zodEmail`, `zodPhoneE164` direct tests                      | 11     | **FIXED** — Already covered in `validators.test.ts` (lines 73-100+)                                                                                                                                                                                                                                                                  |
+| `@d2/result`       | `retryAsync`/`retryResultAsync` with `maxAttempts: 0`                                | 1      | **FIXED** — Guard + test added (commit `af5367db`, finding #15)                                                                                                                                                                                                                                                                      |
+| `@d2/di`           | Singleton returning `undefined`, circular dependency, `setInstance` unregistered key | 2      | **FIXED** — All 3 scenarios tested (commits `daf1343a` + `af5367db`, findings #6,7,16,17)                                                                                                                                                                                                                                            |
+| `.NET Redis`       | Direct SetNx, GetTtl, Increment integration tests                                    | 22     | **FIXED** — 13 integration tests (`RedisDistributedCacheTests.cs`, commit `e98da040`)                                                                                                                                                                                                                                                |
+| `.NET REST`        | ResultExtensions unit tests (status code mapping)                                    | 22     | **N/A** — 2-line wrapper over `ToD2Result` (already tested) + `Results.Json` (framework)                                                                                                                                                                                                                                             |
+| `.NET BaseHandler` | Tracing span creation, TraceId propagation                                           | 22     | **FIXED** — 7 tracing tests (`TracingTests.cs`, commit `e98da040`, parallelism fix `52258132`)                                                                                                                                                                                                                                       |
 | E2E                | Negative paths: Geo down during sign-up, RabbitMQ unavailable                        | 25     | **N/A** — Geo-unavailable test added (2 tests, commit `e98da040`); RabbitMQ-unavailable N/A: BetterAuth `databaseHooks.user.create.before` runs synchronously inside DB transaction — no post-commit hook to decouple notification publish from user creation. Testing requires architectural changes (outbox pattern) out of scope. |
-| E2E                | Org contact CRUD flow, channel preference persistence                                | 25     | **OPEN** — Deferred to Stage C (requires Auth org routes + multi-service orchestration)              |
+| E2E                | Org contact CRUD flow, channel preference persistence                                | 25     | **OPEN** — Deferred to Stage C (requires Auth org routes + multi-service orchestration)                                                                                                                                                                                                                                              |
 
 ### Priority 3: Low (Edge Cases + Documentation)
 
@@ -513,23 +513,50 @@ Prioritized list of all tests to add across all modules.
 | 21  | `Interfaces/Repository/ITransaction.cs:12-14` | Summary says "generic repository" but is actually the transaction interface                    | 20     |
 | 22  | `DI.md`                                       | No mention of `setInstance` + `resolve` interaction pattern or sibling scoping                 | 2      |
 
+### Documentation Fix Status (2026-02-26)
+
+| #   | Status    | Fix Summary                                                                                                                             |
+| --- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **FIXED** | `COMMS_INFRA.md` already shows correct 2-parameter `addCommsInfra(services, db)` signature (fixed in prior session)                     |
+| 2   | **FIXED** | `TESTS.md` rewritten: 67 test files, 837 tests, Vitest 3.x (was 45 files, 744 tests, "Vitest 4.x")                                      |
+| 3   | **FIXED** | `RESULT.md` already shows correct options-object API (fixed in prior session)                                                           |
+| 4   | **FIXED** | `UTILITIES.md`: added `escape-html.ts` to Files table                                                                                   |
+| 5   | **FIXED** | `LOGGING.md`: changed `name` → `serviceName` in usage example                                                                           |
+| 6   | **FIXED** | `TESTING.md`: added 3 missing matchers (`toHaveStatusCode`, `toHaveMessages`, `toHaveInputErrors`)                                      |
+| 7   | **FIXED** | `PROTOS.md`: removed stale `DeliverRequest/Response`, added `GetChannelPreference`/`SetChannelPreference`                               |
+| 8   | **FIXED** | `INTERFACES.md`: removed false `CHECK_REDACTION` from idempotency description                                                           |
+| 9   | **FIXED** | `CACHE_MEMORY.md`: changed "periodic sweep" → "lazy eviction, no periodic sweep"                                                        |
+| 10  | **FIXED** | `SERVICE_DEFAULTS.md`: removed stale `Counter`/`Histogram` re-exports, corrected to `Tracer`/`Meter`/`Span`                             |
+| 11  | **FIXED** | `SERVICE_DEFAULTS.md`: replaced `otlpEndpoint` with per-signal endpoints in example                                                     |
+| 12  | **FIXED** | `MESSAGING.md`: changed `publish()` → `send()`, added `subscribeEnriched()` documentation                                               |
+| 13  | **FIXED** | `GEO_CLIENT.md`: added `ContactsEvicted` handler + `createContactsEvictedConsumer()` to Messaging tables                                |
+| 14  | **FIXED** | `COMMS_TESTS.md`: corrected constants.test.ts description (was COMMS_MESSAGING/COMMS_RETRY, actual: DELIVERY_DEFAULTS/CHANNEL_DEFAULTS) |
+| 15  | **FIXED** | `COMMS_DOMAIN.md`: clarified slug is "accepted for any type (convention: forum only)", not enforced at domain level                     |
+| 16  | **FIXED** | `COMMS_APP.md`: corrected "16 infra + 4 app" → "15 infra + 5 app" (PingDb + CheckHealth were missing)                                   |
+| 17  | **FIXED** | `COMMS_API.md`: clarified main.ts description (OTel via --import, not explicit call)                                                    |
+| 18  | **FIXED** | `REST.md`: added HealthEndpoints, ServiceKey files, health endpoint, S2S auth pipeline documentation                                    |
+| 19  | **FIXED** | `APPHOST.md` already has accurate D2Env.Load() and ServiceExtensions.cs descriptions (fixed in prior session)                           |
+| 20  | **FIXED** | `GEO_SERVICE.md` already documents `double` type for coordinates (fixed in finding #49)                                                 |
+| 21  | **FIXED** | `ITransaction.cs`: XML summary changed from "generic repository" → "database transaction"                                               |
+| 22  | **FIXED** | `DI.md`: added `setInstance` + `resolve` interaction pattern with correct usage example                                                 |
+
 ---
 
 ## 7. Stale Artifacts
 
-| #   | Location                                  | Description                                                                                                                                                  | Module | Status         |
-| --- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | -------------- |
-| 1   | `comms/domain/dist/`                      | Contains compiled output for 4 deleted source files: `quiet-hours.js`, `template-wrapper.js`, `recipient-validation.js`, `message-validation.js`             | 12     | **FIXED** — `dist/` deleted + rebuilt clean |
-| 2   | `comms/app/dist/`                         | ~15 stale artifacts from old architecture (removed handlers/files still in dist/)                                                                            | 13     | **FIXED** — `dist/` deleted + rebuilt clean |
-| 3   | `protos/dist/generated/common/common.v1/` | Stale dist artifacts from old directory structure (double `common/` path)                                                                                    | 4      | **FIXED** — Stale `common.v1/` dir removed |
-| 4   | ~~`comms/v1/comms.proto`~~                | ~~`TemplateWrapperDTO`, `GetTemplate`/`UpsertTemplate` RPCs reference dropped table~~ — **FIXED** (removed RPCs + DTO, field numbers reserved)               | 4      | **FIXED**      |
-| 5   | ~~`comms/v1/comms.proto`~~                | ~~`quiet_hours_*` fields, `user_id`, `recipient_user_id`, `template_name` -- dropped but not `reserved`~~ — **FIXED** (field numbers reserved)               | 4      | **FIXED**      |
+| #   | Location                                  | Description                                                                                                                                                  | Module | Status                                                               |
+| --- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | -------------------------------------------------------------------- |
+| 1   | `comms/domain/dist/`                      | Contains compiled output for 4 deleted source files: `quiet-hours.js`, `template-wrapper.js`, `recipient-validation.js`, `message-validation.js`             | 12     | **FIXED** — `dist/` deleted + rebuilt clean                          |
+| 2   | `comms/app/dist/`                         | ~15 stale artifacts from old architecture (removed handlers/files still in dist/)                                                                            | 13     | **FIXED** — `dist/` deleted + rebuilt clean                          |
+| 3   | `protos/dist/generated/common/common.v1/` | Stale dist artifacts from old directory structure (double `common/` path)                                                                                    | 4      | **FIXED** — Stale `common.v1/` dir removed                           |
+| 4   | ~~`comms/v1/comms.proto`~~                | ~~`TemplateWrapperDTO`, `GetTemplate`/`UpsertTemplate` RPCs reference dropped table~~ — **FIXED** (removed RPCs + DTO, field numbers reserved)               | 4      | **FIXED**                                                            |
+| 5   | ~~`comms/v1/comms.proto`~~                | ~~`quiet_hours_*` fields, `user_id`, `recipient_user_id`, `template_name` -- dropped but not `reserved`~~ — **FIXED** (field numbers reserved)               | 4      | **FIXED**                                                            |
 | 6   | `comms/v1/comms.proto`                    | 16 unimplemented Phase 2+3 RPC stubs returning `UNIMPLEMENTED`                                                                                               | 4      | **BY DESIGN** — Intentional forward-looking stubs for Phase 2/3 RPCs |
-| 7   | `D2.sln` (line 84)                        | References `keycloak_14390_rev7.json` Grafana dashboard. Keycloak removed from project. JSON file does not exist on disk                                     | 25     | **FIXED** — Reference removed from D2.sln |
-| 8   | `D2.sln`                                  | References `D2.sln.DotSettings.user` (user-specific ReSharper settings)                                                                                      | 25     | **FIXED** — Reference removed from D2.sln |
-| 9   | `comms/infra/src/service-keys.ts`         | Re-export-only file. Not used by any infra source file or exported from barrel. Dead code                                                                    | 14     | **FALSE POSITIVE** — Active DI re-export pattern for convenience |
-| 10  | `auth/infra + comms/infra` `factories.ts` | Factory functions exported but unused by DI registration. Only used by test integration files. Maintenance burden (new handlers must be added in two places) | 14, 18 | **FALSE POSITIVE** — Actively used by integration tests |
-| 11  | `@d2/service-defaults` `package.json`     | Unused dependency: `@opentelemetry/sdk-trace-node` (v2.5.0) listed but never imported                                                                        | 7      | **FIXED** — Dependency removed, lockfile updated |
+| 7   | `D2.sln` (line 84)                        | References `keycloak_14390_rev7.json` Grafana dashboard. Keycloak removed from project. JSON file does not exist on disk                                     | 25     | **FIXED** — Reference removed from D2.sln                            |
+| 8   | `D2.sln`                                  | References `D2.sln.DotSettings.user` (user-specific ReSharper settings)                                                                                      | 25     | **FIXED** — Reference removed from D2.sln                            |
+| 9   | `comms/infra/src/service-keys.ts`         | Re-export-only file. Not used by any infra source file or exported from barrel. Dead code                                                                    | 14     | **FALSE POSITIVE** — Active DI re-export pattern for convenience     |
+| 10  | `auth/infra + comms/infra` `factories.ts` | Factory functions exported but unused by DI registration. Only used by test integration files. Maintenance burden (new handlers must be added in two places) | 14, 18 | **FALSE POSITIVE** — Actively used by integration tests              |
+| 11  | `@d2/service-defaults` `package.json`     | Unused dependency: `@opentelemetry/sdk-trace-node` (v2.5.0) listed but never imported                                                                        | 7      | **FIXED** — Dependency removed, lockfile updated                     |
 
 ---
 
@@ -560,3 +587,76 @@ The remaining 5 test gaps (#62-64, #66-67) are not deferred — they are tracked
 | 64  | CheckHealth zero tests (Auth + Comms)        | `comms-app` + `auth-app` — Priority 1            |
 | 66  | .NET Geo.Client ContactsEvicted zero tests   | Geo.Client (.NET) — Priority 1                   |
 | 67  | .NET ServiceDefaults OTel wiring zero tests  | `@d2/service-defaults` — Priority 1              |
+
+---
+
+## 9. Secondary Sweep Verification (2026-02-26)
+
+### Build Verification
+
+| Step | Command                                                               | Result                       |
+| ---- | --------------------------------------------------------------------- | ---------------------------- |
+| 1a   | `pnpm build`                                                          | All packages built, 0 errors |
+| 1b   | `dotnet build D2.sln -c Release`                                      | 0 errors, 0 warnings         |
+| 1c   | `pnpm vitest run --project shared-tests`                              | 844 passed (67 files)        |
+| 1d   | `pnpm vitest run --project auth-tests`                                | 853 passed (63 files)        |
+| 1e   | `pnpm vitest run --project comms-tests`                               | 552 passed (43 files)        |
+| 1f   | `dotnet test backends/dotnet/shared/Tests/Tests.csproj`               | 677 passed                   |
+| 1g   | `dotnet test backends/dotnet/services/Geo/Geo.Tests/Geo.Tests.csproj` | 759 passed                   |
+
+### Lint + Format
+
+| Step | Command                          | Result               |
+| ---- | -------------------------------- | -------------------- |
+| 2a   | `pnpm eslint . --max-warnings 0` | 0 warnings, 0 errors |
+| 2b   | `pnpm prettier --check .`        | All files formatted  |
+
+### Code Quality
+
+| Check                         | Result                                                    |
+| ----------------------------- | --------------------------------------------------------- |
+| Dependency version audit      | FIXED — `@d2/protos` had 4 `^` versions, pinned to exact  |
+| No secrets in committed files | Clean                                                     |
+| No .env files committed       | Clean (only `.env.example`)                               |
+| Stale dist/ artifacts         | Clean — comms/domain and comms/app dist match source 1:1  |
+| Unused `sdk-trace-node`       | Already removed in prior sweep                            |
+| Input validation coverage     | 5 internal handlers missing `validateInput()` (see below) |
+
+### Input Validation Gaps (Follow-Up)
+
+5 handlers lack explicit Zod `validateInput()` calls. All are internal-only (called from BetterAuth hooks, middleware, or gRPC service layer — not directly user-facing). Defense-in-depth, not a security gap.
+
+**Auth (3 handlers):**
+
+| Handler               | File                                                                     | Reason internal                                    |
+| --------------------- | ------------------------------------------------------------------------ | -------------------------------------------------- |
+| `RecordSignInOutcome` | `auth/app/src/implementations/cqrs/handlers/c/record-sign-in-outcome.ts` | Called from BetterAuth `databaseHooks` only        |
+| `CheckSignInThrottle` | `auth/app/src/implementations/cqrs/handlers/q/check-sign-in-throttle.ts` | Called from `beforeHook` rate limit check only     |
+| `GetSignInEvents`     | `auth/app/src/implementations/cqrs/handlers/q/get-sign-in-events.ts`     | Called from auth API route (manual limit clamping) |
+
+**Comms (2 handlers):**
+
+| Handler                | File                                                                      | Reason internal                            |
+| ---------------------- | ------------------------------------------------------------------------- | ------------------------------------------ |
+| `ResolveRecipient`     | `comms/app/src/implementations/cqrs/handlers/x/resolve-recipient.ts`      | Called from Deliver pipeline only          |
+| `GetChannelPreference` | `comms/app/src/implementations/cqrs/handlers/q/get-channel-preference.ts` | Called from gRPC service (proto-validated) |
+
+`CheckHealth` handlers (Auth + Comms) excluded — empty input `{}`, nothing to validate.
+
+### Git Hygiene
+
+| Check                | Result                                                |
+| -------------------- | ----------------------------------------------------- |
+| Conventional Commits | All 39 commits follow format                          |
+| No WIP/fixup commits | Clean                                                 |
+| Diff stats           | 669 files changed, 64,735 insertions, 3,238 deletions |
+
+### Documentation Gaps Fixed
+
+| Gap                                    | Action                                                             |
+| -------------------------------------- | ------------------------------------------------------------------ |
+| Missing `service-keys.ts` in 4 docs    | Added to LOGGING.md, CACHE_MEMORY.md, CACHE_REDIS.md, MESSAGING.md |
+| Missing `create-service-scope.ts`      | Added to HANDLER.md                                                |
+| Missing `cache-keys.ts` in 2 docs      | Added to RATELIMIT.md, IDEMPOTENCY.md                              |
+| Missing `redis-error-result.ts`        | Added to CACHE_REDIS.md                                            |
+| Missing PingMessageBus in MESSAGING.md | Added to Files table                                               |

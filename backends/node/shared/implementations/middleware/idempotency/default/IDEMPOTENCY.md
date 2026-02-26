@@ -9,6 +9,7 @@ Idempotency-Key header middleware using Redis-backed SET NX + cached response re
 | [handlers/check.ts](src/handlers/check.ts)           | `Check` handler — SET NX sentinel, detect in-flight/cached state. Fail-open.                               |
 | [check-idempotency.ts](src/check-idempotency.ts)     | Framework-agnostic orchestrator returning `IdempotencyResult` with `storeResponse`/`removeLock` callbacks. |
 | [idempotency-options.ts](src/idempotency-options.ts) | `IdempotencyOptions` + `DEFAULT_IDEMPOTENCY_OPTIONS` (24h cache, 30s lock, 1MB max body).                  |
+| [cache-keys.ts](src/cache-keys.ts)                   | Idempotency cache key generation.                                                                          |
 | [index.ts](src/index.ts)                             | Barrel re-export of Check, checkIdempotency, IdempotencyOptions.                                           |
 
 ## Flow

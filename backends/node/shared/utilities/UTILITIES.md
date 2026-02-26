@@ -9,6 +9,7 @@ Shared utility functions and constants. Mirrors `D2.Shared.Utilities` in .NET. L
 | [array-extensions.ts](src/array-extensions.ts)   | Array helper functions (`arrayTruthy`, `arrayFalsey`).                                       |
 | [uuid-extensions.ts](src/uuid-extensions.ts)     | UUID helper functions (`uuidTruthy`, `uuidFalsey`, `EMPTY_UUID`).                            |
 | [string-extensions.ts](src/string-extensions.ts) | String cleaning/validation (`cleanStr`, email validation, phone cleaning, hashing).          |
+| [escape-html.ts](src/escape-html.ts)             | `escapeHtml()` — XSS-safe HTML entity escaping for untrusted strings.                        |
 | [constants.ts](src/constants.ts)                 | Cache key prefixes and file name constants.                                                  |
 | [retry.ts](src/retry.ts)                         | `retryAsync()` — general-purpose retry with exponential backoff + `isTransientError` helper. |
 | [index.ts](src/index.ts)                         | Barrel re-export of all utilities.                                                           |

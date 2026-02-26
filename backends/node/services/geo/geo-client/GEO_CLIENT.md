@@ -93,15 +93,17 @@ Handler implementations organized in TLC hierarchy. All extend `BaseHandler` and
 
 > ### Handlers
 >
-> | File                                                | Class     | Description                                                                      |
-> | --------------------------------------------------- | --------- | -------------------------------------------------------------------------------- |
-> | [updated.ts](src/messaging/handlers/sub/updated.ts) | `Updated` | Processes `GeoRefDataUpdatedEvent` events — requests fresh data, updates caches. |
+> | File                                                                  | Class             | Description                                                                      |
+> | --------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
+> | [updated.ts](src/messaging/handlers/sub/updated.ts)                   | `Updated`         | Processes `GeoRefDataUpdatedEvent` events — requests fresh data, updates caches. |
+> | [contacts-evicted.ts](src/messaging/handlers/sub/contacts-evicted.ts) | `ContactsEvicted` | Evicts contacts from local cache by ID and/or ext-key. Failure-tolerant.         |
 
 > ### Consumers
 >
-> | File                                                               | Export                    | Description                                         |
-> | ------------------------------------------------------------------ | ------------------------- | --------------------------------------------------- |
-> | [updated-consumer.ts](src/messaging/consumers/updated-consumer.ts) | `createUpdatedConsumer()` | Factory creating a `@d2/messaging` consumer bridge. |
+> | File                                                                                 | Export                            | Description                                                  |
+> | ------------------------------------------------------------------------------------ | --------------------------------- | ------------------------------------------------------------ |
+> | [updated-consumer.ts](src/messaging/consumers/updated-consumer.ts)                   | `createUpdatedConsumer()`         | Factory creating a `@d2/messaging` consumer bridge.          |
+> | [contacts-evicted-consumer.ts](src/messaging/consumers/contacts-evicted-consumer.ts) | `createContactsEvictedConsumer()` | Factory creating consumer for contact cache eviction events. |
 
 ---
 

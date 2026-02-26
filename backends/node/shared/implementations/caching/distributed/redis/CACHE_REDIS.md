@@ -4,17 +4,20 @@ Redis distributed cache implementation via ioredis. Mirrors `DistributedCache.Re
 
 ## Files
 
-| File Name                                              | Description                                                                    |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| [serialization.ts](src/serialization.ts)               | `ICacheSerializer` interface + `JsonCacheSerializer` default implementation.   |
-| [handlers/r/get.ts](src/handlers/r/get.ts)             | `Get` handler — retrieve value with deserialization.                           |
-| [handlers/r/exists.ts](src/handlers/r/exists.ts)       | `Exists` handler — check key existence.                                        |
-| [handlers/r/get-ttl.ts](src/handlers/r/get-ttl.ts)     | `GetTtl` handler — get remaining TTL in milliseconds.                          |
-| [handlers/u/set.ts](src/handlers/u/set.ts)             | `Set` handler — store value with optional TTL and serialization.               |
-| [handlers/u/increment.ts](src/handlers/u/increment.ts) | `Increment` handler — atomic counter increment with optional TTL.              |
-| [handlers/c/set-nx.ts](src/handlers/c/set-nx.ts)       | `SetNx` handler — SET if Not eXists with optional TTL (for idempotency locks). |
-| [handlers/d/remove.ts](src/handlers/d/remove.ts)       | `Remove` handler — delete key.                                                 |
-| [index.ts](src/index.ts)                               | Barrel re-export of all handlers + `ICacheSerializer` + `JsonCacheSerializer`. |
+| File Name                                              | Description                                                                                |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| [serialization.ts](src/serialization.ts)               | `ICacheSerializer` interface + `JsonCacheSerializer` default implementation.               |
+| [handlers/r/get.ts](src/handlers/r/get.ts)             | `Get` handler — retrieve value with deserialization.                                       |
+| [handlers/r/exists.ts](src/handlers/r/exists.ts)       | `Exists` handler — check key existence.                                                    |
+| [handlers/r/get-ttl.ts](src/handlers/r/get-ttl.ts)     | `GetTtl` handler — get remaining TTL in milliseconds.                                      |
+| [handlers/u/set.ts](src/handlers/u/set.ts)             | `Set` handler — store value with optional TTL and serialization.                           |
+| [handlers/u/increment.ts](src/handlers/u/increment.ts) | `Increment` handler — atomic counter increment with optional TTL.                          |
+| [handlers/c/set-nx.ts](src/handlers/c/set-nx.ts)       | `SetNx` handler — SET if Not eXists with optional TTL (for idempotency locks).             |
+| [handlers/r/ping.ts](src/handlers/r/ping.ts)           | `PingCache` handler — verify Redis connectivity and measure latency.                       |
+| [handlers/d/remove.ts](src/handlers/d/remove.ts)       | `Remove` handler — delete key.                                                             |
+| [service-keys.ts](src/service-keys.ts)                 | ServiceKeys for Redis client and cache handler DI registration (IRedisKey, ICachePingKey). |
+| [redis-error-result.ts](src/redis-error-result.ts)     | Shared Redis error handling utility used by all handlers.                                  |
+| [index.ts](src/index.ts)                               | Barrel re-export of all handlers + `ICacheSerializer` + `JsonCacheSerializer`.             |
 
 ## Serialization
 

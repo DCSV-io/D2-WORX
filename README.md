@@ -78,7 +78,7 @@ Summary:
   - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
-- Comms service Phase 1 (delivery engine) — 510 comms tests passing:
+- Comms service Phase 1 (delivery engine) — 552 comms tests passing:
   - Email delivery via Resend, SMS via Twilio
   - `@d2/comms-client` — thin RabbitMQ publishing client (universal notification shape)
   - RabbitMQ consumer for notification requests, gRPC API layer + Aspire wiring
@@ -258,8 +258,8 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                            | Platform | Status     | Description                                                                            |
 > | -------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching      |
-> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — DDD layers done (825 tests), client libs next |
-> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1 | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (510 tests)                   |
+> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — DDD layers done (853 tests), client libs next |
+> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1 | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (552 tests)                   |
 >
 > **Client Libraries:**
 >

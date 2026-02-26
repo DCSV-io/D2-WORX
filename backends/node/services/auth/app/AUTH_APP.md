@@ -84,7 +84,7 @@ src/
 | `DeleteOrgContact`        | id, orgId                      | `{}`                       | IDOR check, best-effort Geo delete, then junction delete             |
 | `CreateUserContact`       | userId, email, name            | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast       |
 
-### Query Handlers (4)
+### Query Handlers (5)
 
 | Handler               | Input                 | Output               | Description                                                        |
 | --------------------- | --------------------- | -------------------- | ------------------------------------------------------------------ |
@@ -92,6 +92,7 @@ src/
 | `GetActiveConsents`   | userId, limit, offset | `{ consents }`       | Active (non-revoked, non-expired) emulation consents               |
 | `GetOrgContacts`      | orgId, limit, offset  | `{ contacts[] }`     | Junction records hydrated with Geo contact data via ext-key lookup |
 | `CheckSignInThrottle` | identifierHash, etc.  | `{ blocked, retry?}` | Optimized Redis round-trips: 0 on local cache hit, 1 otherwise     |
+| `CheckHealth`         | _(none)_              | `{ status, ... }`    | Aggregates DB, cache, and message bus pings into health report     |
 
 ## Repository Handler Interfaces
 
@@ -107,10 +108,10 @@ Plus `ISignInThrottleStore` (non-handler interface with 6 methods for Redis key 
 
 ## Service Keys
 
-27 `ServiceKey<T>` tokens organized in two groups:
+28 `ServiceKey<T>` tokens organized in two groups:
 
-- **15 infra-layer keys** — for repository handlers and throttle store (interfaces defined here, implemented in `@d2/auth-infra`)
-- **12 app-layer keys** — for CQRS handlers (defined and implemented here)
+- **15 infra-layer keys** — for repository handlers, PingDb, and throttle store (interfaces defined here, implemented in `@d2/auth-infra`)
+- **13 app-layer keys** — for CQRS handlers including CheckHealth (defined and implemented here)
 
 ## DI Registration
 
@@ -118,7 +119,7 @@ Plus `ISignInThrottleStore` (non-handler interface with 6 methods for Redis key 
 addAuthApp(services: ServiceCollection, options: AddAuthAppOptions): void
 ```
 
-Registers all 12 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root.
+Registers all 13 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root.
 
 ## Factory Functions
 

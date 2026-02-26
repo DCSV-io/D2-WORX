@@ -695,7 +695,7 @@ backends/node/services/comms/
 - [x] API: `main.ts` entrypoint (gRPC server + RabbitMQ consumer)
 - [x] Aspire: Auth + Comms services wired via `AddJavaScriptApp` + `.WithPnpm()`
 - [x] CI: GitHub Actions jobs for comms unit + integration tests
-- [x] Tests: 481 unit + integration tests passing (38 test files)
+- [x] Tests: 552 unit + integration tests passing (43 test files)
 - [x] RecipientResolver: contactId via `GetContactsByIds` (contacts-only resolution)
 - [x] Client: `@d2/comms-client` -- `Notify` handler publishes to `comms.notifications` fanout exchange via RabbitMQ
 - [x] Markdown rendering: `marked` (17.0.3) + `isomorphic-dompurify` (2.36.0) for XSS-safe HTML email

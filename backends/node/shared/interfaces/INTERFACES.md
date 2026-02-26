@@ -48,6 +48,7 @@ src/
 | `handlers/r/get-ttl.ts`   | `IGetTtlHandler`    | Get remaining TTL of a key in milliseconds.         |
 | `handlers/u/set.ts`       | `ISetHandler`       | Store typed value with optional TTL.                |
 | `handlers/u/increment.ts` | `IIncrementHandler` | Atomic counter increment with optional TTL.         |
+| `handlers/r/ping.ts`      | `IPingHandler`      | Verify distributed cache connectivity and latency.  |
 | `handlers/d/remove.ts`    | `IRemoveHandler`    | Delete key from distributed cache.                  |
 
 ## Middleware — Request Enrichment
@@ -65,11 +66,11 @@ src/
 
 ## Middleware — Idempotency
 
-| File                   | Export             | Description                                                  |
-| ---------------------- | ------------------ | ------------------------------------------------------------ |
-| `idempotency-state.ts` | `IdempotencyState` | String union: `"acquired"`, `"in_flight"`, `"cached"`.       |
-| `cached-response.ts`   | `CachedResponse`   | Cached HTTP response shape (statusCode, headers, body).      |
-| `handlers/check.ts`    | `ICheckHandler`    | Handler interface for idempotency check + `CHECK_REDACTION`. |
+| File                   | Export             | Description                                             |
+| ---------------------- | ------------------ | ------------------------------------------------------- |
+| `idempotency-state.ts` | `IdempotencyState` | String union: `"acquired"`, `"in_flight"`, `"cached"`.  |
+| `cached-response.ts`   | `CachedResponse`   | Cached HTTP response shape (statusCode, headers, body). |
+| `handlers/check.ts`    | `ICheckHandler`    | Handler interface for idempotency check.                |
 
 ---
 

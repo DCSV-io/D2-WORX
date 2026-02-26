@@ -10,6 +10,7 @@ Logging abstraction with Pino implementation. Auto-instrumented by OpenTelemetry
 | [logger-options.ts](src/logger-options.ts) | `LoggerOptions` type for logger configuration (level, name, pretty printing). |
 | [create-logger.ts](src/create-logger.ts)   | Factory function `createLogger()` to create configured logger instances.      |
 | [pino-logger.ts](src/pino-logger.ts)       | `PinoLogger` class implementing `ILogger` via Pino.                           |
+| [service-keys.ts](src/service-keys.ts)     | ServiceKey for ILogger DI registration (ILoggerKey).                          |
 | [index.ts](src/index.ts)                   | Barrel re-export of `ILogger`, `LogLevel`, `createLogger`, `PinoLogger`.      |
 
 ## Usage
@@ -17,7 +18,7 @@ Logging abstraction with Pino implementation. Auto-instrumented by OpenTelemetry
 ```typescript
 import { createLogger } from "@d2/logging";
 
-const logger = createLogger({ name: "my-service", level: "info" });
+const logger = createLogger({ serviceName: "my-service", level: "info" });
 logger.info("Server started");
 logger.child({ requestId: "abc" }).debug("Processing request");
 ```

@@ -27,7 +27,7 @@ The app layer sits between the domain (`@d2/comms-domain`) and infrastructure (`
 src/
   index.ts                              Barrel exports + createDeliveryHandlers factory
   registration.ts                       addCommsApp(services) DI registration
-  service-keys.ts                       16 infra keys + 4 app keys (ServiceKey<T>)
+  service-keys.ts                       15 infra keys + 5 app keys (ServiceKey<T>)
   interfaces/
     providers/
       index.ts                          Re-exports email + sms provider interfaces
@@ -75,6 +75,7 @@ src/
 | RecipientResolver    | Complex  | `x/` | Resolves contactId to email/phone via `GetContactsByIds` (geo-client)                                                                           |
 | SetChannelPreference | Command  | `c/` | Upsert per-contact channel preferences (email/sms enabled flags)                                                                                |
 | GetChannelPreference | Query    | `q/` | Read channel preferences with optional in-memory cache (15min TTL)                                                                              |
+| CheckHealth          | Query    | `q/` | Aggregates DB, cache, and message bus pings into health report                                                                                  |
 
 ### Deliver Handler Flow
 
@@ -120,9 +121,9 @@ Both extend `IHandler<TInput, TOutput>` -- they ARE handlers, with full OTel spa
 
 20 total ServiceKeys split across two categories:
 
-**Infra keys** (interfaces defined in app, implemented in infra): 12 repository handler keys + 2 provider keys
+**Infra keys** (interfaces defined in app, implemented in infra): 12 repository handler keys + 1 PingDb key + 2 provider keys = 15
 
-**App keys** (defined and implemented in app): `IDeliverKey`, `IRecipientResolverKey`, `ISetChannelPreferenceKey`, `IGetChannelPreferenceKey`
+**App keys** (defined and implemented in app): `IDeliverKey`, `IRecipientResolverKey`, `ISetChannelPreferenceKey`, `IGetChannelPreferenceKey`, `ICheckHealthKey`
 
 ## Registration
 

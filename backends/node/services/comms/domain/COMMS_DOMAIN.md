@@ -90,13 +90,13 @@ All "enums" are `as const` arrays with derived union types and type guard functi
 
 ### Conversational Messaging
 
-| Entity            | Factory                   | Update / Transition                              | Key Rules                                                        |
-| ----------------- | ------------------------- | ------------------------------------------------ | ---------------------------------------------------------------- |
-| Thread            | `createThread`            | `updateThread`, `transitionThreadState`          | Starts as "active", slug only for forum threads, state machine   |
-| ThreadParticipant | `createThreadParticipant` | `updateThreadParticipant`, `markParticipantLeft` | userId OR contactId required, role hierarchy enforced            |
-| MessageReceipt    | `createMessageReceipt`    | --                                               | Immutable, UNIQUE(messageId, userId) at DB level                 |
-| MessageAttachment | `createMessageAttachment` | --                                               | Immutable, max 50 MB, file metadata only (storage via media svc) |
-| MessageReaction   | `createMessageReaction`   | --                                               | Immutable, max 64 chars                                          |
+| Entity            | Factory                   | Update / Transition                              | Key Rules                                                                              |
+| ----------------- | ------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Thread            | `createThread`            | `updateThread`, `transitionThreadState`          | Starts as "active", slug accepted for any type (convention: forum only), state machine |
+| ThreadParticipant | `createThreadParticipant` | `updateThreadParticipant`, `markParticipantLeft` | userId OR contactId required, role hierarchy enforced                                  |
+| MessageReceipt    | `createMessageReceipt`    | --                                               | Immutable, UNIQUE(messageId, userId) at DB level                                       |
+| MessageAttachment | `createMessageAttachment` | --                                               | Immutable, max 50 MB, file metadata only (storage via media svc)                       |
+| MessageReaction   | `createMessageReaction`   | --                                               | Immutable, max 64 chars                                                                |
 
 ## Business Rules
 

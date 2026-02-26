@@ -29,7 +29,8 @@ Run `pnpm --filter @d2/protos generate` to regenerate.
 | `CountryDTO`, `LocationDTO`, etc.         | `geo/v1/`        | Geo domain DTOs                         |
 | `GeoRefDataUpdatedEvent`                  | `events/v1/`     | Geo reference data refresh event        |
 | `CommsServiceClient`                      | `comms/v1/`      | Comms service gRPC client               |
-| `DeliverRequest/Response`                 | `comms/v1/`      | Delivery orchestration messages         |
+| `GetChannelPreferenceRequest/Response`    | `comms/v1/`      | Channel preference query                |
+| `SetChannelPreferenceRequest/Response`    | `comms/v1/`      | Channel preference update               |
 | `Timestamp`                               | Well-known types | Google protobuf timestamp               |
 
 ## Dependencies

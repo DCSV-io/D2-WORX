@@ -64,6 +64,24 @@ scope.dispose();
 
 `ServiceScope` supports TC39 explicit resource management (`Symbol.dispose`).
 
+### setInstance + resolve Interaction
+
+`scope.setInstance(key, value)` places the value directly in the scope's cache. However, `scope.resolve(key)` checks the root descriptor registry first and throws if the key was never registered. The scope cache is only checked **after** finding a matching descriptor.
+
+**Correct pattern:** Always register a scoped factory for keys that will be set via `setInstance()`. The factory acts as a fallback and satisfies the descriptor lookup. Then `setInstance()` overrides it in the scope cache before any `resolve()` call:
+
+```typescript
+// Registration (once)
+services.addScoped(IRequestContextKey, () => {
+  throw new Error("Must setInstance");
+});
+
+// Per-request scope
+const scope = provider.createScope();
+scope.setInstance(IRequestContextKey, actualContext); // overrides the factory
+const ctx = scope.resolve(IRequestContextKey); // returns actualContext
+```
+
 ---
 
 ## Registration Pattern

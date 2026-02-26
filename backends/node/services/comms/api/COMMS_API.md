@@ -31,7 +31,7 @@ Consumed directly by Aspire orchestration (`AddJavaScriptApp`) and integration t
 ```
 src/
   index.ts                              Public API re-exports (createCommsService, mappers)
-  main.ts                               Entry point: OTel setup, env config, createCommsService
+  main.ts                               Entry point: env config, createCommsService (OTel via --import)
   composition-root.ts                   createCommsService(config) -- full app wiring
   services/
     comms-grpc-service.ts               createCommsGrpcService(provider) -- CommsServiceServer impl

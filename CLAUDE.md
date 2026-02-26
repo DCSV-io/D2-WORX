@@ -541,7 +541,7 @@ When adding routes or handlers, follow the full checklist in `backends/node/serv
 
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 825+ tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms delivery engine simplified with `@d2/comms-client` — universal message shape, contactId-only resolution, no event-specific sub-handlers — 481+ tests. E2E cross-service tests passing (5 tests).
+Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 853 tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms delivery engine simplified with `@d2/comms-client` — universal message shape, contactId-only resolution, no event-specific sub-handlers — 552 tests. E2E cross-service tests passing (5 tests).
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 

@@ -73,12 +73,12 @@ src/
 | Layer       | Files  | Description                                       |
 | ----------- | ------ | ------------------------------------------------- |
 | Domain      | 17     | Enums, entities, rules, exceptions                |
-| App         | 12     | CQRS handlers (8 command + 4 query)               |
+| App         | 13     | CQRS handlers (8 command + 5 query)               |
 | Infra       | 10     | Mappers, hooks, throttle store, secondary storage |
 | API         | 11     | Middleware (7) + routes (4)                       |
 | Integration | 9      | Testcontainers (PG + Redis) + BetterAuth behavior |
 | Helpers     | 2      | Container setup helpers (not test files)          |
-| **Total**   | **61** | **825 tests**                                     |
+| **Total**   | **63** | **853 tests**                                     |
 
 ## Test Categories
 

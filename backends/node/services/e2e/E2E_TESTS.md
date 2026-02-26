@@ -65,6 +65,13 @@ Run: `pnpm vitest run --project e2e-tests`
 | Should deliver invitation email to a non-existing user (contactId path)  | Creates invitation contact via Geo, resolves via `GetContactsByIds`                 |
 | Should deliver invitation email to an existing user (ext-key resolution) | Existing user already has Geo contact, resolves via `GetContactsByExtKeys` (userId) |
 
+### `geo-unavailable.test.ts` (2 tests)
+
+| Test                                                                   | Validates                                                                    |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Should fail sign-up when Geo service is unavailable                    | Geo down → CreateUserContact fails → BetterAuth hook aborts sign-up entirely |
+| Should succeed sign-up when Geo service recovers after initial failure | Recovery scenario: Geo comes back → sign-up succeeds on retry                |
+
 ## Helpers
 
 ```

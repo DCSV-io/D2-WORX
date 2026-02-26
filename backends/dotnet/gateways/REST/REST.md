@@ -14,6 +14,11 @@ HTTP/REST gateway providing public API access to D² microservices via gRPC back
 | [JwtAuthOptions.cs](Auth/JwtAuthOptions.cs)                     | Configuration: BaseUrl, Issuer, Audience, ClockSkew for JWT validation.                                        |
 | [JwtFingerprintMiddleware.cs](Auth/JwtFingerprintMiddleware.cs) | Middleware validating JWT `fp` claim against computed SHA-256(UA\|Accept). Fail-open, backwards-compatible.    |
 | [JwtFingerprintValidator.cs](Auth/JwtFingerprintValidator.cs)   | `ComputeFingerprint()` — SHA-256(User-Agent + "\|" + Accept) for stolen token detection.                       |
+| [ServiceKeyMiddleware.cs](Auth/ServiceKeyMiddleware.cs)         | Middleware validating `X-Api-Key` header. Sets `IRequestInfo.IsTrustedService` flag. Invalid key → 401.        |
+| [ServiceKeyEndpointFilter.cs](Auth/ServiceKeyEndpointFilter.cs) | Endpoint filter checking `IsTrustedService` flag (used by `RequireServiceKey()` extension).                    |
+| [ServiceKeyExtensions.cs](Auth/ServiceKeyExtensions.cs)         | `AddServiceKeyAuth()`, `UseServiceKeyDetection()`, `RequireServiceKey()` extension methods.                    |
+| [ServiceKeyOptions.cs](Auth/ServiceKeyOptions.cs)               | Configuration: `ValidKeys` list of trusted service API keys.                                                   |
+| [HealthEndpoints.cs](Endpoints/HealthEndpoints.cs)              | Aggregated health check endpoint fanning out to Geo, Auth, Comms, and gateway cache.                           |
 
 ## API Versioning
 
@@ -24,6 +29,14 @@ All endpoints use URL path versioning (`/api/v1/...`). This approach was chosen 
 - Simple routing without header inspection
 
 ## Endpoints
+
+### Health (`/api/health`)
+
+| Method | Path          | Description                                                                |
+| ------ | ------------- | -------------------------------------------------------------------------- |
+| GET    | `/api/health` | Aggregated health check — fans out to Geo, Auth, Comms, and gateway cache. |
+
+Returns `200` (all healthy) or `503` (degraded) with per-service status, latency, and component breakdown. Geo/Comms via gRPC `CheckHealth`, Auth via HTTP `/health-rich`, gateway cache via distributed cache ping handler.
 
 ### Geo (`/api/v1/geo`)
 
@@ -124,3 +137,17 @@ Trace propagation flows automatically through the gRPC client thanks to:
 - `OpenTelemetry.Instrumentation.GrpcNetClient` (outgoing gRPC)
 
 Both are registered via `AddServiceDefaults()`.
+
+## Service-to-Service Authentication
+
+Trusted backend callers (e.g., SvelteKit server) authenticate via `X-Api-Key` header:
+
+1. `ServiceKeyMiddleware` validates the key early in the pipeline (after request enrichment, before rate limiting)
+2. Valid key → sets `IRequestInfo.IsTrustedService = true` (trusted services bypass rate limiting and fingerprint validation)
+3. Invalid key → 401 immediately (fail fast)
+4. No key → browser request, continues normally
+5. `RequireServiceKey()` endpoint filter checks the trust flag on service-only endpoints
+
+**Pipeline order:** RequestEnrichment → ServiceKeyDetection → RateLimiting → JwtAuth → JwtFingerprint → Endpoints
+
+**Registration:** `AddServiceKeyAuth(configuration)` + `UseServiceKeyDetection()` in `Program.cs`.

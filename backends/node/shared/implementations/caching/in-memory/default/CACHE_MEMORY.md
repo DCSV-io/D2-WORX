@@ -4,21 +4,22 @@ In-memory cache implementation with Map-backed store and LRU eviction. Mirrors `
 
 ## Files
 
-| File Name                                            | Description                                                           |
-| ---------------------------------------------------- | --------------------------------------------------------------------- |
-| [memory-cache-store.ts](src/memory-cache-store.ts)   | `MemoryCacheStore` class — Map-backed with lazy TTL eviction and LRU. |
-| [handlers/r/get.ts](src/handlers/r/get.ts)           | `Get` handler — retrieve single entry by key.                         |
-| [handlers/r/get-many.ts](src/handlers/r/get-many.ts) | `GetMany` handler — batch retrieve entries by multiple keys.          |
-| [handlers/u/set.ts](src/handlers/u/set.ts)           | `Set` handler — store single entry with optional TTL.                 |
-| [handlers/u/set-many.ts](src/handlers/u/set-many.ts) | `SetMany` handler — batch store entries with optional TTL.            |
-| [handlers/d/remove.ts](src/handlers/d/remove.ts)     | `Remove` handler — delete entry by key.                               |
-| [index.ts](src/index.ts)                             | Barrel re-export of `MemoryCacheStore` + all handlers.                |
+| File Name                                            | Description                                                                  |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [memory-cache-store.ts](src/memory-cache-store.ts)   | `MemoryCacheStore` class — Map-backed with lazy TTL eviction and LRU.        |
+| [handlers/r/get.ts](src/handlers/r/get.ts)           | `Get` handler — retrieve single entry by key.                                |
+| [handlers/r/get-many.ts](src/handlers/r/get-many.ts) | `GetMany` handler — batch retrieve entries by multiple keys.                 |
+| [handlers/u/set.ts](src/handlers/u/set.ts)           | `Set` handler — store single entry with optional TTL.                        |
+| [handlers/u/set-many.ts](src/handlers/u/set-many.ts) | `SetMany` handler — batch store entries with optional TTL.                   |
+| [handlers/d/remove.ts](src/handlers/d/remove.ts)     | `Remove` handler — delete entry by key.                                      |
+| [service-keys.ts](src/service-keys.ts)               | ServiceKey factories for MemoryCacheStore and cache handler DI registration. |
+| [index.ts](src/index.ts)                             | Barrel re-export of `MemoryCacheStore` + all handlers.                       |
 
 ## MemoryCacheStore
 
 Standalone Map-backed cache with:
 
-- **Lazy TTL eviction** — expired entries cleaned up on access and periodic sweep
+- **Lazy TTL eviction** — expired entries cleaned up on access (lazy eviction, no periodic sweep)
 - **Always-on LRU** — delete + re-insert on get promotes to MRU; oldest evicted on set when at capacity
 - **Default max entries:** 10,000 (configurable via `maxEntries` option)
 - **No external dependencies** — pure TypeScript, no `IMemoryCache` or framework caching

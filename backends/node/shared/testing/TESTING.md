@@ -4,11 +4,11 @@ Shared test infrastructure and custom Vitest matchers for D2Result assertions. U
 
 ## Files
 
-| File Name                                    | Description                                                                             |
-| -------------------------------------------- | --------------------------------------------------------------------------------------- |
-| [result-matchers.ts](src/result-matchers.ts) | Custom Vitest matchers (`toBeSuccess`, `toBeFailure`, `toHaveData`, `toHaveErrorCode`). |
-| [test-helpers.ts](src/test-helpers.ts)       | Test utility functions (`createTraceId` for test contexts).                             |
-| [index.ts](src/index.ts)                     | Side-effect import to register matchers on startup; exports `createTraceId`.            |
+| File Name                                    | Description                                                                                                                                        |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [result-matchers.ts](src/result-matchers.ts) | Custom Vitest matchers (`toBeSuccess`, `toBeFailure`, `toHaveData`, `toHaveErrorCode`, `toHaveStatusCode`, `toHaveMessages`, `toHaveInputErrors`). |
+| [test-helpers.ts](src/test-helpers.ts)       | Test utility functions (`createTraceId` for test contexts).                                                                                        |
+| [index.ts](src/index.ts)                     | Side-effect import to register matchers on startup; exports `createTraceId`.                                                                       |
 
 ## Usage
 
@@ -19,6 +19,9 @@ expect(result).toBeSuccess();
 expect(result).toBeFailure();
 expect(result).toHaveData(expectedData);
 expect(result).toHaveErrorCode("NOT_FOUND");
+expect(result).toHaveStatusCode(404);
+expect(result).toHaveMessages(["Something went wrong"]);
+expect(result).toHaveInputErrors([{ field: "email", message: "Required" }]);
 ```
 
 ## Dependencies

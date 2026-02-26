@@ -24,7 +24,7 @@ src/
   setup.ts                                  Registers @d2/testing custom matchers
   unit/
     domain/
-      constants.test.ts                     RETRY_POLICY, COMMS_MESSAGING, COMMS_RETRY, THREAD_CONSTRAINTS
+      constants.test.ts                     RETRY_POLICY, DELIVERY_DEFAULTS, CHANNEL_DEFAULTS, THREAD_CONSTRAINTS
       enums/
         channel.test.ts                     Channel values + isValidChannel guard
         urgency.test.ts                     Urgency values + isValidUrgency guard
@@ -60,20 +60,25 @@ src/
         resolve-recipient.test.ts           RecipientResolver (geo-client mock)
         set-channel-preference.test.ts      SetChannelPreference handler (create/update, validation)
         get-channel-preference.test.ts      GetChannelPreference handler (found, not-found paths)
+        check-health.test.ts                CheckHealth handler (aggregates DB + cache + bus pings)
       helpers/
         mock-handlers.ts                    Reusable vi.fn() mock factories
     infra/
       resend-email-provider.test.ts         ResendEmailProvider (mocked Resend client)
       twilio-sms-provider.test.ts           TwilioSmsProvider (mocked Twilio client)
       retry-topology.test.ts               getRetryTierQueue mapping + declareRetryTopology
+      repository/handlers/q/
+        ping-db.test.ts                     PingDb handler (healthy, unhealthy, error, latency)
     api/
       comms-grpc-service.test.ts            gRPC service handlers (mocked DI provider)
+      api-key-interceptor.test.ts           API key interceptor metadata injection
       mappers/
         mapper.test.ts                      channelPreferenceToProto, deliveryRequestToProto, etc.
   integration/
     message-repository.test.ts              Message CRUD against Testcontainers PG
     delivery-request-repository.test.ts     DeliveryRequest CRUD + correlationId idempotency
     delivery-attempt-repository.test.ts     DeliveryAttempt CRUD + status transitions
+    channel-preference-repository.test.ts   ChannelPreference CRUD (create, retrieve, update, isolation)
     deliver-handler.test.ts                 Full Deliver flow (Testcontainers PG + mocked providers)
     notification-consumer.test.ts           RabbitMQ consumer + DLX retry (Testcontainers RabbitMQ)
     helpers/
@@ -89,11 +94,11 @@ src/
 | ----------- | ------ | ----------------------------------------------------------- |
 | Unit/Domain | 23     | Entities, enums, exceptions, rules, constants               |
 | Unit/Client | 1      | Notify handler (validation, publish, no-publisher fallback) |
-| Unit/App    | 5      | CQRS handlers + factory (mocked repos/providers)            |
-| Unit/Infra  | 3      | Providers (mocked clients) + retry topology                 |
-| Unit/API    | 2      | gRPC service + proto mappers                                |
-| Integration | 5      | Repository CRUD, Deliver flow, RabbitMQ consumer            |
-| **Total**   | **39** | **510 tests across 39 test files**                          |
+| Unit/App    | 6      | CQRS handlers + factory + CheckHealth (mocked repos)        |
+| Unit/Infra  | 4      | Providers (mocked clients) + retry topology + PingDb        |
+| Unit/API    | 3      | gRPC service + proto mappers + API key interceptor          |
+| Integration | 6      | Repository CRUD, Deliver flow, RabbitMQ consumer            |
+| **Total**   | **43** | **552 tests across 43 test files**                          |
 
 ## Key Test Helpers
 
