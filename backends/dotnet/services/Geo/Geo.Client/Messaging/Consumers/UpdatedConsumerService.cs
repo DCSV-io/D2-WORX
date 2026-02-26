@@ -8,12 +8,11 @@ namespace D2.Geo.Client.Messaging.Consumers;
 
 using D2.Events.Protos.V1;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
-using D2.Shared.Messaging.RabbitMQ;
+using D2.Shared.Interfaces.Messaging;
 using D2.Shared.Messaging.RabbitMQ.Conventions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using RabbitMQ.Client;
 
 /// <summary>
 /// Background service that consumes geographic reference data updated events.
@@ -21,18 +20,18 @@ using RabbitMQ.Client;
 /// </summary>
 public class UpdatedConsumerService : BackgroundService
 {
-    private readonly IConnection r_connection;
+    private readonly IMessageBus r_messageBus;
     private readonly IServiceScopeFactory r_scopeFactory;
     private readonly ILogger<UpdatedConsumerService> r_logger;
 
-    private ProtoConsumer<GeoRefDataUpdatedEvent>? _consumer;
+    private IAsyncDisposable? _subscription;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UpdatedConsumerService"/> class.
     /// </summary>
     ///
-    /// <param name="connection">
-    /// The RabbitMQ connection.
+    /// <param name="messageBus">
+    /// The message bus for subscribing to events.
     /// </param>
     /// <param name="scopeFactory">
     /// The service scope factory for resolving scoped handlers.
@@ -41,11 +40,11 @@ public class UpdatedConsumerService : BackgroundService
     /// The logger.
     /// </param>
     public UpdatedConsumerService(
-        IConnection connection,
+        IMessageBus messageBus,
         IServiceScopeFactory scopeFactory,
         ILogger<UpdatedConsumerService> logger)
     {
-        r_connection = connection;
+        r_messageBus = messageBus;
         r_scopeFactory = scopeFactory;
         r_logger = logger;
     }
@@ -63,9 +62,9 @@ public class UpdatedConsumerService : BackgroundService
     /// </returns>
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_consumer is not null)
+        if (_subscription is not null)
         {
-            await _consumer.DisposeAsync();
+            await _subscription.DisposeAsync();
         }
 
         await base.StopAsync(cancellationToken);
@@ -86,36 +85,38 @@ public class UpdatedConsumerService : BackgroundService
     {
         var instanceId = Guid.NewGuid().ToString("N")[..8];
 
-        _consumer = await ProtoConsumer<GeoRefDataUpdatedEvent>.CreateBroadcastAsync(
-            r_connection,
-            AmqpConventions.EventExchange("geo"),
-            instanceId,
+        _subscription = await r_messageBus.SubscribeAsync<GeoRefDataUpdatedEvent>(
+            new ConsumerConfig
+            {
+                Exchange = AmqpConventions.EventExchange("geo"),
+                InstanceId = instanceId,
+            },
             async (message, ct) =>
             {
                 r_logger.LogInformation(
                     "Received GeoRefDataUpdated event for version {Version}",
-                    message.Version);
+                    message.Body.Version);
 
                 await using var scope = r_scopeFactory.CreateAsyncScope();
                 var handler = scope.ServiceProvider.GetRequiredService<ISubs.IUpdatedHandler>();
 
-                var result = await handler.HandleAsync(message, ct);
+                var result = await handler.HandleAsync(message.Body, ct);
 
                 if (result.Failed)
                 {
                     r_logger.LogError(
                         "Failed to process GeoRefDataUpdated event for version {Version}",
-                        message.Version);
+                        message.Body.Version);
 
-                    throw new InvalidOperationException(
-                        $"Failed to process GeoRefDataUpdated event for version {message.Version}");
+                    return ConsumerResult.Drop;
                 }
 
                 r_logger.LogInformation(
                     "Successfully processed GeoRefDataUpdated event for version {Version}",
-                    message.Version);
+                    message.Body.Version);
+
+                return ConsumerResult.Ack;
             },
-            r_logger,
             stoppingToken);
     }
 }

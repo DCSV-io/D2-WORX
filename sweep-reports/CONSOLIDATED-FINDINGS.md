@@ -296,7 +296,7 @@
 | #   | Status       | Fix Summary                                                                                                                           |
 | --- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
 | 50  | **FIXED**    | Excluded non-applicable auto-instrumentations (MySQL, MongoDB, Express, etc.) from OTel setup — only relevant instrumentations loaded |
-| 51  | **FIXED**    | Cached `MethodInfo` for protobuf parser/parseFrom in static `ConcurrentDictionary` — eliminates per-call reflection                   |
+| 51  | **FIXED**    | Replaced per-call reflection with `Lazy<Func<byte[], TValue>>` — static per closed generic type, thread-safe, reflection runs once per TValue |
 | 52  | **FIXED**    | Cached `typeof(THandler).Name` in private static readonly field `sr_handlerName`                                                      |
 | 53  | **BY DESIGN** | D2Result immutability is intentional. The "copy" is a shallow memberwise clone (~100-200 bytes of short-lived Gen0 garbage per call) — negligible for SMB SaaS workloads. Making traceId mutable would compromise the frozen-result guarantee for no measured gain. |
 
@@ -370,21 +370,33 @@
 
 Issues where .NET and Node.js implementations diverge in behavior or pattern.
 
-| #   | Area                               | .NET Behavior                                                            | Node.js Behavior                                                       | Impact                                                                                                                 | Modules   |
-| --- | ---------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | --------- |
-| 1   | **Rate limit trust bypass**        | `IRequestInfo.IsTrustedService` property + early return in Check handler | Property missing from `IRequestInfo`, no bypass logic                  | S2S calls are rate-limited in Node.js                                                                                  | 5, 9, 21  |
-| 2   | **OrgType naming**                 | Enum: `Admin, Support, Affiliate, Customer, CustomerClient`              | Union: `admin, support, customer, third_party, affiliate`              | `CustomerClient` vs `third_party` naming discrepancy. Handler `OrgType` enum has `CustomerClient` but not `ThirdParty` | 3, 16, 20 |
-| 3   | **In-memory cache**                | `IMemoryCache` (no LRU, no max size configured)                          | `MemoryCacheStore` (LRU, 10K max entries)                              | .NET cache can grow unbounded                                                                                          | 21        |
-| 4   | **Messaging abstraction**          | `ProtoPublisher` (per-call channel) + `ProtoConsumer` (low-level)        | `MessageBus` (unified, higher-level, topology, confirms, max attempts) | .NET is less abstracted, creates channel per publish                                                                   | 21        |
-| 5   | **Idempotency options**            | 5 options (methods, cacheErrors, TTL, inFlight, maxBody)                 | 3 options (TTL, inFlight, maxBody)                                     | Node.js missing method filtering and error caching                                                                     | 21        |
-| 6   | **Retry (generic)**                | `RetryHelper` throws exceptions                                          | `retryExternal` wraps in D2Result                                      | Different error propagation semantics                                                                                  | 20        |
-| 7   | **Consumer error handling**        | `BasicNackAsync(requeue: true)` (infinite retry risk)                    | `requeue: false` for handler control                                   | .NET consumers can infinitely requeue poison messages                                                                  | 21        |
-| 8   | **RabbitMQ prefetch**              | Hardcoded to 1                                                           | Configurable via `config.prefetchCount`                                | .NET consumer cannot tune throughput                                                                                   | 21        |
-| 9   | **WhoIs cache key (.NET Client)**  | Raw UserAgent string in key (500+ chars)                                 | SHA-256 fingerprint of UA                                              | .NET client bloats cache with large keys                                                                               | 23        |
-| 10  | **Health check**                   | Auth: DB + Redis + MessageBus; Comms: DB + MessageBus (no Redis)         | Auth: DB + Redis + MessageBus; Comms: DB + MessageBus                  | Comms missing Redis health despite using Redis (both platforms consistent in this gap)                                 | 17, 25    |
-| 11  | **Protobuf serialization (Redis)** | Reflection-based (`GetProperty("Parser")`)                               | Pluggable `ICacheSerializer` interface                                 | .NET approach is slower per-call                                                                                       | 21        |
-| 12  | **Validation framework**           | FluentValidation in BaseHandler                                          | Zod via `validateInput`                                                | Different mechanism, same intent. .NET is more flexible but more boilerplate                                           | 20        |
-| 13  | **Redaction**                      | `[RedactData]` attribute + Serilog destructuring                         | `RedactionSpec` in handler constructor                                 | Different mechanism, same intent                                                                                       | 20        |
+**Last reviewed:** 2026-02-26
+
+### 4a. Resolved
+
+| #   | Area                              | Resolution                                                                                                                                                                                                       |
+| --- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Rate limit trust bypass**       | FIXED. `createServiceKeyMiddleware` added to Auth API (Hono). Validates `X-Api-Key`, sets `isTrustedService=true`. Wired between enrichment and rate limiting in composition root. 5 unit tests.                 |
+| 2   | **OrgType naming**                | FIXED. Both platforms now use `ThirdParty` (not `CustomerClient`). Explicit mapping in both directions: `ORG_TYPE_MAP` (Node scope.ts) and `GetOrgTypeClaim` (.NET).                                             |
+| 3   | **In-memory cache**               | FIXED. `AddDefaultMemoryCaching(maxEntries=10_000)` sets `SizeLimit`; `Set`/`SetMany` now use `Size=1` per entry. Count-based LRU matching Node.js `MemoryCacheStore`.                                          |
+| 4   | **Messaging abstraction**         | FIXED. `IMessageBus` interface + `MessageBus` implementation in Messaging.RabbitMQ. Configurable prefetch, `ConsumerResult` enum (Ack/Drop only), `IncomingMessage<T>` with AMQP metadata. Geo consumers migrated. |
+| 5   | **Idempotency options**           | FIXED. Both platforms now have 5 identical options: `applicableMethods`, `cacheErrorResponses`, `cacheTtl`, `inFlightTtl`, `maxBodySize`. Identical defaults.                                                    |
+| 6   | **Retry (generic)**               | FIXED. gRPC codes extracted from `isTransientError()` into `isTransientGrpcError()` in `@d2/service-defaults/grpc`. Generic utility is now protocol-agnostic, matching .NET. Tests updated.                      |
+| 7   | **Consumer error handling**       | FIXED (via #4). `MessageBus.SubscribeAsync` uses `ConsumerResult.Drop` (NACK `requeue: false`) on handler exception. No more `requeue: true` poison message loops.                                               |
+| 8   | **RabbitMQ prefetch**             | FIXED (via #4). `ConsumerConfig.PrefetchCount` makes prefetch configurable (default: 1). Geo consumers use new API.                                                                                              |
+| 9   | **WhoIs cache key (.NET Client)** | FIXED (commit `2ff4ac50`). `CacheKeys.WhoIs()` now SHA-256 hashes the UserAgent, matching Node.js fingerprint pattern. Keys compacted from 500+ chars to 64-char hex.                                           |
+| 10  | **Health check**                  | FIXED. Comms composition root now optionally wires `ioredis` + `PingCache` when `redisUrl` is configured. `ICachePingKey` registered for `CheckHealth` handler.                                                  |
+| 11  | **Protobuf serialization (Redis)**| FIXED. `Get<TValue>.ParseProtobuf` now uses `Lazy<Func<byte[], TValue>>` — reflection runs once per closed generic type. Static field per `TValue`, thread-safe.                                                 |
+| 12  | **Validation framework**          | BY DESIGN. FluentValidation (.NET) vs Zod (Node). Same validators exist on both (hashId, IP, email, phone, GUID, contextKey). Platform-appropriate, no gap.                                                     |
+| 13  | **Redaction**                     | BY DESIGN. `[RedactData]` attribute (.NET, entity-level) vs `RedactionSpec` (Node, handler-level). Different scope, both effective. Documented design choice.                                                    |
+
+### 4b. Partially Resolved
+
+*No items remaining — all moved to Resolved.*
+
+### 4c. Open
+
+*No items remaining — all resolved.*
 
 ---
 

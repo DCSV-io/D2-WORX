@@ -8,12 +8,11 @@ namespace D2.Geo.Client.Messaging.Consumers;
 
 using D2.Events.Protos.V1;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
-using D2.Shared.Messaging.RabbitMQ;
+using D2.Shared.Interfaces.Messaging;
 using D2.Shared.Messaging.RabbitMQ.Conventions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using RabbitMQ.Client;
 
 /// <summary>
 /// Background service that consumes contact eviction events.
@@ -21,18 +20,18 @@ using RabbitMQ.Client;
 /// </summary>
 public class ContactEvictionConsumerService : BackgroundService
 {
-    private readonly IConnection r_connection;
+    private readonly IMessageBus r_messageBus;
     private readonly IServiceScopeFactory r_scopeFactory;
     private readonly ILogger<ContactEvictionConsumerService> r_logger;
 
-    private ProtoConsumer<ContactsEvictedEvent>? _consumer;
+    private IAsyncDisposable? _subscription;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ContactEvictionConsumerService"/> class.
     /// </summary>
     ///
-    /// <param name="connection">
-    /// The RabbitMQ connection.
+    /// <param name="messageBus">
+    /// The message bus for subscribing to events.
     /// </param>
     /// <param name="scopeFactory">
     /// The service scope factory for resolving scoped handlers.
@@ -41,11 +40,11 @@ public class ContactEvictionConsumerService : BackgroundService
     /// The logger.
     /// </param>
     public ContactEvictionConsumerService(
-        IConnection connection,
+        IMessageBus messageBus,
         IServiceScopeFactory scopeFactory,
         ILogger<ContactEvictionConsumerService> logger)
     {
-        r_connection = connection;
+        r_messageBus = messageBus;
         r_scopeFactory = scopeFactory;
         r_logger = logger;
     }
@@ -63,9 +62,9 @@ public class ContactEvictionConsumerService : BackgroundService
     /// </returns>
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (_consumer is not null)
+        if (_subscription is not null)
         {
-            await _consumer.DisposeAsync();
+            await _subscription.DisposeAsync();
         }
 
         await base.StopAsync(cancellationToken);
@@ -86,35 +85,37 @@ public class ContactEvictionConsumerService : BackgroundService
     {
         var instanceId = Guid.NewGuid().ToString("N")[..8];
 
-        _consumer = await ProtoConsumer<ContactsEvictedEvent>.CreateBroadcastAsync(
-            r_connection,
-            AmqpConventions.EventExchange("geo.contacts"),
-            instanceId,
+        _subscription = await r_messageBus.SubscribeAsync<ContactsEvictedEvent>(
+            new ConsumerConfig
+            {
+                Exchange = AmqpConventions.EventExchange("geo.contacts"),
+                InstanceId = instanceId,
+            },
             async (message, ct) =>
             {
                 r_logger.LogInformation(
                     "Received ContactsEvicted event for {IdCount} contact(s)",
-                    message.Contacts.Count);
+                    message.Body.Contacts.Count);
 
                 await using var scope = r_scopeFactory.CreateAsyncScope();
                 var handler = scope.ServiceProvider.GetRequiredService<ISubs.IContactsEvictedHandler>();
 
-                var result = await handler.HandleAsync(message, ct);
+                var result = await handler.HandleAsync(message.Body, ct);
 
                 if (result.Failed)
                 {
                     r_logger.LogError(
                         "Failed to process ContactsEvicted event");
 
-                    throw new InvalidOperationException(
-                        "Failed to process ContactsEvicted event");
+                    return ConsumerResult.Drop;
                 }
 
                 r_logger.LogInformation(
                     "Successfully processed ContactsEvicted event for {IdCount} contact(s)",
-                    message.Contacts.Count);
+                    message.Body.Contacts.Count);
+
+                return ConsumerResult.Ack;
             },
-            r_logger,
             stoppingToken);
     }
 }

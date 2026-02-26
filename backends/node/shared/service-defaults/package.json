@@ -25,6 +25,7 @@
     "@d2/di": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/logging": "workspace:*",
+    "@d2/utilities": "workspace:*",
     "@grpc/grpc-js": "1.14.3",
     "import-in-the-middle": "1.14.4",
     "@opentelemetry/api": "1.9.0",

@@ -48,14 +48,14 @@ public class Set<TValue> : BaseHandler<
         S.SetInput<TValue> input,
         CancellationToken ct = default)
     {
+        var options = new MemoryCacheEntryOptions { Size = 1 };
+
         if (input.Expiration is not null)
         {
-            r_memoryCache.Set(input.Key, input.Value, (TimeSpan)input.Expiration);
+            options.SetAbsoluteExpiration((TimeSpan)input.Expiration);
         }
-        else
-        {
-            r_memoryCache.Set(input.Key, input.Value);
-        }
+
+        r_memoryCache.Set(input.Key, input.Value, options);
 
         return ValueTask.FromResult(D2Result<S.SetOutput?>.Ok(new S.SetOutput()));
     }

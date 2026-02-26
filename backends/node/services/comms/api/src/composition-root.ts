@@ -17,6 +17,8 @@ import {
   createGeoServiceClient,
   DEFAULT_GEO_CLIENT_OPTIONS,
 } from "@d2/geo-client";
+import Redis from "ioredis";
+import { ICachePingKey, PingCache } from "@d2/cache-redis";
 import { MessageBus, PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
 import { addCommsApp, IEmailProviderKey, ISmsProviderKey } from "@d2/comms-app";
@@ -35,6 +37,7 @@ export interface CommsServiceConfig {
   databaseUrl: string;
   rabbitMqUrl: string;
   grpcPort: number;
+  redisUrl?: string;
   resendApiKey?: string;
   resendFromAddress?: string;
   twilioAccountSid?: string;
@@ -154,6 +157,14 @@ export async function createCommsService(config: CommsServiceConfig) {
     logger.warn("No RabbitMQ URL configured — event consumption disabled");
   }
 
+  // Optional Redis connection (for distributed cache health check)
+  let redis: Redis | undefined;
+  if (config.redisUrl) {
+    redis = new Redis(config.redisUrl);
+    services.addInstance(ICachePingKey, new PingCache(redis, serviceContext));
+    logger.info("Redis connected (cache ping registered)");
+  }
+
   // 5. Build ServiceProvider
   const provider = services.build();
 
@@ -217,6 +228,7 @@ export async function createCommsService(config: CommsServiceConfig) {
   // 8. Shutdown
   async function shutdown() {
     if (messageBus) await messageBus.close();
+    if (redis) redis.disconnect();
     provider.dispose();
     await pool.end();
   }

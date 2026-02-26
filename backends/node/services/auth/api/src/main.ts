@@ -6,6 +6,21 @@ import { createApp } from "./composition-root.js";
 const logger = createLogger({ serviceName: "auth-service" });
 
 /**
+ * Parses indexed environment variables into an array.
+ * Reads `${prefix}__0`, `${prefix}__1`, ... until a gap is found.
+ * Matches .NET's indexed-array binding convention.
+ */
+function parseEnvArray(prefix: string): string[] {
+  const result: string[] = [];
+  for (let i = 0; ; i++) {
+    const value = process.env[`${prefix}__${i}`];
+    if (value === undefined) break;
+    result.push(value);
+  }
+  return result;
+}
+
+/**
  * Converts a .NET ADO.NET PostgreSQL connection string to a libpq URI.
  * Passes through strings that are already URIs (standalone / test mode).
  *
@@ -80,6 +95,7 @@ const config = {
   jwtAudience: process.env.AUTH_JWT_AUDIENCE ?? "d2-services",
   geoAddress: process.env.GEO_GRPC_ADDRESS,
   geoApiKey: process.env.AUTHGEOCLIENTOPTIONS_APIKEY,
+  authApiKeys: parseEnvArray("AUTH_API_KEYS"),
 };
 
 if (!config.databaseUrl) {

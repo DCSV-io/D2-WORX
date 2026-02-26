@@ -6,6 +6,7 @@
 
 namespace D2.Shared.Messaging.RabbitMQ;
 
+using D2.Shared.Interfaces.Messaging;
 using global::RabbitMQ.Client;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -48,6 +49,7 @@ public static class Extensions
             });
 
             services.AddSingleton<ProtoPublisher>();
+            services.AddSingleton<IMessageBus, MessageBus>();
 
             services.AddTransient<
                 Interfaces.Messaging.Handlers.Q.IRead.IPingHandler,

@@ -290,6 +290,9 @@ importers:
       '@d2/cache-memory':
         specifier: workspace:*
         version: link:../../../shared/implementations/caching/in-memory/default
+      '@d2/cache-redis':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/caching/distributed/redis
       '@d2/comms-app':
         specifier: workspace:*
         version: link:../app
@@ -338,6 +341,9 @@ importers:
       drizzle-orm:
         specifier: 0.45.1
         version: 0.45.1(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.11)(pg@8.18.0)
+      ioredis:
+        specifier: 5.8.0
+        version: 5.8.0
       pg:
         specifier: 8.18.0
         version: 8.18.0
@@ -854,6 +860,9 @@ importers:
       '@d2/logging':
         specifier: workspace:*
         version: link:../logging
+      '@d2/utilities':
+        specifier: workspace:*
+        version: link:../utilities
       '@grpc/grpc-js':
         specifier: 1.14.3
         version: 1.14.3

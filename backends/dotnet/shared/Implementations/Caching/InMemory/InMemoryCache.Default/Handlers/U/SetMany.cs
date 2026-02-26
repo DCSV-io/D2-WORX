@@ -47,7 +47,7 @@ public class SetMany<TValue> : BaseHandler<
         S.SetManyInput<TValue> input,
         CancellationToken ct = default)
     {
-        var options = new MemoryCacheEntryOptions();
+        var options = new MemoryCacheEntryOptions { Size = 1 };
 
         if (input.Expiration is not null)
         {

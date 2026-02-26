@@ -59,6 +59,7 @@ import { createSessionMiddleware } from "./middleware/session.js";
 import { createCsrfMiddleware } from "./middleware/csrf.js";
 import { createRequestEnrichmentMiddleware } from "./middleware/request-enrichment.js";
 import { createDistributedRateLimitMiddleware } from "./middleware/distributed-rate-limit.js";
+import { createServiceKeyMiddleware } from "./middleware/service-key.js";
 import {
   createSessionFingerprintMiddleware,
   computeFingerprint,
@@ -93,7 +94,7 @@ export interface AppOverrides {
  *   7. Build Hono app with scope middleware on protected routes
  */
 export async function createApp(
-  config: AuthServiceConfig,
+  config: AuthServiceConfig & { authApiKeys?: string[] },
   publisher?: IMessagePublisher,
   overrides?: AppOverrides,
   messageBus?: import("@d2/messaging").MessageBus,
@@ -406,6 +407,10 @@ export async function createApp(
     }),
   );
   app.use("*", createRequestEnrichmentMiddleware(findWhoIs, undefined, logger));
+  if (config.authApiKeys?.length) {
+    app.use("*", createServiceKeyMiddleware(new Set(config.authApiKeys)));
+    logger.info(`Auth API service key authentication enabled (${config.authApiKeys.length} key(s))`);
+  }
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);
 

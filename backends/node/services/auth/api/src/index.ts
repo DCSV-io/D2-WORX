@@ -21,6 +21,7 @@ export {
   type RevokeSession,
 } from "./middleware/session-fingerprint.js";
 export { handleError } from "./middleware/error-handler.js";
+export { createServiceKeyMiddleware } from "./middleware/service-key.js";
 export { createScopeMiddleware } from "./middleware/scope.js";
 export {
   requireOrg,
