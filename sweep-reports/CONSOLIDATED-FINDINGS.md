@@ -141,12 +141,14 @@
 
 **Test results after ALL fixes (high + medium):**
 
-- `shared-tests`: 788 passed (61 files)
-- `auth-tests`: 838 passed (61 files)
+- `shared-tests`: 793 passed (61 files)
+- `auth-tests`: 841 passed (61 files)
 - `comms-tests`: 527 passed (40 files)
 - `e2e-tests`: 5 passed (3 files)
-- **Total: 2,158 tests across 165 files — zero failures**
-- `.NET`: All projects build clean (0 errors)
+- `.NET shared`: 632 passed
+- `.NET Geo`: 759 passed
+- **Total: 3,557 tests — zero failures**
+- Both platforms build with 0 errors, 0 warnings
 
 ---
 
@@ -234,8 +236,8 @@
 | 27  | **FIXED**     | Added `rowCount === 0` → `D2Result.notFound()` checks to `RevokeEmulationConsentRecord`, `UpdateOrgContactRecord`, `DeleteOrgContactRecord`    |
 | 28  | **FIXED**     | Added `D2Result.Cancelled()` factory + check `ct.IsCancellationRequested` before first attempt in `D2RetryHelper.RetryResultAsync`             |
 | 29  | **FIXED**     | Extracted `NOTIFICATIONS_EXCHANGE_TYPE: "fanout" as const` to `COMMS_EVENTS` constants — consumer references constant instead of inline string |
-| 30  | **DEFERRED**  | .NET Geo.Client — requires .NET-side change to hash UA into fingerprint key                                                                    |
-| 31  | **FIXED**     | Standardized ALL cache keys to PascalCase handler names (e.g., `GetContactsByIds:{id}`, `FindWhoIs:{ip}:{fp}`) — both Node.js and .NET updated |
+| 30  | **DEFERRED**  | .NET Geo.Client — requires .NET-side change to hash UA into fingerprint key (see Deferred Items section)                                       |
+| 31  | **FIXED**     | Standardized all cache keys to descriptive data-centric format (`geo:contact:{id}`, `geo:whois:{ip}:{ua}`) + centralized into `CacheKeys.cs`/`cache-keys.ts` per service |
 | 32  | **FIXED**     | Replaced separate `incrby` + `pexpire` with Lua script for atomic increment-with-TTL in both Node.js and .NET Redis Increment handlers         |
 | 33  | **NO ACTION** | Leave as-is — evicting on gRPC failure is safer than allowing stale/garbage data in cache                                                      |
 | 34  | **FIXED**     | `GetChannelPreference` now returns `D2Result.notFound()` when no preferences exist + `D2Result.validationFailed()` for empty contactId         |
@@ -270,7 +272,7 @@
 | 38  | **FIXED**     | Added Zod validation schemas to `RecordSignInOutcome`, `CheckSignInThrottle`, `GetSignInEvents`, `RecipientResolver` handlers                                            |
 | 39  | **FIXED**     | Added `ICachePingKey` to Comms `CheckHealth` handler + wired in composition root                                                                                         |
 | 40  | **FIXED**     | Extracted `parsePostgresUrl`/`parseRedisUrl` to `@d2/service-defaults` shared utility                                                                                    |
-| 41  | **FIXED**     | Standardized to `timestamp with time zone` on all tables we control (Auth custom + Comms). BetterAuth-managed tables are the exception (no timezone, we don't control)   |
+| 41  | **FIXED**     | Standardized to `timestamp WITHOUT time zone` on all tables we control (Auth custom + Comms) with migrations. BetterAuth-managed tables are the exception (we don't control) |
 | 42  | **FIXED**     | Renamed .NET `CustomerClient` → `ThirdParty` to match Node.js (done in high findings #8, covers this too)                                                                |
 | 43  | **FIXED**     | Changed `HIERARCHY` from mutable `string[]` to `IReadOnlyList<string>` in `RoleValues.cs`                                                                                |
 | 44  | **NO ACTION** | Health endpoints already unconditionally registered in all environments (Auth, Comms, .NET Gateway)                                                                      |
@@ -296,7 +298,7 @@
 | 50  | **FIXED**    | Excluded non-applicable auto-instrumentations (MySQL, MongoDB, Express, etc.) from OTel setup — only relevant instrumentations loaded |
 | 51  | **FIXED**    | Cached `MethodInfo` for protobuf parser/parseFrom in static `ConcurrentDictionary` — eliminates per-call reflection                   |
 | 52  | **FIXED**    | Cached `typeof(THandler).Name` in private static readonly field `sr_handlerName`                                                      |
-| 53  | **DEFERRED** | `_injectTraceId` copy cost — needs further discussion on tradeoffs                                                                    |
+| 53  | **DEFERRED** | `_injectTraceId` copy cost — needs further discussion on tradeoffs (see Deferred Items section)                                       |
 
 ### Maintainability (Medium)
 
@@ -339,12 +341,12 @@
 | #   | Status       | Fix Summary                                                                                               |
 | --- | ------------ | --------------------------------------------------------------------------------------------------------- |
 | 61  | **FIXED**    | Updated TESTS.md: added all 8 missing test files, corrected test count to 788                             |
-| 62  | **DEFERRED** | PingCache and PingMessageBus are thin wrappers — low priority for dedicated tests                         |
-| 63  | **DEFERRED** | SetNx error-path tests — low priority (same pattern as other 6 handlers)                                  |
-| 64  | **DEFERRED** | CheckHealth handler tests for Auth and Comms — needs dedicated test infrastructure for health aggregation |
-| 65  | **DEFERRED** | .NET Geo.Client FindWhoIs tests — .NET test scope                                                         |
-| 66  | **DEFERRED** | .NET Geo.Client ContactsEvicted tests — .NET test scope                                                   |
-| 67  | **DEFERRED** | .NET ServiceDefaults tests — .NET test scope                                                              |
+| 62  | **DEFERRED** | PingCache and PingMessageBus — thin wrappers, low priority (see Deferred Items section)                   |
+| 63  | **DEFERRED** | SetNx error-path tests — same pattern as other 6 handlers (see Deferred Items section)                    |
+| 64  | **DEFERRED** | CheckHealth handler tests — needs dedicated test infrastructure (see Deferred Items section)              |
+| 65  | **DEFERRED** | .NET Geo.Client FindWhoIs tests — .NET test scope (see Deferred Items section)                            |
+| 66  | **DEFERRED** | .NET Geo.Client ContactsEvicted tests — .NET test scope (see Deferred Items section)                      |
+| 67  | **DEFERRED** | .NET ServiceDefaults tests — .NET test scope (see Deferred Items section)                                 |
 
 ---
 
@@ -360,7 +362,7 @@
 | Test Gaps       | 7      | 1      | 0                          | 6        |
 | **Total**       | **67** | **53** | **6**                      | **8**    |
 
-**Note:** "No Action" means investigation confirmed the finding was either already addressed, a false positive, or intentionally left as-is after discussion. "Deferred" items: #30 (.NET UA → fingerprint key), #53 (traceId propagation pattern — parked for discussion), #62-67 (test coverage gaps — lower priority).
+**Note:** "No Action" means investigation confirmed the finding was either already addressed, a false positive, or intentionally left as-is after discussion. "Deferred" items are detailed in section 8 below.
 
 ---
 
@@ -486,11 +488,49 @@ Prioritized list of all tests to add across all modules.
 | 1   | `comms/domain/dist/`                      | Contains compiled output for 4 deleted source files: `quiet-hours.js`, `template-wrapper.js`, `recipient-validation.js`, `message-validation.js`             | 12     |
 | 2   | `comms/app/dist/`                         | ~15 stale artifacts from old architecture (removed handlers/files still in dist/)                                                                            | 13     |
 | 3   | `protos/dist/generated/common/common.v1/` | Stale dist artifacts from old directory structure (double `common/` path)                                                                                    | 4      |
-| 4   | `comms/v1/comms.proto`                    | `TemplateWrapperDTO`, `GetTemplate`/`UpsertTemplate` RPCs reference dropped table                                                                            | 4      |
-| 5   | `comms/v1/comms.proto`                    | `quiet_hours_*` fields, `user_id`, `recipient_user_id`, `template_name` -- dropped but not `reserved`                                                        | 4      |
+| 4   | ~~`comms/v1/comms.proto`~~                | ~~`TemplateWrapperDTO`, `GetTemplate`/`UpsertTemplate` RPCs reference dropped table~~ — **FIXED** (removed RPCs + DTO, field numbers reserved)               | 4      |
+| 5   | ~~`comms/v1/comms.proto`~~                | ~~`quiet_hours_*` fields, `user_id`, `recipient_user_id`, `template_name` -- dropped but not `reserved`~~ — **FIXED** (field numbers reserved)               | 4      |
 | 6   | `comms/v1/comms.proto`                    | 8 unimplemented Phase 2+3 RPC stubs that may drift from final designs                                                                                        | 4      |
 | 7   | `D2.sln` (line 84)                        | References `keycloak_14390_rev7.json` Grafana dashboard. Keycloak removed from project. JSON file does not exist on disk                                     | 25     |
 | 8   | `D2.sln`                                  | References `D2.sln.DotSettings.user` (user-specific ReSharper settings)                                                                                      | 25     |
 | 9   | `comms/infra/src/service-keys.ts`         | Re-export-only file. Not used by any infra source file or exported from barrel. Dead code                                                                    | 14     |
 | 10  | `auth/infra + comms/infra` `factories.ts` | Factory functions exported but unused by DI registration. Only used by test integration files. Maintenance burden (new handlers must be added in two places) | 14, 18 |
 | 11  | `@d2/service-defaults` `package.json`     | Unused dependency: `@opentelemetry/sdk-trace-node` (v2.5.0) listed but never imported                                                                        | 7      |
+
+---
+
+## 8. Deferred Items
+
+Items intentionally deferred from the medium-severity sweep. Each includes rationale and recommended action for future sprints.
+
+### Bugs
+
+| #   | Finding                                         | Rationale                                                                                                                                                                                                                                                                   | Recommended Action                                                                                                               |
+| --- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 30  | .NET WhoIs cache key uses raw UserAgent (500+ chars) | Node.js already uses SHA-256 fingerprint of UA for cache keys. .NET Geo.Client `FindWhoIs.cs` still uses raw `ip:userAgent` string, bloating in-memory cache. Requires .NET-side code change to hash UA into a fingerprint before building the cache key.                  | Hash UA to SHA-256 fingerprint in .NET `FindWhoIs` handler, matching Node.js `find-whois.ts` pattern. Update `CacheKeys.WhoIs`. |
+
+### Performance
+
+| #   | Finding                                                   | Rationale                                                                                                                                                                                                                           | Recommended Action                                                                                                                                   |
+| --- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 53  | `_injectTraceId` creates full D2Result copy on every call | BaseHandler's `_injectTraceId` allocates a new object + two array copies + re-freezing per handler invocation. The copy ensures immutability of the result object. Removing it would require a different traceId injection strategy. | Profile actual impact in production-like load. If measurable, consider making traceId a mutable slot on D2Result or injecting at construction time. |
+
+### Test Coverage Gaps
+
+| #   | Finding                                        | Rationale                                                                                                                                                                   | Recommended Action                                                                                      |
+| --- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| 62  | PingCache + PingMessageBus zero test coverage  | Both are thin wrappers (single method call to underlying client). Risk is low since the underlying clients are well-tested. Low priority relative to other test gaps.       | Add basic smoke tests when touching these handlers for other reasons.                                   |
+| 63  | SetNx missing from error-path + integration tests | Follows identical pattern to the other 6 Redis handlers which ARE tested. `BaseRedisHandler` base class (added in this sweep) provides shared error handling.              | Add tests when next modifying `@d2/cache-redis`. Same test structure as existing handlers.              |
+| 64  | CheckHealth handler zero tests (Auth + Comms)  | Non-trivial branching (healthy/degraded/not-configured). Requires mocking multiple cache + DB + messaging ping handlers. Needs dedicated test helper infrastructure.        | Create shared `MockHealthDeps` helper, then add tests for all 3 health states in each service.          |
+| 65  | .NET Geo.Client FindWhoIs zero tests           | Cache-hit, cache-miss + gRPC success, and gRPC failure paths all untested. .NET test infrastructure exists (Testcontainers) but handler has complex multi-tier cache logic. | Add unit tests with mocked cache/gRPC deps covering the 3 main paths + cache population on miss.        |
+| 66  | .NET Geo.Client ContactsEvicted zero tests     | Consumer + handler that evicts contacts from local cache on cross-service event. Critical for cache consistency but straightforward logic.                                  | Add unit tests verifying cache removal for evicted contact IDs and ext-key pairs.                       |
+| 67  | .NET ServiceDefaults OTel wiring zero tests    | 3 extension files with conditional logic (dev vs prod, OTLP configuration). Low blast radius since these are startup-only configuration.                                   | Add integration tests verifying OTel providers are registered and health check endpoints respond.        |
+
+### Summary
+
+| Category   | Deferred | Risk Level | Notes                                                                 |
+| ---------- | -------- | ---------- | --------------------------------------------------------------------- |
+| Bugs       | 1        | Low        | #30 — cache bloat, not a correctness issue                            |
+| Performance | 1       | Low        | #53 — micro-optimization, no measured impact yet                      |
+| Test Gaps  | 6        | Medium     | #62-67 — core infrastructure untested but stable; prioritize #64, #65 |
+| **Total**  | **8**    |            |                                                                       |
