@@ -341,28 +341,28 @@
 | #   | Status       | Fix Summary                                                                                               |
 | --- | ------------ | --------------------------------------------------------------------------------------------------------- |
 | 61  | **FIXED**    | Updated TESTS.md: added all 8 missing test files, corrected test count to 788                             |
-| 62  | **TRACKED**  | PingCache and PingMessageBus — thin wrappers, tracked in Section 5 Priority 1                             |
-| 63  | **TRACKED**  | SetNx error-path tests — same pattern as other 6 handlers, tracked in Section 5 Priority 1                |
-| 64  | **TRACKED**  | CheckHealth handler tests — needs dedicated test infrastructure, tracked in Section 5 Priority 1          |
+| 62  | **FIXED**    | Added PingCache (4 tests) and PingMessageBus (4 tests) unit tests covering healthy, unhealthy, error, and latency paths |
+| 63  | **FIXED**    | Added SetNx to redis-error-paths (1 test) + integration tests (6 tests): set-if-absent, no-overwrite, expiration, binary serializer, serialization failure |
+| 64  | **FIXED**    | Added CheckHealth tests for Auth (7 tests) and Comms (8 tests): all-healthy, degraded per-component, not-configured, latency, no-data fallback |
 | 65  | **FIXED**    | .NET Geo.Client FindWhoIs already has 10 unit tests in `FindWhoIsHandlerTests.cs` (cache hit/miss, fail-open, cache key) — finding was stale |
-| 66  | **TRACKED**  | .NET Geo.Client ContactsEvicted tests — tracked in Section 5 Priority 1                                   |
-| 67  | **TRACKED**  | .NET ServiceDefaults tests — tracked in Section 5 Priority 1                                               |
+| 66  | **FIXED**    | Added ContactsEvicted handler tests (5 tests): evict by ID, evict by ext-key, multiple contacts, eviction failure tolerance, empty list |
+| 67  | **FIXED**    | Added IsAllowedIpForMetrics tests (14 tests): loopback IPv4/v6, all 3 RFC 1918 ranges, boundary IPs, public IPs, null IP |
 
 ---
 
 ### Medium Findings Summary
 
-| Category        | Total  | Fixed  | No Action / By Design | Tracked |
-| --------------- | ------ | ------ | --------------------- | ------- |
-| Security        | 13     | 11     | 2                     | 0       |
-| Bugs            | 21     | 20     | 1                     | 0       |
-| Consistency     | 15     | 13     | 2                     | 0       |
-| Performance     | 4      | 3      | 1                     | 0       |
-| Maintainability | 7      | 6      | 1                     | 0       |
-| Test Gaps       | 7      | 2      | 0                     | 5       |
-| **Total**       | **67** | **55** | **7**                 | **5**   |
+| Category        | Total  | Fixed  | No Action / By Design |
+| --------------- | ------ | ------ | --------------------- |
+| Security        | 13     | 11     | 2                     |
+| Bugs            | 21     | 20     | 1                     |
+| Consistency     | 15     | 13     | 2                     |
+| Performance     | 4      | 3      | 1                     |
+| Maintainability | 7      | 6      | 1                     |
+| Test Gaps       | 7      | 7      | 0                     |
+| **Total**       | **67** | **60** | **7**                 |
 
-**Note:** "No Action / By Design" means investigation confirmed the finding was already addressed, a false positive, or intentionally left as-is (see Section 8). "Tracked" items are test coverage gaps tracked in Section 5 — not blocked, just pending prioritization.
+**Note:** "No Action / By Design" means investigation confirmed the finding was already addressed, a false positive, or intentionally left as-is (see Section 8). All 67 medium findings are now resolved.
 
 ---
 

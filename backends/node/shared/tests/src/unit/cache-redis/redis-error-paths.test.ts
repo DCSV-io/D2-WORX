@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Get, Set, Remove, Exists, GetTtl, Increment } from "@d2/cache-redis";
+import { Get, Set, SetNx, Remove, Exists, GetTtl, Increment } from "@d2/cache-redis";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { HttpStatusCode, ErrorCodes } from "@d2/result";
@@ -77,6 +77,15 @@ describe("DistributedCache Redis error paths (SERVICE_UNAVAILABLE)", () => {
   it("GetTtl returns SERVICE_UNAVAILABLE when Redis is down", async () => {
     const handler = new GetTtl(redis, createTestContext());
     const result = await handler.handleAsync({ key: "k" });
+
+    expect(result).toBeFailure();
+    expect(result.statusCode).toBe(HttpStatusCode.ServiceUnavailable);
+    expect(result.errorCode).toBe(ErrorCodes.SERVICE_UNAVAILABLE);
+  });
+
+  it("SetNx returns SERVICE_UNAVAILABLE when Redis is down", async () => {
+    const handler = new SetNx<string>(redis, createTestContext());
+    const result = await handler.handleAsync({ key: "k", value: "v" });
 
     expect(result).toBeFailure();
     expect(result.statusCode).toBe(HttpStatusCode.ServiceUnavailable);

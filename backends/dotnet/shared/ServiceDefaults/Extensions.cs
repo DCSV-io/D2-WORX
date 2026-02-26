@@ -28,7 +28,7 @@ public static partial class Extensions
     /// <returns>
     /// True if the IP address is allowed; otherwise, false.
     /// </returns>
-    private static bool IsAllowedIpForMetrics(IPAddress? remoteIp)
+    internal static bool IsAllowedIpForMetrics(IPAddress? remoteIp)
     {
         if (remoteIp == null)
         {
