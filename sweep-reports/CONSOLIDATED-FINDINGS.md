@@ -341,28 +341,28 @@
 | #   | Status       | Fix Summary                                                                                               |
 | --- | ------------ | --------------------------------------------------------------------------------------------------------- |
 | 61  | **FIXED**    | Updated TESTS.md: added all 8 missing test files, corrected test count to 788                             |
-| 62  | **DEFERRED** | PingCache and PingMessageBus — thin wrappers, low priority (see Deferred Items section)                   |
-| 63  | **DEFERRED** | SetNx error-path tests — same pattern as other 6 handlers (see Deferred Items section)                    |
-| 64  | **DEFERRED** | CheckHealth handler tests — needs dedicated test infrastructure (see Deferred Items section)              |
-| 65  | **DEFERRED** | .NET Geo.Client FindWhoIs tests — .NET test scope (see Deferred Items section)                            |
-| 66  | **DEFERRED** | .NET Geo.Client ContactsEvicted tests — .NET test scope (see Deferred Items section)                      |
-| 67  | **DEFERRED** | .NET ServiceDefaults tests — .NET test scope (see Deferred Items section)                                 |
+| 62  | **TRACKED**  | PingCache and PingMessageBus — thin wrappers, tracked in Section 5 Priority 1                             |
+| 63  | **TRACKED**  | SetNx error-path tests — same pattern as other 6 handlers, tracked in Section 5 Priority 1                |
+| 64  | **TRACKED**  | CheckHealth handler tests — needs dedicated test infrastructure, tracked in Section 5 Priority 1          |
+| 65  | **FIXED**    | .NET Geo.Client FindWhoIs already has 10 unit tests in `FindWhoIsHandlerTests.cs` (cache hit/miss, fail-open, cache key) — finding was stale |
+| 66  | **TRACKED**  | .NET Geo.Client ContactsEvicted tests — tracked in Section 5 Priority 1                                   |
+| 67  | **TRACKED**  | .NET ServiceDefaults tests — tracked in Section 5 Priority 1                                               |
 
 ---
 
 ### Medium Findings Summary
 
-| Category        | Total  | Fixed  | No Action / False Positive | Deferred |
-| --------------- | ------ | ------ | -------------------------- | -------- |
-| Security        | 13     | 11     | 2                          | 0        |
-| Bugs            | 21     | 19     | 1                          | 1        |
-| Consistency     | 15     | 13     | 2                          | 0        |
-| Performance     | 4      | 3      | 0                          | 1        |
-| Maintainability | 7      | 6      | 1                          | 0        |
-| Test Gaps       | 7      | 1      | 0                          | 6        |
-| **Total**       | **67** | **53** | **6**                      | **8**    |
+| Category        | Total  | Fixed  | No Action / By Design | Tracked |
+| --------------- | ------ | ------ | --------------------- | ------- |
+| Security        | 13     | 11     | 2                     | 0       |
+| Bugs            | 21     | 20     | 1                     | 0       |
+| Consistency     | 15     | 13     | 2                     | 0       |
+| Performance     | 4      | 3      | 1                     | 0       |
+| Maintainability | 7      | 6      | 1                     | 0       |
+| Test Gaps       | 7      | 2      | 0                     | 5       |
+| **Total**       | **67** | **55** | **7**                 | **5**   |
 
-**Note:** "No Action" means investigation confirmed the finding was either already addressed, a false positive, or intentionally left as-is after discussion. "Deferred" items are detailed in section 8 below.
+**Note:** "No Action / By Design" means investigation confirmed the finding was already addressed, a false positive, or intentionally left as-is (see Section 8). "Tracked" items are test coverage gaps tracked in Section 5 — not blocked, just pending prioritization.
 
 ---
 
@@ -403,7 +403,7 @@ Prioritized list of all tests to add across all modules.
 | `@d2/messaging`           | PingMessageBus handler unit test                                     | 7, 11  |
 | `comms-app`               | CheckHealth handler unit tests (healthy, degraded, not-configured)   | 13, 15 |
 | `auth-app`                | CheckHealth handler unit tests                                       | 17, 19 |
-| Geo.Client (.NET)         | FindWhoIs handler tests (cache hit/miss, fail-open, gRPC failure)    | 23     |
+| ~~Geo.Client (.NET)~~     | ~~FindWhoIs handler tests~~ — **Already covered** (`FindWhoIsHandlerTests.cs`, 10 tests) | 23     |
 | Geo.Client (.NET)         | ContactsEvicted consumer + handler tests                             | 23     |
 
 ### Priority 2: Medium (Validation + Coverage)
@@ -499,30 +499,30 @@ Prioritized list of all tests to add across all modules.
 
 ---
 
-## 8. Deferred Items
+## 8. Closed Decisions
 
-Items intentionally deferred from the medium-severity sweep. Each includes rationale and recommended action for future sprints.
+Items from the medium-severity sweep that were investigated and resolved without code changes.
 
-### Test Coverage Gaps
-
-| #   | Finding                                        | Rationale                                                                                                                                                                   | Recommended Action                                                                                      |
-| --- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| 62  | PingCache + PingMessageBus zero test coverage  | Both are thin wrappers (single method call to underlying client). Risk is low since the underlying clients are well-tested. Low priority relative to other test gaps.       | Add basic smoke tests when touching these handlers for other reasons.                                   |
-| 63  | SetNx missing from error-path + integration tests | Follows identical pattern to the other 6 Redis handlers which ARE tested. `BaseRedisHandler` base class (added in this sweep) provides shared error handling.              | Add tests when next modifying `@d2/cache-redis`. Same test structure as existing handlers.              |
-| 64  | CheckHealth handler zero tests (Auth + Comms)  | Non-trivial branching (healthy/degraded/not-configured). Requires mocking multiple cache + DB + messaging ping handlers. Needs dedicated test helper infrastructure.        | Create shared `MockHealthDeps` helper, then add tests for all 3 health states in each service.          |
-| 65  | .NET Geo.Client FindWhoIs zero tests           | Cache-hit, cache-miss + gRPC success, and gRPC failure paths all untested. .NET test infrastructure exists (Testcontainers) but handler has complex multi-tier cache logic. | Add unit tests with mocked cache/gRPC deps covering the 3 main paths + cache population on miss.        |
-| 66  | .NET Geo.Client ContactsEvicted zero tests     | Consumer + handler that evicts contacts from local cache on cross-service event. Critical for cache consistency but straightforward logic.                                  | Add unit tests verifying cache removal for evicted contact IDs and ext-key pairs.                       |
-| 67  | .NET ServiceDefaults OTel wiring zero tests    | 3 extension files with conditional logic (dev vs prod, OTLP configuration). Low blast radius since these are startup-only configuration.                                   | Add integration tests verifying OTel providers are registered and health check endpoints respond.        |
-
-### Summary
-
-| Category  | Deferred | Risk Level | Notes                                                                 |
-| --------- | -------- | ---------- | --------------------------------------------------------------------- |
-| Test Gaps | 6        | Medium     | #62-67 — core infrastructure untested but stable; prioritize #64, #65 |
-| **Total** | **6**    |            |                                                                       |
-
-### Closed — By Design
+### By Design
 
 | #   | Finding                                                   | Decision                                                                                                                                                                                                                                                                                                                 |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 53  | `_injectTraceId` creates full D2Result copy on every call | **Won't fix.** D2Result immutability is intentional. The "copy" is a shallow memberwise clone (~100-200 bytes of short-lived Gen0/young-gen garbage per call) — all fields are reference types so the clone just copies pointers. Negligible for SMB SaaS workloads. Making traceId mutable would compromise the frozen-result guarantee for no measured gain. Revisit only if profiling shows measurable GC pressure. |
+
+### Stale Findings
+
+| #   | Finding                                | Resolution                                                                                                       |
+| --- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 65  | .NET Geo.Client FindWhoIs zero tests   | Already covered — `FindWhoIsHandlerTests.cs` has 10 unit tests (cache hit/miss, fail-open, gRPC failure, cache key format). Finding predated test file. |
+
+### Test Coverage Gaps (Tracked in Section 5)
+
+The remaining 5 test gaps (#62-64, #66-67) are not deferred — they are tracked as prioritized action items in Section 5 (Priority 1). They will be addressed opportunistically when touching the relevant code.
+
+| #   | Finding                                       | Section 5 Entry                                                          |
+| --- | --------------------------------------------- | ------------------------------------------------------------------------ |
+| 62  | PingCache + PingMessageBus zero tests         | `@d2/cache-redis` + `@d2/messaging` — Priority 1                        |
+| 63  | SetNx missing error-path + integration tests  | `@d2/cache-redis` — Priority 1                                          |
+| 64  | CheckHealth zero tests (Auth + Comms)         | `comms-app` + `auth-app` — Priority 1                                   |
+| 66  | .NET Geo.Client ContactsEvicted zero tests    | Geo.Client (.NET) — Priority 1                                          |
+| 67  | .NET ServiceDefaults OTel wiring zero tests   | `@d2/service-defaults` — Priority 1                                     |
