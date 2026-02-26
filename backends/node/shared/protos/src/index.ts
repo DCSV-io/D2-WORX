@@ -120,6 +120,13 @@ export type {
   ParticipantDTO,
 } from "./generated/comms/v1/comms.js";
 
+// Comms service — DTO value exports (encode/decode for roundtrip tests)
+export {
+  ChannelPreferenceDTO as ChannelPreferenceDTOFns,
+  DeliveryRequestDTO as DeliveryRequestDTOFns,
+  DeliveryAttemptDTO as DeliveryAttemptDTOFns,
+} from "./generated/comms/v1/comms.js";
+
 // Comms service — request/response types + client/server
 export type {
   GetChannelPreferenceRequest,

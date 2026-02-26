@@ -305,4 +305,58 @@ describe("Notify", () => {
       expect(result).toHaveErrorCode("UNHANDLED_EXCEPTION");
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Boundary validation
+  // -------------------------------------------------------------------------
+
+  describe("boundary validation", () => {
+    it("should accept correlationId at exactly 36 characters", async () => {
+      const result = await handler.handleAsync(validInput({ correlationId: "a".repeat(36) }));
+
+      expect(result).toBeSuccess();
+    });
+
+    it("should reject correlationId at 37 characters", async () => {
+      const result = await handler.handleAsync(validInput({ correlationId: "a".repeat(37) }));
+
+      expect(result).toBeFailure();
+      expect(result).toHaveStatusCode(400);
+      expect(result).toHaveErrorCode("VALIDATION_FAILED");
+      expect(result.inputErrors.some((e) => e[0] === "correlationId")).toBe(true);
+    });
+
+    it("should accept senderService at exactly 50 characters", async () => {
+      const result = await handler.handleAsync(validInput({ senderService: "s".repeat(50) }));
+
+      expect(result).toBeSuccess();
+    });
+
+    it("should reject senderService at 51 characters", async () => {
+      const result = await handler.handleAsync(validInput({ senderService: "s".repeat(51) }));
+
+      expect(result).toBeFailure();
+      expect(result).toHaveStatusCode(400);
+      expect(result).toHaveErrorCode("VALIDATION_FAILED");
+      expect(result.inputErrors.some((e) => e[0] === "senderService")).toBe(true);
+    });
+
+    it("should accept content at exactly 50,000 characters", async () => {
+      const result = await handler.handleAsync(validInput({ content: "c".repeat(50_000) }));
+
+      expect(result).toBeSuccess();
+    });
+
+    it("should accept plaintext at exactly 50,000 characters", async () => {
+      const result = await handler.handleAsync(validInput({ plaintext: "p".repeat(50_000) }));
+
+      expect(result).toBeSuccess();
+    });
+
+    it("should accept title at exactly 255 characters", async () => {
+      const result = await handler.handleAsync(validInput({ title: "t".repeat(255) }));
+
+      expect(result).toBeSuccess();
+    });
+  });
 });

@@ -40,5 +40,8 @@ export { createNotificationConsumer } from "./messaging/consumers/notification-c
 export type { NotificationConsumerDeps } from "./messaging/consumers/notification-consumer.js";
 export { declareRetryTopology, getRetryTierQueue } from "./messaging/retry-topology.js";
 
+// --- Repository Ping ---
+export { PingDb } from "./repository/handlers/q/ping-db.js";
+
 // --- DI Registration ---
 export { addCommsInfra } from "./registration.js";
