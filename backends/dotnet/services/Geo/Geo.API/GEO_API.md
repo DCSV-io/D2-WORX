@@ -15,16 +15,16 @@ gRPC service layer exposing geographic reference data endpoints. Thin pass-throu
 
 Defined in [geo.proto](../../../../../contracts/protos/geo/v1/geo.proto):
 
-| RPC                          | Request                             | Response                             | Description                                                                                                              |
-| ---------------------------- | ----------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `GetReferenceData`           | `GetReferenceDataRequest`           | `GetReferenceDataResponse`           | Returns full geographic reference data (countries, subdivisions, currencies, languages, locales, geopolitical entities). |
-| `RequestReferenceDataUpdate` | `RequestReferenceDataUpdateRequest` | `RequestReferenceDataUpdateResponse` | Returns current version of reference data.                                                                               |
-| `FindWhoIs`                  | `FindWhoIsRequest`                  | `FindWhoIsResponse`                  | Lookup WhoIs by IP+fingerprint with cache check, external API fallback, and Location enrichment.                         |
-| `GetContacts`                | `GetContactsRequest`                | `GetContactsResponse`                | Internal only — batch Contact retrieval by IDs. Not exposed via client libraries.                                        |
-| `DeleteContacts`             | `DeleteContactsRequest`             | `DeleteContactsResponse`             | Internal only — batch Contact deletion by IDs. Not exposed via client libraries.                                         |
-| `GetContactsByExtKeys`       | `GetContactsByExtKeysRequest`       | `GetContactsByExtKeysResponse`       | Contact lookup by ContextKey/RelatedEntityId pairs with nested Location data.                                            |
-| `CreateContacts`             | `CreateContactsRequest`             | `CreateContactsResponse`             | Batch Contact creation with embedded locations, returning ContactDTOs.                                                   |
-| `DeleteContactsByExtKeys`    | `DeleteContactsByExtKeysRequest`    | `DeleteContactsByExtKeysResponse`    | Delete Contacts by ContextKey/RelatedEntityId pairs. Returns count + publishes cache eviction event.                     |
+| RPC                          | Request                             | Response                             | Description                                                                                                               |
+| ---------------------------- | ----------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `GetReferenceData`           | `GetReferenceDataRequest`           | `GetReferenceDataResponse`           | Returns full geographic reference data (countries, subdivisions, currencies, languages, locales, geopolitical entities).  |
+| `RequestReferenceDataUpdate` | `RequestReferenceDataUpdateRequest` | `RequestReferenceDataUpdateResponse` | Returns current version of reference data.                                                                                |
+| `FindWhoIs`                  | `FindWhoIsRequest`                  | `FindWhoIsResponse`                  | Lookup WhoIs by IP+fingerprint with cache check, external API fallback, and Location enrichment.                          |
+| `GetContacts`                | `GetContactsRequest`                | `GetContactsResponse`                | Internal only — batch Contact retrieval by IDs. Not exposed via client libraries.                                         |
+| `DeleteContacts`             | `DeleteContactsRequest`             | `DeleteContactsResponse`             | Internal only — batch Contact deletion by IDs. Not exposed via client libraries.                                          |
+| `GetContactsByExtKeys`       | `GetContactsByExtKeysRequest`       | `GetContactsByExtKeysResponse`       | Contact lookup by ContextKey/RelatedEntityId pairs with nested Location data.                                             |
+| `CreateContacts`             | `CreateContactsRequest`             | `CreateContactsResponse`             | Batch Contact creation with embedded locations, returning ContactDTOs.                                                    |
+| `DeleteContactsByExtKeys`    | `DeleteContactsByExtKeysRequest`    | `DeleteContactsByExtKeysResponse`    | Delete Contacts by ContextKey/RelatedEntityId pairs. Returns count + publishes cache eviction event.                      |
 | `UpdateContactsByExtKeys`    | `UpdateContactsByExtKeysRequest`    | `UpdateContactsByExtKeysResponse`    | Replace Contacts at given ext keys (delete old, create new). Returns old-to-new mapping + publishes cache eviction event. |
 
 ## Security — API Key Interceptor

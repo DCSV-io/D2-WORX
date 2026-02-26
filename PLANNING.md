@@ -607,15 +607,15 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 ### Infrastructure
 
-| Component     | Status     | Notes                  |
-| ------------- | ---------- | ---------------------- |
-| PostgreSQL 18 | ✅ Done    | Aspire-managed         |
-| Redis 8.2     | ✅ Done    | Aspire-managed         |
-| RabbitMQ 4.1  | ✅ Done    | Aspire-managed         |
-| MinIO         | ✅ Done    | Aspire-managed         |
+| Component     | Status     | Notes                                                    |
+| ------------- | ---------- | -------------------------------------------------------- |
+| PostgreSQL 18 | ✅ Done    | Aspire-managed                                           |
+| Redis 8.2     | ✅ Done    | Aspire-managed                                           |
+| RabbitMQ 4.1  | ✅ Done    | Aspire-managed                                           |
+| MinIO         | ✅ Done    | Aspire-managed                                           |
 | Dkron 4.0.9   | ✅ Done    | Aspire-managed, persistent container, dashboard on :8888 |
-| LGTM Stack    | ✅ Done    | Full observability     |
-| ~~Keycloak~~  | ❌ Removed | Replaced by BetterAuth |
+| LGTM Stack    | ✅ Done    | Full observability                                       |
+| ~~Keycloak~~  | ❌ Removed | Replaced by BetterAuth                                   |
 
 ### Shared Packages (.NET)
 
@@ -787,8 +787,8 @@ Geo.Client / Geo.Domain / Geo.App / Geo.Infra / Geo.API / Geo.Tests
 
 **Two client libraries** (auth serves two distinct consumer types):
 
-| Client             | Package           | Consumers                    | Protocol | Purpose                                         |
-| ------------------ | ----------------- | ---------------------------- | -------- | ----------------------------------------------- |
+| Client             | Package               | Consumers                    | Protocol | Purpose                                         |
+| ------------------ | --------------------- | ---------------------------- | -------- | ----------------------------------------------- |
 | **BFF Client**     | `@d2/auth-bff-client` | SvelteKit                    | HTTP     | Auth proxy, session management, JWT lifecycle   |
 | **Backend Client** | `@d2/auth-client`     | .NET gateway, other services | gRPC     | User/org lookups, JWT validation, JWKS fetching |
 
@@ -1132,16 +1132,16 @@ SessionContext (computed, not persisted)
 
 ##### BetterAuth-Managed vs Custom Tables
 
-| Table               | Managed By  | Notes                                                 |
-| ------------------- | ----------- | ----------------------------------------------------- |
-| `user`              | BetterAuth  | Core; we add no custom fields                         |
-| `account`           | BetterAuth  | Core; 1:N per user (multi-provider)                   |
-| `session`           | BetterAuth  | Core + org plugin + 4 custom extension fields         |
-| `verification`      | BetterAuth  | Email verification tokens (infra only, not in domain) |
-| `jwks`              | BetterAuth  | JWT key pairs (infra only, not in domain)             |
-| `organization`      | BetterAuth  | Org plugin + custom `type` field                      |
-| `member`            | BetterAuth  | Org plugin; role stored as text                       |
-| `invitation`        | BetterAuth  | Org plugin                                            |
+| Table               | Managed By   | Notes                                                 |
+| ------------------- | ------------ | ----------------------------------------------------- |
+| `user`              | BetterAuth   | Core; we add no custom fields                         |
+| `account`           | BetterAuth   | Core; 1:N per user (multi-provider)                   |
+| `session`           | BetterAuth   | Core + org plugin + 4 custom extension fields         |
+| `verification`      | BetterAuth   | Email verification tokens (infra only, not in domain) |
+| `jwks`              | BetterAuth   | JWT key pairs (infra only, not in domain)             |
+| `organization`      | BetterAuth   | Org plugin + custom `type` field                      |
+| `member`            | BetterAuth   | Org plugin; role stored as text                       |
+| `invitation`        | BetterAuth   | Org plugin                                            |
 | `org_contact`       | Us (Drizzle) | Custom — address book junction → Geo Contact          |
 | `sign_in_event`     | Us (Drizzle) | Custom — auth attempt audit log                       |
 | `emulation_consent` | Us (Drizzle) | Custom — user-level impersonation consent             |
@@ -1376,19 +1376,20 @@ clients/web/src/routes/
 
 **Infrastructure**: Dkron v4.0.9 runs as a persistent Aspire container (dashboard: `:8888`). Jobs call service HTTP endpoints on a cron schedule. Use Redis `SET NX` distributed locks when only one instance should execute a job.
 
-| Job                              | Owner | Schedule    | Retention | Status              | Notes                                                                                            |
-| -------------------------------- | ----- | ----------- | --------- | ------------------- | ------------------------------------------------------------------------------------------------ |
-| **Sign-in event purge**          | Auth  | Daily       | 90 days   | Not implemented     | DELETE `sign_in_event` WHERE `created_at < NOW() - 90 days`                                      |
-| **Expired invitation cleanup**   | Auth  | Daily       | 7 days    | Not implemented     | DELETE expired invitations. Domain check `isInvitationExpired()` exists but no row deletion       |
-| **Expired emulation consent**    | Auth  | Weekly      | Per-grant | Not implemented     | DELETE WHERE `expires_at < NOW()` or `revoked_at IS NOT NULL`. Runtime filter works; rows accumulate |
-| **Geo orphaned location cleanup**| Geo   | Daily       | N/A       | Not implemented     | DELETE locations with zero contact/WhoIs references. Auth swallows Geo delete failures relying on this |
-| **Orphaned contacts**            | Geo   | Weekly      | N/A       | Not implemented     | DELETE contacts with `context_key = 'auth_user'` + no matching user. Low priority ("harmless noise") |
-| **Soft-deleted message cleanup** | Comms | Weekly      | 90 days   | Not implemented     | DELETE `message` WHERE `deleted_at < NOW() - 90 days`                                            |
-| **Delivery history retention**   | Comms | Monthly     | 1 year    | Not implemented     | Archive/DELETE old `delivery_request` + `delivery_attempt` rows                                  |
-| BetterAuth sessions (PG)         | Auth  | Weekly      | 7 days    | BetterAuth-managed? | Expired PG session rows may accumulate. Verify BetterAuth handles this                           |
-| BetterAuth verification tokens   | Auth  | Weekly      | Per-token | BetterAuth-managed? | Expired tokens functionally inert. Verify BetterAuth handles cleanup                            |
+| Job                               | Owner | Schedule | Retention | Status              | Notes                                                                                                  |
+| --------------------------------- | ----- | -------- | --------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Sign-in event purge**           | Auth  | Daily    | 90 days   | Not implemented     | DELETE `sign_in_event` WHERE `created_at < NOW() - 90 days`                                            |
+| **Expired invitation cleanup**    | Auth  | Daily    | 7 days    | Not implemented     | DELETE expired invitations. Domain check `isInvitationExpired()` exists but no row deletion            |
+| **Expired emulation consent**     | Auth  | Weekly   | Per-grant | Not implemented     | DELETE WHERE `expires_at < NOW()` or `revoked_at IS NOT NULL`. Runtime filter works; rows accumulate   |
+| **Geo orphaned location cleanup** | Geo   | Daily    | N/A       | Not implemented     | DELETE locations with zero contact/WhoIs references. Auth swallows Geo delete failures relying on this |
+| **Orphaned contacts**             | Geo   | Weekly   | N/A       | Not implemented     | DELETE contacts with `context_key = 'auth_user'` + no matching user. Low priority ("harmless noise")   |
+| **Soft-deleted message cleanup**  | Comms | Weekly   | 90 days   | Not implemented     | DELETE `message` WHERE `deleted_at < NOW() - 90 days`                                                  |
+| **Delivery history retention**    | Comms | Monthly  | 1 year    | Not implemented     | Archive/DELETE old `delivery_request` + `delivery_attempt` rows                                        |
+| BetterAuth sessions (PG)          | Auth  | Weekly   | 7 days    | BetterAuth-managed? | Expired PG session rows may accumulate. Verify BetterAuth handles this                                 |
+| BetterAuth verification tokens    | Auth  | Weekly   | Per-token | BetterAuth-managed? | Expired tokens functionally inert. Verify BetterAuth handles cleanup                                   |
 
 **Already handled (no Dkron job needed):**
+
 - Idempotency keys: Redis TTL (24h)
 - Rate limit counters/blocks: Redis TTL
 - Redis cache entries: Redis TTL + LRU eviction
@@ -1400,13 +1401,13 @@ clients/web/src/routes/
 
 ## Technical Debt
 
-| Item                           | Priority   | Notes                                                                                                                                                                                                 |
-| ------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Validate redaction in OTEL** | **High**   | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output                                                                                                      |
+| Item                           | Priority   | Notes                                                                                                                                                                                                  |
+| ------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Validate redaction in OTEL** | **High**   | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output                                                                                                       |
 | **OTel alerting rules**        | **Medium** | Define AlertManager/Grafana alert rules for key operational signals: error rate spikes, latency P99 thresholds, rate limit blocks, delivery failures. Rate limit admin alerting (via Comms) is Phase 3 |
 | **Service resilience/startup** | **Medium** | Auto-restart policies (Aspire/container health checks), graceful startup when deps aren't ready (RabbitMQ/Redis/PG retry-connect), readiness probes, circuit breakers for downstream failures          |
-| ~~Test container sharing~~     | ~~Medium~~ | ✅ Done                                                                                                                                                                                               |
-| ~~Standardize error codes~~    | ~~Medium~~ | ✅ Done                                                                                                                                                                                               |
+| ~~Test container sharing~~     | ~~Medium~~ | ✅ Done                                                                                                                                                                                                |
+| ~~Standardize error codes~~    | ~~Medium~~ | ✅ Done                                                                                                                                                                                                |
 
 ---
 

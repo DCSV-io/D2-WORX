@@ -7,10 +7,10 @@
 namespace D2.Shared.RateLimit.Default;
 
 using System.Net;
-using System.Text.Json;
 using D2.Shared.RateLimit.Default.Interfaces;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -111,12 +111,7 @@ public class RateLimitMiddleware
                 ErrorCodes.RATE_LIMITED,
                 context.TraceIdentifier);
 
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            };
-
-            await context.Response.WriteAsJsonAsync(response, jsonOptions, context.RequestAborted);
+            await context.Response.WriteAsJsonAsync(response, SerializerOptions.SR_Web, context.RequestAborted);
 
             // Do not log raw ClientIp — it is PII.
             r_logger.LogInformation(

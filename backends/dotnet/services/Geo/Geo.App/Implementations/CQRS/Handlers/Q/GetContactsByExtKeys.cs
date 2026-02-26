@@ -16,6 +16,7 @@ using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ClientCacheKeys = D2.Geo.Client.CacheKeys;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.IGetContactsByExtKeysHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.GetContactsByExtKeysInput;
 using O = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.GetContactsByExtKeysOutput;
@@ -99,7 +100,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         }
 
         // First, try to get contacts from in-memory cache.
-        var cacheKeys = GetCacheKeys(extKeys);
+        var cacheKeys = extKeys.Select(k => ClientCacheKeys.ContactsByExtKey(k.ContextKey, k.Item2)).ToList();
         var getFromCacheR = await r_memoryCacheGetMany.HandleAsync(new(cacheKeys), ct);
 
         // If that failed (for any reason other than "NOT or SOME found"), bubble up the failure.
@@ -173,16 +174,10 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         }
     }
 
-    private static string GetCacheKey((string ContextKey, Guid RelatedEntityId) extKey) =>
-        $"{nameof(GetContactsByExtKeys)}:{extKey.ContextKey}:{extKey.RelatedEntityId}";
-
-    private static List<string> GetCacheKeys(IEnumerable<(string ContextKey, Guid RelatedEntityId)> extKeys) =>
-        extKeys.Select(GetCacheKey).ToList();
-
     private static (string ContextKey, Guid RelatedEntityId)? ParseCacheKey(string cacheKey)
     {
-        // Format: "GetContactsByExtKeys:{contextKey}:{relatedEntityId}"
-        var prefix = $"{nameof(GetContactsByExtKeys)}:";
+        // Format: "geo:contacts-by-extkey:{contextKey}:{relatedEntityId}"
+        var prefix = $"{ClientCacheKeys.CONTACTS_BY_EXT_KEY_PREFIX}:";
         if (!cacheKey.StartsWith(prefix, StringComparison.Ordinal))
         {
             return null;
@@ -211,7 +206,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         var setInCacheR = await r_memoryCacheSetMany.HandleAsync(
             new(
                 fromRepoDict.ToDictionary(
-                    kvp => GetCacheKey(kvp.Key),
+                    kvp => ClientCacheKeys.ContactsByExtKey(kvp.Key.ContextKey, kvp.Key.RelatedEntityId),
                     kvp => kvp.Value),
                 r_options.ContactExpirationDuration),
             ct);

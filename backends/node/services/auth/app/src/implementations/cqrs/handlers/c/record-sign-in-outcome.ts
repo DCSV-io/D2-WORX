@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { SIGN_IN_THROTTLE, computeSignInDelay } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
+import { AUTH_CACHE_KEYS } from "../../../../cache-keys.js";
 import type { ISignInThrottleStore } from "../../../../interfaces/repository/sign-in-throttle-store.js";
 
 export interface RecordSignInOutcomeInput {
@@ -78,7 +79,7 @@ export class RecordSignInOutcome extends BaseHandler<
 
     // Update local cache
     if (this.cache) {
-      const cacheKey = `${input.identifierHash}:${input.identityHash}`;
+      const cacheKey = AUTH_CACHE_KEYS.signInThrottle(input.identifierHash, input.identityHash);
       this.cache.set
         .handleAsync({
           key: cacheKey,

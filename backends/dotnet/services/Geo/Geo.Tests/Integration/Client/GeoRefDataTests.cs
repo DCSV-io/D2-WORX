@@ -99,7 +99,7 @@ public class GeoRefDataTests : IAsyncLifetime
         var setInDistHandler = _services.GetRequiredService<
         IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, ClientTestHelpers.TestGeoRefData),
+            new(CacheKeys.REFDATA, ClientTestHelpers.TestGeoRefData),
             Ct);
 
         var getHandler = _services.GetRequiredService<IComplex.IGetHandler>();
@@ -195,7 +195,7 @@ public class GeoRefDataTests : IAsyncLifetime
         var setInDistHandler = _services.GetRequiredService<
             IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, ClientTestHelpers.TestGeoRefData),
+            new(CacheKeys.REFDATA, ClientTestHelpers.TestGeoRefData),
             Ct);
 
         var getHandler = _services.GetRequiredService<IComplex.IGetHandler>();
@@ -205,7 +205,7 @@ public class GeoRefDataTests : IAsyncLifetime
 
         // Clear Redis to verify second call uses memory
         var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
-        await redis.GetDatabase().KeyDeleteAsync(Constants.DIST_CACHE_KEY_GEO_REF_DATA);
+        await redis.GetDatabase().KeyDeleteAsync(CacheKeys.REFDATA);
 
         // Act - second call
         var result = await getHandler.HandleAsync(new(), Ct);
@@ -285,7 +285,7 @@ public class GeoRefDataTests : IAsyncLifetime
 
         // Clear Redis
         var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
-        await redis.GetDatabase().KeyDeleteAsync(Constants.DIST_CACHE_KEY_GEO_REF_DATA);
+        await redis.GetDatabase().KeyDeleteAsync(CacheKeys.REFDATA);
 
         var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();
         var message = new GeoRefDataUpdatedEvent { Version = "2.0.0" };
@@ -317,7 +317,7 @@ public class GeoRefDataTests : IAsyncLifetime
 
         var setInDistHandler = _services.GetRequiredService<IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, newVersionData),
+            new(CacheKeys.REFDATA, newVersionData),
             Ct);
 
         var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();

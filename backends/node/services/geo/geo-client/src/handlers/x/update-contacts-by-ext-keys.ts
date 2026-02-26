@@ -3,8 +3,10 @@ import { D2Result } from "@d2/result";
 import { handleGrpcCall } from "@d2/result-extensions";
 import type { GeoServiceClient, UpdateContactsByExtKeysResponse } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { Metadata } from "@grpc/grpc-js";
 import { z } from "zod";
 import type { GeoClientOptions } from "../../geo-client-options.js";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Complex } from "../../interfaces/index.js";
 
 type Input = Complex.UpdateContactsByExtKeysInput;
@@ -26,6 +28,7 @@ export class UpdateContactsByExtKeys
 
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
+  private readonly options: GeoClientOptions;
   private readonly inputSchema: z.ZodType<Input>;
 
   constructor(
@@ -37,6 +40,7 @@ export class UpdateContactsByExtKeys
     super(context);
     this.store = store;
     this.geoClient = geoClient;
+    this.options = options;
     this.inputSchema = z
       .object({
         contacts: z.array(
@@ -55,10 +59,15 @@ export class UpdateContactsByExtKeys
     const r = await handleGrpcCall(
       () =>
         new Promise<UpdateContactsByExtKeysResponse>((resolve, reject) => {
-          this.geoClient.updateContactsByExtKeys({ contacts: input.contacts }, (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          });
+          this.geoClient.updateContactsByExtKeys(
+            { contacts: input.contacts },
+            new Metadata(),
+            { deadline: Date.now() + this.options.grpcTimeoutMs },
+            (err, res) => {
+              if (err) reject(err);
+              else resolve(res);
+            },
+          );
         }),
       (res) => res.result!,
       (res) => ({ replacements: res.replacements }),
@@ -66,7 +75,7 @@ export class UpdateContactsByExtKeys
 
     // Evict ext-key cache for each input contact regardless of gRPC result
     for (const c of input.contacts) {
-      this.store.delete(`contact-ext:${c.contextKey}:${c.relatedEntityId}`);
+      this.store.delete(GEO_CACHE_KEYS.contactsByExtKey(c.contextKey, c.relatedEntityId));
     }
 
     return D2Result.bubble(r, r.data);

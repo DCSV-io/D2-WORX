@@ -12,15 +12,19 @@ const X_FORWARDED_FOR: TrustedProxyHeader = "x-forwarded-for";
 
 /**
  * Extracts the first non-empty value from a header that may be a string or string array.
+ * Truncates values exceeding maxLength to prevent abuse from oversized headers.
  */
 function getHeaderValue(
   headers: Record<string, string | string[] | undefined>,
   key: string,
+  maxLength: number = 2048,
 ): string | undefined {
   const value = headers[key];
   if (value === undefined) return undefined;
-  const first = Array.isArray(value) ? value[0] : value;
-  return first && first.trim() !== "" ? first.trim() : undefined;
+  let first = Array.isArray(value) ? value[0] : value;
+  if (!first || first.trim() === "") return undefined;
+  first = first.trim();
+  return first.length > maxLength ? first.slice(0, maxLength) : first;
 }
 
 /**
@@ -42,24 +46,25 @@ function getHeaderValue(
 export function resolveIp(
   headers: Record<string, string | string[] | undefined>,
   trustedProxyHeaders: readonly TrustedProxyHeader[] = DEFAULT_REQUEST_ENRICHMENT_OPTIONS.trustedProxyHeaders,
+  maxLength: number = DEFAULT_REQUEST_ENRICHMENT_OPTIONS.maxForwardedForLength,
 ): string {
   const trusted = new Set(trustedProxyHeaders);
 
   // 1. Cloudflare header
   if (trusted.has(CF_CONNECTING_IP)) {
-    const cfIp = getHeaderValue(headers, CF_CONNECTING_IP);
+    const cfIp = getHeaderValue(headers, CF_CONNECTING_IP, maxLength);
     if (cfIp) return cfIp;
   }
 
   // 2. X-Real-IP
   if (trusted.has(X_REAL_IP)) {
-    const realIp = getHeaderValue(headers, X_REAL_IP);
+    const realIp = getHeaderValue(headers, X_REAL_IP, maxLength);
     if (realIp) return realIp;
   }
 
   // 3. X-Forwarded-For (first entry from comma-separated list)
   if (trusted.has(X_FORWARDED_FOR)) {
-    const forwarded = getHeaderValue(headers, X_FORWARDED_FOR);
+    const forwarded = getHeaderValue(headers, X_FORWARDED_FOR, maxLength);
     if (forwarded) {
       const parts = forwarded.split(",");
       for (const part of parts) {

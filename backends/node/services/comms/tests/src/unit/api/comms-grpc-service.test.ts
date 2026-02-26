@@ -86,10 +86,7 @@ describe("createCommsGrpcService", () => {
       const service = createCommsGrpcService(provider as any);
       const callback = vi.fn();
 
-      await service.getChannelPreference(
-        { request: { contactId: "contact-1" } } as any,
-        callback,
-      );
+      await service.getChannelPreference({ request: { contactId: "contact-1" } } as any, callback);
 
       expect(callback).toHaveBeenCalledOnce();
       const [err, response] = callback.mock.calls[0];
@@ -106,10 +103,7 @@ describe("createCommsGrpcService", () => {
       const service = createCommsGrpcService(provider as any);
       const callback = vi.fn();
 
-      await service.getChannelPreference(
-        { request: { contactId: "contact-1" } } as any,
-        callback,
-      );
+      await service.getChannelPreference({ request: { contactId: "contact-1" } } as any, callback);
 
       expect(callback).toHaveBeenCalledOnce();
       const [, response] = callback.mock.calls[0];
@@ -124,10 +118,7 @@ describe("createCommsGrpcService", () => {
       const service = createCommsGrpcService(provider as any);
       const callback = vi.fn();
 
-      await service.getChannelPreference(
-        { request: { contactId: "contact-1" } } as any,
-        callback,
-      );
+      await service.getChannelPreference({ request: { contactId: "contact-1" } } as any, callback);
 
       expect(callback).toHaveBeenCalledOnce();
       const [err] = callback.mock.calls[0];
@@ -268,8 +259,6 @@ describe("createCommsGrpcService", () => {
 
   describe("stub RPCs", () => {
     const stubNames = [
-      "getTemplate",
-      "upsertTemplate",
       "getNotifications",
       "markNotificationsRead",
       "createThread",

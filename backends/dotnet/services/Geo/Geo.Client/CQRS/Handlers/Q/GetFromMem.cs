@@ -62,9 +62,7 @@ public class GetFromMem : BaseHandler<GetFromMem, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        const string cache_key = "GeoRefData";
-
-        var getR = await r_memoryCacheGet.HandleAsync(new(cache_key), ct);
+        var getR = await r_memoryCacheGet.HandleAsync(new(CacheKeys.REFDATA), ct);
 
         if (getR.CheckSuccess(out var output))
         {

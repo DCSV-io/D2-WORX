@@ -2,19 +2,19 @@
 
 **Files reviewed** (with line counts):
 
-| File | Lines |
-|------|-------|
-| `comms/client/src/index.ts` | 7 |
-| `comms/client/src/handlers/pub/notify.ts` | 93 |
-| `comms/client/src/comms-client-constants.ts` | 10 |
-| `comms/client/src/service-keys.ts` | 4 |
-| `comms/client/src/registration.ts` | 20 |
-| `comms/client/package.json` | 26 |
-| `comms/client/tsconfig.json` | 8 |
-| `comms/client/COMMS_CLIENT.md` | 149 |
-| `comms/tests/src/unit/client/notify.test.ts` | 308 |
-| **Total source** | **134** |
-| **Total tests** | **308** |
+| File                                         | Lines   |
+| -------------------------------------------- | ------- |
+| `comms/client/src/index.ts`                  | 7       |
+| `comms/client/src/handlers/pub/notify.ts`    | 93      |
+| `comms/client/src/comms-client-constants.ts` | 10      |
+| `comms/client/src/service-keys.ts`           | 4       |
+| `comms/client/src/registration.ts`           | 20      |
+| `comms/client/package.json`                  | 26      |
+| `comms/client/tsconfig.json`                 | 8       |
+| `comms/client/COMMS_CLIENT.md`               | 149     |
+| `comms/tests/src/unit/client/notify.test.ts` | 308     |
+| **Total source**                             | **134** |
+| **Total tests**                              | **308** |
 
 ---
 
@@ -32,19 +32,19 @@
 
 **Findings**:
 
-| #  | Severity | Category        | File:Line | Description |
-|----|----------|-----------------|-----------|-------------|
-| 1  | Medium   | Security        | `notify.ts:25` | **No RedactionSpec on Notify handler.** Processes PII-containing fields (`content`, `plaintext` contain user names, verification URLs, password reset URLs). BaseHandler logs full input at DEBUG level without redaction. Should declare `inputFields: ["content", "plaintext"]` at minimum. |
-| 2  | Low      | Security        | `notify.ts:39` | **`metadata` field allows arbitrary depth/size.** `z.record(z.unknown()).optional()` permits deeply nested objects of unbounded size. No max-depth or max-serialized-size guard. Mitigated by trusted internal callers only. |
-| 3  | Low      | Consistency     | `notify.ts:31` | **Redundant `.min(1)` on `z.string().uuid()`.** UUID validator already guarantees non-empty 36-char string. No-op validation. |
-| 4  | Low      | Bug             | `notify.ts:37` | **`correlationId` max length of 36 matches UUID format, but field typed as `string` not UUID.** If intent is "must be UUID," should use `.uuid()`. If "any string key," max should be larger. Ambiguous. |
-| 5  | Low      | Consistency     | `notify.ts:82-83` | **Defaults applied in two places.** Zod schema has `.default(false)` for `sensitive` and `.default("normal")` for `urgency`, but `validateInput` discards parsed output — uses original `input` with `??` operators. Zod `.default()` calls are misleading (unused). Should be `.optional()` or documented. |
-| 6  | Low      | Maintainability | `notify.ts` vs `notification-consumer.ts` | **`NotifyInput` interface duplicated as `NotificationMessage` in consumer.** Consumer re-declares message shape rather than importing from `@d2/comms-client`. Risk of shapes drifting. Currently in sync. |
-| 7  | Low      | Test Gap        | `notify.test.ts` | **No boundary test for `correlationId` max length (36 chars).** |
-| 8  | Low      | Test Gap        | `notify.test.ts` | **No boundary test for `senderService` max length (50 chars).** |
-| 9  | Low      | Test Gap        | `notify.test.ts` | **No boundary test for `plaintext` max length (50,000 chars).** Content max tested but not plaintext. |
-| 10 | Low      | Elegance        | `registration.ts:15-19` | **Publisher baked into factory closure at registration time.** Cannot swap publishers after registration. Fine for current architecture. |
-| 11 | Low      | Consistency     | `notify.ts:64-69` | **No-publisher fallback partially redacts (omits content/plaintext) while with-publisher path (BaseHandler debug) would log everything.** Related to finding #1. |
+| #   | Severity | Category        | File:Line                                 | Description                                                                                                                                                                                                                                                                                                 |
+| --- | -------- | --------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Medium   | Security        | `notify.ts:25`                            | **No RedactionSpec on Notify handler.** Processes PII-containing fields (`content`, `plaintext` contain user names, verification URLs, password reset URLs). BaseHandler logs full input at DEBUG level without redaction. Should declare `inputFields: ["content", "plaintext"]` at minimum.               |
+| 2   | Low      | Security        | `notify.ts:39`                            | **`metadata` field allows arbitrary depth/size.** `z.record(z.unknown()).optional()` permits deeply nested objects of unbounded size. No max-depth or max-serialized-size guard. Mitigated by trusted internal callers only.                                                                                |
+| 3   | Low      | Consistency     | `notify.ts:31`                            | **Redundant `.min(1)` on `z.string().uuid()`.** UUID validator already guarantees non-empty 36-char string. No-op validation.                                                                                                                                                                               |
+| 4   | Low      | Bug             | `notify.ts:37`                            | **`correlationId` max length of 36 matches UUID format, but field typed as `string` not UUID.** If intent is "must be UUID," should use `.uuid()`. If "any string key," max should be larger. Ambiguous.                                                                                                    |
+| 5   | Low      | Consistency     | `notify.ts:82-83`                         | **Defaults applied in two places.** Zod schema has `.default(false)` for `sensitive` and `.default("normal")` for `urgency`, but `validateInput` discards parsed output — uses original `input` with `??` operators. Zod `.default()` calls are misleading (unused). Should be `.optional()` or documented. |
+| 6   | Low      | Maintainability | `notify.ts` vs `notification-consumer.ts` | **`NotifyInput` interface duplicated as `NotificationMessage` in consumer.** Consumer re-declares message shape rather than importing from `@d2/comms-client`. Risk of shapes drifting. Currently in sync.                                                                                                  |
+| 7   | Low      | Test Gap        | `notify.test.ts`                          | **No boundary test for `correlationId` max length (36 chars).**                                                                                                                                                                                                                                             |
+| 8   | Low      | Test Gap        | `notify.test.ts`                          | **No boundary test for `senderService` max length (50 chars).**                                                                                                                                                                                                                                             |
+| 9   | Low      | Test Gap        | `notify.test.ts`                          | **No boundary test for `plaintext` max length (50,000 chars).** Content max tested but not plaintext.                                                                                                                                                                                                       |
+| 10  | Low      | Elegance        | `registration.ts:15-19`                   | **Publisher baked into factory closure at registration time.** Cannot swap publishers after registration. Fine for current architecture.                                                                                                                                                                    |
+| 11  | Low      | Consistency     | `notify.ts:64-69`                         | **No-publisher fallback partially redacts (omits content/plaintext) while with-publisher path (BaseHandler debug) would log everything.** Related to finding #1.                                                                                                                                            |
 
 ---
 

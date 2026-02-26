@@ -50,6 +50,8 @@ public static class D2RetryHelper
             ErrorCodes.SOME_FOUND => false,
             ErrorCodes.COULD_NOT_BE_SERIALIZED => false,
             ErrorCodes.COULD_NOT_BE_DESERIALIZED => false,
+            ErrorCodes.PAYLOAD_TOO_LARGE => false,
+            ErrorCodes.CANCELLED => false,
             _ => result.StatusCode is >= HttpStatusCode.InternalServerError
                 or HttpStatusCode.TooManyRequests,
         };
@@ -84,13 +86,13 @@ public static class D2RetryHelper
         var checkTransient = options.IsTransientResult ?? IsTransientResult;
         var delayFunc = options.DelayFunc ?? Task.Delay;
 
-        var lastResult = D2Result<TData>.UnhandledException();
+        D2Result<TData>? lastResult = null;
 
         for (var attempt = 1; attempt <= options.MaxAttempts; attempt++)
         {
             if (ct.IsCancellationRequested)
             {
-                return lastResult;
+                return lastResult ?? D2Result<TData>.Cancelled();
             }
 
             try
@@ -123,7 +125,7 @@ public static class D2RetryHelper
             }
         }
 
-        return lastResult;
+        return lastResult ?? D2Result<TData>.Cancelled();
     }
 
     /// <summary>
@@ -160,13 +162,13 @@ public static class D2RetryHelper
         var checkTransient = options.IsTransientResult ?? IsTransientResult;
         var delayFunc = options.DelayFunc ?? Task.Delay;
 
-        var lastResult = D2Result<TData>.UnhandledException();
+        D2Result<TData>? lastResult = null;
 
         for (var attempt = 1; attempt <= options.MaxAttempts; attempt++)
         {
             if (ct.IsCancellationRequested)
             {
-                return lastResult;
+                return lastResult ?? D2Result<TData>.Cancelled();
             }
 
             D2Result mapped;
@@ -206,7 +208,7 @@ public static class D2RetryHelper
             }
         }
 
-        return lastResult;
+        return lastResult ?? D2Result<TData>.Cancelled();
     }
 
     /// <summary>

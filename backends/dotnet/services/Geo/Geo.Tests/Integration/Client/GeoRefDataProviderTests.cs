@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Tests.Integration.Client;
 
+using D2.Geo.Client;
 using D2.Geo.Client.CQRS.Handlers.C;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
 using D2.Services.Protos.Geo.V1;
@@ -14,7 +15,6 @@ using D2.Services.Protos.Geo.V1;
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
-using D2.Shared.Utilities.Constants;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.Redis;
@@ -83,7 +83,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
         // Assert - data retrievable from Redis via low-level handler
         var getHandler = _services.GetRequiredService<IRead.IGetHandler<GeoRefData>>();
         var getResult = await getHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA),
+            new(CacheKeys.REFDATA),
             Ct);
         Assert.True(getResult.Success);
         Assert.Equal(ClientTestHelpers.TestGeoRefData.Version, getResult.Data!.Value!.Version);
@@ -119,7 +119,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
         // Assert - new version retrievable
         var getHandler = _services.GetRequiredService<IRead.IGetHandler<GeoRefData>>();
         var getResult = await getHandler.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA),
+            new(CacheKeys.REFDATA),
             Ct);
         Assert.True(getResult.Success);
         Assert.Equal("2.0.0", getResult.Data!.Value!.Version);

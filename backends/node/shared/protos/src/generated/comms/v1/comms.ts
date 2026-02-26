@@ -31,37 +31,9 @@ export interface PaginationRequest {
 
 export interface ChannelPreferenceDTO {
   id: string;
-  /** set if user-scoped */
-  userId?:
-    | string
-    | undefined;
-  /** set if contact-scoped */
-  contactId?: string | undefined;
+  contactId: string;
   emailEnabled: boolean;
   smsEnabled: boolean;
-  /** HH:MM */
-  quietHoursStart?:
-    | string
-    | undefined;
-  /** HH:MM */
-  quietHoursEnd?:
-    | string
-    | undefined;
-  /** IANA timezone */
-  quietHoursTz?: string | undefined;
-  createdAt: Date | undefined;
-  updatedAt: Date | undefined;
-}
-
-export interface TemplateWrapperDTO {
-  id: string;
-  name: string;
-  /** "email" | "sms" */
-  channel: string;
-  /** not applicable for SMS */
-  subjectTemplate?: string | undefined;
-  bodyTemplate: string;
-  active: boolean;
   createdAt: Date | undefined;
   updatedAt: Date | undefined;
 }
@@ -70,10 +42,7 @@ export interface DeliveryRequestDTO {
   id: string;
   messageId: string;
   correlationId: string;
-  recipientUserId?: string | undefined;
-  recipientContactId?: string | undefined;
-  channels: string[];
-  templateName?: string | undefined;
+  recipientContactId: string;
   callbackTopic?: string | undefined;
   createdAt: Date | undefined;
   processedAt: Date | undefined;
@@ -175,7 +144,6 @@ export interface ParticipantDTO {
 }
 
 export interface GetChannelPreferenceRequest {
-  userId: string;
   contactId: string;
 }
 
@@ -185,41 +153,14 @@ export interface GetChannelPreferenceResponse {
 }
 
 export interface SetChannelPreferenceRequest {
-  userId: string;
   contactId: string;
   emailEnabled: boolean;
   smsEnabled: boolean;
-  quietHoursStart: string;
-  quietHoursEnd: string;
-  quietHoursTz: string;
 }
 
 export interface SetChannelPreferenceResponse {
   result: D2ResultProto | undefined;
   data: ChannelPreferenceDTO | undefined;
-}
-
-export interface GetTemplateRequest {
-  name: string;
-  channel: string;
-}
-
-export interface GetTemplateResponse {
-  result: D2ResultProto | undefined;
-  data: TemplateWrapperDTO | undefined;
-}
-
-export interface UpsertTemplateRequest {
-  name: string;
-  channel: string;
-  bodyTemplate: string;
-  subjectTemplate: string;
-  active: boolean;
-}
-
-export interface UpsertTemplateResponse {
-  result: D2ResultProto | undefined;
-  data: TemplateWrapperDTO | undefined;
 }
 
 export interface GetDeliveryStatusRequest {
@@ -455,18 +396,7 @@ export const PaginationRequest: MessageFns<PaginationRequest> = {
 };
 
 function createBaseChannelPreferenceDTO(): ChannelPreferenceDTO {
-  return {
-    id: "",
-    userId: undefined,
-    contactId: undefined,
-    emailEnabled: false,
-    smsEnabled: false,
-    quietHoursStart: undefined,
-    quietHoursEnd: undefined,
-    quietHoursTz: undefined,
-    createdAt: undefined,
-    updatedAt: undefined,
-  };
+  return { id: "", contactId: "", emailEnabled: false, smsEnabled: false, createdAt: undefined, updatedAt: undefined };
 }
 
 export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
@@ -474,10 +404,7 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
     if (message.id !== "") {
       writer.uint32(10).string(message.id);
     }
-    if (message.userId !== undefined) {
-      writer.uint32(18).string(message.userId);
-    }
-    if (message.contactId !== undefined) {
+    if (message.contactId !== "") {
       writer.uint32(26).string(message.contactId);
     }
     if (message.emailEnabled !== false) {
@@ -485,15 +412,6 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
     }
     if (message.smsEnabled !== false) {
       writer.uint32(40).bool(message.smsEnabled);
-    }
-    if (message.quietHoursStart !== undefined) {
-      writer.uint32(50).string(message.quietHoursStart);
-    }
-    if (message.quietHoursEnd !== undefined) {
-      writer.uint32(58).string(message.quietHoursEnd);
-    }
-    if (message.quietHoursTz !== undefined) {
-      writer.uint32(66).string(message.quietHoursTz);
     }
     if (message.createdAt !== undefined) {
       Timestamp.encode(toTimestamp(message.createdAt), writer.uint32(74).fork()).join();
@@ -519,14 +437,6 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
           message.id = reader.string();
           continue;
         }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.userId = reader.string();
-          continue;
-        }
         case 3: {
           if (tag !== 26) {
             break;
@@ -549,30 +459,6 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
           }
 
           message.smsEnabled = reader.bool();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.quietHoursStart = reader.string();
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.quietHoursEnd = reader.string();
-          continue;
-        }
-        case 8: {
-          if (tag !== 66) {
-            break;
-          }
-
-          message.quietHoursTz = reader.string();
           continue;
         }
         case 9: {
@@ -603,16 +489,11 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
   fromJSON(object: any): ChannelPreferenceDTO {
     return {
       id: isSet(object.id) ? globalThis.String(object.id) : "",
-      userId: isSet(object.userId)
-        ? globalThis.String(object.userId)
-        : isSet(object.user_id)
-        ? globalThis.String(object.user_id)
-        : undefined,
       contactId: isSet(object.contactId)
         ? globalThis.String(object.contactId)
         : isSet(object.contact_id)
         ? globalThis.String(object.contact_id)
-        : undefined,
+        : "",
       emailEnabled: isSet(object.emailEnabled)
         ? globalThis.Boolean(object.emailEnabled)
         : isSet(object.email_enabled)
@@ -623,21 +504,6 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
         : isSet(object.sms_enabled)
         ? globalThis.Boolean(object.sms_enabled)
         : false,
-      quietHoursStart: isSet(object.quietHoursStart)
-        ? globalThis.String(object.quietHoursStart)
-        : isSet(object.quiet_hours_start)
-        ? globalThis.String(object.quiet_hours_start)
-        : undefined,
-      quietHoursEnd: isSet(object.quietHoursEnd)
-        ? globalThis.String(object.quietHoursEnd)
-        : isSet(object.quiet_hours_end)
-        ? globalThis.String(object.quiet_hours_end)
-        : undefined,
-      quietHoursTz: isSet(object.quietHoursTz)
-        ? globalThis.String(object.quietHoursTz)
-        : isSet(object.quiet_hours_tz)
-        ? globalThis.String(object.quiet_hours_tz)
-        : undefined,
       createdAt: isSet(object.createdAt)
         ? fromJsonTimestamp(object.createdAt)
         : isSet(object.created_at)
@@ -656,10 +522,7 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
     if (message.id !== "") {
       obj.id = message.id;
     }
-    if (message.userId !== undefined) {
-      obj.userId = message.userId;
-    }
-    if (message.contactId !== undefined) {
+    if (message.contactId !== "") {
       obj.contactId = message.contactId;
     }
     if (message.emailEnabled !== false) {
@@ -667,15 +530,6 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
     }
     if (message.smsEnabled !== false) {
       obj.smsEnabled = message.smsEnabled;
-    }
-    if (message.quietHoursStart !== undefined) {
-      obj.quietHoursStart = message.quietHoursStart;
-    }
-    if (message.quietHoursEnd !== undefined) {
-      obj.quietHoursEnd = message.quietHoursEnd;
-    }
-    if (message.quietHoursTz !== undefined) {
-      obj.quietHoursTz = message.quietHoursTz;
     }
     if (message.createdAt !== undefined) {
       obj.createdAt = message.createdAt.toISOString();
@@ -692,210 +546,9 @@ export const ChannelPreferenceDTO: MessageFns<ChannelPreferenceDTO> = {
   fromPartial<I extends Exact<DeepPartial<ChannelPreferenceDTO>, I>>(object: I): ChannelPreferenceDTO {
     const message = createBaseChannelPreferenceDTO();
     message.id = object.id ?? "";
-    message.userId = object.userId ?? undefined;
-    message.contactId = object.contactId ?? undefined;
+    message.contactId = object.contactId ?? "";
     message.emailEnabled = object.emailEnabled ?? false;
     message.smsEnabled = object.smsEnabled ?? false;
-    message.quietHoursStart = object.quietHoursStart ?? undefined;
-    message.quietHoursEnd = object.quietHoursEnd ?? undefined;
-    message.quietHoursTz = object.quietHoursTz ?? undefined;
-    message.createdAt = object.createdAt ?? undefined;
-    message.updatedAt = object.updatedAt ?? undefined;
-    return message;
-  },
-};
-
-function createBaseTemplateWrapperDTO(): TemplateWrapperDTO {
-  return {
-    id: "",
-    name: "",
-    channel: "",
-    subjectTemplate: undefined,
-    bodyTemplate: "",
-    active: false,
-    createdAt: undefined,
-    updatedAt: undefined,
-  };
-}
-
-export const TemplateWrapperDTO: MessageFns<TemplateWrapperDTO> = {
-  encode(message: TemplateWrapperDTO, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.id !== "") {
-      writer.uint32(10).string(message.id);
-    }
-    if (message.name !== "") {
-      writer.uint32(18).string(message.name);
-    }
-    if (message.channel !== "") {
-      writer.uint32(26).string(message.channel);
-    }
-    if (message.subjectTemplate !== undefined) {
-      writer.uint32(34).string(message.subjectTemplate);
-    }
-    if (message.bodyTemplate !== "") {
-      writer.uint32(42).string(message.bodyTemplate);
-    }
-    if (message.active !== false) {
-      writer.uint32(48).bool(message.active);
-    }
-    if (message.createdAt !== undefined) {
-      Timestamp.encode(toTimestamp(message.createdAt), writer.uint32(58).fork()).join();
-    }
-    if (message.updatedAt !== undefined) {
-      Timestamp.encode(toTimestamp(message.updatedAt), writer.uint32(66).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): TemplateWrapperDTO {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseTemplateWrapperDTO();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.id = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.name = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.channel = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.subjectTemplate = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.bodyTemplate = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 48) {
-            break;
-          }
-
-          message.active = reader.bool();
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.createdAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
-        case 8: {
-          if (tag !== 66) {
-            break;
-          }
-
-          message.updatedAt = fromTimestamp(Timestamp.decode(reader, reader.uint32()));
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): TemplateWrapperDTO {
-    return {
-      id: isSet(object.id) ? globalThis.String(object.id) : "",
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      channel: isSet(object.channel) ? globalThis.String(object.channel) : "",
-      subjectTemplate: isSet(object.subjectTemplate)
-        ? globalThis.String(object.subjectTemplate)
-        : isSet(object.subject_template)
-        ? globalThis.String(object.subject_template)
-        : undefined,
-      bodyTemplate: isSet(object.bodyTemplate)
-        ? globalThis.String(object.bodyTemplate)
-        : isSet(object.body_template)
-        ? globalThis.String(object.body_template)
-        : "",
-      active: isSet(object.active) ? globalThis.Boolean(object.active) : false,
-      createdAt: isSet(object.createdAt)
-        ? fromJsonTimestamp(object.createdAt)
-        : isSet(object.created_at)
-        ? fromJsonTimestamp(object.created_at)
-        : undefined,
-      updatedAt: isSet(object.updatedAt)
-        ? fromJsonTimestamp(object.updatedAt)
-        : isSet(object.updated_at)
-        ? fromJsonTimestamp(object.updated_at)
-        : undefined,
-    };
-  },
-
-  toJSON(message: TemplateWrapperDTO): unknown {
-    const obj: any = {};
-    if (message.id !== "") {
-      obj.id = message.id;
-    }
-    if (message.name !== "") {
-      obj.name = message.name;
-    }
-    if (message.channel !== "") {
-      obj.channel = message.channel;
-    }
-    if (message.subjectTemplate !== undefined) {
-      obj.subjectTemplate = message.subjectTemplate;
-    }
-    if (message.bodyTemplate !== "") {
-      obj.bodyTemplate = message.bodyTemplate;
-    }
-    if (message.active !== false) {
-      obj.active = message.active;
-    }
-    if (message.createdAt !== undefined) {
-      obj.createdAt = message.createdAt.toISOString();
-    }
-    if (message.updatedAt !== undefined) {
-      obj.updatedAt = message.updatedAt.toISOString();
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<TemplateWrapperDTO>, I>>(base?: I): TemplateWrapperDTO {
-    return TemplateWrapperDTO.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<TemplateWrapperDTO>, I>>(object: I): TemplateWrapperDTO {
-    const message = createBaseTemplateWrapperDTO();
-    message.id = object.id ?? "";
-    message.name = object.name ?? "";
-    message.channel = object.channel ?? "";
-    message.subjectTemplate = object.subjectTemplate ?? undefined;
-    message.bodyTemplate = object.bodyTemplate ?? "";
-    message.active = object.active ?? false;
     message.createdAt = object.createdAt ?? undefined;
     message.updatedAt = object.updatedAt ?? undefined;
     return message;
@@ -907,10 +560,7 @@ function createBaseDeliveryRequestDTO(): DeliveryRequestDTO {
     id: "",
     messageId: "",
     correlationId: "",
-    recipientUserId: undefined,
-    recipientContactId: undefined,
-    channels: [],
-    templateName: undefined,
+    recipientContactId: "",
     callbackTopic: undefined,
     createdAt: undefined,
     processedAt: undefined,
@@ -928,17 +578,8 @@ export const DeliveryRequestDTO: MessageFns<DeliveryRequestDTO> = {
     if (message.correlationId !== "") {
       writer.uint32(26).string(message.correlationId);
     }
-    if (message.recipientUserId !== undefined) {
-      writer.uint32(34).string(message.recipientUserId);
-    }
-    if (message.recipientContactId !== undefined) {
+    if (message.recipientContactId !== "") {
       writer.uint32(42).string(message.recipientContactId);
-    }
-    for (const v of message.channels) {
-      writer.uint32(50).string(v!);
-    }
-    if (message.templateName !== undefined) {
-      writer.uint32(58).string(message.templateName);
     }
     if (message.callbackTopic !== undefined) {
       writer.uint32(66).string(message.callbackTopic);
@@ -983,36 +624,12 @@ export const DeliveryRequestDTO: MessageFns<DeliveryRequestDTO> = {
           message.correlationId = reader.string();
           continue;
         }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.recipientUserId = reader.string();
-          continue;
-        }
         case 5: {
           if (tag !== 42) {
             break;
           }
 
           message.recipientContactId = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.channels.push(reader.string());
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.templateName = reader.string();
           continue;
         }
         case 8: {
@@ -1061,24 +678,11 @@ export const DeliveryRequestDTO: MessageFns<DeliveryRequestDTO> = {
         : isSet(object.correlation_id)
         ? globalThis.String(object.correlation_id)
         : "",
-      recipientUserId: isSet(object.recipientUserId)
-        ? globalThis.String(object.recipientUserId)
-        : isSet(object.recipient_user_id)
-        ? globalThis.String(object.recipient_user_id)
-        : undefined,
       recipientContactId: isSet(object.recipientContactId)
         ? globalThis.String(object.recipientContactId)
         : isSet(object.recipient_contact_id)
         ? globalThis.String(object.recipient_contact_id)
-        : undefined,
-      channels: globalThis.Array.isArray(object?.channels)
-        ? object.channels.map((e: any) => globalThis.String(e))
-        : [],
-      templateName: isSet(object.templateName)
-        ? globalThis.String(object.templateName)
-        : isSet(object.template_name)
-        ? globalThis.String(object.template_name)
-        : undefined,
+        : "",
       callbackTopic: isSet(object.callbackTopic)
         ? globalThis.String(object.callbackTopic)
         : isSet(object.callback_topic)
@@ -1108,17 +712,8 @@ export const DeliveryRequestDTO: MessageFns<DeliveryRequestDTO> = {
     if (message.correlationId !== "") {
       obj.correlationId = message.correlationId;
     }
-    if (message.recipientUserId !== undefined) {
-      obj.recipientUserId = message.recipientUserId;
-    }
-    if (message.recipientContactId !== undefined) {
+    if (message.recipientContactId !== "") {
       obj.recipientContactId = message.recipientContactId;
-    }
-    if (message.channels?.length) {
-      obj.channels = message.channels;
-    }
-    if (message.templateName !== undefined) {
-      obj.templateName = message.templateName;
     }
     if (message.callbackTopic !== undefined) {
       obj.callbackTopic = message.callbackTopic;
@@ -1140,10 +735,7 @@ export const DeliveryRequestDTO: MessageFns<DeliveryRequestDTO> = {
     message.id = object.id ?? "";
     message.messageId = object.messageId ?? "";
     message.correlationId = object.correlationId ?? "";
-    message.recipientUserId = object.recipientUserId ?? undefined;
-    message.recipientContactId = object.recipientContactId ?? undefined;
-    message.channels = object.channels?.map((e) => e) || [];
-    message.templateName = object.templateName ?? undefined;
+    message.recipientContactId = object.recipientContactId ?? "";
     message.callbackTopic = object.callbackTopic ?? undefined;
     message.createdAt = object.createdAt ?? undefined;
     message.processedAt = object.processedAt ?? undefined;
@@ -2588,14 +2180,11 @@ export const ParticipantDTO: MessageFns<ParticipantDTO> = {
 };
 
 function createBaseGetChannelPreferenceRequest(): GetChannelPreferenceRequest {
-  return { userId: "", contactId: "" };
+  return { contactId: "" };
 }
 
 export const GetChannelPreferenceRequest: MessageFns<GetChannelPreferenceRequest> = {
   encode(message: GetChannelPreferenceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== "") {
-      writer.uint32(10).string(message.userId);
-    }
     if (message.contactId !== "") {
       writer.uint32(18).string(message.contactId);
     }
@@ -2609,14 +2198,6 @@ export const GetChannelPreferenceRequest: MessageFns<GetChannelPreferenceRequest
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.userId = reader.string();
-          continue;
-        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -2636,11 +2217,6 @@ export const GetChannelPreferenceRequest: MessageFns<GetChannelPreferenceRequest
 
   fromJSON(object: any): GetChannelPreferenceRequest {
     return {
-      userId: isSet(object.userId)
-        ? globalThis.String(object.userId)
-        : isSet(object.user_id)
-        ? globalThis.String(object.user_id)
-        : "",
       contactId: isSet(object.contactId)
         ? globalThis.String(object.contactId)
         : isSet(object.contact_id)
@@ -2651,9 +2227,6 @@ export const GetChannelPreferenceRequest: MessageFns<GetChannelPreferenceRequest
 
   toJSON(message: GetChannelPreferenceRequest): unknown {
     const obj: any = {};
-    if (message.userId !== "") {
-      obj.userId = message.userId;
-    }
     if (message.contactId !== "") {
       obj.contactId = message.contactId;
     }
@@ -2665,7 +2238,6 @@ export const GetChannelPreferenceRequest: MessageFns<GetChannelPreferenceRequest
   },
   fromPartial<I extends Exact<DeepPartial<GetChannelPreferenceRequest>, I>>(object: I): GetChannelPreferenceRequest {
     const message = createBaseGetChannelPreferenceRequest();
-    message.userId = object.userId ?? "";
     message.contactId = object.contactId ?? "";
     return message;
   },
@@ -2752,22 +2324,11 @@ export const GetChannelPreferenceResponse: MessageFns<GetChannelPreferenceRespon
 };
 
 function createBaseSetChannelPreferenceRequest(): SetChannelPreferenceRequest {
-  return {
-    userId: "",
-    contactId: "",
-    emailEnabled: false,
-    smsEnabled: false,
-    quietHoursStart: "",
-    quietHoursEnd: "",
-    quietHoursTz: "",
-  };
+  return { contactId: "", emailEnabled: false, smsEnabled: false };
 }
 
 export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest> = {
   encode(message: SetChannelPreferenceRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.userId !== "") {
-      writer.uint32(10).string(message.userId);
-    }
     if (message.contactId !== "") {
       writer.uint32(18).string(message.contactId);
     }
@@ -2776,15 +2337,6 @@ export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest
     }
     if (message.smsEnabled !== false) {
       writer.uint32(32).bool(message.smsEnabled);
-    }
-    if (message.quietHoursStart !== "") {
-      writer.uint32(42).string(message.quietHoursStart);
-    }
-    if (message.quietHoursEnd !== "") {
-      writer.uint32(50).string(message.quietHoursEnd);
-    }
-    if (message.quietHoursTz !== "") {
-      writer.uint32(58).string(message.quietHoursTz);
     }
     return writer;
   },
@@ -2796,14 +2348,6 @@ export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.userId = reader.string();
-          continue;
-        }
         case 2: {
           if (tag !== 18) {
             break;
@@ -2828,30 +2372,6 @@ export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest
           message.smsEnabled = reader.bool();
           continue;
         }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.quietHoursStart = reader.string();
-          continue;
-        }
-        case 6: {
-          if (tag !== 50) {
-            break;
-          }
-
-          message.quietHoursEnd = reader.string();
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          message.quietHoursTz = reader.string();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -2863,11 +2383,6 @@ export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest
 
   fromJSON(object: any): SetChannelPreferenceRequest {
     return {
-      userId: isSet(object.userId)
-        ? globalThis.String(object.userId)
-        : isSet(object.user_id)
-        ? globalThis.String(object.user_id)
-        : "",
       contactId: isSet(object.contactId)
         ? globalThis.String(object.contactId)
         : isSet(object.contact_id)
@@ -2883,29 +2398,11 @@ export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest
         : isSet(object.sms_enabled)
         ? globalThis.Boolean(object.sms_enabled)
         : false,
-      quietHoursStart: isSet(object.quietHoursStart)
-        ? globalThis.String(object.quietHoursStart)
-        : isSet(object.quiet_hours_start)
-        ? globalThis.String(object.quiet_hours_start)
-        : "",
-      quietHoursEnd: isSet(object.quietHoursEnd)
-        ? globalThis.String(object.quietHoursEnd)
-        : isSet(object.quiet_hours_end)
-        ? globalThis.String(object.quiet_hours_end)
-        : "",
-      quietHoursTz: isSet(object.quietHoursTz)
-        ? globalThis.String(object.quietHoursTz)
-        : isSet(object.quiet_hours_tz)
-        ? globalThis.String(object.quiet_hours_tz)
-        : "",
     };
   },
 
   toJSON(message: SetChannelPreferenceRequest): unknown {
     const obj: any = {};
-    if (message.userId !== "") {
-      obj.userId = message.userId;
-    }
     if (message.contactId !== "") {
       obj.contactId = message.contactId;
     }
@@ -2915,15 +2412,6 @@ export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest
     if (message.smsEnabled !== false) {
       obj.smsEnabled = message.smsEnabled;
     }
-    if (message.quietHoursStart !== "") {
-      obj.quietHoursStart = message.quietHoursStart;
-    }
-    if (message.quietHoursEnd !== "") {
-      obj.quietHoursEnd = message.quietHoursEnd;
-    }
-    if (message.quietHoursTz !== "") {
-      obj.quietHoursTz = message.quietHoursTz;
-    }
     return obj;
   },
 
@@ -2932,13 +2420,9 @@ export const SetChannelPreferenceRequest: MessageFns<SetChannelPreferenceRequest
   },
   fromPartial<I extends Exact<DeepPartial<SetChannelPreferenceRequest>, I>>(object: I): SetChannelPreferenceRequest {
     const message = createBaseSetChannelPreferenceRequest();
-    message.userId = object.userId ?? "";
     message.contactId = object.contactId ?? "";
     message.emailEnabled = object.emailEnabled ?? false;
     message.smsEnabled = object.smsEnabled ?? false;
-    message.quietHoursStart = object.quietHoursStart ?? "";
-    message.quietHoursEnd = object.quietHoursEnd ?? "";
-    message.quietHoursTz = object.quietHoursTz ?? "";
     return message;
   },
 };
@@ -3018,374 +2502,6 @@ export const SetChannelPreferenceResponse: MessageFns<SetChannelPreferenceRespon
       : undefined;
     message.data = (object.data !== undefined && object.data !== null)
       ? ChannelPreferenceDTO.fromPartial(object.data)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseGetTemplateRequest(): GetTemplateRequest {
-  return { name: "", channel: "" };
-}
-
-export const GetTemplateRequest: MessageFns<GetTemplateRequest> = {
-  encode(message: GetTemplateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.name !== "") {
-      writer.uint32(10).string(message.name);
-    }
-    if (message.channel !== "") {
-      writer.uint32(18).string(message.channel);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetTemplateRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetTemplateRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.name = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.channel = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetTemplateRequest {
-    return {
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      channel: isSet(object.channel) ? globalThis.String(object.channel) : "",
-    };
-  },
-
-  toJSON(message: GetTemplateRequest): unknown {
-    const obj: any = {};
-    if (message.name !== "") {
-      obj.name = message.name;
-    }
-    if (message.channel !== "") {
-      obj.channel = message.channel;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetTemplateRequest>, I>>(base?: I): GetTemplateRequest {
-    return GetTemplateRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetTemplateRequest>, I>>(object: I): GetTemplateRequest {
-    const message = createBaseGetTemplateRequest();
-    message.name = object.name ?? "";
-    message.channel = object.channel ?? "";
-    return message;
-  },
-};
-
-function createBaseGetTemplateResponse(): GetTemplateResponse {
-  return { result: undefined, data: undefined };
-}
-
-export const GetTemplateResponse: MessageFns<GetTemplateResponse> = {
-  encode(message: GetTemplateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.result !== undefined) {
-      D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
-    }
-    if (message.data !== undefined) {
-      TemplateWrapperDTO.encode(message.data, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): GetTemplateResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseGetTemplateResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.result = D2ResultProto.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.data = TemplateWrapperDTO.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): GetTemplateResponse {
-    return {
-      result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
-      data: isSet(object.data) ? TemplateWrapperDTO.fromJSON(object.data) : undefined,
-    };
-  },
-
-  toJSON(message: GetTemplateResponse): unknown {
-    const obj: any = {};
-    if (message.result !== undefined) {
-      obj.result = D2ResultProto.toJSON(message.result);
-    }
-    if (message.data !== undefined) {
-      obj.data = TemplateWrapperDTO.toJSON(message.data);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<GetTemplateResponse>, I>>(base?: I): GetTemplateResponse {
-    return GetTemplateResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<GetTemplateResponse>, I>>(object: I): GetTemplateResponse {
-    const message = createBaseGetTemplateResponse();
-    message.result = (object.result !== undefined && object.result !== null)
-      ? D2ResultProto.fromPartial(object.result)
-      : undefined;
-    message.data = (object.data !== undefined && object.data !== null)
-      ? TemplateWrapperDTO.fromPartial(object.data)
-      : undefined;
-    return message;
-  },
-};
-
-function createBaseUpsertTemplateRequest(): UpsertTemplateRequest {
-  return { name: "", channel: "", bodyTemplate: "", subjectTemplate: "", active: false };
-}
-
-export const UpsertTemplateRequest: MessageFns<UpsertTemplateRequest> = {
-  encode(message: UpsertTemplateRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.name !== "") {
-      writer.uint32(10).string(message.name);
-    }
-    if (message.channel !== "") {
-      writer.uint32(18).string(message.channel);
-    }
-    if (message.bodyTemplate !== "") {
-      writer.uint32(26).string(message.bodyTemplate);
-    }
-    if (message.subjectTemplate !== "") {
-      writer.uint32(34).string(message.subjectTemplate);
-    }
-    if (message.active !== false) {
-      writer.uint32(40).bool(message.active);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UpsertTemplateRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseUpsertTemplateRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.name = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.channel = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.bodyTemplate = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.subjectTemplate = reader.string();
-          continue;
-        }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.active = reader.bool();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): UpsertTemplateRequest {
-    return {
-      name: isSet(object.name) ? globalThis.String(object.name) : "",
-      channel: isSet(object.channel) ? globalThis.String(object.channel) : "",
-      bodyTemplate: isSet(object.bodyTemplate)
-        ? globalThis.String(object.bodyTemplate)
-        : isSet(object.body_template)
-        ? globalThis.String(object.body_template)
-        : "",
-      subjectTemplate: isSet(object.subjectTemplate)
-        ? globalThis.String(object.subjectTemplate)
-        : isSet(object.subject_template)
-        ? globalThis.String(object.subject_template)
-        : "",
-      active: isSet(object.active) ? globalThis.Boolean(object.active) : false,
-    };
-  },
-
-  toJSON(message: UpsertTemplateRequest): unknown {
-    const obj: any = {};
-    if (message.name !== "") {
-      obj.name = message.name;
-    }
-    if (message.channel !== "") {
-      obj.channel = message.channel;
-    }
-    if (message.bodyTemplate !== "") {
-      obj.bodyTemplate = message.bodyTemplate;
-    }
-    if (message.subjectTemplate !== "") {
-      obj.subjectTemplate = message.subjectTemplate;
-    }
-    if (message.active !== false) {
-      obj.active = message.active;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<UpsertTemplateRequest>, I>>(base?: I): UpsertTemplateRequest {
-    return UpsertTemplateRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<UpsertTemplateRequest>, I>>(object: I): UpsertTemplateRequest {
-    const message = createBaseUpsertTemplateRequest();
-    message.name = object.name ?? "";
-    message.channel = object.channel ?? "";
-    message.bodyTemplate = object.bodyTemplate ?? "";
-    message.subjectTemplate = object.subjectTemplate ?? "";
-    message.active = object.active ?? false;
-    return message;
-  },
-};
-
-function createBaseUpsertTemplateResponse(): UpsertTemplateResponse {
-  return { result: undefined, data: undefined };
-}
-
-export const UpsertTemplateResponse: MessageFns<UpsertTemplateResponse> = {
-  encode(message: UpsertTemplateResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.result !== undefined) {
-      D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
-    }
-    if (message.data !== undefined) {
-      TemplateWrapperDTO.encode(message.data, writer.uint32(18).fork()).join();
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): UpsertTemplateResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    const end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseUpsertTemplateResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.result = D2ResultProto.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.data = TemplateWrapperDTO.decode(reader, reader.uint32());
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): UpsertTemplateResponse {
-    return {
-      result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
-      data: isSet(object.data) ? TemplateWrapperDTO.fromJSON(object.data) : undefined,
-    };
-  },
-
-  toJSON(message: UpsertTemplateResponse): unknown {
-    const obj: any = {};
-    if (message.result !== undefined) {
-      obj.result = D2ResultProto.toJSON(message.result);
-    }
-    if (message.data !== undefined) {
-      obj.data = TemplateWrapperDTO.toJSON(message.data);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<UpsertTemplateResponse>, I>>(base?: I): UpsertTemplateResponse {
-    return UpsertTemplateResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<UpsertTemplateResponse>, I>>(object: I): UpsertTemplateResponse {
-    const message = createBaseUpsertTemplateResponse();
-    message.result = (object.result !== undefined && object.result !== null)
-      ? D2ResultProto.fromPartial(object.result)
-      : undefined;
-    message.data = (object.data !== undefined && object.data !== null)
-      ? TemplateWrapperDTO.fromPartial(object.data)
       : undefined;
     return message;
   },
@@ -5988,26 +5104,7 @@ export const CommsServiceService = {
       Buffer.from(SetChannelPreferenceResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): SetChannelPreferenceResponse => SetChannelPreferenceResponse.decode(value),
   },
-  getTemplate: {
-    path: "/d2.comms.v1.CommsService/GetTemplate",
-    requestStream: false,
-    responseStream: false,
-    requestSerialize: (value: GetTemplateRequest): Buffer => Buffer.from(GetTemplateRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): GetTemplateRequest => GetTemplateRequest.decode(value),
-    responseSerialize: (value: GetTemplateResponse): Buffer => Buffer.from(GetTemplateResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): GetTemplateResponse => GetTemplateResponse.decode(value),
-  },
-  upsertTemplate: {
-    path: "/d2.comms.v1.CommsService/UpsertTemplate",
-    requestStream: false,
-    responseStream: false,
-    requestSerialize: (value: UpsertTemplateRequest): Buffer =>
-      Buffer.from(UpsertTemplateRequest.encode(value).finish()),
-    requestDeserialize: (value: Buffer): UpsertTemplateRequest => UpsertTemplateRequest.decode(value),
-    responseSerialize: (value: UpsertTemplateResponse): Buffer =>
-      Buffer.from(UpsertTemplateResponse.encode(value).finish()),
-    responseDeserialize: (value: Buffer): UpsertTemplateResponse => UpsertTemplateResponse.decode(value),
-  },
+  /** GetTemplate and UpsertTemplate removed — templates dropped from architecture. */
   getDeliveryStatus: {
     path: "/d2.comms.v1.CommsService/GetDeliveryStatus",
     requestStream: false,
@@ -6160,8 +5257,7 @@ export interface CommsServiceServer extends UntypedServiceImplementation {
   /** Phase 1: Delivery Engine */
   getChannelPreference: handleUnaryCall<GetChannelPreferenceRequest, GetChannelPreferenceResponse>;
   setChannelPreference: handleUnaryCall<SetChannelPreferenceRequest, SetChannelPreferenceResponse>;
-  getTemplate: handleUnaryCall<GetTemplateRequest, GetTemplateResponse>;
-  upsertTemplate: handleUnaryCall<UpsertTemplateRequest, UpsertTemplateResponse>;
+  /** GetTemplate and UpsertTemplate removed — templates dropped from architecture. */
   getDeliveryStatus: handleUnaryCall<GetDeliveryStatusRequest, GetDeliveryStatusResponse>;
   /** Phase 2: In-App Notifications (stubs) */
   getNotifications: handleUnaryCall<GetNotificationsRequest, GetNotificationsResponse>;
@@ -6228,36 +5324,7 @@ export interface CommsServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: SetChannelPreferenceResponse) => void,
   ): ClientUnaryCall;
-  getTemplate(
-    request: GetTemplateRequest,
-    callback: (error: ServiceError | null, response: GetTemplateResponse) => void,
-  ): ClientUnaryCall;
-  getTemplate(
-    request: GetTemplateRequest,
-    metadata: Metadata,
-    callback: (error: ServiceError | null, response: GetTemplateResponse) => void,
-  ): ClientUnaryCall;
-  getTemplate(
-    request: GetTemplateRequest,
-    metadata: Metadata,
-    options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: GetTemplateResponse) => void,
-  ): ClientUnaryCall;
-  upsertTemplate(
-    request: UpsertTemplateRequest,
-    callback: (error: ServiceError | null, response: UpsertTemplateResponse) => void,
-  ): ClientUnaryCall;
-  upsertTemplate(
-    request: UpsertTemplateRequest,
-    metadata: Metadata,
-    callback: (error: ServiceError | null, response: UpsertTemplateResponse) => void,
-  ): ClientUnaryCall;
-  upsertTemplate(
-    request: UpsertTemplateRequest,
-    metadata: Metadata,
-    options: Partial<CallOptions>,
-    callback: (error: ServiceError | null, response: UpsertTemplateResponse) => void,
-  ): ClientUnaryCall;
+  /** GetTemplate and UpsertTemplate removed — templates dropped from architecture. */
   getDeliveryStatus(
     request: GetDeliveryStatusRequest,
     callback: (error: ServiceError | null, response: GetDeliveryStatusResponse) => void,

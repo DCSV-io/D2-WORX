@@ -72,9 +72,8 @@ message DeliveryRequestDTO {
   string message_id = 2;
   string correlation_id = 3;
   string recipient_contact_id = 5;
-  repeated string channels = 6;
   optional string callback_topic = 8;
-  reserved 4, 7; // recipient_user_id, template_name
+  reserved 4, 6, 7; // recipient_user_id, channels, template_name
   google.protobuf.Timestamp created_at = 9;
   google.protobuf.Timestamp processed_at = 10;
 }

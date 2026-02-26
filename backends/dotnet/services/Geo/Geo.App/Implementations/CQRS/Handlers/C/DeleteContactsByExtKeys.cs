@@ -11,6 +11,7 @@ using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
+using ClientCacheKeys = D2.Geo.Client.CacheKeys;
 using DeleteRepo = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.IDeleteContactsByExtKeysHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.DeleteContactsByExtKeysInput;
@@ -111,7 +112,7 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
         foreach (var id in repoOutput!.DeletedIds)
         {
             var removeR = await r_memoryCacheRemove.HandleAsync(
-                new($"GetContactsByIds:{id}"), ct);
+                new(ClientCacheKeys.Contact(id)), ct);
 
             if (removeR.Failed)
             {

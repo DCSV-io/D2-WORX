@@ -17,6 +17,7 @@
     "dist"
   ],
   "dependencies": {
+    "@d2/cache-redis": "workspace:*",
     "@d2/comms-domain": "workspace:*",
     "@d2/di": "workspace:*",
     "@d2/geo-client": "workspace:*",

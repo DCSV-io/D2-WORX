@@ -40,18 +40,12 @@ describe("resolveIp", () => {
   });
 
   it("should trim whitespace from x-forwarded-for entries", () => {
-    const ip = resolveIp(
-      { "x-forwarded-for": "  4.4.4.4  , 5.5.5.5" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "x-forwarded-for": "  4.4.4.4  , 5.5.5.5" }, ALL_HEADERS);
     expect(ip).toBe("4.4.4.4");
   });
 
   it("should skip empty entries in x-forwarded-for", () => {
-    const ip = resolveIp(
-      { "x-forwarded-for": " , , 6.6.6.6" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "x-forwarded-for": " , , 6.6.6.6" }, ALL_HEADERS);
     expect(ip).toBe("6.6.6.6");
   });
 
@@ -68,34 +62,22 @@ describe("resolveIp", () => {
   });
 
   it("should skip empty cf-connecting-ip and fall through", () => {
-    const ip = resolveIp(
-      { "cf-connecting-ip": "", "x-real-ip": "7.7.7.7" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "cf-connecting-ip": "", "x-real-ip": "7.7.7.7" }, ALL_HEADERS);
     expect(ip).toBe("7.7.7.7");
   });
 
   it("should skip whitespace-only cf-connecting-ip and fall through", () => {
-    const ip = resolveIp(
-      { "cf-connecting-ip": "   ", "x-real-ip": "8.8.8.8" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "cf-connecting-ip": "   ", "x-real-ip": "8.8.8.8" }, ALL_HEADERS);
     expect(ip).toBe("8.8.8.8");
   });
 
   it("should preserve IPv4-mapped IPv6 addresses as-is", () => {
-    const ip = resolveIp(
-      { "x-real-ip": "::ffff:192.168.1.1" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "x-real-ip": "::ffff:192.168.1.1" }, ALL_HEADERS);
     expect(ip).toBe("::ffff:192.168.1.1");
   });
 
   it("should trim x-real-ip", () => {
-    const ip = resolveIp(
-      { "x-real-ip": "  9.9.9.9  " },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "x-real-ip": "  9.9.9.9  " }, ALL_HEADERS);
     expect(ip).toBe("9.9.9.9");
   });
 
@@ -118,10 +100,7 @@ describe("resolveIp", () => {
   });
 
   it("should handle empty array for cf-connecting-ip and fall through", () => {
-    const ip = resolveIp(
-      { "cf-connecting-ip": [], "x-real-ip": "11.11.11.11" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "cf-connecting-ip": [], "x-real-ip": "11.11.11.11" }, ALL_HEADERS);
     expect(ip).toBe("11.11.11.11");
   });
 
@@ -134,10 +113,7 @@ describe("resolveIp", () => {
   });
 
   it("should return 'unknown' when x-forwarded-for has only commas", () => {
-    const ip = resolveIp(
-      { "x-forwarded-for": "," },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "x-forwarded-for": "," }, ALL_HEADERS);
     expect(ip).toBe("unknown");
   });
 
@@ -153,26 +129,19 @@ describe("resolveIp", () => {
   });
 
   it("should ignore x-forwarded-for when only cf-connecting-ip is trusted", () => {
-    const ip = resolveIp(
-      { "x-forwarded-for": "1.2.3.4" },
-      ["cf-connecting-ip"],
-    );
+    const ip = resolveIp({ "x-forwarded-for": "1.2.3.4" }, ["cf-connecting-ip"]);
     expect(ip).toBe("unknown");
   });
 
   it("should respect x-real-ip when explicitly trusted", () => {
-    const ip = resolveIp(
-      { "x-real-ip": "10.0.0.1", "x-forwarded-for": "10.0.0.2" },
-      ["x-real-ip"],
-    );
+    const ip = resolveIp({ "x-real-ip": "10.0.0.1", "x-forwarded-for": "10.0.0.2" }, ["x-real-ip"]);
     expect(ip).toBe("10.0.0.1");
   });
 
   it("should respect x-forwarded-for when explicitly trusted but ignore x-real-ip", () => {
-    const ip = resolveIp(
-      { "x-real-ip": "10.0.0.1", "x-forwarded-for": "10.0.0.2" },
-      ["x-forwarded-for"],
-    );
+    const ip = resolveIp({ "x-real-ip": "10.0.0.1", "x-forwarded-for": "10.0.0.2" }, [
+      "x-forwarded-for",
+    ]);
     expect(ip).toBe("10.0.0.2");
   });
 
@@ -186,10 +155,9 @@ describe("resolveIp", () => {
 
   it("should not allow spoofing via untrusted headers", () => {
     // Attacker sets CF-Connecting-IP but we only trust x-forwarded-for (Nginx)
-    const ip = resolveIp(
-      { "cf-connecting-ip": "127.0.0.1", "x-forwarded-for": "203.0.113.50" },
-      ["x-forwarded-for"],
-    );
+    const ip = resolveIp({ "cf-connecting-ip": "127.0.0.1", "x-forwarded-for": "203.0.113.50" }, [
+      "x-forwarded-for",
+    ]);
     expect(ip).toBe("203.0.113.50");
   });
 });

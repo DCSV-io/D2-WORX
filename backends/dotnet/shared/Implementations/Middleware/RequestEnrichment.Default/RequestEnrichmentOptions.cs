@@ -54,4 +54,18 @@ public class RequestEnrichmentOptions
     /// </remarks>
     public HashSet<TrustedProxyHeader> TrustedProxyHeaders { get; set; } =
         [TrustedProxyHeader.CfConnectingIp];
+
+    /// <summary>
+    /// Gets or sets the maximum length for client fingerprint header values.
+    /// Values exceeding this are truncated.
+    /// </summary>
+    /// <remarks>Default is 256.</remarks>
+    public int MaxFingerprintLength { get; set; } = 256;
+
+    /// <summary>
+    /// Gets or sets the maximum length for forwarded-for / IP proxy headers.
+    /// Values exceeding this are truncated.
+    /// </summary>
+    /// <remarks>Default is 2048.</remarks>
+    public int MaxForwardedForLength { get; set; } = 2048;
 }

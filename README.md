@@ -259,15 +259,15 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | -------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching      |
 > | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — DDD layers done (825 tests), client libs next |
-> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (510 tests)                   |
+> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1 | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (510 tests)                   |
 >
 > **Client Libraries:**
 >
 > _Service-owned client libraries for consumers. Each service publishes a client package so consumers don't need to know gRPC details._
 >
-> | Client      | .NET                                                                | Node.js                                                                    | Description                    |
-> | ----------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------ |
-> | Geo Client  | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md)      | Service-owned consumer library |
+> | Client       | .NET                                                                | Node.js                                                                 | Description                     |
+> | ------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------- |
+> | Geo Client   | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md)   | Service-owned consumer library  |
 > | Comms Client | —                                                                   | [@d2/comms-client](backends/node/services/comms/client/COMMS_CLIENT.md) | RabbitMQ notification publisher |
 >
 > **Gateways:**

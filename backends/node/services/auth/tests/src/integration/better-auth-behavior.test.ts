@@ -157,9 +157,7 @@ describe("BetterAuth behavioral integration", () => {
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
 
-      const payload = JSON.parse(
-        Buffer.from(tokenRes.token.split(".")[1], "base64url").toString(),
-      );
+      const payload = JSON.parse(Buffer.from(tokenRes.token.split(".")[1], "base64url").toString());
 
       // Standard JWT claims that .NET AddJwtBearer() validates
       expect(payload.iss).toBe("test-issuer");
@@ -181,10 +179,7 @@ describe("BetterAuth behavioral integration", () => {
     it("should create a session row in the database on sign-in", async () => {
       const { user, token } = await signUpAndVerify("q2-create@example.com", "Q2 Create");
 
-      const sessions = await getPool().query(
-        "SELECT * FROM session WHERE user_id = $1",
-        [user.id],
-      );
+      const sessions = await getPool().query("SELECT * FROM session WHERE user_id = $1", [user.id]);
       expect(sessions.rows.length).toBeGreaterThanOrEqual(1);
 
       const sess = sessions.rows.find((r: Record<string, unknown>) => r.token === token);
@@ -254,10 +249,9 @@ describe("BetterAuth behavioral integration", () => {
 
       expect(token1).not.toBe(token2);
 
-      const sessions = await getPool().query(
-        "SELECT token FROM session WHERE user_id = $1",
-        [session1.user.id],
-      );
+      const sessions = await getPool().query("SELECT token FROM session WHERE user_id = $1", [
+        session1.user.id,
+      ]);
       expect(sessions.rows.length).toBeGreaterThanOrEqual(2);
     });
 
@@ -436,9 +430,7 @@ describe("BetterAuth behavioral integration", () => {
       const tokenRes = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
-      const payload = JSON.parse(
-        Buffer.from(tokenRes.token.split(".")[1], "base64url").toString(),
-      );
+      const payload = JSON.parse(Buffer.from(tokenRes.token.split(".")[1], "base64url").toString());
 
       // Identity claims — always present
       expect(payload[JWT_CLAIM_TYPES.SUB]).toBe(user.id);
@@ -460,9 +452,7 @@ describe("BetterAuth behavioral integration", () => {
       const tokenRes = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
-      const payload = JSON.parse(
-        Buffer.from(tokenRes.token.split(".")[1], "base64url").toString(),
-      );
+      const payload = JSON.parse(Buffer.from(tokenRes.token.split(".")[1], "base64url").toString());
 
       // All org claims present — hook enriches session before cookie/DB write
       expect(payload[JWT_CLAIM_TYPES.ORG_ID]).toBe(org.id);
@@ -480,9 +470,7 @@ describe("BetterAuth behavioral integration", () => {
       const tokenRes = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
-      const payload = JSON.parse(
-        Buffer.from(tokenRes.token.split(".")[1], "base64url").toString(),
-      );
+      const payload = JSON.parse(Buffer.from(tokenRes.token.split(".")[1], "base64url").toString());
 
       expect(payload[JWT_CLAIM_TYPES.ORG_ID]).toBeNull();
       expect(payload[JWT_CLAIM_TYPES.ORG_TYPE]).toBeNull();
@@ -510,9 +498,7 @@ describe("BetterAuth behavioral integration", () => {
       const jwt1 = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
-      const payload1 = JSON.parse(
-        Buffer.from(jwt1.token.split(".")[1], "base64url").toString(),
-      );
+      const payload1 = JSON.parse(Buffer.from(jwt1.token.split(".")[1], "base64url").toString());
       expect(payload1[JWT_CLAIM_TYPES.ORG_ID]).toBe(org1.id);
 
       // Switch to org2
@@ -524,9 +510,7 @@ describe("BetterAuth behavioral integration", () => {
       const jwt2 = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
-      const payload2 = JSON.parse(
-        Buffer.from(jwt2.token.split(".")[1], "base64url").toString(),
-      );
+      const payload2 = JSON.parse(Buffer.from(jwt2.token.split(".")[1], "base64url").toString());
       expect(payload2[JWT_CLAIM_TYPES.ORG_ID]).toBe(org2.id);
 
       // JWTs should be different (different org context)
@@ -539,9 +523,7 @@ describe("BetterAuth behavioral integration", () => {
       const tokenRes = await auth.api.getToken({
         headers: new Headers({ Authorization: `Bearer ${token}` }),
       });
-      const payload = JSON.parse(
-        Buffer.from(tokenRes.token.split(".")[1], "base64url").toString(),
-      );
+      const payload = JSON.parse(Buffer.from(tokenRes.token.split(".")[1], "base64url").toString());
 
       // User-derived claims (proves user param works)
       expect(payload[JWT_CLAIM_TYPES.SUB]).toBe(user.id);

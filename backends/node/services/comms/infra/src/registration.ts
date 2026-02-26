@@ -38,15 +38,9 @@ import { PingDb } from "./repository/handlers/q/ping-db.js";
  * registered as singleton instances in the composition root since they
  * hold API client connections and need service-level HandlerContext.
  */
-export function addCommsInfra(
-  services: ServiceCollection,
-  db: NodePgDatabase,
-): void {
+export function addCommsInfra(services: ServiceCollection, db: NodePgDatabase): void {
   // Health check handler
-  services.addTransient(
-    IPingDbKey,
-    (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)),
-  );
+  services.addTransient(IPingDbKey, (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)));
 
   // --- Message Repository ---
   services.addTransient(
@@ -103,5 +97,4 @@ export function addCommsInfra(
     IUpdateChannelPreferenceRecordKey,
     (sp) => new UpdateChannelPreferenceRecord(db, sp.resolve(IHandlerContextKey)),
   );
-
 }

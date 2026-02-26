@@ -1,6 +1,8 @@
 // @d2/auth-app — Custom business logic handlers for the Auth service.
 // Zero BetterAuth imports — this package is pure application logic.
 
+export { AUTH_CACHE_KEYS } from "./cache-keys.js";
+
 import type { IHandlerContext } from "@d2/handler";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { Commands, Queries, Complex } from "@d2/geo-client";

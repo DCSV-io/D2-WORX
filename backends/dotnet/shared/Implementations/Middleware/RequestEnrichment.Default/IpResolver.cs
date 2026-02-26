@@ -39,6 +39,9 @@ public static class IpResolver
     /// <param name="trustedHeaders">
     /// The set of proxy headers to trust. If null, defaults to Cloudflare only.
     /// </param>
+    /// <param name="maxHeaderLength">
+    /// Maximum allowed length for header values. Values exceeding this are truncated. Defaults to 2048.
+    /// </param>
     ///
     /// <returns>
     /// The resolved client IP address, or "unknown" if it cannot be determined.
@@ -50,7 +53,7 @@ public static class IpResolver
     /// 3. X-Forwarded-For (first entry = original client)
     /// 4. HttpContext.Connection.RemoteIpAddress (direct connection fallback).
     /// </remarks>
-    public static string Resolve(HttpContext context, HashSet<TrustedProxyHeader>? trustedHeaders = null)
+    public static string Resolve(HttpContext context, HashSet<TrustedProxyHeader>? trustedHeaders = null, int maxHeaderLength = 2048)
     {
         trustedHeaders ??= [TrustedProxyHeader.CfConnectingIp];
 
@@ -61,7 +64,7 @@ public static class IpResolver
             var ip = cfIp.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(ip))
             {
-                return ip.Trim();
+                return Truncate(ip.Trim(), maxHeaderLength);
             }
         }
 
@@ -72,7 +75,7 @@ public static class IpResolver
             var ip = realIp.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(ip))
             {
-                return ip.Trim();
+                return Truncate(ip.Trim(), maxHeaderLength);
             }
         }
 
@@ -83,8 +86,11 @@ public static class IpResolver
             var forwardedValue = forwardedFor.FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(forwardedValue))
             {
+                // Truncate before parsing to prevent abuse from oversized headers.
+                var truncated = Truncate(forwardedValue, maxHeaderLength);
+
                 // Format can be "client, proxy1, proxy2" — take the first one.
-                var firstIp = forwardedValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                var firstIp = truncated.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .FirstOrDefault();
                 if (!string.IsNullOrWhiteSpace(firstIp))
                 {
@@ -123,5 +129,10 @@ public static class IpResolver
     public static bool IsLocalhost(string ip)
     {
         return ip is "127.0.0.1" or "::1" or "localhost" or "unknown";
+    }
+
+    private static string Truncate(string value, int maxLength)
+    {
+        return value.Length > maxLength ? value[..maxLength] : value;
     }
 }

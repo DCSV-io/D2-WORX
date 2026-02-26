@@ -46,9 +46,10 @@ export class GetFromDisk extends BaseHandler<Input, Output> implements Queries.I
     try {
       const data = GeoRefDataCodec.decode(bytes);
       return D2Result.ok({ data: { data } });
-    } catch {
+    } catch (error) {
       this.context.logger.error(
         `Failed to parse georeference data from disk. TraceId: ${this.traceId}`,
+        error,
       );
       return D2Result.fail({
         messages: ["Corrupted data on disk."],

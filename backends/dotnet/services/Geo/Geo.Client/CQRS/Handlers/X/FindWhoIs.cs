@@ -87,7 +87,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        var cacheKey = $"whois:{input.IpAddress}:{input.UserAgent}";
+        var cacheKey = CacheKeys.WhoIs(input.IpAddress, input.UserAgent);
 
         // Try cache first.
         var getR = await r_cacheGet.HandleAsync(new(cacheKey), ct);

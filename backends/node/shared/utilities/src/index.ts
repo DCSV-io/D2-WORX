@@ -6,11 +6,6 @@ export {
   cleanAndValidatePhoneNumber,
   getNormalizedStrForHashing,
 } from "./string-extensions.js";
-export {
-  DIST_CACHE_KEY_PREFIX,
-  DIST_CACHE_KEY_GEO,
-  DIST_CACHE_KEY_GEO_REF_DATA,
-  GEO_REF_DATA_FILE_NAME,
-} from "./constants.js";
+export { GEO_REF_DATA_FILE_NAME } from "./constants.js";
 export { retryAsync, isTransientError, type RetryOptions } from "./retry.js";
 export { escapeHtml } from "./escape-html.js";

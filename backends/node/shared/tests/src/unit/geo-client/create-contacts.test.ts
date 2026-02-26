@@ -27,15 +27,19 @@ function createMockContactDTO(id: string): ContactDTO {
 }
 
 function mockGrpcMethod<TReq, TRes>(response: TRes) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(null, response);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(null, response);
+    },
+  );
 }
 
 function mockGrpcMethodError<TReq, TRes>(error: Error) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(error, undefined as never);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(error, undefined as never);
+    },
+  );
 }
 
 describe("CreateContacts handler", () => {

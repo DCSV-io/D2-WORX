@@ -28,6 +28,8 @@ export class ServiceProvider implements ServiceResolver {
   readonly _descriptors: ReadonlyMap<string, ServiceDescriptor>;
   /** @internal Singleton cache (shared across all scopes). */
   readonly _singletons = new Map<string, unknown>();
+  /** @internal Tracks keys currently being resolved to detect circular dependencies. */
+  readonly _resolvingStack = new Set<string>();
   private _disposed = false;
 
   /** @internal */
@@ -85,7 +87,7 @@ export class ServiceProvider implements ServiceResolver {
       case Lifetime.Singleton: {
         if (this._singletons.has(desc.key.id)) return this._singletons.get(desc.key.id);
         // Factory receives root provider (captive dependency prevention).
-        const instance = desc.factory!(this);
+        const instance = this._invokeFactory(desc, this);
         this._singletons.set(desc.key.id, instance);
         return instance;
       }
@@ -94,7 +96,26 @@ export class ServiceProvider implements ServiceResolver {
           `Cannot resolve scoped service "${desc.key.id}" from the root provider. Create a scope first.`,
         );
       case Lifetime.Transient:
-        return desc.factory!(this);
+        return this._invokeFactory(desc, this);
+    }
+  }
+
+  /**
+   * Invoke a factory with circular dependency detection.
+   * Tracks the resolution stack and throws if a cycle is detected.
+   * @internal
+   */
+  _invokeFactory(desc: ServiceDescriptor, resolver: ServiceResolver): unknown {
+    const keyId = desc.key.id;
+    if (this._resolvingStack.has(keyId)) {
+      const chain = [...this._resolvingStack, keyId].join(" -> ");
+      throw new Error(`Circular dependency detected: ${chain}`);
+    }
+    this._resolvingStack.add(keyId);
+    try {
+      return desc.factory!(resolver);
+    } finally {
+      this._resolvingStack.delete(keyId);
     }
   }
 
@@ -181,20 +202,20 @@ export class ServiceScope implements ServiceResolver {
       case Lifetime.Singleton: {
         // Singletons always resolve from root cache.
         if (this._root._singletons.has(desc.key.id)) return this._root._singletons.get(desc.key.id);
-        const instance = desc.factory!(this._root);
+        const instance = this._root._invokeFactory(desc, this._root);
         this._root._singletons.set(desc.key.id, instance);
         return instance;
       }
       case Lifetime.Scoped: {
         if (this._scopedCache.has(desc.key.id)) return this._scopedCache.get(desc.key.id);
         // Scoped factory receives the scope (can depend on singletons + scoped).
-        const instance = desc.factory!(this);
+        const instance = this._root._invokeFactory(desc, this);
         this._scopedCache.set(desc.key.id, instance);
         return instance;
       }
       case Lifetime.Transient:
         // Transient factory receives the scope (can depend on singletons + scoped).
-        return desc.factory!(this);
+        return this._root._invokeFactory(desc, this);
     }
   }
 

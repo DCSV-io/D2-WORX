@@ -3,8 +3,8 @@ import { D2Result } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
 import { GeoRefData as GeoRefDataCodec } from "@d2/protos";
 import type { DistributedCache } from "@d2/interfaces";
-import { DIST_CACHE_KEY_GEO_REF_DATA } from "@d2/utilities";
 import type { ICacheSerializer } from "@d2/cache-redis";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Commands } from "../../interfaces/index.js";
 
 type Input = Commands.SetInDistInput;
@@ -39,7 +39,7 @@ export class SetInDist extends BaseHandler<Input, Output> implements Commands.IS
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const setR = await this.distCacheSet.handleAsync({
-      key: DIST_CACHE_KEY_GEO_REF_DATA,
+      key: GEO_CACHE_KEYS.REFDATA,
       value: input.data,
     });
 

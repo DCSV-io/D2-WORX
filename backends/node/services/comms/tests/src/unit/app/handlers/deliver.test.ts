@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { D2Result } from "@d2/result";
-import { Deliver } from "@d2/comms-app";
+import { Deliver, EmailDispatcher, SmsDispatcher } from "@d2/comms-app";
 import { RecipientResolver } from "@d2/comms-app";
 import {
   createMockContext,
@@ -57,7 +57,7 @@ describe("Deliver", () => {
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
       },
-      { email: emailProvider },
+      [new EmailDispatcher(emailProvider)],
       recipientResolver,
       context,
     );
@@ -131,7 +131,7 @@ describe("Deliver", () => {
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
       },
-      { email: emailProvider },
+      [new EmailDispatcher(emailProvider)],
       resolver,
       context,
     );
@@ -182,12 +182,12 @@ describe("Deliver", () => {
     expect(messageRepo.create.handleAsync).toHaveBeenCalledOnce();
     expect(requestRepo.create.handleAsync).toHaveBeenCalledOnce();
     // contact-1 has both email + phone; non-sensitive normal -> email + sms resolved,
-    // but SMS is skipped (no provider) so only email attempt is created
+    // but SMS dispatcher not registered so only email attempt is created
     expect(attemptRepo.create.handleAsync).toHaveBeenCalledTimes(1);
   });
 
-  it("should skip SMS attempt entirely when smsProvider is undefined", async () => {
-    // Default Deliver has no SMS provider — only email
+  it("should skip SMS attempt entirely when no SMS dispatcher configured", async () => {
+    // Default Deliver has no SMS dispatcher — only email
     // Mock geo to return a contact with phone only (no email)
     const contactsWithPhone = new Map();
     contactsWithPhone.set(CONTACT_SMS, {
@@ -218,7 +218,7 @@ describe("Deliver", () => {
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
       },
-      { email: emailProvider }, // No sms provider
+      [new EmailDispatcher(emailProvider)], // No SMS dispatcher
       resolverSms,
       context,
     );
@@ -232,10 +232,10 @@ describe("Deliver", () => {
       correlationId: CORR_SMS,
     });
 
-    // SMS channel skipped entirely — no pending attempt created
-    // Since only SMS was resolved and it was skipped, no attempts at all
-    // The request still succeeds with empty attempts (all channels were skipped)
-    expect(result.data!.attempts).toHaveLength(0);
+    // SMS channel skipped entirely — no dispatcher configured
+    // No deliverable channels remain → NOT_FOUND
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
     // No attempt persisted
     expect(attemptRepo.create.handleAsync).not.toHaveBeenCalled();
   });
@@ -270,7 +270,7 @@ describe("Deliver", () => {
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
       },
-      { email: emailProvider },
+      [new EmailDispatcher(emailProvider)],
       resolverContact,
       context,
     );
@@ -398,9 +398,9 @@ describe("Deliver", () => {
 
   it("should propagate resolver failure (e.g. geo 503) to caller", async () => {
     const geoIdsFailing = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["Geo down"], statusCode: 503 }),
-      ),
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(D2Result.fail({ messages: ["Geo down"], statusCode: 503 })),
     };
 
     const context = createMockContext();
@@ -413,7 +413,7 @@ describe("Deliver", () => {
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
       },
-      { email: emailProvider },
+      [new EmailDispatcher(emailProvider)],
       failingResolver,
       context,
     );
@@ -496,9 +496,9 @@ describe("Deliver", () => {
     const dualResolver = new RecipientResolver(geoById as any, context);
 
     const mockSmsProvider = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.ok({ data: { providerMessageId: "twilio-123" } }),
-      ),
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { providerMessageId: "twilio-123" } })),
     };
 
     const dualDeliver = new Deliver(
@@ -508,7 +508,7 @@ describe("Deliver", () => {
         attempt: attemptRepo,
         channelPref: channelPrefRepo,
       },
-      { email: emailProvider, sms: mockSmsProvider as any },
+      [new EmailDispatcher(emailProvider), new SmsDispatcher(mockSmsProvider as any)],
       dualResolver,
       context,
     );

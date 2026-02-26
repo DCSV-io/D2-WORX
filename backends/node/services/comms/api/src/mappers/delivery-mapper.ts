@@ -7,7 +7,6 @@ export function deliveryRequestToProto(req: DeliveryRequest): DeliveryRequestDTO
     messageId: req.messageId,
     correlationId: req.correlationId,
     recipientContactId: req.recipientContactId,
-    channels: [],
     callbackTopic: req.callbackTopic ?? undefined,
     createdAt: req.createdAt,
     processedAt: req.processedAt ?? undefined,

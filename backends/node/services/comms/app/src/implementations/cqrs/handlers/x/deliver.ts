@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import {
@@ -21,9 +19,8 @@ import type {
   DeliveryAttemptRepoHandlers,
   ChannelPreferenceRepoHandlers,
 } from "../../../../interfaces/repository/handlers/index.js";
-import type { IEmailProvider, SendEmailInput } from "../../../../interfaces/providers/index.js";
-import type { ISmsProvider } from "../../../../interfaces/providers/index.js";
 import type { RecipientResolver } from "./resolve-recipient.js";
+import type { IChannelDispatcher } from "./channel-dispatchers.js";
 
 export interface DeliverInput {
   readonly senderService: string;
@@ -43,11 +40,6 @@ export interface DeliverOutput {
   readonly attempts: DeliveryAttempt[];
 }
 
-export interface EmailWrapperOptions {
-  /** HTML template with {{title}}, {{body}}, {{unsubscribeUrl}} placeholders. */
-  emailWrapper?: string;
-}
-
 const deliverSchema = z.object({
   correlationId: zodGuid,
   recipientContactId: zodGuid,
@@ -60,31 +52,22 @@ const deliverSchema = z.object({
   senderService: z.string().min(1).max(100),
 });
 
-/** Default email HTML wrapper. */
-const DEFAULT_EMAIL_WRAPPER = `<!DOCTYPE html>
-<html><body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h2>{{title}}</h2>
-  <div>{{body}}</div>
-  <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
-  <p style="color: #999; font-size: 12px;">This is an automated message from D2-WORX.
-  {{unsubscribeUrl}}</p>
-</body></html>`;
-
 /**
  * Core delivery orchestrator. Creates Message + DeliveryRequest, resolves
- * the recipient's address, determines channels, renders markdown to HTML,
- * wraps in email template, and dispatches via providers (Resend for email,
- * Twilio for SMS).
+ * the recipient's address, determines channels, and dispatches via channel
+ * dispatchers in parallel (Promise.allSettled).
+ *
+ * Channel-specific logic (content transformation, provider invocation) is
+ * delegated to IChannelDispatcher implementations. The handler owns
+ * orchestration: attempt creation, domain rule application, persistence.
  */
 export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
   private readonly messageRepo: MessageRepoHandlers;
   private readonly requestRepo: DeliveryRequestRepoHandlers;
   private readonly attemptRepo: DeliveryAttemptRepoHandlers;
   private readonly channelPrefRepo: ChannelPreferenceRepoHandlers;
-  private readonly emailProvider: IEmailProvider;
-  private readonly smsProvider: ISmsProvider | undefined;
+  private readonly dispatchers: Map<Channel, IChannelDispatcher>;
   private readonly recipientResolver: RecipientResolver;
-  private readonly emailWrapper: string;
 
   constructor(
     repos: {
@@ -93,20 +76,17 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       attempt: DeliveryAttemptRepoHandlers;
       channelPref: ChannelPreferenceRepoHandlers;
     },
-    providers: { email: IEmailProvider; sms?: ISmsProvider },
+    dispatchers: IChannelDispatcher[],
     recipientResolver: RecipientResolver,
     context: IHandlerContext,
-    options?: EmailWrapperOptions,
   ) {
     super(context);
     this.messageRepo = repos.message;
     this.requestRepo = repos.request;
     this.attemptRepo = repos.attempt;
     this.channelPrefRepo = repos.channelPref;
-    this.emailProvider = providers.email;
-    this.smsProvider = providers.sms;
+    this.dispatchers = new Map(dispatchers.map((d) => [d.channel, d]));
     this.recipientResolver = recipientResolver;
-    this.emailWrapper = options?.emailWrapper ?? DEFAULT_EMAIL_WRAPPER;
   }
 
   protected async executeAsync(input: DeliverInput): Promise<D2Result<DeliverOutput | undefined>> {
@@ -180,13 +160,17 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     // Step 6: Resolve channels via domain rule
     const channelsResult = resolveChannels(prefs, message);
 
-    // Step 7: Check if we have addresses for resolved channels
+    // Step 7: Filter to deliverable channels (must have address + dispatcher)
     const deliverableChannels: Array<{ channel: Channel; address: string }> = [];
     for (const ch of channelsResult.channels) {
-      if (ch === "email" && email) {
+      if (ch === "email" && email && this.dispatchers.has("email")) {
         deliverableChannels.push({ channel: "email", address: email });
-      } else if (ch === "sms" && phone) {
+      } else if (ch === "sms" && phone && this.dispatchers.has("sms")) {
         deliverableChannels.push({ channel: "sms", address: phone });
+      } else if (ch === "sms" && !this.dispatchers.has("sms")) {
+        this.context.logger.warn(
+          `SMS channel requested but no dispatcher configured. Skipping SMS delivery. TraceId: ${this.traceId}`,
+        );
       }
     }
 
@@ -196,84 +180,66 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       });
     }
 
-    // Step 8: Deliver to each channel
-    const attempts: DeliveryAttempt[] = [];
-
-    for (const { channel, address } of deliverableChannels) {
-      // If no SMS provider configured, fail fast — do not persist a pending attempt
-      if (channel === "sms" && !this.smsProvider) {
-        this.context.logger.warn(
-          `SMS channel requested but no SMS provider configured. Skipping SMS delivery. TraceId: ${this.traceId}`,
-        );
-        continue;
-      }
-
-      // Create attempt
-      let attempt = createDeliveryAttempt({
+    // Step 8: Dispatch to all channels in parallel
+    const dispatchTasks = deliverableChannels.map(({ channel, address }) => ({
+      channel,
+      address,
+      attempt: createDeliveryAttempt({
         requestId: request.id,
         channel,
         recipientAddress: address,
         attemptNumber: 1,
-      });
+      }),
+    }));
 
-      // Dispatch
-      if (channel === "email") {
-        // Render markdown content to HTML and wrap in email template
-        const renderedBody = renderMarkdownToHtml(input.content);
-        const html = renderTemplate(this.emailWrapper, {
+    const results = await Promise.allSettled(
+      dispatchTasks.map(async (task) => {
+        const dispatcher = this.dispatchers.get(task.channel)!;
+        const result = await dispatcher.dispatch({
+          address: task.address,
           title: input.title,
-          body: renderedBody,
-          unsubscribeUrl: "",
+          content: input.content,
+          plainTextContent: input.plainTextContent,
         });
+        return result;
+      }),
+    );
 
-        const sendInput: SendEmailInput = {
-          to: address,
-          subject: input.title,
-          html,
-          plainText: input.plainTextContent,
-        };
-        const sendResult = await this.emailProvider.handleAsync(sendInput);
+    // Step 8a: Process results and persist attempts
+    const attempts: DeliveryAttempt[] = [];
 
-        if (sendResult.success && sendResult.data) {
+    for (const [i, settled] of results.entries()) {
+      let attempt = dispatchTasks[i]!.attempt;
+
+      if (settled.status === "fulfilled") {
+        const dispatchResult = settled.value;
+        if (dispatchResult.success) {
           attempt = transitionDeliveryAttemptStatus(attempt, "sent", {
-            providerMessageId: sendResult.data.providerMessageId,
+            providerMessageId: dispatchResult.providerMessageId,
           });
         } else {
-          const errorMsg = sendResult.messages?.join("; ") ?? "Email send failed";
           const nextRetryAt = isMaxAttemptsReached(attempt.attemptNumber)
             ? null
             : computeNextRetryAt(attempt.attemptNumber);
           attempt = transitionDeliveryAttemptStatus(attempt, "failed", {
-            error: errorMsg,
+            error: dispatchResult.error,
             nextRetryAt,
           });
         }
-      } else if (channel === "sms" && this.smsProvider) {
-        const sendResult = await this.smsProvider.handleAsync({
-          to: address,
-          body: input.plainTextContent,
+      } else {
+        // Dispatcher threw — treat as failed with retry
+        const nextRetryAt = isMaxAttemptsReached(attempt.attemptNumber)
+          ? null
+          : computeNextRetryAt(attempt.attemptNumber);
+        attempt = transitionDeliveryAttemptStatus(attempt, "failed", {
+          error: settled.reason instanceof Error ? settled.reason.message : "Dispatch error",
+          nextRetryAt,
         });
-
-        if (sendResult.success && sendResult.data) {
-          attempt = transitionDeliveryAttemptStatus(attempt, "sent", {
-            providerMessageId: sendResult.data.providerMessageId,
-          });
-        } else {
-          const errorMsg = sendResult.messages?.join("; ") ?? "SMS send failed";
-          const nextRetryAt = isMaxAttemptsReached(attempt.attemptNumber)
-            ? null
-            : computeNextRetryAt(attempt.attemptNumber);
-          attempt = transitionDeliveryAttemptStatus(attempt, "failed", {
-            error: errorMsg,
-            nextRetryAt,
-          });
-        }
       }
 
       // Persist attempt
       await this.attemptRepo.create.handleAsync({ attempt });
 
-      // Update status in DB if not pending
       if (attempt.status !== "pending") {
         await this.attemptRepo.updateStatus.handleAsync({
           id: attempt.id,
@@ -293,9 +259,7 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     );
     if (retryableFailures.length > 0) {
       return D2Result.fail({
-        messages: [
-          `Delivery failed for ${retryableFailures.length} channel(s), retry scheduled.`,
-        ],
+        messages: [`Delivery failed for ${retryableFailures.length} channel(s), retry scheduled.`],
         statusCode: 503,
         errorCode: COMMS_RETRY.DELIVERY_FAILED,
       });
@@ -319,18 +283,4 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       },
     });
   }
-}
-
-/** Simple {{key}} template interpolation. */
-function renderTemplate(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
-}
-
-/**
- * Renders markdown to sanitized HTML using `marked` + `isomorphic-dompurify`.
- * Full CommonMark support with XSS protection via DOMPurify.
- */
-function renderMarkdownToHtml(markdown: string): string {
-  const rawHtml = marked.parse(markdown, { async: false }) as string;
-  return DOMPurify.sanitize(rawHtml);
 }

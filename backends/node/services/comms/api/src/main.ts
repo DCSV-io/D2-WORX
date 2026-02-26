@@ -62,8 +62,15 @@ function parsePostgresUrl(connectionString: string): string {
 // Aspire injects connection strings in .NET formats (ADO.NET for PG).
 // Parser converts to URI format for Node.js clients, passing through URIs unchanged.
 const config = {
-  databaseUrl: parsePostgresUrl(process.env["ConnectionStrings__d2-services-comms"] ?? process.env.ConnectionStrings__d2_services_comms ?? ""),
-  rabbitMqUrl: process.env["ConnectionStrings__d2-rabbitmq"] ?? process.env.ConnectionStrings__d2_rabbitmq ?? "",
+  databaseUrl: parsePostgresUrl(
+    process.env["ConnectionStrings__d2-services-comms"] ??
+      process.env.ConnectionStrings__d2_services_comms ??
+      "",
+  ),
+  rabbitMqUrl:
+    process.env["ConnectionStrings__d2-rabbitmq"] ??
+    process.env.ConnectionStrings__d2_rabbitmq ??
+    "",
   grpcPort: parseInt(process.env.GRPC_PORT ?? "5200", 10),
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromAddress: process.env.RESEND_FROM_ADDRESS,

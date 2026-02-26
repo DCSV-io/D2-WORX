@@ -1,6 +1,8 @@
 // @d2/comms-app — CQRS handlers for the Comms service delivery engine.
 // Zero infra imports — this package is pure application logic.
 
+export { COMMS_CACHE_KEYS } from "./cache-keys.js";
+
 import type { IHandlerContext } from "@d2/handler";
 import type { ChannelPreference } from "@d2/comms-domain";
 import type { InMemoryCache } from "@d2/interfaces";
@@ -69,11 +71,18 @@ export type {
 
 // --- Complex Handlers ---
 export { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
+export type { DeliverInput, DeliverOutput } from "./implementations/cqrs/handlers/x/deliver.js";
+
+// --- Channel Dispatchers ---
+export {
+  EmailDispatcher,
+  SmsDispatcher,
+} from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 export type {
-  DeliverInput,
-  DeliverOutput,
-  EmailWrapperOptions,
-} from "./implementations/cqrs/handlers/x/deliver.js";
+  IChannelDispatcher,
+  DispatchInput,
+  DispatchResult,
+} from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 
 export { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
 export type {
@@ -108,7 +117,11 @@ import type {
 import type { IEmailProvider } from "./interfaces/providers/index.js";
 import type { ISmsProvider } from "./interfaces/providers/index.js";
 import { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
-import type { EmailWrapperOptions } from "./implementations/cqrs/handlers/x/deliver.js";
+import {
+  EmailDispatcher,
+  SmsDispatcher,
+} from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
+import type { IChannelDispatcher } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 import { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
 import { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
 import { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
@@ -130,10 +143,18 @@ export function createDeliveryHandlers(
       set: InMemoryCache.ISetHandler<ChannelPreference>;
     };
   },
-  options?: EmailWrapperOptions,
+  options?: { emailWrapper?: string },
 ): DeliveryHandlers {
   const recipientResolver = new RecipientResolver(getContactsByIds, context);
-  const deliver = new Deliver(repos, providers, recipientResolver, context, options);
+
+  const dispatchers: IChannelDispatcher[] = [
+    new EmailDispatcher(providers.email, options?.emailWrapper),
+  ];
+  if (providers.sms) {
+    dispatchers.push(new SmsDispatcher(providers.sms));
+  }
+
+  const deliver = new Deliver(repos, dispatchers, recipientResolver, context);
 
   return {
     deliver,

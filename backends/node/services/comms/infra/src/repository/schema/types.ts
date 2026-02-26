@@ -1,10 +1,5 @@
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
-import type {
-  message,
-  deliveryRequest,
-  deliveryAttempt,
-  channelPreference,
-} from "./tables.js";
+import type { message, deliveryRequest, deliveryAttempt, channelPreference } from "./tables.js";
 
 export type MessageRow = InferSelectModel<typeof message>;
 export type NewMessage = InferInsertModel<typeof message>;

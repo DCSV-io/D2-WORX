@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { SIGN_IN_THROTTLE } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
+import { AUTH_CACHE_KEYS } from "../../../../cache-keys.js";
 import type { ISignInThrottleStore } from "../../../../interfaces/repository/sign-in-throttle-store.js";
 
 export interface CheckSignInThrottleInput {
@@ -52,7 +53,7 @@ export class CheckSignInThrottle extends BaseHandler<
     input: CheckSignInThrottleInput,
   ): Promise<D2Result<CheckSignInThrottleOutput | undefined>> {
     try {
-      const cacheKey = `${input.identifierHash}:${input.identityHash}`;
+      const cacheKey = AUTH_CACHE_KEYS.signInThrottle(input.identifierHash, input.identityHash);
 
       // 1. Check local memory cache for known-good → fast path (0 Redis calls)
       if (this.cache) {

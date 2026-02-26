@@ -42,10 +42,7 @@ import { PingDb } from "./repository/handlers/q/ping-db.js";
  */
 export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void {
   // Health check handler
-  services.addTransient(
-    IPingDbKey,
-    (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)),
-  );
+  services.addTransient(IPingDbKey, (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)));
 
   // Sign-in event repo handlers
   services.addTransient(

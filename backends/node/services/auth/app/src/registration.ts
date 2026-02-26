@@ -186,5 +186,4 @@ export function addAuthApp(services: ServiceCollection, options: AddAuthAppOptio
         sp.tryResolve(IMessageBusPingKey),
       ),
   );
-
 }

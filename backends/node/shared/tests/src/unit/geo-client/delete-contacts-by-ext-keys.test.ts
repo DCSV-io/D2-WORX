@@ -5,6 +5,7 @@ import { createLogger } from "@d2/logging";
 import {
   DeleteContactsByExtKeys,
   DEFAULT_GEO_CLIENT_OPTIONS,
+  GEO_CACHE_KEYS,
   type GeoClientOptions,
 } from "@d2/geo-client";
 
@@ -23,15 +24,19 @@ function createTestContext(): IHandlerContext {
 }
 
 function mockGrpcMethod<TReq, TRes>(response: TRes) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(null, response);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(null, response);
+    },
+  );
 }
 
 function mockGrpcMethodError<TReq, TRes>(error: Error) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(error, undefined as never);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(error, undefined as never);
+    },
+  );
 }
 
 describe("DeleteContactsByExtKeys handler", () => {
@@ -135,9 +140,15 @@ describe("DeleteContactsByExtKeys handler", () => {
 
   it("should evict ext-key cache for each input key", async () => {
     // Pre-populate cache
-    store.set("contact-ext:auth_org_contact:org-1", [{ id: "c-1" } as ContactDTO]);
-    store.set("contact-ext:auth_org_contact:org-2", [{ id: "c-2" } as ContactDTO]);
-    store.set("contact-ext:auth_org_contact:org-3", [{ id: "c-3" } as ContactDTO]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"), [
+      { id: "c-1" } as ContactDTO,
+    ]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-2"), [
+      { id: "c-2" } as ContactDTO,
+    ]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-3"), [
+      { id: "c-3" } as ContactDTO,
+    ]);
 
     const mockGeoClient = {
       deleteContactsByExtKeys: mockGrpcMethod({
@@ -167,13 +178,15 @@ describe("DeleteContactsByExtKeys handler", () => {
     });
 
     // org-1 and org-2 evicted, org-3 remains
-    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
-    expect(store.get("contact-ext:auth_org_contact:org-2")).toBeUndefined();
-    expect(store.get("contact-ext:auth_org_contact:org-3")).toBeDefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"))).toBeUndefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-2"))).toBeUndefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-3"))).toBeDefined();
   });
 
   it("should evict cache even on gRPC failure", async () => {
-    store.set("contact-ext:auth_org_contact:org-1", [{ id: "c-1" } as ContactDTO]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"), [
+      { id: "c-1" } as ContactDTO,
+    ]);
 
     const mockGeoClient = {
       deleteContactsByExtKeys: mockGrpcMethodError(new Error("Connection refused")),
@@ -190,7 +203,7 @@ describe("DeleteContactsByExtKeys handler", () => {
     });
 
     // Cache should still be evicted even though gRPC failed
-    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"))).toBeUndefined();
   });
 
   it("should return failure on gRPC error", async () => {

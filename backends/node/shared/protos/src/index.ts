@@ -111,7 +111,6 @@ export {
 export type {
   PaginationRequest as CommsPaginationRequest,
   ChannelPreferenceDTO,
-  TemplateWrapperDTO,
   DeliveryRequestDTO,
   DeliveryAttemptDTO,
   ThreadDTO,
@@ -127,10 +126,6 @@ export type {
   GetChannelPreferenceResponse,
   SetChannelPreferenceRequest,
   SetChannelPreferenceResponse,
-  GetTemplateRequest,
-  GetTemplateResponse,
-  UpsertTemplateRequest,
-  UpsertTemplateResponse,
   GetDeliveryStatusRequest,
   GetDeliveryStatusResponse,
   GetNotificationsRequest,

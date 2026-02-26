@@ -30,7 +30,8 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
           const handler = scope.resolve(ICheckHealthKey);
           const result = await handler.handleAsync({});
 
-          const components: Record<string, { status: string; latencyMs: string; error: string }> = {};
+          const components: Record<string, { status: string; latencyMs: string; error: string }> =
+            {};
           if (result.data?.components) {
             for (const [key, comp] of Object.entries(result.data.components)) {
               components[key] = {
@@ -127,14 +128,6 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
           scope.dispose();
         }
       });
-    },
-
-    // Template RPCs — no longer implemented (templates removed from architecture)
-    getTemplate: (_call, cb) => {
-      cb({ code: grpc.status.UNIMPLEMENTED, message: "Not implemented" });
-    },
-    upsertTemplate: (_call, cb) => {
-      cb({ code: grpc.status.UNIMPLEMENTED, message: "Not implemented" });
     },
 
     getDeliveryStatus: (call, callback) => {

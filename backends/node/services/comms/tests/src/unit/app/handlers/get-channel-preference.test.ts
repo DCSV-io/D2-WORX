@@ -90,16 +90,16 @@ describe("GetChannelPreference", () => {
     // Should populate cache after DB fetch
     expect(cache.set.handleAsync).toHaveBeenCalledOnce();
     const setCall = (cache.set.handleAsync as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(setCall.key).toBe(`chan-pref:contact:${VALID_CONTACT_ID}`);
+    expect(setCall.key).toBe(`comms:channel-pref:${VALID_CONTACT_ID}`);
     expect(setCall.value).toBe(dbPref);
     expect(setCall.expirationMs).toBe(900_000);
   });
 
   // -------------------------------------------------------------------------
-  // Contact with no preference — returns null pref
+  // Contact with no preference — returns NOT_FOUND
   // -------------------------------------------------------------------------
 
-  it("should return null pref when contact has no preference in DB", async () => {
+  it("should return NOT_FOUND when contact has no preference in DB", async () => {
     // Cache miss
     (cache.get.handleAsync as ReturnType<typeof vi.fn>).mockResolvedValue(
       D2Result.ok({ data: { value: undefined } }),
@@ -112,10 +112,10 @@ describe("GetChannelPreference", () => {
 
     const result = await handler.handleAsync({ contactId: VALID_CONTACT_ID });
 
-    expect(result.success).toBe(true);
-    expect(result.data!.pref).toBeNull();
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
 
-    // Should NOT populate cache when pref is null
+    // Should NOT populate cache when pref is not found
     expect(cache.set.handleAsync).not.toHaveBeenCalled();
   });
 
@@ -142,14 +142,14 @@ describe("GetChannelPreference", () => {
   });
 
   // -------------------------------------------------------------------------
-  // Empty/falsy contactId — returns null pref (early exit)
+  // Empty/falsy contactId — returns validation failure (early exit)
   // -------------------------------------------------------------------------
 
-  it("should return null pref for empty string contactId", async () => {
+  it("should return validation failure for empty string contactId", async () => {
     const result = await handler.handleAsync({ contactId: "" });
 
-    expect(result.success).toBe(true);
-    expect(result.data!.pref).toBeNull();
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
 
     // Should NOT call cache or repo for empty contactId
     expect(cache.get.handleAsync).not.toHaveBeenCalled();

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { D2Result } from "@d2/result";
-import { SetChannelPreference } from "@d2/comms-app";
+import { SetChannelPreference, GetChannelPreference } from "@d2/comms-app";
 import type { ChannelPreferenceRepoHandlers } from "@d2/comms-app";
 import type { ChannelPreference } from "@d2/comms-domain";
 import { createMockContext, createMockChannelPrefRepo } from "../helpers/mock-handlers.js";
@@ -125,7 +125,7 @@ describe("SetChannelPreference", () => {
     expect(cache.set.handleAsync).toHaveBeenCalledOnce();
 
     const setCall = (cache.set.handleAsync as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(setCall.key).toBe(`chan-pref:contact:${VALID_CONTACT_ID}`);
+    expect(setCall.key).toBe(`comms:channel-pref:${VALID_CONTACT_ID}`);
     expect(setCall.value.contactId).toBe(VALID_CONTACT_ID);
     expect(setCall.expirationMs).toBe(900_000);
   });
@@ -182,5 +182,84 @@ describe("SetChannelPreference", () => {
     // Existing values preserved (not overridden by defaults)
     expect(result.data!.pref.emailEnabled).toBe(false);
     expect(result.data!.pref.smsEnabled).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cross-handler cache coherence: SetChannelPreference → GetChannelPreference
+// ---------------------------------------------------------------------------
+
+describe("Cross-handler cache coherence: SetChannelPreference → GetChannelPreference", () => {
+  const CONTACT_ID = "019505a0-1234-7abc-8000-000000000099";
+
+  it("preference written by SetChannelPreference should be readable by GetChannelPreference via the same cache key", async () => {
+    const repo = createMockChannelPrefRepo();
+
+    // Use a real-ish cache that records calls and stores values
+    const cacheStore = new Map<string, unknown>();
+    const cache = {
+      get: {
+        handleAsync: vi.fn().mockImplementation(async (input: { key: string }) => {
+          const value = cacheStore.get(input.key);
+          return D2Result.ok({ data: { value } });
+        }),
+      },
+      set: {
+        handleAsync: vi.fn().mockImplementation(async (input: { key: string; value: unknown }) => {
+          cacheStore.set(input.key, input.value);
+          return D2Result.ok({ data: {} });
+        }),
+      },
+    };
+
+    // Step 1: Set preference via SetChannelPreference
+    const setHandler = new SetChannelPreference(repo, createMockContext(), cache);
+    const setResult = await setHandler.handleAsync({
+      contactId: CONTACT_ID,
+      emailEnabled: false,
+      smsEnabled: true,
+    });
+    expect(setResult.success).toBe(true);
+
+    // Verify the cache was populated with the correct key format
+    const expectedKey = `comms:channel-pref:${CONTACT_ID}`;
+    expect(cacheStore.has(expectedKey)).toBe(true);
+
+    // Step 2: Read preference via GetChannelPreference — should find it in cache
+    const getHandler = new GetChannelPreference(repo, createMockContext(), cache);
+    const getResult = await getHandler.handleAsync({ contactId: CONTACT_ID });
+
+    expect(getResult.success).toBe(true);
+    expect(getResult.data!.pref!.contactId).toBe(CONTACT_ID);
+    expect(getResult.data!.pref!.emailEnabled).toBe(false);
+    expect(getResult.data!.pref!.smsEnabled).toBe(true);
+
+    // Repo should NOT be called for the GET — cache hit
+    expect(repo.findByContactId.handleAsync).toHaveBeenCalledTimes(1); // only from SetChannelPreference
+  });
+
+  it("both handlers should use the exact same cache key format comms:channel-pref:{contactId}", async () => {
+    const repo = createMockChannelPrefRepo();
+    const cache = createMockCache();
+
+    // Set handler writes to cache
+    const setHandler = new SetChannelPreference(repo, createMockContext(), cache);
+    await setHandler.handleAsync({
+      contactId: CONTACT_ID,
+      emailEnabled: true,
+    });
+
+    const setCacheKey = (cache.set.handleAsync as ReturnType<typeof vi.fn>).mock.calls[0][0].key;
+
+    // Get handler reads from cache
+    const getHandler = new GetChannelPreference(repo, createMockContext(), cache);
+    await getHandler.handleAsync({ contactId: CONTACT_ID });
+
+    const getCacheKey = (cache.get.handleAsync as ReturnType<typeof vi.fn>).mock.calls[0][0].key;
+
+    // Both must use identical key format
+    expect(setCacheKey).toBe(`comms:channel-pref:${CONTACT_ID}`);
+    expect(getCacheKey).toBe(`comms:channel-pref:${CONTACT_ID}`);
+    expect(setCacheKey).toBe(getCacheKey);
   });
 });

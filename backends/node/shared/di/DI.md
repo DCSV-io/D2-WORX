@@ -4,13 +4,13 @@ Lightweight dependency injection container mirroring .NET's `IServiceCollection`
 
 ## Files
 
-| File Name                                            | Description                                                                                                        |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| [service-key.ts](src/service-key.ts)                 | `ServiceKey<T>` branded runtime token + `createServiceKey<T>()` factory. Phantom type replaces erased TS interfaces. |
-| [lifetime.ts](src/lifetime.ts)                       | `Lifetime` enum: `Singleton`, `Scoped`, `Transient`.                                                               |
-| [service-collection.ts](src/service-collection.ts)   | `ServiceCollection` registration builder with `addSingleton`, `addScoped`, `addTransient`, `addInstance`, `build`. |
-| [service-provider.ts](src/service-provider.ts)       | `ServiceProvider` (root) + `ServiceScope` (child). Resolution, caching, disposal, and `Symbol.dispose` support.   |
-| [index.ts](src/index.ts)                             | Barrel re-export of all types and classes.                                                                         |
+| File Name                                          | Description                                                                                                          |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| [service-key.ts](src/service-key.ts)               | `ServiceKey<T>` branded runtime token + `createServiceKey<T>()` factory. Phantom type replaces erased TS interfaces. |
+| [lifetime.ts](src/lifetime.ts)                     | `Lifetime` enum: `Singleton`, `Scoped`, `Transient`.                                                                 |
+| [service-collection.ts](src/service-collection.ts) | `ServiceCollection` registration builder with `addSingleton`, `addScoped`, `addTransient`, `addInstance`, `build`.   |
+| [service-provider.ts](src/service-provider.ts)     | `ServiceProvider` (root) + `ServiceScope` (child). Resolution, caching, disposal, and `Symbol.dispose` support.      |
+| [index.ts](src/index.ts)                           | Barrel re-export of all types and classes.                                                                           |
 
 ---
 
@@ -28,11 +28,11 @@ Keys are frozen objects. The `id` string is used at runtime; the `T` type parame
 
 ### Lifetime
 
-| Lifetime      | Cached In   | Factory Receives | Can Depend On               |
-| ------------- | ----------- | ---------------- | --------------------------- |
-| **Singleton** | Root        | Root provider    | Other singletons only       |
-| **Scoped**    | Per scope   | Scope provider   | Singletons + scoped         |
-| **Transient** | Never       | Current provider | Singletons + scoped         |
+| Lifetime      | Cached In | Factory Receives | Can Depend On         |
+| ------------- | --------- | ---------------- | --------------------- |
+| **Singleton** | Root      | Root provider    | Other singletons only |
+| **Scoped**    | Per scope | Scope provider   | Singletons + scoped   |
+| **Transient** | Never     | Current provider | Singletons + scoped   |
 
 **Captive dependency prevention**: Singleton factories receive the root provider, so they cannot accidentally capture scoped services. Scoped services resolved from root throw immediately.
 
@@ -70,11 +70,11 @@ scope.dispose();
 
 Each service layer exports an `addXxx()` function that registers its handlers:
 
-| Layer | Function                                    | Example Registrations                        |
-| ----- | ------------------------------------------- | -------------------------------------------- |
-| Infra | `addAuthInfra(services, db)`                | Repositories, BetterAuth adapter, mappers    |
-| App   | `addAuthApp(services, options)`             | CQRS handlers (scoped), pub/sub handlers     |
-| API   | Composition root calls `addXxx` in sequence | Wire infra → app → build provider            |
+| Layer | Function                                    | Example Registrations                     |
+| ----- | ------------------------------------------- | ----------------------------------------- |
+| Infra | `addAuthInfra(services, db)`                | Repositories, BetterAuth adapter, mappers |
+| App   | `addAuthApp(services, options)`             | CQRS handlers (scoped), pub/sub handlers  |
+| API   | Composition root calls `addXxx` in sequence | Wire infra → app → build provider         |
 
 ### Key Placement
 

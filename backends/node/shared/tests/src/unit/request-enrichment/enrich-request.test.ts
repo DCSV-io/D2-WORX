@@ -139,7 +139,12 @@ describe("enrichRequest", () => {
       D2Result.fail<FindWhoIsOutput | undefined>({ messages: ["service down"] }),
     );
 
-    const info = await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
+    const info = await enrichRequest(
+      { "cf-connecting-ip": "1.2.3.4" },
+      handler,
+      undefined,
+      mockLogger,
+    );
 
     expect(info.clientIp).toBe("1.2.3.4");
     expect(info.city).toBeUndefined();
@@ -151,7 +156,12 @@ describe("enrichRequest", () => {
       handleAsync: vi.fn().mockRejectedValue(new Error("connection refused")),
     } as unknown as FindWhoIs;
 
-    const info = await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
+    const info = await enrichRequest(
+      { "cf-connecting-ip": "1.2.3.4" },
+      handler,
+      undefined,
+      mockLogger,
+    );
 
     expect(info.clientIp).toBe("1.2.3.4");
     expect(info.city).toBeUndefined();
@@ -163,7 +173,12 @@ describe("enrichRequest", () => {
       D2Result.ok<FindWhoIsOutput | undefined>({ data: { whoIs: undefined } }),
     );
 
-    const info = await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
+    const info = await enrichRequest(
+      { "cf-connecting-ip": "1.2.3.4" },
+      handler,
+      undefined,
+      mockLogger,
+    );
 
     expect(info.whoIsHashId).toBeUndefined();
     expect(info.city).toBeUndefined();

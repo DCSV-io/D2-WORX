@@ -21,7 +21,7 @@ Defines entities, enums, business rules, and constants for both the **delivery e
 | 2 urgency levels (normal, urgent)   | Simple model -- urgent bypasses preferences, normal respects them                  |
 | No quiet hours                      | Deferred to a future phase                                                         |
 | No template wrappers in domain      | Email template rendering is an app-layer concern (Deliver handler)                 |
-| State machine transitions via rules | `transitionDeliveryAttemptStatus` and `transitionThreadState` enforce valid states  |
+| State machine transitions via rules | `transitionDeliveryAttemptStatus` and `transitionThreadState` enforce valid states |
 
 ## Package Structure
 
@@ -66,81 +66,81 @@ src/
 
 All "enums" are `as const` arrays with derived union types and type guard functions.
 
-| Enum               | Values                                            | Extras                                         |
-| ------------------ | ------------------------------------------------- | ---------------------------------------------- |
-| Channel            | email, sms                                        | `isValidChannel` guard                         |
-| Urgency            | normal, urgent                                    | `isValidUrgency` guard                         |
-| DeliveryStatus     | pending, sent, failed, retried                    | `DELIVERY_STATUS_TRANSITIONS` state machine    |
-| ContentFormat      | markdown, plain, html                             | `isValidContentFormat` guard                   |
-| NotificationPolicy | all_messages, mentions_only, none                 | `isValidNotificationPolicy` guard              |
-| ThreadType         | chat, support, forum, system                      | `isValidThreadType` guard                      |
-| ThreadState        | active, archived, closed                          | `THREAD_STATE_TRANSITIONS` state machine       |
-| ParticipantRole    | observer, participant, moderator, creator         | `PARTICIPANT_ROLE_HIERARCHY` numeric map        |
+| Enum               | Values                                    | Extras                                      |
+| ------------------ | ----------------------------------------- | ------------------------------------------- |
+| Channel            | email, sms                                | `isValidChannel` guard                      |
+| Urgency            | normal, urgent                            | `isValidUrgency` guard                      |
+| DeliveryStatus     | pending, sent, failed, retried            | `DELIVERY_STATUS_TRANSITIONS` state machine |
+| ContentFormat      | markdown, plain, html                     | `isValidContentFormat` guard                |
+| NotificationPolicy | all_messages, mentions_only, none         | `isValidNotificationPolicy` guard           |
+| ThreadType         | chat, support, forum, system              | `isValidThreadType` guard                   |
+| ThreadState        | active, archived, closed                  | `THREAD_STATE_TRANSITIONS` state machine    |
+| ParticipantRole    | observer, participant, moderator, creator | `PARTICIPANT_ROLE_HIERARCHY` numeric map    |
 
 ## Entities
 
 ### Delivery Engine
 
-| Entity            | Factory                     | Update / Transition                                   | Key Rules                                                           |
-| ----------------- | --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------- |
-| Message           | `createMessage`             | `editMessage`, `softDeleteMessage`                    | Content + plaintext required, at least one sender, UUIDv7 ID        |
-| DeliveryRequest   | `createDeliveryRequest`     | `markDeliveryRequestProcessed`                        | Immutable except processedAt, correlationId for idempotency         |
-| DeliveryAttempt   | `createDeliveryAttempt`     | `transitionDeliveryAttemptStatus`                     | Starts as "pending", state machine enforced, tracks attempt number  |
-| ChannelPreference | `createChannelPreference`   | `updateChannelPreference`                             | Per-contact, defaults: email+sms enabled                            |
+| Entity            | Factory                   | Update / Transition                | Key Rules                                                          |
+| ----------------- | ------------------------- | ---------------------------------- | ------------------------------------------------------------------ |
+| Message           | `createMessage`           | `editMessage`, `softDeleteMessage` | Content + plaintext required, at least one sender, UUIDv7 ID       |
+| DeliveryRequest   | `createDeliveryRequest`   | `markDeliveryRequestProcessed`     | Immutable except processedAt, correlationId for idempotency        |
+| DeliveryAttempt   | `createDeliveryAttempt`   | `transitionDeliveryAttemptStatus`  | Starts as "pending", state machine enforced, tracks attempt number |
+| ChannelPreference | `createChannelPreference` | `updateChannelPreference`          | Per-contact, defaults: email+sms enabled                           |
 
 ### Conversational Messaging
 
-| Entity            | Factory                     | Update / Transition                                   | Key Rules                                                           |
-| ----------------- | --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------- |
-| Thread            | `createThread`              | `updateThread`, `transitionThreadState`               | Starts as "active", slug only for forum threads, state machine      |
-| ThreadParticipant | `createThreadParticipant`   | `updateThreadParticipant`, `markParticipantLeft`      | userId OR contactId required, role hierarchy enforced                |
-| MessageReceipt    | `createMessageReceipt`      | --                                                    | Immutable, UNIQUE(messageId, userId) at DB level                    |
-| MessageAttachment | `createMessageAttachment`   | --                                                    | Immutable, max 50 MB, file metadata only (storage via media svc)    |
-| MessageReaction   | `createMessageReaction`     | --                                                    | Immutable, max 64 chars                                             |
+| Entity            | Factory                   | Update / Transition                              | Key Rules                                                        |
+| ----------------- | ------------------------- | ------------------------------------------------ | ---------------------------------------------------------------- |
+| Thread            | `createThread`            | `updateThread`, `transitionThreadState`          | Starts as "active", slug only for forum threads, state machine   |
+| ThreadParticipant | `createThreadParticipant` | `updateThreadParticipant`, `markParticipantLeft` | userId OR contactId required, role hierarchy enforced            |
+| MessageReceipt    | `createMessageReceipt`    | --                                               | Immutable, UNIQUE(messageId, userId) at DB level                 |
+| MessageAttachment | `createMessageAttachment` | --                                               | Immutable, max 50 MB, file metadata only (storage via media svc) |
+| MessageReaction   | `createMessageReaction`   | --                                               | Immutable, max 64 chars                                          |
 
 ## Business Rules
 
-| Rule                     | Function                                                                                |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| Channel resolution       | `resolveChannels(prefs, message)` -- sensitive=email only, urgent=all, normal=by prefs  |
-| Retry delay              | `computeRetryDelay(attempt)` -- 5s, 10s, 30s, 60s, 300s (capped at last value)         |
-| Max attempts check       | `isMaxAttemptsReached(attempt)` -- true at 10 attempts                                  |
-| Next retry timestamp     | `computeNextRetryAt(attempt, now)` -- current time + computed delay                     |
-| Post permission          | `canPostMessage(participant)` -- active + participant role or higher                     |
-| Edit permission          | `canEditMessage(participant, message)` -- own=participant+, others=moderator+            |
-| Delete permission        | `canDeleteMessage(participant, message)` -- same rules as edit                           |
-| Manage participants      | `canManageParticipants(participant)` -- active + moderator role or higher                |
-| Manage thread            | `canManageThread(participant)` -- active + moderator role or higher                      |
-| Add reaction             | `canAddReaction(participant)` -- active + participant role or higher                     |
+| Rule                 | Function                                                                               |
+| -------------------- | -------------------------------------------------------------------------------------- |
+| Channel resolution   | `resolveChannels(prefs, message)` -- sensitive=email only, urgent=all, normal=by prefs |
+| Retry delay          | `computeRetryDelay(attempt)` -- 5s, 10s, 30s, 60s, 300s (capped at last value)         |
+| Max attempts check   | `isMaxAttemptsReached(attempt)` -- true at 10 attempts                                 |
+| Next retry timestamp | `computeNextRetryAt(attempt, now)` -- current time + computed delay                    |
+| Post permission      | `canPostMessage(participant)` -- active + participant role or higher                   |
+| Edit permission      | `canEditMessage(participant, message)` -- own=participant+, others=moderator+          |
+| Delete permission    | `canDeleteMessage(participant, message)` -- same rules as edit                         |
+| Manage participants  | `canManageParticipants(participant)` -- active + moderator role or higher              |
+| Manage thread        | `canManageThread(participant)` -- active + moderator role or higher                    |
+| Add reaction         | `canAddReaction(participant)` -- active + participant role or higher                   |
 
 ## Constants
 
 ### RETRY_POLICY
 
-| Constant       | Value                         | Purpose                                           |
-| -------------- | ----------------------------- | ------------------------------------------------- |
-| `MAX_ATTEMPTS` | 10                            | Maximum delivery attempts before permanent failure |
-| `DELAYS_MS`    | [5000, 10000, 30000, 60000, 300000] | Escalating retry delays (5s to 5min)         |
+| Constant       | Value                               | Purpose                                            |
+| -------------- | ----------------------------------- | -------------------------------------------------- |
+| `MAX_ATTEMPTS` | 10                                  | Maximum delivery attempts before permanent failure |
+| `DELAYS_MS`    | [5000, 10000, 30000, 60000, 300000] | Escalating retry delays (5s to 5min)               |
 
 ### COMMS_RETRY (RabbitMQ Retry Topology)
 
-| Constant             | Value                    | Purpose                                              |
-| -------------------- | ------------------------ | ---------------------------------------------------- |
-| `RETRY_COUNT_HEADER` | `x-retry-count`          | Header tracking current retry attempt number         |
-| `REQUEUE_EXCHANGE`   | `comms.retry.requeue`    | Exchange routing expired tier messages back to main   |
-| `TIER_QUEUE_PREFIX`  | `comms.retry.tier-`      | Prefix for tier delay queues                         |
-| `TIER_TTLS`          | [5000, 10000, 30000, 60000, 300000] | TTL per tier, matches RETRY_POLICY.DELAYS_MS |
-| `DELIVERY_FAILED`    | `DELIVERY_FAILED`        | Error code for retryable delivery failures           |
+| Constant             | Value                               | Purpose                                             |
+| -------------------- | ----------------------------------- | --------------------------------------------------- |
+| `RETRY_COUNT_HEADER` | `x-retry-count`                     | Header tracking current retry attempt number        |
+| `REQUEUE_EXCHANGE`   | `comms.retry.requeue`               | Exchange routing expired tier messages back to main |
+| `TIER_QUEUE_PREFIX`  | `comms.retry.tier-`                 | Prefix for tier delay queues                        |
+| `TIER_TTLS`          | [5000, 10000, 30000, 60000, 300000] | TTL per tier, matches RETRY_POLICY.DELAYS_MS        |
+| `DELIVERY_FAILED`    | `DELIVERY_FAILED`                   | Error code for retryable delivery failures          |
 
 ### THREAD_CONSTRAINTS
 
-| Constant                     | Value        | Purpose                    |
-| ---------------------------- | ------------ | -------------------------- |
-| `MAX_TITLE_LENGTH`           | 255          | Max title/slug length      |
-| `MAX_MESSAGE_LENGTH`         | 50,000       | Max content length         |
-| `MAX_ATTACHMENTS_PER_MESSAGE`| 20           | Max attachments per message|
-| `MAX_FILE_SIZE_BYTES`        | 52,428,800   | Max attachment size (50 MB)|
-| `MAX_REACTION_LENGTH`        | 64           | Max reaction string length |
+| Constant                      | Value      | Purpose                     |
+| ----------------------------- | ---------- | --------------------------- |
+| `MAX_TITLE_LENGTH`            | 255        | Max title/slug length       |
+| `MAX_MESSAGE_LENGTH`          | 50,000     | Max content length          |
+| `MAX_ATTACHMENTS_PER_MESSAGE` | 20         | Max attachments per message |
+| `MAX_FILE_SIZE_BYTES`         | 52,428,800 | Max attachment size (50 MB) |
+| `MAX_REACTION_LENGTH`         | 64         | Max reaction string length  |
 
 ## Tests
 
@@ -163,6 +163,6 @@ Run: `pnpm vitest run --project comms-tests`
 
 ## Dependencies
 
-| Package         | Purpose                    |
-| --------------- | -------------------------- |
-| `@d2/utilities` | String cleaning, UUIDv7    |
+| Package         | Purpose                 |
+| --------------- | ----------------------- |
+| `@d2/utilities` | String cleaning, UUIDv7 |

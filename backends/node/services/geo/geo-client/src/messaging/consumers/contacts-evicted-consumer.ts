@@ -21,9 +21,7 @@ export function createContactsEvictedConsumer(
   return bus.subscribe<ContactsEvictedEvent>(
     { ...config, deserialize: ContactsEvictedEventFns.fromJSON },
     async (message) => {
-      logger.info(
-        `Received ContactsEvicted event for ${message.contacts.length} contact(s)`,
-      );
+      logger.info(`Received ContactsEvicted event for ${message.contacts.length} contact(s)`);
 
       const handler = handlerFactory();
       const result = await handler.handleAsync(message);

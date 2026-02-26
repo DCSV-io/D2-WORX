@@ -199,7 +199,11 @@ describe("requireAdmin", () => {
 describe("requireOrg — defensive edge cases", () => {
   it("should reject empty string orgType", async () => {
     const app = createApp(
-      { activeOrganizationId: "org-1", activeOrganizationType: "", activeOrganizationRole: "owner" },
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "",
+        activeOrganizationRole: "owner",
+      },
       requireOrg(),
     );
     const res = await app.request("/test");
@@ -269,7 +273,11 @@ describe("requireOrg — defensive edge cases", () => {
 
   it("should reject numeric role", async () => {
     const app = createApp(
-      { activeOrganizationId: "org-1", activeOrganizationType: "customer", activeOrganizationRole: 3 },
+      {
+        activeOrganizationId: "org-1",
+        activeOrganizationType: "customer",
+        activeOrganizationRole: 3,
+      },
       requireOrg(),
     );
     const res = await app.request("/test");

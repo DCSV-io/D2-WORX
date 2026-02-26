@@ -3,12 +3,12 @@ import { D2Result } from "@d2/result";
 import type { DistributedCache, Idempotency } from "@d2/interfaces";
 import { z } from "zod";
 import { DEFAULT_IDEMPOTENCY_OPTIONS, type IdempotencyOptions } from "../idempotency-options.js";
+import { IDEMPOTENCY_CACHE_KEYS } from "../cache-keys.js";
 
 type CheckInput = Idempotency.CheckInput;
 type CheckOutput = Idempotency.CheckOutput;
 
 const SENTINEL = "__processing__";
-const KEY_PREFIX = "idempotency:";
 
 /**
  * Handler for checking idempotency state using SET NX + GET pattern.
@@ -50,7 +50,7 @@ export class Check
       return D2Result.bubbleFail(validation);
     }
 
-    const cacheKey = `${KEY_PREFIX}${input.idempotencyKey}`;
+    const cacheKey = IDEMPOTENCY_CACHE_KEYS.entry(input.idempotencyKey);
 
     try {
       // 1. Attempt to acquire the lock with SET NX.

@@ -1,9 +1,4 @@
-export {
-  message,
-  deliveryRequest,
-  deliveryAttempt,
-  channelPreference,
-} from "./tables.js";
+export { message, deliveryRequest, deliveryAttempt, channelPreference } from "./tables.js";
 
 export type {
   MessageRow,

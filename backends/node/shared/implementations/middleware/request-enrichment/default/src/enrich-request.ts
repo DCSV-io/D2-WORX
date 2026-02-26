@@ -30,18 +30,21 @@ export async function enrichRequest(
   const opts = { ...DEFAULT_REQUEST_ENRICHMENT_OPTIONS, ...options };
 
   // 1. Resolve client IP (only trusting configured proxy headers).
-  const clientIp = resolveIp(headers, opts.trustedProxyHeaders);
+  const clientIp = resolveIp(headers, opts.trustedProxyHeaders, opts.maxForwardedForLength);
 
   // 2. Compute server fingerprint.
   const serverFingerprint = buildServerFingerprint(headers);
 
-  // 3. Read client fingerprint from configured header.
+  // 3. Read client fingerprint from configured header (truncate oversized values).
   const clientFingerprintRaw = headers[opts.clientFingerprintHeader];
-  const clientFingerprint = clientFingerprintRaw
+  let clientFingerprint = clientFingerprintRaw
     ? Array.isArray(clientFingerprintRaw)
       ? clientFingerprintRaw[0]
       : clientFingerprintRaw
     : undefined;
+  if (clientFingerprint && clientFingerprint.length > opts.maxFingerprintLength) {
+    clientFingerprint = clientFingerprint.slice(0, opts.maxFingerprintLength);
+  }
 
   // 4. Build initial request info (without WhoIs data).
   let requestInfo: RequestEnrichment.IRequestInfo = new RequestInfo({

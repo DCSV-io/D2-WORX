@@ -8,17 +8,17 @@ Implements the infrastructure layer for authentication: BetterAuth instance crea
 
 ## Design Decisions
 
-| Decision                           | Rationale                                                                          |
-| ---------------------------------- | ---------------------------------------------------------------------------------- |
-| BetterAuth is infra, not domain    | BetterAuth internals never leave this package — all data crosses via domain types   |
-| Drizzle adapter for BetterAuth     | Single ORM for all 11 tables (ADR-009). `drizzleAdapter(db, { provider: "pg" })`   |
-| AuthHooks callback interface       | Decouples infra from app layer — composition root wires app-layer callbacks in      |
-| No direct ioredis imports          | Secondary storage + throttle use `@d2/interfaces` cache handler abstractions       |
-| Structural typing for throttle     | `SignInThrottleStore` matches `ISignInThrottleStore` shape without importing it     |
-| Repository handlers follow TLC     | Same `c/`, `r/`, `u/`, `d/` folder convention as app-layer and .NET patterns       |
-| Service keys re-exported from app  | Keys live alongside interfaces in auth-app; infra re-exports for convenience       |
-| Mappers as plain functions         | `toDomainX(row)` converters — no class overhead, easy to test                      |
-| Password hooks wrap BetterAuth     | Domain validation + HIBP check before BetterAuth's own bcrypt hashing              |
+| Decision                          | Rationale                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| BetterAuth is infra, not domain   | BetterAuth internals never leave this package — all data crosses via domain types |
+| Drizzle adapter for BetterAuth    | Single ORM for all 11 tables (ADR-009). `drizzleAdapter(db, { provider: "pg" })`  |
+| AuthHooks callback interface      | Decouples infra from app layer — composition root wires app-layer callbacks in    |
+| No direct ioredis imports         | Secondary storage + throttle use `@d2/interfaces` cache handler abstractions      |
+| Structural typing for throttle    | `SignInThrottleStore` matches `ISignInThrottleStore` shape without importing it   |
+| Repository handlers follow TLC    | Same `c/`, `r/`, `u/`, `d/` folder convention as app-layer and .NET patterns      |
+| Service keys re-exported from app | Keys live alongside interfaces in auth-app; infra re-exports for convenience      |
+| Mappers as plain functions        | `toDomainX(row)` converters — no class overhead, easy to test                     |
+| Password hooks wrap BetterAuth    | Domain validation + HIBP check before BetterAuth's own bcrypt hashing             |
 
 ## Package Structure
 
@@ -94,23 +94,23 @@ src/
 
 ### Session Settings
 
-| Setting                      | Default Value              |
-| ---------------------------- | -------------------------- |
-| `expiresIn`                  | 604,800s (7 days)          |
-| `updateAge`                  | 86,400s (1 day)            |
-| `cookieCache.maxAge`         | 300s (5 minutes)           |
-| `cookieCache.strategy`       | `"compact"`                |
-| `storeSessionInDatabase`     | `true` (dual-write)        |
-| `cookieOptions.sameSite`     | `"lax"`                    |
+| Setting                  | Default Value       |
+| ------------------------ | ------------------- |
+| `expiresIn`              | 604,800s (7 days)   |
+| `updateAge`              | 86,400s (1 day)     |
+| `cookieCache.maxAge`     | 300s (5 minutes)    |
+| `cookieCache.strategy`   | `"compact"`         |
+| `storeSessionInDatabase` | `true` (dual-write) |
+| `cookieOptions.sameSite` | `"lax"`             |
 
 ### Session Extension Fields
 
-| Field                        | Source                               |
-| ---------------------------- | ------------------------------------ |
-| `activeOrganizationType`     | Enriched on org switch (DB lookup)   |
-| `activeOrganizationRole`     | Enriched on org switch (member lookup)|
-| `emulatedOrganizationId`     | Set by emulation flow                |
-| `emulatedOrganizationType`   | Set by emulation flow                |
+| Field                      | Source                                 |
+| -------------------------- | -------------------------------------- |
+| `activeOrganizationType`   | Enriched on org switch (DB lookup)     |
+| `activeOrganizationRole`   | Enriched on org switch (member lookup) |
+| `emulatedOrganizationId`   | Set by emulation flow                  |
+| `emulatedOrganizationType` | Set by emulation flow                  |
 
 ### JWT Payload Claims
 
@@ -118,34 +118,34 @@ Custom `definePayload` emits: `sub`, `email`, `username`, `orgId`, `orgType`, `r
 
 ### Database Hooks
 
-| Hook                            | Purpose                                                          |
-| ------------------------------- | ---------------------------------------------------------------- |
-| `user.create.before`            | Ensures username, pre-generates UUIDv7, creates Geo contact      |
-| `session.update.before`         | Enriches activeOrganizationType + activeOrganizationRole on switch|
-| `session.create.after`          | Records sign-in audit event (fire-and-forget)                    |
+| Hook                    | Purpose                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
+| `user.create.before`    | Ensures username, pre-generates UUIDv7, creates Geo contact        |
+| `session.update.before` | Enriches activeOrganizationType + activeOrganizationRole on switch |
+| `session.create.after`  | Records sign-in audit event (fire-and-forget)                      |
 
 ### AuthHooks Callback Interface
 
 The composition root provides these callbacks to avoid circular dependencies between infra and app layers:
 
-| Callback                       | Purpose                                                    |
-| ------------------------------ | ---------------------------------------------------------- |
-| `onSignIn`                     | Records audit event after successful sign-in               |
-| `getFingerprintForCurrentRequest` | Returns client fingerprint for JWT `fp` claim           |
-| `passwordFunctions`            | Custom hash/verify with domain validation + HIBP check     |
-| `publishVerificationEmail`     | Publishes verification email event to RabbitMQ             |
-| `publishPasswordReset`         | Publishes password reset email event to RabbitMQ           |
-| `createUserContact`            | Creates Geo contact before user record (fail-fast pattern) |
+| Callback                          | Purpose                                                    |
+| --------------------------------- | ---------------------------------------------------------- |
+| `onSignIn`                        | Records audit event after successful sign-in               |
+| `getFingerprintForCurrentRequest` | Returns client fingerprint for JWT `fp` claim              |
+| `passwordFunctions`               | Custom hash/verify with domain validation + HIBP check     |
+| `publishVerificationEmail`        | Publishes verification email event to RabbitMQ             |
+| `publishPasswordReset`            | Publishes password reset email event to RabbitMQ           |
+| `createUserContact`               | Creates Geo contact before user record (fail-fast pattern) |
 
 ## RBAC Access Control
 
 Hierarchical role permissions (each level inherits from below):
 
-| Role      | Resources                                                         |
-| --------- | ----------------------------------------------------------------- |
-| `auditor` | businessData:read, orgSettings:read                               |
-| `agent`   | + businessData:create/update                                      |
-| `officer` | + businessData:delete, billing:read/update, member:create/read/update |
+| Role      | Resources                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| `auditor` | businessData:read, orgSettings:read                                                            |
+| `agent`   | + businessData:create/update                                                                   |
+| `officer` | + businessData:delete, billing:read/update, member:create/read/update                          |
 | `owner`   | + orgSettings:update, organization:read/update/delete, member:delete, invitation:create/cancel |
 
 ## Secondary Storage
@@ -156,14 +156,14 @@ Hierarchical role permissions (each level inherits from below):
 
 `SignInThrottleStore` — Redis-backed implementation of `ISignInThrottleStore` using five `@d2/cache-redis` handler abstractions:
 
-| Method              | Redis Pattern                          | Key Prefix          |
-| ------------------- | -------------------------------------- | ------------------- |
-| `isKnownGood`       | EXISTS                                 | `signin:known:`     |
-| `getLockedTtlSeconds`| GET TTL                               | `signin:locked:`    |
-| `markKnownGood`     | SET with 90-day TTL                    | `signin:known:`     |
-| `incrementFailures` | INCR with 15-min window TTL            | `signin:attempts:`  |
-| `setLocked`         | SET with computed delay TTL            | `signin:locked:`    |
-| `clearFailureState` | DEL attempts + locked keys (parallel)  | both                |
+| Method                | Redis Pattern                         | Key Prefix         |
+| --------------------- | ------------------------------------- | ------------------ |
+| `isKnownGood`         | EXISTS                                | `signin:known:`    |
+| `getLockedTtlSeconds` | GET TTL                               | `signin:locked:`   |
+| `markKnownGood`       | SET with 90-day TTL                   | `signin:known:`    |
+| `incrementFailures`   | INCR with 15-min window TTL           | `signin:attempts:` |
+| `setLocked`           | SET with computed delay TTL           | `signin:locked:`   |
+| `clearFailureState`   | DEL attempts + locked keys (parallel) | both               |
 
 ## Password Validation
 
@@ -183,11 +183,11 @@ Hierarchical role permissions (each level inherits from below):
 
 ### Custom Tables (3)
 
-| Table               | Columns                                                      | Indexes                                |
-| ------------------- | ------------------------------------------------------------ | -------------------------------------- |
-| `sign_in_event`     | id, user_id, successful, ip_address, user_agent, who_is_id, created_at | idx_sign_in_event_user_id       |
+| Table               | Columns                                                                | Indexes                                                                                    |
+| ------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `sign_in_event`     | id, user_id, successful, ip_address, user_agent, who_is_id, created_at | idx_sign_in_event_user_id                                                                  |
 | `emulation_consent` | id, user_id, granted_to_org_id, expires_at, revoked_at, created_at     | idx_emulation_consent_user_id, unique(user_id, granted_to_org_id) WHERE revoked_at IS NULL |
-| `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at         | idx_org_contact_organization_id |
+| `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at         | idx_org_contact_organization_id                                                            |
 
 ## DI Registration
 
@@ -199,18 +199,18 @@ Registers all 14 repository handlers as **transient** (new instance per resolve)
 
 ## Dependencies
 
-| Package          | Purpose                                              |
-| ---------------- | ---------------------------------------------------- |
-| `@d2/auth-app`   | Repository interface types and service keys          |
+| Package           | Purpose                                             |
+| ----------------- | --------------------------------------------------- |
+| `@d2/auth-app`    | Repository interface types and service keys         |
 | `@d2/auth-domain` | Domain entities, constants, password validation     |
-| `@d2/di`         | `ServiceCollection` for DI registration              |
-| `@d2/handler`    | `BaseHandler`, `IHandlerContext`                     |
-| `@d2/interfaces` | Distributed cache handler types (secondary storage)  |
-| `@d2/result`     | `D2Result` for handler return types                  |
-| `@d2/utilities`  | `generateUuidV7`                                     |
-| `better-auth`    | Auth framework (plugins, adapter, crypto)            |
-| `drizzle-orm`    | ORM for PostgreSQL (schema, queries, migrations)     |
-| `pg`             | PostgreSQL client (Pool for migrations)              |
+| `@d2/di`          | `ServiceCollection` for DI registration             |
+| `@d2/handler`     | `BaseHandler`, `IHandlerContext`                    |
+| `@d2/interfaces`  | Distributed cache handler types (secondary storage) |
+| `@d2/result`      | `D2Result` for handler return types                 |
+| `@d2/utilities`   | `generateUuidV7`                                    |
+| `better-auth`     | Auth framework (plugins, adapter, crypto)           |
+| `drizzle-orm`     | ORM for PostgreSQL (schema, queries, migrations)    |
+| `pg`              | PostgreSQL client (Pool for migrations)             |
 
 ## Tests
 

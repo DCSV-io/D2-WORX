@@ -12,6 +12,8 @@ export interface GeoClientOptions {
   allowedContextKeys: string[];
   /** API key sent via gRPC metadata (`x-api-key` header) for Geo service authentication. */
   apiKey: string;
+  /** Timeout in ms for gRPC calls to the Geo service. Default: 30,000 (30 seconds). */
+  grpcTimeoutMs: number;
 }
 
 export const DEFAULT_GEO_CLIENT_OPTIONS: GeoClientOptions = {
@@ -21,4 +23,5 @@ export const DEFAULT_GEO_CLIENT_OPTIONS: GeoClientOptions = {
   contactCacheMaxEntries: 10_000,
   allowedContextKeys: [],
   apiKey: "",
+  grpcTimeoutMs: 30_000,
 };

@@ -19,9 +19,9 @@ Shared proto definitions used across all services:
 
 Cross-service async event definitions:
 
-| File Name                                                                         | Description                                                                      |
-| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [geo_events.proto](../../../../../../contracts/protos/events/v1/geo_events.proto) | `GeoRefDataUpdatedEvent` — broadcast when Geo reference data is refreshed.       |
+| File Name                                                                         | Description                                                                |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [geo_events.proto](../../../../../../contracts/protos/events/v1/geo_events.proto) | `GeoRefDataUpdatedEvent` — broadcast when Geo reference data is refreshed. |
 
 ### Geo
 
@@ -35,8 +35,8 @@ Geographic reference data service definitions:
 
 Communication/delivery service definitions:
 
-| File Name                                                            | Description                                                                                                                                |
-| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| File Name                                                              | Description                                                                                                                                           |
+| ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [comms.proto](../../../../../../contracts/protos/comms/v1/comms.proto) | CommsService gRPC contract: Deliver, GetChannelPreference, SetChannelPreference, UpsertTemplate, GetTemplate, GetDeliveryHistory, GetDeliveryRequest. |
 
 ## Generated Output

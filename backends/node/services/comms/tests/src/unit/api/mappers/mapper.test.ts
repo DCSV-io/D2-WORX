@@ -84,9 +84,9 @@ describe("deliveryRequestToProto", () => {
 
     expect(result.callbackTopic).toBeUndefined();
     expect(result.processedAt).toBeUndefined();
-    // Removed fields should not be present; channels empty (proto-required)
+    // Removed fields should not be present
     expect(result).not.toHaveProperty("recipientUserId");
-    expect(result.channels).toEqual([]);
+    expect(result).not.toHaveProperty("channels");
     expect(result).not.toHaveProperty("templateName");
   });
 });

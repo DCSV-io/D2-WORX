@@ -25,6 +25,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
+using ClientCacheKeys = D2.Geo.Client.CacheKeys;
 using GetContactsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByIds;
 using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 
@@ -383,7 +384,7 @@ public class GetContactsByIdsTests : IAsyncLifetime
         // Arrange - Setup cache to return contacts with unique context key
         var suffix = Guid.NewGuid().ToString("N");
         var cachedContact = CreateTestContact($"cached-ctx-{suffix}", "Cached", "Contact");
-        var cacheKey = $"GetContactsByIds:{cachedContact.Id}";
+        var cacheKey = ClientCacheKeys.Contact(cachedContact.Id);
 
         _mockCacheGetMany
             .Setup(x => x.HandleAsync(It.IsAny<IRead.GetManyInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
@@ -565,7 +566,7 @@ public class GetContactsByIdsTests : IAsyncLifetime
 
         // Setup cache to return one contact (simulating partial hit)
         var cachedContact = CreateTestContact($"cached-ctx-{suffix}", "Cached", "Contact");
-        var cacheKey = $"GetContactsByIds:{cachedContact.Id}";
+        var cacheKey = ClientCacheKeys.Contact(cachedContact.Id);
 
         _mockCacheGetMany
             .Setup(x => x.HandleAsync(It.IsAny<IRead.GetManyInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))

@@ -5,6 +5,7 @@ import { createChannelPreference, updateChannelPreference } from "@d2/comms-doma
 import type { ChannelPreference } from "@d2/comms-domain";
 import type { ChannelPreferenceRepoHandlers } from "../../../../interfaces/repository/handlers/index.js";
 import type { InMemoryCache } from "@d2/interfaces";
+import { COMMS_CACHE_KEYS } from "../../../../cache-keys.js";
 
 const schema = z.object({
   contactId: zodGuid,
@@ -74,7 +75,7 @@ export class SetChannelPreference extends BaseHandler<
 
     // Evict + repopulate cache
     if (this.cache) {
-      const cacheKey = `chan-pref:contact:${input.contactId}`;
+      const cacheKey = COMMS_CACHE_KEYS.channelPref(input.contactId);
       await this.cache.set.handleAsync({ key: cacheKey, value: pref, expirationMs: 900_000 });
     }
 

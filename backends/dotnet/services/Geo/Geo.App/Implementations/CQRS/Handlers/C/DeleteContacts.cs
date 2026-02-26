@@ -11,6 +11,7 @@ using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
+using ClientCacheKeys = D2.Geo.Client.CacheKeys;
 using DeleteRepo = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.IDeleteContactsHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.DeleteContactsInput;
@@ -105,7 +106,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         foreach (var id in input.ContactIds)
         {
             var removeR = await r_memoryCacheRemove.HandleAsync(
-                new(GetCacheKey(id)), ct);
+                new(ClientCacheKeys.Contact(id)), ct);
 
             if (removeR.Failed)
             {
@@ -131,6 +132,4 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
 
         return D2Result<O?>.Ok(new O(repoOutput!.Deleted));
     }
-
-    private static string GetCacheKey(Guid id) => $"GetContactsByIds:{id}";
 }

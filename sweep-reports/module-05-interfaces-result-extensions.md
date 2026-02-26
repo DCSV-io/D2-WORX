@@ -5,45 +5,45 @@
 **Source total**: 413 lines across 32 files (interfaces: 325, result-extensions: 88)
 **Test total**: 1,011 lines across 5 files (54 test cases total)
 
-| File | Lines |
-|------|-------|
-| `interfaces/src/index.ts` | 9 |
-| `interfaces/src/caching/in-memory/index.ts` | 5 |
-| `interfaces/src/caching/in-memory/handlers/r/get.ts` | 14 |
-| `interfaces/src/caching/in-memory/handlers/r/get-many.ts` | 14 |
-| `interfaces/src/caching/in-memory/handlers/u/set.ts` | 15 |
-| `interfaces/src/caching/in-memory/handlers/u/set-many.ts` | 14 |
-| `interfaces/src/caching/in-memory/handlers/d/remove.ts` | 13 |
-| `interfaces/src/caching/distributed/index.ts` | 8 |
-| `interfaces/src/caching/distributed/handlers/r/get.ts` | 14 |
-| `interfaces/src/caching/distributed/handlers/r/exists.ts` | 14 |
-| `interfaces/src/caching/distributed/handlers/r/get-ttl.ts` | 14 |
-| `interfaces/src/caching/distributed/handlers/c/set-nx.ts` | 16 |
-| `interfaces/src/caching/distributed/handlers/u/set.ts` | 15 |
-| `interfaces/src/caching/distributed/handlers/u/increment.ts` | 16 |
-| `interfaces/src/caching/distributed/handlers/d/remove.ts` | 13 |
-| `interfaces/src/caching/distributed/handlers/q/ping.ts` | 14 |
-| `interfaces/src/messaging/index.ts` | 1 |
-| `interfaces/src/messaging/handlers/index.ts` | 1 |
-| `interfaces/src/messaging/handlers/q/ping.ts` | 14 |
-| `interfaces/src/middleware/request-enrichment/i-request-info.ts` | 32 |
-| `interfaces/src/middleware/request-enrichment/index.ts` | 1 |
-| `interfaces/src/middleware/ratelimit/rate-limit-dimension.ts` | 12 |
-| `interfaces/src/middleware/ratelimit/handlers/check.ts` | 25 |
-| `interfaces/src/middleware/ratelimit/index.ts` | 3 |
-| `interfaces/src/middleware/idempotency/cached-response.ts` | 6 |
-| `interfaces/src/middleware/idempotency/idempotency-state.ts` | 2 |
-| `interfaces/src/middleware/idempotency/handlers/check.ts` | 17 |
-| `interfaces/src/middleware/idempotency/index.ts` | 3 |
-| `result-extensions/src/index.ts` | 3 |
-| `result-extensions/src/d2-result-to-proto.ts` | 22 |
-| `result-extensions/src/d2-result-from-proto.ts` | 21 |
-| `result-extensions/src/handle-grpc-call.ts` | 42 |
-| Tests: `distributed-cache.test.ts` | 266 |
-| Tests: `in-memory-cache.test.ts` | 219 |
-| Tests: `d2-result-from-proto.test.ts` | 147 |
-| Tests: `d2-result-to-proto.test.ts` | 172 |
-| Tests: `handle-grpc-call.test.ts` | 207 |
+| File                                                             | Lines |
+| ---------------------------------------------------------------- | ----- |
+| `interfaces/src/index.ts`                                        | 9     |
+| `interfaces/src/caching/in-memory/index.ts`                      | 5     |
+| `interfaces/src/caching/in-memory/handlers/r/get.ts`             | 14    |
+| `interfaces/src/caching/in-memory/handlers/r/get-many.ts`        | 14    |
+| `interfaces/src/caching/in-memory/handlers/u/set.ts`             | 15    |
+| `interfaces/src/caching/in-memory/handlers/u/set-many.ts`        | 14    |
+| `interfaces/src/caching/in-memory/handlers/d/remove.ts`          | 13    |
+| `interfaces/src/caching/distributed/index.ts`                    | 8     |
+| `interfaces/src/caching/distributed/handlers/r/get.ts`           | 14    |
+| `interfaces/src/caching/distributed/handlers/r/exists.ts`        | 14    |
+| `interfaces/src/caching/distributed/handlers/r/get-ttl.ts`       | 14    |
+| `interfaces/src/caching/distributed/handlers/c/set-nx.ts`        | 16    |
+| `interfaces/src/caching/distributed/handlers/u/set.ts`           | 15    |
+| `interfaces/src/caching/distributed/handlers/u/increment.ts`     | 16    |
+| `interfaces/src/caching/distributed/handlers/d/remove.ts`        | 13    |
+| `interfaces/src/caching/distributed/handlers/q/ping.ts`          | 14    |
+| `interfaces/src/messaging/index.ts`                              | 1     |
+| `interfaces/src/messaging/handlers/index.ts`                     | 1     |
+| `interfaces/src/messaging/handlers/q/ping.ts`                    | 14    |
+| `interfaces/src/middleware/request-enrichment/i-request-info.ts` | 32    |
+| `interfaces/src/middleware/request-enrichment/index.ts`          | 1     |
+| `interfaces/src/middleware/ratelimit/rate-limit-dimension.ts`    | 12    |
+| `interfaces/src/middleware/ratelimit/handlers/check.ts`          | 25    |
+| `interfaces/src/middleware/ratelimit/index.ts`                   | 3     |
+| `interfaces/src/middleware/idempotency/cached-response.ts`       | 6     |
+| `interfaces/src/middleware/idempotency/idempotency-state.ts`     | 2     |
+| `interfaces/src/middleware/idempotency/handlers/check.ts`        | 17    |
+| `interfaces/src/middleware/idempotency/index.ts`                 | 3     |
+| `result-extensions/src/index.ts`                                 | 3     |
+| `result-extensions/src/d2-result-to-proto.ts`                    | 22    |
+| `result-extensions/src/d2-result-from-proto.ts`                  | 21    |
+| `result-extensions/src/handle-grpc-call.ts`                      | 42    |
+| Tests: `distributed-cache.test.ts`                               | 266   |
+| Tests: `in-memory-cache.test.ts`                                 | 219   |
+| Tests: `d2-result-from-proto.test.ts`                            | 147   |
+| Tests: `d2-result-to-proto.test.ts`                              | 172   |
+| Tests: `handle-grpc-call.test.ts`                                | 207   |
 
 ---
 
@@ -63,18 +63,18 @@
 
 **Findings**:
 
-| #  | Severity | Category        | File:Line | Description |
-|----|----------|-----------------|-----------|-------------|
-| 1  | Medium   | Consistency     | `interfaces/src/middleware/request-enrichment/i-request-info.ts` | **Missing `isTrustedService` property.** The .NET `IRequestInfo` has `bool IsTrustedService { get; set; }`, used by rate limiter and fingerprint validator to bypass checks for S2S calls. The Node.js interface omits this entirely. The Node.js rate limiter has no trusted-service bypass. |
-| 2  | Medium   | Consistency     | `interfaces/src/caching/distributed/handlers/r/get.ts:10` | **`GetOutput.value` is `TValue \| undefined` but Redis implementation returns `D2Result.notFound()` on cache miss, not `D2Result.ok({ value: undefined })`.** The interface type suggests cache miss = success with undefined value, but actual behavior is failure result. Semantic mismatch doesn't cause runtime bugs (consumers handle both paths) but is confusing for new implementors. |
-| 3  | Low      | Security        | `result-extensions/src/d2-result-from-proto.ts:17` | **Unsafe type assertion `proto.statusCode as HttpStatusCode`.** The proto `status_code` field is `int32` (any integer), cast without runtime validation. |
-| 4  | Low      | Maintainability | `interfaces/INTERFACES.md:72` | **Documentation claims `CHECK_REDACTION` exists in idempotency but it does not.** The actual `idempotency/handlers/check.ts` only exports `CheckInput`, `CheckOutput`, and `ICheckHandler`. |
-| 5  | Low      | Consistency     | `interfaces/src/middleware/idempotency/handlers/check.ts` | **`Idempotency.ICheckHandler` is a plain `type` alias while `RateLimit.ICheckHandler` is an `interface extends IHandler` with required `redaction`.** Deliberate (idempotency has no PII) but asymmetric. Needs JSDoc explaining why. |
-| 6  | Low      | Maintainability | `tests/src/unit/interfaces/distributed-cache.test.ts:2` | **Unused import `HttpStatusCode`.** Never referenced in the file. |
-| 7  | Low      | Consistency     | `distributed/handlers/q/ping.ts` vs `messaging/handlers/q/ping.ts` | **`PingInput`/`PingOutput`/`IPingHandler` identically defined in both `DistributedCache` and `Messaging` namespaces.** Could be extracted to shared `health/` module. Low priority — types are stable and small. |
-| 8  | Low      | Maintainability | Various handler files | **Blank line inconsistency before empty output interfaces.** Minor formatting. |
-| 9  | Low      | Elegance        | `interfaces/src/index.ts:5` | **`RateLimit` is the only non-`type` import/export in the barrel.** Correct because it has runtime values (`RateLimitDimension` const, `CHECK_REDACTION`) but worth a comment. |
-| 10 | Low      | Maintainability | `result-extensions/src/handle-grpc-call.ts` | **`handleGrpcCall` maps ALL gRPC `ServiceError` codes to a single `SERVICE_UNAVAILABLE` result.** gRPC has 17 status codes including `NOT_FOUND`, `PERMISSION_DENIED`, etc. Intentional fail-safe but could provide richer error info. |
+| #   | Severity | Category        | File:Line                                                          | Description                                                                                                                                                                                                                                                                                                                                                                                   |
+| --- | -------- | --------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Medium   | Consistency     | `interfaces/src/middleware/request-enrichment/i-request-info.ts`   | **Missing `isTrustedService` property.** The .NET `IRequestInfo` has `bool IsTrustedService { get; set; }`, used by rate limiter and fingerprint validator to bypass checks for S2S calls. The Node.js interface omits this entirely. The Node.js rate limiter has no trusted-service bypass.                                                                                                 |
+| 2   | Medium   | Consistency     | `interfaces/src/caching/distributed/handlers/r/get.ts:10`          | **`GetOutput.value` is `TValue \| undefined` but Redis implementation returns `D2Result.notFound()` on cache miss, not `D2Result.ok({ value: undefined })`.** The interface type suggests cache miss = success with undefined value, but actual behavior is failure result. Semantic mismatch doesn't cause runtime bugs (consumers handle both paths) but is confusing for new implementors. |
+| 3   | Low      | Security        | `result-extensions/src/d2-result-from-proto.ts:17`                 | **Unsafe type assertion `proto.statusCode as HttpStatusCode`.** The proto `status_code` field is `int32` (any integer), cast without runtime validation.                                                                                                                                                                                                                                      |
+| 4   | Low      | Maintainability | `interfaces/INTERFACES.md:72`                                      | **Documentation claims `CHECK_REDACTION` exists in idempotency but it does not.** The actual `idempotency/handlers/check.ts` only exports `CheckInput`, `CheckOutput`, and `ICheckHandler`.                                                                                                                                                                                                   |
+| 5   | Low      | Consistency     | `interfaces/src/middleware/idempotency/handlers/check.ts`          | **`Idempotency.ICheckHandler` is a plain `type` alias while `RateLimit.ICheckHandler` is an `interface extends IHandler` with required `redaction`.** Deliberate (idempotency has no PII) but asymmetric. Needs JSDoc explaining why.                                                                                                                                                         |
+| 6   | Low      | Maintainability | `tests/src/unit/interfaces/distributed-cache.test.ts:2`            | **Unused import `HttpStatusCode`.** Never referenced in the file.                                                                                                                                                                                                                                                                                                                             |
+| 7   | Low      | Consistency     | `distributed/handlers/q/ping.ts` vs `messaging/handlers/q/ping.ts` | **`PingInput`/`PingOutput`/`IPingHandler` identically defined in both `DistributedCache` and `Messaging` namespaces.** Could be extracted to shared `health/` module. Low priority — types are stable and small.                                                                                                                                                                              |
+| 8   | Low      | Maintainability | Various handler files                                              | **Blank line inconsistency before empty output interfaces.** Minor formatting.                                                                                                                                                                                                                                                                                                                |
+| 9   | Low      | Elegance        | `interfaces/src/index.ts:5`                                        | **`RateLimit` is the only non-`type` import/export in the barrel.** Correct because it has runtime values (`RateLimitDimension` const, `CHECK_REDACTION`) but worth a comment.                                                                                                                                                                                                                |
+| 10  | Low      | Maintainability | `result-extensions/src/handle-grpc-call.ts`                        | **`handleGrpcCall` maps ALL gRPC `ServiceError` codes to a single `SERVICE_UNAVAILABLE` result.** gRPC has 17 status codes including `NOT_FOUND`, `PERMISSION_DENIED`, etc. Intentional fail-safe but could provide richer error info.                                                                                                                                                        |
 
 ---
 

@@ -8,14 +8,14 @@ Validates the full Comms service stack from domain entity factories through gRPC
 
 ## Design Decisions
 
-| Decision                           | Rationale                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------- |
-| Separate test project              | Source packages have zero test deps -- mirrors .NET Geo.Tests pattern            |
-| Testcontainers for integration     | Real PG 18 + RabbitMQ containers for accurate behavior validation               |
-| Silent logger in test context      | Prevents noise in test output while preserving handler tracing paths            |
-| Shared mock handlers               | `mock-handlers.ts` provides reusable `vi.fn()`-based repo/provider stubs       |
-| Custom D2Result matchers           | `@d2/testing` setup file registers matchers for all tests                       |
-| Table truncation between tests     | `cleanAllTables()` truncates all 4 tables with CASCADE between integration runs |
+| Decision                       | Rationale                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| Separate test project          | Source packages have zero test deps -- mirrors .NET Geo.Tests pattern           |
+| Testcontainers for integration | Real PG 18 + RabbitMQ containers for accurate behavior validation               |
+| Silent logger in test context  | Prevents noise in test output while preserving handler tracing paths            |
+| Shared mock handlers           | `mock-handlers.ts` provides reusable `vi.fn()`-based repo/provider stubs        |
+| Custom D2Result matchers       | `@d2/testing` setup file registers matchers for all tests                       |
+| Table truncation between tests | `cleanAllTables()` truncates all 4 tables with CASCADE between integration runs |
 
 ## Test Organization
 
@@ -85,24 +85,24 @@ src/
 
 ## Test Counts
 
-| Category     | Files | Description                                                |
-| ------------ | ----- | ---------------------------------------------------------- |
-| Unit/Domain  | 23    | Entities, enums, exceptions, rules, constants              |
-| Unit/Client  | 1     | Notify handler (validation, publish, no-publisher fallback)|
-| Unit/App     | 5     | CQRS handlers + factory (mocked repos/providers)           |
-| Unit/Infra   | 3     | Providers (mocked clients) + retry topology                |
-| Unit/API     | 2     | gRPC service + proto mappers                               |
-| Integration  | 5     | Repository CRUD, Deliver flow, RabbitMQ consumer           |
-| **Total**    | **39**| **510 tests across 39 test files**                         |
+| Category    | Files  | Description                                                 |
+| ----------- | ------ | ----------------------------------------------------------- |
+| Unit/Domain | 23     | Entities, enums, exceptions, rules, constants               |
+| Unit/Client | 1      | Notify handler (validation, publish, no-publisher fallback) |
+| Unit/App    | 5      | CQRS handlers + factory (mocked repos/providers)            |
+| Unit/Infra  | 3      | Providers (mocked clients) + retry topology                 |
+| Unit/API    | 2      | gRPC service + proto mappers                                |
+| Integration | 5      | Repository CRUD, Deliver flow, RabbitMQ consumer            |
+| **Total**   | **39** | **510 tests across 39 test files**                          |
 
 ## Key Test Helpers
 
-| Helper                  | Location                          | Purpose                                         |
-| ----------------------- | --------------------------------- | ----------------------------------------------- |
-| `createTestContext()`   | `helpers/test-context.ts`         | HandlerContext with silent logger + static trace |
-| `startPostgres()`       | `helpers/postgres-test-helpers.ts` | Spins up PG 18 Testcontainer + runs migrations  |
-| `cleanAllTables()`      | `helpers/postgres-test-helpers.ts` | Truncates all 4 tables with CASCADE             |
-| `mock-handlers.ts`      | `unit/app/helpers/`               | Reusable `vi.fn()` mocks for repo/provider handlers |
+| Helper                | Location                           | Purpose                                             |
+| --------------------- | ---------------------------------- | --------------------------------------------------- |
+| `createTestContext()` | `helpers/test-context.ts`          | HandlerContext with silent logger + static trace    |
+| `startPostgres()`     | `helpers/postgres-test-helpers.ts` | Spins up PG 18 Testcontainer + runs migrations      |
+| `cleanAllTables()`    | `helpers/postgres-test-helpers.ts` | Truncates all 4 tables with CASCADE                 |
+| `mock-handlers.ts`    | `unit/app/helpers/`                | Reusable `vi.fn()` mocks for repo/provider handlers |
 
 ## Configuration
 
@@ -113,32 +113,33 @@ Vitest config at `comms/tests/vitest.config.ts`:
 - **Setup file**: `src/setup.ts` (registers `@d2/testing` custom matchers)
 
 Run all comms tests:
+
 ```
 pnpm vitest run --project comms-tests
 ```
 
 ## Dependencies
 
-| Package                       | Purpose                                          |
-| ----------------------------- | ------------------------------------------------ |
-| `@d2/comms-api`               | Composition root + gRPC service under test       |
-| `@d2/comms-app`               | CQRS handlers + service keys under test          |
-| `@d2/comms-client`            | Notification publisher (consumer test)           |
-| `@d2/comms-domain`            | Domain entities, enums, rules under test         |
-| `@d2/comms-infra`             | Repository handlers, providers, consumer under test |
-| `@d2/di`                      | ServiceCollection for DI in integration tests    |
-| `@d2/handler`                 | HandlerContext, IRequestContext for test setup    |
-| `@d2/logging`                 | createLogger (silent mode for tests)             |
-| `@d2/messaging`               | MessageBus for RabbitMQ integration tests        |
-| `@d2/protos`                  | Proto types for mapper tests                     |
-| `@d2/result`                  | D2Result assertions                              |
-| `@d2/result-extensions`       | d2ResultToProto for API tests                    |
-| `@d2/testing`                 | Custom Vitest matchers for D2Result              |
-| `@d2/utilities`               | UUIDv7 for test data generation                  |
-| `@testcontainers/postgresql`  | PostgreSQL 18 container for integration tests    |
-| `@testcontainers/rabbitmq`    | RabbitMQ container for consumer integration tests |
-| `drizzle-orm`                 | ORM for test database operations                 |
-| `pg`                          | PostgreSQL driver                                |
-| `resend`                      | Resend types for provider mock tests             |
-| `twilio`                      | Twilio types for provider mock tests             |
-| `vitest`                      | Test runner                                      |
+| Package                      | Purpose                                             |
+| ---------------------------- | --------------------------------------------------- |
+| `@d2/comms-api`              | Composition root + gRPC service under test          |
+| `@d2/comms-app`              | CQRS handlers + service keys under test             |
+| `@d2/comms-client`           | Notification publisher (consumer test)              |
+| `@d2/comms-domain`           | Domain entities, enums, rules under test            |
+| `@d2/comms-infra`            | Repository handlers, providers, consumer under test |
+| `@d2/di`                     | ServiceCollection for DI in integration tests       |
+| `@d2/handler`                | HandlerContext, IRequestContext for test setup      |
+| `@d2/logging`                | createLogger (silent mode for tests)                |
+| `@d2/messaging`              | MessageBus for RabbitMQ integration tests           |
+| `@d2/protos`                 | Proto types for mapper tests                        |
+| `@d2/result`                 | D2Result assertions                                 |
+| `@d2/result-extensions`      | d2ResultToProto for API tests                       |
+| `@d2/testing`                | Custom Vitest matchers for D2Result                 |
+| `@d2/utilities`              | UUIDv7 for test data generation                     |
+| `@testcontainers/postgresql` | PostgreSQL 18 container for integration tests       |
+| `@testcontainers/rabbitmq`   | RabbitMQ container for consumer integration tests   |
+| `drizzle-orm`                | ORM for test database operations                    |
+| `pg`                         | PostgreSQL driver                                   |
+| `resend`                     | Resend types for provider mock tests                |
+| `twilio`                     | Twilio types for provider mock tests                |
+| `vitest`                     | Test runner                                         |

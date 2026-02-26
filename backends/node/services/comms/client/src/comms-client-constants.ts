@@ -7,4 +7,6 @@
 export const COMMS_EVENTS = {
   /** RabbitMQ fanout exchange for notification requests. */
   NOTIFICATIONS_EXCHANGE: "comms.notifications",
+  /** Exchange type — fanout broadcasts to all bound queues. */
+  NOTIFICATIONS_EXCHANGE_TYPE: "fanout" as const,
 } as const;

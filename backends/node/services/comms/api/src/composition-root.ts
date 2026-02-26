@@ -3,14 +3,19 @@ import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { createLogger, type ILogger } from "@d2/logging";
 import { ILoggerKey } from "@d2/logging";
-import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
-import type { IRequestContext } from "@d2/handler";
-import { ServiceCollection, type ServiceProvider, type ServiceScope } from "@d2/di";
+import {
+  HandlerContext,
+  IHandlerContextKey,
+  IRequestContextKey,
+  createServiceScope,
+} from "@d2/handler";
+import { ServiceCollection } from "@d2/di";
 import * as CacheMemory from "@d2/cache-memory";
 import {
   GetContactsByIds,
   IGetContactsByIdsKey,
   createGeoServiceClient,
+  DEFAULT_GEO_CLIENT_OPTIONS,
 } from "@d2/geo-client";
 import { MessageBus, PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
 import { CommsServiceService } from "@d2/protos";
@@ -40,30 +45,6 @@ export interface CommsServiceConfig {
   commsApiKeys?: string[];
   /** When true, allow startup without API key auth. Default false. */
   allowUnauthenticated?: boolean;
-}
-
-/**
- * Creates a disposable DI scope with a fresh traceId and no auth context.
- * Used for per-RPC, per-message, and startup operations.
- */
-function createServiceScope(provider: ServiceProvider): ServiceScope {
-  const scope = provider.createScope();
-  const requestContext: IRequestContext = {
-    traceId: crypto.randomUUID(),
-    isAuthenticated: false,
-    isAgentStaff: false,
-    isAgentAdmin: false,
-    isTargetingStaff: false,
-    isTargetingAdmin: false,
-    isOrgEmulating: false,
-    isUserImpersonating: false,
-  };
-  scope.setInstance(IRequestContextKey, requestContext);
-  scope.setInstance(
-    IHandlerContextKey,
-    new HandlerContext(requestContext, provider.resolve(ILoggerKey)),
-  );
-  return scope;
 }
 
 /**
@@ -123,7 +104,13 @@ export async function createCommsService(config: CommsServiceConfig) {
     config.geoAddress && config.geoApiKey
       ? createGeoServiceClient(config.geoAddress, config.geoApiKey)
       : (undefined as never);
-  const getContactsByIds = new GetContactsByIds(contactCacheStore, geoClient, serviceContext);
+  const geoOptions = { ...DEFAULT_GEO_CLIENT_OPTIONS, apiKey: config.geoApiKey ?? "" };
+  const getContactsByIds = new GetContactsByIds(
+    contactCacheStore,
+    geoClient,
+    geoOptions,
+    serviceContext,
+  );
   services.addInstance(IGetContactsByIdsKey, getContactsByIds);
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
@@ -184,7 +171,9 @@ export async function createCommsService(config: CommsServiceConfig) {
     logger.info(`Comms gRPC API key authentication enabled (${validKeys.size} key(s))`);
   } else if (config.allowUnauthenticated) {
     server.addService(CommsServiceService, grpcService);
-    logger.warn("No COMMS_API_KEYS configured — gRPC API key authentication disabled (allowUnauthenticated=true)");
+    logger.warn(
+      "No COMMS_API_KEYS configured — gRPC API key authentication disabled (allowUnauthenticated=true)",
+    );
   } else {
     throw new Error(
       "COMMS_API_KEYS not configured. Set COMMS_API_KEYS environment variable or pass allowUnauthenticated=true for local development.",

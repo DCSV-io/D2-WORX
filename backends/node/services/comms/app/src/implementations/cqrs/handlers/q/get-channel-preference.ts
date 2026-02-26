@@ -3,6 +3,7 @@ import { D2Result } from "@d2/result";
 import type { ChannelPreference } from "@d2/comms-domain";
 import type { ChannelPreferenceRepoHandlers } from "../../../../interfaces/repository/handlers/index.js";
 import type { InMemoryCache } from "@d2/interfaces";
+import { COMMS_CACHE_KEYS } from "../../../../cache-keys.js";
 
 export interface GetChannelPreferenceInput {
   readonly contactId: string;
@@ -39,10 +40,12 @@ export class GetChannelPreference extends BaseHandler<
     input: GetChannelPreferenceInput,
   ): Promise<D2Result<GetChannelPreferenceOutput | undefined>> {
     if (!input.contactId) {
-      return D2Result.ok({ data: { pref: null } });
+      return D2Result.validationFailed({
+        inputErrors: [["contactId", "Contact ID is required."]],
+      });
     }
 
-    const cacheKey = `chan-pref:contact:${input.contactId}`;
+    const cacheKey = COMMS_CACHE_KEYS.channelPref(input.contactId);
 
     // Check cache first
     if (this.cache) {
@@ -60,6 +63,12 @@ export class GetChannelPreference extends BaseHandler<
     // Populate cache on miss
     if (this.cache && pref) {
       await this.cache.set.handleAsync({ key: cacheKey, value: pref, expirationMs: 900_000 });
+    }
+
+    if (!pref) {
+      return D2Result.notFound({
+        messages: [`No channel preferences found for contact ${input.contactId}.`],
+      });
     }
 
     return D2Result.ok({ data: { pref } });

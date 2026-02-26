@@ -307,7 +307,7 @@ describe("GetSignInEvents", () => {
       // Should populate cache
       expect(cache.set.handleAsync).toHaveBeenCalledOnce();
       const setCalls = cache.set.handleAsync.mock.calls[0][0];
-      expect(setCalls.key).toContain("sign-in-events:user-123:");
+      expect(setCalls.key).toContain("auth:sign-in-events:user-123:");
       expect(setCalls.value.total).toBe(1);
     });
 

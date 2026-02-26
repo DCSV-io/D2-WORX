@@ -5,6 +5,7 @@ import { createLogger } from "@d2/logging";
 import {
   UpdateContactsByExtKeys,
   DEFAULT_GEO_CLIENT_OPTIONS,
+  GEO_CACHE_KEYS,
   type GeoClientOptions,
 } from "@d2/geo-client";
 
@@ -37,15 +38,19 @@ function createMockContactDTO(
 }
 
 function mockGrpcMethod<TReq, TRes>(response: TRes) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(null, response);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(null, response);
+    },
+  );
 }
 
 function mockGrpcMethodError<TReq, TRes>(error: Error) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(error, undefined as never);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(error, undefined as never);
+    },
+  );
 }
 
 describe("UpdateContactsByExtKeys handler", () => {
@@ -70,8 +75,22 @@ describe("UpdateContactsByExtKeys handler", () => {
           traceId: "",
         },
         replacements: [
-          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact: newContact1 },
-          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-2", oldContactId: "old-2" }, newContact: newContact2 },
+          {
+            key: {
+              contextKey: "auth_org_contact",
+              relatedEntityId: "org-1",
+              oldContactId: "old-1",
+            },
+            newContact: newContact1,
+          },
+          {
+            key: {
+              contextKey: "auth_org_contact",
+              relatedEntityId: "org-2",
+              oldContactId: "old-2",
+            },
+            newContact: newContact2,
+          },
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -115,7 +134,14 @@ describe("UpdateContactsByExtKeys handler", () => {
           traceId: "",
         },
         replacements: [
-          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact: createMockContactDTO("new-1") },
+          {
+            key: {
+              contextKey: "auth_org_contact",
+              relatedEntityId: "org-1",
+              oldContactId: "old-1",
+            },
+            newContact: createMockContactDTO("new-1"),
+          },
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -143,9 +169,15 @@ describe("UpdateContactsByExtKeys handler", () => {
 
   it("should evict ext-key cache for each input contact", async () => {
     // Pre-populate cache
-    store.set("contact-ext:auth_org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
-    store.set("contact-ext:auth_org_contact:org-2", [{ id: "old-2" } as ContactDTO]);
-    store.set("contact-ext:auth_org_contact:org-3", [{ id: "old-3" } as ContactDTO]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"), [
+      { id: "old-1" } as ContactDTO,
+    ]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-2"), [
+      { id: "old-2" } as ContactDTO,
+    ]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-3"), [
+      { id: "old-3" } as ContactDTO,
+    ]);
 
     const mockGeoClient = {
       updateContactsByExtKeys: mockGrpcMethod({
@@ -158,8 +190,22 @@ describe("UpdateContactsByExtKeys handler", () => {
           traceId: "",
         },
         replacements: [
-          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact: createMockContactDTO("new-1", "auth_org_contact", "org-1") },
-          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-2", oldContactId: "old-2" }, newContact: createMockContactDTO("new-2", "auth_org_contact", "org-2") },
+          {
+            key: {
+              contextKey: "auth_org_contact",
+              relatedEntityId: "org-1",
+              oldContactId: "old-1",
+            },
+            newContact: createMockContactDTO("new-1", "auth_org_contact", "org-1"),
+          },
+          {
+            key: {
+              contextKey: "auth_org_contact",
+              relatedEntityId: "org-2",
+              oldContactId: "old-2",
+            },
+            newContact: createMockContactDTO("new-2", "auth_org_contact", "org-2"),
+          },
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -186,13 +232,15 @@ describe("UpdateContactsByExtKeys handler", () => {
     });
 
     // org-1 and org-2 evicted, org-3 remains
-    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
-    expect(store.get("contact-ext:auth_org_contact:org-2")).toBeUndefined();
-    expect(store.get("contact-ext:auth_org_contact:org-3")).toBeDefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"))).toBeUndefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-2"))).toBeUndefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-3"))).toBeDefined();
   });
 
   it("should evict cache even on gRPC failure", async () => {
-    store.set("contact-ext:auth_org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"), [
+      { id: "old-1" } as ContactDTO,
+    ]);
 
     const mockGeoClient = {
       updateContactsByExtKeys: mockGrpcMethodError(new Error("Connection refused")),
@@ -215,7 +263,7 @@ describe("UpdateContactsByExtKeys handler", () => {
     });
 
     // Cache should still be evicted even though gRPC failed
-    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"))).toBeUndefined();
   });
 
   it("should return failure on gRPC error", async () => {
@@ -322,7 +370,14 @@ describe("UpdateContactsByExtKeys handler", () => {
           traceId: "",
         },
         replacements: [
-          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact },
+          {
+            key: {
+              contextKey: "auth_org_contact",
+              relatedEntityId: "org-1",
+              oldContactId: "old-1",
+            },
+            newContact,
+          },
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -365,7 +420,10 @@ describe("UpdateContactsByExtKeys handler", () => {
           traceId: "",
         },
         replacements: [
-          { key: { contextKey: "any_key", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact },
+          {
+            key: { contextKey: "any_key", relatedEntityId: "org-1", oldContactId: "old-1" },
+            newContact,
+          },
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -391,7 +449,9 @@ describe("UpdateContactsByExtKeys handler", () => {
   });
 
   it("should not repopulate cache with new contacts after eviction", async () => {
-    store.set("contact-ext:auth_org_contact:org-1", [{ id: "old-1" } as ContactDTO]);
+    store.set(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"), [
+      { id: "old-1" } as ContactDTO,
+    ]);
 
     const newContact = createMockContactDTO("new-1", "auth_org_contact", "org-1");
     const mockGeoClient = {
@@ -405,7 +465,14 @@ describe("UpdateContactsByExtKeys handler", () => {
           traceId: "",
         },
         replacements: [
-          { key: { contextKey: "auth_org_contact", relatedEntityId: "org-1", oldContactId: "old-1" }, newContact },
+          {
+            key: {
+              contextKey: "auth_org_contact",
+              relatedEntityId: "org-1",
+              oldContactId: "old-1",
+            },
+            newContact,
+          },
         ],
       }),
     } as unknown as GeoServiceClient;
@@ -427,6 +494,6 @@ describe("UpdateContactsByExtKeys handler", () => {
     });
 
     // Cache was evicted and NOT repopulated — next GetContactsByExtKeys will cache it
-    expect(store.get("contact-ext:auth_org_contact:org-1")).toBeUndefined();
+    expect(store.get(GEO_CACHE_KEYS.contactsByExtKey("auth_org_contact", "org-1"))).toBeUndefined();
   });
 });

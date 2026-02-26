@@ -19,6 +19,7 @@ import {
   ReqUpdate,
 } from "@d2/geo-client";
 import type { GeoClientOptions } from "@d2/geo-client";
+import { DEFAULT_GEO_CLIENT_OPTIONS } from "@d2/geo-client";
 
 function createTestContext(): IHandlerContext {
   const request: IRequestContext = {
@@ -156,7 +157,7 @@ describe("Geo-client reference data handlers", () => {
 
       expect(result).toBeSuccess();
       expect(mockDistSet.handleAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ key: "d2:geo:refdata" }),
+        expect.objectContaining({ key: "geo:refdata" }),
       );
     });
 
@@ -205,6 +206,70 @@ describe("Geo-client reference data handlers", () => {
     });
   });
 
+  describe("Cross-handler cache coherence: SetInMem → GetFromMem", () => {
+    let store: MemoryCacheStore;
+
+    beforeEach(() => {
+      store = new MemoryCacheStore();
+    });
+
+    it("data set via SetInMem should be retrievable via GetFromMem using the same cache key", async () => {
+      const data = createTestGeoRefData();
+
+      // Write via SetInMem
+      const setHandler = new SetInMem(store, createTestContext());
+      const setR = await setHandler.handleAsync({ data });
+      expect(setR).toBeSuccess();
+
+      // Read via GetFromMem — must find it under the same key ("geo:refdata")
+      const getHandler = new GetFromMem(store, createTestContext());
+      const getR = await getHandler.handleAsync({});
+      expect(getR).toBeSuccess();
+      expect(getR.data?.data).toEqual(data);
+
+      // Explicitly verify both handlers use the exact same cache key
+      expect(store.get("geo:refdata")).toEqual(data);
+    });
+
+    it("GetFromMem should return NotFound when SetInMem has not been called", async () => {
+      const getHandler = new GetFromMem(store, createTestContext());
+      const getR = await getHandler.handleAsync({});
+      expect(getR).toBeFailure();
+      expect(getR.errorCode).toBe(ErrorCodes.NOT_FOUND);
+    });
+
+    it("overwriting data via SetInMem should be visible to GetFromMem", async () => {
+      const data1 = GeoRefDataCodec.fromPartial({
+        version: "1.0.0",
+        countries: {},
+        subdivisions: {},
+        currencies: {},
+        languages: {},
+        locales: {},
+        geopoliticalEntities: {},
+      });
+      const data2 = GeoRefDataCodec.fromPartial({
+        version: "2.0.0",
+        countries: { US: { iso31661Alpha2Code: "US", displayName: "United States" } },
+        subdivisions: {},
+        currencies: {},
+        languages: {},
+        locales: {},
+        geopoliticalEntities: {},
+      });
+
+      const setHandler = new SetInMem(store, createTestContext());
+      await setHandler.handleAsync({ data: data1 });
+      await setHandler.handleAsync({ data: data2 });
+
+      const getHandler = new GetFromMem(store, createTestContext());
+      const getR = await getHandler.handleAsync({});
+      expect(getR).toBeSuccess();
+      expect(getR.data?.data.version).toBe("2.0.0");
+      expect(getR.data?.data.countries["US"]?.displayName).toBe("United States");
+    });
+  });
+
   describe("GeoRefDataSerializer", () => {
     it("should serialize and deserialize GeoRefData via protobuf", () => {
       const serializer = new GeoRefDataSerializer();
@@ -233,13 +298,18 @@ describe("Geo-client reference data handlers", () => {
       };
       const mockGeoClient = {
         requestReferenceDataUpdate: vi.fn(
-          (_req: unknown, cb: (err: Error | null, res: typeof response) => void) => {
+          (
+            _req: unknown,
+            _meta: unknown,
+            _opts: unknown,
+            cb: (err: Error | null, res: typeof response) => void,
+          ) => {
             cb(null, response);
           },
         ),
       } as unknown as GeoServiceClient;
 
-      const handler = new ReqUpdate(mockGeoClient, createTestContext());
+      const handler = new ReqUpdate(mockGeoClient, DEFAULT_GEO_CLIENT_OPTIONS, createTestContext());
       const result = await handler.handleAsync({});
 
       expect(result).toBeSuccess();
@@ -250,13 +320,18 @@ describe("Geo-client reference data handlers", () => {
       const error = Object.assign(new Error("Unavailable"), { code: 14 });
       const mockGeoClient = {
         requestReferenceDataUpdate: vi.fn(
-          (_req: unknown, cb: (err: Error | null, res: never) => void) => {
+          (
+            _req: unknown,
+            _meta: unknown,
+            _opts: unknown,
+            cb: (err: Error | null, res: never) => void,
+          ) => {
             cb(error, undefined as never);
           },
         ),
       } as unknown as GeoServiceClient;
 
-      const handler = new ReqUpdate(mockGeoClient, createTestContext());
+      const handler = new ReqUpdate(mockGeoClient, DEFAULT_GEO_CLIENT_OPTIONS, createTestContext());
       const result = await handler.handleAsync({});
 
       expect(result).toBeFailure();

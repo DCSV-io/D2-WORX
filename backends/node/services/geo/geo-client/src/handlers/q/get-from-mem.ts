@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Queries } from "../../interfaces/index.js";
 
 type Input = Queries.GetFromMemInput;
@@ -24,7 +25,7 @@ export class GetFromMem extends BaseHandler<Input, Output> implements Queries.IG
   }
 
   protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
-    const value = this.store.get<GeoRefData>("GeoRefData");
+    const value = this.store.get<GeoRefData>(GEO_CACHE_KEYS.REFDATA);
     if (value === undefined) {
       return D2Result.notFound();
     }

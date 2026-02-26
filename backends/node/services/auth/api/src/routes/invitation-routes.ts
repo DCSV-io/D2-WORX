@@ -63,7 +63,9 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     }
     if (!INVITABLE_ROLES.has(role as Role)) {
       return c.json(
-        D2Result.validationFailed({ inputErrors: [["role", `Invalid role. Allowed: ${ROLES.join(", ")}.`]] }),
+        D2Result.validationFailed({
+          inputErrors: [["role", `Invalid role. Allowed: ${ROLES.join(", ")}.`]],
+        }),
         400 as ContentfulStatusCode,
       );
     }

@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext, type IHandler } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ContactsEvictedEvent } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { GEO_CACHE_KEYS } from "../../../cache-keys.js";
 
 export interface ContactsEvictedOutput {}
 
@@ -28,15 +29,15 @@ export class ContactsEvicted
     input: ContactsEvictedEvent,
   ): Promise<D2Result<ContactsEvictedOutput | undefined>> {
     for (const contact of input.contacts) {
-      // Evict by contact ID (matches GetContactsByIds cache key format).
-      this.store.delete(`contact:${contact.contactId}`);
-      // Evict by ext-key (matches GetContactsByExtKeys cache key format).
-      this.store.delete(`contact-ext:${contact.contextKey}:${contact.relatedEntityId}`);
+      // Evict by contact ID.
+      this.store.delete(GEO_CACHE_KEYS.contact(contact.contactId));
+      // Evict by ext-key.
+      this.store.delete(
+        GEO_CACHE_KEYS.contactsByExtKey(contact.contextKey, contact.relatedEntityId),
+      );
     }
 
-    this.context.logger.info(
-      `Evicted ${input.contacts.length} contact(s) from cache`,
-    );
+    this.context.logger.info(`Evicted ${input.contacts.length} contact(s) from cache`);
 
     return D2Result.ok({ data: {} });
   }

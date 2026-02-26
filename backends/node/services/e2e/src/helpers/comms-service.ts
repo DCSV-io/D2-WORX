@@ -2,14 +2,19 @@ import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { createLogger, type ILogger } from "@d2/logging";
 import { ILoggerKey } from "@d2/logging";
-import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
-import type { IRequestContext } from "@d2/handler";
-import { ServiceCollection, type ServiceProvider, type ServiceScope } from "@d2/di";
+import {
+  HandlerContext,
+  IHandlerContextKey,
+  IRequestContextKey,
+  createServiceScope,
+} from "@d2/handler";
+import { ServiceCollection } from "@d2/di";
 import * as CacheMemory from "@d2/cache-memory";
 import {
   GetContactsByIds,
   IGetContactsByIdsKey,
   createGeoServiceClient,
+  DEFAULT_GEO_CLIENT_OPTIONS,
 } from "@d2/geo-client";
 import { MessageBus } from "@d2/messaging";
 import { IEmailProviderKey } from "@d2/comms-app";
@@ -32,30 +37,6 @@ export interface CommsServiceHandle {
   stubEmail: StubEmailProvider;
   /** Comms database pool for assertions. */
   pool: pg.Pool;
-}
-
-/**
- * Creates a disposable DI scope with a fresh traceId and no auth context.
- * Mirrors the production composition root's `createServiceScope`.
- */
-function createServiceScope(provider: ServiceProvider): ServiceScope {
-  const scope = provider.createScope();
-  const requestContext: IRequestContext = {
-    traceId: crypto.randomUUID(),
-    isAuthenticated: false,
-    isAgentStaff: false,
-    isAgentAdmin: false,
-    isTargetingStaff: false,
-    isTargetingAdmin: false,
-    isOrgEmulating: false,
-    isUserImpersonating: false,
-  };
-  scope.setInstance(IRequestContextKey, requestContext);
-  scope.setInstance(
-    IHandlerContextKey,
-    new HandlerContext(requestContext, provider.resolve(ILoggerKey)),
-  );
-  return scope;
 }
 
 /**
@@ -104,7 +85,13 @@ export async function startCommsService(opts: {
   // Geo client for recipient resolution (GetContactsByIds only)
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
   geoClient = createGeoServiceClient(opts.geoAddress, opts.geoApiKey);
-  const getContactsByIds = new GetContactsByIds(contactCacheStore, geoClient, serviceContext);
+  const geoOptions = { ...DEFAULT_GEO_CLIENT_OPTIONS, apiKey: opts.geoApiKey };
+  const getContactsByIds = new GetContactsByIds(
+    contactCacheStore,
+    geoClient,
+    geoOptions,
+    serviceContext,
+  );
   services.addInstance(IGetContactsByIdsKey, getContactsByIds);
 
   // Stub email provider (captures emails in-memory)

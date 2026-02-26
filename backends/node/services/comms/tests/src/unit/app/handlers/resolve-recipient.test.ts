@@ -61,9 +61,9 @@ describe("RecipientResolver", () => {
 
   it("should propagate geo failure via bubbleFail", async () => {
     const geoIds = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["Geo timeout"], statusCode: 503 }),
-      ),
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(D2Result.fail({ messages: ["Geo timeout"], statusCode: 503 })),
     };
 
     const resolver = new RecipientResolver(geoIds as any, createMockContext());
@@ -76,9 +76,11 @@ describe("RecipientResolver", () => {
 
   it("should propagate geo 400 failure without masking status code", async () => {
     const geoIds = {
-      handleAsync: vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["Invalid contact ID format"], statusCode: 400 }),
-      ),
+      handleAsync: vi
+        .fn()
+        .mockResolvedValue(
+          D2Result.fail({ messages: ["Invalid contact ID format"], statusCode: 400 }),
+        ),
     };
 
     const resolver = new RecipientResolver(geoIds as any, createMockContext());

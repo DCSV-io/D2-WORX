@@ -49,7 +49,7 @@ public class ContactsEvicted : BaseHandler<ContactsEvicted, I, O>, H
         {
             // Evict by contact ID.
             var removeByIdR = await r_cacheRemove.HandleAsync(
-                new($"GetContactsByIds:{contact.ContactId}"), ct);
+                new(CacheKeys.Contact(Guid.Parse(contact.ContactId))), ct);
 
             if (removeByIdR.Failed)
             {
@@ -61,12 +61,12 @@ public class ContactsEvicted : BaseHandler<ContactsEvicted, I, O>, H
 
             // Evict by ext-key.
             var removeByExtR = await r_cacheRemove.HandleAsync(
-                new($"contact-ext:{contact.ContextKey}:{contact.RelatedEntityId}"), ct);
+                new(CacheKeys.ContactsByExtKey(contact.ContextKey, Guid.Parse(contact.RelatedEntityId))), ct);
 
             if (removeByExtR.Failed)
             {
                 Context.Logger.LogWarning(
-                    "Failed to evict contact-ext:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
+                    "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
                     contact.ContextKey,
                     contact.RelatedEntityId,
                     TraceId);

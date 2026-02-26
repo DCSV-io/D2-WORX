@@ -75,7 +75,9 @@ describe("NotificationConsumer (integration)", () => {
   }
 
   /** Creates a publisher and registers it for automatic cleanup. */
-  function createTrackedPublisher(options?: Parameters<ReturnType<typeof getBus>["createPublisher"]>[0]) {
+  function createTrackedPublisher(
+    options?: Parameters<ReturnType<typeof getBus>["createPublisher"]>[0],
+  ) {
     const pub = getBus().createPublisher(options);
     cleanupFns.push(() => pub.close());
     return pub;
@@ -204,67 +206,63 @@ describe("NotificationConsumer (integration)", () => {
     expect(callCount).toBe(3);
   });
 
-  it(
-    "should retry a failed message via tier queue and redeliver to main queue",
-    async () => {
-      const bus = getBus();
-      const retryPublisher = createTrackedPublisher();
-      const logger = createMockLogger();
+  it("should retry a failed message via tier queue and redeliver to main queue", async () => {
+    const bus = getBus();
+    const retryPublisher = createTrackedPublisher();
+    const logger = createMockLogger();
 
-      let callCount = 0;
-      let resolveSecondCall: () => void;
-      const secondCall = new Promise<void>((resolve) => {
-        resolveSecondCall = resolve;
-      });
+    let callCount = 0;
+    let resolveSecondCall: () => void;
+    const secondCall = new Promise<void>((resolve) => {
+      resolveSecondCall = resolve;
+    });
 
-      const handler = createMockHandler();
-      handler.handleAsync.mockImplementation(async () => {
-        callCount++;
-        if (callCount === 1) {
-          // First call: return DELIVERY_FAILED to trigger retry
-          return D2Result.fail({
-            messages: ["Delivery failed for 1 channel(s), retry scheduled."],
-            statusCode: 503,
-            errorCode: COMMS_RETRY.DELIVERY_FAILED,
-          });
-        }
-        resolveSecondCall();
-        return D2Result.ok({ data: {} });
-      });
+    const handler = createMockHandler();
+    handler.handleAsync.mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) {
+        // First call: return DELIVERY_FAILED to trigger retry
+        return D2Result.fail({
+          messages: ["Delivery failed for 1 channel(s), retry scheduled."],
+          statusCode: 503,
+          errorCode: COMMS_RETRY.DELIVERY_FAILED,
+        });
+      }
+      resolveSecondCall();
+      return D2Result.ok({ data: {} });
+    });
 
-      const { provider, createScope } = createMockProviderAndScope(handler);
+    const { provider, createScope } = createMockProviderAndScope(handler);
 
-      const consumer = createNotificationConsumer({
-        messageBus: bus,
-        provider,
-        createScope,
-        retryPublisher,
-        logger: logger as never,
-      });
-      cleanupFns.push(() => consumer.close());
-      await consumer.ready;
+    const consumer = createNotificationConsumer({
+      messageBus: bus,
+      provider,
+      createScope,
+      retryPublisher,
+      logger: logger as never,
+    });
+    cleanupFns.push(() => consumer.close());
+    await consumer.ready;
 
-      const publisher = createTrackedPublisher({
-        exchanges: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, type: "fanout" }],
-      });
-      await publisher.send(
-        { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
-        createNotificationMessage({
-          recipientContactId: "contact-retry-1",
-          correlationId: "corr-retry-1",
-          title: "Retry Notification",
-        }),
-      );
+    const publisher = createTrackedPublisher({
+      exchanges: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, type: "fanout" }],
+    });
+    await publisher.send(
+      { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
+      createNotificationMessage({
+        recipientContactId: "contact-retry-1",
+        correlationId: "corr-retry-1",
+        title: "Retry Notification",
+      }),
+    );
 
-      // tier-1 has 5s TTL, so allow up to 15s for the full retry cycle
-      await withTimeout(secondCall, 15_000);
+    // tier-1 has 5s TTL, so allow up to 15s for the full retry cycle
+    await withTimeout(secondCall, 15_000);
 
-      expect(callCount).toBe(2);
-      expect(logger.warn).toHaveBeenCalledWith(
-        "Handler failed, scheduling retry",
-        expect.objectContaining({ retryCount: 1 }),
-      );
-    },
-    20_000,
-  );
+    expect(callCount).toBe(2);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Handler failed, scheduling retry",
+      expect.objectContaining({ retryCount: 1 }),
+    );
+  }, 20_000);
 });

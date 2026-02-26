@@ -109,7 +109,9 @@ describe("withApiKeyAuth interceptor", () => {
 
     (wrapped.deliver as grpc.handleUnaryCall<unknown, unknown>)(call, callback);
 
-    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining("Missing x-api-key header on RPC deliver"));
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Missing x-api-key header on RPC deliver"),
+    );
   });
 
   it("should accept the first key in a multi-key set", () => {

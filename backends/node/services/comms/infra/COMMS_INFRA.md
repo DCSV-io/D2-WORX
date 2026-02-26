@@ -11,15 +11,15 @@ Implements the repository and provider interfaces defined in `@d2/comms-app`. Ow
 
 ## Design Decisions
 
-| Decision                             | Rationale                                                                       |
-| ------------------------------------ | ------------------------------------------------------------------------------- |
-| Drizzle ORM (not Kysely)             | Consistent with Auth service -- single ORM across all Node.js services (ADR-009)|
-| 12 handler-per-file repo pattern     | Mirrors .NET TLC convention: one handler per file, organized by C/R/U           |
-| Factory functions for repo bundles   | `createMessageRepoHandlers(db, ctx)` groups related handlers for composition    |
-| Providers as singleton               | Hold API client connections (Resend, Twilio) -- shared across all requests      |
-| DLX-based retry topology             | Tier queues with escalating TTLs dead-letter back to main queue on expiry       |
-| Always ACK + re-publish for retry    | Never NACK/requeue -- retry is explicit via tier queues for predictable delays  |
-| Conditional provider registration    | Missing API keys = no registration (warn log, not crash)                        |
+| Decision                           | Rationale                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| Drizzle ORM (not Kysely)           | Consistent with Auth service -- single ORM across all Node.js services (ADR-009) |
+| 12 handler-per-file repo pattern   | Mirrors .NET TLC convention: one handler per file, organized by C/R/U            |
+| Factory functions for repo bundles | `createMessageRepoHandlers(db, ctx)` groups related handlers for composition     |
+| Providers as singleton             | Hold API client connections (Resend, Twilio) -- shared across all requests       |
+| DLX-based retry topology           | Tier queues with escalating TTLs dead-letter back to main queue on expiry        |
+| Always ACK + re-publish for retry  | Never NACK/requeue -- retry is explicit via tier queues for predictable delays   |
+| Conditional provider registration  | Missing API keys = no registration (warn log, not crash)                         |
 
 ## Package Structure
 
@@ -73,12 +73,12 @@ src/
 
 Four tables in the comms database (PostgreSQL 18):
 
-| Table                | Key Columns                                                     | Indexes                                             |
-| -------------------- | --------------------------------------------------------------- | --------------------------------------------------- |
-| `message`            | id (PK), thread_id, sender_*, content, plain_text_content, urgency, sensitive | idx_message_thread_id, idx_message_sender_user_id   |
-| `delivery_request`   | id (PK), message_id, correlation_id, recipient_contact_id, processed_at | idx_delivery_request_message_id, UNIQUE(correlation_id), idx_recipient_contact_id |
-| `delivery_attempt`   | id (PK), request_id, channel, recipient_address, status, attempt_number | idx_delivery_attempt_request_id, idx_status_retry   |
-| `channel_preference` | id (PK), contact_id, email_enabled, sms_enabled                | UNIQUE(contact_id)                                  |
+| Table                | Key Columns                                                                    | Indexes                                                                           |
+| -------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| `message`            | id (PK), thread*id, sender*\*, content, plain_text_content, urgency, sensitive | idx_message_thread_id, idx_message_sender_user_id                                 |
+| `delivery_request`   | id (PK), message_id, correlation_id, recipient_contact_id, processed_at        | idx_delivery_request_message_id, UNIQUE(correlation_id), idx_recipient_contact_id |
+| `delivery_attempt`   | id (PK), request_id, channel, recipient_address, status, attempt_number        | idx_delivery_attempt_request_id, idx_status_retry                                 |
+| `channel_preference` | id (PK), contact_id, email_enabled, sms_enabled                                | UNIQUE(contact_id)                                                                |
 
 All primary keys are UUIDv7 (varchar 36). Timestamps use `timestamptz`. Column names are `snake_case`.
 
@@ -88,37 +88,37 @@ Organized by TLC convention (C/R/U):
 
 ### Create (C/) -- 4 handlers
 
-| Handler                        | Input                | Output                |
-| ------------------------------ | -------------------- | --------------------- |
-| CreateMessageRecord            | `{ message }`        | `{ message }`         |
-| CreateDeliveryRequestRecord    | `{ request }`        | `{ request }`         |
-| CreateDeliveryAttemptRecord    | `{ attempt }`        | `{ attempt }`         |
-| CreateChannelPreferenceRecord  | `{ pref }`           | `{ pref }`            |
+| Handler                       | Input         | Output        |
+| ----------------------------- | ------------- | ------------- |
+| CreateMessageRecord           | `{ message }` | `{ message }` |
+| CreateDeliveryRequestRecord   | `{ request }` | `{ request }` |
+| CreateDeliveryAttemptRecord   | `{ attempt }` | `{ attempt }` |
+| CreateChannelPreferenceRecord | `{ pref }`    | `{ pref }`    |
 
 ### Read (R/) -- 5 handlers
 
-| Handler                              | Input                  | Output                   |
-| ------------------------------------ | ---------------------- | ------------------------ |
-| FindMessageById                      | `{ id }`               | `{ message }`            |
-| FindDeliveryRequestById              | `{ id }`               | `{ request }`            |
-| FindDeliveryRequestByCorrelationId   | `{ correlationId }`    | `{ request }`            |
-| FindDeliveryAttemptsByRequestId      | `{ requestId }`        | `{ attempts[] }`         |
-| FindChannelPreferenceByContactId     | `{ contactId }`        | `{ pref }`               |
+| Handler                            | Input               | Output           |
+| ---------------------------------- | ------------------- | ---------------- |
+| FindMessageById                    | `{ id }`            | `{ message }`    |
+| FindDeliveryRequestById            | `{ id }`            | `{ request }`    |
+| FindDeliveryRequestByCorrelationId | `{ correlationId }` | `{ request }`    |
+| FindDeliveryAttemptsByRequestId    | `{ requestId }`     | `{ attempts[] }` |
+| FindChannelPreferenceByContactId   | `{ contactId }`     | `{ pref }`       |
 
 ### Update (U/) -- 3 handlers
 
-| Handler                        | Input                                          | Output          |
-| ------------------------------ | ---------------------------------------------- | --------------- |
-| MarkDeliveryRequestProcessed   | `{ id }`                                       | `{ request }`   |
-| UpdateDeliveryAttemptStatus    | `{ id, status, providerMessageId?, error?, nextRetryAt? }` | `{ attempt }` |
-| UpdateChannelPreferenceRecord  | `{ pref }`                                     | `{ pref }`      |
+| Handler                       | Input                                                      | Output        |
+| ----------------------------- | ---------------------------------------------------------- | ------------- |
+| MarkDeliveryRequestProcessed  | `{ id }`                                                   | `{ request }` |
+| UpdateDeliveryAttemptStatus   | `{ id, status, providerMessageId?, error?, nextRetryAt? }` | `{ attempt }` |
+| UpdateChannelPreferenceRecord | `{ pref }`                                                 | `{ pref }`    |
 
 ## Providers
 
-| Provider             | External API | Singleton | Redacted Fields      |
-| -------------------- | ------------ | --------- | -------------------- |
-| ResendEmailProvider   | Resend       | Yes       | html, plainText      |
-| TwilioSmsProvider     | Twilio       | Yes       | body                 |
+| Provider            | External API | Singleton | Redacted Fields |
+| ------------------- | ------------ | --------- | --------------- |
+| ResendEmailProvider | Resend       | Yes       | html, plainText |
+| TwilioSmsProvider   | Twilio       | Yes       | body            |
 
 Both extend `BaseHandler` and return `D2Result<{ providerMessageId }>`. Failures return 503 with the provider error message.
 
@@ -137,13 +137,13 @@ Both extend `BaseHandler` and return `D2Result<{ providerMessageId }>`. Failures
 
 DLX-based retry with 5 tier queues and escalating TTLs:
 
-| Tier | Queue Name             | TTL    |
-| ---- | ---------------------- | ------ |
-| 1    | `comms.retry.tier-1`   | 5s     |
-| 2    | `comms.retry.tier-2`   | 10s    |
-| 3    | `comms.retry.tier-3`   | 30s    |
-| 4    | `comms.retry.tier-4`   | 60s    |
-| 5    | `comms.retry.tier-5`   | 300s   |
+| Tier | Queue Name           | TTL  |
+| ---- | -------------------- | ---- |
+| 1    | `comms.retry.tier-1` | 5s   |
+| 2    | `comms.retry.tier-2` | 10s  |
+| 3    | `comms.retry.tier-3` | 30s  |
+| 4    | `comms.retry.tier-4` | 60s  |
+| 5    | `comms.retry.tier-5` | 300s |
 
 Each tier queue dead-letters to `comms.retry.requeue` (direct exchange), which routes expired messages back to `comms.notifications` (main queue). Retry count 0-3 map to tiers 1-4; count 4+ caps at tier 5. `getRetryTierQueue(retryCount)` returns `null` at 10 attempts.
 

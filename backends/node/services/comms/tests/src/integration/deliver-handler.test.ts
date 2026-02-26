@@ -124,10 +124,7 @@ describe("Deliver handler (integration)", () => {
 
     // Verify actual DB records
     const db = getDb();
-    const [msgRow] = await db
-      .select()
-      .from(messageTable)
-      .where(eq(messageTable.id, messageId));
+    const [msgRow] = await db.select().from(messageTable).where(eq(messageTable.id, messageId));
     expect(msgRow).toBeDefined();
     expect(msgRow.title).toBe("Test Email");
     expect(msgRow.senderService).toBe("auth");

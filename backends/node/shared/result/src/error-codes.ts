@@ -15,6 +15,8 @@ export const ErrorCodes = {
   SOME_FOUND: "SOME_FOUND",
   RATE_LIMITED: "RATE_LIMITED",
   IDEMPOTENCY_IN_FLIGHT: "IDEMPOTENCY_IN_FLIGHT",
+  PAYLOAD_TOO_LARGE: "PAYLOAD_TOO_LARGE",
+  CANCELLED: "CANCELLED",
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

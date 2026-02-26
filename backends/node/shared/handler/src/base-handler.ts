@@ -90,8 +90,10 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
       span.setAttribute("handler.type", handlerName);
       span.setAttribute("trace.id", this.context.request.traceId ?? "");
       if (this.context.request.userId) span.setAttribute("user.id", this.context.request.userId);
-      if (this.context.request.agentOrgId) span.setAttribute("agent.org.id", this.context.request.agentOrgId);
-      if (this.context.request.targetOrgId) span.setAttribute("target.org.id", this.context.request.targetOrgId);
+      if (this.context.request.agentOrgId)
+        span.setAttribute("agent.org.id", this.context.request.agentOrgId);
+      if (this.context.request.targetOrgId)
+        span.setAttribute("target.org.id", this.context.request.targetOrgId);
 
       const startTime = performance.now();
 

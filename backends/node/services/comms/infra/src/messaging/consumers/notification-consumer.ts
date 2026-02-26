@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { MessageBus, IMessagePublisher, IncomingMessage } from "@d2/messaging";
 import { ConsumerResult } from "@d2/messaging";
 import type { ILogger } from "@d2/logging";
@@ -16,20 +17,22 @@ export interface NotificationConsumerDeps {
 }
 
 /**
- * Incoming notification message shape from @d2/comms-client.
- * Matches the NotifyInput published by the Notify handler.
+ * Zod schema for validating incoming notification messages.
+ * Matches the NotifyInput shape published by @d2/comms-client.
  */
-interface NotificationMessage {
-  recipientContactId: string;
-  title: string;
-  content: string;
-  plaintext: string;
-  sensitive?: boolean;
-  urgency?: "normal" | "urgent";
-  correlationId: string;
-  senderService: string;
-  metadata?: Record<string, unknown>;
-}
+const notificationMessageSchema = z.object({
+  recipientContactId: z.string().min(1).max(64),
+  title: z.string().min(1).max(500),
+  content: z.string().min(1).max(50_000),
+  plaintext: z.string().min(1).max(50_000),
+  sensitive: z.boolean().optional(),
+  urgency: z.enum(["normal", "urgent"]).optional(),
+  correlationId: z.string().min(1).max(64),
+  senderService: z.string().min(1).max(100),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+type NotificationMessage = z.infer<typeof notificationMessageSchema>;
 
 /**
  * Creates a RabbitMQ consumer for notification requests with DLX-based retry.
@@ -51,18 +54,24 @@ export function createNotificationConsumer(deps: NotificationConsumerDeps) {
     {
       queue: COMMS_MESSAGING.NOTIFICATIONS_QUEUE,
       queueOptions: { durable: true },
-      exchanges: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, type: "fanout" }],
+      exchanges: [
+        {
+          exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE,
+          type: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE_TYPE,
+        },
+      ],
       queueBindings: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" }],
     },
     async (msg: IncomingMessage<unknown>) => {
-      const body = msg.body as NotificationMessage;
-
-      if (!body.recipientContactId || !body.title || !body.correlationId) {
-        logger.warn("Invalid notification message — missing required fields, dropping", {
-          body,
+      const parseResult = notificationMessageSchema.safeParse(msg.body);
+      if (!parseResult.success) {
+        logger.warn("Invalid notification message — validation failed, dropping", {
+          errors: parseResult.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
+          body: msg.body,
         });
         return ConsumerResult.ACK;
       }
+      const body = parseResult.data;
 
       const scope = createScope(provider);
       try {

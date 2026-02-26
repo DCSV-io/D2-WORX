@@ -9,6 +9,7 @@ namespace D2.Geo.Tests.Integration.App;
 
 using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
 using D2.Geo.App.Interfaces.Repository.Handlers.R;
+using D2.Geo.Client;
 using D2.Geo.Client.CQRS.Handlers.C;
 using D2.Geo.Client.CQRS.Handlers.Q;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
@@ -20,7 +21,6 @@ using D2.Shared.DistributedCache.Redis;
 using D2.Shared.Handler;
 using D2.Shared.InMemoryCache.Default;
 using D2.Shared.Result;
-using D2.Shared.Utilities.Constants;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
@@ -150,7 +150,7 @@ public class GetTests : IAsyncLifetime
 
         // Clear Redis and reset updater mock to verify memory hit
         var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
-        await redis.GetDatabase().KeyDeleteAsync(Constants.DIST_CACHE_KEY_GEO_REF_DATA);
+        await redis.GetDatabase().KeyDeleteAsync(CacheKeys.REFDATA);
         _updaterMock.Invocations.Clear();
 
         // Act - second call should hit memory

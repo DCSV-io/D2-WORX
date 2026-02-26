@@ -88,11 +88,7 @@ export type {
 } from "./u/update-channel-preference-record.js";
 
 // --- Query (Q) ---
-export type {
-  PingDbInput,
-  PingDbOutput,
-  IPingDbHandler,
-} from "./q/ping-db.js";
+export type { PingDbInput, PingDbOutput, IPingDbHandler } from "./q/ping-db.js";
 
 // ---------------------------------------------------------------------------
 // Bundle types — one per aggregate, used by app-layer factory functions

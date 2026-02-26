@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
+import { AUTH_CACHE_KEYS } from "../../../../cache-keys.js";
 import type {
   IFindSignInEventsByUserIdHandler,
   ICountSignInEventsByUserIdHandler,
@@ -71,7 +72,7 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
 
     // Try cache hit
     if (this.cache) {
-      const cacheKey = `sign-in-events:${input.userId}:${limit}:${offset}`;
+      const cacheKey = AUTH_CACHE_KEYS.signInEvents(input.userId, limit, offset);
       const cacheResult = await this.cache.get.handleAsync({ key: cacheKey });
 
       if (cacheResult.success && cacheResult.data?.value) {
@@ -109,7 +110,7 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
       const globalLatestDate = latestDateResult.success
         ? (latestDateResult.data?.date?.toISOString() ?? null)
         : null;
-      const cacheKey = `sign-in-events:${input.userId}:${limit}:${offset}`;
+      const cacheKey = AUTH_CACHE_KEYS.signInEvents(input.userId, limit, offset);
       // Fire-and-forget — don't block response on cache write
       this.cache.set
         .handleAsync({

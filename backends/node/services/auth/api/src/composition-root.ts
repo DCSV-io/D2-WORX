@@ -5,11 +5,16 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { D2Result, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
 import { ServiceCollection } from "@d2/di";
 import { createLogger } from "@d2/logging";
 import { ILoggerKey } from "@d2/logging";
-import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
+import {
+  HandlerContext,
+  IHandlerContextKey,
+  IRequestContextKey,
+  createServiceScope,
+} from "@d2/handler";
 import * as CacheRedis from "@d2/cache-redis";
 import { PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
 import * as CacheMemory from "@d2/cache-memory";
@@ -261,22 +266,7 @@ export async function createApp(
    * Creates a temporary DI scope for BetterAuth callback handlers.
    * These fire during request processing but outside the scope middleware.
    */
-  function createCallbackScope() {
-    const scope = provider.createScope();
-    const requestContext = {
-      traceId: crypto.randomUUID(),
-      isAuthenticated: false,
-      isAgentStaff: false,
-      isAgentAdmin: false,
-      isTargetingStaff: false,
-      isTargetingAdmin: false,
-      isOrgEmulating: false,
-      isUserImpersonating: false,
-    };
-    scope.setInstance(IRequestContextKey, requestContext);
-    scope.setInstance(IHandlerContextKey, new HandlerContext(requestContext, logger));
-    return scope;
-  }
+  const createCallbackScope = () => createServiceScope(provider, logger);
 
   // User contact handler for sign-up → Geo contact creation.
   const geoConfigured = !!(config.geoAddress && config.geoApiKey);
@@ -309,7 +299,9 @@ export async function createApp(
         const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${input.userId}`;
         const contactId = result.data?.data.get(lookupKey)?.[0]?.id;
         if (!contactId) {
-          logger.error(`No Geo contact found for user ${input.userId} — cannot send verification email`);
+          logger.error(
+            `No Geo contact found for user ${input.userId} — cannot send verification email`,
+          );
           return;
         }
 
@@ -337,7 +329,9 @@ export async function createApp(
         const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${input.userId}`;
         const contactId = result.data?.data.get(lookupKey)?.[0]?.id;
         if (!contactId) {
-          logger.error(`No Geo contact found for user ${input.userId} — cannot send password reset`);
+          logger.error(
+            `No Geo contact found for user ${input.userId} — cannot send password reset`,
+          );
           return;
         }
 
@@ -404,9 +398,8 @@ export async function createApp(
       maxSize: 256 * 1024, // 256 KB — auth payloads are small JSON
       onError: (c) =>
         c.json(
-          D2Result.fail({
+          D2Result.payloadTooLarge({
             messages: ["Request body too large."],
-            statusCode: HttpStatusCode.BadRequest,
           }),
           413 as ContentfulStatusCode,
         ),

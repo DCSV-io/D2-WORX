@@ -4,6 +4,7 @@ import { type DistributedCache, RateLimit } from "@d2/interfaces";
 import { isLocalhost } from "@d2/request-enrichment";
 import { z } from "zod";
 import { DEFAULT_RATE_LIMIT_OPTIONS, type RateLimitOptions } from "../rate-limit-options.js";
+import { RATELIMIT_CACHE_KEYS } from "../cache-keys.js";
 
 type CheckInput = RateLimit.CheckInput;
 type CheckOutput = RateLimit.CheckOutput;
@@ -149,7 +150,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
     threshold: number,
   ): Promise<CheckOutput> {
     const dimensionKey = dimension.toLowerCase();
-    const blockedKey = `blocked:${dimensionKey}:${value}`;
+    const blockedKey = RATELIMIT_CACHE_KEYS.blocked(dimensionKey, value);
 
     try {
       // Compute window keys upfront so all Redis operations can fire concurrently.
@@ -159,8 +160,8 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
       const previousTime = new Date(now.getTime() - this.options.windowMs);
       const previousWindowId = Check.getWindowId(previousTime);
 
-      const currentKey = `ratelimit:${dimensionKey}:${value}:${currentWindowId}`;
-      const previousKey = `ratelimit:${dimensionKey}:${value}:${previousWindowId}`;
+      const currentKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, currentWindowId);
+      const previousKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, previousWindowId);
       const counterTtlMs = this.options.windowMs * 2;
 
       // Fire all three Redis operations concurrently: blocked check, previous

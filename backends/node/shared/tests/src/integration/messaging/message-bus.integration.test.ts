@@ -316,10 +316,7 @@ describe("MessageBus integration (RabbitMQ)", () => {
 
       // Publish directly to the tier queue (no consumer — TTL will expire and DLX)
       const publisher = topoBus.createPublisher();
-      await publisher.send(
-        { exchange: "", routingKey: "test-dlx-tier" },
-        { ping: "dlx-test" },
-      );
+      await publisher.send({ exchange: "", routingKey: "test-dlx-tier" }, { ping: "dlx-test" });
 
       // Wait for TTL expiry + DLX routing (1s TTL + buffer)
       const result = await withTimeout(received, 10_000);

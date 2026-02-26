@@ -7,10 +7,10 @@
 namespace D2.Gateways.REST.Auth;
 
 using System.Net;
-using System.Text.Json;
 using D2.Shared.Handler.Auth;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Serialization;
 
 /// <summary>
 /// Middleware that validates the JWT <c>fp</c> (fingerprint) claim against the current
@@ -31,11 +31,6 @@ using D2.Shared.Result;
 /// </remarks>
 public class JwtFingerprintMiddleware
 {
-    private static readonly JsonSerializerOptions sr_jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     private readonly RequestDelegate r_next;
     private readonly ILogger<JwtFingerprintMiddleware> r_logger;
 
@@ -95,7 +90,7 @@ public class JwtFingerprintMiddleware
                 "MISSING_FINGERPRINT",
                 context.TraceIdentifier);
 
-            await context.Response.WriteAsJsonAsync(missingFpResponse, sr_jsonOptions, context.RequestAborted);
+            await context.Response.WriteAsJsonAsync(missingFpResponse, SerializerOptions.SR_Web, context.RequestAborted);
             return;
         }
 
@@ -125,7 +120,7 @@ public class JwtFingerprintMiddleware
 
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
         context.Response.ContentType = "application/json";
-        await context.Response.WriteAsJsonAsync(response, sr_jsonOptions, context.RequestAborted);
+        await context.Response.WriteAsJsonAsync(response, SerializerOptions.SR_Web, context.RequestAborted);
     }
 
     /// <summary>

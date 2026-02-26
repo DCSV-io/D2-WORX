@@ -79,11 +79,11 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
         foreach (var contact in input.Contacts)
         {
             var removeR = await r_cacheRemove.HandleAsync(
-                new($"contact-ext:{contact.ContextKey}:{contact.RelatedEntityId}"), ct);
+                new(CacheKeys.ContactsByExtKey(contact.ContextKey, Guid.Parse(contact.RelatedEntityId))), ct);
             if (removeR.Failed)
             {
                 Context.Logger.LogWarning(
-                    "Failed to evict contact-ext:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
+                    "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
                     contact.ContextKey,
                     contact.RelatedEntityId,
                     TraceId);

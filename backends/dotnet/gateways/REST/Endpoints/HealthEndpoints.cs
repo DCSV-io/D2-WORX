@@ -14,6 +14,7 @@ using D2.Services.Protos.Common.V1;
 using D2.Services.Protos.Comms.V1;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
+using D2.Shared.Utilities.Serialization;
 using Grpc.Core;
 using Serilog;
 
@@ -99,11 +100,7 @@ public static class HealthEndpoints
         }
     }
 
-    private static readonly JsonSerializerOptions sr_jsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
+    private static readonly JsonSerializerOptions sr_jsonOptions = SerializerOptions.SR_WebIgnoreNull;
 
     /// <summary>
     /// Handles the GET /api/health endpoint.

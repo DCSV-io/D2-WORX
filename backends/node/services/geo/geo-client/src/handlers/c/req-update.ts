@@ -2,6 +2,8 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { handleGrpcCall } from "@d2/result-extensions";
 import type { GeoServiceClient, RequestReferenceDataUpdateResponse } from "@d2/protos";
+import { Metadata } from "@grpc/grpc-js";
+import type { GeoClientOptions } from "../../geo-client-options.js";
 import type { Commands } from "../../interfaces/index.js";
 
 type Input = Commands.ReqUpdateInput;
@@ -13,20 +15,27 @@ type Output = Commands.ReqUpdateOutput;
  */
 export class ReqUpdate extends BaseHandler<Input, Output> implements Commands.IReqUpdateHandler {
   private readonly geoClient: GeoServiceClient;
+  private readonly options: GeoClientOptions;
 
-  constructor(geoClient: GeoServiceClient, context: IHandlerContext) {
+  constructor(geoClient: GeoServiceClient, options: GeoClientOptions, context: IHandlerContext) {
     super(context);
     this.geoClient = geoClient;
+    this.options = options;
   }
 
   protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const r = await handleGrpcCall(
       () =>
         new Promise<RequestReferenceDataUpdateResponse>((resolve, reject) => {
-          this.geoClient.requestReferenceDataUpdate({}, (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          });
+          this.geoClient.requestReferenceDataUpdate(
+            {},
+            new Metadata(),
+            { deadline: Date.now() + this.options.grpcTimeoutMs },
+            (err, res) => {
+              if (err) reject(err);
+              else resolve(res);
+            },
+          );
         }),
       (res) => res.result!,
       (res) => ({ version: res.data?.version }),

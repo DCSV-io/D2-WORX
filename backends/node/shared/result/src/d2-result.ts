@@ -190,6 +190,31 @@ export class D2Result<TData = void> {
     });
   }
 
+  /** Create a 413 Payload Too Large result. */
+  static payloadTooLarge<T = void>(options?: {
+    messages?: string[];
+    traceId?: string;
+  }): D2Result<T> {
+    return new D2Result<T>({
+      success: false,
+      messages: options?.messages ?? ["Request payload too large."],
+      statusCode: HttpStatusCode.RequestEntityTooLarge,
+      errorCode: ErrorCodes.PAYLOAD_TOO_LARGE,
+      traceId: options?.traceId,
+    });
+  }
+
+  /** Create a cancelled result (client or server cancellation). */
+  static cancelled<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
+    return new D2Result<T>({
+      success: false,
+      messages: options?.messages ?? ["The operation was cancelled."],
+      statusCode: HttpStatusCode.BadRequest,
+      errorCode: ErrorCodes.CANCELLED,
+      traceId: options?.traceId,
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Partial success
   // ---------------------------------------------------------------------------

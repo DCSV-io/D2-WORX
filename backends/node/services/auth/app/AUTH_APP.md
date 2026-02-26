@@ -8,16 +8,16 @@ Defines the CQRS handler layer between the API (routes) and infrastructure (repo
 
 ## Design Decisions
 
-| Decision                            | Rationale                                                                        |
-| ----------------------------------- | -------------------------------------------------------------------------------- |
-| Interfaces defined here, not infra  | Prevents circular dependency (infra cannot import from app)                      |
-| Repository handler bundles          | Group related repo handlers into typed objects for factory convenience            |
-| Handler-per-operation               | One class per CQRS operation — matches .NET Geo pattern and `BaseHandler` model  |
-| Zod validation at handler boundary  | `this.validateInput(schema, input)` before any persistence or external calls     |
-| Geo contact ops via geo-client      | Org contacts are junctions — actual contact data lives in Geo service (gRPC)     |
-| Fail-open throttle handlers         | All store errors swallowed — sign-in availability > throttle accuracy            |
-| ISignInThrottleStore interface      | Non-handler contract (stateful Redis store) — structurally implemented in infra  |
-| DI registration via `addAuthApp()`  | Mirrors .NET `services.AddAuthApp()` — all handlers registered as transient      |
+| Decision                           | Rationale                                                                        |
+| ---------------------------------- | -------------------------------------------------------------------------------- |
+| Interfaces defined here, not infra | Prevents circular dependency (infra cannot import from app)                      |
+| Repository handler bundles         | Group related repo handlers into typed objects for factory convenience           |
+| Handler-per-operation              | One class per CQRS operation — matches .NET Geo pattern and `BaseHandler` model  |
+| Zod validation at handler boundary | `this.validateInput(schema, input)` before any persistence or external calls     |
+| Geo contact ops via geo-client     | Org contacts are junctions — actual contact data lives in Geo service (gRPC)     |
+| Fail-open throttle handlers        | All store errors swallowed — sign-in availability > throttle accuracy            |
+| ISignInThrottleStore interface     | Non-handler contract (stateful Redis store) — structurally implemented in infra  |
+| DI registration via `addAuthApp()` | Mirrors .NET `services.AddAuthApp()` — all handlers registered as transient      |
 | Service keys alongside interfaces  | Keys live in app (with interfaces), infra re-exports for composition root access |
 
 ## Package Structure
@@ -73,35 +73,35 @@ src/
 
 ### Command Handlers (8)
 
-| Handler                  | Input                          | Output                         | Description                                                         |
-| ------------------------ | ------------------------------ | ------------------------------ | ------------------------------------------------------------------- |
-| `RecordSignInEvent`      | userId, successful, IP, UA     | `{ event }`                    | Creates immutable audit record via domain factory + repo            |
-| `RecordSignInOutcome`    | identifierHash, identityHash   | `{ recorded }`                 | Records throttle state: success marks known-good, failure increments |
-| `CreateEmulationConsent` | userId, grantedToOrgId, expiry | `{ consent }`                  | Validates org type, checks org exists, prevents duplicates          |
-| `RevokeEmulationConsent` | consentId, userId              | `{ consent }`                  | Ownership check + active check before revoking                      |
-| `CreateOrgContact`       | orgId, label, contact details  | `{ contact, geoContact }`     | Creates junction then Geo contact; rollback on Geo failure          |
-| `UpdateOrgContactHandler`| id, orgId, updates             | `{ contact, geoContact? }`    | Metadata-only or contact replacement via UpdateContactsByExtKeys    |
-| `DeleteOrgContact`       | id, orgId                      | `{}`                           | IDOR check, best-effort Geo delete, then junction delete            |
-| `CreateUserContact`      | userId, email, name            | `{ contact }`                  | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast      |
+| Handler                   | Input                          | Output                     | Description                                                          |
+| ------------------------- | ------------------------------ | -------------------------- | -------------------------------------------------------------------- |
+| `RecordSignInEvent`       | userId, successful, IP, UA     | `{ event }`                | Creates immutable audit record via domain factory + repo             |
+| `RecordSignInOutcome`     | identifierHash, identityHash   | `{ recorded }`             | Records throttle state: success marks known-good, failure increments |
+| `CreateEmulationConsent`  | userId, grantedToOrgId, expiry | `{ consent }`              | Validates org type, checks org exists, prevents duplicates           |
+| `RevokeEmulationConsent`  | consentId, userId              | `{ consent }`              | Ownership check + active check before revoking                       |
+| `CreateOrgContact`        | orgId, label, contact details  | `{ contact, geoContact }`  | Creates junction then Geo contact; rollback on Geo failure           |
+| `UpdateOrgContactHandler` | id, orgId, updates             | `{ contact, geoContact? }` | Metadata-only or contact replacement via UpdateContactsByExtKeys     |
+| `DeleteOrgContact`        | id, orgId                      | `{}`                       | IDOR check, best-effort Geo delete, then junction delete             |
+| `CreateUserContact`       | userId, email, name            | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast       |
 
 ### Query Handlers (4)
 
-| Handler              | Input                | Output              | Description                                                        |
-| -------------------- | -------------------- | ------------------- | ------------------------------------------------------------------ |
-| `GetSignInEvents`    | userId, limit, offset| `{ events, total }` | Paginated with local cache + staleness check (append-only data)    |
-| `GetActiveConsents`  | userId, limit, offset| `{ consents }`      | Active (non-revoked, non-expired) emulation consents               |
-| `GetOrgContacts`     | orgId, limit, offset | `{ contacts[] }`    | Junction records hydrated with Geo contact data via ext-key lookup |
-| `CheckSignInThrottle`| identifierHash, etc. | `{ blocked, retry?}`| Optimized Redis round-trips: 0 on local cache hit, 1 otherwise    |
+| Handler               | Input                 | Output               | Description                                                        |
+| --------------------- | --------------------- | -------------------- | ------------------------------------------------------------------ |
+| `GetSignInEvents`     | userId, limit, offset | `{ events, total }`  | Paginated with local cache + staleness check (append-only data)    |
+| `GetActiveConsents`   | userId, limit, offset | `{ consents }`       | Active (non-revoked, non-expired) emulation consents               |
+| `GetOrgContacts`      | orgId, limit, offset  | `{ contacts[] }`     | Junction records hydrated with Geo contact data via ext-key lookup |
+| `CheckSignInThrottle` | identifierHash, etc.  | `{ blocked, retry?}` | Optimized Redis round-trips: 0 on local cache hit, 1 otherwise     |
 
 ## Repository Handler Interfaces
 
 Defined as `IHandler<TInput, TOutput>` interfaces, grouped into aggregate bundles:
 
-| Bundle                         | Handlers | Operations                                               |
-| ------------------------------ | -------- | -------------------------------------------------------- |
-| `SignInEventRepoHandlers`      | 4        | create, findByUserId, countByUserId, getLatestEventDate  |
+| Bundle                         | Handlers | Operations                                                     |
+| ------------------------------ | -------- | -------------------------------------------------------------- |
+| `SignInEventRepoHandlers`      | 4        | create, findByUserId, countByUserId, getLatestEventDate        |
 | `EmulationConsentRepoHandlers` | 5        | create, findById, findActiveByUserId, findByUserAndOrg, revoke |
-| `OrgContactRepoHandlers`      | 5        | create, findById, findByOrgId, update, delete            |
+| `OrgContactRepoHandlers`       | 5        | create, findById, findByOrgId, update, delete                  |
 
 Plus `ISignInThrottleStore` (non-handler interface with 6 methods for Redis key operations).
 
@@ -124,27 +124,27 @@ Registers all 12 CQRS handlers as **transient** (new instance per resolve). Each
 
 Legacy factory functions (pre-DI) are still exported for backward compatibility and tests:
 
-| Factory                           | Returns                                       |
-| --------------------------------- | --------------------------------------------- |
-| `createSignInEventHandlers()`     | `{ record, getByUser }`                       |
-| `createEmulationConsentHandlers()`| `{ create, revoke, getActive }`               |
-| `createOrgContactHandlers()`      | `{ create, update, delete, getByOrg }`        |
-| `createSignInThrottleHandlers()`  | `{ check, record }`                           |
-| `createUserContactHandler()`      | `CreateUserContact` instance                  |
+| Factory                            | Returns                                |
+| ---------------------------------- | -------------------------------------- |
+| `createSignInEventHandlers()`      | `{ record, getByUser }`                |
+| `createEmulationConsentHandlers()` | `{ create, revoke, getActive }`        |
+| `createOrgContactHandlers()`       | `{ create, update, delete, getByOrg }` |
+| `createSignInThrottleHandlers()`   | `{ check, record }`                    |
+| `createUserContactHandler()`       | `CreateUserContact` instance           |
 
 ## Dependencies
 
-| Package            | Purpose                                          |
-| ------------------ | ------------------------------------------------ |
-| `@d2/auth-domain`  | Domain entities, rules, constants, enums         |
-| `@d2/di`           | `createServiceKey`, `ServiceCollection`          |
-| `@d2/geo-client`   | Geo contact handler types, `contactInputSchema`  |
-| `@d2/handler`      | `BaseHandler`, `IHandlerContext`, Zod helpers    |
-| `@d2/interfaces`   | `InMemoryCache` handler types for caching        |
-| `@d2/protos`       | `ContactDTO`, `ContactToCreateDTO` proto types   |
-| `@d2/result`       | `D2Result`, `HttpStatusCode`, `ErrorCodes`       |
-| `@d2/utilities`    | `generateUuidV7`                                 |
-| `zod`              | Input validation schemas                         |
+| Package           | Purpose                                         |
+| ----------------- | ----------------------------------------------- |
+| `@d2/auth-domain` | Domain entities, rules, constants, enums        |
+| `@d2/di`          | `createServiceKey`, `ServiceCollection`         |
+| `@d2/geo-client`  | Geo contact handler types, `contactInputSchema` |
+| `@d2/handler`     | `BaseHandler`, `IHandlerContext`, Zod helpers   |
+| `@d2/interfaces`  | `InMemoryCache` handler types for caching       |
+| `@d2/protos`      | `ContactDTO`, `ContactToCreateDTO` proto types  |
+| `@d2/result`      | `D2Result`, `HttpStatusCode`, `ErrorCodes`      |
+| `@d2/utilities`   | `generateUuidV7`                                |
+| `zod`             | Input validation schemas                        |
 
 ## Tests
 

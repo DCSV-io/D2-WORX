@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Text.Json.Serialization;
 using D2.Gateways.REST.Auth;
 using D2.Gateways.REST.Endpoints;
 using D2.Geo.Client;
@@ -28,6 +29,12 @@ builder.AddServiceDefaults();
 builder.Services.AddHandlerContext();
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
+
+// Configure global JSON serialization: camelCase + enums as strings.
+builder.Services.ConfigureHttpJsonOptions(opts =>
+{
+    opts.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Register gRPC clients.
 builder.Services.AddGeoGrpcClient(builder.Configuration);

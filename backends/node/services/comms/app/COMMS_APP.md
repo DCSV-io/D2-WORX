@@ -11,15 +11,15 @@ The app layer sits between the domain (`@d2/comms-domain`) and infrastructure (`
 
 ## Design Decisions
 
-| Decision                            | Rationale                                                                          |
-| ----------------------------------- | ---------------------------------------------------------------------------------- |
-| Repository handler bundles          | Typed groupings (MessageRepoHandlers, etc.) reduce parameter lists in factories    |
-| Provider interfaces as IHandler     | Email/SMS providers extend BaseHandler -- same OTel tracing as all handlers        |
-| Markdown rendering in Deliver       | `marked` + `isomorphic-dompurify` for XSS-safe markdown-to-HTML in email bodies    |
-| Idempotency via correlationId       | Deliver checks for existing DeliveryRequest before processing, returns cached data |
-| Optional in-memory cache            | GetChannelPreference/SetChannelPreference accept optional cache for warm reads     |
-| ServiceKeys in app, not infra       | Infra keys live in app (interfaces defined here); prevents circular deps           |
-| DI via addCommsApp(services)        | All CQRS handlers registered as transient -- new instance per resolve              |
+| Decision                        | Rationale                                                                          |
+| ------------------------------- | ---------------------------------------------------------------------------------- |
+| Repository handler bundles      | Typed groupings (MessageRepoHandlers, etc.) reduce parameter lists in factories    |
+| Provider interfaces as IHandler | Email/SMS providers extend BaseHandler -- same OTel tracing as all handlers        |
+| Markdown rendering in Deliver   | `marked` + `isomorphic-dompurify` for XSS-safe markdown-to-HTML in email bodies    |
+| Idempotency via correlationId   | Deliver checks for existing DeliveryRequest before processing, returns cached data |
+| Optional in-memory cache        | GetChannelPreference/SetChannelPreference accept optional cache for warm reads     |
+| ServiceKeys in app, not infra   | Infra keys live in app (interfaces defined here); prevents circular deps           |
+| DI via addCommsApp(services)    | All CQRS handlers registered as transient -- new instance per resolve              |
 
 ## Package Structure
 
@@ -69,12 +69,12 @@ src/
 
 ## CQRS Handlers
 
-| Handler              | Category | Dir  | Description                                                               |
-| -------------------- | -------- | ---- | ------------------------------------------------------------------------- |
+| Handler              | Category | Dir  | Description                                                                                                                                     |
+| -------------------- | -------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deliver              | Complex  | `x/` | Full delivery orchestrator: create Message + Request, resolve recipient, pick channels, render markdown, dispatch via providers, handle retries |
-| RecipientResolver    | Complex  | `x/` | Resolves contactId to email/phone via `GetContactsByIds` (geo-client)     |
-| SetChannelPreference | Command  | `c/` | Upsert per-contact channel preferences (email/sms enabled flags)          |
-| GetChannelPreference | Query    | `q/` | Read channel preferences with optional in-memory cache (15min TTL)        |
+| RecipientResolver    | Complex  | `x/` | Resolves contactId to email/phone via `GetContactsByIds` (geo-client)                                                                           |
+| SetChannelPreference | Command  | `c/` | Upsert per-contact channel preferences (email/sms enabled flags)                                                                                |
+| GetChannelPreference | Query    | `q/` | Read channel preferences with optional in-memory cache (15min TTL)                                                                              |
 
 ### Deliver Handler Flow
 
@@ -92,6 +92,7 @@ src/
 ### Markdown Rendering
 
 Email content goes through a two-step pipeline:
+
 1. `marked.parse()` -- full CommonMark markdown to raw HTML
 2. `DOMPurify.sanitize()` -- XSS protection (strips script tags, event handlers, etc.)
 
@@ -99,21 +100,21 @@ The sanitized HTML is then interpolated into an email wrapper template with `{{t
 
 ## Provider Interfaces
 
-| Interface       | Input                                              | Output                     |
-| --------------- | -------------------------------------------------- | -------------------------- |
-| IEmailProvider  | `{ to, subject, html, plainText, replyTo? }`      | `{ providerMessageId }`   |
-| ISmsProvider    | `{ to, body }`                                     | `{ providerMessageId }`   |
+| Interface      | Input                                        | Output                  |
+| -------------- | -------------------------------------------- | ----------------------- |
+| IEmailProvider | `{ to, subject, html, plainText, replyTo? }` | `{ providerMessageId }` |
+| ISmsProvider   | `{ to, body }`                               | `{ providerMessageId }` |
 
 Both extend `IHandler<TInput, TOutput>` -- they ARE handlers, with full OTel span tracing and redaction support.
 
 ## Repository Handler Bundles
 
-| Bundle                         | Handlers                                      |
-| ------------------------------ | --------------------------------------------- |
-| `MessageRepoHandlers`          | create, findById                              |
-| `DeliveryRequestRepoHandlers`  | create, findById, findByCorrelationId, markProcessed |
-| `DeliveryAttemptRepoHandlers`  | create, findByRequestId, updateStatus         |
-| `ChannelPreferenceRepoHandlers`| create, findByContactId, update               |
+| Bundle                          | Handlers                                             |
+| ------------------------------- | ---------------------------------------------------- |
+| `MessageRepoHandlers`           | create, findById                                     |
+| `DeliveryRequestRepoHandlers`   | create, findById, findByCorrelationId, markProcessed |
+| `DeliveryAttemptRepoHandlers`   | create, findByRequestId, updateStatus                |
+| `ChannelPreferenceRepoHandlers` | create, findByContactId, update                      |
 
 ## Service Keys (DI)
 
@@ -128,7 +129,7 @@ Both extend `IHandler<TInput, TOutput>` -- they ARE handlers, with full OTel spa
 ```ts
 import { addCommsApp } from "@d2/comms-app";
 
-addCommsApp(services);  // registers all 4 CQRS handlers as transient
+addCommsApp(services); // registers all 4 CQRS handlers as transient
 ```
 
 Requires infra keys to already be registered (called after `addCommsInfra`).
@@ -149,15 +150,15 @@ src/unit/app/
 
 ## Dependencies
 
-| Package                | Purpose                                       |
-| ---------------------- | --------------------------------------------- |
-| `@d2/comms-domain`     | Domain entities, enums, rules                 |
-| `@d2/di`               | ServiceKey, ServiceCollection for DI          |
+| Package                | Purpose                                                |
+| ---------------------- | ------------------------------------------------------ |
+| `@d2/comms-domain`     | Domain entities, enums, rules                          |
+| `@d2/di`               | ServiceKey, ServiceCollection for DI                   |
 | `@d2/geo-client`       | GetContactsByIds handler type for recipient resolution |
-| `@d2/handler`          | BaseHandler, IHandlerContext, zodGuid         |
-| `@d2/interfaces`       | InMemoryCache handler types for optional caching |
-| `@d2/result`           | D2Result return type                          |
-| `@d2/utilities`        | UUIDv7 generation                             |
-| `isomorphic-dompurify` | XSS-safe HTML sanitization for email bodies   |
-| `marked`               | Markdown to HTML rendering (CommonMark)       |
-| `zod`                  | Input validation schemas                      |
+| `@d2/handler`          | BaseHandler, IHandlerContext, zodGuid                  |
+| `@d2/interfaces`       | InMemoryCache handler types for optional caching       |
+| `@d2/result`           | D2Result return type                                   |
+| `@d2/utilities`        | UUIDv7 generation                                      |
+| `isomorphic-dompurify` | XSS-safe HTML sanitization for email bodies            |
+| `marked`               | Markdown to HTML rendering (CommonMark)                |
+| `zod`                  | Input validation schemas                               |

@@ -365,7 +365,7 @@ public class FindWhoIsHandlerTests
         // Assert - Verify cache key format
         r_cacheGetMock.Verify(
             x => x.HandleAsync(
-                It.Is<IRead.GetInput>(i => i.Key == "whois:1.2.3.4:CustomUA/1.0"),
+                It.Is<IRead.GetInput>(i => i.Key == "geo:whois:1.2.3.4:CustomUA/1.0"),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()),
             Times.Once);

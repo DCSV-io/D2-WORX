@@ -82,7 +82,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
 
         // First, try to get WhoIs from in-memory cache.
         var getFromCacheR = await r_memoryCacheGetMany.HandleAsync(
-            new(GetCacheKeys(input.HashIds)), ct);
+            new(input.HashIds.Select(id => CacheKeys.WhoIs(id)).ToList()), ct);
 
         // If that failed (for any reason other than "NOT or SOME found"), bubble up the failure.
         if (getFromCacheR.CheckFailure(out var getFromCache)
@@ -156,11 +156,6 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         }
     }
 
-    private static string GetCacheKey(string id) => $"{nameof(GetWhoIsByIds)}:{id}";
-
-    private static List<string> GetCacheKeys(IEnumerable<string> ids) =>
-        ids.Select(GetCacheKey).ToList();
-
     private static Location? GetLocation(string? hashId, Dictionary<string, Location> locations) =>
         hashId is not null && locations.TryGetValue(hashId, out var loc) ? loc : null;
 
@@ -171,7 +166,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
         var setInCacheR = await r_memoryCacheSetMany.HandleAsync(
             new(
                 fromDbDict.ToDictionary(
-                    kvp => GetCacheKey(kvp.Key),
+                    kvp => CacheKeys.WhoIs(kvp.Key),
                     kvp => kvp.Value),
                 r_options.WhoIsExpirationDuration),
             ct);

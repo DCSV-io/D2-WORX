@@ -32,11 +32,11 @@ function createTestContext(logger?: ILogger): IHandlerContext {
 describe("ContactsEvicted messaging handler", () => {
   it("should evict contacts by ID and ext-key from cache", async () => {
     const store = new MemoryCacheStore({ maxEntries: 100 });
-    store.set("contact:abc-111", { name: "Alice" });
-    store.set("contact-ext:auth_user:user-001", { name: "Alice ext" });
-    store.set("contact:abc-222", { name: "Bob" });
-    store.set("contact-ext:auth_org_contact:org-001", { name: "Bob ext" });
-    store.set("contact:abc-333", { name: "Charlie" });
+    store.set("geo:contact:abc-111", { name: "Alice" });
+    store.set("geo:contacts-by-extkey:auth_user:user-001", { name: "Alice ext" });
+    store.set("geo:contact:abc-222", { name: "Bob" });
+    store.set("geo:contacts-by-extkey:auth_org_contact:org-001", { name: "Bob ext" });
+    store.set("geo:contact:abc-333", { name: "Charlie" });
 
     const handler = new ContactsEvicted(store, createTestContext());
     const input: ContactsEvictedEvent = {
@@ -49,42 +49,40 @@ describe("ContactsEvicted messaging handler", () => {
     const result = await handler.handleAsync(input);
 
     expect(result).toBeSuccess();
-    expect(store.get("contact:abc-111")).toBeUndefined();
-    expect(store.get("contact-ext:auth_user:user-001")).toBeUndefined();
-    expect(store.get("contact:abc-222")).toBeUndefined();
-    expect(store.get("contact-ext:auth_org_contact:org-001")).toBeUndefined();
+    expect(store.get("geo:contact:abc-111")).toBeUndefined();
+    expect(store.get("geo:contacts-by-extkey:auth_user:user-001")).toBeUndefined();
+    expect(store.get("geo:contact:abc-222")).toBeUndefined();
+    expect(store.get("geo:contacts-by-extkey:auth_org_contact:org-001")).toBeUndefined();
     // Untouched entry remains
-    expect(store.get("contact:abc-333")).not.toBeUndefined();
+    expect(store.get("geo:contact:abc-333")).not.toBeUndefined();
   });
 
   it("should evict both cache keys for each contact entry", async () => {
     const store = new MemoryCacheStore({ maxEntries: 100 });
-    store.set("contact:abc-111", { name: "Alice" });
-    store.set("contact-ext:auth_user:user-001", { name: "Alice ext" });
-    store.set("contact:abc-999", { name: "Charlie" });
-    store.set("contact-ext:auth_user:user-999", { name: "Diana" });
+    store.set("geo:contact:abc-111", { name: "Alice" });
+    store.set("geo:contacts-by-extkey:auth_user:user-001", { name: "Alice ext" });
+    store.set("geo:contact:abc-999", { name: "Charlie" });
+    store.set("geo:contacts-by-extkey:auth_user:user-999", { name: "Diana" });
 
     const handler = new ContactsEvicted(store, createTestContext());
     const input: ContactsEvictedEvent = {
-      contacts: [
-        { contactId: "abc-111", contextKey: "auth_user", relatedEntityId: "user-001" },
-      ],
+      contacts: [{ contactId: "abc-111", contextKey: "auth_user", relatedEntityId: "user-001" }],
     };
 
     const result = await handler.handleAsync(input);
 
     expect(result).toBeSuccess();
-    expect(store.get("contact:abc-111")).toBeUndefined();
-    expect(store.get("contact-ext:auth_user:user-001")).toBeUndefined();
+    expect(store.get("geo:contact:abc-111")).toBeUndefined();
+    expect(store.get("geo:contacts-by-extkey:auth_user:user-001")).toBeUndefined();
     // Untouched entries remain
-    expect(store.get("contact:abc-999")).not.toBeUndefined();
-    expect(store.get("contact-ext:auth_user:user-999")).not.toBeUndefined();
+    expect(store.get("geo:contact:abc-999")).not.toBeUndefined();
+    expect(store.get("geo:contacts-by-extkey:auth_user:user-999")).not.toBeUndefined();
     expect(store.size).toBe(2);
   });
 
   it("should succeed with empty contacts array", async () => {
     const store = new MemoryCacheStore({ maxEntries: 100 });
-    store.set("contact:abc-111", { name: "Alice" });
+    store.set("geo:contact:abc-111", { name: "Alice" });
 
     const handler = new ContactsEvicted(store, createTestContext());
     const input: ContactsEvictedEvent = {
@@ -95,14 +93,14 @@ describe("ContactsEvicted messaging handler", () => {
 
     expect(result).toBeSuccess();
     // Nothing should have been evicted
-    expect(store.get("contact:abc-111")).not.toBeUndefined();
+    expect(store.get("geo:contact:abc-111")).not.toBeUndefined();
     expect(store.size).toBe(1);
   });
 
   it("should log eviction summary", async () => {
     const store = new MemoryCacheStore({ maxEntries: 100 });
-    store.set("contact:abc-111", { name: "Alice" });
-    store.set("contact-ext:auth_user:user-001", { name: "Bob" });
+    store.set("geo:contact:abc-111", { name: "Alice" });
+    store.set("geo:contacts-by-extkey:auth_user:user-001", { name: "Bob" });
 
     const logger = createMockLogger();
     const handler = new ContactsEvicted(store, createTestContext(logger));
@@ -115,8 +113,6 @@ describe("ContactsEvicted messaging handler", () => {
 
     await handler.handleAsync(input);
 
-    expect(logger.info).toHaveBeenCalledWith(
-      expect.stringContaining("2 contact(s)"),
-    );
+    expect(logger.info).toHaveBeenCalledWith(expect.stringContaining("2 contact(s)"));
   });
 });

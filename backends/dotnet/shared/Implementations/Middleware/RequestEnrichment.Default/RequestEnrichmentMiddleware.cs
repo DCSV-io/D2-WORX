@@ -67,18 +67,24 @@ public class RequestEnrichmentMiddleware
         IComplex.IFindWhoIsHandler whoIsHandler)
     {
         // 1. Resolve client IP (only trusting configured proxy headers).
-        var clientIp = IpResolver.Resolve(context, r_options.TrustedProxyHeaders);
+        var clientIp = IpResolver.Resolve(context, r_options.TrustedProxyHeaders, r_options.MaxForwardedForLength);
 
         // 2. Compute server fingerprint (for logging).
         var serverFingerprint = FingerprintBuilder.Build(context);
 
-        // 3. Read client fingerprint header (for rate limiting).
+        // 3. Read client fingerprint header (for rate limiting). Truncate oversized values.
         string? clientFingerprint = null;
         if (context.Request.Headers.TryGetValue(
                 r_options.ClientFingerprintHeader,
                 out var fingerprintHeader))
         {
-            clientFingerprint = fingerprintHeader.FirstOrDefault();
+            var fp = fingerprintHeader.FirstOrDefault();
+            if (fp is not null && fp.Length > r_options.MaxFingerprintLength)
+            {
+                fp = fp[..r_options.MaxFingerprintLength];
+            }
+
+            clientFingerprint = fp;
         }
 
         // 4. Build initial request info (without WhoIs data).

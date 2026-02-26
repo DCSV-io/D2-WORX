@@ -2,6 +2,9 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { GeoServiceClient, GetContactsResponse, ContactDTO } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { Metadata } from "@grpc/grpc-js";
+import type { GeoClientOptions } from "../../geo-client-options.js";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Queries } from "../../interfaces/index.js";
 
 type Input = Queries.GetContactsByIdsInput;
@@ -26,11 +29,18 @@ export class GetContactsByIds
 
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
+  private readonly options: GeoClientOptions;
 
-  constructor(store: MemoryCacheStore, geoClient: GeoServiceClient, context: IHandlerContext) {
+  constructor(
+    store: MemoryCacheStore,
+    geoClient: GeoServiceClient,
+    options: GeoClientOptions,
+    context: IHandlerContext,
+  ) {
     super(context);
     this.store = store;
     this.geoClient = geoClient;
+    this.options = options;
   }
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
@@ -43,7 +53,7 @@ export class GetContactsByIds
 
     // Check cache first
     for (const id of input.ids) {
-      const cacheKey = `contact:${id}`;
+      const cacheKey = GEO_CACHE_KEYS.contact(id);
       const cached = this.store.get<ContactDTO>(cacheKey);
       if (cached !== undefined) {
         result.set(id, cached);
@@ -61,10 +71,15 @@ export class GetContactsByIds
     let response: GetContactsResponse;
     try {
       response = await new Promise<GetContactsResponse>((resolve, reject) => {
-        this.geoClient.getContacts({ ids: missingIds }, (err, res) => {
-          if (err) reject(err);
-          else resolve(res);
-        });
+        this.geoClient.getContacts(
+          { ids: missingIds },
+          new Metadata(),
+          { deadline: Date.now() + this.options.grpcTimeoutMs },
+          (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+          },
+        );
       });
     } catch {
       // gRPC failed — return whatever was cached with appropriate status
@@ -77,7 +92,7 @@ export class GetContactsByIds
     // Process data whenever present — server returns data even for SOME_FOUND
     if (response.data) {
       for (const [id, contact] of Object.entries(response.data)) {
-        const cacheKey = `contact:${id}`;
+        const cacheKey = GEO_CACHE_KEYS.contact(id);
         this.store.set(cacheKey, contact);
         result.set(id, contact);
       }

@@ -64,9 +64,16 @@ function parseRedisUrl(connectionString: string): string {
 // Aspire injects connection strings in .NET formats (ADO.NET for PG, StackExchange for Redis).
 // Parsers convert to URI format for Node.js clients, passing through URIs unchanged.
 const config = {
-  databaseUrl: parsePostgresUrl(process.env["ConnectionStrings__d2-services-auth"] ?? process.env.ConnectionStrings__d2_services_auth ?? ""),
-  redisUrl: parseRedisUrl(process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis ?? ""),
-  rabbitMqUrl: process.env["ConnectionStrings__d2-rabbitmq"] ?? process.env.ConnectionStrings__d2_rabbitmq,
+  databaseUrl: parsePostgresUrl(
+    process.env["ConnectionStrings__d2-services-auth"] ??
+      process.env.ConnectionStrings__d2_services_auth ??
+      "",
+  ),
+  redisUrl: parseRedisUrl(
+    process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis ?? "",
+  ),
+  rabbitMqUrl:
+    process.env["ConnectionStrings__d2-rabbitmq"] ?? process.env.ConnectionStrings__d2_rabbitmq,
   baseUrl: process.env.AUTH_BASE_URL ?? "http://localhost:5100",
   corsOrigin: process.env.AUTH_CORS_ORIGIN ?? "http://localhost:5173",
   jwtIssuer: process.env.AUTH_JWT_ISSUER ?? "d2-worx",

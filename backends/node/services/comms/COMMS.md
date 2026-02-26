@@ -253,12 +253,12 @@ Plain text (`plainTextContent`) is used as-is for SMS and email plaintext fallba
 
 ## Channels & Providers
 
-| Channel | Protocol       | Provider               | Notes                                            |
-| ------- | -------------- | ---------------------- | ------------------------------------------------ |
-| Email   | HTTP API       | **Resend**             | Markdown -> HTML via marked + DOMPurify          |
-| SMS     | HTTP API       | **Twilio**             | Plain text content, no HTML                      |
+| Channel | Protocol        | Provider               | Notes                                            |
+| ------- | --------------- | ---------------------- | ------------------------------------------------ |
+| Email   | HTTP API        | **Resend**             | Markdown -> HTML via marked + DOMPurify          |
+| SMS     | HTTP API        | **Twilio**             | Plain text content, no HTML                      |
 | Push    | gRPC -> SignalR | SignalR gateway (.NET) | Title + body, delivered to connected clients     |
-| In-App  | DB + Push      | Local PG + SignalR     | Stored in `notification` table, pushed if online |
+| In-App  | DB + Push       | Local PG + SignalR     | Stored in `notification` table, pushed if online |
 
 ### SignalR Gateway
 
@@ -294,12 +294,12 @@ Group join/leave is handled client-side -- when a user opens a thread, their Sig
 
 ### Exchanges
 
-| Exchange                   | Type   | Purpose                                           |
-| -------------------------- | ------ | ------------------------------------------------- |
-| `comms.notifications`      | fanout | Inbound notification requests from any service    |
-| `comms.retry.requeue`      | --     | Routes expired tier-queue messages back to main   |
-| `comms.retry.tier-{N}`     | --     | Tier delay queues (TTL-based retry scheduling)    |
-| `comms.outcome` (future)   | topic  | Delivery outcome callbacks (optional)             |
+| Exchange                 | Type   | Purpose                                         |
+| ------------------------ | ------ | ----------------------------------------------- |
+| `comms.notifications`    | fanout | Inbound notification requests from any service  |
+| `comms.retry.requeue`    | --     | Routes expired tier-queue messages back to main |
+| `comms.retry.tier-{N}`   | --     | Tier delay queues (TTL-based retry scheduling)  |
+| `comms.outcome` (future) | topic  | Delivery outcome callbacks (optional)           |
 
 **Note:** Thread/conversational messaging does NOT use RabbitMQ. Thread operations go through gRPC (synchronous, user-initiated). RabbitMQ is only for transactional delivery (fire-and-forget side effects).
 
@@ -486,17 +486,17 @@ await notify.handleAsync({
 
 **Universal message shape (`NotifyInput`):**
 
-| Field                | Type                      | Required | Description                                              |
-| -------------------- | ------------------------- | -------- | -------------------------------------------------------- |
-| `recipientContactId` | `string` (UUID)           | Yes      | Geo contact ID -- the ONLY recipient identifier          |
-| `title`              | `string` (max 255)        | Yes      | Email subject, SMS prefix, push title                    |
-| `content`            | `string` (max 50,000)     | Yes      | Markdown body -- rendered to HTML for email              |
-| `plaintext`          | `string` (max 50,000)     | Yes      | Plain text -- SMS body, email fallback                   |
-| `sensitive`          | `boolean`                 | No       | Default `false`. When `true`, email only (secure)        |
-| `urgency`            | `"normal"` \| `"urgent"`  | No       | Default `"normal"`. `"urgent"` bypasses prefs            |
-| `correlationId`      | `string` (max 36)         | Yes      | Idempotency key for deduplication                        |
-| `senderService`      | `string` (max 50)         | Yes      | Source service identifier (e.g. `"auth"`, `"billing"`)   |
-| `metadata`           | `Record<string, unknown>` | No       | Arbitrary key-value pairs for future use                 |
+| Field                | Type                      | Required | Description                                            |
+| -------------------- | ------------------------- | -------- | ------------------------------------------------------ |
+| `recipientContactId` | `string` (UUID)           | Yes      | Geo contact ID -- the ONLY recipient identifier        |
+| `title`              | `string` (max 255)        | Yes      | Email subject, SMS prefix, push title                  |
+| `content`            | `string` (max 50,000)     | Yes      | Markdown body -- rendered to HTML for email            |
+| `plaintext`          | `string` (max 50,000)     | Yes      | Plain text -- SMS body, email fallback                 |
+| `sensitive`          | `boolean`                 | No       | Default `false`. When `true`, email only (secure)      |
+| `urgency`            | `"normal"` \| `"urgent"`  | No       | Default `"normal"`. `"urgent"` bypasses prefs          |
+| `correlationId`      | `string` (max 36)         | Yes      | Idempotency key for deduplication                      |
+| `senderService`      | `string` (max 50)         | Yes      | Source service identifier (e.g. `"auth"`, `"billing"`) |
+| `metadata`           | `Record<string, unknown>` | No       | Arbitrary key-value pairs for future use               |
 
 All fields validated via Zod before publishing. Published to `comms.notifications` fanout exchange (empty routing key). When `publisher` is omitted during registration, the handler logs the notification and returns success (safe for tests and local dev).
 
@@ -581,29 +581,29 @@ backends/node/services/comms/
 
 ### App Layer (comms-app)
 
-| Handler              | Type    | Category | Description                                         |
-| -------------------- | ------- | -------- | --------------------------------------------------- |
-| `Deliver`            | Complex | `x/`    | Orchestrates full delivery: create Message + DeliveryRequest, resolve recipient, resolve channels, render markdown, dispatch via providers, record attempts |
-| `RecipientResolver`  | Complex | `x/`    | Resolves email/phone from contactId via geo-client `GetContactsByIds` |
-| `SetChannelPreference` | Command | `c/`  | Creates or updates channel preferences for a contact |
-| `GetChannelPreference` | Query  | `q/`   | Returns channel preferences for a contact (creates defaults if missing) |
+| Handler                | Type    | Category | Description                                                                                                                                                 |
+| ---------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Deliver`              | Complex | `x/`     | Orchestrates full delivery: create Message + DeliveryRequest, resolve recipient, resolve channels, render markdown, dispatch via providers, record attempts |
+| `RecipientResolver`    | Complex | `x/`     | Resolves email/phone from contactId via geo-client `GetContactsByIds`                                                                                       |
+| `SetChannelPreference` | Command | `c/`     | Creates or updates channel preferences for a contact                                                                                                        |
+| `GetChannelPreference` | Query   | `q/`     | Returns channel preferences for a contact (creates defaults if missing)                                                                                     |
 
 ### Repository Interfaces (comms-app) + Implementations (comms-infra)
 
-| Handler                            | Category | Table              |
-| ---------------------------------- | -------- | ------------------ |
-| `CreateMessageRecord`              | `c/`     | message            |
-| `CreateDeliveryRequestRecord`      | `c/`     | delivery_request   |
-| `CreateDeliveryAttemptRecord`      | `c/`     | delivery_attempt   |
-| `CreateChannelPreferenceRecord`    | `c/`     | channel_preference |
-| `FindMessageById`                  | `r/`     | message            |
-| `FindDeliveryRequestById`         | `r/`     | delivery_request   |
-| `FindDeliveryRequestByCorrelationId` | `r/`  | delivery_request   |
-| `FindDeliveryAttemptsByRequestId`  | `r/`     | delivery_attempt   |
-| `FindChannelPreferenceByContactId` | `r/`    | channel_preference |
-| `MarkDeliveryRequestProcessed`     | `u/`     | delivery_request   |
-| `UpdateDeliveryAttemptStatus`      | `u/`     | delivery_attempt   |
-| `UpdateChannelPreferenceRecord`    | `u/`     | channel_preference |
+| Handler                              | Category | Table              |
+| ------------------------------------ | -------- | ------------------ |
+| `CreateMessageRecord`                | `c/`     | message            |
+| `CreateDeliveryRequestRecord`        | `c/`     | delivery_request   |
+| `CreateDeliveryAttemptRecord`        | `c/`     | delivery_attempt   |
+| `CreateChannelPreferenceRecord`      | `c/`     | channel_preference |
+| `FindMessageById`                    | `r/`     | message            |
+| `FindDeliveryRequestById`            | `r/`     | delivery_request   |
+| `FindDeliveryRequestByCorrelationId` | `r/`     | delivery_request   |
+| `FindDeliveryAttemptsByRequestId`    | `r/`     | delivery_attempt   |
+| `FindChannelPreferenceByContactId`   | `r/`     | channel_preference |
+| `MarkDeliveryRequestProcessed`       | `u/`     | delivery_request   |
+| `UpdateDeliveryAttemptStatus`        | `u/`     | delivery_attempt   |
+| `UpdateChannelPreferenceRecord`      | `u/`     | channel_preference |
 
 ---
 
@@ -621,59 +621,59 @@ backends/node/services/comms/
 
 ### comms-domain
 
-| Package         | Purpose              |
-| --------------- | -------------------- |
+| Package         | Purpose                  |
+| --------------- | ------------------------ |
 | `@d2/utilities` | generateUuidV7, cleanStr |
 
 ### comms-app
 
-| Package                | Purpose                                     |
-| ---------------------- | ------------------------------------------- |
-| `@d2/comms-domain`     | Domain entities, rules, enums               |
-| `@d2/di`               | ServiceKey + ServiceCollection              |
-| `@d2/geo-client`       | GetContactsByIds for recipient resolution   |
-| `@d2/handler`          | BaseHandler + IHandlerContext               |
-| `@d2/interfaces`       | Cache contracts                             |
-| `@d2/result`           | D2Result return type                        |
-| `@d2/utilities`        | Helpers                                     |
-| `isomorphic-dompurify` | XSS sanitization for HTML email rendering   |
-| `marked`               | Markdown -> HTML conversion                 |
-| `zod`                  | Input validation                            |
+| Package                | Purpose                                   |
+| ---------------------- | ----------------------------------------- |
+| `@d2/comms-domain`     | Domain entities, rules, enums             |
+| `@d2/di`               | ServiceKey + ServiceCollection            |
+| `@d2/geo-client`       | GetContactsByIds for recipient resolution |
+| `@d2/handler`          | BaseHandler + IHandlerContext             |
+| `@d2/interfaces`       | Cache contracts                           |
+| `@d2/result`           | D2Result return type                      |
+| `@d2/utilities`        | Helpers                                   |
+| `isomorphic-dompurify` | XSS sanitization for HTML email rendering |
+| `marked`               | Markdown -> HTML conversion               |
+| `zod`                  | Input validation                          |
 
 ### comms-infra
 
-| Package            | Purpose                                        |
-| ------------------ | ---------------------------------------------- |
-| `@d2/comms-app`    | Service keys + repo handler interfaces         |
-| `@d2/comms-client` | COMMS_EVENTS constants (exchange names)         |
-| `@d2/comms-domain` | Domain types for DB mapping                    |
-| `@d2/di`           | ServiceCollection for DI registration          |
-| `@d2/handler`      | BaseHandler for repo handlers                  |
-| `@d2/logging`      | ILogger for consumer logging                   |
-| `@d2/messaging`    | MessageBus, IMessagePublisher, ConsumerResult  |
-| `@d2/result`       | D2Result return type                           |
-| `@d2/utilities`    | Helpers                                        |
-| `drizzle-orm`      | Drizzle ORM for PostgreSQL                     |
-| `pg`               | PostgreSQL client                              |
-| `resend`           | Resend email API SDK                           |
-| `twilio`           | Twilio SMS API SDK                             |
+| Package            | Purpose                                       |
+| ------------------ | --------------------------------------------- |
+| `@d2/comms-app`    | Service keys + repo handler interfaces        |
+| `@d2/comms-client` | COMMS_EVENTS constants (exchange names)       |
+| `@d2/comms-domain` | Domain types for DB mapping                   |
+| `@d2/di`           | ServiceCollection for DI registration         |
+| `@d2/handler`      | BaseHandler for repo handlers                 |
+| `@d2/logging`      | ILogger for consumer logging                  |
+| `@d2/messaging`    | MessageBus, IMessagePublisher, ConsumerResult |
+| `@d2/result`       | D2Result return type                          |
+| `@d2/utilities`    | Helpers                                       |
+| `drizzle-orm`      | Drizzle ORM for PostgreSQL                    |
+| `pg`               | PostgreSQL client                             |
+| `resend`           | Resend email API SDK                          |
+| `twilio`           | Twilio SMS API SDK                            |
 
 ### comms-api
 
-| Package            | Purpose                          |
-| ------------------ | -------------------------------- |
-| `@d2/comms-app`    | addCommsApp, service keys        |
-| `@d2/comms-infra`  | addCommsInfra, consumer, migrations |
+| Package            | Purpose                               |
+| ------------------ | ------------------------------------- |
+| `@d2/comms-app`    | addCommsApp, service keys             |
+| `@d2/comms-infra`  | addCommsInfra, consumer, migrations   |
 | `@d2/cache-memory` | MemoryCacheStore for geo-client cache |
-| `@d2/di`           | ServiceCollection, ServiceProvider |
+| `@d2/di`           | ServiceCollection, ServiceProvider    |
 | `@d2/geo-client`   | GetContactsByIds, gRPC client factory |
-| `@d2/handler`      | HandlerContext, IRequestContext   |
-| `@d2/logging`      | createLogger, ILogger            |
-| `@d2/messaging`    | MessageBus                       |
-| `@d2/protos`       | CommsServiceService gRPC definition |
-| `@grpc/grpc-js`    | gRPC server runtime              |
-| `drizzle-orm`      | Drizzle for DB connection        |
-| `pg`               | PostgreSQL Pool                  |
+| `@d2/handler`      | HandlerContext, IRequestContext       |
+| `@d2/logging`      | createLogger, ILogger                 |
+| `@d2/messaging`    | MessageBus                            |
+| `@d2/protos`       | CommsServiceService gRPC definition   |
+| `@grpc/grpc-js`    | gRPC server runtime                   |
+| `drizzle-orm`      | Drizzle for DB connection             |
+| `pg`               | PostgreSQL Pool                       |
 
 ---
 
@@ -753,7 +753,7 @@ backends/node/services/comms/
 | Aspect               | DeCAF v3                                 | D2 Comms                                                       |
 | -------------------- | ---------------------------------------- | -------------------------------------------------------------- |
 | Queue mechanism      | PG polling via Quartz cron               | RabbitMQ with DLX tier-queue retry                             |
-| Retry scheduling     | `NextSendAttempt` column + cron          | Per-message TTL on tier queues -> requeue exchange              |
+| Retry scheduling     | `NextSendAttempt` column + cron          | Per-message TTL on tier queues -> requeue exchange             |
 | Message format       | Provider interface (ITemplatingProvider) | Universal shape: title + markdown + plaintext                  |
 | Markdown rendering   | N/A                                      | `marked` + `isomorphic-dompurify` (server-side for email)      |
 | Sender API           | `Context.Messaging.Commands.Notify`      | `@d2/comms-client` Notify handler -> RabbitMQ fanout           |

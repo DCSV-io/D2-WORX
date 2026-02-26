@@ -1,6 +1,7 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Commands } from "../../interfaces/index.js";
 
 type Input = Commands.SetInMemInput;
@@ -23,7 +24,7 @@ export class SetInMem extends BaseHandler<Input, Output> implements Commands.ISe
   }
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
-    this.store.set("GeoRefData", input.data);
+    this.store.set(GEO_CACHE_KEYS.REFDATA, input.data);
     return D2Result.ok({ data: {} });
   }
 }

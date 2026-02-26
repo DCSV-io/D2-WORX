@@ -82,6 +82,7 @@ Messages use **proto canonical JSON** (camelCase field names):
 ### Comms Retry Topology
 
 The Comms service uses a DLX-based retry pattern (`comms.retry.*`):
+
 - 1 requeue exchange (`comms.retry.requeue`, direct, durable)
 - 5 tier queues (`comms.retry.tier-1` through `tier-5`) with escalating TTLs
 - Each tier queue dead-letters expired messages back to the main consumer queue via the requeue exchange

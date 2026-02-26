@@ -23,6 +23,7 @@ export class ServiceCollection {
    * The factory receives the root provider and can only depend on other singletons.
    */
   addSingleton<T>(key: ServiceKey<T>, factory: (sp: ServiceResolver) => T): this {
+    this._validateFactory(key, factory);
     this._descriptors.set(key.id, {
       key,
       lifetime: Lifetime.Singleton,
@@ -36,6 +37,7 @@ export class ServiceCollection {
    * The factory receives the scope provider and can depend on singletons + other scoped services.
    */
   addScoped<T>(key: ServiceKey<T>, factory: (sp: ServiceResolver) => T): this {
+    this._validateFactory(key, factory);
     this._descriptors.set(key.id, {
       key,
       lifetime: Lifetime.Scoped,
@@ -49,6 +51,7 @@ export class ServiceCollection {
    * The factory receives the current provider (root or scope).
    */
   addTransient<T>(key: ServiceKey<T>, factory: (sp: ServiceResolver) => T): this {
+    this._validateFactory(key, factory);
     this._descriptors.set(key.id, {
       key,
       lifetime: Lifetime.Transient,
@@ -79,5 +82,12 @@ export class ServiceCollection {
     // Snapshot descriptors so mutations to the collection after build have no effect.
     const snapshot = new Map(this._descriptors);
     return new ServiceProvider(snapshot);
+  }
+
+  /** Validate that the factory parameter is actually a function. */
+  private _validateFactory<T>(key: ServiceKey<T>, factory: unknown): void {
+    if (typeof factory !== "function") {
+      throw new TypeError(`Factory for "${key.id}" must be a function, got ${typeof factory}`);
+    }
   }
 }

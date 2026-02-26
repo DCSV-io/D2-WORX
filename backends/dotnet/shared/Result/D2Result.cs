@@ -180,5 +180,32 @@ public class D2Result
             traceId: traceId);
     }
 
+    /// <summary>
+    /// Factory method to create a cancelled <see cref="D2Result"/> instance.
+    /// </summary>
+    ///
+    /// <param name="messages">
+    /// A list of messages related to the cancellation. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A new cancelled <see cref="D2Result"/> instance.
+    /// </returns>
+    public static D2Result Cancelled(
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        messages ??= ["The operation was cancelled."];
+        return new(
+            false,
+            messages,
+            statusCode: HttpStatusCode.BadRequest,
+            errorCode: ErrorCodes.CANCELLED,
+            traceId: traceId);
+    }
+
     #endregion
 }

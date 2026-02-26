@@ -98,9 +98,7 @@ export function createMockGeoHandlers(): MockGeoHandlers {
       lastName: "User",
       contactMethods: {
         emails: [{ value: email, label: "primary", isPrimary: true }],
-        phoneNumbers: phone
-          ? [{ value: phone, label: "mobile", isPrimary: true }]
-          : [],
+        phoneNumbers: phone ? [{ value: phone, label: "mobile", isPrimary: true }] : [],
         addresses: [],
       },
       locationId: "",

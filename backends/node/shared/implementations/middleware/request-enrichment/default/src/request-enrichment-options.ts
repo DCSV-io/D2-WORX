@@ -19,6 +19,10 @@ export interface RequestEnrichmentOptions {
    * ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"]
    */
   trustedProxyHeaders: readonly TrustedProxyHeader[];
+  /** Max length for client fingerprint header values. Values exceeding this are truncated. Default: 256. */
+  maxFingerprintLength: number;
+  /** Max length for forwarded-for / IP headers. Values exceeding this are truncated. Default: 2048. */
+  maxForwardedForLength: number;
 }
 
 /** Default request enrichment options. */
@@ -26,4 +30,6 @@ export const DEFAULT_REQUEST_ENRICHMENT_OPTIONS: RequestEnrichmentOptions = {
   enableWhoIsLookup: true,
   clientFingerprintHeader: "x-client-fingerprint",
   trustedProxyHeaders: ["cf-connecting-ip"],
+  maxFingerprintLength: 256,
+  maxForwardedForLength: 2048,
 };

@@ -22,24 +22,24 @@ Auth sign-up / action
 
 All infrastructure starts in `beforeAll` (per test file) and tears down in `afterAll`. Containers are started in parallel.
 
-| Component  | Image / Runtime       | Purpose                                           |
-| ---------- | --------------------- | ------------------------------------------------- |
-| PostgreSQL | `postgres:18`         | Single container, 3 databases: default (Geo), `e2e_auth`, `e2e_comms` |
-| Redis      | `redis:8.2`           | Distributed cache for Geo service                 |
-| RabbitMQ   | `rabbitmq:4.1-management` | Async event bus (Auth → Comms)                |
-| Geo.API    | .NET child process    | gRPC service for contacts + WhoIs                 |
-| Auth       | In-process (`createApp`) | BetterAuth + Hono, publishes to RabbitMQ       |
-| Comms      | In-process (DI wired) | Notification consumer + stub email provider       |
+| Component  | Image / Runtime           | Purpose                                                               |
+| ---------- | ------------------------- | --------------------------------------------------------------------- |
+| PostgreSQL | `postgres:18`             | Single container, 3 databases: default (Geo), `e2e_auth`, `e2e_comms` |
+| Redis      | `redis:8.2`               | Distributed cache for Geo service                                     |
+| RabbitMQ   | `rabbitmq:4.1-management` | Async event bus (Auth → Comms)                                        |
+| Geo.API    | .NET child process        | gRPC service for contacts + WhoIs                                     |
+| Auth       | In-process (`createApp`)  | BetterAuth + Hono, publishes to RabbitMQ                              |
+| Comms      | In-process (DI wired)     | Notification consumer + stub email provider                           |
 
 ## Vitest Configuration
 
-| Setting           | Value     | Reason                                                   |
-| ----------------- | --------- | -------------------------------------------------------- |
-| `testTimeout`     | 30,000 ms | Async pipeline needs time to propagate events            |
-| `hookTimeout`     | 180,000 ms | Container startup (PG + Redis + RabbitMQ + .NET build)  |
-| `fileParallelism` | `false`   | Avoids .NET build lock contention between test files     |
-| `globalSetup`     | `global-setup.ts` | Pre-builds Geo.API so test files use `--no-build` |
-| `setupFiles`      | `setup.ts`        | Registers `@d2/testing` custom D2Result matchers  |
+| Setting           | Value             | Reason                                                 |
+| ----------------- | ----------------- | ------------------------------------------------------ |
+| `testTimeout`     | 30,000 ms         | Async pipeline needs time to propagate events          |
+| `hookTimeout`     | 180,000 ms        | Container startup (PG + Redis + RabbitMQ + .NET build) |
+| `fileParallelism` | `false`           | Avoids .NET build lock contention between test files   |
+| `globalSetup`     | `global-setup.ts` | Pre-builds Geo.API so test files use `--no-build`      |
+| `setupFiles`      | `setup.ts`        | Registers `@d2/testing` custom D2Result matchers       |
 
 Run: `pnpm vitest run --project e2e-tests`
 
@@ -47,23 +47,23 @@ Run: `pnpm vitest run --project e2e-tests`
 
 ### `verification-email.test.ts` (2 tests)
 
-| Test                                                        | Validates                                                                 |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Should deliver a verification email when a user signs up    | Full pipeline: sign-up → Geo contact → RabbitMQ → Comms → email captured |
-| Should be idempotent — same correlationId produces same result | Duplicate event does not produce a second email (Deliver dedup)        |
+| Test                                                           | Validates                                                                |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Should deliver a verification email when a user signs up       | Full pipeline: sign-up → Geo contact → RabbitMQ → Comms → email captured |
+| Should be idempotent — same correlationId produces same result | Duplicate event does not produce a second email (Deliver dedup)          |
 
 ### `password-reset.test.ts` (1 test)
 
-| Test                                                                    | Validates                                                                   |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Test                                                                      | Validates                                                                     |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Should deliver a password reset email when requestPasswordReset is called | Sign-up → verify → password reset request → RabbitMQ → Comms → email captured |
 
 ### `invitation-email.test.ts` (2 tests)
 
-| Test                                                                       | Validates                                                                          |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Should deliver invitation email to a non-existing user (contactId path)    | Creates invitation contact via Geo, resolves via `GetContactsByIds`                |
-| Should deliver invitation email to an existing user (ext-key resolution)   | Existing user already has Geo contact, resolves via `GetContactsByExtKeys` (userId) |
+| Test                                                                     | Validates                                                                           |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| Should deliver invitation email to a non-existing user (contactId path)  | Creates invitation contact via Geo, resolves via `GetContactsByIds`                 |
+| Should deliver invitation email to an existing user (ext-key resolution) | Existing user already has Geo contact, resolves via `GetContactsByExtKeys` (userId) |
 
 ## Helpers
 
@@ -104,39 +104,39 @@ Extends `BaseHandler<SendEmailInput, SendEmailOutput>` and implements `IEmailPro
 
 Polling utilities for async assertions:
 
-| Function      | Purpose                                                              |
-| ------------- | -------------------------------------------------------------------- |
+| Function      | Purpose                                                                      |
+| ------------- | ---------------------------------------------------------------------------- |
 | `waitFor`     | Polls an async condition until true or timeout (default 15s, 200ms interval) |
-| `waitForRow`  | Polls a SQL query until at least one row, returns first row          |
-| `waitForRows` | Polls a SQL query until at least N rows, returns all matching rows   |
+| `waitForRow`  | Polls a SQL query until at least one row, returns first row                  |
+| `waitForRows` | Polls a SQL query until at least N rows, returns all matching rows           |
 
 ## Dependencies
 
-| Package                        | Purpose                                        |
-| ------------------------------ | ---------------------------------------------- |
-| `@d2/auth-api`                 | Auth composition root (`createApp`)            |
-| `@d2/auth-app`                 | Auth handler types                             |
-| `@d2/auth-infra`               | Auth config types, password functions           |
-| `@d2/cache-memory`             | In-memory cache for Geo client (Comms service) |
-| `@d2/cache-redis`              | Distributed cache handlers                     |
-| `@d2/comms-app`                | Comms handler interfaces + DI registration     |
-| `@d2/comms-client`             | `COMMS_EVENTS` exchange constants              |
-| `@d2/comms-domain`             | Comms domain types                             |
-| `@d2/comms-infra`              | Comms migrations, consumer, retry topology     |
-| `@d2/di`                       | DI container for Comms wiring                  |
-| `@d2/geo-client`               | Geo gRPC client + `GetContactsByIds`           |
-| `@d2/handler`                  | `BaseHandler`, `HandlerContext`                |
-| `@d2/logging`                  | ILogger + Pino                                 |
-| `@d2/messaging`                | RabbitMQ `MessageBus` + publisher              |
-| `@d2/protos`                   | Proto-generated types                          |
-| `@d2/result`                   | D2Result pattern                               |
-| `@d2/testing`                  | Custom Vitest matchers                         |
-| `@d2/utilities`                | UUIDv7 generation                              |
-| `@testcontainers/postgresql`   | PostgreSQL container                           |
-| `@testcontainers/rabbitmq`     | RabbitMQ container                             |
-| `@testcontainers/redis`        | Redis container                                |
-| `drizzle-orm`                  | Comms DB access + migrations                   |
-| `ioredis`                      | Redis client (transitive, Comms infra)         |
-| `pg`                           | PostgreSQL client + assertion pools            |
-| `rabbitmq-client`              | AMQP client (transitive, messaging)            |
-| `vitest`                       | Test runner                                    |
+| Package                      | Purpose                                        |
+| ---------------------------- | ---------------------------------------------- |
+| `@d2/auth-api`               | Auth composition root (`createApp`)            |
+| `@d2/auth-app`               | Auth handler types                             |
+| `@d2/auth-infra`             | Auth config types, password functions          |
+| `@d2/cache-memory`           | In-memory cache for Geo client (Comms service) |
+| `@d2/cache-redis`            | Distributed cache handlers                     |
+| `@d2/comms-app`              | Comms handler interfaces + DI registration     |
+| `@d2/comms-client`           | `COMMS_EVENTS` exchange constants              |
+| `@d2/comms-domain`           | Comms domain types                             |
+| `@d2/comms-infra`            | Comms migrations, consumer, retry topology     |
+| `@d2/di`                     | DI container for Comms wiring                  |
+| `@d2/geo-client`             | Geo gRPC client + `GetContactsByIds`           |
+| `@d2/handler`                | `BaseHandler`, `HandlerContext`                |
+| `@d2/logging`                | ILogger + Pino                                 |
+| `@d2/messaging`              | RabbitMQ `MessageBus` + publisher              |
+| `@d2/protos`                 | Proto-generated types                          |
+| `@d2/result`                 | D2Result pattern                               |
+| `@d2/testing`                | Custom Vitest matchers                         |
+| `@d2/utilities`              | UUIDv7 generation                              |
+| `@testcontainers/postgresql` | PostgreSQL container                           |
+| `@testcontainers/rabbitmq`   | RabbitMQ container                             |
+| `@testcontainers/redis`      | Redis container                                |
+| `drizzle-orm`                | Comms DB access + migrations                   |
+| `ioredis`                    | Redis client (transitive, Comms infra)         |
+| `pg`                         | PostgreSQL client + assertion pools            |
+| `rabbitmq-client`            | AMQP client (transitive, messaging)            |
+| `vitest`                     | Test runner                                    |

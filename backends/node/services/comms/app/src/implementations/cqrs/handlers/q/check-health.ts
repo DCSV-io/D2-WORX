@@ -1,6 +1,6 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { Messaging } from "@d2/interfaces";
+import type { DistributedCache, Messaging } from "@d2/interfaces";
 import type { IPingDbHandler } from "../../../../interfaces/repository/handlers/index.js";
 
 export interface CheckHealthInput {}
@@ -23,15 +23,18 @@ export interface CheckHealthOutput {
  */
 export class CheckHealth extends BaseHandler<CheckHealthInput, CheckHealthOutput> {
   private readonly pingDb: IPingDbHandler;
+  private readonly pingCache?: DistributedCache.IPingHandler;
   private readonly pingMessageBus?: Messaging.IPingHandler;
 
   constructor(
     pingDb: IPingDbHandler,
     context: IHandlerContext,
+    pingCache?: DistributedCache.IPingHandler,
     pingMessageBus?: Messaging.IPingHandler,
   ) {
     super(context);
     this.pingDb = pingDb;
+    this.pingCache = pingCache;
     this.pingMessageBus = pingMessageBus;
   }
 
@@ -41,8 +44,9 @@ export class CheckHealth extends BaseHandler<CheckHealthInput, CheckHealthOutput
     const components: Record<string, ComponentHealth> = {};
 
     // Fan out all pings in parallel
-    const [dbResult, messageBusResult] = await Promise.all([
+    const [dbResult, cacheResult, messageBusResult] = await Promise.all([
       this.pingDb.handleAsync({}),
+      this.pingCache?.handleAsync({}) ?? Promise.resolve(undefined),
       this.pingMessageBus?.handleAsync({}) ?? Promise.resolve(undefined),
     ]);
 
@@ -55,6 +59,19 @@ export class CheckHealth extends BaseHandler<CheckHealthInput, CheckHealthOutput
       };
     } else {
       components["db"] = { status: "unhealthy", error: "Ping handler returned no data" };
+    }
+
+    // Cache (Redis)
+    if (cacheResult === undefined) {
+      components["cache"] = { status: "not configured" };
+    } else if (cacheResult.data) {
+      components["cache"] = {
+        status: cacheResult.data.healthy ? "healthy" : "unhealthy",
+        latencyMs: cacheResult.data.latencyMs,
+        error: cacheResult.data.error,
+      };
+    } else {
+      components["cache"] = { status: "unhealthy", error: "Ping handler returned no data" };
     }
 
     // Messaging

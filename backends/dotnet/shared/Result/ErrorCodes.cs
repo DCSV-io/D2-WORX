@@ -70,4 +70,14 @@ public class ErrorCodes
     /// Indicates that an idempotent request is already being processed (in-flight).
     /// </summary>
     public const string IDEMPOTENCY_IN_FLIGHT = nameof(IDEMPOTENCY_IN_FLIGHT);
+
+    /// <summary>
+    /// Indicates that the request payload exceeds the maximum allowed size.
+    /// </summary>
+    public const string PAYLOAD_TOO_LARGE = nameof(PAYLOAD_TOO_LARGE);
+
+    /// <summary>
+    /// Indicates that the operation was cancelled (client or server cancellation).
+    /// </summary>
+    public const string CANCELLED = nameof(CANCELLED);
 }

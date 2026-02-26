@@ -93,10 +93,10 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > ##### Sub (Subscribers)
 >
-> | File Name                                                              | Description                                                                                 |
-> | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-> | [ISubs.cs](Interfaces/Messaging/Handlers/Sub/ISubs.cs)                 | Partial interface defining subscription operations for geographic reference data messaging. |
-> | [ISubs.Updated.cs](Interfaces/Messaging/Handlers/Sub/ISubs.Updated.cs)               | Extends ISubs with IUpdatedHandler for processing GeoRefDataUpdatedEvent events.              |
+> | File Name                                                                              | Description                                                                                    |
+> | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+> | [ISubs.cs](Interfaces/Messaging/Handlers/Sub/ISubs.cs)                                 | Partial interface defining subscription operations for geographic reference data messaging.    |
+> | [ISubs.Updated.cs](Interfaces/Messaging/Handlers/Sub/ISubs.Updated.cs)                 | Extends ISubs with IUpdatedHandler for processing GeoRefDataUpdatedEvent events.               |
 > | [ISubs.ContactsEvicted.cs](Interfaces/Messaging/Handlers/Sub/ISubs.ContactsEvicted.cs) | Extends ISubs with IContactsEvictedHandler for processing ContactsEvictedEvent cache eviction. |
 
 ---
@@ -141,16 +141,16 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > #### Sub (Subscribers)
 >
-> | File Name                                       | Description                                                                                                         |
-> | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-> | [Updated.cs](Messaging/Handlers/Sub/Updated.cs)               | Handler processing GeoRefDataUpdatedEvent events by requesting fresh data from Geo service and updating all caches.          |
+> | File Name                                                       | Description                                                                                                           |
+> | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+> | [Updated.cs](Messaging/Handlers/Sub/Updated.cs)                 | Handler processing GeoRefDataUpdatedEvent events by requesting fresh data from Geo service and updating all caches.   |
 > | [ContactsEvicted.cs](Messaging/Handlers/Sub/ContactsEvicted.cs) | Handler processing ContactsEvictedEvent by evicting matching contact IDs and ext-keys from the local in-memory cache. |
 >
 > ### Consumers
 >
-> | File Name                                                                  | Description                                                                                                  |
-> | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-> | [UpdatedConsumerService.cs](Messaging/Consumers/UpdatedConsumerService.cs)                       | BackgroundService hosting a ProtoConsumer<GeoRefDataUpdatedEvent> that delegates to the Updated sub handler.                                                        |
+> | File Name                                                                                  | Description                                                                                                                                                         |
+> | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | [UpdatedConsumerService.cs](Messaging/Consumers/UpdatedConsumerService.cs)                 | BackgroundService hosting a ProtoConsumer<GeoRefDataUpdatedEvent> that delegates to the Updated sub handler.                                                        |
 > | [ContactEvictionConsumerService.cs](Messaging/Consumers/ContactEvictionConsumerService.cs) | BackgroundService hosting a broadcast ProtoConsumer<ContactsEvictedEvent> (exclusive auto-delete queue per instance) that delegates to the ContactsEvicted handler. |
 
 ---

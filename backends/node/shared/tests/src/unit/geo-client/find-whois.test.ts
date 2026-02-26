@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { FindWhoIs, DEFAULT_GEO_CLIENT_OPTIONS } from "@d2/geo-client";
+import { FindWhoIs, DEFAULT_GEO_CLIENT_OPTIONS, GEO_CACHE_KEYS } from "@d2/geo-client";
 import { ErrorCodes } from "@d2/result";
 import type { GeoServiceClient, WhoIsDTO } from "@d2/protos";
 
@@ -41,15 +41,19 @@ function createMockWhoIs(): WhoIsDTO {
  * with the given response (or error).
  */
 function mockGrpcMethod<TReq, TRes>(response: TRes) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(null, response);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(null, response);
+    },
+  );
 }
 
 function mockGrpcMethodError<TReq, TRes>(error: Error) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(error, undefined as never);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(error, undefined as never);
+    },
+  );
 }
 
 describe("FindWhoIs handler", () => {
@@ -61,7 +65,7 @@ describe("FindWhoIs handler", () => {
 
   it("should return cached WhoIs data without making gRPC call", async () => {
     const whoIs = createMockWhoIs();
-    store.set("whois:1.2.3.4:ua-fingerprint", whoIs);
+    store.set(GEO_CACHE_KEYS.whois("1.2.3.4", "ua-fingerprint"), whoIs);
 
     const mockGeoClient = { findWhoIs: vi.fn() } as unknown as GeoServiceClient;
     const handler = new FindWhoIs(
@@ -133,7 +137,7 @@ describe("FindWhoIs handler", () => {
     );
     await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
 
-    expect(store.get("whois:1.2.3.4:fp")).toEqual(whoIs);
+    expect(store.get(GEO_CACHE_KEYS.whois("1.2.3.4", "fp"))).toEqual(whoIs);
   });
 
   it("should return Ok(undefined) on gRPC failure (fail-open)", async () => {
@@ -207,7 +211,7 @@ describe("FindWhoIs handler", () => {
     expect(result.data?.whoIs).toBeUndefined();
   });
 
-  it("should use correct cache key format whois:{ip}:{fingerprint}", async () => {
+  it("should use correct cache key format geo:whois:{ip}:{fingerprint}", async () => {
     const whoIs = createMockWhoIs();
     const mockGeoClient = {
       findWhoIs: mockGrpcMethod({
@@ -231,8 +235,8 @@ describe("FindWhoIs handler", () => {
     );
     await handler.handleAsync({ ipAddress: "10.0.0.1", fingerprint: "abc123" });
 
-    expect(store.get("whois:10.0.0.1:abc123")).toEqual(whoIs);
-    expect(store.get("whois:10.0.0.1:other")).toBeUndefined();
+    expect(store.get("geo:whois:10.0.0.1:abc123")).toEqual(whoIs);
+    expect(store.get("geo:whois:10.0.0.1:other")).toBeUndefined();
   });
 
   // -------------------------------------------------------------------------
