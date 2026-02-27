@@ -4,8 +4,6 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-using Npgsql;
-
 namespace D2.Shared.Repository.Errors.Pg;
 
 /// <summary>

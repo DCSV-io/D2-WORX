@@ -8,9 +8,9 @@ namespace D2.Geo.Infra.Repository.Handlers.C;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.Repository.Errors.Pg;
 using D2.Shared.Result;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using H = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.ICreateContactsHandler;
 using I = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsInput;
 using O = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsOutput;
@@ -26,8 +26,6 @@ using O = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsOutp
 /// </remarks>
 public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
 {
-    private const string _PG_UNIQUE_VIOLATION = "23505";
-
     private readonly GeoDbContext r_db;
 
     /// <summary>
@@ -64,7 +62,7 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
             r_db.Contacts.AddRange(input.Contacts);
             await r_db.SaveChangesAsync(ct);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: _PG_UNIQUE_VIOLATION })
+        catch (DbUpdateException ex) when (PgErrorCodes.IsUniqueViolation(ex))
         {
             return D2Result<O?>.Fail(
                 ["A contact with the same context key and related entity ID already exists."],

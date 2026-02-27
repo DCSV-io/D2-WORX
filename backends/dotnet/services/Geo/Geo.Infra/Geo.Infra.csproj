@@ -20,6 +20,7 @@
       <ProjectReference Include="..\..\..\shared\protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
       <ProjectReference Include="..\Geo.Client\Geo.Client.csproj" />
       <ProjectReference Include="..\..\..\shared\Implementations\Repository\Batch\Batch.Pg\Batch.Pg.csproj" />
+      <ProjectReference Include="..\..\..\shared\Implementations\Repository\Errors\Errors.Pg\Errors.Pg.csproj" />
       <ProjectReference Include="..\..\..\shared\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
       <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
