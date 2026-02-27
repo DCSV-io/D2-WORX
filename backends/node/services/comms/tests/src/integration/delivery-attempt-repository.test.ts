@@ -140,4 +140,13 @@ describe("DeliveryAttemptRepository (integration)", () => {
     expect(updated.providerMessageId).toBeNull();
     expect(updated.error).toBeNull();
   });
+
+  it("should return notFound when updateStatus targets nonexistent id", async () => {
+    const result = await repo.updateStatus.handleAsync({
+      id: "00000000-0000-0000-0000-000000000000",
+      status: "sent",
+    });
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
+  });
 });

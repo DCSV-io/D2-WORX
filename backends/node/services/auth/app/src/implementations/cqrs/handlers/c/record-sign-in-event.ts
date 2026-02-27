@@ -10,6 +10,7 @@ export interface RecordSignInEventInput {
   readonly ipAddress: string;
   readonly userAgent: string;
   readonly whoIsId?: string | null;
+  readonly failureReason?: string | null;
 }
 
 export type RecordSignInEventOutput = { event: SignInEvent };
@@ -20,6 +21,7 @@ const schema = z.object({
   ipAddress: z.string().max(45),
   userAgent: z.string().max(512),
   whoIsId: z.string().max(64).nullish(),
+  failureReason: z.string().max(100).nullish(),
 });
 
 /**
@@ -45,7 +47,12 @@ export class RecordSignInEvent extends BaseHandler<
     input: RecordSignInEventInput,
   ): Promise<D2Result<RecordSignInEventOutput | undefined>> {
     const validation = this.validateInput(schema, input);
-    if (!validation.success) return D2Result.bubbleFail(validation);
+    if (!validation.success) {
+      this.context.logger.warn("RecordSignInEvent validation failed", {
+        errors: validation.messages,
+      });
+      return D2Result.bubbleFail(validation);
+    }
 
     const createInput: CreateSignInEventInput = {
       userId: input.userId,
@@ -53,11 +60,18 @@ export class RecordSignInEvent extends BaseHandler<
       ipAddress: input.ipAddress,
       userAgent: input.userAgent,
       whoIsId: input.whoIsId,
+      failureReason: input.failureReason,
     };
 
     const event = createSignInEvent(createInput);
     const createResult = await this.createRecord.handleAsync({ event });
-    if (!createResult.success) return D2Result.bubbleFail(createResult);
+    if (!createResult.success) {
+      this.context.logger.warn("Failed to persist sign-in event", {
+        userId: input.userId,
+        errors: createResult.messages,
+      });
+      return D2Result.bubbleFail(createResult);
+    }
 
     return D2Result.ok({ data: { event } });
   }

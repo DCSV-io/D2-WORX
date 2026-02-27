@@ -100,6 +100,27 @@ ServiceKeys live in the **app** package alongside the interfaces they represent.
 
 ---
 
+## Root Provider Behavior
+
+The root `ServiceProvider` can **only** resolve singleton and transient services. Scoped services resolved from root throw immediately:
+
+```typescript
+const scopedKey = createServiceKey<MyService>("MyService");
+services.addScoped(scopedKey, () => new MyService());
+const provider = services.build();
+
+provider.resolve(scopedKey); // THROWS: "Cannot resolve scoped service from root"
+
+const scope = provider.createScope();
+scope.resolve(scopedKey); // OK — scoped resolved from scope
+```
+
+This enforces the **captive dependency rule**: singleton factories always receive the root provider (which can only resolve singletons). A singleton cannot accidentally depend on a scoped service. Scoped/transient factories receive the scope provider (which can resolve both singletons and scoped).
+
+**Error caching:** If a singleton factory throws during resolution, the error is NOT cached — the factory will be re-invoked on the next `resolve()` call. This matches .NET behavior and allows transient failures (e.g., missing config at startup) to self-heal.
+
+---
+
 ## .NET Equivalent
 
 `Microsoft.Extensions.DependencyInjection` — `IServiceCollection`, `IServiceProvider`, `IServiceScope`. Same lifetime semantics, same captive dependency rules.

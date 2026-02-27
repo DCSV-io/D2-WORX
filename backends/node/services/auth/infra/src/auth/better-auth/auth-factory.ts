@@ -141,13 +141,19 @@ export function createAuth(
       autoSignInAfterVerification: true,
       sendVerificationEmail: hooks?.publishVerificationEmail
         ? async ({ user, url, token }) => {
-            await hooks.publishVerificationEmail!({
-              userId: user.id,
-              email: user.email,
-              name: user.name ?? "User",
-              verificationUrl: url,
-              token,
-            });
+            try {
+              await hooks.publishVerificationEmail!({
+                userId: user.id,
+                email: user.email,
+                name: user.name ?? "User",
+                verificationUrl: url,
+                token,
+              });
+            } catch {
+              // Fail-open: RabbitMQ down shouldn't crash sign-in/sign-up.
+              // BetterAuth awaits this callback — if it throws, the entire flow
+              // fails with 500. The user can re-trigger via sign-in (sendOnSignIn: true).
+            }
           }
         : undefined,
     },

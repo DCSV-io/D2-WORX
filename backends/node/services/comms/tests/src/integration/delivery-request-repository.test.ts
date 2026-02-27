@@ -123,4 +123,12 @@ describe("DeliveryRequestRepository (integration)", () => {
     const found = result.data!.request;
     expect(found.callbackTopic).toBe("delivery.callback");
   });
+
+  it("should return notFound when markProcessed targets nonexistent id", async () => {
+    const result = await repo.markProcessed.handleAsync({
+      id: "00000000-0000-0000-0000-000000000000",
+    });
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
+  });
 });

@@ -178,14 +178,11 @@ export async function createApp(
   };
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
   if (!config.geoAddress || !config.geoApiKey) {
-    logger.warn(
-      "Geo gRPC client not configured (missing GEO_GRPC_ADDRESS or API key) — contact/WhoIs operations will fail",
+    throw new Error(
+      "GEO_GRPC_ADDRESS and GEO_API_KEY are required — auth service cannot start without Geo",
     );
   }
-  const geoClient =
-    config.geoAddress && config.geoApiKey
-      ? createGeoServiceClient(config.geoAddress, config.geoApiKey)
-      : (undefined as never);
+  const geoClient = createGeoServiceClient(config.geoAddress, config.geoApiKey);
 
   // Register geo-client handlers as singleton instances (share cache stores)
   const createContacts = new CreateContacts(geoClient, geoOptions, serviceContext);
@@ -271,7 +268,6 @@ export async function createApp(
   const createCallbackScope = () => createServiceScope(provider, logger);
 
   // User contact handler for sign-up → Geo contact creation.
-  const geoConfigured = !!(config.geoAddress && config.geoApiKey);
 
   // 7. BetterAuth instance with scoped callbacks
   const auth = createAuth(config, db, secondaryStorage, {
@@ -368,22 +364,20 @@ export async function createApp(
         scope.dispose();
       }
     },
-    createUserContact: geoConfigured
-      ? async (data) => {
-          const scope = createCallbackScope();
-          try {
-            const handler = scope.resolve(ICreateUserContactKey);
-            const result = await handler.handleAsync(data);
-            if (!result.success) {
-              throw new Error(
-                `Failed to create Geo contact for user ${data.userId}: ${result.messages?.join(", ") ?? "unknown error"}`,
-              );
-            }
-          } finally {
-            scope.dispose();
-          }
+    createUserContact: async (data) => {
+      const scope = createCallbackScope();
+      try {
+        const handler = scope.resolve(ICreateUserContactKey);
+        const result = await handler.handleAsync(data);
+        if (!result.success) {
+          throw new Error(
+            `Failed to create Geo contact for user ${data.userId}: ${result.messages?.join(", ") ?? "unknown error"}`,
+          );
         }
-      : undefined,
+      } finally {
+        scope.dispose();
+      }
+    },
   });
 
   // 8. Session fingerprint binding (stolen token detection)
@@ -450,7 +444,10 @@ export async function createApp(
     const fp = computeFingerprint(c.req.raw.headers);
     await fingerprintStorage.run(fp, () => next());
   });
-  authApp.route("/", createAuthRoutes(auth, { check: throttleCheck, record: throttleRecord }));
+  authApp.route(
+    "/",
+    createAuthRoutes(auth, { check: throttleCheck, record: throttleRecord }, logger),
+  );
   app.route("/", authApp);
 
   // Protected custom routes: session + fingerprint + scope + CSRF → routes resolve from scope

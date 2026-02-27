@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { D2Result, HttpStatusCode } from "@d2/result";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { ILogger } from "@d2/logging";
 import type { Auth } from "@d2/auth-infra";
 import type { CheckSignInThrottle, RecordSignInOutcome } from "@d2/auth-app";
 import { REQUEST_INFO_KEY } from "../middleware/request-enrichment.js";
@@ -42,6 +43,7 @@ function extractIdentifier(body: Record<string, unknown> | null, path: string): 
 export function createAuthRoutes(
   auth: Auth,
   throttleHandlers?: { check: CheckSignInThrottle; record: RecordSignInOutcome },
+  logger?: ILogger,
 ) {
   const app = new Hono();
 
@@ -98,6 +100,14 @@ export function createAuthRoutes(
             responseStatus: response.status,
           })
           .catch(() => {});
+
+        if (response.status !== 200 && logger) {
+          logger.warn("Sign-in attempt failed", {
+            path: c.req.path,
+            status: response.status,
+            identifierHash,
+          });
+        }
 
         return response;
       }

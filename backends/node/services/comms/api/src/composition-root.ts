@@ -99,14 +99,11 @@ export async function createCommsService(config: CommsServiceConfig) {
   // Geo client for recipient resolution (GetContactsByIds)
   const contactCacheStore = new CacheMemory.MemoryCacheStore();
   if (!config.geoAddress || !config.geoApiKey) {
-    logger.warn(
-      "Geo gRPC client not configured (missing GEO_GRPC_ADDRESS or API key) — recipient resolution will fail",
+    throw new Error(
+      "GEO_GRPC_ADDRESS and GEO_API_KEY are required — comms service cannot start without Geo",
     );
   }
-  const geoClient =
-    config.geoAddress && config.geoApiKey
-      ? createGeoServiceClient(config.geoAddress, config.geoApiKey)
-      : (undefined as never);
+  const geoClient = createGeoServiceClient(config.geoAddress, config.geoApiKey);
   const geoOptions = { ...DEFAULT_GEO_CLIENT_OPTIONS, apiKey: config.geoApiKey ?? "" };
   const getContactsByIds = new GetContactsByIds(
     contactCacheStore,
@@ -215,13 +212,14 @@ export async function createCommsService(config: CommsServiceConfig) {
     // Retry publisher for re-publishing failed messages to tier queues
     const retryPublisher = messageBus.createPublisher();
 
-    createNotificationConsumer({
+    const consumer = createNotificationConsumer({
       messageBus,
       provider,
       createScope: createServiceScope,
       retryPublisher,
       logger,
     });
+    await consumer.ready;
     logger.info("Notification consumer started");
   }
 

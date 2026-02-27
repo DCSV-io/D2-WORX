@@ -206,6 +206,115 @@ describe("NotificationConsumer (integration)", () => {
     expect(callCount).toBe(3);
   });
 
+  it("should drop message with invalid UUID for recipientContactId", async () => {
+    const bus = getBus();
+    const { provider, createScope, handler } = createMockProviderAndScope();
+    const retryPublisher = createTrackedPublisher();
+    const logger = createMockLogger();
+
+    const consumer = createNotificationConsumer({
+      messageBus: bus,
+      provider,
+      createScope,
+      retryPublisher,
+      logger: logger as never,
+    });
+    cleanupFns.push(() => consumer.close());
+    await consumer.ready;
+
+    const publisher = createTrackedPublisher({
+      exchanges: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, type: "fanout" }],
+    });
+
+    // Send a message with an invalid UUID for recipientContactId
+    await publisher.send(
+      { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
+      createNotificationMessage({ recipientContactId: "not-a-uuid" }),
+    );
+
+    // Wait enough time for the consumer to process the message
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+    // Handler should NOT have been called — consumer drops invalid messages before dispatch
+    expect(handler.handleAsync).not.toHaveBeenCalled();
+    // Consumer should have logged a warning about validation failure
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid notification message"),
+      expect.objectContaining({ errors: expect.any(Array) }),
+    );
+  });
+
+  it("should drop message with missing required fields", async () => {
+    const bus = getBus();
+    const { provider, createScope, handler } = createMockProviderAndScope();
+    const retryPublisher = createTrackedPublisher();
+    const logger = createMockLogger();
+
+    const consumer = createNotificationConsumer({
+      messageBus: bus,
+      provider,
+      createScope,
+      retryPublisher,
+      logger: logger as never,
+    });
+    cleanupFns.push(() => consumer.close());
+    await consumer.ready;
+
+    const publisher = createTrackedPublisher({
+      exchanges: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, type: "fanout" }],
+    });
+
+    // Send a message missing the required "title" field
+    const { title: _, ...noTitle } = createNotificationMessage();
+    await publisher.send(
+      { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
+      noTitle,
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+    expect(handler.handleAsync).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid notification message"),
+      expect.objectContaining({ errors: expect.any(Array) }),
+    );
+  });
+
+  it("should drop a completely empty message object", async () => {
+    const bus = getBus();
+    const { provider, createScope, handler } = createMockProviderAndScope();
+    const retryPublisher = createTrackedPublisher();
+    const logger = createMockLogger();
+
+    const consumer = createNotificationConsumer({
+      messageBus: bus,
+      provider,
+      createScope,
+      retryPublisher,
+      logger: logger as never,
+    });
+    cleanupFns.push(() => consumer.close());
+    await consumer.ready;
+
+    const publisher = createTrackedPublisher({
+      exchanges: [{ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, type: "fanout" }],
+    });
+
+    // Send a completely empty object
+    await publisher.send(
+      { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
+      {},
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+
+    expect(handler.handleAsync).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining("Invalid notification message"),
+      expect.objectContaining({ errors: expect.any(Array) }),
+    );
+  });
+
   it("should retry a failed message via tier queue and redeliver to main queue", async () => {
     const bus = getBus();
     const retryPublisher = createTrackedPublisher();

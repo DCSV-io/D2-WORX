@@ -29,6 +29,7 @@ const CORR_RESOLVER_FAIL = "b0000000-0000-0000-0000-000000000008";
 const CORR_MSG_FAIL = "b0000000-0000-0000-0000-000000000009";
 const CORR_REQ_FAIL = "b0000000-0000-0000-0000-00000000000a";
 const CORR_DUAL = "b0000000-0000-0000-0000-00000000000b";
+const CORR_PROVIDER_THROW = "b0000000-0000-0000-0000-00000000000c";
 
 describe("Deliver", () => {
   let deliver: Deliver;
@@ -469,6 +470,38 @@ describe("Deliver", () => {
 
     expect(result.success).toBe(false);
     expect(emailProvider.handleAsync).not.toHaveBeenCalled();
+  });
+
+  it("should return DELIVERY_FAILED when email provider throws an Error", async () => {
+    // Mock email provider that throws (simulates SMTP timeout / network failure)
+    (emailProvider.handleAsync as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("SMTP timeout"),
+    );
+
+    const result = await deliver.handleAsync({
+      senderService: "auth",
+      title: "Test",
+      content: "test",
+      plainTextContent: "test",
+      sensitive: true,
+      recipientContactId: CONTACT_1,
+      correlationId: CORR_PROVIDER_THROW,
+    });
+
+    // Deliver handler catches the rejected promise via Promise.allSettled
+    // and returns DELIVERY_FAILED for retryable failures
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(503);
+    expect(result.errorCode).toBe("DELIVERY_FAILED");
+
+    // Attempt should still be persisted with failed status and the error message
+    expect(attemptRepo.create.handleAsync).toHaveBeenCalledOnce();
+    expect(attemptRepo.updateStatus.handleAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "failed",
+        error: "SMTP timeout",
+      }),
+    );
   });
 
   it("should handle both email and sms channels in single request", async () => {

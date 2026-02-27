@@ -1,6 +1,12 @@
 export interface MessageBusOptions {
   url: string;
   connectionName?: string;
+  /** Pass-through options for the underlying rabbitmq-client Connection (reconnection tuning, etc.). */
+  connectionOptions?: {
+    retryLow?: number;
+    retryHigh?: number;
+    maxRetries?: number;
+  };
 }
 
 export interface ConsumerConfig<T = unknown> {

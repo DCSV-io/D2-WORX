@@ -400,6 +400,82 @@ describe("ServiceProvider", () => {
     });
   });
 
+  describe("circular dependency detection", () => {
+    it("should throw on self-circular A→A", () => {
+      const keyA = createServiceKey<unknown>("circular-self");
+      const services = new ServiceCollection();
+      services.addSingleton(keyA, (sp) => sp.resolve(keyA));
+      const provider = services.build();
+
+      expect(() => provider.resolve(keyA)).toThrow(/[Cc]ircular/);
+      provider.dispose();
+    });
+
+    it("should throw on 2-way circular A→B→A", () => {
+      const keyA = createServiceKey<unknown>("circular-a");
+      const keyB = createServiceKey<unknown>("circular-b");
+      const services = new ServiceCollection();
+      services.addSingleton(keyA, (sp) => sp.resolve(keyB));
+      services.addSingleton(keyB, (sp) => sp.resolve(keyA));
+      const provider = services.build();
+
+      expect(() => provider.resolve(keyA)).toThrow(/[Cc]ircular/);
+      provider.dispose();
+    });
+
+    it("should throw on 3-way circular A→B→C→A", () => {
+      const keyA = createServiceKey<unknown>("circular-3a");
+      const keyB = createServiceKey<unknown>("circular-3b");
+      const keyC = createServiceKey<unknown>("circular-3c");
+      const services = new ServiceCollection();
+      services.addSingleton(keyA, (sp) => sp.resolve(keyB));
+      services.addSingleton(keyB, (sp) => sp.resolve(keyC));
+      services.addSingleton(keyC, (sp) => sp.resolve(keyA));
+      const provider = services.build();
+
+      expect(() => provider.resolve(keyA)).toThrow(/[Cc]ircular/);
+      provider.dispose();
+    });
+
+    it("should include the dependency chain in the error message", () => {
+      const keyA = createServiceKey<unknown>("chain-a");
+      const keyB = createServiceKey<unknown>("chain-b");
+      const services = new ServiceCollection();
+      services.addSingleton(keyA, (sp) => sp.resolve(keyB));
+      services.addSingleton(keyB, (sp) => sp.resolve(keyA));
+      const provider = services.build();
+
+      expect(() => provider.resolve(keyA)).toThrow(/chain-a.*->.*chain-b.*->.*chain-a/);
+      provider.dispose();
+    });
+
+    it("should detect circular dependencies in scoped services", () => {
+      const keyA = createServiceKey<unknown>("scoped-circ-a");
+      const keyB = createServiceKey<unknown>("scoped-circ-b");
+      const services = new ServiceCollection();
+      services.addScoped(keyA, (sp) => sp.resolve(keyB));
+      services.addScoped(keyB, (sp) => sp.resolve(keyA));
+      const provider = services.build();
+      const scope = provider.createScope();
+
+      expect(() => scope.resolve(keyA)).toThrow(/[Cc]ircular/);
+      scope.dispose();
+      provider.dispose();
+    });
+
+    it("should detect circular dependencies in transient services", () => {
+      const keyA = createServiceKey<unknown>("transient-circ-a");
+      const keyB = createServiceKey<unknown>("transient-circ-b");
+      const services = new ServiceCollection();
+      services.addTransient(keyA, (sp) => sp.resolve(keyB));
+      services.addTransient(keyB, (sp) => sp.resolve(keyA));
+      const provider = services.build();
+
+      expect(() => provider.resolve(keyA)).toThrow(/[Cc]ircular/);
+      provider.dispose();
+    });
+  });
+
   describe("dependency resolution", () => {
     it("should allow transient to depend on singleton", () => {
       const singletonKey = createServiceKey<{ name: string }>("config");

@@ -154,6 +154,9 @@ public static partial class Extensions
                             x.EnrichWithHttpResponse = (activity, response) =>
                             {
                                 activity.SetTag("http.response.status_code", response.StatusCode);
+                                activity.SetTag(
+                                    "http.request_id",
+                                    response.HttpContext.TraceIdentifier);
                             };
                         })
                         .AddGrpcClientInstrumentation()

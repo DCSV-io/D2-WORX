@@ -377,6 +377,28 @@ Update `.md` files when:
 
 ---
 
+## Observability & Logging
+
+### Structured Logging Fields
+
+All logs and spans MUST include these fields for cross-service correlation:
+
+| Field         | Type   | Source                                                             | Purpose                           |
+| ------------- | ------ | ------------------------------------------------------------------ | --------------------------------- |
+| traceId       | string | `IRequestContext.traceId` (auto on BaseHandler, auto in D2Result) | End-to-end request tracing        |
+| correlationId | string | `Idempotency-Key` header / RabbitMQ message correlationId        | Async message tracking across svc |
+| userId        | string | JWT `sub` claim / session                                         | User context for audit trails     |
+| orgId         | string | JWT `activeOrganizationId` / session                              | Org context for multi-tenant logs |
+| service       | string | `OTEL_SERVICE_NAME`                                                | Service origin                    |
+
+### Automatic Instrumentation
+
+- **Node.js:** BaseHandler auto-includes traceId in D2Result. `@d2/logging` enriches via OTel context. `@d2/service-defaults` bootstraps OTel SDK.
+- **.NET:** BaseHandler includes traceId in spans. ServiceDefaults enriches HTTP spans with `http.request_id` (TraceIdentifier) and `http.response.status_code`.
+- **Async messages:** Include `correlationId` in RabbitMQ message headers for cross-service tracking.
+
+---
+
 ## Testing
 
 ### .NET Backend Tests

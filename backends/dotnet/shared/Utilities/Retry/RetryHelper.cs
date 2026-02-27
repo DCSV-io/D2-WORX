@@ -155,7 +155,9 @@ public static class RetryHelper
         int maxDelayMs,
         bool jitter)
     {
-        var calculated = Math.Min(baseDelayMs * Math.Pow(backoffMultiplier, retryIndex), maxDelayMs);
+        // Math.Min clamps overflow: if Pow exceeds double.MaxValue it becomes +∞,
+        // and Min(+∞, maxDelayMs) safely returns maxDelayMs.
+        var calculated = Math.Min(baseDelayMs * Math.Pow(backoffMultiplier, Math.Min(retryIndex, 63)), maxDelayMs);
         var actual = jitter ? Random.Shared.NextDouble() * calculated : calculated;
         return TimeSpan.FromMilliseconds(actual);
     }

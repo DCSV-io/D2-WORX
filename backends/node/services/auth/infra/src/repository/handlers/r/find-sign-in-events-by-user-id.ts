@@ -42,6 +42,7 @@ function toSignInEvent(row: typeof signInEvent.$inferSelect): SignInEvent {
     ipAddress: row.ipAddress,
     userAgent: row.userAgent,
     whoIsId: row.whoIsId,
+    failureReason: row.failureReason,
     createdAt: row.createdAt,
   };
 }

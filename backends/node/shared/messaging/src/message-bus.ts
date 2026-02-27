@@ -25,6 +25,7 @@ export class MessageBus {
     this.connection = new Connection({
       url: options.url,
       connectionName: options.connectionName,
+      ...options.connectionOptions,
     });
   }
 

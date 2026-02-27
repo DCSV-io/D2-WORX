@@ -101,4 +101,42 @@ describe("ChannelPreferenceRepository (integration)", () => {
     expect(found.emailEnabled).toBe(true);
     expect(found.smsEnabled).toBe(true);
   });
+
+  it("should return notFound when update targets nonexistent id", async () => {
+    const pref = createChannelPreference({ contactId: generateUuidV7() });
+    // Do NOT create the preference — update a record that doesn't exist
+    const updated = updateChannelPreference(pref, { emailEnabled: false });
+
+    const result = await repo.update.handleAsync({ pref: updated });
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
+  });
+
+  it("should handle concurrent updates to the same preference without error", async () => {
+    const contactId = generateUuidV7();
+    const pref = createChannelPreference({ contactId });
+    await repo.create.handleAsync({ pref });
+
+    // Fire 5 concurrent updates with different values
+    const updates = await Promise.all(
+      Array.from({ length: 5 }, (_, i) => {
+        const toggle = updateChannelPreference(pref, {
+          emailEnabled: i % 2 === 0,
+          smsEnabled: i % 2 !== 0,
+        });
+        return repo.update.handleAsync({ pref: toggle });
+      }),
+    );
+
+    // All promises should resolve without error
+    for (const result of updates) {
+      expect(result.success).toBe(true);
+    }
+
+    // Exactly 1 row should exist for that contactId
+    const findResult = await repo.findByContactId.handleAsync({ contactId });
+    expect(findResult.success).toBe(true);
+    expect(findResult.data!.pref).not.toBeNull();
+    expect(findResult.data!.pref!.contactId).toBe(contactId);
+  });
 });
