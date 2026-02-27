@@ -14,6 +14,7 @@ import { FindEmulationConsentById } from "./r/find-emulation-consent-by-id.js";
 import { FindActiveConsentsByUserId } from "./r/find-active-consents-by-user-id.js";
 import { FindActiveConsentByUserIdAndOrg } from "./r/find-active-consent-by-user-id-and-org.js";
 import { RevokeEmulationConsentRecord } from "./u/revoke-emulation-consent-record.js";
+import { UpdateSignInEventWhoIsId } from "./u/update-sign-in-event-who-is-id.js";
 import { CreateOrgContactRecord } from "./c/create-org-contact-record.js";
 import { FindOrgContactById } from "./r/find-org-contact-by-id.js";
 import { FindOrgContactsByOrgId } from "./r/find-org-contacts-by-org-id.js";
@@ -29,6 +30,7 @@ export function createSignInEventRepoHandlers(
     findByUserId: new FindSignInEventsByUserId(db, ctx),
     countByUserId: new CountSignInEventsByUserId(db, ctx),
     getLatestEventDate: new GetLatestSignInEventDate(db, ctx),
+    updateWhoIsId: new UpdateSignInEventWhoIsId(db, ctx),
   };
 }
 

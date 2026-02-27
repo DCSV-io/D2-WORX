@@ -101,7 +101,7 @@ describe("DeliveryRequestRepository (integration)", () => {
     expect(result.data!.request.processedAt).toBeInstanceOf(Date);
   });
 
-  it("should enforce unique constraint on correlationId", async () => {
+  it("should return 409 Conflict on duplicate correlationId", async () => {
     const correlationId = generateUuidV7();
     const req1 = makeRequest({ correlationId });
     const req2 = makeRequest({ id: generateUuidV7(), correlationId });
@@ -109,6 +109,8 @@ describe("DeliveryRequestRepository (integration)", () => {
     await repo.create.handleAsync({ request: req1 });
     const result = await repo.create.handleAsync({ request: req2 });
     expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(409);
+    expect(result.errorCode).toBe("CONFLICT");
   });
 
   it("should store optional fields when provided", async () => {

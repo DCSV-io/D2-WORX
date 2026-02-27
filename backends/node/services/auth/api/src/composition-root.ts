@@ -42,10 +42,11 @@ import {
   runMigrations,
   addAuthInfra,
   SignInThrottleStore,
+  createWhoIsResolutionConsumer,
   type AuthServiceConfig,
   type PasswordFunctions,
 } from "@d2/auth-infra";
-import { PASSWORD_POLICY, GEO_CONTEXT_KEYS } from "@d2/auth-domain";
+import { PASSWORD_POLICY, GEO_CONTEXT_KEYS, AUTH_MESSAGING } from "@d2/auth-domain";
 import {
   addAuthApp,
   ISignInThrottleStoreKey,
@@ -278,12 +279,29 @@ export async function createApp(
       const scope = createCallbackScope();
       try {
         const handler = scope.resolve(IRecordSignInEventKey);
-        await handler.handleAsync({
+        const result = await handler.handleAsync({
           userId: data.userId,
           successful: true,
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
         });
+
+        // Fire-and-forget: publish to WhoIs resolution queue for async enrichment
+        if (result.success && result.data?.event && publisher) {
+          publisher
+            .send(
+              {
+                exchange: AUTH_MESSAGING.WHOIS_RESOLUTION_EXCHANGE,
+                routingKey: AUTH_MESSAGING.WHOIS_RESOLUTION_QUEUE,
+              },
+              {
+                signInEventId: result.data.event.id,
+                ipAddress: data.ipAddress,
+                userAgent: data.userAgent,
+              },
+            )
+            .catch(() => {}); // Fail-open: ipAddress already persisted
+        }
       } finally {
         scope.dispose();
       }
@@ -445,6 +463,17 @@ export async function createApp(
   protectedRoutes.route("/", createOrgContactRoutes());
   protectedRoutes.route("/", createInvitationRoutes(auth, db, config.baseUrl));
   app.route("/", protectedRoutes);
+
+  // WhoIs resolution consumer (self-consume: resolves WhoIs for sign-in events)
+  if (messageBus) {
+    createWhoIsResolutionConsumer({
+      messageBus,
+      provider,
+      createScope: createServiceScope,
+      findWhoIs,
+      logger,
+    });
+  }
 
   // Cleanup function for graceful shutdown
   async function shutdown() {

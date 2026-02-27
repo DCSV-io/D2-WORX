@@ -313,6 +313,22 @@ interface SecondaryStorage {
 
 **Verified by**: `auth/tests/src/unit/infra/secondary-storage.test.ts`
 
+### Cache Invalidation Strategy
+
+Auth uses **intentional TTL-based expiry** rather than explicit write-through invalidation. Each cache layer has its own staleness guarantees:
+
+| Layer                     | Invalidation Method                                                                | Max Staleness |
+| ------------------------- | ---------------------------------------------------------------------------------- | ------------- |
+| Session cookie cache      | `cookieCache.maxAge` (5 min) — browser sends stale cookie, BetterAuth re-validates | 5 minutes     |
+| Session Redis (secondary) | Explicit delete on `revokeSession`; TTL set on write                               | Instant       |
+| Session PostgreSQL        | Dual-write — always current                                                        | Instant       |
+| Sign-in throttle          | Per-key TTLs via Redis SET + EX                                                    | Per-TTL       |
+| Sign-in events query      | Staleness check: compare latest event date for user — if unchanged, return cached  | 0 (validated) |
+
+This is a deliberate design choice: auth data changes infrequently (sign-ins, session revocations), so short TTLs provide sufficient consistency without the complexity of cross-instance cache invalidation.
+
+**Cross-ref**: `secondary-storage.ts` (session cache), `sign-in-throttle-store.ts` (throttle TTLs)
+
 ---
 
 ## JWT Architecture

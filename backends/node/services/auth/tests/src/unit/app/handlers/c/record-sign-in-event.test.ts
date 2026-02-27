@@ -171,4 +171,11 @@ describe("RecordSignInEvent", () => {
     expect(result.success).toBe(true);
     expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
+
+  it("should define redaction spec that redacts PII fields", () => {
+    expect(handler.redaction).toBeDefined();
+    expect(handler.redaction?.inputFields).toContain("ipAddress");
+    expect(handler.redaction?.inputFields).toContain("userAgent");
+    expect(handler.redaction?.suppressOutput).toBe(true);
+  });
 });

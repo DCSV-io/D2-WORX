@@ -162,4 +162,12 @@ describe("RecipientResolver", () => {
     expect(result.data!.email).toBeUndefined();
     expect(result.data!.phone).toBeUndefined();
   });
+
+  it("should define redaction spec that redacts PII output fields", () => {
+    const geoIds = { handleAsync: vi.fn() };
+    const resolver = new RecipientResolver(geoIds as any, createMockContext());
+    expect(resolver.redaction).toBeDefined();
+    expect(resolver.redaction?.outputFields).toContain("email");
+    expect(resolver.redaction?.outputFields).toContain("phone");
+  });
 });

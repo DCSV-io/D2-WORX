@@ -181,12 +181,21 @@ importers:
       '@d2/di':
         specifier: workspace:*
         version: link:../../../shared/di
+      '@d2/geo-client':
+        specifier: workspace:*
+        version: link:../../geo/geo-client
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
+      '@d2/logging':
+        specifier: workspace:*
+        version: link:../../../shared/logging
+      '@d2/messaging':
+        specifier: workspace:*
+        version: link:../../../shared/messaging
       '@d2/repository-pg':
         specifier: workspace:*
         version: link:../../../shared/implementations/repository/pg/default
@@ -239,6 +248,9 @@ importers:
       '@d2/comms-client':
         specifier: workspace:*
         version: link:../../comms/client
+      '@d2/di':
+        specifier: workspace:*
+        version: link:../../../shared/di
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../../geo/geo-client
@@ -251,6 +263,9 @@ importers:
       '@d2/logging':
         specifier: workspace:*
         version: link:../../../shared/logging
+      '@d2/messaging':
+        specifier: workspace:*
+        version: link:../../../shared/messaging
       '@d2/protos':
         specifier: workspace:*
         version: link:../../../shared/protos
@@ -264,6 +279,9 @@ importers:
         specifier: workspace:*
         version: link:../../../shared/utilities
       '@testcontainers/postgresql':
+        specifier: 10.18.0
+        version: 10.18.0
+      '@testcontainers/rabbitmq':
         specifier: 10.18.0
         version: 10.18.0
       '@testcontainers/redis':

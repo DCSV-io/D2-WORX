@@ -436,4 +436,10 @@ describe("CreateOrgContact", () => {
     expect(call.contacts[0].contactMethods?.phoneNumbers?.[0].value).toBe("+1234567890");
     expect(call.contacts[0].personalDetails?.firstName).toBe("Jane");
   });
+
+  it("should define redaction spec that suppresses both input and output", () => {
+    expect(handler.redaction).toBeDefined();
+    expect(handler.redaction?.suppressInput).toBe(true);
+    expect(handler.redaction?.suppressOutput).toBe(true);
+  });
 });

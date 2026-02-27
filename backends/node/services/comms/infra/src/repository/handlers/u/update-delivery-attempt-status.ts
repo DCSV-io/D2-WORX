@@ -21,10 +21,12 @@ export class UpdateDeliveryAttemptStatus
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
-    const updates: Record<string, unknown> = { status: input.status };
-    if (input.providerMessageId !== undefined) updates.providerMessageId = input.providerMessageId;
-    if (input.error !== undefined) updates.error = input.error;
-    if (input.nextRetryAt !== undefined) updates.nextRetryAt = input.nextRetryAt;
+    const updates = {
+      status: input.status,
+      ...(input.providerMessageId !== undefined && { providerMessageId: input.providerMessageId }),
+      ...(input.error !== undefined && { error: input.error }),
+      ...(input.nextRetryAt !== undefined && { nextRetryAt: input.nextRetryAt }),
+    };
 
     const rows = await this.db
       .update(deliveryAttempt)

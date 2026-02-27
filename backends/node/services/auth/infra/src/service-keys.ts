@@ -6,6 +6,7 @@ export {
   IFindSignInEventsByUserIdKey,
   ICountSignInEventsByUserIdKey,
   IGetLatestSignInEventDateKey,
+  IUpdateSignInEventWhoIsIdKey,
   ICreateEmulationConsentRecordKey,
   IFindEmulationConsentByIdKey,
   IFindActiveConsentsByUserIdKey,

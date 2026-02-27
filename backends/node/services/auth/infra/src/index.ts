@@ -78,6 +78,10 @@ export {
 // --- Migrations ---
 export { runMigrations } from "./repository/migrate.js";
 
+// --- Messaging Consumers ---
+export { createWhoIsResolutionConsumer } from "./messaging/consumers/whois-resolution-consumer.js";
+export type { WhoIsResolutionConsumerDeps } from "./messaging/consumers/whois-resolution-consumer.js";
+
 // --- DI Registration ---
 export { addAuthInfra } from "./registration.js";
 export {
@@ -85,6 +89,7 @@ export {
   IFindSignInEventsByUserIdKey,
   ICountSignInEventsByUserIdKey,
   IGetLatestSignInEventDateKey,
+  IUpdateSignInEventWhoIsIdKey,
   ICreateEmulationConsentRecordKey,
   IFindEmulationConsentByIdKey,
   IFindActiveConsentsByUserIdKey,

@@ -18,6 +18,7 @@ import type {
   IFindOrgContactsByOrgIdHandler,
   IUpdateOrgContactRecordHandler,
   IDeleteOrgContactRecordHandler,
+  IUpdateSignInEventWhoIsIdHandler,
 } from "./interfaces/repository/handlers/index.js";
 import type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 import type { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
@@ -49,6 +50,9 @@ export const ICountSignInEventsByUserIdKey = createServiceKey<ICountSignInEvents
 );
 export const IGetLatestSignInEventDateKey = createServiceKey<IGetLatestSignInEventDateHandler>(
   "Auth.Repo.GetLatestSignInEventDate",
+);
+export const IUpdateSignInEventWhoIsIdKey = createServiceKey<IUpdateSignInEventWhoIsIdHandler>(
+  "Auth.Repo.UpdateSignInEventWhoIsId",
 );
 
 // --- Emulation Consent Repository Handlers ---

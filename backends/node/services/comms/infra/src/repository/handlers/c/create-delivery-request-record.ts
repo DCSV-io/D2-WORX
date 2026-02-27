@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
-import { D2Result } from "@d2/result";
+import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { isPgUniqueViolation } from "@d2/repository-pg";
 import type {
   CreateDeliveryRequestRecordInput as I,
   CreateDeliveryRequestRecordOutput as O,
@@ -20,17 +21,28 @@ export class CreateDeliveryRequestRecord
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
-    const r = input.request;
-    await this.db.insert(deliveryRequest).values({
-      id: r.id,
-      messageId: r.messageId,
-      correlationId: r.correlationId,
-      recipientContactId: r.recipientContactId,
-      callbackTopic: r.callbackTopic,
-      createdAt: r.createdAt,
-      processedAt: r.processedAt,
-    });
+    try {
+      const r = input.request;
+      await this.db.insert(deliveryRequest).values({
+        id: r.id,
+        messageId: r.messageId,
+        correlationId: r.correlationId,
+        recipientContactId: r.recipientContactId,
+        callbackTopic: r.callbackTopic,
+        createdAt: r.createdAt,
+        processedAt: r.processedAt,
+      });
 
-    return D2Result.ok({ data: {} });
+      return D2Result.ok({ data: {} });
+    } catch (err) {
+      if (isPgUniqueViolation(err)) {
+        return D2Result.fail({
+          messages: ["Delivery request already exists."],
+          statusCode: HttpStatusCode.Conflict,
+          errorCode: ErrorCodes.CONFLICT,
+        });
+      }
+      throw err;
+    }
   }
 }

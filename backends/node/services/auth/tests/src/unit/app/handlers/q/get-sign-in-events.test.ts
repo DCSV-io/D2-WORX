@@ -449,4 +449,15 @@ describe("GetSignInEvents", () => {
       expect(repo.findByUserId.handleAsync).toHaveBeenCalledOnce();
     });
   });
+
+  it("should define redaction spec that suppresses output", () => {
+    const handler = new GetSignInEvents(
+      { handleAsync: vi.fn() } as unknown as IFindSignInEventsByUserIdHandler,
+      { handleAsync: vi.fn() } as unknown as ICountSignInEventsByUserIdHandler,
+      { handleAsync: vi.fn() } as unknown as IGetLatestSignInEventDateHandler,
+      createTestContext(),
+    );
+    expect(handler.redaction).toBeDefined();
+    expect(handler.redaction?.suppressOutput).toBe(true);
+  });
 });
