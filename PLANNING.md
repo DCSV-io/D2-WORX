@@ -1420,7 +1420,7 @@ Consolidated from all sweep reports (now deleted). This is the single source of 
 
 Sorted by priority: security/breaking first, then bugs/data integrity, infrastructure, observability, tests, documentation, polish.
 
-**Triage (68→41):** 26 non-issues removed, 1 false category corrected. Remaining: 20 planned fixes, 6 decisions needed, 15 deferred (P2/P3).
+**Triage (68→41):** 26 non-issues removed. Remaining: 28 fixes (do first), 6 decisions needed, 13 polish (do last).
 
 #### Security / Auth Hardening
 
@@ -1466,47 +1466,42 @@ Sorted by priority: security/breaking first, then bugs/data integrity, infrastru
 | -- | ------------------------------------------------- | ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | 19 | RetryHelper `CalculateDelay` overflow clamp       | .NET  | Tiny   | **FIX:** Add `Math.Min` guard before `Math.Pow` or document max retries contract. Cosmetic hardening                               |
 | 20 | Sign-in event logging doesn't record failure type | Auth  | Small  | **FIX:** Add structured failure reason (bad password, lockout, unverified, etc.) to sign-in hooks before calling RecordSignInEvent  |
-| 21 | FluentValidation version behind latest stable     | .NET  | Tiny   | **FIX (P3):** Current: 12.1.0. Bump to latest stable in next dependency review. Non-breaking                                      |
-
-#### Node.js / .NET Parity
-
-| #  | Item                                             | Owner | Effort | Resolution                                                                                                                                   |
-| -- | ------------------------------------------------ | ----- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| 22 | `@d2/repository-pg`: Batch query utilities       | Node  | Medium | **DEFER (P2):** Feature request — add chunked IN-clause helper to `@d2/repository-pg` when batch query patterns become common across services |
-| 23 | `@d2/repository-pg`: Drizzle transaction helpers | Node  | Medium | **DEFER (P2):** Feature request — add Begin/Commit/Rollback handler pattern when transaction needs arise (item 7 may trigger this)            |
-| 24 | .NET: Shared PG error handling project           | .NET  | Small  | **DEFER (P2):** Feature request — create shared EF Core constraint violation utilities mirroring `@d2/repository-pg`                          |
+| 21 | FluentValidation version behind latest stable     | .NET  | Tiny   | **FIX:** Current: 12.1.0. Bump to latest stable in next dependency review. Non-breaking                                               |
 
 #### Test Gaps
 
 | #  | Item                                                   | Owner  | Effort | Resolution                                                                                                                        |
 | -- | ------------------------------------------------------ | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| 25 | UPDATE/DELETE rowCount=0 → notFound tests              | Both   | Small  | **FIX:** Add unit tests for DELETE/UPDATE handlers returning notFound when rowCount=0                                              |
-| 26 | Consumer schema validation rejection tests             | Comms  | Small  | **FIX:** Add test — send malformed message payload, verify consumer drops it with warning log                                      |
-| 27 | Retry tier exhaustion (max attempts) tests             | Comms  | Small  | **FIX:** Add integration test — simulate message failing all 10 retry attempts, verify it's ACKed and logged                       |
-| 28 | Concurrent channel preference update tests             | Comms  | Small  | **FIX:** Add test — concurrent `Promise.all` updates for same contactId, verify no data corruption                                 |
-| 29 | Middleware chain order E2E test                         | Auth   | Medium | **DEFER (P3):** Ordering verified by code inspection. E2E middleware test is high effort for low risk                               |
-| 30 | Redis connection failure fallback tests                 | Both   | Medium | **DEFER (P3):** Requires Testcontainers Redis kill mid-test. Complex setup, fail-open behavior is well-understood                  |
-| 31 | Email provider unavailable scenario tests              | Comms  | Small  | **FIX:** Add unit test — mock email provider throwing, verify delivery attempt marked as failed                                    |
-| 32 | DI circular dependency negative-path test              | Shared | Small  | **FIX:** Add test — register A→B→A, verify `resolve(A)` throws circular dependency error                                          |
+| 22 | UPDATE/DELETE rowCount=0 → notFound tests              | Both   | Small  | **FIX:** Add unit tests for DELETE/UPDATE handlers returning notFound when rowCount=0                                              |
+| 23 | Consumer schema validation rejection tests             | Comms  | Small  | **FIX:** Add test — send malformed message payload, verify consumer drops it with warning log                                      |
+| 24 | Retry tier exhaustion (max attempts) tests             | Comms  | Small  | **FIX:** Add integration test — simulate message failing all 10 retry attempts, verify it's ACKed and logged                       |
+| 25 | Concurrent channel preference update tests             | Comms  | Small  | **FIX:** Add test — concurrent `Promise.all` updates for same contactId, verify no data corruption                                 |
+| 26 | Email provider unavailable scenario tests              | Comms  | Small  | **FIX:** Add unit test — mock email provider throwing, verify delivery attempt marked as failed                                    |
+| 27 | DI circular dependency negative-path test              | Shared | Small  | **FIX:** Add test — register A→B→A, verify `resolve(A)` throws circular dependency error                                          |
 
 #### Documentation
 
-| #  | Item                                                | Owner | Effort | Resolution                                                                                                                            |
-| -- | --------------------------------------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 33 | Cross-platform parity checks documented             | All   | Small  | **DEFER (P3):** Nice-to-have parity checklist. Implicit contract in CLAUDE.md is sufficient for now                                    |
-| 34 | Singleton root provider behavior documented         | DI    | Tiny   | **FIX:** Add note to DI.md — document that singleton factories receive root provider (can't depend on scoped), error caching semantics |
+| #  | Item                                            | Owner | Effort | Resolution                                                                                                                            |
+| -- | ----------------------------------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 28 | Singleton root provider behavior documented     | DI    | Tiny   | **FIX:** Add note to DI.md — document that singleton factories receive root provider (can't depend on scoped), error caching semantics |
 
-#### Polish / Nice-to-Have (P3)
+#### Polish / Nice-to-Have
 
-| #  | Item                                                | Owner  | Effort | Resolution                                                                                                                                 |
-| -- | --------------------------------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 35 | Thundering herd protection on popular key expiry    | Shared | Medium | **DEFER (P3):** Real but low impact — in-memory cache hits are fast. Singleflight pattern worthwhile at scale, not needed now               |
-| 36 | Negative caching (NOT_FOUND) for geo-client         | Geo    | Small  | **DEFER (P3):** Real — NOT_FOUND results re-fetch every time. Fix: cache `undefined` with shorter TTL (1hr vs 8hr)                         |
-| 37 | LRU eviction stress testing                         | Shared | Medium | **DEFER (P3):** No stress tests for concurrent eviction. Unit tests cover basic LRU. Worth adding later for confidence                      |
-| 38 | DI debug logging for resolution troubleshooting     | DI     | Small  | **DEFER (P3):** Add optional `DEBUG_DI` env var for verbose resolution logging. Nice for debugging, not urgent                              |
-| 39 | E2E test wiring vs production divergence            | E2E    | Small  | **DEFER (P3):** StubEmailProvider always succeeds, no rate limiting. Document divergences in E2E README when E2E scope expands               |
-| 40 | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | **DEFER (P3):** 70 lines duplicate postgres-test-helpers. Extract shared `createTestDb()` to `@d2/testing` when test infra matures          |
-| 41 | Integration test container reuse across files       | Tests  | Medium | **DEFER (P3):** Containers start/stop per file (~5-10s overhead each). Implement `vi.config.ts` global setup for shared containers later    |
+| #  | Item                                                | Owner  | Effort | Resolution                                                                                                                      |
+| -- | --------------------------------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| 29 | `@d2/repository-pg`: Batch query utilities          | Node   | Medium | **FIX:** Add chunked IN-clause helper to `@d2/repository-pg` when batch query patterns become common across services            |
+| 30 | `@d2/repository-pg`: Drizzle transaction helpers    | Node   | Medium | **FIX:** Add Begin/Commit/Rollback handler pattern when transaction needs arise (item 7 may trigger this)                       |
+| 31 | .NET: Shared PG error handling project              | .NET   | Small  | **FIX:** Create shared EF Core constraint violation utilities mirroring `@d2/repository-pg`                                     |
+| 32 | Middleware chain order E2E test                      | Auth   | Medium | **FIX:** Ordering verified by code inspection. Add E2E middleware test when integration test infra matures                      |
+| 33 | Redis connection failure fallback tests              | Both   | Medium | **FIX:** Testcontainers Redis kill mid-test. Complex setup, fail-open behavior is well-understood                               |
+| 34 | Cross-platform parity checks documented             | All    | Small  | **FIX:** Create parity checklist for verifying .NET/Node.js implementations are equivalent                                      |
+| 35 | Thundering herd protection on popular key expiry    | Shared | Medium | **FIX:** Add singleflight/lock pattern for cache-memory on popular key expiry                                                   |
+| 36 | Negative caching (NOT_FOUND) for geo-client         | Geo    | Small  | **FIX:** Cache `undefined` NOT_FOUND results with shorter TTL (1hr vs 8hr) to avoid repeated Geo lookups                        |
+| 37 | LRU eviction stress testing                         | Shared | Medium | **FIX:** Add high-concurrency stress tests for cache-memory LRU eviction                                                       |
+| 38 | DI debug logging for resolution troubleshooting     | DI     | Small  | **FIX:** Add optional `DEBUG_DI` env var for verbose resolution logging                                                         |
+| 39 | E2E test wiring vs production divergence            | E2E    | Small  | **FIX:** Document where stubs diverge from real providers in E2E README                                                         |
+| 40 | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | **FIX:** Extract shared `createTestDb()` to `@d2/testing` — 70 lines duplicate postgres-test-helpers                            |
+| 41 | Integration test container reuse across files       | Tests  | Medium | **FIX:** Implement `vi.config.ts` global setup for shared Testcontainers across test files                                      |
 
 ### 2. Can Only Fix Later
 
