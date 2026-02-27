@@ -58,3 +58,21 @@ export function createRedisIncrementKey(
     `DistributedCache.Increment:${qualifier}`,
   );
 }
+
+/** DI key for the Redis cache AcquireLock handler. */
+export function createRedisAcquireLockKey(
+  qualifier: string,
+): ServiceKey<DistributedCache.IAcquireLockHandler> {
+  return createServiceKey<DistributedCache.IAcquireLockHandler>(
+    `DistributedCache.AcquireLock:${qualifier}`,
+  );
+}
+
+/** DI key for the Redis cache ReleaseLock handler. */
+export function createRedisReleaseLockKey(
+  qualifier: string,
+): ServiceKey<DistributedCache.IReleaseLockHandler> {
+  return createServiceKey<DistributedCache.IReleaseLockHandler>(
+    `DistributedCache.ReleaseLock:${qualifier}`,
+  );
+}

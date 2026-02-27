@@ -12,12 +12,13 @@ src/
 │   │       ├── r/         # Get, GetMany
 │   │       ├── u/         # Set, SetMany
 │   │       └── d/         # Remove
-│   └── distributed/       # 7 handler interfaces
+│   └── distributed/       # 10 handler interfaces
 │       └── handlers/
-│           ├── c/         # SetNx
+│           ├── c/         # SetNx, AcquireLock
 │           ├── r/         # Get, Exists, GetTtl
 │           ├── u/         # Set, Increment
-│           └── d/         # Remove
+│           ├── d/         # Remove, ReleaseLock
+│           └── q/         # Ping
 └── middleware/
     ├── request-enrichment/  # IRequestInfo contract
     ├── ratelimit/           # ICheckHandler + RateLimitDimension + CHECK_REDACTION
@@ -42,14 +43,16 @@ src/
 
 | File                      | Handler             | Description                                         |
 | ------------------------- | ------------------- | --------------------------------------------------- |
-| `handlers/c/set-nx.ts`    | `ISetNxHandler`     | SET if Not eXists with optional TTL (for locks).    |
+| `handlers/c/set-nx.ts`       | `ISetNxHandler`        | SET if Not eXists with optional TTL (for locks).       |
+| `handlers/c/acquire-lock.ts` | `IAcquireLockHandler`  | Acquire distributed lock via SET NX PX (mandatory TTL). |
 | `handlers/r/get.ts`       | `IGetHandler`       | Retrieve typed value from distributed cache by key. |
 | `handlers/r/exists.ts`    | `IExistsHandler`    | Check key existence without retrieval.              |
 | `handlers/r/get-ttl.ts`   | `IGetTtlHandler`    | Get remaining TTL of a key in milliseconds.         |
 | `handlers/u/set.ts`       | `ISetHandler`       | Store typed value with optional TTL.                |
 | `handlers/u/increment.ts` | `IIncrementHandler` | Atomic counter increment with optional TTL.         |
 | `handlers/r/ping.ts`      | `IPingHandler`      | Verify distributed cache connectivity and latency.  |
-| `handlers/d/remove.ts`    | `IRemoveHandler`    | Delete key from distributed cache.                  |
+| `handlers/d/remove.ts`       | `IRemoveHandler`       | Delete key from distributed cache.                     |
+| `handlers/d/release-lock.ts` | `IReleaseLockHandler`  | Release distributed lock (safe compare-and-delete).    |
 
 ## Middleware — Request Enrichment
 

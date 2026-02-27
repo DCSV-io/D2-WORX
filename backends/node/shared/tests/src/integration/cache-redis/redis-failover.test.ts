@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { RedisContainer, type StartedRedisContainer } from "@testcontainers/redis";
 import Redis from "ioredis";
-import { Get, Set, Exists, Remove, GetTtl, Increment } from "@d2/cache-redis";
+import { Get, Set, Exists, Remove, GetTtl, Increment, AcquireLock, ReleaseLock } from "@d2/cache-redis";
 import { ErrorCodes } from "@d2/result";
 import { createTestContext } from "./redis-test-helpers.js";
 
@@ -75,5 +75,22 @@ describe("Redis failover — cache-redis handlers", () => {
     const incrAfter = await incrHandler.handleAsync({ key: "failover-counter", amount: 1 });
     expect(incrAfter).toBeFailure();
     expect(incrAfter.errorCode).toBe(ErrorCodes.SERVICE_UNAVAILABLE);
+
+    const acquireLockHandler = new AcquireLock(redis, ctx);
+    const acquireLockAfter = await acquireLockHandler.handleAsync({
+      key: "lock-test",
+      lockId: "test-id",
+      expirationMs: 5000,
+    });
+    expect(acquireLockAfter).toBeFailure();
+    expect(acquireLockAfter.errorCode).toBe(ErrorCodes.SERVICE_UNAVAILABLE);
+
+    const releaseLockHandler = new ReleaseLock(redis, ctx);
+    const releaseLockAfter = await releaseLockHandler.handleAsync({
+      key: "lock-test",
+      lockId: "test-id",
+    });
+    expect(releaseLockAfter).toBeFailure();
+    expect(releaseLockAfter.errorCode).toBe(ErrorCodes.SERVICE_UNAVAILABLE);
   }, 30_000);
 });
