@@ -16,7 +16,7 @@ This document describes the complete authentication and authorization infrastruc
 8. [Middleware Pipeline](#middleware-pipeline)
 9. [Fail-Closed vs Fail-Open Matrix](#fail-closed-vs-fail-open-matrix)
 10. [CQRS Handlers](#cqrs-handlers)
-11. [Request Flow Diagrams](#request-flow-diagrams)
+11. [Request Flow Diagrams](#request-flow-diagrams) (includes [plain-language overview](#how-authentication-works-plain-language-overview))
 12. [Constants Cross-Reference](#constants-cross-reference)
 13. [Security Controls Summary](#security-controls-summary)
 14. [Known Security Gaps & Pre-Production Requirements](#known-security-gaps--pre-production-requirements)
@@ -639,6 +639,26 @@ These are handled by BetterAuth directly (not custom handlers):
 ---
 
 ## Request Flow Diagrams
+
+### How Authentication Works (Plain-Language Overview)
+
+The system uses two complementary mechanisms: **sessions** (for browser-to-auth communication) and **JWTs** (for browser-to-gateway API calls). Understanding the difference is key.
+
+**JWT** (JSON Web Token) is a signed, self-contained note. Auth Service creates it, signs it with a private key, and hands it to the client. The note says "this is user X, they belong to org Y, their role is Z, and this note expires in 15 minutes." Anyone who receives the note can read it — it's not encrypted — but nobody can forge it because they don't have the private key.
+
+**JWKS** (JSON Web Key Set) is the corresponding public key, published by Auth Service at `/api/auth/jwks`. The .NET gateways download this key once, cache it, and use it to verify the signature on every incoming JWT — no per-request call to Auth Service needed.
+
+**The three paths through the system:**
+
+1. **Login (session creation)** — Browser talks to SvelteKit, which proxies to Auth Service. Auth validates credentials, creates a session (stored in Redis + PostgreSQL for durability), and sets a session cookie. This is the only cookie/session-based path.
+
+2. **JWT issuance** — The browser asks Auth Service (via SvelteKit proxy) for a JWT by calling `authClient.token()`. Auth looks up the session, confirms it's valid, then mints a JWT containing the user's claims (userId, orgId, role, fingerprint) and signs it with the RS256 private key. The JWT is held in memory only — never localStorage (XSS risk).
+
+3. **API calls** — The browser sends the JWT directly to the REST Gateway in the `Authorization` header. The gateway checks the signature against its cached JWKS public key (no network call to Auth). If valid and not expired, it trusts the claims inside and forwards the request via gRPC to internal services (Geo, Comms, etc.).
+
+**Why this design?** Auth Service is the single source of truth for identity but is never a per-request bottleneck — gateways validate JWTs independently using cached public keys. Sessions give instant revocation (within 5 minutes when cookie cache expires). JWTs give stateless validation at the gateway. The 15-minute JWT expiry is the tradeoff: if a session is revoked, an existing JWT still works at the gateway for up to 15 minutes — short enough to be acceptable, long enough to avoid constant re-issuance.
+
+---
 
 ### Browser → SvelteKit → Auth Service (Cookie Session)
 

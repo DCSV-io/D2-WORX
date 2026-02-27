@@ -59,31 +59,32 @@ Summary:
 - Geo.Client: Service-owned client library (messages, interfaces, WhoIs cache handler)
 - Request enrichment middleware (IP resolution, fingerprinting, WhoIs geolocation lookup)
 - Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
-- 1,436+ .NET tests (unit + integration) passing (677 shared + 759 Geo)
+- 1,436+ .NET tests (unit + integration) passing (677 shared + 759 Geo service)
 - Node.js pnpm workspace with shared TypeScript config and Vitest
 - ESLint 9 + Prettier monorepo-wide code quality tooling
-- TypeScript shared infrastructure (Phase 1 complete — 18 `@d2/*` shared packages, 837 tests):
+- TypeScript shared infrastructure (Phase 1 complete — 19 `@d2/*` shared packages, 857 tests):
   - Layer 0: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing`, `@d2/messaging`
   - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction), `@d2/di` (DI container)
   - Layer 2: `@d2/interfaces`, `@d2/result-extensions`
-  - Layer 3: `@d2/cache-memory`, `@d2/cache-redis`
+  - Layer 3: `@d2/cache-memory`, `@d2/cache-redis`, `@d2/batch-pg`, `@d2/errors-pg`
   - Layer 4: `@d2/geo-client` (full .NET Geo.Client parity)
   - Layer 5: `@d2/request-enrichment`, `@d2/ratelimit`, `@d2/idempotency`
   - Data redaction infrastructure (RedactionSpec + interface-level compile-time enforcement)
 
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
-- Auth service Stage B (Node.js + Hono + BetterAuth) — 853 auth tests passing:
+- Auth service Stage B (Node.js + Hono + BetterAuth) — 874 auth tests passing:
   - Domain model (entities, value objects, business rules)
   - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
-- Comms service Phase 1 (delivery engine) — 552 comms tests passing:
+- Comms service Phase 1 (delivery engine) — 566 comms tests passing:
   - Email delivery via Resend, SMS via Twilio
   - `@d2/comms-client` — thin RabbitMQ publishing client (universal notification shape)
   - RabbitMQ consumer for notification requests, gRPC API layer + Aspire wiring
 - E2E cross-service tests (Auth → Geo → Comms pipeline, 5 tests)
-- Production-readiness deep dive sweep — 21-agent cross-cutting audit, P1 fixes applied (see `sweep-reports/`)
+- Cross-platform parity — `@d2/batch-pg`, `@d2/errors-pg` (Node.js), `Errors.Pg` (.NET), documented in `backends/PARITY.md`
+- Production-readiness deep dive sweep — 21-agent cross-cutting audit, P1 fixes applied
 
 **🚧 In Progress:**
 
@@ -95,7 +96,7 @@ Summary:
 - SvelteKit auth integration (proxy pattern to Auth Service)
 - SignalR Gateway (WebSocket to gRPC routing)
 - OTel alerting and notification integration
-- Production-readiness sweep deferred items (see `sweep-reports/DEEP-DIVE-FINDINGS.md`)
+- Production-readiness sweep deferred items (see Outstanding Items in PLANNING.md)
 - Much, much more...
 
 **📝 Internal Planning:**
@@ -129,45 +130,42 @@ graph TB
             SR[SignalR Gateway<br/>.NET]
         end
 
-        subgraph AuthSvc["Auth Microservice"]
+        subgraph AuthSvc["Auth Service"]
             AUTH[Auth<br/>Node.js + BetterAuth]
         end
 
-        subgraph Services["Microservices"]
-            GEO[Geo Service<br/>.NET] ~~~ OTHER[Other Services...]
+        subgraph Services["Internal Services"]
+            GEO[Geo<br/>.NET]
+            COMMS[Comms<br/>Node.js]
         end
+
+        Gateways <-->|gRPC| Services
+        Gateways <-->|JWKS| AuthSvc
+        AuthSvc <-->|gRPC| Services
     end
 
     subgraph Infra["Infrastructure"]
-        GEODB[(Geo DB)] ~~~ AUTHDB[(Auth DB)] ~~~ OTHERDB[(Other DBs...)] ~~~ REDIS[(Redis)]
-        RMQ[RabbitMQ] ~~~ MINIO[MinIO S3] ~~~ LGTM[LGTM Stack]
+        PG[(PostgreSQL)] ~~~ REDIS[(Redis)] ~~~ RMQ[RabbitMQ]
+        MINIO[MinIO S3] ~~~ LGTM[LGTM Stack]
     end
 
-    %% Browser paths
+    %% External connections
     BROWSER <-->|SSR + Auth| SK
     BROWSER <-->|JWT API calls| REST
     BROWSER <-->|WebSocket| SR
-
-    %% SvelteKit to backends
     SK <-->|JWT| REST
-    SK <-->|Proxy /api/auth/*| AuthSvc
+    SK <-->|Auth proxy| AuthSvc
 
-    %% Internal backend routing
-    Gateways <-->|gRPC| Services
-    Gateways <-->|JWKS| AuthSvc
-    AuthSvc <-->|gRPC| Services
-
-    %% Infrastructure data
-    SK <-->|Infra Data| Infra
-    Backends <-->|Infra Data| Infra
+    %% Infra connection
+    Backends --- Infra
 
     %% Node colors
     classDef browser fill:#6c757d,stroke:#495057,color:#fff
     classDef svelte fill:#FF3E00,stroke:#c73100,color:#fff
     classDef gateway fill:#512BD4,stroke:#3d1f9e,color:#fff
-    classDef nodejs fill:#339933,stroke:#267326,color:#fff
+    classDef auth fill:#339933,stroke:#267326,color:#fff
     classDef service fill:#1a73e8,stroke:#1557b0,color:#fff
-    classDef postgres fill:#4169E1,stroke:#2f4fb3,color:#fff
+    classDef infra fill:#4169E1,stroke:#2f4fb3,color:#fff
     classDef redis fill:#DC382D,stroke:#b02d24,color:#fff
     classDef rabbitmq fill:#FF6600,stroke:#cc5200,color:#fff
     classDef minio fill:#C72E49,stroke:#9e243a,color:#fff
@@ -176,9 +174,9 @@ graph TB
     class BROWSER browser
     class SK svelte
     class REST,SR gateway
-    class AUTH nodejs
-    class GEO,OTHER service
-    class GEODB,AUTHDB,OTHERDB postgres
+    class AUTH auth
+    class GEO,COMMS service
+    class PG infra
     class REDIS redis
     class RMQ rabbitmq
     class MINIO minio
@@ -232,12 +230,13 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | In-Memory Cache   | [InMemoryCache.Default](backends/dotnet/shared/Implementations/Caching/InMemory/InMemoryCache.Default/INMEMORYCACHE_DEFAULT.md)       | [@d2/cache-memory](backends/node/shared/implementations/caching/in-memory/default/CACHE_MEMORY.md) | Local cache with LRU eviction |
 > | Distributed Cache | [DistributedCache.Redis](backends/dotnet/shared/Implementations/Caching/Distributed/DistributedCache.Redis/DISTRIBUTEDCACHE_REDIS.md) | [@d2/cache-redis](backends/node/shared/implementations/caching/distributed/redis/CACHE_REDIS.md)   | Redis caching                 |
 >
-> _Repository (.NET only):_
+> _Repository:_
 >
-> | Component                                                                                                            | Description                                |
-> | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-> | [Batch.Pg](backends/dotnet/shared/Implementations/Repository/Batch/Batch.Pg/BATCH_PG.md)                             | Reusable batched query utilities           |
-> | [Transactions.Pg](backends/dotnet/shared/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md) | PostgreSQL transaction management handlers |
+> | Concern      | .NET                                                                                                                 | Node.js                                                                                          | Description                                |
+> | ------------ | -------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+> | Batch Query  | [Batch.Pg](backends/dotnet/shared/Implementations/Repository/Batch/Batch.Pg/BATCH_PG.md)                             | [@d2/batch-pg](backends/node/shared/implementations/repository/pg/batch/BATCH_PG.md)             | Reusable batched query utilities           |
+> | Transactions | [Transactions.Pg](backends/dotnet/shared/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md) | —                                                                                                | PostgreSQL transaction management handlers |
+> | Error Helpers| [Errors.Pg](backends/dotnet/shared/Implementations/Repository/Errors/Errors.Pg/ERRORS_PG.md)                         | [@d2/errors-pg](backends/node/shared/implementations/repository/pg/errors/ERRORS_PG.md)          | PostgreSQL constraint error detection      |
 >
 > _Middleware:_
 >
@@ -260,8 +259,8 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                            | Platform | Status      | Description                                                                               |
 > | -------------------------------------------------- | -------- | ----------- | ----------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done     | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching         |
-> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers done (853 tests), scheduled jobs next |
-> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (552 tests)                      |
+> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers done (874 tests), scheduled jobs next |
+> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (566 tests)                      |
 >
 > **Client Libraries:**
 >
