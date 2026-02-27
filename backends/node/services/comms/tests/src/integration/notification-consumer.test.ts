@@ -86,7 +86,7 @@ describe("NotificationConsumer (integration)", () => {
   /** Creates a standard notification message matching the NotifyInput shape. */
   function createNotificationMessage(overrides?: Record<string, unknown>) {
     return {
-      recipientContactId: "contact-1",
+      recipientContactId: "00000000-0000-0000-0000-000000000001",
       title: "Test Notification",
       content: "# Hello\nThis is a test.",
       plaintext: "Hello, this is a test.",
@@ -135,7 +135,7 @@ describe("NotificationConsumer (integration)", () => {
     expect(handler.handleAsync).toHaveBeenCalledOnce();
 
     const input = handler.handleAsync.mock.calls[0][0];
-    expect(input.recipientContactId).toBe("contact-1");
+    expect(input.recipientContactId).toBe("00000000-0000-0000-0000-000000000001");
     expect(input.title).toBe("Test Notification");
     expect(input.content).toBe("# Hello\nThis is a test.");
     expect(input.plainTextContent).toBe("Hello, this is a test.");
@@ -179,7 +179,7 @@ describe("NotificationConsumer (integration)", () => {
     await publisher.send(
       { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
       createNotificationMessage({
-        recipientContactId: "c1",
+        recipientContactId: "00000000-0000-0000-0000-000000000011",
         correlationId: "corr-1",
         title: "Notification 1",
       }),
@@ -187,7 +187,7 @@ describe("NotificationConsumer (integration)", () => {
     await publisher.send(
       { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
       createNotificationMessage({
-        recipientContactId: "c2",
+        recipientContactId: "00000000-0000-0000-0000-000000000012",
         correlationId: "corr-2",
         title: "Notification 2",
       }),
@@ -195,7 +195,7 @@ describe("NotificationConsumer (integration)", () => {
     await publisher.send(
       { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
       createNotificationMessage({
-        recipientContactId: "c3",
+        recipientContactId: "00000000-0000-0000-0000-000000000013",
         correlationId: "corr-3",
         title: "Notification 3",
       }),
@@ -250,7 +250,7 @@ describe("NotificationConsumer (integration)", () => {
     await publisher.send(
       { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
       createNotificationMessage({
-        recipientContactId: "contact-retry-1",
+        recipientContactId: "00000000-0000-0000-0000-000000000021",
         correlationId: "corr-retry-1",
         title: "Retry Notification",
       }),

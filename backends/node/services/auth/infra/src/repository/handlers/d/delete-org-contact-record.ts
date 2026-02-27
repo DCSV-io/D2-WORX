@@ -21,7 +21,12 @@ export class DeleteOrgContactRecord
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
-    await this.db.delete(orgContact).where(eq(orgContact.id, input.id));
+    const rows = await this.db
+      .delete(orgContact)
+      .where(eq(orgContact.id, input.id))
+      .returning({ id: orgContact.id });
+
+    if (rows.length === 0) return D2Result.notFound();
 
     return D2Result.ok({ data: {} });
   }

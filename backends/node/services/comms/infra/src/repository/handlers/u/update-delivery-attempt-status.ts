@@ -26,7 +26,13 @@ export class UpdateDeliveryAttemptStatus
     if (input.error !== undefined) updates.error = input.error;
     if (input.nextRetryAt !== undefined) updates.nextRetryAt = input.nextRetryAt;
 
-    await this.db.update(deliveryAttempt).set(updates).where(eq(deliveryAttempt.id, input.id));
+    const rows = await this.db
+      .update(deliveryAttempt)
+      .set(updates)
+      .where(eq(deliveryAttempt.id, input.id))
+      .returning({ id: deliveryAttempt.id });
+
+    if (rows.length === 0) return D2Result.notFound();
 
     return D2Result.ok({ data: {} });
   }

@@ -14,6 +14,8 @@ export interface NotificationConsumerDeps {
   createScope: (provider: ServiceProvider) => ServiceScope;
   retryPublisher: IMessagePublisher;
   logger: ILogger;
+  /** Number of unacknowledged messages the broker delivers. Matches .NET ConsumerConfig default. */
+  prefetchCount?: number;
 }
 
 /**
@@ -21,14 +23,14 @@ export interface NotificationConsumerDeps {
  * Matches the NotifyInput shape published by @d2/comms-client.
  */
 const notificationMessageSchema = z.object({
-  recipientContactId: z.string().min(1).max(64),
-  title: z.string().min(1).max(500),
+  recipientContactId: z.string().uuid(),
+  title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
   plaintext: z.string().min(1).max(50_000),
   sensitive: z.boolean().optional(),
   urgency: z.enum(["normal", "urgent"]).optional(),
-  correlationId: z.string().min(1).max(64),
-  senderService: z.string().min(1).max(100),
+  correlationId: z.string().min(1).max(36),
+  senderService: z.string().min(1).max(50),
   metadata: z.record(z.unknown()).optional(),
 });
 
@@ -48,12 +50,13 @@ type NotificationMessage = z.infer<typeof notificationMessageSchema>;
  * Always returns ACK — retry is via re-publish to tier queues, not NACK/requeue.
  */
 export function createNotificationConsumer(deps: NotificationConsumerDeps) {
-  const { messageBus, provider, createScope, retryPublisher, logger } = deps;
+  const { messageBus, provider, createScope, retryPublisher, logger, prefetchCount = 1 } = deps;
 
   return messageBus.subscribeEnriched<unknown>(
     {
       queue: COMMS_MESSAGING.NOTIFICATIONS_QUEUE,
       queueOptions: { durable: true },
+      prefetchCount,
       exchanges: [
         {
           exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE,

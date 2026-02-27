@@ -59,10 +59,10 @@ Summary:
 - Geo.Client: Service-owned client library (messages, interfaces, WhoIs cache handler)
 - Request enrichment middleware (IP resolution, fingerprinting, WhoIs geolocation lookup)
 - Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
-- 1,287+ .NET tests (unit + integration) passing (565 shared + 722 Geo)
+- 1,436+ .NET tests (unit + integration) passing (677 shared + 759 Geo)
 - Node.js pnpm workspace with shared TypeScript config and Vitest
 - ESLint 9 + Prettier monorepo-wide code quality tooling
-- TypeScript shared infrastructure (Phase 1 complete — 18 `@d2/*` shared packages, 726 tests):
+- TypeScript shared infrastructure (Phase 1 complete — 18 `@d2/*` shared packages, 837 tests):
   - Layer 0: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing`, `@d2/messaging`
   - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction), `@d2/di` (DI container)
   - Layer 2: `@d2/interfaces`, `@d2/result-extensions`
@@ -73,7 +73,7 @@ Summary:
 
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
-- Auth service Stage B (Node.js + Hono + BetterAuth) — 825 auth tests passing:
+- Auth service Stage B (Node.js + Hono + BetterAuth) — 853 auth tests passing:
   - Domain model (entities, value objects, business rules)
   - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
@@ -83,17 +83,19 @@ Summary:
   - `@d2/comms-client` — thin RabbitMQ publishing client (universal notification shape)
   - RabbitMQ consumer for notification requests, gRPC API layer + Aspire wiring
 - E2E cross-service tests (Auth → Geo → Comms pipeline, 5 tests)
+- Production-readiness deep dive sweep — 21-agent cross-cutting audit, P1 fixes applied (see `sweep-reports/`)
 
 **🚧 In Progress:**
 
-- Auth service Stage C — client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC)
+- Scheduled jobs (Dkron) — data maintenance jobs for expired/orphaned record cleanup across Auth, Geo, and Comms services
 
 **📋 Planned:**
 
-- SignalR Gateway (WebSocket to gRPC routing)
+- Auth service Stage C — client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC)
 - SvelteKit auth integration (proxy pattern to Auth Service)
-- OTEL alerting and notification integration
-- Scheduled job definitions via Dkron (infrastructure already running)
+- SignalR Gateway (WebSocket to gRPC routing)
+- OTel alerting and notification integration
+- Production-readiness sweep deferred items (see `sweep-reports/DEEP-DIVE-FINDINGS.md`)
 - Much, much more...
 
 **📝 Internal Planning:**
@@ -258,7 +260,7 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                            | Platform | Status     | Description                                                                            |
 > | -------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching      |
-> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — DDD layers done (853 tests), client libs next |
+> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers done (853 tests), scheduled jobs next |
 > | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1 | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (552 tests)                   |
 >
 > **Client Libraries:**

@@ -21,10 +21,13 @@ export class MarkDeliveryRequestProcessed
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
-    await this.db
+    const rows = await this.db
       .update(deliveryRequest)
       .set({ processedAt: new Date() })
-      .where(eq(deliveryRequest.id, input.id));
+      .where(eq(deliveryRequest.id, input.id))
+      .returning({ id: deliveryRequest.id });
+
+    if (rows.length === 0) return D2Result.notFound();
 
     return D2Result.ok({ data: {} });
   }

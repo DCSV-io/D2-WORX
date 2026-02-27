@@ -76,9 +76,21 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         // Add metadata to the activity.
         activity?.SetTag("handler.type", typeof(THandler).FullName ?? typeof(THandler).Name);
         activity?.SetTag("trace.id", Context.Request.TraceId);
-        activity?.SetTag("user.id", Context.Request.UserId);
-        activity?.SetTag("agent.org.id", Context.Request.AgentOrgId);
-        activity?.SetTag("target.org.id", Context.Request.TargetOrgId);
+
+        if (Context.Request.UserId is not null)
+        {
+            activity?.SetTag("user.id", Context.Request.UserId);
+        }
+
+        if (Context.Request.AgentOrgId is not null)
+        {
+            activity?.SetTag("agent.org.id", Context.Request.AgentOrgId);
+        }
+
+        if (Context.Request.TargetOrgId is not null)
+        {
+            activity?.SetTag("target.org.id", Context.Request.TargetOrgId);
+        }
 
         // Start the stopwatch to measure elapsed time.
         var sw = Stopwatch.StartNew();

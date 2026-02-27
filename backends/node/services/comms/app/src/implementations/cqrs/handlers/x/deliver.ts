@@ -43,13 +43,13 @@ export interface DeliverOutput {
 const deliverSchema = z.object({
   correlationId: zodGuid,
   recipientContactId: zodGuid,
-  title: z.string().min(1).max(500),
-  content: z.string().min(1).max(50000),
-  plainTextContent: z.string().max(50000),
+  title: z.string().min(1).max(255),
+  content: z.string().min(1).max(50_000),
+  plainTextContent: z.string().max(50_000),
   sensitive: z.boolean().optional(),
   urgency: z.enum(["normal", "urgent"]).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
-  senderService: z.string().min(1).max(100),
+  senderService: z.string().min(1).max(50),
 });
 
 /**

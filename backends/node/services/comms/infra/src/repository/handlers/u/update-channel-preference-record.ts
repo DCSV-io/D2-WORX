@@ -22,14 +22,17 @@ export class UpdateChannelPreferenceRecord
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
     const p = input.pref;
-    await this.db
+    const rows = await this.db
       .update(channelPreference)
       .set({
         emailEnabled: p.emailEnabled,
         smsEnabled: p.smsEnabled,
         updatedAt: p.updatedAt,
       })
-      .where(eq(channelPreference.id, p.id));
+      .where(eq(channelPreference.id, p.id))
+      .returning({ id: channelPreference.id });
+
+    if (rows.length === 0) return D2Result.notFound();
 
     return D2Result.ok({ data: {} });
   }
