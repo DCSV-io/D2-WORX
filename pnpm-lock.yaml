@@ -101,6 +101,9 @@ importers:
       '@hono/node-server':
         specifier: 1.19.9
         version: 1.19.9(hono@4.11.9)
+      '@opentelemetry/api':
+        specifier: 1.9.0
+        version: 1.9.0
       drizzle-orm:
         specifier: 0.45.1
         version: 0.45.1(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.11)(pg@8.18.0)
@@ -184,6 +187,9 @@ importers:
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
+      '@d2/repository-pg':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/repository/pg/default
       '@d2/result':
         specifier: workspace:*
         version: link:../../../shared/result
@@ -445,6 +451,9 @@ importers:
       '@d2/messaging':
         specifier: workspace:*
         version: link:../../../shared/messaging
+      '@d2/repository-pg':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/repository/pg/default
       '@d2/result':
         specifier: workspace:*
         version: link:../../../shared/result
@@ -782,6 +791,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../result
 
+  backends/node/shared/implementations/repository/pg/default: {}
+
   backends/node/shared/interfaces:
     dependencies:
       '@d2/handler':
@@ -822,17 +833,17 @@ importers:
   backends/node/shared/protos:
     dependencies:
       '@bufbuild/protobuf':
-        specifier: ^2.5.0
+        specifier: 2.11.0
         version: 2.11.0
       '@grpc/grpc-js':
-        specifier: ^1.12.0
+        specifier: 1.14.3
         version: 1.14.3
     devDependencies:
       '@bufbuild/buf':
-        specifier: ^1.65.0
+        specifier: 1.65.0
         version: 1.65.0
       ts-proto:
-        specifier: ^2.6.0
+        specifier: 2.11.2
         version: 2.11.2
 
   backends/node/shared/result: {}

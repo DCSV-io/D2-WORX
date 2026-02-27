@@ -257,11 +257,11 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 > _Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async)._
 >
-> | Service                                            | Platform | Status     | Description                                                                            |
-> | -------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------- |
-> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching      |
+> | Service                                            | Platform | Status      | Description                                                                               |
+> | -------------------------------------------------- | -------- | ----------- | ----------------------------------------------------------------------------------------- |
+> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done     | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching         |
 > | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers done (853 tests), scheduled jobs next |
-> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1 | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (552 tests)                   |
+> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (552 tests)                      |
 >
 > **Client Libraries:**
 >

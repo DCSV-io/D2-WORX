@@ -37,6 +37,7 @@
     "@d2/service-defaults": "workspace:*",
     "@d2/utilities": "workspace:*",
     "@hono/node-server": "1.19.9",
+    "@opentelemetry/api": "1.9.0",
     "hono": "4.11.9",
     "ioredis": "5.8.0",
     "drizzle-orm": "0.45.1",

@@ -393,6 +393,11 @@ export async function createApp(
 
   // Global middleware
   app.use("*", createCorsMiddleware(config.corsOrigin));
+  app.use("*", async (c, next) => {
+    await next();
+    c.res.headers.set("X-Content-Type-Options", "nosniff");
+    c.res.headers.set("X-Frame-Options", "DENY");
+  });
   app.use(
     "*",
     bodyLimit({

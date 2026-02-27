@@ -7,7 +7,7 @@ import type {
   ICreateEmulationConsentRecordHandler,
 } from "@d2/auth-app";
 import { emulationConsent } from "../../schema/custom-tables.js";
-import { isPgUniqueViolation } from "../../utils/pg-errors.js";
+import { isPgUniqueViolation } from "@d2/repository-pg";
 
 export class CreateEmulationConsentRecord
   extends BaseHandler<I, O>

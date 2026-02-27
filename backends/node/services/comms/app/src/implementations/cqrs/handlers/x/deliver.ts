@@ -162,21 +162,36 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
 
     // Step 7: Filter to deliverable channels (must have address + dispatcher)
     const deliverableChannels: Array<{ channel: Channel; address: string }> = [];
+    const skippedReasons: string[] = [];
     for (const ch of channelsResult.channels) {
       if (ch === "email" && email && this.dispatchers.has("email")) {
         deliverableChannels.push({ channel: "email", address: email });
       } else if (ch === "sms" && phone && this.dispatchers.has("sms")) {
         deliverableChannels.push({ channel: "sms", address: phone });
+      } else if (ch === "email" && !email) {
+        skippedReasons.push("email: no address on contact");
+      } else if (ch === "email" && !this.dispatchers.has("email")) {
+        skippedReasons.push("email: no dispatcher configured");
+      } else if (ch === "sms" && !phone) {
+        skippedReasons.push("sms: no phone number on contact");
       } else if (ch === "sms" && !this.dispatchers.has("sms")) {
-        this.context.logger.warn(
-          `SMS channel requested but no dispatcher configured. Skipping SMS delivery. TraceId: ${this.traceId}`,
-        );
+        skippedReasons.push("sms: no dispatcher configured");
       }
     }
 
+    if (skippedReasons.length > 0) {
+      this.context.logger.warn(
+        `Channels skipped: ${skippedReasons.join(", ")}. TraceId: ${this.traceId}`,
+      );
+    }
+
     if (deliverableChannels.length === 0) {
+      const detail =
+        skippedReasons.length > 0
+          ? `No deliverable channels. Attempted: ${channelsResult.channels.join(", ")}. Skipped: ${skippedReasons.join("; ")}.`
+          : "No deliverable address found for any resolved channel.";
       return D2Result.notFound({
-        messages: ["No deliverable address found for any resolved channel."],
+        messages: [detail],
       });
     }
 

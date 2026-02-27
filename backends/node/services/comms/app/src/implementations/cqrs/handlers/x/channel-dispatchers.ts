@@ -54,7 +54,14 @@ export class EmailDispatcher implements IChannelDispatcher {
   }
 
   async dispatch(input: DispatchInput): Promise<DispatchResult> {
-    const renderedBody = renderMarkdownToHtml(input.content);
+    let renderedBody: string;
+    try {
+      renderedBody = renderMarkdownToHtml(input.content);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown rendering error";
+      return { success: false, error: `Markdown rendering failed: ${message}` };
+    }
+
     const html = renderTemplate(this.emailWrapper, {
       title: input.title,
       body: renderedBody,

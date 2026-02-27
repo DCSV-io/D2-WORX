@@ -7,6 +7,8 @@
 namespace D2.Gateways.REST.Auth;
 
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using Microsoft.Extensions.Options;
@@ -32,7 +34,7 @@ public class ServiceKeyMiddleware
 {
     private readonly RequestDelegate r_next;
     private readonly ILogger<ServiceKeyMiddleware> r_logger;
-    private readonly HashSet<string> r_validKeys;
+    private readonly byte[][] r_validKeyBytes;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceKeyMiddleware"/> class.
@@ -48,8 +50,9 @@ public class ServiceKeyMiddleware
     {
         r_next = next;
         r_logger = logger;
-        r_validKeys = new HashSet<string>(
-            options.Value.ValidKeys, StringComparer.Ordinal);
+        r_validKeyBytes = options.Value.ValidKeys
+            .Select(k => Encoding.UTF8.GetBytes(k))
+            .ToArray();
     }
 
     /// <summary>
@@ -70,8 +73,22 @@ public class ServiceKeyMiddleware
             return;
         }
 
+        // Timing-safe key validation: compare against ALL keys using
+        // FixedTimeEquals to prevent timing side-channel attacks.
+        var apiKeyBytes = Encoding.UTF8.GetBytes(apiKey);
+        var matched = false;
+        foreach (var validKeyBytes in r_validKeyBytes)
+        {
+            if (CryptographicOperations.FixedTimeEquals(apiKeyBytes, validKeyBytes))
+            {
+                matched = true;
+            }
+
+            // Continue loop — always compare ALL keys to prevent timing leaks.
+        }
+
         // Invalid key → 401 immediately (fail fast).
-        if (!r_validKeys.Contains(apiKey))
+        if (!matched)
         {
             r_logger.LogWarning("Invalid service API key presented");
 
@@ -83,7 +100,8 @@ public class ServiceKeyMiddleware
                     HttpStatusCode.Unauthorized,
                     inputErrors: null,
                     errorCode: "INVALID_SERVICE_KEY",
-                    traceId: context.TraceIdentifier));
+                    traceId: context.TraceIdentifier),
+                context.RequestAborted);
             return;
         }
 

@@ -62,6 +62,13 @@ public class RateLimitMiddleware
         HttpContext context,
         IRateLimit.ICheckHandler checkHandler)
     {
+        // Skip rate limiting for health endpoints.
+        if (context.Request.Path.StartsWithSegments("/api/health", StringComparison.OrdinalIgnoreCase))
+        {
+            await r_next(context);
+            return;
+        }
+
         // Get request info from previous middleware.
         var requestInfo = context.Features.Get<IRequestInfo>();
         if (requestInfo is null)

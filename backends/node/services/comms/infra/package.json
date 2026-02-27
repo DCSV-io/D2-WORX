@@ -26,6 +26,7 @@
     "@d2/di": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/messaging": "workspace:*",
+    "@d2/repository-pg": "workspace:*",
     "@d2/result": "workspace:*",
     "@d2/utilities": "workspace:*",
     "drizzle-orm": "0.45.1",
