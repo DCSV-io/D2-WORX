@@ -629,10 +629,9 @@ Each service package exports an `addXxx(services, ...)` registration function th
 > These data maintenance jobs should be implemented before client libraries. Without them, expired/orphaned data accumulates silently in production. See the "Scheduled Jobs (Dkron)" section below for the full job table.
 
 10. **Job infrastructure** — HTTP endpoint pattern for Dkron callbacks, Redis `SET NX` distributed lock helper, shared job utilities.
-11. **Auth jobs** — Sign-in event purge (daily, 90d), expired invitation cleanup (daily, 7d), expired emulation consent cleanup (weekly).
-12. **Geo jobs** — Orphaned location cleanup (daily), orphaned contacts cleanup (weekly).
-13. **Comms jobs** — Soft-deleted message cleanup (weekly, 90d), delivery history retention (monthly, 1y).
-14. **BetterAuth cleanup verification** — Confirm whether BetterAuth auto-purges expired sessions and verification tokens, or if we need Dkron jobs for those too.
+11. **Auth jobs** — Expired session purge (daily), sign-in event purge (daily, 90d), expired invitation cleanup (daily, 7d), expired emulation consent cleanup (daily).
+12. **Geo jobs** — Orphaned location cleanup (daily), orphaned contacts cleanup (daily).
+13. **Comms jobs** — Soft-deleted message cleanup (daily, 90d), delivery history retention (daily, 1y).
 
 **SvelteKit App Foundations**
 
@@ -1248,17 +1247,16 @@ clients/web/src/routes/
 
 **Infrastructure**: Dkron v4.0.9 runs as a persistent Aspire container (dashboard: `:8888`). Jobs call service HTTP endpoints on a cron schedule. Use Redis `SET NX` distributed locks when only one instance should execute a job.
 
-| Job                               | Owner | Schedule | Retention | Status              | Notes                                                                                                  |
-| --------------------------------- | ----- | -------- | --------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
-| **Sign-in event purge**           | Auth  | Daily    | 90 days   | Not implemented     | DELETE `sign_in_event` WHERE `created_at < NOW() - 90 days`                                            |
-| **Expired invitation cleanup**    | Auth  | Daily    | 7 days    | Not implemented     | DELETE expired invitations. Domain check `isInvitationExpired()` exists but no row deletion            |
-| **Expired emulation consent**     | Auth  | Weekly   | Per-grant | Not implemented     | DELETE WHERE `expires_at < NOW()` or `revoked_at IS NOT NULL`. Runtime filter works; rows accumulate   |
-| **Geo orphaned location cleanup** | Geo   | Daily    | N/A       | Not implemented     | DELETE locations with zero contact/WhoIs references. Auth swallows Geo delete failures relying on this |
-| **Orphaned contacts**             | Geo   | Weekly   | N/A       | Not implemented     | DELETE contacts with `context_key = 'auth_user'` + no matching user. Low priority ("harmless noise")   |
-| **Soft-deleted message cleanup**  | Comms | Weekly   | 90 days   | Not implemented     | DELETE `message` WHERE `deleted_at < NOW() - 90 days`                                                  |
-| **Delivery history retention**    | Comms | Monthly  | 1 year    | Not implemented     | Archive/DELETE old `delivery_request` + `delivery_attempt` rows                                        |
-| BetterAuth sessions (PG)          | Auth  | Weekly   | 7 days    | BetterAuth-managed? | Expired PG session rows may accumulate. Verify BetterAuth handles this                                 |
-| BetterAuth verification tokens    | Auth  | Weekly   | Per-token | BetterAuth-managed? | Expired tokens functionally inert. Verify BetterAuth handles cleanup                                   |
+| Job                               | Owner | Schedule | Retention | Status          | Notes                                                                                                  |
+| --------------------------------- | ----- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------ |
+| **Expired session purge (PG)**    | Auth  | Daily    | 0 days    | Not implemented | DELETE `session` WHERE `expires_at < NOW()`. BetterAuth only lazy-deletes on token presentation        |
+| **Sign-in event purge**           | Auth  | Daily    | 90 days   | Not implemented | DELETE `sign_in_event` WHERE `created_at < NOW() - 90 days`                                            |
+| **Expired invitation cleanup**    | Auth  | Daily    | 7 days    | Not implemented | DELETE expired invitations. Domain check `isInvitationExpired()` exists but no row deletion            |
+| **Expired emulation consent**     | Auth  | Daily    | 0 days    | Not implemented | DELETE WHERE `expires_at < NOW()` OR `revoked_at IS NOT NULL`. Runtime filter works; rows accumulate   |
+| **Geo orphaned location cleanup** | Geo   | Daily    | N/A       | Not implemented | DELETE locations with zero contact/WhoIs references. Auth swallows Geo delete failures relying on this |
+| **Orphaned contacts**             | Geo   | Daily    | N/A       | Not implemented | DELETE contacts with `context_key = 'auth_user'` + no matching user                                   |
+| **Soft-deleted message cleanup**  | Comms | Daily    | 90 days   | Not implemented | DELETE `message` WHERE `deleted_at < NOW() - 90 days`                                                  |
+| **Delivery history retention**    | Comms | Daily    | 1 year    | Not implemented | Archive/DELETE old `delivery_request` + `delivery_attempt` rows                                        |
 
 **Already handled (no Dkron job needed):**
 
@@ -1268,6 +1266,7 @@ clients/web/src/routes/
 - In-memory cache: Lazy TTL + LRU eviction
 - Comms delivery retries: RabbitMQ DLX + tier queue TTLs
 - JWKS key rotation: BetterAuth-managed
+- BetterAuth verification tokens: Lazy bulk-delete on any `findVerificationValue` call (since v1.2.0)
 
 ---
 
