@@ -103,7 +103,7 @@
 - ✅ Cross-service contact cache eviction — ContactsEvictedEvent via `events.geo.contacts` fan-out exchange. Publisher in Geo.Infra, consumers in Geo.Client (.NET) and geo-client (Node.js). Evicts matching IDs + ext-keys from local cache on delete/replace
 - ✅ Comms gRPC API key interceptor — `withApiKeyAuth` wrapper validates `x-api-key` metadata header against `COMMS_API_KEYS__<n>` indexed key set (multi-key, mirrors .NET ServiceKeyMiddleware pattern)
 - ✅ Proto contract updates — ContactReplacementKey, ContactReplacement, ContactsEvictedEvent, updated UpdateContactsByExtKeysResponse
-- ✅ Production-readiness deep dive sweep (2026-02-26) — 21-agent cross-cutting audit across 8 phases. 9 P1 findings (4 fixed, 1 reverted as false positive, 4 deferred architectural). 36 P2 + 28 P3 catalogued for future work. Key fixes: Drizzle rowCount validation (6 handlers), Zod schema alignment across consumer/handler/domain/DB, consumer prefetchCount default, BaseHandler PII span tags. See `sweep-reports/DEEP-DIVE-FINDINGS.md`
+- ✅ Production-readiness deep dive sweep (2026-02-26) — 21-agent cross-cutting audit across 8 phases. 9 P1 findings (4 fixed, 1 reverted as false positive, 4 deferred architectural). 36 P2 + 28 P3 catalogued for future work. Key fixes: Drizzle rowCount validation (6 handlers), Zod schema alignment across consumer/handler/domain/DB, consumer prefetchCount default, BaseHandler PII span tags. Findings consolidated into Outstanding Items below
 
 ### Blocked By
 
@@ -1412,7 +1412,7 @@ clients/web/src/routes/
 
 ## Outstanding Items
 
-Consolidated from all sweep reports (DEEP-DIVE-FINDINGS.md, CONSOLIDATED-FINDINGS.md, SECONDARY-SWEEP-PLAN.md, module sweep reports). Sweep reports in `sweep-reports/` are now historical reference only — this is the single source of truth. Items marked ~~strikethrough~~ were fixed in R1/R2 sweeps or identified as false positives.
+Consolidated from all sweep reports (now deleted). This is the single source of truth. Items marked ~~strikethrough~~ were fixed in R1/R2 sweeps or identified as false positives.
 
 **Sweep stats:** 303 module-level findings (30 high, 92 medium, 148 low, 33 info) + 73 deep-dive findings = all high fixed, all medium resolved, remaining items below.
 
