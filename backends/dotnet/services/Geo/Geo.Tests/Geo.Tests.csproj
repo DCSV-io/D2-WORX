@@ -37,6 +37,16 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\shared\Implementations\Messaging\Messaging.RabbitMQ\Messaging.RabbitMQ.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\..\..\..\contracts\fixtures\events\v1\*.json" Link="Fixtures\events\v1\%(FileName)%(Extension)">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
       <Folder Include="Integration\Infra\Repository\" />
     </ItemGroup>
 

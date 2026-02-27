@@ -2,8 +2,10 @@ import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { GeoServiceClient, GetContactsByExtKeysResponse, ContactDTO } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { Metadata } from "@grpc/grpc-js";
 import { z } from "zod";
 import type { GeoClientOptions } from "../../geo-client-options.js";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Queries } from "../../interfaces/index.js";
 
 type Input = Queries.GetContactsByExtKeysInput;
@@ -25,6 +27,7 @@ export class GetContactsByExtKeys
 
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
+  private readonly options: GeoClientOptions;
   private readonly inputSchema: z.ZodType<Input>;
 
   constructor(
@@ -36,6 +39,7 @@ export class GetContactsByExtKeys
     super(context);
     this.store = store;
     this.geoClient = geoClient;
+    this.options = options;
     this.inputSchema = z
       .object({
         keys: z.array(
@@ -52,7 +56,7 @@ export class GetContactsByExtKeys
     if (!validation.success) return D2Result.bubbleFail(validation);
 
     if (input.keys.length === 0) {
-      return D2Result.ok({ data: { data: new Map() }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: new Map() } });
     }
 
     const result = new Map<string, ContactDTO[]>();
@@ -60,7 +64,7 @@ export class GetContactsByExtKeys
 
     // Check cache first
     for (const key of input.keys) {
-      const cacheKey = `contact-ext:${key.contextKey}:${key.relatedEntityId}`;
+      const cacheKey = GEO_CACHE_KEYS.contactsByExtKey(key.contextKey, key.relatedEntityId);
       const cached = this.store.get<ContactDTO[]>(cacheKey);
       if (cached !== undefined) {
         result.set(`${key.contextKey}:${key.relatedEntityId}`, cached);
@@ -71,24 +75,29 @@ export class GetContactsByExtKeys
 
     // All cached — return early
     if (missingKeys.length === 0) {
-      return D2Result.ok({ data: { data: result }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: result } });
     }
 
     // Fetch cache misses from Geo service
     let response: GetContactsByExtKeysResponse;
     try {
       response = await new Promise<GetContactsByExtKeysResponse>((resolve, reject) => {
-        this.geoClient.getContactsByExtKeys({ keys: missingKeys }, (err, res) => {
-          if (err) reject(err);
-          else resolve(res);
-        });
+        this.geoClient.getContactsByExtKeys(
+          { keys: missingKeys },
+          new Metadata(),
+          { deadline: Date.now() + this.options.grpcTimeoutMs },
+          (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+          },
+        );
       });
     } catch {
       // Fail-open: return whatever was cached
       this.context.logger.warn(
         `gRPC call to Geo service failed for GetContactsByExtKeys. TraceId: ${this.traceId}`,
       );
-      return D2Result.ok({ data: { data: result }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: result } });
     }
 
     if (response.result?.success && response.data) {
@@ -96,14 +105,17 @@ export class GetContactsByExtKeys
       for (const entry of response.data) {
         if (entry.key) {
           const mapKey = `${entry.key.contextKey}:${entry.key.relatedEntityId}`;
-          const cacheKey = `contact-ext:${entry.key.contextKey}:${entry.key.relatedEntityId}`;
+          const cacheKey = GEO_CACHE_KEYS.contactsByExtKey(
+            entry.key.contextKey,
+            entry.key.relatedEntityId,
+          );
           this.store.set(cacheKey, entry.contacts);
           result.set(mapKey, entry.contacts);
         }
       }
     }
 
-    return D2Result.ok({ data: { data: result }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: result } });
   }
 }
 

@@ -27,6 +27,12 @@ public class Get<TValue> : BaseHandler<
         S.IGetHandler<TValue>, S.GetInput, S.GetOutput<TValue>>,
     S.IGetHandler<TValue>
 {
+    /// <summary>
+    /// Cached protobuf parser delegate. Static per closed generic type, so reflection
+    /// runs once per TValue regardless of how many <see cref="Get{TValue}"/> instances exist.
+    /// </summary>
+    private static readonly Lazy<Func<byte[], TValue>> sr_parser = new(BuildParser);
+
     private readonly IConnectionMultiplexer r_redis;
 
     /// <summary>
@@ -61,7 +67,7 @@ public class Get<TValue> : BaseHandler<
             // If no value was retrieved, return NotFound.
             if (!redisValue.HasValue)
             {
-                return D2Result<S.GetOutput<TValue>?>.NotFound(traceId: TraceId);
+                return D2Result<S.GetOutput<TValue>?>.NotFound();
             }
 
             // Deserialize the value.
@@ -73,8 +79,7 @@ public class Get<TValue> : BaseHandler<
 
             // Return the result.
             return D2Result<S.GetOutput<TValue>?>.Ok(
-                new S.GetOutput<TValue>(value),
-                traceId: TraceId);
+                new S.GetOutput<TValue>(value));
         }
         catch (RedisException ex)
         {
@@ -87,8 +92,7 @@ public class Get<TValue> : BaseHandler<
             return D2Result<S.GetOutput<TValue>?>.Fail(
                 ["Unable to connect to Redis."],
                 HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
+                errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
         catch (JsonException ex)
         {
@@ -103,15 +107,14 @@ public class Get<TValue> : BaseHandler<
                 [err_msg],
                 HttpStatusCode.InternalServerError,
                 [[nameof(S.GetInput.Key), err_msg]],
-                ErrorCodes.COULD_NOT_BE_DESERIALIZED,
-                TraceId);
+                ErrorCodes.COULD_NOT_BE_DESERIALIZED);
         }
 
         // Let the base handler catch any other exceptions.
     }
 
     /// <summary>
-    /// Parses a Protobuf message from a byte array.
+    /// Parses a Protobuf message from a byte array using a cached delegate.
     /// </summary>
     ///
     /// <param name="bytes">
@@ -121,32 +124,27 @@ public class Get<TValue> : BaseHandler<
     /// <returns>
     /// The parsed Protobuf message.
     /// </returns>
-    private static TValue ParseProtobuf(byte[] bytes)
+    private static TValue ParseProtobuf(byte[] bytes) => sr_parser.Value(bytes);
+
+    /// <summary>
+    /// Builds the protobuf parser delegate via reflection (called once per TValue).
+    /// </summary>
+    private static Func<byte[], TValue> BuildParser()
     {
         var parserProperty = typeof(TValue).GetProperty(
             "Parser",
-            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-
-        if (parserProperty == null)
-        {
-            throw new InvalidOperationException(
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            ?? throw new InvalidOperationException(
                 $"Type '{typeof(TValue).FullName}' does not have a public static 'Parser' property. Ensure that TValue is a generated protobuf message type.");
-        }
 
-        var parser = parserProperty.GetValue(null);
-        if (parser == null)
-        {
-            throw new InvalidOperationException(
+        var parser = parserProperty.GetValue(null)
+            ?? throw new InvalidOperationException(
                 $"The 'Parser' property on type '{typeof(TValue).FullName}' is null. Ensure that TValue is a valid protobuf message type.");
-        }
 
-        var parseFromMethod = parser.GetType().GetMethod("ParseFrom", [typeof(byte[])]);
-        if (parseFromMethod == null)
-        {
-            throw new InvalidOperationException(
+        var parseFromMethod = parser.GetType().GetMethod("ParseFrom", [typeof(byte[])])
+            ?? throw new InvalidOperationException(
                 $"The 'Parser' object on type '{typeof(TValue).FullName}' does not have a 'ParseFrom(byte[])' method. Ensure that TValue is a valid protobuf message type.");
-        }
 
-        return (TValue)parseFromMethod.Invoke(parser, [bytes])!;
+        return (byte[] data) => (TValue)parseFromMethod.Invoke(parser, [data])!;
     }
 }

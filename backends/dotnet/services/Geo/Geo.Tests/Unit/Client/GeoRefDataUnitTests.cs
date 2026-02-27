@@ -8,19 +8,16 @@
 namespace D2.Geo.Tests.Unit.Client;
 
 using System.Net;
+using D2.Events.Protos.V1;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
-using D2.Geo.Client.Messages;
 using D2.Geo.Client.Messaging.Handlers.Sub;
-using D2.Geo.Client.Messaging.MT.Consumers;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using FluentAssertions;
-using MassTransit;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -75,7 +72,7 @@ public class GeoRefDataUnitTests
             r_setOnDisk.Object,
             r_context);
 
-        var message = new GeoRefDataUpdated("2.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "2.0.0" };
 
         // Act
         var result = await handler.HandleAsync(message, CancellationToken.None);
@@ -126,7 +123,7 @@ public class GeoRefDataUnitTests
             r_setOnDisk.Object,
             r_context);
 
-        var message = new GeoRefDataUpdated("2.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "2.0.0" };
 
         // Act
         var result = await handler.HandleAsync(message, CancellationToken.None);
@@ -179,77 +176,12 @@ public class GeoRefDataUnitTests
             r_setOnDisk.Object,
             r_context);
 
-        var message = new GeoRefDataUpdated("2.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "2.0.0" };
 
         // Act
         var result = await handler.HandleAsync(message, CancellationToken.None);
 
         // Assert
         result.Success.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Tests that UpdatedConsumer completes successfully when handler succeeds.
-    /// </summary>
-    ///
-    /// <returns>
-    /// A <see cref="Task"/> representing the asynchronous operation.
-    /// </returns>
-    [Fact]
-    public async Task UpdatedConsumer_WhenHandlerSucceeds_CompletesWithoutException()
-    {
-        // Arrange
-        var mockHandler = new Mock<ISubs.IUpdatedHandler>();
-        mockHandler
-            .Setup(x => x.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(D2Result<ISubs.UpdatedOutput?>.Ok(new ISubs.UpdatedOutput()));
-
-        var mockLogger = new Mock<ILogger<UpdatedConsumer>>();
-        var mockContext = new Mock<ConsumeContext<GeoRefDataUpdated>>();
-        mockContext.Setup(x => x.Message).Returns(new GeoRefDataUpdated("1.0.0"));
-        mockContext.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
-
-        var consumer = new UpdatedConsumer(mockHandler.Object, mockLogger.Object);
-
-        // Act
-        var act = () => consumer.Consume(mockContext.Object);
-
-        // Assert
-        await act.Should().NotThrowAsync();
-        mockHandler.Verify(
-            x => x.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()),
-            Times.Once);
-    }
-
-    /// <summary>
-    /// Tests that UpdatedConsumer throws when handler fails.
-    /// </summary>
-    ///
-    /// <returns>
-    /// A <see cref="Task"/> representing the asynchronous operation.
-    /// </returns>
-    [Fact]
-    public async Task UpdatedConsumer_WhenHandlerFails_ThrowsInvalidOperationException()
-    {
-        // Arrange
-        var mockHandler = new Mock<ISubs.IUpdatedHandler>();
-        mockHandler
-            .Setup(x => x.HandleAsync(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(D2Result<ISubs.UpdatedOutput?>.Fail(
-                ["Handler failed"],
-                HttpStatusCode.InternalServerError));
-
-        var mockLogger = new Mock<ILogger<UpdatedConsumer>>();
-        var mockContext = new Mock<ConsumeContext<GeoRefDataUpdated>>();
-        mockContext.Setup(x => x.Message).Returns(new GeoRefDataUpdated("1.0.0"));
-        mockContext.Setup(x => x.CancellationToken).Returns(CancellationToken.None);
-
-        var consumer = new UpdatedConsumer(mockHandler.Object, mockLogger.Object);
-
-        // Act
-        var act = () => consumer.Consume(mockContext.Object);
-
-        // Assert
-        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 }

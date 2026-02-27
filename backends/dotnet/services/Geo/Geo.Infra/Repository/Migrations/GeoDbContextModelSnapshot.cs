@@ -57,6 +57,7 @@ namespace D2.Geo.Infra.Repository.Migrations
                     b.HasIndex("LocationHashId");
 
                     b.HasIndex("ContextKey", "RelatedEntityId")
+                        .IsUnique()
                         .HasDatabaseName("ix_contacts_context_key_related_entity_id");
 
                     b.ToTable("contacts", (string)null);

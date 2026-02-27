@@ -8,6 +8,7 @@ export interface SignInEvent {
   readonly ipAddress: string;
   readonly userAgent: string;
   readonly whoIsId: string | null;
+  readonly failureReason: string | null;
   readonly createdAt: Date;
 }
 
@@ -17,6 +18,7 @@ export interface CreateSignInEventInput {
   readonly ipAddress: string;
   readonly userAgent: string;
   readonly whoIsId?: string | null;
+  readonly failureReason?: string | null;
   readonly id?: string;
 }
 
@@ -40,6 +42,7 @@ export function createSignInEvent(input: CreateSignInEventInput): SignInEvent {
     ipAddress: input.ipAddress,
     userAgent: input.userAgent,
     whoIsId: input.whoIsId ?? null,
+    failureReason: input.failureReason ?? null,
     createdAt: new Date(),
   };
 }

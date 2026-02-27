@@ -22,7 +22,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		stylecop.json = stylecop.json
 		Directory.Build.props = Directory.Build.props
 		D2.sln.DotSettings = D2.sln.DotSettings
-		D2.sln.DotSettings.user = D2.sln.DotSettings.user
 		.dockerignore = .dockerignore
 		.editorconfig = .editorconfig
 		NuGet.config = NuGet.config
@@ -81,7 +80,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "D2-WORX", "D2-WORX", "{1F44
 	ProjectSection(SolutionItems) = preProject
 		observability\grafana\provisioning\dashboards\d2-worx\rest-gateway-performance.json = observability\grafana\provisioning\dashboards\d2-worx\rest-gateway-performance.json
 		observability\grafana\provisioning\dashboards\d2-worx\cadvisor_19792_rev6.json = observability\grafana\provisioning\dashboards\d2-worx\cadvisor_19792_rev6.json
-		observability\grafana\provisioning\dashboards\d2-worx\keycloak_14390_rev7.json = observability\grafana\provisioning\dashboards\d2-worx\keycloak_14390_rev7.json
 		observability\grafana\provisioning\dashboards\d2-worx\minio_13502_rev26.json = observability\grafana\provisioning\dashboards\d2-worx\minio_13502_rev26.json
 		observability\grafana\provisioning\dashboards\d2-worx\pgsqldb_9628_rev8.json = observability\grafana\provisioning\dashboards\d2-worx\pgsqldb_9628_rev8.json
 		observability\grafana\provisioning\dashboards\d2-worx\rabbitmq_10991_rev15.json = observability\grafana\provisioning\dashboards\d2-worx\rabbitmq_10991_rev15.json
@@ -163,6 +161,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Middleware", "Middleware", "{67CEFB94-72CA-A18C-F9EB-B4DFA098AB43}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Idempotency.Default", "backends\dotnet\shared\Implementations\Middleware\Idempotency.Default\Idempotency.Default.csproj", "{32DE0227-03A1-46D7-B69A-2B8E83FFF886}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.RabbitMQ", "backends\dotnet\shared\Implementations\Messaging\Messaging.RabbitMQ\Messaging.RabbitMQ.csproj", "{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Repository", "Repository", "{0F698BD6-454E-2F85-2B3B-6C82D0DDE483}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Errors", "Errors", "{56217CD5-D833-4A29-9EDD-1CDFFCF80D6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Errors.Pg", "backends\dotnet\shared\Implementations\Repository\Errors\Errors.Pg\Errors.Pg.csproj", "{DF1F3BCD-0D35-4110-88B5-32217EF197F1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -462,6 +468,30 @@ Global
 		{32DE0227-03A1-46D7-B69A-2B8E83FFF886}.Release|x64.Build.0 = Release|Any CPU
 		{32DE0227-03A1-46D7-B69A-2B8E83FFF886}.Release|x86.ActiveCfg = Release|Any CPU
 		{32DE0227-03A1-46D7-B69A-2B8E83FFF886}.Release|x86.Build.0 = Release|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Debug|x64.Build.0 = Debug|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Debug|x86.Build.0 = Debug|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Release|x64.ActiveCfg = Release|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Release|x64.Build.0 = Release|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Release|x86.ActiveCfg = Release|Any CPU
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9}.Release|x86.Build.0 = Release|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Debug|x64.Build.0 = Debug|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Debug|x86.Build.0 = Debug|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Release|x64.ActiveCfg = Release|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Release|x64.Build.0 = Release|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Release|x86.ActiveCfg = Release|Any CPU
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -522,5 +552,9 @@ Global
 		{15D780A7-58A8-9D67-E29D-6FD3298E7EB0} = {6FB68B6D-9F68-FD48-E674-07A74FD400D2}
 		{67CEFB94-72CA-A18C-F9EB-B4DFA098AB43} = {15D780A7-58A8-9D67-E29D-6FD3298E7EB0}
 		{32DE0227-03A1-46D7-B69A-2B8E83FFF886} = {67CEFB94-72CA-A18C-F9EB-B4DFA098AB43}
+		{36E4E2F2-A338-42B6-BFA4-74AF45315DC9} = {15D780A7-58A8-9D67-E29D-6FD3298E7EB0}
+		{0F698BD6-454E-2F85-2B3B-6C82D0DDE483} = {15D780A7-58A8-9D67-E29D-6FD3298E7EB0}
+		{56217CD5-D833-4A29-9EDD-1CDFFCF80D6D} = {0F698BD6-454E-2F85-2B3B-6C82D0DDE483}
+		{DF1F3BCD-0D35-4110-88B5-32217EF197F1} = {56217CD5-D833-4A29-9EDD-1CDFFCF80D6D}
 	EndGlobalSection
 EndGlobal

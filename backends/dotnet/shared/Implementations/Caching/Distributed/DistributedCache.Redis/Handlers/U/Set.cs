@@ -67,8 +67,7 @@ public class Set<TValue> : BaseHandler<
 
             // Return success.
             return D2Result<S.SetOutput?>.Ok(
-                new S.SetOutput(),
-                traceId: TraceId);
+                new S.SetOutput());
         }
         catch (RedisException ex)
         {
@@ -81,8 +80,7 @@ public class Set<TValue> : BaseHandler<
             return D2Result<S.SetOutput?>.Fail(
                 ["Unable to connect to Redis."],
                 HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
+                errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
         catch (JsonException ex)
         {
@@ -97,8 +95,7 @@ public class Set<TValue> : BaseHandler<
                 [err_msg],
                 HttpStatusCode.InternalServerError,
                 [[nameof(S.SetInput<TValue>.Value), err_msg]],
-                ErrorCodes.COULD_NOT_BE_SERIALIZED,
-                TraceId);
+                ErrorCodes.COULD_NOT_BE_SERIALIZED);
         }
 
         // Let the base handler catch any other exceptions.

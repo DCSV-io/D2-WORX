@@ -84,6 +84,7 @@ public static class Extensions
             services.AddTransient<ICommands.ISetInMemHandler, SetInMem>();
             services.AddTransient<ICommands.ISetOnDiskHandler, SetOnDisk>();
             services.AddTransient<ISubs.IUpdatedHandler, Updated>();
+            services.AddTransient<ISubs.IContactsEvictedHandler, ContactsEvicted>();
         }
 
         /// <summary>

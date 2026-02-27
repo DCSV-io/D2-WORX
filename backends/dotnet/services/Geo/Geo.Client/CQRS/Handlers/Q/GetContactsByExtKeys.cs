@@ -76,7 +76,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
 
         if (input.Keys.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         var result = new Dictionary<string, List<ContactDTO>>();
@@ -85,7 +85,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         // Check cache first.
         foreach (var key in input.Keys)
         {
-            var cacheKey = $"contact-ext:{key.ContextKey}:{key.RelatedEntityId}";
+            var cacheKey = CacheKeys.ContactsByExtKey(key.ContextKey, Guid.Parse(key.RelatedEntityId));
             var getR = await r_cacheGet.HandleAsync(new(cacheKey), ct);
             if (getR.CheckSuccess(out var cached) && cached?.Value is not null)
             {
@@ -100,7 +100,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         // All cached — return early.
         if (missingKeys.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(result), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(result));
         }
 
         // Fetch cache misses from Geo service.
@@ -119,7 +119,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
                 "gRPC call to Geo service failed for GetContactsByExtKeys. TraceId: {TraceId}",
                 TraceId);
 
-            return D2Result<O?>.Ok(new O(result), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(result));
         }
 
         if (response.Result is { Success: true })
@@ -130,14 +130,14 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
                 if (entry.Key is not null)
                 {
                     var mapKey = $"{entry.Key.ContextKey}:{entry.Key.RelatedEntityId}";
-                    var cacheKey = $"contact-ext:{entry.Key.ContextKey}:{entry.Key.RelatedEntityId}";
+                    var cacheKey = CacheKeys.ContactsByExtKey(entry.Key.ContextKey, Guid.Parse(entry.Key.RelatedEntityId));
                     var contacts = entry.Contacts.ToList();
 
                     var setR = await r_cacheSet.HandleAsync(new(cacheKey, contacts), ct);
                     if (setR.Failed)
                     {
                         Context.Logger.LogWarning(
-                            "Failed to cache contact-ext:{ContextKey}:{RelatedEntityId}. TraceId: {TraceId}",
+                            "Failed to cache geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId}. TraceId: {TraceId}",
                             entry.Key.ContextKey,
                             entry.Key.RelatedEntityId,
                             TraceId);
@@ -148,6 +148,6 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
             }
         }
 
-        return D2Result<O?>.Ok(new O(result), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(result));
     }
 }

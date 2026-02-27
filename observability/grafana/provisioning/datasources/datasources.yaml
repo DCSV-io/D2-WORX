@@ -36,10 +36,16 @@ datasources:
       maxLines: 5000
       timeout: 60
       derivedFields:
-        # Match JSON format: "trace_id":"abc123"
+        # Match JSON snake_case: "trace_id":"abc123" (Pino + OTel instrumentation)
         - datasourceUid: tempo
           matcherRegex: '"trace_id"[:\s]+"([a-f0-9]+)"'
           name: TraceID_JSON
+          url: "$${__value.raw}"
+          urlDisplayLabel: "View Trace"
+        # Match JSON PascalCase: "TraceId":"abc123" (.NET Serilog)
+        - datasourceUid: tempo
+          matcherRegex: '"TraceId"[:\s]+"([a-f0-9]+)"'
+          name: TraceID_Serilog
           url: "$${__value.raw}"
           urlDisplayLabel: "View Trace"
         # Match key=value format: trace_id=abc123

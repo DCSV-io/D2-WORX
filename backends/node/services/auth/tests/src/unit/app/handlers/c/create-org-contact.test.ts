@@ -38,7 +38,7 @@ function createMockCreateContacts(): Commands.ICreateContactsHandler {
             {
               id: "geo-contact-001",
               createdAt: new Date("2026-02-10"),
-              contextKey: "org_contact",
+              contextKey: "auth_org_contact",
               relatedEntityId: "placeholder",
             } as ContactDTO,
           ],
@@ -157,7 +157,7 @@ describe("CreateOrgContact", () => {
     // Verify createContacts was called with contacts array containing contextKey
     const call = vi.mocked(createContacts.handleAsync).mock.calls[0][0];
     expect(call.contacts).toHaveLength(1);
-    expect(call.contacts[0].contextKey).toBe("org_contact");
+    expect(call.contacts[0].contextKey).toBe("auth_org_contact");
     expect(call.contacts[0].relatedEntityId).toBeDefined();
     expect(call.contacts[0].relatedEntityId.length).toBeGreaterThan(0);
   });
@@ -435,5 +435,11 @@ describe("CreateOrgContact", () => {
     expect(call.contacts[0].contactMethods?.emails?.[0].value).toBe("hq@example.com");
     expect(call.contacts[0].contactMethods?.phoneNumbers?.[0].value).toBe("+1234567890");
     expect(call.contacts[0].personalDetails?.firstName).toBe("Jane");
+  });
+
+  it("should define redaction spec that suppresses both input and output", () => {
+    expect(handler.redaction).toBeDefined();
+    expect(handler.redaction?.suppressInput).toBe(true);
+    expect(handler.redaction?.suppressOutput).toBe(true);
   });
 });

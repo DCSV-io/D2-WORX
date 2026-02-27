@@ -70,6 +70,6 @@ public class Begin : BaseHandler<Begin, I, O>, H
 
         await r_db.Database.BeginTransactionAsync(isolationLevel, ct);
 
-        return D2Result<O?>.Ok(traceId: TraceId);
+        return D2Result<O?>.Ok();
     }
 }

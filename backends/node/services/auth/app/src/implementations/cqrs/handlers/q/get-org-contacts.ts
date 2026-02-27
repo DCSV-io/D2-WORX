@@ -2,7 +2,7 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ContactDTO } from "@d2/protos";
-import type { OrgContact } from "@d2/auth-domain";
+import { GEO_CONTEXT_KEYS, type OrgContact } from "@d2/auth-domain";
 import type { Queries } from "@d2/geo-client";
 import type { IFindOrgContactsByOrgIdHandler } from "../../../../interfaces/repository/handlers/index.js";
 
@@ -39,7 +39,7 @@ const schema = z.object({
  * Geo contact data via ext keys.
  *
  * Loads junction records from the repo, batch-fetches Geo contact data
- * via GetContactsByExtKeys (using contextKey="org_contact", relatedEntityId=junction.id),
+ * via GetContactsByExtKeys (using contextKey="auth_org_contact", relatedEntityId=junction.id),
  * then joins the results. Orphaned junctions (where the Geo contact no longer
  * exists) are returned with geoContact: null.
  */
@@ -72,12 +72,12 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
     const junctions: OrgContact[] = findResult.success ? (findResult.data?.contacts ?? []) : [];
 
     if (junctions.length === 0) {
-      return D2Result.ok({ data: { contacts: [] }, traceId: this.traceId });
+      return D2Result.ok({ data: { contacts: [] } });
     }
 
     // Batch fetch Geo contacts using ext keys
     const keys = junctions.map((j) => ({
-      contextKey: "org_contact",
+      contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT,
       relatedEntityId: j.id,
     }));
 
@@ -96,9 +96,9 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
       isPrimary: j.isPrimary,
       createdAt: j.createdAt,
       updatedAt: j.updatedAt,
-      geoContact: geoContactMap.get(`org_contact:${j.id}`)?.[0] ?? null,
+      geoContact: geoContactMap.get(`${GEO_CONTEXT_KEYS.ORG_CONTACT}:${j.id}`)?.[0] ?? null,
     }));
 
-    return D2Result.ok({ data: { contacts }, traceId: this.traceId });
+    return D2Result.ok({ data: { contacts } });
   }
 }

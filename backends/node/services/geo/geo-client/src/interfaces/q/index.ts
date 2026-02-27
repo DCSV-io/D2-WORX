@@ -10,3 +10,9 @@ export type {
   GetContactsByExtKeysOutput,
   IGetContactsByExtKeysHandler,
 } from "./get-contacts-by-ext-keys.js";
+export { GET_CONTACTS_BY_IDS_REDACTION } from "./get-contacts-by-ids.js";
+export type {
+  GetContactsByIdsInput,
+  GetContactsByIdsOutput,
+  IGetContactsByIdsHandler,
+} from "./get-contacts-by-ids.js";

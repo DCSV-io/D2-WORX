@@ -33,6 +33,7 @@ function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
     isHosting: false,
     userId: undefined,
     isAuthenticated: false,
+    isTrustedService: false,
     ...overrides,
   };
 }
@@ -80,6 +81,42 @@ describe("RateLimit Check handler", () => {
 
   beforeEach(() => {
     mocks = createMockHandlers();
+  });
+
+  // -----------------------------------------------------------------------
+  // Trusted service bypass
+  // -----------------------------------------------------------------------
+
+  it("should bypass all rate limiting for trusted services", async () => {
+    // Even with counts that would normally trigger blocking, trusted services pass.
+    mocks.incrementFn.mockResolvedValue(
+      D2Result.ok<DistributedCache.IncrementOutput | undefined>({
+        data: { newValue: 999_999 },
+      }),
+    );
+
+    const handler = createCheck(mocks, { clientFingerprintThreshold: 1 });
+    const info = createRequestInfo({ isTrustedService: true });
+    const result = await handler.handleAsync({ requestInfo: info });
+
+    expect(result).toBeSuccess();
+    expect(result.data?.isBlocked).toBe(false);
+    expect(result.data?.blockedDimension).toBeUndefined();
+    expect(result.data?.retryAfterMs).toBeUndefined();
+    // No cache operations should have been called.
+    expect(mocks.getTtlFn).not.toHaveBeenCalled();
+    expect(mocks.incrementFn).not.toHaveBeenCalled();
+    expect(mocks.setFn).not.toHaveBeenCalled();
+  });
+
+  it("should not bypass rate limiting for non-trusted services", async () => {
+    const handler = createCheck(mocks);
+    const info = createRequestInfo({ isTrustedService: false });
+    const result = await handler.handleAsync({ requestInfo: info });
+
+    expect(result).toBeSuccess();
+    // Cache operations should have been called (normal flow).
+    expect(mocks.getTtlFn).toHaveBeenCalled();
   });
 
   // -----------------------------------------------------------------------
@@ -334,7 +371,7 @@ describe("RateLimit Check handler", () => {
   // Short-circuit
   // -----------------------------------------------------------------------
 
-  it("should stop checking remaining dimensions after first block", async () => {
+  it("should return blocked when any dimension exceeds threshold (concurrent)", async () => {
     mocks.incrementFn.mockResolvedValue(
       D2Result.ok<DistributedCache.IncrementOutput | undefined>({
         data: { newValue: 200 },
@@ -345,16 +382,10 @@ describe("RateLimit Check handler", () => {
     const info = createRequestInfo();
     const result = await handler.handleAsync({ requestInfo: info });
 
+    // All dimensions fire concurrently; first blocked result is returned.
     expect(result.data?.isBlocked).toBe(true);
-    expect(result.data?.blockedDimension).toBe(RateLimitDimension.ClientFingerprint);
+    expect(result.data?.blockedDimension).toBeDefined();
     expect(result.data?.retryAfterMs).toBeDefined();
-
-    // Should not have checked IP, city, or country after fingerprint blocked
-    const getTtlCalls = mocks.getTtlFn.mock.calls;
-    const ipCalls = getTtlCalls.filter((c: unknown[]) =>
-      (c[0] as { key: string }).key.includes("blocked:ip:"),
-    );
-    expect(ipCalls).toHaveLength(0);
   });
 
   // -----------------------------------------------------------------------
@@ -374,8 +405,8 @@ describe("RateLimit Check handler", () => {
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
     expect(result.data?.retryAfterMs).toBe(180_000);
-    // Increment should not have been called (short-circuited at getTtl)
-    expect(mocks.incrementFn).not.toHaveBeenCalled();
+    // With concurrent execution, increment fires alongside getTtl (harmless —
+    // counters auto-expire via TTL). The important thing is the correct result.
   });
 
   // -----------------------------------------------------------------------

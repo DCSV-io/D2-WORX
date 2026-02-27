@@ -53,7 +53,7 @@ class PlainHandler extends BaseHandler<{ ip: string; name: string }, { data: str
     ip: string;
     name: string;
   }): Promise<D2Result<{ data: string } | undefined>> {
-    return D2Result.ok({ data: { data: input.name }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: input.name } });
   }
 }
 
@@ -74,7 +74,7 @@ class InputFieldRedactionHandler extends BaseHandler<
     ip: string;
     name: string;
   }): Promise<D2Result<{ data: string } | undefined>> {
-    return D2Result.ok({ data: { data: input.name }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: input.name } });
   }
 }
 
@@ -96,7 +96,6 @@ class OutputFieldRedactionHandler extends BaseHandler<
   }): Promise<D2Result<{ secret: string; public: string } | undefined>> {
     return D2Result.ok({
       data: { secret: "s3cret", public: "visible" },
-      traceId: this.traceId,
     });
   }
 }
@@ -114,7 +113,7 @@ class SuppressInputHandler extends BaseHandler<{ ip: string }, { data: string }>
   protected async executeAsync(_input: {
     ip: string;
   }): Promise<D2Result<{ data: string } | undefined>> {
-    return D2Result.ok({ data: { data: "ok" }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: "ok" } });
   }
 }
 
@@ -131,7 +130,7 @@ class SuppressOutputHandler extends BaseHandler<{ query: string }, { data: strin
   protected async executeAsync(_input: {
     query: string;
   }): Promise<D2Result<{ data: string } | undefined>> {
-    return D2Result.ok({ data: { data: "secret-data" }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: "secret-data" } });
   }
 }
 
@@ -148,7 +147,7 @@ class SuppressAndFieldsHandler extends BaseHandler<{ ip: string }, { data: strin
   protected async executeAsync(_input: {
     ip: string;
   }): Promise<D2Result<{ data: string } | undefined>> {
-    return D2Result.ok({ data: { data: "ok" }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: "ok" } });
   }
 }
 
@@ -166,7 +165,7 @@ class EmptyInputFieldsHandler extends BaseHandler<{ ip: string; name: string }, 
     ip: string;
     name: string;
   }): Promise<D2Result<{ data: string } | undefined>> {
-    return D2Result.ok({ data: { data: input.name }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: input.name } });
   }
 }
 
@@ -188,7 +187,6 @@ class EmptyOutputFieldsHandler extends BaseHandler<
   }): Promise<D2Result<{ secret: string; public: string } | undefined>> {
     return D2Result.ok({
       data: { secret: "s3cret", public: "visible" },
-      traceId: this.traceId,
     });
   }
 }
@@ -206,7 +204,7 @@ class NullDataOutputHandler extends BaseHandler<{ query: string }, { secret: str
   protected async executeAsync(_input: {
     query: string;
   }): Promise<D2Result<{ secret: string } | undefined>> {
-    return D2Result.notFound({ traceId: this.traceId });
+    return D2Result.notFound();
   }
 }
 
@@ -228,7 +226,7 @@ class MultiFieldRedactionHandler extends BaseHandler<
     fingerprint: string;
     name: string;
   }): Promise<D2Result<{ data: string } | undefined>> {
-    return D2Result.ok({ data: { data: input.name }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: input.name } });
   }
 }
 
@@ -250,7 +248,6 @@ class SuppressOutputAndFieldsHandler extends BaseHandler<
   }): Promise<D2Result<{ secret: string; public: string } | undefined>> {
     return D2Result.ok({
       data: { secret: "s3cret", public: "visible" },
-      traceId: this.traceId,
     });
   }
 }
@@ -293,7 +290,7 @@ class ManualLogSafeHandler extends BaseHandler<
   }): Promise<D2Result<{ data: string } | undefined>> {
     // Safe: does NOT log raw PII in manual calls
     this.context.logger.warn(`gRPC call failed. TraceId: ${this.traceId}`);
-    return D2Result.ok({ data: { data: "ok" }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: "ok" } });
   }
 }
 
@@ -316,7 +313,7 @@ class ManualLogLeakyHandler extends BaseHandler<
   }): Promise<D2Result<{ data: string } | undefined>> {
     // UNSAFE: logs raw PII despite having redaction spec on input
     this.context.logger.warn(`gRPC call failed for IP ${input.ip}. TraceId: ${this.traceId}`);
-    return D2Result.ok({ data: { data: "ok" }, traceId: this.traceId });
+    return D2Result.ok({ data: { data: "ok" } });
   }
 }
 

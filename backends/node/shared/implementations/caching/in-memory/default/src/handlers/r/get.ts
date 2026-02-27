@@ -21,8 +21,8 @@ export class Get<TValue>
   ): Promise<D2Result<InMemoryCache.GetOutput<TValue> | undefined>> {
     const value = this.store.get<TValue>(input.key);
     if (value === undefined) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
-    return D2Result.ok({ data: { value }, traceId: this.traceId });
+    return D2Result.ok({ data: { value } });
   }
 }

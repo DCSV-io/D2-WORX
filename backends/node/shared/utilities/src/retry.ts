@@ -22,23 +22,16 @@ export interface RetryOptions<T = unknown> {
   _delayFn?: (ms: number, signal?: AbortSignal) => Promise<void>;
 }
 
-/** gRPC status codes that are considered transient. */
-const TRANSIENT_GRPC_CODES = new Set([
-  4, // DEADLINE_EXCEEDED
-  8, // RESOURCE_EXHAUSTED
-  10, // ABORTED
-  13, // INTERNAL
-  14, // UNAVAILABLE
-]);
-
 /**
  * Default transient error detector.
  *
  * Checks for:
- * - gRPC ServiceError (duck-typed: numeric `code` property in transient set)
  * - Timeout patterns (ETIMEDOUT, deadline, timeout in message)
  * - Connection patterns (ECONNREFUSED, ECONNRESET, ENETUNREACH)
  * - NOT AbortError (user cancellation should propagate immediately)
+ *
+ * Note: gRPC-specific transient detection lives in `@d2/service-defaults/grpc`
+ * (`isTransientGrpcError`). This function is protocol-agnostic.
  */
 export function isTransientError(error: unknown): boolean {
   if (error == null) return false;
@@ -46,12 +39,6 @@ export function isTransientError(error: unknown): boolean {
   // Never retry user cancellation
   if (error instanceof DOMException && error.name === "AbortError") return false;
   if (error instanceof Error && error.name === "AbortError") return false;
-
-  // gRPC ServiceError (duck-type: has numeric `code` property)
-  if (typeof error === "object" && "code" in error) {
-    const code = (error as { code: unknown }).code;
-    if (typeof code === "number" && TRANSIENT_GRPC_CODES.has(code)) return true;
-  }
 
   // Check error message / code string for common transient patterns
   const errCode = error instanceof Error ? ((error as { code?: string }).code ?? "") : "";
@@ -161,14 +148,14 @@ function calculateDelay(
 
 async function defaultDelay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        reject(signal.reason);
-      },
-      { once: true },
-    );
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal!.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }

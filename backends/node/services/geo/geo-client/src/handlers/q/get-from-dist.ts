@@ -2,7 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { GeoRefData } from "@d2/protos";
 import type { DistributedCache } from "@d2/interfaces";
-import { DIST_CACHE_KEY_GEO_REF_DATA } from "@d2/utilities";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Queries } from "../../interfaces/index.js";
 
 type Input = Queries.GetFromDistInput;
@@ -26,14 +26,14 @@ export class GetFromDist extends BaseHandler<Input, Output> implements Queries.I
 
   protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const getR = await this.distCacheGet.handleAsync({
-      key: DIST_CACHE_KEY_GEO_REF_DATA,
+      key: GEO_CACHE_KEYS.REFDATA,
     });
 
     const value = getR.checkSuccess();
     if (value?.value !== undefined) {
-      return D2Result.ok({ data: { data: value.value }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: value.value } });
     }
-    return D2Result.notFound({ traceId: this.traceId });
+    return D2Result.notFound();
   }
 }
 

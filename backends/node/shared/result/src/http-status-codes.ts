@@ -11,6 +11,7 @@ export const HttpStatusCode = {
   Forbidden: 403,
   NotFound: 404,
   Conflict: 409,
+  RequestEntityTooLarge: 413,
   TooManyRequests: 429,
   InternalServerError: 500,
   ServiceUnavailable: 503,

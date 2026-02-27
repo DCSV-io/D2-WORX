@@ -137,7 +137,7 @@ describe("DeleteOrgContact", () => {
     expect(result.success).toBe(true);
     expect(deleteRecord.handleAsync).toHaveBeenCalledWith({ id: VALID_JUNCTION_ID });
     expect(deleteContactsByExtKeys.handleAsync).toHaveBeenCalledWith({
-      keys: [{ contextKey: "org_contact", relatedEntityId: VALID_JUNCTION_ID }],
+      keys: [{ contextKey: "auth_org_contact", relatedEntityId: VALID_JUNCTION_ID }],
     });
   });
 

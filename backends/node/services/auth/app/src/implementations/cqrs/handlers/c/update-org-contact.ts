@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
-import { updateOrgContact, type OrgContact, type UpdateOrgContactInput } from "@d2/auth-domain";
+import {
+  updateOrgContact,
+  GEO_CONTEXT_KEYS,
+  type OrgContact,
+  type UpdateOrgContactInput,
+} from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Complex } from "@d2/geo-client";
 import type {
@@ -75,7 +80,7 @@ export class UpdateOrgContactHandler extends BaseHandler<
 
     const findResult = await this.findById.handleAsync({ id: input.id });
     if (!findResult.success || !findResult.data) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
     const existing = findResult.data.contact;
@@ -86,7 +91,6 @@ export class UpdateOrgContactHandler extends BaseHandler<
         messages: ["Not authorized to modify this contact."],
         statusCode: HttpStatusCode.Forbidden,
         errorCode: ErrorCodes.FORBIDDEN,
-        traceId: this.traceId,
       });
     }
 
@@ -96,7 +100,7 @@ export class UpdateOrgContactHandler extends BaseHandler<
     if (input.updates.contact) {
       const contactToCreate = {
         createdAt: new Date(),
-        contextKey: "org_contact",
+        contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT,
         relatedEntityId: existing.id,
         contactMethods: input.updates.contact.contactMethods ?? undefined,
         personalDetails: input.updates.contact.personalDetails ?? undefined,
@@ -111,7 +115,8 @@ export class UpdateOrgContactHandler extends BaseHandler<
         return D2Result.bubbleFail(geoResult);
       }
 
-      newGeoContact = geoResult.data.data[0];
+      // We send exactly 1 contact, so we expect exactly 1 replacement entry.
+      newGeoContact = geoResult.data.replacements[0]?.newContact;
       if (!newGeoContact) {
         return D2Result.bubbleFail(geoResult);
       }
@@ -132,7 +137,6 @@ export class UpdateOrgContactHandler extends BaseHandler<
 
     return D2Result.ok({
       data: { contact: updated, geoContact: newGeoContact },
-      traceId: this.traceId,
     });
   }
 }

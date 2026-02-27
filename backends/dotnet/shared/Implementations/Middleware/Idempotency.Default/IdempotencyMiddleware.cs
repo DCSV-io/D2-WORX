@@ -12,6 +12,7 @@ using D2.Shared.Idempotency.Default.Interfaces;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -108,13 +109,16 @@ public class IdempotencyMiddleware
                 inputErrors: [[_IDEMPOTENCY_KEY_HEADER, "Idempotency-Key must be a valid UUID."]],
                 traceId: context.TraceIdentifier);
 
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            };
-
-            await context.Response.WriteAsJsonAsync(badRequestResponse, jsonOptions, context.RequestAborted);
+            await context.Response.WriteAsJsonAsync(badRequestResponse, SerializerOptions.SR_Web, context.RequestAborted);
             return;
+        }
+
+        // 3b. Scope key to authenticated user to prevent cross-user collisions.
+        // Auth runs before idempotency in the pipeline, so User.Identity is available.
+        var userId = context.User?.FindFirst("sub")?.Value;
+        if (userId is not null)
+        {
+            idempotencyKey = $"{userId}:{idempotencyKey}";
         }
 
         // 4. Check idempotency state.
@@ -159,12 +163,7 @@ public class IdempotencyMiddleware
                 ErrorCodes.IDEMPOTENCY_IN_FLIGHT,
                 context.TraceIdentifier);
 
-            var jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            };
-
-            await context.Response.WriteAsJsonAsync(conflictResponse, jsonOptions, context.RequestAborted);
+            await context.Response.WriteAsJsonAsync(conflictResponse, SerializerOptions.SR_Web, context.RequestAborted);
             return;
         }
 

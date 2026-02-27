@@ -37,7 +37,7 @@ export class FindActiveConsentsByUserId
       .limit(input.limit)
       .offset(input.offset);
 
-    return D2Result.ok({ data: { consents: rows.map(toEmulationConsent) }, traceId: this.traceId });
+    return D2Result.ok({ data: { consents: rows.map(toEmulationConsent) } });
   }
 }
 

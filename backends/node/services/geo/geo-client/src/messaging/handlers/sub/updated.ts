@@ -1,7 +1,6 @@
 import { BaseHandler, type IHandlerContext, type IHandler } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { GeoRefData } from "@d2/protos";
-import type { GeoRefDataUpdated } from "../../../messages/geo-ref-data-updated.js";
+import type { GeoRefData, GeoRefDataUpdatedEvent } from "@d2/protos";
 import type { Subs, Complex, Queries, Commands } from "../../../interfaces/index.js";
 
 type Output = Subs.UpdatedOutput;
@@ -18,7 +17,7 @@ export interface UpdatedDeps {
  * Mirrors D2.Geo.Client.Messaging.Handlers.Sub.Updated in .NET.
  */
 export class Updated
-  extends BaseHandler<GeoRefDataUpdated, Output>
+  extends BaseHandler<GeoRefDataUpdatedEvent, Output>
   implements Subs.IUpdatedHandler
 {
   private readonly deps: UpdatedDeps;
@@ -28,13 +27,15 @@ export class Updated
     this.deps = deps;
   }
 
-  protected async executeAsync(input: GeoRefDataUpdated): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(
+    input: GeoRefDataUpdatedEvent,
+  ): Promise<D2Result<Output | undefined>> {
     // Check if the current data is up to date
     const getR = await this.deps.getHandler.handleAsync({});
     const isUpToDate = getR.success && getR.data?.data.version === input.version;
 
     if (isUpToDate) {
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     }
 
     // Get the updated data from the distributed cache
@@ -43,7 +44,7 @@ export class Updated
       this.context.logger.error(
         `Failed to get data from dist cache after update message. TraceId: ${this.traceId}`,
       );
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
     const data = distR.data!.data;
@@ -64,7 +65,7 @@ export class Updated
       );
     }
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }
 

@@ -24,6 +24,8 @@ prometheus.scrape "infrastructure" {
     },
 
     // Application services (running on host via Aspire)
+    // Note: Node.js services (Auth, Comms) push metrics via OTLP, not Prometheus scrape.
+    // Only .NET services expose /metrics endpoints for pull-based scraping.
     {
       __address__ = "host.docker.internal:5461",
       job         = "gateway-rest",
@@ -31,14 +33,8 @@ prometheus.scrape "infrastructure" {
       __metrics_path__ = "/metrics",
     },
     {
-      __address__ = "host.docker.internal:5132",
-      job         = "service-auth",
-      service     = "Auth.API",
-      __metrics_path__ = "/metrics",
-    },
-    {
       __address__ = "host.docker.internal:5138",
-      job         = "service-auth",
+      job         = "service-geo",
       service     = "Geo.API",
       __metrics_path__ = "/metrics",
     },
@@ -58,12 +54,6 @@ prometheus.scrape "infrastructure" {
       __address__ = "d2-rabbitmq:15692",
       job         = "rabbitmq",
       service     = "rabbitmq",
-    },
-    {
-      __address__      = "d2-keycloak:9000",
-      job              = "keycloak",
-      service          = "keycloak",
-      __metrics_path__ = "/metrics",
     },
 
     // LGTM stack (containers)

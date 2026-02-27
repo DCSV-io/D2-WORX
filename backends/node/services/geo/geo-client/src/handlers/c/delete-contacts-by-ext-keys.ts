@@ -3,8 +3,10 @@ import { D2Result } from "@d2/result";
 import { handleGrpcCall } from "@d2/result-extensions";
 import type { GeoServiceClient, DeleteContactsByExtKeysResponse } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { Metadata } from "@grpc/grpc-js";
 import { z } from "zod";
 import type { GeoClientOptions } from "../../geo-client-options.js";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import type { Commands } from "../../interfaces/index.js";
 
 type Input = Commands.DeleteContactsByExtKeysInput;
@@ -21,6 +23,7 @@ export class DeleteContactsByExtKeys
 {
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
+  private readonly options: GeoClientOptions;
   private readonly inputSchema: z.ZodType<Input>;
 
   constructor(
@@ -32,6 +35,7 @@ export class DeleteContactsByExtKeys
     super(context);
     this.store = store;
     this.geoClient = geoClient;
+    this.options = options;
     this.inputSchema = z
       .object({
         keys: z.array(
@@ -50,10 +54,15 @@ export class DeleteContactsByExtKeys
     const r = await handleGrpcCall(
       () =>
         new Promise<DeleteContactsByExtKeysResponse>((resolve, reject) => {
-          this.geoClient.deleteContactsByExtKeys({ keys: input.keys }, (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          });
+          this.geoClient.deleteContactsByExtKeys(
+            { keys: input.keys },
+            new Metadata(),
+            { deadline: Date.now() + this.options.grpcTimeoutMs },
+            (err, res) => {
+              if (err) reject(err);
+              else resolve(res);
+            },
+          );
         }),
       (res) => res.result!,
       (res) => ({ deleted: res.deleted }),
@@ -61,7 +70,7 @@ export class DeleteContactsByExtKeys
 
     // Evict ext-key cache for each input key regardless of gRPC result
     for (const key of input.keys) {
-      this.store.delete(`contact-ext:${key.contextKey}:${key.relatedEntityId}`);
+      this.store.delete(GEO_CACHE_KEYS.contactsByExtKey(key.contextKey, key.relatedEntityId));
     }
 
     return D2Result.bubble(r, r.data);

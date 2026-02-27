@@ -24,9 +24,10 @@ export class CreateSignInEvent extends BaseHandler<I, O> implements ICreateSignI
       ipAddress: input.event.ipAddress,
       userAgent: input.event.userAgent,
       whoIsId: input.event.whoIsId,
+      failureReason: input.event.failureReason,
       createdAt: input.event.createdAt,
     });
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    return D2Result.ok({ data: {} });
   }
 }

@@ -16,6 +16,8 @@ using Moq;
 using Xunit;
 using CqrsCmd = D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands;
 using DeleteRepo = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
+using IPubs = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs;
+using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 
 /// <summary>
 /// Unit tests for the validation logic in the <see cref="DeleteContacts"/> CQRS handler.
@@ -256,8 +258,18 @@ public class DeleteContactsValidationTests
         return context.Object;
     }
 
-    private DeleteContacts CreateHandler() =>
-        new(r_mockRepo.Object, r_mockCacheRemove.Object, r_context);
+    private DeleteContacts CreateHandler()
+    {
+        var mockGetByIds = new Mock<ReadRepo.IGetContactsByIdsHandler>();
+        mockGetByIds
+            .Setup(x => x.HandleAsync(It.IsAny<ReadRepo.GetContactsByIdsInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<ReadRepo.GetContactsByIdsOutput?>.Ok(new ReadRepo.GetContactsByIdsOutput([])));
+        var mockEviction = new Mock<IPubs.IContactEvictionHandler>();
+        mockEviction
+            .Setup(x => x.HandleAsync(It.IsAny<IPubs.ContactEvictionInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
+            .ReturnsAsync(D2Result<IPubs.ContactEvictionOutput?>.Ok(new IPubs.ContactEvictionOutput()));
+        return new(mockGetByIds.Object, r_mockRepo.Object, r_mockCacheRemove.Object, mockEviction.Object, r_context);
+    }
 
     #endregion
 }

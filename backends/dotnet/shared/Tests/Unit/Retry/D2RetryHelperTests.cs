@@ -498,7 +498,7 @@ public class D2RetryHelperTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal(ErrorCodes.UNHANDLED_EXCEPTION, result.ErrorCode);
+        Assert.Equal(ErrorCodes.CANCELLED, result.ErrorCode);
     }
 
     /// <summary>
@@ -798,7 +798,7 @@ public class D2RetryHelperTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Equal(ErrorCodes.UNHANDLED_EXCEPTION, result.ErrorCode);
+        Assert.Equal(ErrorCodes.CANCELLED, result.ErrorCode);
     }
 
     /// <summary>

@@ -29,4 +29,6 @@ export interface IRequestInfo {
   userId: string | undefined;
   /** Whether the request is authenticated (set by auth middleware later). */
   isAuthenticated: boolean;
+  /** Whether the request is from a trusted service (set by service-key middleware later). */
+  isTrustedService: boolean;
 }

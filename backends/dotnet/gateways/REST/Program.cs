@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+using System.Text.Json.Serialization;
 using D2.Gateways.REST.Auth;
 using D2.Gateways.REST.Endpoints;
 using D2.Geo.Client;
@@ -26,8 +27,24 @@ if (string.IsNullOrWhiteSpace(redisConnectionString))
 
 builder.AddServiceDefaults();
 builder.Services.AddHandlerContext();
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(opts =>
+{
+    opts.CustomizeProblemDetails = ctx =>
+    {
+        if (!builder.Environment.IsDevelopment())
+        {
+            ctx.ProblemDetails.Detail = null;
+            ctx.ProblemDetails.Title = "An error occurred processing your request.";
+        }
+    };
+});
 builder.Services.AddOpenApi();
+
+// Configure global JSON serialization: camelCase + enums as strings.
+builder.Services.ConfigureHttpJsonOptions(opts =>
+{
+    opts.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // Register gRPC clients.
 builder.Services.AddGeoGrpcClient(builder.Configuration);
@@ -54,7 +71,7 @@ builder.Services.AddServiceKeyAuth(builder.Configuration);
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(builder.Configuration["CorsOrigin"] ?? "http://localhost:5173")
      .AllowCredentials()
-     .WithHeaders("Content-Type", "Authorization", "Idempotency-Key")
+     .WithHeaders("Content-Type", "Authorization", "Idempotency-Key", "X-Client-Fingerprint")
      .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")));
 
 // Request body size limit (256 KB — gateway payloads are small JSON).
@@ -63,7 +80,19 @@ builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 256 * 1024);
 // Register idempotency middleware services.
 builder.Services.AddIdempotency(builder.Configuration);
 
+// Register gRPC clients + HTTP client for health endpoint fan-out.
+builder.Services.AddHealthEndpointDependencies(builder.Configuration);
+
 var app = builder.Build();
+
+// Security headers — before exception handler so they apply to all responses.
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    await next();
+});
+
 app.UseExceptionHandler();
 app.UseStructuredRequestLogging();
 app.UseCors();
@@ -84,6 +113,7 @@ app.MapDefaultEndpoints();
 
 // Map versioned API endpoints.
 app.MapGeoEndpointsV1();
+app.MapHealthEndpointsV1();
 
 try
 {

@@ -21,15 +21,18 @@ export class UpdateOrgContactRecord
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
-    await this.db
+    const rows = await this.db
       .update(orgContact)
       .set({
         label: input.contact.label,
         isPrimary: input.contact.isPrimary,
         updatedAt: input.contact.updatedAt,
       })
-      .where(eq(orgContact.id, input.contact.id));
+      .where(eq(orgContact.id, input.contact.id))
+      .returning({ id: orgContact.id });
 
-    return D2Result.ok({ data: {}, traceId: this.traceId });
+    if (rows.length === 0) return D2Result.notFound();
+
+    return D2Result.ok({ data: {} });
   }
 }

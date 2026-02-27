@@ -72,19 +72,18 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
                 cancellationToken: ct)
             .HandleAsync(
                 r => r.Result,
-                r => r.Data,
-                Context.Logger,
-                TraceId);
+                r => r.Replacements,
+                Context.Logger);
 
         // Evict ext-key cache for each input contact regardless of gRPC result.
         foreach (var contact in input.Contacts)
         {
             var removeR = await r_cacheRemove.HandleAsync(
-                new($"contact-ext:{contact.ContextKey}:{contact.RelatedEntityId}"), ct);
+                new(CacheKeys.ContactsByExtKey(contact.ContextKey, Guid.Parse(contact.RelatedEntityId))), ct);
             if (removeR.Failed)
             {
                 Context.Logger.LogWarning(
-                    "Failed to evict contact-ext:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
+                    "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
                     contact.ContextKey,
                     contact.RelatedEntityId,
                     TraceId);

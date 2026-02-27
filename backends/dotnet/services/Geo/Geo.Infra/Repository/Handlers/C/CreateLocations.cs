@@ -58,7 +58,7 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
         // If the request was empty, return early.
         if (input.Locations.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(0), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(0));
         }
 
         // Get all hash IDs from input.
@@ -87,6 +87,6 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
             await r_db.SaveChangesAsync(ct);
         }
 
-        return D2Result<O?>.Ok(new O(newLocations.Count), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(newLocations.Count));
     }
 }

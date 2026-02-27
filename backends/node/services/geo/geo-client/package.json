@@ -18,6 +18,7 @@
   ],
   "dependencies": {
     "@grpc/grpc-js": "1.14.3",
+    "@d2/di": "workspace:*",
     "@d2/cache-memory": "workspace:*",
     "@d2/cache-redis": "workspace:*",
     "@d2/handler": "workspace:*",

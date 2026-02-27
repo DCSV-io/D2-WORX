@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="UpdatePublisherTests.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -6,10 +6,10 @@
 
 namespace D2.Geo.Tests.Unit.Infra.Messaging;
 
-using D2.Geo.Client.Messages;
-using D2.Geo.Infra.Messaging.MT.Publishers;
+using D2.Events.Protos.V1;
+using D2.Geo.Infra.Messaging.Publishers;
+using D2.Shared.Messaging.RabbitMQ;
 using FluentAssertions;
-using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -19,7 +19,7 @@ using Xunit;
 /// </summary>
 public class UpdatePublisherTests
 {
-    private readonly Mock<IPublishEndpoint> r_publishEndpointMock;
+    private readonly Mock<ProtoPublisher> r_protoPublisherMock;
     private readonly UpdatePublisher r_publisher;
 
     /// <summary>
@@ -27,9 +27,11 @@ public class UpdatePublisherTests
     /// </summary>
     public UpdatePublisherTests()
     {
-        r_publishEndpointMock = new Mock<IPublishEndpoint>();
+        r_protoPublisherMock = new Mock<ProtoPublisher>(
+            Mock.Of<RabbitMQ.Client.IConnection>(),
+            Mock.Of<ILogger<ProtoPublisher>>());
         var loggerMock = new Mock<ILogger<UpdatePublisher>>();
-        r_publisher = new UpdatePublisher(r_publishEndpointMock.Object, loggerMock.Object);
+        r_publisher = new UpdatePublisher(r_protoPublisherMock.Object, loggerMock.Object);
     }
 
     /// <summary>
@@ -43,20 +45,26 @@ public class UpdatePublisherTests
     public async Task PublishAsync_WhenSuccessful_ReturnsSuccess()
     {
         // Arrange
-        r_publishEndpointMock
-            .Setup(x => x.Publish(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
+        r_protoPublisherMock
+            .Setup(x => x.PublishAsync(
+                It.IsAny<string>(),
+                It.IsAny<GeoRefDataUpdatedEvent>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        var message = new GeoRefDataUpdated("1.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "1.0.0" };
 
         // Act
         var result = await r_publisher.PublishAsync(message, CancellationToken.None);
 
         // Assert
         result.Success.Should().BeTrue();
-        r_publishEndpointMock.Verify(
-            x => x.Publish(
-                It.Is<GeoRefDataUpdated>(m => m.Version == "1.0.0"),
+        r_protoPublisherMock.Verify(
+            x => x.PublishAsync(
+                "events.geo",
+                It.Is<GeoRefDataUpdatedEvent>(m => m.Version == "1.0.0"),
+                It.IsAny<string>(),
                 It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -72,11 +80,15 @@ public class UpdatePublisherTests
     public async Task PublishAsync_WhenExceptionThrown_ReturnsFailure()
     {
         // Arrange
-        r_publishEndpointMock
-            .Setup(x => x.Publish(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
+        r_protoPublisherMock
+            .Setup(x => x.PublishAsync(
+                It.IsAny<string>(),
+                It.IsAny<GeoRefDataUpdatedEvent>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("RabbitMQ connection failed"));
 
-        var message = new GeoRefDataUpdated("1.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "1.0.0" };
 
         // Act
         var result = await r_publisher.PublishAsync(message, CancellationToken.None);
@@ -87,23 +99,28 @@ public class UpdatePublisherTests
     }
 
     /// <summary>
-    /// Tests that PublishAsync passes the message to the publish endpoint.
+    /// Tests that PublishAsync passes the message to the proto publisher.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous operation.
     /// </returns>
     [Fact]
-    public async Task PublishAsync_PassesMessageToEndpoint()
+    public async Task PublishAsync_PassesMessageToPublisher()
     {
         // Arrange
-        GeoRefDataUpdated? capturedMessage = null;
-        r_publishEndpointMock
-            .Setup(x => x.Publish(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .Callback<object, CancellationToken>((msg, _) => capturedMessage = msg as GeoRefDataUpdated)
+        GeoRefDataUpdatedEvent? capturedMessage = null;
+        r_protoPublisherMock
+            .Setup(x => x.PublishAsync(
+                It.IsAny<string>(),
+                It.IsAny<GeoRefDataUpdatedEvent>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, GeoRefDataUpdatedEvent, string, CancellationToken>(
+                (_, msg, _, _) => capturedMessage = msg)
             .Returns(Task.CompletedTask);
 
-        var message = new GeoRefDataUpdated("2.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "2.0.0" };
 
         // Act
         await r_publisher.PublishAsync(message, CancellationToken.None);
@@ -125,13 +142,18 @@ public class UpdatePublisherTests
     {
         // Arrange
         CancellationToken capturedToken = CancellationToken.None;
-        r_publishEndpointMock
-            .Setup(x => x.Publish(It.IsAny<GeoRefDataUpdated>(), It.IsAny<CancellationToken>()))
-            .Callback<object, CancellationToken>((_, ct) => capturedToken = ct)
+        r_protoPublisherMock
+            .Setup(x => x.PublishAsync(
+                It.IsAny<string>(),
+                It.IsAny<GeoRefDataUpdatedEvent>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .Callback<string, GeoRefDataUpdatedEvent, string, CancellationToken>(
+                (_, _, _, ct) => capturedToken = ct)
             .Returns(Task.CompletedTask);
 
         using var cts = new CancellationTokenSource();
-        var message = new GeoRefDataUpdated("1.0.0");
+        var message = new GeoRefDataUpdatedEvent { Version = "1.0.0" };
 
         // Act
         await r_publisher.PublishAsync(message, cts.Token);

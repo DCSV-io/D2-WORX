@@ -48,8 +48,10 @@ public static class Extensions
             // Complex handlers.
             services.AddTransient<IComplex.IGetHandler, Get>();
             services.AddTransient<IGeoComplex.IFindWhoIsHandler, FindWhoIs>();
+            services.AddTransient<IGeoComplex.IUpdateContactsByExtKeysHandler, UpdateContactsByExtKeys>();
 
             // Query handlers.
+            services.AddTransient<IQueries.ICheckHealthHandler, CheckHealth>();
             services.AddTransient<IQueries.IGetLocationsByIdsHandler, GetLocationsByIds>();
             services.AddTransient<IQueries.IGetWhoIsByIdsHandler, GetWhoIsByIds>();
             services.AddTransient<IQueries.IGetContactsByIdsHandler, GetContactsByIds>();
@@ -60,6 +62,7 @@ public static class Extensions
             services.AddTransient<ICommands.ICreateWhoIsHandler, CreateWhoIs>();
             services.AddTransient<ICommands.ICreateContactsHandler, CreateContacts>();
             services.AddTransient<ICommands.IDeleteContactsHandler, DeleteContacts>();
+            services.AddTransient<ICommands.IDeleteContactsByExtKeysHandler, DeleteContactsByExtKeys>();
 
             return services;
         }

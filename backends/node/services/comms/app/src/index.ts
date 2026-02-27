@@ -1,0 +1,208 @@
+// @d2/comms-app — CQRS handlers for the Comms service delivery engine.
+// Zero infra imports — this package is pure application logic.
+
+export { COMMS_CACHE_KEYS } from "./cache-keys.js";
+
+import type { IHandlerContext } from "@d2/handler";
+import type { ChannelPreference } from "@d2/comms-domain";
+import type { InMemoryCache } from "@d2/interfaces";
+import type { Queries } from "@d2/geo-client";
+
+// --- Interfaces (Provider Contracts) ---
+export type {
+  IEmailProvider,
+  SendEmailInput,
+  SendEmailOutput,
+  ISmsProvider,
+  SendSmsInput,
+  SendSmsOutput,
+} from "./interfaces/providers/index.js";
+
+// --- Interfaces (Repository Handler Bundles) ---
+export type {
+  // Bundle types (used by factory functions + composition root)
+  MessageRepoHandlers,
+  DeliveryRequestRepoHandlers,
+  DeliveryAttemptRepoHandlers,
+  ChannelPreferenceRepoHandlers,
+  // Individual handler types
+  ICreateMessageRecordHandler,
+  ICreateDeliveryRequestRecordHandler,
+  ICreateDeliveryAttemptRecordHandler,
+  ICreateChannelPreferenceRecordHandler,
+  IFindMessageByIdHandler,
+  IFindDeliveryRequestByIdHandler,
+  IFindDeliveryRequestByCorrelationIdHandler,
+  IFindDeliveryAttemptsByRequestIdHandler,
+  IFindChannelPreferenceByContactIdHandler,
+  IMarkDeliveryRequestProcessedHandler,
+  IUpdateDeliveryAttemptStatusHandler,
+  IUpdateChannelPreferenceRecordHandler,
+  // Individual I/O types
+  CreateMessageRecordInput,
+  CreateMessageRecordOutput,
+  CreateDeliveryRequestRecordInput,
+  CreateDeliveryRequestRecordOutput,
+  CreateDeliveryAttemptRecordInput,
+  CreateDeliveryAttemptRecordOutput,
+  CreateChannelPreferenceRecordInput,
+  CreateChannelPreferenceRecordOutput,
+  FindMessageByIdInput,
+  FindMessageByIdOutput,
+  FindDeliveryRequestByIdInput,
+  FindDeliveryRequestByIdOutput,
+  FindDeliveryRequestByCorrelationIdInput,
+  FindDeliveryRequestByCorrelationIdOutput,
+  FindDeliveryAttemptsByRequestIdInput,
+  FindDeliveryAttemptsByRequestIdOutput,
+  FindChannelPreferenceByContactIdInput,
+  FindChannelPreferenceByContactIdOutput,
+  MarkDeliveryRequestProcessedInput,
+  MarkDeliveryRequestProcessedOutput,
+  UpdateDeliveryAttemptStatusInput,
+  UpdateDeliveryAttemptStatusOutput,
+  UpdateChannelPreferenceRecordInput,
+  UpdateChannelPreferenceRecordOutput,
+  // Query (Q) — PingDb
+  PingDbInput,
+  PingDbOutput,
+  IPingDbHandler,
+} from "./interfaces/repository/handlers/index.js";
+
+// --- Complex Handlers ---
+export { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
+export type { DeliverInput, DeliverOutput } from "./implementations/cqrs/handlers/x/deliver.js";
+
+// --- Channel Dispatchers ---
+export {
+  EmailDispatcher,
+  SmsDispatcher,
+} from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
+export type {
+  IChannelDispatcher,
+  DispatchInput,
+  DispatchResult,
+} from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
+
+export { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
+export type {
+  ResolveRecipientInput,
+  ResolveRecipientOutput,
+} from "./implementations/cqrs/handlers/x/resolve-recipient.js";
+
+// --- Command Handlers ---
+export { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
+export type {
+  SetChannelPreferenceInput,
+  SetChannelPreferenceOutput,
+} from "./implementations/cqrs/handlers/c/set-channel-preference.js";
+
+// --- Query Handlers ---
+export { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
+export type {
+  GetChannelPreferenceInput,
+  GetChannelPreferenceOutput,
+} from "./implementations/cqrs/handlers/q/get-channel-preference.js";
+
+// ---------------------------------------------------------------------------
+// Factory Functions
+// ---------------------------------------------------------------------------
+
+import type {
+  MessageRepoHandlers,
+  DeliveryRequestRepoHandlers,
+  DeliveryAttemptRepoHandlers,
+  ChannelPreferenceRepoHandlers,
+} from "./interfaces/repository/handlers/index.js";
+import type { IEmailProvider } from "./interfaces/providers/index.js";
+import type { ISmsProvider } from "./interfaces/providers/index.js";
+import { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
+import {
+  EmailDispatcher,
+  SmsDispatcher,
+} from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
+import type { IChannelDispatcher } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
+import { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
+import { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
+import { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
+
+/** Creates the delivery engine handlers (orchestrator + CRUD). */
+export function createDeliveryHandlers(
+  repos: {
+    message: MessageRepoHandlers;
+    request: DeliveryRequestRepoHandlers;
+    attempt: DeliveryAttemptRepoHandlers;
+    channelPref: ChannelPreferenceRepoHandlers;
+  },
+  providers: { email: IEmailProvider; sms?: ISmsProvider },
+  getContactsByIds: Queries.IGetContactsByIdsHandler,
+  context: IHandlerContext,
+  cache?: {
+    channelPref?: {
+      get: InMemoryCache.IGetHandler<ChannelPreference>;
+      set: InMemoryCache.ISetHandler<ChannelPreference>;
+    };
+  },
+  options?: { emailWrapper?: string },
+): DeliveryHandlers {
+  const recipientResolver = new RecipientResolver(getContactsByIds, context);
+
+  const dispatchers: IChannelDispatcher[] = [
+    new EmailDispatcher(providers.email, options?.emailWrapper),
+  ];
+  if (providers.sms) {
+    dispatchers.push(new SmsDispatcher(providers.sms));
+  }
+
+  const deliver = new Deliver(repos, dispatchers, recipientResolver, context);
+
+  return {
+    deliver,
+    resolveRecipient: recipientResolver,
+    setChannelPreference: new SetChannelPreference(repos.channelPref, context, cache?.channelPref),
+    getChannelPreference: new GetChannelPreference(repos.channelPref, context, cache?.channelPref),
+  };
+}
+
+/** Return type of createDeliveryHandlers. */
+export type DeliveryHandlers = {
+  deliver: Deliver;
+  resolveRecipient: RecipientResolver;
+  setChannelPreference: SetChannelPreference;
+  getChannelPreference: GetChannelPreference;
+};
+
+// --- Health Check Handler ---
+export { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
+export type {
+  CheckHealthInput,
+  CheckHealthOutput,
+  ComponentHealth,
+} from "./implementations/cqrs/handlers/q/check-health.js";
+
+// --- DI Registration ---
+export { addCommsApp } from "./registration.js";
+export {
+  // Infra keys
+  ICreateMessageRecordKey,
+  IFindMessageByIdKey,
+  ICreateDeliveryRequestRecordKey,
+  IFindDeliveryRequestByIdKey,
+  IFindDeliveryRequestByCorrelationIdKey,
+  IMarkDeliveryRequestProcessedKey,
+  ICreateDeliveryAttemptRecordKey,
+  IFindDeliveryAttemptsByRequestIdKey,
+  IUpdateDeliveryAttemptStatusKey,
+  ICreateChannelPreferenceRecordKey,
+  IFindChannelPreferenceByContactIdKey,
+  IUpdateChannelPreferenceRecordKey,
+  IEmailProviderKey,
+  ISmsProviderKey,
+  // App keys
+  IDeliverKey,
+  IRecipientResolverKey,
+  ISetChannelPreferenceKey,
+  IGetChannelPreferenceKey,
+  IPingDbKey,
+  ICheckHealthKey,
+} from "./service-keys.js";

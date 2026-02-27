@@ -64,6 +64,8 @@ export function isTransientResult(result: D2Result<unknown>): boolean {
       case ErrorCodes.SOME_FOUND:
       case ErrorCodes.COULD_NOT_BE_SERIALIZED:
       case ErrorCodes.COULD_NOT_BE_DESERIALIZED:
+      case ErrorCodes.PAYLOAD_TOO_LARGE:
+      case ErrorCodes.CANCELLED:
         return false;
       default:
         break;
@@ -94,10 +96,10 @@ export async function retryResultAsync<T>(
   const config = resolveConfig(options);
   const checkTransient = options?.isTransientResult ?? isTransientResult;
 
-  let lastResult: D2Result<T> = D2Result.unhandledException<T>();
+  let lastResult: D2Result<T> | undefined;
 
   for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
-    if (config.signal?.aborted) return lastResult;
+    if (config.signal?.aborted) return lastResult ?? D2Result.cancelled<T>();
 
     try {
       lastResult = await operation(attempt);
@@ -126,7 +128,7 @@ export async function retryResultAsync<T>(
     }
   }
 
-  return lastResult;
+  return lastResult ?? D2Result.cancelled<T>();
 }
 
 // ---------------------------------------------------------------------------
@@ -162,10 +164,10 @@ export async function retryExternalAsync<TRaw, TData>(
   const mapError = options?.mapError ?? (() => D2Result.unhandledException());
   const checkTransient = options?.isTransientResult ?? isTransientResult;
 
-  let lastResult: D2Result<TData> = D2Result.unhandledException<TData>();
+  let lastResult: D2Result<TData> | undefined;
 
   for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
-    if (config.signal?.aborted) return lastResult;
+    if (config.signal?.aborted) return lastResult ?? D2Result.cancelled<TData>();
 
     let mapped: D2Result<unknown>;
 
@@ -200,7 +202,7 @@ export async function retryExternalAsync<TRaw, TData>(
     }
   }
 
-  return lastResult;
+  return lastResult ?? D2Result.cancelled<TData>();
 }
 
 // ---------------------------------------------------------------------------
@@ -232,14 +234,14 @@ function calculateDelay(
 
 async function defaultDelay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    signal?.addEventListener(
-      "abort",
-      () => {
-        clearTimeout(timer);
-        reject(signal.reason);
-      },
-      { once: true },
-    );
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal!.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }

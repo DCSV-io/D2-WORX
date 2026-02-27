@@ -62,14 +62,12 @@ public class SetInMem : BaseHandler<SetInMem, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        const string cache_key = "GeoRefData";
-
         var setR = await r_memoryCacheSet.HandleAsync(
-            new(cache_key, input.Data),
+            new(CacheKeys.REFDATA, input.Data),
             ct);
 
         return setR.Success
-            ? D2Result<O?>.Ok(traceId: TraceId)
+            ? D2Result<O?>.Ok()
             : D2Result<O?>.BubbleFail(setR);
     }
 }

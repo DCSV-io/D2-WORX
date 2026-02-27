@@ -6,6 +6,19 @@ export {
   InputErrorProto as InputErrorProtoFns,
 } from "./generated/common/v1/d2_result.js";
 
+// Health check types (shared by all services)
+export type {
+  CheckHealthRequest,
+  CheckHealthResponse,
+  ComponentHealth,
+} from "./generated/common/v1/health.js";
+
+export {
+  CheckHealthRequest as CheckHealthRequestFns,
+  CheckHealthResponse as CheckHealthResponseFns,
+  ComponentHealth as ComponentHealthFns,
+} from "./generated/common/v1/health.js";
+
 // Ping service
 export type {
   PingRequest,
@@ -67,6 +80,8 @@ export type {
   DeleteContactsByExtKeysResponse,
   UpdateContactsByExtKeysRequest,
   UpdateContactsByExtKeysResponse,
+  ContactReplacementKey,
+  ContactReplacement,
   GeoServiceClient,
   GeoServiceServer,
 } from "./generated/geo/v1/geo.js";
@@ -78,3 +93,80 @@ export {
 
 // Timestamp (well-known type)
 export type { Timestamp } from "./generated/google/protobuf/timestamp.js";
+
+// Events — Geo
+export type {
+  GeoRefDataUpdatedEvent,
+  EvictedContact,
+  ContactsEvictedEvent,
+} from "./generated/events/v1/geo_events.js";
+
+export {
+  GeoRefDataUpdatedEvent as GeoRefDataUpdatedEventFns,
+  EvictedContact as EvictedContactFns,
+  ContactsEvictedEvent as ContactsEvictedEventFns,
+} from "./generated/events/v1/geo_events.js";
+
+// Comms service — DTOs
+export type {
+  PaginationRequest as CommsPaginationRequest,
+  ChannelPreferenceDTO,
+  DeliveryRequestDTO,
+  DeliveryAttemptDTO,
+  ThreadDTO,
+  MessageDTO as CommsMessageDTO,
+  NotificationDTO,
+  ReactionDTO,
+  ParticipantDTO,
+} from "./generated/comms/v1/comms.js";
+
+// Comms service — DTO value exports (encode/decode for roundtrip tests)
+export {
+  ChannelPreferenceDTO as ChannelPreferenceDTOFns,
+  DeliveryRequestDTO as DeliveryRequestDTOFns,
+  DeliveryAttemptDTO as DeliveryAttemptDTOFns,
+} from "./generated/comms/v1/comms.js";
+
+// Comms service — request/response types + client/server
+export type {
+  GetChannelPreferenceRequest,
+  GetChannelPreferenceResponse,
+  SetChannelPreferenceRequest,
+  SetChannelPreferenceResponse,
+  GetDeliveryStatusRequest,
+  GetDeliveryStatusResponse,
+  GetNotificationsRequest,
+  GetNotificationsResponse,
+  MarkNotificationsReadRequest,
+  MarkNotificationsReadResponse,
+  CreateThreadRequest,
+  CreateThreadResponse,
+  GetThreadRequest,
+  GetThreadResponse,
+  GetThreadsRequest,
+  GetThreadsResponse,
+  PostMessageRequest,
+  PostMessageResponse,
+  EditMessageRequest,
+  EditMessageResponse,
+  DeleteMessageRequest,
+  DeleteMessageResponse,
+  GetThreadMessagesRequest,
+  GetThreadMessagesResponse,
+  AddReactionRequest,
+  AddReactionResponse,
+  RemoveReactionRequest,
+  RemoveReactionResponse,
+  AddParticipantRequest,
+  AddParticipantResponse,
+  RemoveParticipantRequest,
+  RemoveParticipantResponse,
+  CommsServiceClient,
+  CommsServiceServer,
+} from "./generated/comms/v1/comms.js";
+
+// Comms service — value exports (client constructor + service definition)
+export {
+  CommsServiceClient as CommsServiceClientCtor,
+  CommsServiceService,
+} from "./generated/comms/v1/comms.js";

@@ -12,6 +12,7 @@ import type { IFindOrgContactByIdHandler } from "./r/find-org-contact-by-id.js";
 import type { IFindOrgContactsByOrgIdHandler } from "./r/find-org-contacts-by-org-id.js";
 import type { IRevokeEmulationConsentRecordHandler } from "./u/revoke-emulation-consent-record.js";
 import type { IUpdateOrgContactRecordHandler } from "./u/update-org-contact-record.js";
+import type { IUpdateSignInEventWhoIsIdHandler } from "./u/update-sign-in-event-who-is-id.js";
 import type { IDeleteOrgContactRecordHandler } from "./d/delete-org-contact-record.js";
 
 // --- Create (C) ---
@@ -95,12 +96,21 @@ export type {
   IUpdateOrgContactRecordHandler,
 } from "./u/update-org-contact-record.js";
 
+export type {
+  UpdateSignInEventWhoIsIdInput,
+  UpdateSignInEventWhoIsIdOutput,
+  IUpdateSignInEventWhoIsIdHandler,
+} from "./u/update-sign-in-event-who-is-id.js";
+
 // --- Delete (D) ---
 export type {
   DeleteOrgContactRecordInput,
   DeleteOrgContactRecordOutput,
   IDeleteOrgContactRecordHandler,
 } from "./d/delete-org-contact-record.js";
+
+// --- Query (Q) ---
+export type { PingDbInput, PingDbOutput, IPingDbHandler } from "./q/ping-db.js";
 
 // ---------------------------------------------------------------------------
 // Bundle types — one per aggregate, used by app-layer factory functions
@@ -111,6 +121,7 @@ export interface SignInEventRepoHandlers {
   findByUserId: IFindSignInEventsByUserIdHandler;
   countByUserId: ICountSignInEventsByUserIdHandler;
   getLatestEventDate: IGetLatestSignInEventDateHandler;
+  updateWhoIsId: IUpdateSignInEventWhoIsIdHandler;
 }
 
 export interface EmulationConsentRepoHandlers {

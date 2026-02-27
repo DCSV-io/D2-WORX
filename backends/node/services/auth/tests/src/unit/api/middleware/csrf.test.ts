@@ -169,5 +169,90 @@ describe("CSRF middleware", () => {
       });
       expect(res.status).toBe(403);
     });
+
+    it("should reject 'null' origin string (sandboxed iframe)", async () => {
+      const res = await app.request("/test", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "null",
+        },
+        body: "{}",
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("should reject origin with different port", async () => {
+      const res = await app.request("/test", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://app.example.com:8080",
+        },
+        body: "{}",
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("should reject origin with different scheme (http vs https)", async () => {
+      const res = await app.request("/test", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "http://app.example.com",
+        },
+        body: "{}",
+      });
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("Content-Type bypass attempts", () => {
+    it("should reject text/plain (form submission attack)", async () => {
+      const res = await app.request("/test", {
+        method: "POST",
+        headers: {
+          "content-type": "text/plain",
+          origin: ORIGIN,
+        },
+        body: "{}",
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("should reject multipart/form-data (form submission attack)", async () => {
+      const res = await app.request("/test", {
+        method: "POST",
+        headers: {
+          "content-type": "multipart/form-data",
+          origin: ORIGIN,
+        },
+        body: "{}",
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("should reject application/x-www-form-urlencoded", async () => {
+      const res = await app.request("/test", {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          origin: ORIGIN,
+        },
+        body: "a=b",
+      });
+      expect(res.status).toBe(403);
+    });
+
+    it("should reject empty Content-Type header", async () => {
+      const res = await app.request("/test", {
+        method: "POST",
+        headers: {
+          "content-type": "",
+          origin: ORIGIN,
+        },
+      });
+      expect(res.status).toBe(403);
+    });
   });
 });

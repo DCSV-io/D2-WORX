@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { Hono } from "hono";
-import { createSessionMiddleware } from "@d2/auth-api";
+import { createSessionMiddleware, USER_KEY, SESSION_KEY } from "@d2/auth-api";
 import type { Auth } from "@d2/auth-infra";
 
 /**
@@ -18,7 +18,7 @@ function mockAuth(getSession: (opts: { headers: Headers }) => Promise<unknown>):
 function createApp(auth: Auth) {
   const app = new Hono();
   app.use("*", createSessionMiddleware(auth));
-  app.get("/test", (c) => c.json({ ok: true, user: c.get("user"), session: c.get("session") }));
+  app.get("/test", (c) => c.json({ ok: true, user: c.get(USER_KEY), session: c.get(SESSION_KEY) }));
   return app;
 }
 
@@ -108,6 +108,43 @@ describe("createSessionMiddleware", () => {
     await app.request("/test");
 
     expect(nextReached).toBe(false);
+  });
+
+  it("should return 401 when getSession returns undefined", async () => {
+    const auth = mockAuth(async () => undefined);
+    const app = createApp(auth);
+
+    const res = await app.request("/test");
+
+    // undefined is falsy like null — must not reach route handler
+    expect(res.status).toBe(401);
+  });
+
+  it("should return 503 when getSession rejects with non-Error", async () => {
+    const auth = mockAuth(async () => {
+      throw "string error";
+    });
+    const app = createApp(auth);
+
+    const res = await app.request("/test");
+
+    // Non-Error throws still fail-closed (503, not 401)
+    expect(res.status).toBe(503);
+  });
+
+  it("should not leak infrastructure error details to client", async () => {
+    const auth = mockAuth(async () => {
+      throw new Error("pg: password authentication failed for user 'admin'");
+    });
+    const app = createApp(auth);
+
+    const res = await app.request("/test");
+    const body = await res.json();
+
+    expect(res.status).toBe(503);
+    // Must NOT contain internal error details
+    expect(JSON.stringify(body)).not.toContain("password authentication");
+    expect(JSON.stringify(body)).not.toContain("admin");
   });
 
   it("should forward request headers to getSession", async () => {

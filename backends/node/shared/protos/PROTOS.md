@@ -13,21 +13,25 @@ Run `pnpm --filter @d2/protos generate` to regenerate.
 
 ## Key Exports
 
-| Export                            | Proto Source     | Description                             |
-| --------------------------------- | ---------------- | --------------------------------------- |
-| `D2ResultProto`                   | `common/v1/`     | Protobuf representation of D2Result     |
-| `InputErrorProto`                 | `common/v1/`     | Protobuf representation of input errors |
-| `PingServiceClient`               | `common/v1/`     | Health check gRPC client                |
-| `GeoServiceClient`                | `geo/v1/`        | Geo service gRPC client                 |
-| `FindWhoIsRequest/Response`       | `geo/v1/`        | WhoIs lookup messages                   |
-| `GetReferenceDataResponse`        | `geo/v1/`        | Geo reference data response             |
-| `ContactDTO`, `ContactToCreateDTO`  | `geo/v1/`        | Contact data transfer objects           |
-| `CreateContactsRequest/Response`    | `geo/v1/`        | Batch contact creation                  |
-| `GetContactsByExtKeysRequest/Response` | `geo/v1/`     | Contact lookup by ext keys              |
-| `DeleteContactsByExtKeysRequest/Response` | `geo/v1/`  | Delete contacts by ext keys             |
-| `UpdateContactsByExtKeysRequest/Response` | `geo/v1/`  | Replace contacts at ext keys            |
-| `CountryDTO`, `LocationDTO`, etc.   | `geo/v1/`        | Geo domain DTOs                         |
-| `Timestamp`                       | Well-known types | Google protobuf timestamp               |
+| Export                                    | Proto Source     | Description                             |
+| ----------------------------------------- | ---------------- | --------------------------------------- |
+| `D2ResultProto`                           | `common/v1/`     | Protobuf representation of D2Result     |
+| `InputErrorProto`                         | `common/v1/`     | Protobuf representation of input errors |
+| `PingServiceClient`                       | `common/v1/`     | Health check gRPC client                |
+| `GeoServiceClient`                        | `geo/v1/`        | Geo service gRPC client                 |
+| `FindWhoIsRequest/Response`               | `geo/v1/`        | WhoIs lookup messages                   |
+| `GetReferenceDataResponse`                | `geo/v1/`        | Geo reference data response             |
+| `ContactDTO`, `ContactToCreateDTO`        | `geo/v1/`        | Contact data transfer objects           |
+| `CreateContactsRequest/Response`          | `geo/v1/`        | Batch contact creation                  |
+| `GetContactsByExtKeysRequest/Response`    | `geo/v1/`        | Contact lookup by ext keys              |
+| `DeleteContactsByExtKeysRequest/Response` | `geo/v1/`        | Delete contacts by ext keys             |
+| `UpdateContactsByExtKeysRequest/Response` | `geo/v1/`        | Replace contacts at ext keys            |
+| `CountryDTO`, `LocationDTO`, etc.         | `geo/v1/`        | Geo domain DTOs                         |
+| `GeoRefDataUpdatedEvent`                  | `events/v1/`     | Geo reference data refresh event        |
+| `CommsServiceClient`                      | `comms/v1/`      | Comms service gRPC client               |
+| `GetChannelPreferenceRequest/Response`    | `comms/v1/`      | Channel preference query                |
+| `SetChannelPreferenceRequest/Response`    | `comms/v1/`      | Channel preference update               |
+| `Timestamp`                               | Well-known types | Google protobuf timestamp               |
 
 ## Dependencies
 

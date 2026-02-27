@@ -2,6 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 import "common/v1/d2_result.proto";
+import "common/v1/health.proto";
 
 package d2.geo.v1;
 
@@ -12,6 +13,10 @@ option csharp_namespace = "D2.Services.Protos.Geo.V1";
 // ******************************
 
 service GeoService {
+  // Health check — pings all dependencies (DB, cache, messaging).
+  rpc CheckHealth(d2.common.v1.CheckHealthRequest)
+      returns (d2.common.v1.CheckHealthResponse);
+
   rpc GetReferenceData(GetReferenceDataRequest)
       returns (GetReferenceDataResponse);
 
@@ -192,7 +197,20 @@ message UpdateContactsByExtKeysRequest {
 
 message UpdateContactsByExtKeysResponse {
   d2.common.v1.D2ResultProto result = 1;
-  repeated ContactDTO data = 2;
+  repeated ContactReplacement replacements = 2;
+}
+
+// Rich key identifying which old contact was replaced, with full ext-key context.
+message ContactReplacementKey {
+  string context_key = 1;
+  string related_entity_id = 2;
+  string old_contact_id = 3;
+}
+
+// One entry per old contact that was replaced.
+message ContactReplacement {
+  ContactReplacementKey key = 1;
+  ContactDTO new_contact = 2;
 }
 
 // ***********************

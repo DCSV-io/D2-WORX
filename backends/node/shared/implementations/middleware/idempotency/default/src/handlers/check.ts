@@ -1,13 +1,14 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { DistributedCache, Idempotency } from "@d2/interfaces";
+import { z } from "zod";
 import { DEFAULT_IDEMPOTENCY_OPTIONS, type IdempotencyOptions } from "../idempotency-options.js";
+import { IDEMPOTENCY_CACHE_KEYS } from "../cache-keys.js";
 
 type CheckInput = Idempotency.CheckInput;
 type CheckOutput = Idempotency.CheckOutput;
 
 const SENTINEL = "__processing__";
-const KEY_PREFIX = "idempotency:";
 
 /**
  * Handler for checking idempotency state using SET NX + GET pattern.
@@ -22,6 +23,10 @@ export class Check
   extends BaseHandler<CheckInput, CheckOutput>
   implements Idempotency.ICheckHandler
 {
+  private static readonly checkSchema = z.object({
+    idempotencyKey: z.string().min(1).max(256),
+  }) as unknown as z.ZodType<CheckInput>;
+
   private readonly setNx: DistributedCache.ISetNxHandler<string>;
   private readonly get: DistributedCache.IGetHandler<string>;
   private readonly options: IdempotencyOptions;
@@ -39,7 +44,13 @@ export class Check
   }
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
-    const cacheKey = `${KEY_PREFIX}${input.idempotencyKey}`;
+    // Validate input.
+    const validation = this.validateInput(Check.checkSchema, input);
+    if (validation.failed) {
+      return D2Result.bubbleFail(validation);
+    }
+
+    const cacheKey = IDEMPOTENCY_CACHE_KEYS.entry(input.idempotencyKey);
 
     try {
       // 1. Attempt to acquire the lock with SET NX.
@@ -53,7 +64,6 @@ export class Check
         // Lock acquired — caller should proceed with request processing.
         return D2Result.ok({
           data: { state: "acquired" as const, cachedResponse: undefined },
-          traceId: this.traceId,
         });
       }
 
@@ -72,7 +82,6 @@ export class Check
         );
         return D2Result.ok({
           data: { state: "acquired" as const, cachedResponse: undefined },
-          traceId: this.traceId,
         });
       }
 
@@ -80,7 +89,6 @@ export class Check
       if (getResult.data.value === SENTINEL) {
         return D2Result.ok({
           data: { state: "in_flight" as const, cachedResponse: undefined },
-          traceId: this.traceId,
         });
       }
 
@@ -90,7 +98,6 @@ export class Check
         if (cachedResponse && typeof cachedResponse.statusCode === "number") {
           return D2Result.ok({
             data: { state: "cached" as const, cachedResponse },
-            traceId: this.traceId,
           });
         }
       } catch {
@@ -102,14 +109,12 @@ export class Check
       // Could not parse — fail-open: treat as acquired.
       return D2Result.ok({
         data: { state: "acquired" as const, cachedResponse: undefined },
-        traceId: this.traceId,
       });
     } catch {
       // Fail-open on all cache errors.
       this.context.logger.warn(`Idempotency check failed. Failing open. TraceId: ${this.traceId}`);
       return D2Result.ok({
         data: { state: "acquired" as const, cachedResponse: undefined },
-        traceId: this.traceId,
       });
     }
   }

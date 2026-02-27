@@ -1,18 +1,16 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { type D2Result, HttpStatusCode } from "@d2/result";
+import { HttpStatusCode } from "@d2/result";
 import { SESSION_FIELDS, type OrgType } from "@d2/auth-domain";
+import {
+  ICreateEmulationConsentKey,
+  IRevokeEmulationConsentKey,
+  IGetActiveConsentsKey,
+} from "@d2/auth-app";
 import type { SessionVariables } from "../middleware/session.js";
+import { type ScopeVariables } from "../middleware/scope.js";
+import { SCOPE_KEY, SESSION_KEY, USER_KEY } from "../context-keys.js";
 import { requireOrg, requireStaff, requireRole } from "../middleware/authorization.js";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Handler = { handleAsync: (input: any) => Promise<D2Result<any>> };
-
-interface EmulationHandlers {
-  create: Handler;
-  revoke: Handler;
-  getActive: Handler;
-}
 
 /** Default and maximum page sizes for list endpoints. */
 const DEFAULT_LIMIT = 50;
@@ -22,9 +20,10 @@ const MAX_LIMIT = 100;
  * Thin routes for emulation consent management.
  * Authorization is visible at route declaration via middleware.
  * All validation and business logic lives in handlers.
+ * Handlers are resolved from the per-request DI scope.
  */
-export function createEmulationRoutes(handlers: EmulationHandlers) {
-  const app = new Hono<{ Variables: SessionVariables }>();
+export function createEmulationRoutes() {
+  const app = new Hono<{ Variables: SessionVariables & ScopeVariables }>();
 
   // POST — Create consent (staff officer+)
   app.post(
@@ -34,10 +33,11 @@ export function createEmulationRoutes(handlers: EmulationHandlers) {
     requireRole("officer"),
     async (c) => {
       const body = await c.req.json();
-      const result = await handlers.create.handleAsync({
-        userId: c.get("user")!.id,
+      const handler = c.get(SCOPE_KEY).resolve(ICreateEmulationConsentKey);
+      const result = await handler.handleAsync({
+        userId: c.get(USER_KEY)!.id,
         grantedToOrgId: body.grantedToOrgId,
-        activeOrgType: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_TYPE] as OrgType,
+        activeOrgType: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_TYPE] as OrgType,
         expiresAt: new Date(body.expiresAt),
       });
       const status = (
@@ -54,9 +54,10 @@ export function createEmulationRoutes(handlers: EmulationHandlers) {
     requireStaff(),
     requireRole("officer"),
     async (c) => {
-      const result = await handlers.revoke.handleAsync({
+      const handler = c.get(SCOPE_KEY).resolve(IRevokeEmulationConsentKey);
+      const result = await handler.handleAsync({
         consentId: c.req.param("id"),
-        userId: c.get("user")!.id,
+        userId: c.get(USER_KEY)!.id,
       });
       const status = (
         result.success ? HttpStatusCode.OK : (result.statusCode ?? HttpStatusCode.BadRequest)
@@ -75,8 +76,9 @@ export function createEmulationRoutes(handlers: EmulationHandlers) {
     );
     const offset = Number.isFinite(offsetParam) && offsetParam >= 0 ? offsetParam : 0;
 
-    const result = await handlers.getActive.handleAsync({
-      userId: c.get("user")!.id,
+    const handler = c.get(SCOPE_KEY).resolve(IGetActiveConsentsKey);
+    const result = await handler.handleAsync({
+      userId: c.get(USER_KEY)!.id,
       limit,
       offset,
     });

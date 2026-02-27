@@ -2,8 +2,10 @@ import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { WhoIsDTO, FindWhoIsRequest, FindWhoIsResponse, GeoServiceClient } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
+import { Metadata } from "@grpc/grpc-js";
 import { z } from "zod";
 import type { GeoClientOptions } from "../../geo-client-options.js";
+import { GEO_CACHE_KEYS } from "../../cache-keys.js";
 import { Complex } from "../../interfaces/index.js";
 
 type Input = Complex.FindWhoIsInput;
@@ -49,12 +51,12 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
       return D2Result.bubbleFail(validation);
     }
 
-    const cacheKey = `whois:${input.ipAddress}:${input.fingerprint}`;
+    const cacheKey = GEO_CACHE_KEYS.whois(input.ipAddress, input.fingerprint);
 
-    // Try cache first
-    const cached = this.store.get<WhoIsDTO>(cacheKey);
+    // Try cache first (null = negative cache sentinel, undefined = miss)
+    const cached = this.store.get<WhoIsDTO | null>(cacheKey);
     if (cached !== undefined) {
-      return D2Result.ok({ data: { whoIs: cached }, traceId: this.traceId });
+      return D2Result.ok({ data: { whoIs: cached ?? undefined } });
     }
 
     // Cache miss — call Geo service
@@ -64,20 +66,27 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
         requests: [{ ipAddress: input.ipAddress, fingerprint: input.fingerprint }],
       };
       response = await new Promise<FindWhoIsResponse>((resolve, reject) => {
-        this.geoClient.findWhoIs(request, (err, res) => {
-          if (err) reject(err);
-          else resolve(res);
-        });
+        this.geoClient.findWhoIs(
+          request,
+          new Metadata(),
+          { deadline: Date.now() + this.options.grpcTimeoutMs },
+          (err, res) => {
+            if (err) reject(err);
+            else resolve(res);
+          },
+        );
       });
     } catch {
       // Fail-open: log warning and return undefined.
       // Do not log input.ipAddress directly — it bypasses BaseHandler's redaction.
       this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`);
-      return D2Result.ok({ data: { whoIs: undefined }, traceId: this.traceId });
+      return D2Result.ok({ data: { whoIs: undefined } });
     }
 
     if (!response.result?.success || response.data.length === 0) {
-      return D2Result.ok({ data: { whoIs: undefined }, traceId: this.traceId });
+      // Negative cache: avoid repeated gRPC calls for unknown IPs
+      this.store.set(cacheKey, null, this.options.whoIsNegativeCacheExpirationMs);
+      return D2Result.ok({ data: { whoIs: undefined } });
     }
 
     const whoIs = response.data[0]?.whois;
@@ -87,7 +96,7 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
       this.store.set(cacheKey, whoIs, this.options.whoIsCacheExpirationMs);
     }
 
-    return D2Result.ok({ data: { whoIs }, traceId: this.traceId });
+    return D2Result.ok({ data: { whoIs } });
   }
 }
 

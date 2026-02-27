@@ -12,10 +12,12 @@ namespace D2.Shared.Tests.Integration;
 using D2.Services.Protos.Geo.V1;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
+using D2.Shared.DistributedCache.Redis.Handlers.C;
 using D2.Shared.DistributedCache.Redis.Handlers.D;
 using D2.Shared.DistributedCache.Redis.Handlers.R;
 using D2.Shared.DistributedCache.Redis.Handlers.U;
 using D2.Shared.Handler;
+using D2.Shared.Interfaces.Caching.Distributed.Handlers.C;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
@@ -488,6 +490,346 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         // Act
         var result = await handler.HandleAsync(
             new IDelete.RemoveInput("any-key"),
+            CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    // ── SetNx ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tests that SetNx sets the value and returns true when the key does not exist.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task SetNx_WhenKeyDoesNotExist_SetsAndReturnsTrue()
+    {
+        var handler = new SetNx<string>(_redis, _context);
+
+        var result = await handler.HandleAsync(
+            new ICreate.SetNxInput<string>("nx-new-key", "first-value"),
+            Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.WasSet.Should().BeTrue();
+
+        var db = _redis.GetDatabase();
+        var cached = await db.StringGetAsync("nx-new-key");
+        cached.HasValue.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that SetNx does not overwrite an existing key and returns false.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task SetNx_WhenKeyExists_DoesNotOverwriteAndReturnsFalse()
+    {
+        // Arrange — set the key first
+        var handler = new SetNx<string>(_redis, _context);
+        await handler.HandleAsync(
+            new ICreate.SetNxInput<string>("nx-existing-key", "original"),
+            Ct);
+
+        // Act — attempt to set again with a different value
+        var result = await handler.HandleAsync(
+            new ICreate.SetNxInput<string>("nx-existing-key", "overwrite-attempt"),
+            Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.WasSet.Should().BeFalse();
+
+        // Verify original value is preserved
+        var getHandler = new Get<string>(_redis, _context);
+        var getResult = await getHandler.HandleAsync(
+            new IRead.GetInput("nx-existing-key"), Ct);
+        getResult.Data!.Value.Should().Be("original");
+    }
+
+    /// <summary>
+    /// Tests that SetNx with expiration causes the key to expire after the duration.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task SetNx_WithExpiration_KeyExpiresAfterDuration()
+    {
+        var handler = new SetNx<string>(_redis, _context);
+        await handler.HandleAsync(
+            new ICreate.SetNxInput<string>(
+                "nx-expiring-key", "temp-value", TimeSpan.FromMilliseconds(100)),
+            Ct);
+
+        await Task.Delay(200, Ct);
+
+        var db = _redis.GetDatabase();
+        var cached = await db.StringGetAsync("nx-expiring-key");
+        cached.HasValue.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that SetNx with a protobuf message stores it as binary data.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task SetNx_WithProtobufMessage_StoresAsBinary()
+    {
+        // Arrange
+        var protoData = TestHelpers.TestGeoRefData;
+        var handler = new SetNx<GeoRefData>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new ICreate.SetNxInput<GeoRefData>("nx-proto-key", protoData),
+            Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.WasSet.Should().BeTrue();
+
+        var db = _redis.GetDatabase();
+        var cached = await db.StringGetAsync("nx-proto-key");
+        cached.HasValue.Should().BeTrue();
+
+        // Verify it's binary protobuf, not JSON (protobuf won't start with '{')
+        var bytes = (byte[])cached!;
+        bytes.Should().NotBeEmpty();
+        bytes[0].Should().NotBe((byte)'{');
+    }
+
+    /// <summary>
+    /// Tests that SetNx returns ServiceUnavailable when Redis is unavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task SetNx_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        await EnsureContainerStoppedAsync();
+        var handler = new SetNx<string>(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new ICreate.SetNxInput<string>("any-key", "any-value"),
+            CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    // ── GetTtl ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tests that GetTtl returns the remaining TTL when a key has an expiration set.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetTtl_WhenKeyHasTtl_ReturnsTtl()
+    {
+        // Arrange — set a key with a known TTL
+        var db = _redis.GetDatabase();
+        await db.StringSetAsync("ttl-key", "value", TimeSpan.FromSeconds(30));
+
+        var handler = new GetTtl(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IRead.GetTtlInput("ttl-key"), Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.TimeToLive.Should().NotBeNull();
+        result.Data!.TimeToLive!.Value.Should().BeGreaterThan(TimeSpan.Zero);
+        result.Data!.TimeToLive!.Value.Should().BeLessThanOrEqualTo(TimeSpan.FromSeconds(30));
+    }
+
+    /// <summary>
+    /// Tests that GetTtl returns null when a key has no expiration (persistent).
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetTtl_WhenKeyHasNoTtl_ReturnsNull()
+    {
+        // Arrange — set a key without expiration
+        var db = _redis.GetDatabase();
+        await db.StringSetAsync("persistent-key", "value");
+
+        var handler = new GetTtl(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IRead.GetTtlInput("persistent-key"), Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.TimeToLive.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetTtl returns null when the key does not exist.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetTtl_WhenKeyMissing_ReturnsNull()
+    {
+        var handler = new GetTtl(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IRead.GetTtlInput("nonexistent-key"), Ct);
+
+        // Assert — Redis returns -2 for missing keys, StackExchange maps to null
+        result.Success.Should().BeTrue();
+        result.Data!.TimeToLive.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests that GetTtl returns ServiceUnavailable when Redis is unavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task GetTtl_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        await EnsureContainerStoppedAsync();
+        var handler = new GetTtl(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IRead.GetTtlInput("any-key"),
+            CancellationToken.None);
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    // ── Increment ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tests that incrementing a non-existent key returns 1 (Redis auto-creates with value 0 then increments).
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Increment_NewKey_ReturnsOne()
+    {
+        var handler = new Increment(_redis, _context);
+
+        var result = await handler.HandleAsync(
+            new IUpdate.IncrementInput("incr-new-key"),
+            Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.NewValue.Should().Be(1);
+    }
+
+    /// <summary>
+    /// Tests that incrementing an existing numeric key returns the correctly incremented value.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Increment_ExistingKey_ReturnsIncrementedValue()
+    {
+        // Arrange — set the key to "5" (Redis stores numbers as strings)
+        var db = _redis.GetDatabase();
+        await db.StringSetAsync("incr-existing-key", "5");
+
+        var handler = new Increment(_redis, _context);
+
+        // Act — increment by 3
+        var result = await handler.HandleAsync(
+            new IUpdate.IncrementInput("incr-existing-key", 3),
+            Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.NewValue.Should().Be(8);
+    }
+
+    /// <summary>
+    /// Tests that incrementing with an expiration sets a TTL on the key.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Increment_WithExpiration_SetsKeyTtl()
+    {
+        var handler = new Increment(_redis, _context);
+
+        // Act — increment with a 30s expiration
+        var result = await handler.HandleAsync(
+            new IUpdate.IncrementInput("incr-ttl-key", 1, TimeSpan.FromSeconds(30)),
+            Ct);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.NewValue.Should().Be(1);
+
+        var db = _redis.GetDatabase();
+        var ttl = await db.KeyTimeToLiveAsync("incr-ttl-key");
+        ttl.Should().NotBeNull();
+        ttl!.Value.Should().BeGreaterThan(TimeSpan.Zero);
+        ttl.Value.Should().BeLessThanOrEqualTo(TimeSpan.FromSeconds(30));
+    }
+
+    /// <summary>
+    /// Tests that Increment returns ServiceUnavailable when Redis is unavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task Increment_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        // Arrange
+        await EnsureContainerStoppedAsync();
+        var handler = new Increment(_redis, _context);
+
+        // Act
+        var result = await handler.HandleAsync(
+            new IUpdate.IncrementInput("any-key"),
             CancellationToken.None);
 
         // Assert

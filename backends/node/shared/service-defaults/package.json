@@ -7,6 +7,11 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./register": "./dist/register.js",
+    "./grpc": {
+      "types": "./dist/grpc/index.d.ts",
+      "default": "./dist/grpc/index.js"
     }
   },
   "scripts": {
@@ -17,6 +22,12 @@
     "dist"
   ],
   "dependencies": {
+    "@d2/di": "workspace:*",
+    "@d2/handler": "workspace:*",
+    "@d2/logging": "workspace:*",
+    "@d2/utilities": "workspace:*",
+    "@grpc/grpc-js": "1.14.3",
+    "import-in-the-middle": "1.14.4",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/auto-instrumentations-node": "0.65.0",
     "@opentelemetry/exporter-logs-otlp-http": "0.206.0",
@@ -26,7 +37,6 @@
     "@opentelemetry/sdk-logs": "0.206.0",
     "@opentelemetry/sdk-metrics": "2.1.0",
     "@opentelemetry/sdk-node": "0.206.0",
-    "@opentelemetry/sdk-trace-node": "2.5.0",
     "@opentelemetry/semantic-conventions": "1.37.0"
   }
 }

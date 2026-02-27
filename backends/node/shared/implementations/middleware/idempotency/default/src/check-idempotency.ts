@@ -1,8 +1,7 @@
 import type { ILogger } from "@d2/logging";
 import type { DistributedCache, Idempotency } from "@d2/interfaces";
 import { DEFAULT_IDEMPOTENCY_OPTIONS, type IdempotencyOptions } from "./idempotency-options.js";
-
-const KEY_PREFIX = "idempotency:";
+import { IDEMPOTENCY_CACHE_KEYS } from "./cache-keys.js";
 
 /** Result from checking idempotency state. */
 export interface IdempotencyResult {
@@ -25,6 +24,9 @@ export interface IdempotencyResult {
  * @param removeHandler - Distributed cache REMOVE handler (for sentinel cleanup).
  * @param options - Optional partial options (merged with defaults).
  * @param logger - Optional logger.
+ * @param scopeId - Optional scope identifier (e.g., userId or sessionId) to prevent
+ *   cross-user key collisions. When provided, the cache key becomes
+ *   `idempotency:{scopeId}:{key}` instead of `idempotency:{key}` (via IDEMPOTENCY_CACHE_KEYS.entry).
  */
 export async function checkIdempotency(
   idempotencyKey: string,
@@ -33,11 +35,17 @@ export async function checkIdempotency(
   removeHandler: DistributedCache.IRemoveHandler,
   options?: Partial<IdempotencyOptions>,
   logger?: ILogger,
+  scopeId?: string,
 ): Promise<IdempotencyResult> {
   const opts = { ...DEFAULT_IDEMPOTENCY_OPTIONS, ...options };
-  const cacheKey = `${KEY_PREFIX}${idempotencyKey}`;
 
-  const checkResult = await checkHandler.handleAsync({ idempotencyKey });
+  // Scope the key to the authenticated user to prevent cross-user collisions.
+  // The scoped key is passed to the Check handler so its SET NX uses the same key
+  // as the orchestrator's store/remove operations.
+  const scopedKey = scopeId ? `${scopeId}:${idempotencyKey}` : idempotencyKey;
+  const cacheKey = IDEMPOTENCY_CACHE_KEYS.entry(scopedKey);
+
+  const checkResult = await checkHandler.handleAsync({ idempotencyKey: scopedKey });
 
   const state = checkResult.success ? (checkResult.data?.state ?? "acquired") : "acquired";
   const cachedResponse = checkResult.success ? checkResult.data?.cachedResponse : undefined;

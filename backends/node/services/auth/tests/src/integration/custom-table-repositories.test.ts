@@ -182,6 +182,49 @@ describe("SignInEventRepository (integration)", () => {
     expect(resultA.data!.events[0].userId).toBe("user-A");
     expect(resultB.data!.events[0].userId).toBe("user-B");
   });
+
+  it("should update whoIsId on an existing event", async () => {
+    const event = makeEvent();
+    await repo.create.handleAsync({ event });
+
+    const updateResult = await repo.updateWhoIsId.handleAsync({
+      id: event.id,
+      whoIsId: "a".repeat(64),
+    });
+    expect(updateResult.success).toBe(true);
+
+    const findResult = await repo.findByUserId.handleAsync({
+      userId: event.userId,
+      limit: 10,
+      offset: 0,
+    });
+    expect(findResult.data!.events[0].whoIsId).toBe("a".repeat(64));
+  });
+
+  it("should return notFound when updating whoIsId for nonexistent event", async () => {
+    const result = await repo.updateWhoIsId.handleAsync({
+      id: generateUuidV7(),
+      whoIsId: "b".repeat(64),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("should overwrite an existing whoIsId value", async () => {
+    const event = makeEvent({ whoIsId: "old-hash" });
+    await repo.create.handleAsync({ event });
+
+    await repo.updateWhoIsId.handleAsync({
+      id: event.id,
+      whoIsId: "c".repeat(64),
+    });
+
+    const findResult = await repo.findByUserId.handleAsync({
+      userId: event.userId,
+      limit: 10,
+      offset: 0,
+    });
+    expect(findResult.data!.events[0].whoIsId).toBe("c".repeat(64));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -319,6 +362,14 @@ describe("EmulationConsentRepository (integration)", () => {
       offset: 0,
     });
     expect(activeResult.data!.consents).toHaveLength(0);
+  });
+
+  it("should return notFound when revoking a nonexistent consent", async () => {
+    const result = await repo.revoke.handleAsync({
+      id: "00000000-0000-0000-0000-000000000000",
+    });
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
   });
 
   it("should enforce partial unique index on active consents", async () => {
@@ -489,6 +540,28 @@ describe("OrgContactRepository (integration)", () => {
 
     const result = await repo.findById.handleAsync({ id: contact.id });
     expect(result.success).toBe(false);
+  });
+
+  it("should return notFound when updating a nonexistent contact", async () => {
+    const contact: OrgContact = {
+      id: "00000000-0000-0000-0000-000000000000",
+      organizationId: "org-1",
+      label: "Ghost Office",
+      isPrimary: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const result = await repo.update.handleAsync({ contact });
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
+  });
+
+  it("should return notFound when deleting a nonexistent contact", async () => {
+    const result = await repo.delete.handleAsync({
+      id: "00000000-0000-0000-0000-000000000000",
+    });
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
   });
 
   it("should not cross-contaminate between orgs", async () => {

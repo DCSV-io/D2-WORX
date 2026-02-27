@@ -31,6 +31,6 @@ export class GetLatestSignInEventDate
       date = result.latest instanceof Date ? result.latest : new Date(result.latest as string);
     }
 
-    return D2Result.ok({ data: { date }, traceId: this.traceId });
+    return D2Result.ok({ data: { date } });
   }
 }

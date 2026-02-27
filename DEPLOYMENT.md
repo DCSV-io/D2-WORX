@@ -8,16 +8,16 @@ This document captures the current multi-instance posture of the D²-WORX platfo
 
 D²-WORX is a microservices platform with the following topology:
 
-| Component          | Technology        | Communication               |
-| ------------------ | ----------------- | --------------------------- |
-| Geo Service        | .NET 10 / gRPC    | gRPC (sync), RabbitMQ (async) |
-| Auth Service       | Node.js / Hono    | HTTP (BetterAuth), gRPC (planned) |
-| REST Gateway       | .NET 10 / ASP.NET | HTTP → gRPC (reverse proxy) |
-| Web Client         | SvelteKit 5       | HTTP (SSR + client-side)    |
-| PostgreSQL         | 18                | Per-service databases       |
-| Redis              | 8.2               | Shared distributed cache    |
-| RabbitMQ           | 4.1               | Async messaging             |
-| Aspire AppHost     | .NET Aspire        | Orchestration + discovery   |
+| Component      | Technology        | Communication                     |
+| -------------- | ----------------- | --------------------------------- |
+| Geo Service    | .NET 10 / gRPC    | gRPC (sync), RabbitMQ (async)     |
+| Auth Service   | Node.js / Hono    | HTTP (BetterAuth), gRPC (planned) |
+| REST Gateway   | .NET 10 / ASP.NET | HTTP → gRPC (reverse proxy)       |
+| Web Client     | SvelteKit 5       | HTTP (SSR + client-side)          |
+| PostgreSQL     | 18                | Per-service databases             |
+| Redis          | 8.2               | Shared distributed cache          |
+| RabbitMQ       | 4.1               | Async messaging                   |
+| Aspire AppHost | .NET Aspire       | Orchestration + discovery         |
 
 **Service discovery:** Aspire injects connection strings and service URLs via environment variables at startup. Services do not hard-code peer addresses.
 
@@ -36,11 +36,11 @@ These components require **no code changes** to run multiple instances:
 
 ### Session Storage (3-Tier)
 
-| Tier           | Storage    | Multi-Instance Behavior                          |
-| -------------- | ---------- | ------------------------------------------------ |
-| Cookie cache   | In cookie  | Travels with the request — any instance can read |
-| Redis          | Shared     | Any instance queries the same Redis              |
-| PostgreSQL     | Shared     | Dual-write ensures durability across instances   |
+| Tier         | Storage   | Multi-Instance Behavior                          |
+| ------------ | --------- | ------------------------------------------------ |
+| Cookie cache | In cookie | Travels with the request — any instance can read |
+| Redis        | Shared    | Any instance queries the same Redis              |
+| PostgreSQL   | Shared    | Dual-write ensures durability across instances   |
 
 No sticky sessions required. Session revocation propagates instantly via Redis.
 
@@ -74,20 +74,7 @@ No sticky sessions required. Session revocation propagates instantly via Redis.
 
 ## Blockers Fixed
 
-### 1. MassTransit `GeoRefDataUpdated` Competing Consumer
-
-**Problem:** `Geo.Infra/Extensions.cs` registered `UpdatedConsumer` with default MassTransit queue naming. With multiple Geo.API instances, `ConfigureEndpoints` creates a single named queue (`updated-consumer`) — MassTransit distributes messages across consumers (competing consumer pattern). Only ONE instance receives each `GeoRefDataUpdated` message, leaving other instances with stale reference data caches.
-
-**Fix:** Set `Temporary = true` on the consumer endpoint:
-
-```csharp
-x.AddConsumer<UpdatedConsumer>()
-    .Endpoint(e => e.Temporary = true);
-```
-
-This creates a unique auto-delete queue per instance (includes GUID in name, non-durable, removed on disconnect). All instances receive every broadcast — correct for cache invalidation signals.
-
-### 2. Auth Service In-Memory Rate Limiter
+### 1. Auth Service In-Memory Rate Limiter
 
 **Problem:** `rate-limit.ts` used a per-process `Map` for rate limit counters. With multiple auth instances, each has independent counters — an attacker rotating across instances gets N× the allowed rate.
 
@@ -147,10 +134,10 @@ Cloudflare Tunnels remain viable for multi-machine deployments:
 
 When adding a new service, verify:
 
-- [ ] **Cache invalidation broadcasts** — If using MassTransit for cache refresh signals, register consumers with `Endpoint(e => e.Temporary = true)` (fanout, not competing)
+- [ ] **Cache invalidation broadcasts** — Use fanout exchanges with exclusive auto-delete queues per instance (not competing consumers) for cache refresh signals
 - [ ] **Rate limiting** — Use `@d2/ratelimit` (Redis-backed) or `.NET RateLimit.Default`, never per-process Maps
 - [ ] **Session/auth** — Validate JWTs via JWKS (no instance affinity), sessions via Redis
 - [ ] **Idempotency** — Use Redis-backed `@d2/idempotency`, not in-memory dedup
 - [ ] **Local caches** — Memory caches are per-instance (fine for read-heavy, TTL-bounded data). Ensure correctness doesn't depend on cache consistency across instances
-- [ ] **Background jobs** — Use distributed locks (Redis `SET NX`) if only one instance should run a job
+- [ ] **Background jobs** — Use Dkron for scheduled jobs (HTTP callback to service endpoints). Use distributed locks (Redis `SET NX`) if only one instance should run a job
 - [ ] **Connection strings** — Externalized via config/environment, not hardcoded

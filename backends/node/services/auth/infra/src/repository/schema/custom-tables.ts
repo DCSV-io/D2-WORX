@@ -26,7 +26,8 @@ export const signInEvent = pgTable(
     ipAddress: varchar("ip_address", { length: 45 }).notNull(),
     userAgent: text("user_agent").notNull(),
     whoIsId: varchar("who_is_id", { length: 64 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    failureReason: varchar("failure_reason", { length: 100 }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [index("idx_sign_in_event_user_id").on(table.userId)],
 );
@@ -37,9 +38,9 @@ export const emulationConsent = pgTable(
     id: varchar("id", { length: 36 }).primaryKey(),
     userId: varchar("user_id", { length: 36 }).notNull(),
     grantedToOrgId: varchar("granted_to_org_id", { length: 36 }).notNull(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    revokedAt: timestamp("revoked_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at").notNull(),
+    revokedAt: timestamp("revoked_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
     index("idx_emulation_consent_user_id").on(table.userId),
@@ -56,8 +57,8 @@ export const orgContact = pgTable(
     organizationId: varchar("organization_id", { length: 36 }).notNull(),
     label: varchar("label", { length: 100 }).notNull(),
     isPrimary: boolean("is_primary").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [index("idx_org_contact_organization_id").on(table.organizationId)],
 );

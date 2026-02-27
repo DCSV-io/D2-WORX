@@ -33,6 +33,13 @@ public class IpInfoClientWrapper : IIpInfoClient
         IOptions<GeoInfraOptions> options,
         ILogger<IpInfoClientWrapper> logger)
     {
+        if (string.IsNullOrEmpty(options.Value.IpInfoAccessToken))
+        {
+            logger.LogCritical(
+                "IpInfoAccessToken is not configured — IPinfo requests will use unauthenticated (rate-limited) access. " +
+                "Set GeoInfraOptions:IpInfoAccessToken via configuration or environment variables for production use.");
+        }
+
         r_client = new IPinfoClient.Builder()
             .AccessToken(options.Value.IpInfoAccessToken)
             .Build();

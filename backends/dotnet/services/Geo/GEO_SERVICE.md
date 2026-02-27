@@ -73,9 +73,11 @@ Contacts use a **ContextKey + RelatedEntityId** pattern instead of foreign keys.
 
 **ContextKey Examples:**
 
-- `"auth-user"` - Contact belongs to a user in Auth service
-- `"sales-order"` - Contact belongs to an order in Sales service
-- `"invoice"` - Contact belongs to an invoice in Billing service
+- `"auth_user"` - Contact belongs to a user in Auth service
+- `"auth_org_contact"` - Contact belongs to an org in Auth service
+- `"auth_org_invitation"` - Contact belongs to an invitation in Auth service
+- `"sales_order"` - Contact belongs to an order in Sales service (future)
+- `"invoice"` - Contact belongs to an invoice in Billing service (future)
 
 **RelatedEntityId:**
 References the external entity's ID (User.Id, Order.Id, etc.) without FK constraint

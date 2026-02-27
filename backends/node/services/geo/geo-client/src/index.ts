@@ -1,4 +1,5 @@
 export { type GeoClientOptions, DEFAULT_GEO_CLIENT_OPTIONS } from "./geo-client-options.js";
+export { GEO_CACHE_KEYS } from "./cache-keys.js";
 
 // Validation schemas (single source of truth for contact field constraints)
 export {
@@ -8,8 +9,6 @@ export {
   locationInputSchema,
   contactInputSchema,
 } from "./validation/contact-schemas.js";
-export type { GeoRefDataUpdated } from "./messages/geo-ref-data-updated.js";
-
 // gRPC helpers
 export { createApiKeyInterceptor } from "./grpc/api-key-interceptor.js";
 export { createGeoServiceClient } from "./grpc/create-geo-client.js";
@@ -47,6 +46,11 @@ export type {
   GetContactsByExtKeysInput,
   GetContactsByExtKeysOutput,
 } from "./interfaces/q/get-contacts-by-ext-keys.js";
+export { GetContactsByIds } from "./handlers/q/get-contacts-by-ids.js";
+export type {
+  GetContactsByIdsInput,
+  GetContactsByIdsOutput,
+} from "./interfaces/q/get-contacts-by-ids.js";
 
 // Complex
 export { FindWhoIs } from "./handlers/x/find-whois.js";
@@ -63,3 +67,20 @@ export type {
 export { Updated, type UpdatedDeps } from "./messaging/handlers/sub/updated.js";
 export type { UpdatedOutput } from "./interfaces/sub/updated.js";
 export { createUpdatedConsumer } from "./messaging/consumers/updated-consumer.js";
+export { ContactsEvicted } from "./messaging/handlers/sub/contacts-evicted.js";
+export type {
+  ContactsEvictedOutput,
+  IContactsEvictedHandler,
+} from "./messaging/handlers/sub/contacts-evicted.js";
+export { createContactsEvictedConsumer } from "./messaging/consumers/contacts-evicted-consumer.js";
+
+// Service Keys (DI registration tokens)
+export {
+  IGeoServiceClientKey,
+  ICreateContactsKey,
+  IDeleteContactsByExtKeysKey,
+  IGetContactsByExtKeysKey,
+  IGetContactsByIdsKey,
+  IFindWhoIsKey,
+  IUpdateContactsByExtKeysKey,
+} from "./service-keys.js";

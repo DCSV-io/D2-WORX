@@ -90,75 +90,60 @@ public class Check : BaseHandler<Check, I, O>, H
         // Trusted services bypass all rate limiting.
         if (requestInfo.IsTrustedService)
         {
-            return D2Result<O?>.Ok(new O(false, null, null), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(false, null, null));
         }
 
-        // Check dimensions in hierarchy order: fingerprint → IP → city → country.
-        // Short-circuit if any dimension is already blocked.
+        // Build the list of applicable dimension checks, then fire them all concurrently.
+        // Each dimension's internal Redis operations (GetTtl + 2× Increment) also run
+        // concurrently. This reduces total latency from N×3 sequential Redis round-trips
+        // to a single round-trip time (~5-8ms regardless of dimension count).
+        var checks = new List<Task<O>>(4);
 
-        // 1. Check client fingerprint (if present).
         if (!string.IsNullOrWhiteSpace(requestInfo.ClientFingerprint))
         {
-            var result = await CheckDimensionAsync(
+            checks.Add(CheckDimensionAsync(
                 RateLimitDimension.ClientFingerprint,
                 requestInfo.ClientFingerprint,
                 r_options.ClientFingerprintThreshold,
-                ct);
-
-            if (result.IsBlocked)
-            {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
-            }
+                ct));
         }
 
-        // 2. Check IP (if not localhost).
         if (!IpResolver.IsLocalhost(requestInfo.ClientIp))
         {
-            var result = await CheckDimensionAsync(
+            checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Ip,
                 requestInfo.ClientIp,
                 r_options.IpThreshold,
-                ct);
-
-            if (result.IsBlocked)
-            {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
-            }
+                ct));
         }
 
-        // 3. Check city (if WhoIs resolved).
         if (!string.IsNullOrWhiteSpace(requestInfo.City))
         {
-            var result = await CheckDimensionAsync(
+            checks.Add(CheckDimensionAsync(
                 RateLimitDimension.City,
                 requestInfo.City,
                 r_options.CityThreshold,
-                ct);
-
-            if (result.IsBlocked)
-            {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
-            }
+                ct));
         }
 
-        // 4. Check country (if WhoIs resolved and not whitelisted).
         if (!string.IsNullOrWhiteSpace(requestInfo.CountryCode) &&
             !r_options.WhitelistedCountryCodes.Contains(requestInfo.CountryCode))
         {
-            var result = await CheckDimensionAsync(
+            checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Country,
                 requestInfo.CountryCode,
                 r_options.CountryThreshold,
-                ct);
-
-            if (result.IsBlocked)
-            {
-                return D2Result<O?>.Ok(result, traceId: TraceId);
-            }
+                ct));
         }
 
-        // All dimensions passed.
-        return D2Result<O?>.Ok(new O(false, null, null), traceId: TraceId);
+        var results = await Task.WhenAll(checks);
+        var blocked = results.FirstOrDefault(r => r.IsBlocked);
+        if (blocked is not null)
+        {
+            return D2Result<O?>.Ok(blocked);
+        }
+
+        return D2Result<O?>.Ok(new O(false, null, null));
     }
 
     /// <summary>
@@ -209,8 +194,31 @@ public class Check : BaseHandler<Check, I, O>, H
 
         try
         {
+            // Compute window keys upfront so all Redis operations can fire concurrently.
+            var now = DateTime.UtcNow;
+            var windowSeconds = (int)r_options.Window.TotalSeconds;
+            var currentWindowId = GetWindowId(now);
+            var previousWindowId = GetWindowId(now.AddSeconds(-windowSeconds));
+
+            var currentKey = $"ratelimit:{dimensionKey}:{value}:{currentWindowId}";
+            var previousKey = $"ratelimit:{dimensionKey}:{value}:{previousWindowId}";
+
+            // Fire all three Redis operations concurrently: blocked check, previous
+            // window read, and current window increment. If already blocked, the
+            // extra increment is harmless (counter auto-expires via TTL).
+            var ttlTask = r_getTtl.HandleAsync(new IRead.GetTtlInput(blockedKey), ct);
+            var prevTask = r_increment.HandleAsync(
+                new IUpdate.IncrementInput(previousKey, 0, r_options.Window * 2), ct);
+            var incrTask = r_increment.HandleAsync(
+                new IUpdate.IncrementInput(currentKey, 1, r_options.Window * 2), ct);
+
+            await Task.WhenAll(ttlTask.AsTask(), prevTask.AsTask(), incrTask.AsTask());
+
+            var ttlResult = ttlTask.Result;
+            var prevResult = prevTask.Result;
+            var incrResult = incrTask.Result;
+
             // 1. Check if already blocked.
-            var ttlResult = await r_getTtl.HandleAsync(new IRead.GetTtlInput(blockedKey), ct);
             if (ttlResult.CheckSuccess(out var ttlOutput) && ttlOutput?.TimeToLive.HasValue == true)
             {
                 // Do not log raw `value` — it may be an IP address or fingerprint (PII).
@@ -223,27 +231,7 @@ public class Check : BaseHandler<Check, I, O>, H
                 return new O(true, dimension, ttlOutput.TimeToLive.Value);
             }
 
-            // 2. Get current and previous window IDs.
-            var now = DateTime.UtcNow;
-            var windowSeconds = (int)r_options.Window.TotalSeconds;
-            var currentWindowId = GetWindowId(now);
-            var previousWindowId = GetWindowId(now.AddSeconds(-windowSeconds));
-
-            var currentKey = $"ratelimit:{dimensionKey}:{value}:{currentWindowId}";
-            var previousKey = $"ratelimit:{dimensionKey}:{value}:{previousWindowId}";
-
-            // 3. Get previous window count (increment by 0 to get current value).
-            // Note: This creates the key if it doesn't exist, but with TTL it will auto-expire.
-            var prevResult = await r_increment.HandleAsync(
-                new IUpdate.IncrementInput(previousKey, 0, r_options.Window * 2),
-                ct);
-            var prevCount = prevResult.CheckSuccess(out var prevOutput) ? prevOutput?.NewValue ?? 0 : 0;
-
-            // 4. Increment current window and get new count.
-            var incrResult = await r_increment.HandleAsync(
-                new IUpdate.IncrementInput(currentKey, 1, r_options.Window * 2),
-                ct);
-
+            // 2. Evaluate increment results.
             if (!incrResult.CheckSuccess(out var incrOutput))
             {
                 // Fail-open on cache errors. Do not log raw `value` — may be PII.
@@ -255,14 +243,15 @@ public class Check : BaseHandler<Check, I, O>, H
                 return new O(false, null, null);
             }
 
+            var prevCount = prevResult.CheckSuccess(out var prevOutput) ? prevOutput?.NewValue ?? 0 : 0;
             var currCount = incrOutput?.NewValue ?? 0;
 
-            // 5. Calculate weighted estimate.
+            // 3. Calculate weighted estimate.
             var secondsIntoCurrentWindow = now.Second + (now.Millisecond / 1000.0);
             var weight = 1.0 - (secondsIntoCurrentWindow / windowSeconds);
             var estimated = (long)((prevCount * weight) + currCount);
 
-            // 6. Check if over threshold.
+            // 4. Check if over threshold.
             if (estimated > threshold)
             {
                 // Block the dimension.

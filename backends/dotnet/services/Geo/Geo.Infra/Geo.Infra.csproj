@@ -9,7 +9,6 @@
 
     <ItemGroup>
       <Folder Include="Messaging\Handlers\Sub\" />
-      <Folder Include="Messaging\MT\Consumers\" />
       <Folder Include="Repository\Handlers\D\" />
       <Folder Include="Repository\Handlers\U\" />
     </ItemGroup>
@@ -17,8 +16,11 @@
     <ItemGroup>
       <ProjectReference Include="..\..\..\shared\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
       <ProjectReference Include="..\..\..\shared\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
+      <ProjectReference Include="..\..\..\shared\Implementations\Messaging\Messaging.RabbitMQ\Messaging.RabbitMQ.csproj" />
+      <ProjectReference Include="..\..\..\shared\protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
       <ProjectReference Include="..\Geo.Client\Geo.Client.csproj" />
       <ProjectReference Include="..\..\..\shared\Implementations\Repository\Batch\Batch.Pg\Batch.Pg.csproj" />
+      <ProjectReference Include="..\..\..\shared\Implementations\Repository\Errors\Errors.Pg\Errors.Pg.csproj" />
       <ProjectReference Include="..\..\..\shared\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />
       <ProjectReference Include="..\Geo.App\Geo.App.csproj" />
       <ProjectReference Include="..\Geo.Domain\Geo.Domain.csproj" />
@@ -26,7 +28,6 @@
 
     <ItemGroup>
       <PackageReference Include="IPinfo" Version="3.3.0" />
-      <PackageReference Include="MassTransit.RabbitMQ" Version="9.0.0-develop.25" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
         <PrivateAssets>all</PrivateAssets>

@@ -16,6 +16,16 @@ using Microsoft.AspNetCore.Http;
 /// </summary>
 public class IpResolverTests
 {
+    /// <summary>
+    /// All proxy headers trusted — used by tests that verify fallback through the full chain.
+    /// </summary>
+    private static readonly HashSet<TrustedProxyHeader> sr_allHeaders =
+    [
+        TrustedProxyHeader.CfConnectingIp,
+        TrustedProxyHeader.XRealIp,
+        TrustedProxyHeader.XForwardedFor,
+    ];
+
     #region Resolve Tests
 
     /// <summary>
@@ -44,7 +54,7 @@ public class IpResolverTests
         context.Request.Headers["X-Real-IP"] = "192.168.1.1";
         context.Request.Headers["X-Forwarded-For"] = "10.0.0.1";
 
-        var result = IpResolver.Resolve(context);
+        var result = IpResolver.Resolve(context, sr_allHeaders);
 
         result.Should().Be("192.168.1.1");
     }
@@ -58,7 +68,7 @@ public class IpResolverTests
         var context = CreateHttpContext();
         context.Request.Headers["X-Forwarded-For"] = "203.0.113.50, 70.41.3.18, 150.172.238.178";
 
-        var result = IpResolver.Resolve(context);
+        var result = IpResolver.Resolve(context, sr_allHeaders);
 
         result.Should().Be("203.0.113.50");
     }
@@ -72,7 +82,7 @@ public class IpResolverTests
         var context = CreateHttpContext();
         context.Request.Headers["X-Forwarded-For"] = "198.51.100.178";
 
-        var result = IpResolver.Resolve(context);
+        var result = IpResolver.Resolve(context, sr_allHeaders);
 
         result.Should().Be("198.51.100.178");
     }
@@ -142,7 +152,7 @@ public class IpResolverTests
         context.Request.Headers["CF-Connecting-IP"] = "   ";
         context.Request.Headers["X-Real-IP"] = "192.168.1.1";
 
-        var result = IpResolver.Resolve(context);
+        var result = IpResolver.Resolve(context, sr_allHeaders);
 
         result.Should().Be("192.168.1.1");
     }

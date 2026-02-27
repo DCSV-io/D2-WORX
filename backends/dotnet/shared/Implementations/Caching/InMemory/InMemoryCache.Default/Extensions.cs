@@ -37,9 +37,9 @@ public static class Extensions
         /// <returns>
         /// The updated service collection.
         /// </returns>
-        public IServiceCollection AddDefaultMemoryCaching()
+        public IServiceCollection AddDefaultMemoryCaching(int maxEntries = 10_000)
         {
-            services.AddMemoryCache();
+            services.AddMemoryCache(options => options.SizeLimit = maxEntries);
 
             // The handlers for in-memory cache operations.
             services.AddTransient(typeof(IRead.IGetHandler<>), typeof(Get<>));

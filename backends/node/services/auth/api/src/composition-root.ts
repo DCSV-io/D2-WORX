@@ -5,10 +5,18 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { D2Result, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
+import { ServiceCollection } from "@d2/di";
 import { createLogger } from "@d2/logging";
-import { HandlerContext } from "@d2/handler";
+import { ILoggerKey } from "@d2/logging";
+import {
+  HandlerContext,
+  IHandlerContextKey,
+  IRequestContextKey,
+  createServiceScope,
+} from "@d2/handler";
 import * as CacheRedis from "@d2/cache-redis";
+import { PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
 import * as CacheMemory from "@d2/cache-memory";
 import {
   CreateContacts,
@@ -16,67 +24,91 @@ import {
   FindWhoIs,
   GetContactsByExtKeys,
   UpdateContactsByExtKeys,
+  ICreateContactsKey,
+  IDeleteContactsByExtKeysKey,
+  IGetContactsByExtKeysKey,
+  IUpdateContactsByExtKeysKey,
   DEFAULT_GEO_CLIENT_OPTIONS,
+  createGeoServiceClient,
   type GeoClientOptions,
 } from "@d2/geo-client";
+import { addCommsClient, INotifyKey } from "@d2/comms-client";
+import type { IMessagePublisher } from "@d2/messaging";
 import { Check as RateLimitCheck } from "@d2/ratelimit";
 import {
   createAuth,
   createSecondaryStorage,
   createPasswordFunctions,
   runMigrations,
-  createSignInEventRepoHandlers,
-  createEmulationConsentRepoHandlers,
-  createOrgContactRepoHandlers,
+  addAuthInfra,
   SignInThrottleStore,
+  createWhoIsResolutionConsumer,
   type AuthServiceConfig,
+  type PasswordFunctions,
 } from "@d2/auth-infra";
-import { PASSWORD_POLICY } from "@d2/auth-domain";
+import { PASSWORD_POLICY, GEO_CONTEXT_KEYS, AUTH_MESSAGING } from "@d2/auth-domain";
 import {
-  createSignInEventHandlers,
-  createEmulationConsentHandlers,
-  createOrgContactHandlers,
-  createSignInThrottleHandlers,
+  addAuthApp,
+  ISignInThrottleStoreKey,
+  IRecordSignInEventKey,
+  ICreateUserContactKey,
+  CheckSignInThrottle,
+  RecordSignInOutcome,
 } from "@d2/auth-app";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createSessionMiddleware } from "./middleware/session.js";
 import { createCsrfMiddleware } from "./middleware/csrf.js";
 import { createRequestEnrichmentMiddleware } from "./middleware/request-enrichment.js";
 import { createDistributedRateLimitMiddleware } from "./middleware/distributed-rate-limit.js";
+import { createServiceKeyMiddleware } from "./middleware/service-key.js";
 import {
   createSessionFingerprintMiddleware,
   computeFingerprint,
 } from "./middleware/session-fingerprint.js";
+import { createScopeMiddleware } from "./middleware/scope.js";
 import { handleError } from "./middleware/error-handler.js";
 import { createAuthRoutes } from "./routes/auth-routes.js";
 import { createEmulationRoutes } from "./routes/emulation-routes.js";
 import { createOrgContactRoutes } from "./routes/org-contact-routes.js";
+import { createInvitationRoutes } from "./routes/invitation-routes.js";
 import { createHealthRoutes } from "./routes/health.js";
+
+/**
+ * Optional overrides for the composition root.
+ * Primarily used by tests to replace infrastructure dependencies.
+ */
+export interface AppOverrides {
+  /** Custom password hash/verify — skips HIBP breach check when provided. */
+  passwordFunctions?: PasswordFunctions;
+}
 
 /**
  * Creates and wires the complete auth service application.
  *
  * This is the composition root (mirrors .NET Program.cs):
  *   1. Create singletons: pg.Pool, Redis, logger
- *   2. Run Drizzle migrations + create repos
- *   3. Create app-layer handlers: factory functions from auth-app
- *   4. App-layer handlers wiring
- *   5. Password policy: HIBP k-anonymity cache + domain validation
- *   6. Create AsyncLocalStorage for per-request fingerprint (JWT `fp` claim)
- *   7. Create BetterAuth: configured with all plugins + secondary storage
- *   8. Session fingerprint binding (stolen token detection)
- *   9. Build Hono app: CORS → body limit → enrichment → rate limit → fingerprint → session → CSRF → routes
+ *   2. Run Drizzle migrations + create repos via DI
+ *   3. Register all services in ServiceCollection
+ *   4. Build ServiceProvider
+ *   5. Create pre-auth singletons (FindWhoIs, RateLimit, Throttle)
+ *   6. Create BetterAuth with scoped callbacks
+ *   7. Build Hono app with scope middleware on protected routes
  */
-export async function createApp(config: AuthServiceConfig) {
-  // 1. Singletons
+export async function createApp(
+  config: AuthServiceConfig & { authApiKeys?: string[] },
+  publisher?: IMessagePublisher,
+  overrides?: AppOverrides,
+  messageBus?: import("@d2/messaging").MessageBus,
+) {
+  // 1. Singletons (infrastructure)
   const pool = new pg.Pool({ connectionString: config.databaseUrl });
   const redis = new Redis(config.redisUrl);
   const logger = createLogger({
     serviceName: config.appName ?? "auth-service",
   });
 
-  // Handler context for custom handlers (service-level, no per-request user)
-  const handlerContext = new HandlerContext(
+  // Service-level HandlerContext for pre-auth handlers (no per-request user info)
+  const serviceContext = new HandlerContext(
     {
       isAuthenticated: false,
       isAgentStaff: false,
@@ -89,110 +121,36 @@ export async function createApp(config: AuthServiceConfig) {
     logger,
   );
 
-  // 2. Run Drizzle migrations + create Drizzle instance for custom tables
+  // 2. Run Drizzle migrations + create Drizzle instance
   await runMigrations(pool);
   const db = drizzle(pool);
 
-  const signInEventRepo = createSignInEventRepoHandlers(db, handlerContext);
-  const emulationConsentRepo = createEmulationConsentRepoHandlers(db, handlerContext);
-  const orgContactRepo = createOrgContactRepoHandlers(db, handlerContext);
+  // 3. Build ServiceCollection (mirrors .NET Program.cs)
+  const services = new ServiceCollection();
 
-  // 3. Secondary storage (Redis-backed via @d2/cache-redis handlers)
-  const redisGet = new CacheRedis.Get<string>(redis, handlerContext);
-  const redisSet = new CacheRedis.Set<string>(redis, handlerContext);
-  const redisRemove = new CacheRedis.Remove(redis, handlerContext);
+  // Logger — singleton (pre-built instance)
+  services.addInstance(ILoggerKey, logger);
+
+  // IHandlerContext — scoped (new per request, built from IRequestContext + logger)
+  services.addScoped(
+    IHandlerContextKey,
+    (sp) => new HandlerContext(sp.resolve(IRequestContextKey), sp.resolve(ILoggerKey)),
+  );
+
+  // Secondary storage (Redis-backed via @d2/cache-redis handlers)
+  const redisGet = new CacheRedis.Get<string>(redis, serviceContext);
+  const redisSet = new CacheRedis.Set<string>(redis, serviceContext);
+  const redisRemove = new CacheRedis.Remove(redis, serviceContext);
   const secondaryStorage = createSecondaryStorage({
     get: redisGet,
     set: redisSet,
     remove: redisRemove,
   });
 
-  // Rate limiting (Redis-backed distributed sliding window via @d2/ratelimit)
-  const redisExists = new CacheRedis.Exists(redis, handlerContext);
-  const redisGetTtl = new CacheRedis.GetTtl(redis, handlerContext);
-  const redisIncrement = new CacheRedis.Increment(redis, handlerContext);
-  const rateLimitCheck = new RateLimitCheck(
-    redisGetTtl,
-    redisIncrement,
-    redisSet,
-    {},
-    handlerContext,
-  );
-
-  // Helper: checks whether an organization exists in BetterAuth's organization table.
-  async function checkOrgExists(orgId: string): Promise<boolean> {
-    const result = await pool.query("SELECT 1 FROM organization WHERE id = $1 LIMIT 1", [orgId]);
-    return result.rows.length > 0;
-  }
-
-  // Geo contact handlers via @d2/geo-client (gRPC-backed with local caching)
-  // TODO: Create actual gRPC client via createGeoServiceClient() when Geo service is available.
-  // For now, the handlers will fail with SERVICE_UNAVAILABLE (same as before).
-  const geoOptions: GeoClientOptions = {
-    ...DEFAULT_GEO_CLIENT_OPTIONS,
-    allowedContextKeys: ["org_contact"],
-    apiKey: config.geoApiKey ?? "",
-  };
-  const contactCacheStore = new CacheMemory.MemoryCacheStore();
-  const geoClient = undefined as never; // Placeholder until Geo gRPC client is wired
-  const createContacts = new CreateContacts(geoClient, geoOptions, handlerContext);
-  const deleteContactsByExtKeys = new DeleteContactsByExtKeys(
-    contactCacheStore,
-    geoClient,
-    geoOptions,
-    handlerContext,
-  );
-  const getContactsByExtKeys = new GetContactsByExtKeys(
-    contactCacheStore,
-    geoClient,
-    geoOptions,
-    handlerContext,
-  );
-  const updateContactsByExtKeys = new UpdateContactsByExtKeys(
-    contactCacheStore,
-    geoClient,
-    geoOptions,
-    handlerContext,
-  );
-
-  // FindWhoIs for request enrichment (WhoIs lookup for IP → city/country).
-  // Uses same geoClient placeholder — fail-open when Geo gRPC is unavailable.
-  // IP + fingerprint enrichment works regardless; city/country dimensions
-  // activate once Geo gRPC is connected.
-  const whoIsCacheStore = new CacheMemory.MemoryCacheStore();
-  const findWhoIs = new FindWhoIs(whoIsCacheStore, geoClient, geoOptions, handlerContext);
-
-  // In-memory cache for sign-in event queries
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type SignInEventCacheValue = { events: any[]; total: number; latestDate: string | null };
-  const signInEventCacheStore = new CacheMemory.MemoryCacheStore();
-  const signInEventCacheGet = new CacheMemory.Get<SignInEventCacheValue>(
-    signInEventCacheStore,
-    handlerContext,
-  );
-  const signInEventCacheSet = new CacheMemory.Set<SignInEventCacheValue>(
-    signInEventCacheStore,
-    handlerContext,
-  );
-
-  // 4. App-layer handlers
-  const signInEventHandlers = createSignInEventHandlers(signInEventRepo, handlerContext, {
-    get: signInEventCacheGet,
-    set: signInEventCacheSet,
-  });
-  const emulationConsentHandlers = createEmulationConsentHandlers(
-    emulationConsentRepo,
-    handlerContext,
-    checkOrgExists,
-  );
-  const orgContactHandlers = createOrgContactHandlers(orgContactRepo, handlerContext, {
-    createContacts,
-    deleteContactsByExtKeys,
-    updateContactsByExtKeys,
-    getContactsByExtKeys,
-  });
-
-  // Sign-in brute-force protection (Redis + local memory cache)
+  // Sign-in throttle store (Redis-backed)
+  const redisExists = new CacheRedis.Exists(redis, serviceContext);
+  const redisGetTtl = new CacheRedis.GetTtl(redis, serviceContext);
+  const redisIncrement = new CacheRedis.Increment(redis, serviceContext);
   const throttleStore = new SignInThrottleStore(
     redisExists,
     redisGetTtl,
@@ -200,35 +158,226 @@ export async function createApp(config: AuthServiceConfig) {
     redisRemove,
     redisIncrement,
   );
+  services.addInstance(ISignInThrottleStoreKey, throttleStore);
+
+  // Helper: checks whether an organization exists in BetterAuth's organization table.
+  async function checkOrgExists(orgId: string): Promise<boolean> {
+    const result = await pool.query("SELECT 1 FROM organization WHERE id = $1 LIMIT 1", [orgId]);
+    return result.rows.length > 0;
+  }
+
+  // Geo contact handlers (gRPC-backed with local caching)
+  const geoOptions: GeoClientOptions = {
+    ...DEFAULT_GEO_CLIENT_OPTIONS,
+    allowedContextKeys: [
+      GEO_CONTEXT_KEYS.ORG_CONTACT,
+      GEO_CONTEXT_KEYS.USER,
+      GEO_CONTEXT_KEYS.ORG_INVITATION,
+    ],
+    apiKey: config.geoApiKey ?? "",
+  };
+  const contactCacheStore = new CacheMemory.MemoryCacheStore();
+  if (!config.geoAddress || !config.geoApiKey) {
+    throw new Error(
+      "GEO_GRPC_ADDRESS and GEO_API_KEY are required — auth service cannot start without Geo",
+    );
+  }
+  const geoClient = createGeoServiceClient(config.geoAddress, config.geoApiKey);
+
+  // Register geo-client handlers as singleton instances (share cache stores)
+  const createContacts = new CreateContacts(geoClient, geoOptions, serviceContext);
+  const deleteContactsByExtKeys = new DeleteContactsByExtKeys(
+    contactCacheStore,
+    geoClient,
+    geoOptions,
+    serviceContext,
+  );
+  const getContactsByExtKeys = new GetContactsByExtKeys(
+    contactCacheStore,
+    geoClient,
+    geoOptions,
+    serviceContext,
+  );
+  const updateContactsByExtKeys = new UpdateContactsByExtKeys(
+    contactCacheStore,
+    geoClient,
+    geoOptions,
+    serviceContext,
+  );
+  services.addInstance(ICreateContactsKey, createContacts);
+  services.addInstance(IDeleteContactsByExtKeysKey, deleteContactsByExtKeys);
+  services.addInstance(IGetContactsByExtKeysKey, getContactsByExtKeys);
+  services.addInstance(IUpdateContactsByExtKeysKey, updateContactsByExtKeys);
+
+  // Layer registrations (mirrors services.AddAuthInfra(), services.AddAuthApp())
+  addAuthInfra(services, db);
+  addAuthApp(services, { checkOrgExists });
+  addCommsClient(services, { publisher });
+
+  // Shared health check handlers (cache + messaging)
+  services.addInstance(CacheRedis.ICachePingKey, new CacheRedis.PingCache(redis, serviceContext));
+  if (messageBus) {
+    services.addInstance(IMessageBusPingKey, new PingMessageBus(messageBus, serviceContext));
+  }
+
+  // 4. Build ServiceProvider
+  const provider = services.build();
+
+  // 5. Pre-auth singletons (not in DI — use service-level context)
+  // Rate limiting (Redis-backed distributed sliding window via @d2/ratelimit)
+  const rateLimitCheck = new RateLimitCheck(
+    redisGetTtl,
+    redisIncrement,
+    redisSet,
+    {},
+    serviceContext,
+  );
+
+  // FindWhoIs for request enrichment (WhoIs lookup for IP → city/country)
+  const whoIsCacheStore = new CacheMemory.MemoryCacheStore();
+  const findWhoIs = new FindWhoIs(whoIsCacheStore, geoClient, geoOptions, serviceContext);
+
+  // Throttle handlers (pre-auth singletons — used in auth routes before BetterAuth)
   const throttleCacheStore = new CacheMemory.MemoryCacheStore();
-  const throttleCacheGet = new CacheMemory.Get<boolean>(throttleCacheStore, handlerContext);
-  const throttleCacheSet = new CacheMemory.Set<boolean>(throttleCacheStore, handlerContext);
-  const throttleHandlers = createSignInThrottleHandlers(throttleStore, handlerContext, {
+  const throttleCacheGet = new CacheMemory.Get<boolean>(throttleCacheStore, serviceContext);
+  const throttleCacheSet = new CacheMemory.Set<boolean>(throttleCacheStore, serviceContext);
+  const throttleCheck = new CheckSignInThrottle(throttleStore, serviceContext, {
+    get: throttleCacheGet,
+    set: throttleCacheSet,
+  });
+  const throttleRecord = new RecordSignInOutcome(throttleStore, serviceContext, {
     get: throttleCacheGet,
     set: throttleCacheSet,
   });
 
-  // 5. Password policy — HIBP k-anonymity cache + domain validation
-  const hibpCacheStore = new CacheMemory.MemoryCacheStore({
-    maxEntries: PASSWORD_POLICY.HIBP_CACHE_MAX_ENTRIES,
-  });
-  const passwordFns = createPasswordFunctions(hibpCacheStore, logger);
+  // 6. Password policy — HIBP k-anonymity cache + domain validation
+  const passwordFns =
+    overrides?.passwordFunctions ??
+    createPasswordFunctions(
+      new CacheMemory.MemoryCacheStore({ maxEntries: PASSWORD_POLICY.HIBP_CACHE_MAX_ENTRIES }),
+      logger,
+    );
 
-  // 6. AsyncLocalStorage for per-request fingerprint (used by JWT definePayload)
+  // AsyncLocalStorage for per-request fingerprint (used by JWT definePayload)
   const fingerprintStorage = new AsyncLocalStorage<string>();
 
-  // 7. BetterAuth instance with app-layer callbacks
+  /**
+   * Creates a temporary DI scope for BetterAuth callback handlers.
+   * These fire during request processing but outside the scope middleware.
+   */
+  const createCallbackScope = () => createServiceScope(provider, logger);
+
+  // User contact handler for sign-up → Geo contact creation.
+
+  // 7. BetterAuth instance with scoped callbacks
   const auth = createAuth(config, db, secondaryStorage, {
     onSignIn: async (data) => {
-      await signInEventHandlers.record.handleAsync({
-        userId: data.userId,
-        successful: true,
-        ipAddress: data.ipAddress,
-        userAgent: data.userAgent,
-      });
+      const scope = createCallbackScope();
+      try {
+        const handler = scope.resolve(IRecordSignInEventKey);
+        const result = await handler.handleAsync({
+          userId: data.userId,
+          successful: true,
+          ipAddress: data.ipAddress,
+          userAgent: data.userAgent,
+        });
+
+        // Fire-and-forget: publish to WhoIs resolution queue for async enrichment
+        if (result.success && result.data?.event && publisher) {
+          publisher
+            .send(
+              {
+                exchange: AUTH_MESSAGING.WHOIS_RESOLUTION_EXCHANGE,
+                routingKey: AUTH_MESSAGING.WHOIS_RESOLUTION_QUEUE,
+              },
+              {
+                signInEventId: result.data.event.id,
+                ipAddress: data.ipAddress,
+                userAgent: data.userAgent,
+              },
+            )
+            .catch(() => {}); // Fail-open: ipAddress already persisted
+        }
+      } finally {
+        scope.dispose();
+      }
     },
     getFingerprintForCurrentRequest: () => fingerprintStorage.getStore(),
     passwordFunctions: passwordFns,
+    publishVerificationEmail: async (input) => {
+      const scope = createCallbackScope();
+      try {
+        // Resolve contactId from userId via geo-client (cached)
+        const result = await getContactsByExtKeys.handleAsync({
+          keys: [{ contextKey: GEO_CONTEXT_KEYS.USER, relatedEntityId: input.userId }],
+        });
+        const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${input.userId}`;
+        const contactId = result.data?.data.get(lookupKey)?.[0]?.id;
+        if (!contactId) {
+          logger.error(
+            `No Geo contact found for user ${input.userId} — cannot send verification email`,
+          );
+          return;
+        }
+
+        const notifier = scope.resolve(INotifyKey);
+        await notifier.handleAsync({
+          recipientContactId: contactId,
+          title: "Verify your email address",
+          content: `Hi ${input.name},\n\nPlease verify your email by clicking the link below:\n\n[Verify Email](${input.verificationUrl})`,
+          plaintext: `Hi ${input.name}, please verify your email by visiting: ${input.verificationUrl}`,
+          sensitive: true,
+          correlationId: crypto.randomUUID(),
+          senderService: "auth",
+        });
+      } finally {
+        scope.dispose();
+      }
+    },
+    publishPasswordReset: async (input) => {
+      const scope = createCallbackScope();
+      try {
+        // Resolve contactId from userId via geo-client (cached)
+        const result = await getContactsByExtKeys.handleAsync({
+          keys: [{ contextKey: GEO_CONTEXT_KEYS.USER, relatedEntityId: input.userId }],
+        });
+        const lookupKey = `${GEO_CONTEXT_KEYS.USER}:${input.userId}`;
+        const contactId = result.data?.data.get(lookupKey)?.[0]?.id;
+        if (!contactId) {
+          logger.error(
+            `No Geo contact found for user ${input.userId} — cannot send password reset`,
+          );
+          return;
+        }
+
+        const notifier = scope.resolve(INotifyKey);
+        await notifier.handleAsync({
+          recipientContactId: contactId,
+          title: "Reset your password",
+          content: `Hi ${input.name},\n\nYou requested a password reset. Click the link below to set a new password:\n\n[Reset Password](${input.resetUrl})\n\nIf you didn't request this, you can safely ignore this email.`,
+          plaintext: `Hi ${input.name}, reset your password by visiting: ${input.resetUrl}. If you didn't request this, ignore this email.`,
+          sensitive: true,
+          correlationId: crypto.randomUUID(),
+          senderService: "auth",
+        });
+      } finally {
+        scope.dispose();
+      }
+    },
+    createUserContact: async (data) => {
+      const scope = createCallbackScope();
+      try {
+        const handler = scope.resolve(ICreateUserContactKey);
+        const result = await handler.handleAsync(data);
+        if (!result.success) {
+          throw new Error(
+            `Failed to create Geo contact for user ${data.userId}: ${result.messages?.join(", ") ?? "unknown error"}`,
+          );
+        }
+      } finally {
+        scope.dispose();
+      }
+    },
   });
 
   // 8. Session fingerprint binding (stolen token detection)
@@ -243,9 +392,7 @@ export async function createApp(config: AuthServiceConfig) {
       return redis.get(`${SESSION_FP_PREFIX}${token}`);
     },
     revokeSession: async (token) => {
-      // Remove fingerprint key
       await redis.del(`${SESSION_FP_PREFIX}${token}`);
-      // Revoke via BetterAuth — invalidates the session in DB + Redis
       await auth.api.revokeSession({
         headers: new Headers(),
         body: { token },
@@ -258,51 +405,76 @@ export async function createApp(config: AuthServiceConfig) {
 
   // Global middleware
   app.use("*", createCorsMiddleware(config.corsOrigin));
+  app.use("*", async (c, next) => {
+    await next();
+    c.res.headers.set("X-Content-Type-Options", "nosniff");
+    c.res.headers.set("X-Frame-Options", "DENY");
+  });
   app.use(
     "*",
     bodyLimit({
       maxSize: 256 * 1024, // 256 KB — auth payloads are small JSON
       onError: (c) =>
         c.json(
-          D2Result.fail({
+          D2Result.payloadTooLarge({
             messages: ["Request body too large."],
-            statusCode: HttpStatusCode.BadRequest,
           }),
           413 as ContentfulStatusCode,
         ),
     }),
   );
   app.use("*", createRequestEnrichmentMiddleware(findWhoIs, undefined, logger));
+  if (config.authApiKeys?.length) {
+    app.use("*", createServiceKeyMiddleware(new Set(config.authApiKeys)));
+    logger.info(
+      `Auth API service key authentication enabled (${config.authApiKeys.length} key(s))`,
+    );
+  }
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);
 
   // Health (no auth required)
-  app.route("/", createHealthRoutes());
+  app.route("/", createHealthRoutes(provider));
 
   // BetterAuth routes (handles its own auth)
-  // Fingerprint check on auth routes — catches stolen tokens on sign-in.
-  // AsyncLocalStorage middleware: stores the request fingerprint so that
-  // BetterAuth's definePayload callback can embed it as the JWT `fp` claim.
+  // Fingerprint + AsyncLocalStorage for JWT `fp` claim
   const authApp = new Hono();
   authApp.use("*", sessionFingerprintMiddleware);
   authApp.use("*", async (c, next) => {
     const fp = computeFingerprint(c.req.raw.headers);
     await fingerprintStorage.run(fp, () => next());
   });
-  authApp.route("/", createAuthRoutes(auth, throttleHandlers));
+  authApp.route(
+    "/",
+    createAuthRoutes(auth, { check: throttleCheck, record: throttleRecord }, logger),
+  );
   app.route("/", authApp);
 
-  // Protected custom routes: session + fingerprint + CSRF
+  // Protected custom routes: session + fingerprint + scope + CSRF → routes resolve from scope
   const protectedRoutes = new Hono();
   protectedRoutes.use("*", createSessionMiddleware(auth));
   protectedRoutes.use("*", sessionFingerprintMiddleware);
+  protectedRoutes.use("*", createScopeMiddleware(provider));
   protectedRoutes.use("*", createCsrfMiddleware(config.corsOrigin));
-  protectedRoutes.route("/", createEmulationRoutes(emulationConsentHandlers));
-  protectedRoutes.route("/", createOrgContactRoutes(orgContactHandlers));
+  protectedRoutes.route("/", createEmulationRoutes());
+  protectedRoutes.route("/", createOrgContactRoutes());
+  protectedRoutes.route("/", createInvitationRoutes(auth, db, config.baseUrl));
   app.route("/", protectedRoutes);
+
+  // WhoIs resolution consumer (self-consume: resolves WhoIs for sign-in events)
+  if (messageBus) {
+    createWhoIsResolutionConsumer({
+      messageBus,
+      provider,
+      createScope: createServiceScope,
+      findWhoIs,
+      logger,
+    });
+  }
 
   // Cleanup function for graceful shutdown
   async function shutdown() {
+    provider.dispose();
     redis.disconnect();
     await pool.end();
   }

@@ -9,6 +9,7 @@ import {
   type OrgType,
   type Role,
 } from "@d2/auth-domain";
+import { SESSION_KEY } from "../context-keys.js";
 import type { SessionVariables } from "./session.js";
 
 /**
@@ -18,7 +19,7 @@ import type { SessionVariables } from "./session.js";
  */
 export function requireOrg() {
   return createMiddleware<{ Variables: SessionVariables }>(async (c, next) => {
-    const session = c.get("session");
+    const session = c.get(SESSION_KEY);
     if (!session) {
       return c.json(D2Result.unauthorized(), 401 as ContentfulStatusCode);
     }
@@ -49,7 +50,7 @@ export function requireOrgType(...allowed: OrgType[]) {
   const allowedSet = new Set<string>(allowed);
 
   return createMiddleware<{ Variables: SessionVariables }>(async (c, next) => {
-    const session = c.get("session");
+    const session = c.get(SESSION_KEY);
     if (!session) {
       return c.json(D2Result.unauthorized(), 401 as ContentfulStatusCode);
     }
@@ -77,7 +78,7 @@ export function requireRole(minRole: Role) {
   const minLevel = ROLE_HIERARCHY[minRole];
 
   return createMiddleware<{ Variables: SessionVariables }>(async (c, next) => {
-    const session = c.get("session");
+    const session = c.get(SESSION_KEY);
     if (!session) {
       return c.json(D2Result.unauthorized(), 401 as ContentfulStatusCode);
     }

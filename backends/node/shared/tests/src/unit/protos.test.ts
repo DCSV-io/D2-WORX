@@ -172,9 +172,10 @@ describe("PingServiceService", () => {
 // ---------------------------------------------------------------------------
 
 describe("GeoServiceService", () => {
-  it("has all 9 RPC methods", () => {
+  it("has all 10 RPC methods", () => {
     const methods = Object.keys(GeoServiceService);
     expect(methods).toEqual([
+      "checkHealth",
       "getReferenceData",
       "requestReferenceDataUpdate",
       "findWhoIs",
@@ -295,7 +296,7 @@ describe("Geo DTO interfaces", () => {
     const contact: ContactDTO = {
       id: "contact-1",
       createdAt: undefined,
-      contextKey: "user",
+      contextKey: "auth_user",
       relatedEntityId: "user-123",
       contactMethods: {
         emails: [{ value: "test@example.com", labels: ["primary"] }],

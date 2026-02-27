@@ -10,7 +10,6 @@ using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Result;
-using D2.Shared.Utilities.Constants;
 
 // ReSharper disable AccessToStaticMemberViaDerivedType
 using H = D2.Geo.Client.Interfaces.CQRS.Handlers.Q.IQueries.IGetFromDistHandler;
@@ -64,14 +63,14 @@ public class GetFromDist : BaseHandler<GetFromDist, I, O>, H
         CancellationToken ct = default)
     {
         var getR = await r_distCacheGet.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA),
+            new(CacheKeys.REFDATA),
             ct);
 
         if (getR.CheckSuccess(out var output))
         {
-            return D2Result<O?>.Ok(new(output!.Value!), traceId: TraceId);
+            return D2Result<O?>.Ok(new(output!.Value!));
         }
 
-        return D2Result<O?>.NotFound(traceId: TraceId);
+        return D2Result<O?>.NotFound();
     }
 }

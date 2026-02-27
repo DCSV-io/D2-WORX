@@ -1,13 +1,13 @@
 # Geo.Infra
 
-Infrastructure layer for the Geo microservice implementing Entity Framework Core persistence, MassTransit messaging, database configuration, seed data, and repository handlers.
+Infrastructure layer for the Geo microservice implementing Entity Framework Core persistence, raw AMQP messaging with Protocol Buffer contracts, database configuration, seed data, and repository handlers.
 
 ## Files
 
-| File Name                                | Description                                                                                                                                                                  |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Extensions.cs](Extensions.cs)           | DI extension method AddGeoInfra registering GeoDbContext, MassTransit with RabbitMQ, repository handlers, messaging publisher handlers, and UpdatedConsumer from Geo.Client. |
-| [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration including BatchSize for repository operations.                                                                                      |
+| File Name                                | Description                                                                                                                                                                             |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Extensions.cs](Extensions.cs)           | DI extension method AddGeoInfra registering GeoDbContext, RabbitMQ messaging (raw AMQP), repository handlers, messaging publisher handlers, and UpdatedConsumerService from Geo.Client. |
+| [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration including BatchSize for repository operations.                                                                                                 |
 
 ---
 
@@ -17,25 +17,25 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > #### Pub (Publishers)
 >
-> | File Name                                     | Description                                                                                        |
-> | --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-> | [Update.cs](Messaging/Handlers/Pub/Update.cs) | Handler for publishing GeoRefDataUpdated messages via UpdatePublisher when reference data changes. |
+> | File Name                                                       | Description                                                                                                  |
+> | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+> | [Update.cs](Messaging/Handlers/Pub/Update.cs)                   | Handler for publishing GeoRefDataUpdatedEvent via UpdatePublisher when reference data changes.               |
+> | [ContactEviction.cs](Messaging/Handlers/Pub/ContactEviction.cs) | Handler for publishing ContactsEvictedEvent via ContactEvictionPublisher when contacts are deleted/replaced. |
 >
 > #### Sub (Subscribers)
 >
 > No subscriber handlers - shared subscribers (like Updated from Geo.Client) are registered via consumer services.
 >
-> ### MT (MassTransit)
+> ### Publishers
 >
-> #### Consumers
+> | File Name                                                                       | Description                                                                                                         |
+> | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+> | [UpdatePublisher.cs](Messaging/Publishers/UpdatePublisher.cs)                   | AMQP publisher wrapping ProtoPublisher for GeoRefDataUpdatedEvent messages with error handling and logging.         |
+> | [ContactEvictionPublisher.cs](Messaging/Publishers/ContactEvictionPublisher.cs) | AMQP publisher wrapping ProtoPublisher for ContactsEvictedEvent messages to `events.geo.contacts` fan-out exchange. |
 >
-> No Geo-specific consumers - shared consumers (like UpdatedConsumer from Geo.Client) are registered via Extensions.cs.
+> ### Consumers
 >
-> #### Publishers
->
-> | File Name                                                        | Description                                                                                                     |
-> | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-> | [UpdatePublisher.cs](Messaging/MT/Publishers/UpdatePublisher.cs) | MassTransit publisher wrapping IPublishEndpoint for GeoRefDataUpdated messages with error handling and logging. |
+> No Geo-specific consumers — shared consumers (like UpdatedConsumerService from Geo.Client) are registered as hosted services via Extensions.cs.
 
 ---
 
@@ -76,9 +76,10 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > #### D (Delete)
 >
-> | File Name                                                    | Description                                                                                  |
-> | ------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
-> | [DeleteContacts.cs](Repository/Handlers/D/DeleteContacts.cs) | Handler for batch deleting Contact entities by GUID IDs with OK/SOME_FOUND/NOT_FOUND status. |
+> | File Name                                                                      | Description                                                                                                                    |
+> | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+> | [DeleteContacts.cs](Repository/Handlers/D/DeleteContacts.cs)                   | Handler for batch deleting Contact entities by GUID IDs with OK/SOME_FOUND/NOT_FOUND status.                                   |
+> | [DeleteContactsByExtKeys.cs](Repository/Handlers/D/DeleteContactsByExtKeys.cs) | Handler for deleting Contact entities by ContextKey/RelatedEntityId pairs, returns count of deleted contacts and ext-key list. |
 >
 > #### R (Read)
 >
@@ -100,12 +101,12 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > | File Name                                                                                     | Description                                                                 |
 > | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-> | [CountrySeedData.cs](Repository/Seeding/CountrySeeding.cs)                                    | 249 countries with ISO codes, phone prefixes, and metadata.                 |
-> | [SubdivisionSeedData.cs](Repository/Seeding/SubdivisionSeeding.cs)                            | 183 subdivisions (US states, Canadian provinces, etc.).                     |
-> | [CurrencySeedData.cs](Repository/Seeding/CurrencySeeding.cs)                                  | Major world currencies with ISO 4217 codes and symbols.                     |
-> | [LanguageSeedData.cs](Repository/Seeding/LanguageSeeding.cs)                                  | Common languages with ISO 639-1 codes.                                      |
-> | [LocaleSeedData.cs](Repository/Seeding/LocaleSeeding.cs)                                      | 100+ locales with IETF BCP-47 tags.                                         |
-> | [GeopoliticalEntitySeedData.cs](Repository/Seeding/GeopoliticalEntitySeeding.cs)              | Organizations like NATO, EU, UN with member countries.                      |
+> | [CountrySeeding.cs](Repository/Seeding/CountrySeeding.cs)                                     | 249 countries with ISO codes, phone prefixes, and metadata.                 |
+> | [SubdivisionSeeding.cs](Repository/Seeding/SubdivisionSeeding.cs)                             | 183 subdivisions (US states, Canadian provinces, etc.).                     |
+> | [CurrencySeeding.cs](Repository/Seeding/CurrencySeeding.cs)                                   | Major world currencies with ISO 4217 codes and symbols.                     |
+> | [LanguageSeeding.cs](Repository/Seeding/LanguageSeeding.cs)                                   | Common languages with ISO 639-1 codes.                                      |
+> | [LocaleSeeding.cs](Repository/Seeding/LocaleSeeding.cs)                                       | 100+ locales with IETF BCP-47 tags.                                         |
+> | [GeopoliticalEntitySeeding.cs](Repository/Seeding/GeopoliticalEntitySeeding.cs)               | Organizations like NATO, EU, UN with member countries.                      |
 > | [ReferenceDataVersionSeeding.cs](Repository/Seeding/ReferenceDataVersionSeeding.cs)           | Initial version tracking for reference data.                                |
 > | [CountryCurrencySeeding.cs](Repository/Seeding/CountryCurrencySeeding.cs)                     | Many-to-many relationship data for country-currency associations.           |
 > | [CountryGeopoliticalEntitySeeding.cs](Repository/Seeding/CountryGeopoliticalEntitySeeding.cs) | Many-to-many relationship data for country-geopolitical entity memberships. |

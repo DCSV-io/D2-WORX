@@ -74,7 +74,7 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
 
         // First, try to get locations from in-memory cache.
         var getFromCacheR = await r_memoryCacheGetMany.HandleAsync(
-            new(GetCacheKeys(input.HashIds)), ct);
+            new(input.HashIds.Select(id => CacheKeys.Location(id)).ToList()), ct);
 
         // If that failed (for any reason other than "NOT or SOME found"), bubble up the failure.
         if (getFromCacheR.CheckFailure(out var getFromCache)
@@ -127,7 +127,7 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
                 }
 
                 // Otherwise, return (fail, NOT found).
-                return D2Result<O?>.NotFound(traceId: TraceId);
+                return D2Result<O?>.NotFound();
             }
 
             // If SOME locations were found, add to list, cache and return [fail, SOME found].
@@ -150,11 +150,6 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         }
     }
 
-    private static string GetCacheKey(string id) => $"{nameof(GetLocationsByIds)}:{id}";
-
-    private static List<string> GetCacheKeys(IEnumerable<string> ids) =>
-        ids.Select(GetCacheKey).ToList();
-
     private async ValueTask SetInCacheAsync(
         Dictionary<string, Location> locationsFromDbDict,
         CancellationToken ct)
@@ -162,7 +157,7 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         var setInCacheR = await r_memoryCacheSetMany.HandleAsync(
             new(
                 locationsFromDbDict.ToDictionary(
-                    kvp => GetCacheKey(kvp.Key),
+                    kvp => CacheKeys.Location(kvp.Key),
                     kvp => kvp.Value),
                 r_options.LocationExpirationDuration),
             ct);
@@ -179,8 +174,8 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
     }
 
     private D2Result<O?> Success(Dictionary<string, Location> locations) =>
-        D2Result<O?>.Ok(new O(locations), traceId: TraceId);
+        D2Result<O?>.Ok(new O(locations));
 
     private D2Result<O?> SomeFound(Dictionary<string, Location> locations) =>
-        D2Result<O?>.SomeFound(new O(locations), traceId: TraceId);
+        D2Result<O?>.SomeFound(new O(locations));
 }

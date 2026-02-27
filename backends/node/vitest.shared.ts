@@ -18,6 +18,7 @@ export default defineConfig({
       "@d2/utilities": resolve(shared, "utilities/src/index.ts"),
       "@d2/protos": resolve(shared, "protos/src/index.ts"),
       "@d2/logging": resolve(shared, "logging/src/index.ts"),
+      "@d2/service-defaults/grpc": resolve(shared, "service-defaults/src/grpc/index.ts"),
       "@d2/service-defaults": resolve(shared, "service-defaults/src/index.ts"),
       "@d2/handler": resolve(shared, "handler/src/index.ts"),
       "@d2/interfaces": resolve(shared, "interfaces/src/index.ts"),
@@ -33,6 +34,10 @@ export default defineConfig({
       "@d2/auth-infra": resolve(import.meta.dirname, "services/auth/infra/src/index.ts"),
       "@d2/auth-app": resolve(import.meta.dirname, "services/auth/app/src/index.ts"),
       "@d2/auth-api": resolve(import.meta.dirname, "services/auth/api/src/index.ts"),
+      "@d2/comms-domain": resolve(import.meta.dirname, "services/comms/domain/src/index.ts"),
+      "@d2/comms-app": resolve(import.meta.dirname, "services/comms/app/src/index.ts"),
+      "@d2/comms-infra": resolve(import.meta.dirname, "services/comms/infra/src/index.ts"),
+      "@d2/comms-api": resolve(import.meta.dirname, "services/comms/api/src/index.ts"),
     },
   },
   test: {

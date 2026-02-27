@@ -8,6 +8,27 @@
       "when": 1771235394133,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1771926000000,
+      "tag": "0001_add_org_updated_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772087385764,
+      "tag": "0002_concerned_shadow_king",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772179200000,
+      "tag": "0003_add_sign_in_event_failure_reason",
+      "breakpoints": true
     }
   ]
 }

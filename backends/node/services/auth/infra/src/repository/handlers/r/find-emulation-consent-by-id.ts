@@ -28,10 +28,10 @@ export class FindEmulationConsentById
       .where(eq(emulationConsent.id, input.id));
 
     if (!row) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
-    return D2Result.ok({ data: { consent: toEmulationConsent(row) }, traceId: this.traceId });
+    return D2Result.ok({ data: { consent: toEmulationConsent(row) } });
   }
 }
 

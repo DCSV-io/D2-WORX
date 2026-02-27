@@ -31,7 +31,7 @@ export class SetOnDisk extends BaseHandler<Input, Output> implements Commands.IS
       const bytes = GeoRefDataCodec.encode(input.data).finish();
       await mkdir(join(this.filePath, ".."), { recursive: true });
       await writeFile(this.filePath, bytes);
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     } catch {
       this.context.logger.error(
         `IOException occurred while writing georeference data to disk. TraceId: ${this.traceId}`,
@@ -39,7 +39,6 @@ export class SetOnDisk extends BaseHandler<Input, Output> implements Commands.IS
       return D2Result.fail({
         messages: ["Unable to write to disk."],
         statusCode: HttpStatusCode.InternalServerError,
-        traceId: this.traceId,
       });
     }
   }

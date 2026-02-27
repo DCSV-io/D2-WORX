@@ -60,15 +60,15 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         // Handle success case first.
         if (result.Success)
         {
-            return D2Result<O?>.Ok(new O(result.Data!), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(result.Data!));
         }
 
         // Handle partial success and not found - these have specific semantics.
         // For any other errors, bubble up the failure.
         return result.ErrorCode switch
         {
-            ErrorCodes.SOME_FOUND => D2Result<O?>.SomeFound(new O(result.Data!), traceId: TraceId),
-            ErrorCodes.NOT_FOUND => D2Result<O?>.NotFound(traceId: TraceId),
+            ErrorCodes.SOME_FOUND => D2Result<O?>.SomeFound(new O(result.Data!)),
+            ErrorCodes.NOT_FOUND => D2Result<O?>.NotFound(),
             _ => D2Result<O?>.BubbleFail(result),
         };
     }

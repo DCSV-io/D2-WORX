@@ -1,6 +1,6 @@
 import type { IHandler } from "@d2/handler";
-import type { GeoRefDataUpdated } from "../../messages/geo-ref-data-updated.js";
+import type { GeoRefDataUpdatedEvent } from "@d2/protos";
 
 export interface UpdatedOutput {}
 
-export type IUpdatedHandler = IHandler<GeoRefDataUpdated, UpdatedOutput>;
+export type IUpdatedHandler = IHandler<GeoRefDataUpdatedEvent, UpdatedOutput>;

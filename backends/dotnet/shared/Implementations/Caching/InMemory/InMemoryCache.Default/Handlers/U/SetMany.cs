@@ -47,7 +47,7 @@ public class SetMany<TValue> : BaseHandler<
         S.SetManyInput<TValue> input,
         CancellationToken ct = default)
     {
-        var options = new MemoryCacheEntryOptions();
+        var options = new MemoryCacheEntryOptions { Size = 1 };
 
         if (input.Expiration is not null)
         {
@@ -60,6 +60,6 @@ public class SetMany<TValue> : BaseHandler<
         }
 
         return ValueTask.FromResult(
-            D2Result<S.SetManyOutput?>.Ok(new S.SetManyOutput(), traceId: TraceId));
+            D2Result<S.SetManyOutput?>.Ok(new S.SetManyOutput()));
     }
 }

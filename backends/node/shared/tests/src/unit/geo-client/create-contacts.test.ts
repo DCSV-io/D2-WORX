@@ -21,21 +21,25 @@ function createMockContactDTO(id: string): ContactDTO {
   return {
     id,
     createdAt: new Date("2026-02-10"),
-    contextKey: "org_contact",
+    contextKey: "auth_org_contact",
     relatedEntityId: "related-1",
   } as ContactDTO;
 }
 
 function mockGrpcMethod<TReq, TRes>(response: TRes) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(null, response);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(null, response);
+    },
+  );
 }
 
 function mockGrpcMethodError<TReq, TRes>(error: Error) {
-  return vi.fn((_req: TReq, cb: (err: Error | null, res: TRes) => void) => {
-    cb(error, undefined as never);
-  });
+  return vi.fn(
+    (_req: TReq, _meta: unknown, _opts: unknown, cb: (err: Error | null, res: TRes) => void) => {
+      cb(error, undefined as never);
+    },
+  );
 }
 
 describe("CreateContacts handler", () => {
@@ -66,7 +70,7 @@ describe("CreateContacts handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "oc-1",
         } as never,
       ],
@@ -101,7 +105,7 @@ describe("CreateContacts handler", () => {
     const inputContacts = [
       {
         createdAt: new Date(),
-        contextKey: "org_contact",
+        contextKey: "auth_org_contact",
         relatedEntityId: "oc-1",
       } as never,
     ];
@@ -164,7 +168,7 @@ describe("CreateContacts handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new CreateContacts(mockGeoClient, restrictedOptions, createTestContext());
@@ -203,7 +207,7 @@ describe("CreateContacts handler", () => {
 
     const restrictedOptions: GeoClientOptions = {
       ...DEFAULT_GEO_CLIENT_OPTIONS,
-      allowedContextKeys: ["org_contact"],
+      allowedContextKeys: ["auth_org_contact"],
     };
 
     const handler = new CreateContacts(mockGeoClient, restrictedOptions, createTestContext());
@@ -211,7 +215,7 @@ describe("CreateContacts handler", () => {
       contacts: [
         {
           createdAt: new Date(),
-          contextKey: "org_contact",
+          contextKey: "auth_org_contact",
           relatedEntityId: "x",
         } as never,
       ],

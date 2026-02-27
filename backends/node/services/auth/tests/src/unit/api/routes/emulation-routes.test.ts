@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 import { D2Result, HttpStatusCode } from "@d2/result";
-import { createEmulationRoutes } from "@d2/auth-api";
+import {
+  ICreateEmulationConsentKey,
+  IRevokeEmulationConsentKey,
+  IGetActiveConsentsKey,
+} from "@d2/auth-app";
+import { createEmulationRoutes, SCOPE_KEY } from "@d2/auth-api";
 
 /** Creates mock handlers for emulation routes. */
 function createMockHandlers() {
@@ -26,9 +31,26 @@ function createMockHandlers() {
   };
 }
 
+/** Creates a mock DI scope that returns the mock handlers on resolve(). */
+function createMockScope(handlers: ReturnType<typeof createMockHandlers>) {
+  const keyMap = new Map<string, unknown>([
+    [ICreateEmulationConsentKey.id, handlers.create],
+    [IRevokeEmulationConsentKey.id, handlers.revoke],
+    [IGetActiveConsentsKey.id, handlers.getActive],
+  ]);
+  return {
+    resolve: (key: { id: string }) => {
+      const handler = keyMap.get(key.id);
+      if (!handler) throw new Error(`No mock handler for key: ${key.id}`);
+      return handler;
+    },
+  };
+}
+
 /**
- * Creates a test app with mock session middleware.
+ * Creates a test app with mock session + scope middleware.
  * Session middleware sets user and session on c.var.
+ * Scope middleware sets the mock DI scope on c.var.
  */
 function createTestApp(
   handlers: ReturnType<typeof createMockHandlers>,
@@ -49,10 +71,12 @@ function createTestApp(
       activeOrganizationRole: session.activeOrganizationRole ?? "owner",
       activeOrganizationId: session.activeOrganizationId ?? "org-session-1",
     });
+    // Mock DI scope — routes resolve handlers from c.get("scope")
+    c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
     await next();
   });
 
-  app.route("/", createEmulationRoutes(handlers));
+  app.route("/", createEmulationRoutes());
   return app;
 }
 

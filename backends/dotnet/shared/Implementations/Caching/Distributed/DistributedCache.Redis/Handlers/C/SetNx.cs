@@ -71,8 +71,7 @@ public class SetNx<TValue> : BaseHandler<
 
             // Return success with whether the key was set.
             return D2Result<C.SetNxOutput?>.Ok(
-                new C.SetNxOutput(wasSet),
-                traceId: TraceId);
+                new C.SetNxOutput(wasSet));
         }
         catch (RedisException ex)
         {
@@ -85,8 +84,7 @@ public class SetNx<TValue> : BaseHandler<
             return D2Result<C.SetNxOutput?>.Fail(
                 ["Unable to connect to Redis."],
                 HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
+                errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
         catch (JsonException ex)
         {
@@ -101,8 +99,7 @@ public class SetNx<TValue> : BaseHandler<
                 [err_msg],
                 HttpStatusCode.InternalServerError,
                 [[nameof(C.SetNxInput<TValue>.Value), err_msg]],
-                ErrorCodes.COULD_NOT_BE_SERIALIZED,
-                TraceId);
+                ErrorCodes.COULD_NOT_BE_SERIALIZED);
         }
 
         // Let the base handler catch any other exceptions.

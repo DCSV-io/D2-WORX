@@ -69,9 +69,44 @@
 - ✅ Ext-key-only contact API — Contacts accessed externally via contextKey+relatedEntityId (ID-based get/delete removed from client libs), API key authentication (gRPC metadata), allowedContextKeys defense-in-depth
 - ✅ Geo.Client ext-key handlers — GetContactsByExtKeys, DeleteContactsByExtKeys, UpdateContactsByExtKeys (both .NET and Node.js)
 - ✅ @d2/shared-tests — 663 tests (up from 507)
-- ✅ .NET shared tests — 565 passing (gateway auth, idempotency, retry, allowedContextKeys)
-- ✅ .NET Geo tests — 722 passing (contacts ext-key integration tests)
+- ✅ .NET shared tests — 585 passing (gateway auth, idempotency, retry, allowedContextKeys)
+- ✅ .NET Geo tests — 735 passing (contacts ext-key integration tests)
 - ✅ Context key validation refactored to built-in validateInput (Zod + FluentValidation)
+- ✅ Comms service — Phase 1 DDD layers: domain (entities, enums, rules), app (delivery handlers), infra (Drizzle schema, Resend email, Twilio SMS, RabbitMQ consumer)
+- ✅ Comms API — gRPC server (`@d2/comms-api`): composition root, proto ↔ domain mappers, Phase 1 handlers wired, Phase 2-3 stubs UNIMPLEMENTED
+- ✅ `@d2/comms-client` — Thin RabbitMQ publishing client: `Notify` handler with universal message shape, contactId-only recipient, DI registration via `addCommsClient(services, { publisher })`
+- ✅ Comms proto contract — `contracts/protos/comms/v1/comms.proto` (full Phase 1-3 surface)
+- ✅ Auth entrypoint — `main.ts` with Hono HTTP server, optional RabbitMQ publisher
+- ✅ Aspire wiring — Auth + Comms services via `AddJavaScriptApp` + `.WithPnpm()` (databases, Redis, RabbitMQ refs)
+- ✅ CI — Comms unit + integration test jobs in GitHub Actions
+- ✅ Comms tests — 550 unit tests passing (44 test files)
+- ✅ Auth tests — 617 tests passing (52 test files, up from 437)
+- ✅ Shared tests — 636 tests passing (45 test files)
+- ✅ `@d2/di` — Lightweight DI container: ServiceKey, ServiceCollection, ServiceProvider, ServiceScope (ADR-011)
+- ✅ DI refactoring — Auth + Comms composition roots refactored to use ServiceCollection with per-request/per-RPC/per-message scoping
+- ✅ Registration functions — `addAuthInfra()`, `addAuthApp()`, `addCommsInfra()`, `addCommsApp()` mirror .NET `services.AddXxx()`
+- ✅ BaseHandler traceId auto-injection — eliminates 174 occurrences of `traceId: this.traceId` boilerplate
+- ✅ Shared tests — 671 tests passing (35 new DI tests: ServiceCollection, ServiceProvider, ServiceScope, traceId auto-injection)
+- ✅ Invitation email delivery — Custom `/api/invitations` route, notification publishing via `@d2/comms-client`, `GetContactsByIds` handler in geo-client, RecipientResolver contactId-only resolution
+- ✅ E2E tests — 5 cross-service tests (verification email × 2, password reset, invitation for new user, invitation for existing user) via Testcontainers (PG × 3 + Redis + RabbitMQ) + .NET Geo child process
+- ✅ Defensive programming test sweep — 70 new security/edge-case tests across auth middleware, CSRF, session, scope, invitation route, emulation rules, comms handlers
+- ✅ Auth tests — 853 passing (64 test files), Comms tests — 552 passing (39 test files), Shared tests — 837 passing (59 test files)
+- ✅ Deliver fail path fix — `D2Result.fail()` with `DELIVERY_FAILED` error code on retryable send failures (was returning `ok()`)
+- ✅ Consumer dispatch simplification — all notifications dispatched directly to Deliver handler (no event-specific sub-handlers, no event registry)
+- ✅ Retry topology fix — main queue declared before requeue exchange binding (first-time deploy bug)
+- ✅ Handler integration tests — 14 tests with real Postgres (Testcontainers), StubEmailProvider, mock geo-client covering full delivery pipeline
+- ✅ Comms tests — 510 passing (39 test files), E2E tests — 5 passing
+- ✅ Open question validation tests — 28 integration tests resolving Q1 (RS256 JWT), Q2 (session lifecycle), Q3 (additionalFields), Q4 (definePayload), Q6 (snake_case), Q7 (pre-generated IDs)
+- ✅ Session enrichment hook — `databaseHooks.session.update.before` auto-populates `activeOrganizationType` + `activeOrganizationRole` on org switch (eliminates the Q3 gap). 3 new tests (auto-populate, auto-activate on org creation, clear on deactivation)
+- ✅ Auth tests — 825 passing (64 test files)
+- ✅ Production-readiness sweep fixes #5-8 (bugs/data integrity): WhoIs resolution consumer, constraint violation handling, typed partial updates, cache invalidation docs
+- ✅ Production-readiness sweep fixes #9-25: infrastructure resilience (startup guards, reconnection options, fail-open callbacks, readiness probes), observability (request ID span tag, error logging, structured logging docs), code quality (.NET overflow clamp, FluentValidation bump, sign-in failureReason field + migration), 21 new test gap tests, DI.md documentation
+- ✅ Auth tests — 868 passing (64 test files), Comms tests — 566 passing (43 test files), Shared tests — 850 passing (67 test files)
+- ✅ .NET Geo ext-key handlers — DeleteContactsByExtKeys (Command: repo + app + API), UpdateContactsByExtKeys (Complex: app + API, no longer stub)
+- ✅ Cross-service contact cache eviction — ContactsEvictedEvent via `events.geo.contacts` fan-out exchange. Publisher in Geo.Infra, consumers in Geo.Client (.NET) and geo-client (Node.js). Evicts matching IDs + ext-keys from local cache on delete/replace
+- ✅ Comms gRPC API key interceptor — `withApiKeyAuth` wrapper validates `x-api-key` metadata header against `COMMS_API_KEYS__<n>` indexed key set (multi-key, mirrors .NET ServiceKeyMiddleware pattern)
+- ✅ Proto contract updates — ContactReplacementKey, ContactReplacement, ContactsEvictedEvent, updated UpdateContactsByExtKeysResponse
+- ✅ Production-readiness deep dive sweep (2026-02-26) — 21-agent cross-cutting audit across 8 phases. 9 P1 findings (4 fixed, 1 reverted as false positive, 4 deferred architectural). 36 P2 + 28 P3 catalogued for future work. Key fixes: Drizzle rowCount validation (6 handlers), Zod schema alignment across consumer/handler/domain/DB, consumer prefetchCount default, BaseHandler PII span tags. Findings consolidated into Outstanding Items below
 
 ### Blocked By
 
@@ -220,8 +255,8 @@ blocked:{dimension}:{value}
 **Decision**:
 
 - Local memory cache packages for WhoIs data
-- `@d2/geo-cache` (Node.js), `D2.Geo.Cache` (C#)
-- LRU cache with 1-hour TTL, 1000 entry limit
+- `@d2/geo-client` FindWhoIs handler (Node.js), `D2.Geo.Cache` (C#)
+- LRU cache with configurable TTL, configurable entry limit
 - Cache miss → gRPC call to Geo service
 
 **Rationale**:
@@ -474,23 +509,25 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 
 **Key changes:**
 
-| Aspect                       | Before (Kysely)                                     | After (Drizzle 0.45.x)                                                |
-| ---------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------- |
-| BetterAuth adapter           | Built-in Kysely (internal)                          | `drizzleAdapter(db, { provider: "pg", schema })`                       |
-| Custom table schema          | Hand-written `kysely-types.ts`                      | `pgTable()` declarations with `$inferSelect`/`$inferInsert`            |
-| BetterAuth table schema      | Managed internally by BetterAuth                    | Explicit `pgTable()` declarations matching BetterAuth CLI output       |
-| Migration generation         | Hand-written TS files                               | `drizzle-kit generate` from schema diffs                               |
-| Migration runner             | None (files existed but no runner)                  | Programmatic `runMigrations(pool)` for app startup + Testcontainers   |
-| Repository query builder     | `Kysely<AuthCustomDatabase>`                        | `NodePgDatabase` + Drizzle query builder                               |
-| Column naming                | snake_case (manual)                                 | camelCase JS props → snake_case DB columns (Drizzle convention)       |
-| Number of ORMs               | 2 (Kysely explicit + Kysely internal to BetterAuth) | 1 (Drizzle everywhere)                                                |
+| Aspect                   | Before (Kysely)                                     | After (Drizzle 0.45.x)                                              |
+| ------------------------ | --------------------------------------------------- | ------------------------------------------------------------------- |
+| BetterAuth adapter       | Built-in Kysely (internal)                          | `drizzleAdapter(db, { provider: "pg", schema })`                    |
+| Custom table schema      | Hand-written `kysely-types.ts`                      | `pgTable()` declarations with `$inferSelect`/`$inferInsert`         |
+| BetterAuth table schema  | Managed internally by BetterAuth                    | Explicit `pgTable()` declarations matching BetterAuth CLI output    |
+| Migration generation     | Hand-written TS files                               | `drizzle-kit generate` from schema diffs                            |
+| Migration runner         | None (files existed but no runner)                  | Programmatic `runMigrations(pool)` for app startup + Testcontainers |
+| Repository query builder | `Kysely<AuthCustomDatabase>`                        | `NodePgDatabase` + Drizzle query builder                            |
+| Column naming            | snake_case (manual)                                 | camelCase JS props → snake_case DB columns (Drizzle convention)     |
+| Number of ORMs           | 2 (Kysely explicit + Kysely internal to BetterAuth) | 1 (Drizzle everywhere)                                              |
 
 **Schema files:**
+
 - `infra/src/repository/schema/better-auth-tables.ts` — 8 BetterAuth tables (user, session, account, verification, jwks, organization, member, invitation)
 - `infra/src/repository/schema/custom-tables.ts` — 3 custom tables (sign_in_event, emulation_consent, org_contact)
 - `infra/drizzle.config.ts` — Points at both schema files, generates to `src/repository/migrations/`
 
 **Rationale:**
+
 - Single ORM eliminates the two-ORM complexity
 - Auto-generated migrations from schema diffs (no hand-written SQL)
 - Programmatic migration runner enables Testcontainers integration tests
@@ -501,18 +538,88 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 
 ---
 
+### ADR-010: Reserved
+
+---
+
+### ADR-011: Lightweight DI Container (`@d2/di`)
+
+**Status**: Implemented (2026-02-21)
+
+**Context**: The Node.js services used manual factory functions (`createXxxHandlers(deps, context)`) for dependency injection, as decided in the Phase 2 research (2026-02-07). While functional at small scale, this approach had growing pain points as auth and comms services expanded:
+
+- Composition roots manually wired 30+ handlers with explicit dependency threading
+- Per-request scoping required ad-hoc patterns (Hono `c.var`, function closures)
+- No lifetime management — no distinction between singleton, scoped, and transient services
+- Handler `traceId` boilerplate: every handler had to pass `traceId: this.traceId` to D2Result (174 occurrences)
+
+**Decision**: Build `@d2/di` — a lightweight DI container mirroring .NET's `IServiceCollection`/`IServiceProvider` with `ServiceKey<T>` branded tokens for type-safe resolution.
+
+**Core types:**
+
+| Type                | .NET Equivalent      | Purpose                                                                                               |
+| ------------------- | -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ServiceKey<T>`     | —                    | Branded runtime token (replaces erased TS interfaces as DI keys)                                      |
+| `ServiceCollection` | `IServiceCollection` | Registration builder — `addSingleton`, `addScoped`, `addTransient`, `addInstance`                     |
+| `ServiceProvider`   | `IServiceProvider`   | Immutable resolver — `resolve<T>(key)`, `tryResolve<T>(key)`, `createScope()`                         |
+| `ServiceScope`      | `IServiceScope`      | Per-request child scope — caches scoped services, `setInstance()` for overrides, `[Symbol.dispose]()` |
+| `Lifetime`          | `ServiceLifetime`    | Enum: `Singleton`, `Scoped`, `Transient`                                                              |
+
+**Resolution rules (matching .NET exactly):**
+
+- **Singleton**: Cached once in root, shared across all scopes. Factory receives root provider (captive dependency prevention)
+- **Scoped**: Cached per scope (typically per-request). Throws when resolved from root. Factory receives scope provider
+- **Transient**: New instance every `resolve()`. Factory receives current provider (root or scope)
+
+**Registration pattern:**
+
+Each service package exports an `addXxx(services, ...)` registration function that mirrors .NET's `services.AddXxx()`:
+
+- `addAuthInfra(services, db)` — 14 transient repo handlers
+- `addAuthApp(services, options)` — 17 transient CQRS + notification handlers
+- `addCommsInfra(services, db, providerConfig)` — infra handlers + email/SMS providers
+- `addCommsApp(services)` — delivery handlers
+
+`ServiceKey` constants are co-located with their interfaces (e.g., `IRecordSignInEventKey` next to the handler interface in `@d2/auth-app`).
+
+**Scoping patterns:**
+
+- **Auth (HTTP)**: `createScopeMiddleware(provider)` on protected routes — builds `IRequestContext` from session data, sets `IHandlerContext` in scope. Routes resolve handlers via `c.get("scope").resolve(key)`. BetterAuth callbacks use `createCallbackScope()` (temporary scope with service-level context)
+- **Comms (gRPC)**: Per-RPC scope in gRPC service handlers — `createServiceScope(provider)` with fresh traceId
+- **Comms (RabbitMQ)**: Per-message scope in consumer callback — same `createServiceScope(provider)` pattern
+
+**BaseHandler traceId auto-injection:**
+
+`BaseHandler.handleAsync()` now automatically injects the ambient `traceId` from `IHandlerContext` into any `D2Result` that doesn't already have one. This eliminated 174 occurrences of `traceId: this.traceId` across all handler return sites.
+
+**Package location**: `backends/node/shared/di/` (`@d2/di`). Layer 0 — zero project dependencies.
+
+**Rationale:**
+
+- Mirrors .NET's DI patterns (reduces cognitive overhead for polyglot developers)
+- Lifetime management prevents captive dependency bugs (singleton depending on scoped)
+- `ServiceKey<T>` provides compile-time type safety without runtime reflection
+- Per-request scoping enables proper `IRequestContext` isolation (traceId, user context)
+- Registration functions (`addXxxApp`, `addXxxInfra`) provide the same composability as .NET extension methods
+- ~200 lines of code — no external dependencies, fully testable
+
+**Supersedes**: The manual factory function pattern from the Phase 2 DI research decision (2026-02-07). Factory functions are replaced by `ServiceCollection` registrations + `ServiceProvider` resolution.
+
+---
+
 ## Implementation Status
 
 ### Infrastructure
 
-| Component     | Status     | Notes                  |
-| ------------- | ---------- | ---------------------- |
-| PostgreSQL 18 | ✅ Done    | Aspire-managed         |
-| Redis 8.2     | ✅ Done    | Aspire-managed         |
-| RabbitMQ 4.1  | ✅ Done    | Aspire-managed         |
-| MinIO         | ✅ Done    | Aspire-managed         |
-| LGTM Stack    | ✅ Done    | Full observability     |
-| ~~Keycloak~~  | ❌ Removed | Replaced by BetterAuth |
+| Component     | Status     | Notes                                                    |
+| ------------- | ---------- | -------------------------------------------------------- |
+| PostgreSQL 18 | ✅ Done    | Aspire-managed                                           |
+| Redis 8.2     | ✅ Done    | Aspire-managed                                           |
+| RabbitMQ 4.1  | ✅ Done    | Aspire-managed                                           |
+| MinIO         | ✅ Done    | Aspire-managed                                           |
+| Dkron 4.0.9   | ✅ Done    | Aspire-managed, persistent container, dashboard on :8888 |
+| LGTM Stack    | ✅ Done    | Full observability                                       |
+| ~~Keycloak~~  | ❌ Removed | Replaced by BetterAuth                                   |
 
 ### Shared Packages (.NET)
 
@@ -530,6 +637,7 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 | Batch.Pg                      | ✅ Done | `backends/dotnet/shared/Implementations/Repository/`                                            |
 | **RequestEnrichment.Default** | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/`                                            |
 | **RateLimit.Default**         | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (uses abstracted cache handlers)           |
+| **Handler.Extensions**        | ✅ Done | `backends/dotnet/shared/Handler.Extensions/` (JWT/auth extensions)                              |
 | **Geo.Client**                | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (includes WhoIs cache handler)                       |
 
 ### Shared Packages (Node.js)
@@ -537,40 +645,47 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 > Mirrors .NET shared project structure under `backends/node/shared/`. All packages use `@d2/` scope.
 > Workspace root is at project root (`D2-WORX/`) — SvelteKit and other clients can consume any `@d2/*` package.
 
-| Package                    | Status     | Location                                                                      | .NET Equivalent                           |
-| -------------------------- | ---------- | ----------------------------------------------------------------------------- | ----------------------------------------- |
-| **@d2/result**             | ✅ Done    | `backends/node/shared/result/`                                                | `D2.Shared.Result`                        |
-| **@d2/utilities**          | ✅ Done    | `backends/node/shared/utilities/`                                             | `D2.Shared.Utilities`                     |
-| **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                                | `Protos.DotNet`                           |
-| **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                               | `D2.Shared.Tests` (infra)                 |
-| **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                                 | `D2.Shared.Tests` (tests)                 |
-| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                               | `Microsoft.Extensions.Logging` (ILogger)  |
-| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                                      | `D2.Shared.ServiceDefaults`               |
-| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                               | `D2.Shared.Handler`                       |
-| **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                            | `D2.Shared.Interfaces`                    |
-| **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                                     | `D2.Shared.Result.Extensions`             |
-| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`             | `InMemoryCache.Default`                   |
-| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`             | `DistributedCache.Redis`                  |
-| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                             | MassTransit (thin rabbitmq-client wrap)   |
-| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                                      | `Geo.Client` (full parity)                |
-| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`               |
-| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                       |
-| **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                     |
-| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/auth-client/`                                    | — (BFF client, HTTP — no .NET equivalent) |
-| **@d2/auth-sdk**           | 📋 Phase 2 | `backends/node/services/auth/auth-sdk/`                                       | `Auth.Client` (gRPC, service-to-service)  |
+| Package                    | Status     | Location                                                                      | .NET Equivalent                            |
+| -------------------------- | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| **@d2/result**             | ✅ Done    | `backends/node/shared/result/`                                                | `D2.Shared.Result`                         |
+| **@d2/utilities**          | ✅ Done    | `backends/node/shared/utilities/`                                             | `D2.Shared.Utilities`                      |
+| **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                                | `Protos.DotNet`                            |
+| **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                               | `D2.Shared.Tests` (infra)                  |
+| **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                                 | `D2.Shared.Tests` (tests)                  |
+| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                               | `Microsoft.Extensions.Logging` (ILogger)   |
+| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                                      | `D2.Shared.ServiceDefaults`                |
+| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                               | `D2.Shared.Handler`                        |
+| **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                            | `D2.Shared.Interfaces`                     |
+| **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                                     | `D2.Shared.Result.Extensions`              |
+| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`             | `InMemoryCache.Default`                    |
+| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`             | `DistributedCache.Redis`                   |
+| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                             | Messaging.RabbitMQ (raw AMQP + proto JSON) |
+| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                                      | `Geo.Client` (full parity)                 |
+| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`                |
+| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                        |
+| **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
+| **@d2/di**                 | ✅ Done    | `backends/node/shared/di/`                                                    | `Microsoft.Extensions.DependencyInjection` |
+| **@d2/comms-client**       | ✅ Done    | `backends/node/services/comms/client/`                                        | — (RabbitMQ notification publisher)        |
+| **@d2/auth-bff-client**    | 📋 Phase 2 | `backends/node/services/auth/bff-client/`                                     | — (BFF client, HTTP — no .NET equivalent)  |
+| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/client/`                                         | `Auth.Client` (gRPC, service-to-service)   |
 
 ### Services
 
-| Service          | Status     | Notes                                                         |
-| ---------------- | ---------- | ------------------------------------------------------------- |
-| Geo.Domain       | ✅ Done    | Entities, value objects                                       |
-| Geo.App          | ✅ Done    | CQRS handlers, mappers                                        |
-| Geo.Infra        | ✅ Done    | Repository, messaging                                         |
-| Geo.API          | ✅ Done    | gRPC service                                                  |
-| Geo.Client       | ✅ Done    | Service-owned client library (messages, interfaces, handlers) |
-| Geo.Tests        | ✅ Done    | 708 tests passing                                             |
-| **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B (DDD layers) done: domain, app, infra, api |
-| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 437 tests passing |
+| Service          | Status         | Notes                                                                                                           |
+| ---------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| Geo.Domain       | ✅ Done        | Entities, value objects                                                                                         |
+| Geo.App          | ✅ Done        | CQRS handlers, mappers                                                                                          |
+| Geo.Infra        | ✅ Done        | Repository, messaging                                                                                           |
+| Geo.API          | ✅ Done        | gRPC service                                                                                                    |
+| Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                   |
+| Geo.Tests        | ✅ Done        | 759 tests passing                                                                                               |
+| **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E    |
+| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 853 tests passing                                   |
+| **Comms.Domain** | ✅ Done        | Entities, enums, rules, constants (`backends/node/services/comms/domain/`)                                      |
+| **Comms.App**    | ✅ Done        | CQRS handlers, delivery orchestrator (`backends/node/services/comms/app/`)                                      |
+| **Comms.Infra**  | ✅ Done        | Drizzle schema/migrations, Resend + Twilio providers, RabbitMQ consumer (`backends/node/services/comms/infra/`) |
+| **Comms.API**    | ✅ Done        | gRPC server + composition root + mappers (`backends/node/services/comms/api/`)                                  |
+| **Comms.Tests**  | ✅ Done        | 552 tests passing (`backends/node/services/comms/tests/`)                                                       |
 
 ### Gateways
 
@@ -636,22 +751,32 @@ BetterAuth supports programmer-defined IDs via two mechanisms:
 **Stage B — Auth Service (bottom-up DDD layers)**
 
 5. **auth-domain** — Domain types (User, Organization, Member, OrgType, Role, SessionContext, etc.). Pure types, no BetterAuth.
-6. **auth-infra** — BetterAuth config, Kysely adapter, secondary storage adapter (wraps `@d2/cache-redis`), hooks (`generateId` UUIDv7, `forceAllowId`), custom table migrations (`org_contact`, `sign_in_event`, `emulation_consent`).
+6. **auth-infra** — BetterAuth config, Drizzle adapter, secondary storage adapter (wraps `@d2/cache-redis`), hooks (`generateId` UUIDv7, `forceAllowId`), custom table migrations (`org_contact`, `sign_in_event`, `emulation_consent`).
 7. **auth-app** — Interfaces, CQRS handlers, mappers (BetterAuth→domain, domain→proto).
 8. **auth-api** — Hono entry point, route mounting, composition root, gRPC server. Wire idempotency middleware here.
 9. **auth-tests** — Unit + integration tests for all layers.
 
+**Stage B.5 — Scheduled Jobs (Dkron) ← NEXT**
+
+> These data maintenance jobs should be implemented before client libraries. Without them, expired/orphaned data accumulates silently in production. See the "Scheduled Jobs (Dkron)" section below for the full job table.
+
+10. **Job infrastructure** — HTTP endpoint pattern for Dkron callbacks, Redis `SET NX` distributed lock helper, shared job utilities.
+11. **Auth jobs** — Sign-in event purge (daily, 90d), expired invitation cleanup (daily, 7d), expired emulation consent cleanup (weekly).
+12. **Geo jobs** — Orphaned location cleanup (daily), orphaned contacts cleanup (weekly).
+13. **Comms jobs** — Soft-deleted message cleanup (weekly, 90d), delivery history retention (monthly, 1y).
+14. **BetterAuth cleanup verification** — Confirm whether BetterAuth auto-purges expired sessions and verification tokens, or if we need Dkron jobs for those too.
+
 **Stage C — Client Libraries**
 
-10. **@d2/auth-client** — BFF client for SvelteKit (proxy helper, JWT lifecycle, `createAuthClient`).
-11. **@d2/auth-sdk** — Backend gRPC client for other Node.js services.
-12. **.NET Auth.Client** — JWT validation via JWKS + `AddJwtBearer()`.
+15. **@d2/auth-bff-client** — BFF client for SvelteKit (proxy helper, JWT lifecycle, `createAuthClient`).
+16. **@d2/auth-client** — Backend gRPC client for other Node.js services (mirrors `@d2/geo-client`).
+17. **.NET Auth.Client** — JWT validation via JWKS + `AddJwtBearer()`.
 
 **Stage D — Integration**
 
-13. **SvelteKit integration** — Proxy in `hooks.server.ts`, session population, route groups, onboarding flow.
-14. **.NET gateway** — JWT validation middleware, CORS for SvelteKit origin.
-15. **Notifications pipes** — Auth publishes events to RabbitMQ (e.g., `auth.email.verification`, `auth.email.password-reset`, `auth.email.invitation`). Consumer/notification service is a later deliverable — the "pipes" (event emission + message contracts) are wired during auth service build so the events flow even if nothing consumes them yet.
+18. **SvelteKit integration** — Proxy in `hooks.server.ts`, session population, route groups, onboarding flow.
+19. **.NET gateway** — JWT validation middleware, CORS for SvelteKit origin.
+20. ~~**Notifications pipes**~~ — ✅ Done. Auth publishes notifications via `@d2/comms-client` to `comms.notifications` fanout exchange. Comms service consumes and delivers (email verification, password reset, invitations).
 
 #### Auth Service — DDD Structure
 
@@ -664,8 +789,8 @@ backends/node/services/auth/
 ├── infra/             # @d2/auth-infra — BetterAuth config, repos, mappers (TLC: auth/better-auth/, repository/, mappers/)
 ├── api/               # @d2/auth-api — Hono entry point, routes, composition root, geo gateway impl
 ├── tests/             # @d2/auth-tests — Tests (unit + integration)
-├── auth-client/       # @d2/auth-client — BFF client for SvelteKit (HTTP, proxy, JWT manager) [planned]
-└── auth-sdk/          # @d2/auth-sdk — Backend client for other services (gRPC, like Geo.Client) [planned]
+├── bff-client/        # @d2/auth-bff-client — BFF client for SvelteKit (HTTP, proxy, JWT manager) [planned]
+├── client/            # @d2/auth-client — Backend client for other services (gRPC, like Geo.Client) [planned]
 ```
 
 Mirrors .NET Geo:
@@ -676,13 +801,13 @@ Geo.Client / Geo.Domain / Geo.App / Geo.Infra / Geo.API / Geo.Tests
 
 **Two client libraries** (auth serves two distinct consumer types):
 
-| Client             | Package           | Consumers                    | Protocol | Purpose                                         |
-| ------------------ | ----------------- | ---------------------------- | -------- | ----------------------------------------------- |
-| **BFF Client**     | `@d2/auth-client` | SvelteKit                    | HTTP     | Auth proxy, session management, JWT lifecycle   |
-| **Backend Client** | `@d2/auth-sdk`    | .NET gateway, other services | gRPC     | User/org lookups, JWT validation, JWKS fetching |
+| Client             | Package               | Consumers                    | Protocol | Purpose                                         |
+| ------------------ | --------------------- | ---------------------------- | -------- | ----------------------------------------------- |
+| **BFF Client**     | `@d2/auth-bff-client` | SvelteKit                    | HTTP     | Auth proxy, session management, JWT lifecycle   |
+| **Backend Client** | `@d2/auth-client`     | .NET gateway, other services | gRPC     | User/org lookups, JWT validation, JWKS fetching |
 
-- `@d2/auth-client`: BFF-oriented. Proxies BetterAuth endpoints (`/api/auth/*`), manages JWT obtain/store/refresh, exposes `createAuthClient()` for SvelteKit. Works with **domain types** (tightly coupled, same codebase).
-- `@d2/auth-sdk`: Service-oriented. gRPC stubs from `contracts/protos/auth/v1/`, handler-based (mirrors Geo.Client pattern). Works with **proto-generated types only** — no domain types exposed. Used by .NET services and future Node services that need auth data.
+- `@d2/auth-bff-client`: BFF-oriented. Proxies BetterAuth endpoints (`/api/auth/*`), manages JWT obtain/store/refresh, exposes `createAuthClient()` for SvelteKit. Works with **domain types** (tightly coupled, same codebase).
+- `@d2/auth-client`: Service-oriented. gRPC stubs from `contracts/protos/auth/v1/`, handler-based (mirrors Geo.Client pattern). Works with **proto-generated types only** — no domain types exposed. Used by .NET services and future Node services that need auth data.
 - **.NET side**: `Auth.Client` at `backends/dotnet/services/Auth/Auth.Client/` — gRPC client + JWT validation (`AddJwtBearer` + JWKS). Works with proto-generated C# types.
 
 **Type boundary principle**: Domain types are internal to the auth service (and BFF). Backend consumers only see proto-generated types via gRPC. This prevents leaking domain logic between services — the proto contract IS the public API. Same pattern as Geo: `Geo.Domain` types are internal, `Geo.API` maps to proto responses, `Geo.Client` consumers only see proto types.
@@ -693,7 +818,7 @@ Geo.Client / Geo.Domain / Geo.App / Geo.Infra / Geo.API / Geo.Tests
 
 - **Framework-agnostic by design**: BetterAuth is an infra concern only. Domain and app layers have zero BetterAuth imports. If BetterAuth is ever swapped, only auth-infra changes.
 - **Mappers in auth-app/auth-infra**: infra→domain (BetterAuth types → domain types, lives in auth-infra), domain→proto (domain types → gRPC responses, lives in auth-app). Similar to Geo's `LocationMapper`, `WhoIsMapper`, etc.
-- **SignInEvent purge**: Scheduled job + handler (like other retention-based cleanup). 90-day retention.
+- **SignInEvent purge**: Dkron scheduled job (daily). 90-day retention. See "Scheduled Jobs (Dkron)" section.
 - **Notifications service co-dependency**: Auth needs a notifications service scaffold for email verification, password reset, invitation emails. See "Notifications Service" section below.
 
 **TLC concerns within auth-infra:**
@@ -707,11 +832,11 @@ auth-infra/src/
 **Abstraction boundaries:**
 
 - **Caching (Redis secondary storage)**: Fully abstracted. BetterAuth's `secondaryStorage` interface (`get`, `set`, `delete`) implemented by wrapping `@d2/interfaces` distributed cache handlers (IDistributedCacheGet, Set, Remove). auth-infra never imports ioredis directly.
-- **Database (PostgreSQL)**: BetterAuth owns its DB connection via the built-in Kysely adapter with a dedicated `pg.Pool`. Give BetterAuth its own PG schema (`search_path=auth`). Accept BetterAuth's camelCase column naming internally — fighting it causes plugin compatibility issues (see Known Gotchas below). Custom `modelName` for table prefixes (e.g., `auth_users`, `auth_sessions`) is supported but has edge cases.
+- **Database (PostgreSQL)**: BetterAuth owns its DB connection via the Drizzle adapter (`drizzleAdapter(db, { provider: "pg", schema })`) with a dedicated `pg.Pool`. Uses `casing: "snake_case"` for PG conventions. Drizzle manages all tables (BetterAuth's 8 managed tables + 3 custom tables) with a single ORM. See ADR-009 for migration details.
 - **Auth-app defines interfaces** for auth operations (sign-up, sign-in, session management, token issuance). auth-infra implements these using BetterAuth under the hood.
 - **Abstraction boundary for consumers**: JWTs validated via JWKS are the inter-service boundary. Only the auth service itself depends on BetterAuth. .NET services validate JWTs statelessly via `AddJwtBearer()`.
 
-**Dependency injection**: **Manual factory functions** (decided 2026-02-07). Each package exports a `createXxxHandlers(deps, context)` factory that maps 1:1 to .NET's `services.AddXxx()` extension methods. Hono's `c.var` + middleware provides per-request scoping. No DI container library needed at current scale (~15 packages). If complexity grows beyond 30+ handlers with cross-cutting deps, evaluate `@snap/ts-inject` (Snap Inc., compile-time type-safe, composable containers, ESM-native, decorator-free). Avoid tsyringe/inversify (decorator-based, ESM issues).
+**Dependency injection**: **`@d2/di` container** (ADR-011, implemented 2026-02-21). Replaces the earlier manual factory function approach. Each package exports an `addXxx(services, ...)` registration function (mirrors .NET `services.AddXxx()`). `ServiceCollection` + `ServiceProvider` with `Singleton`/`Scoped`/`Transient` lifetimes. `ServiceKey<T>` branded tokens for type-safe resolution. Per-request scoping via `createScopeMiddleware(provider)` (HTTP) or `createServiceScope(provider)` (gRPC/RabbitMQ).
 
 #### Auth Domain Model (decided 2026-02-07)
 
@@ -1021,19 +1146,19 @@ SessionContext (computed, not persisted)
 
 ##### BetterAuth-Managed vs Custom Tables
 
-| Table               | Managed By  | Notes                                                 |
-| ------------------- | ----------- | ----------------------------------------------------- |
-| `user`              | BetterAuth  | Core; we add no custom fields                         |
-| `account`           | BetterAuth  | Core; 1:N per user (multi-provider)                   |
-| `session`           | BetterAuth  | Core + org plugin + 4 custom extension fields         |
-| `verification`      | BetterAuth  | Email verification tokens (infra only, not in domain) |
-| `jwks`              | BetterAuth  | JWT key pairs (infra only, not in domain)             |
-| `organization`      | BetterAuth  | Org plugin + custom `type` field                      |
-| `member`            | BetterAuth  | Org plugin; role stored as text                       |
-| `invitation`        | BetterAuth  | Org plugin                                            |
-| `org_contact`       | Us (Kysely) | Custom — address book junction → Geo Contact          |
-| `sign_in_event`     | Us (Kysely) | Custom — auth attempt audit log                       |
-| `emulation_consent` | Us (Kysely) | Custom — user-level impersonation consent             |
+| Table               | Managed By   | Notes                                                 |
+| ------------------- | ------------ | ----------------------------------------------------- |
+| `user`              | BetterAuth   | Core; we add no custom fields                         |
+| `account`           | BetterAuth   | Core; 1:N per user (multi-provider)                   |
+| `session`           | BetterAuth   | Core + org plugin + 4 custom extension fields         |
+| `verification`      | BetterAuth   | Email verification tokens (infra only, not in domain) |
+| `jwks`              | BetterAuth   | JWT key pairs (infra only, not in domain)             |
+| `organization`      | BetterAuth   | Org plugin + custom `type` field                      |
+| `member`            | BetterAuth   | Org plugin; role stored as text                       |
+| `invitation`        | BetterAuth   | Org plugin                                            |
+| `org_contact`       | Us (Drizzle) | Custom — address book junction → Geo Contact          |
+| `sign_in_event`     | Us (Drizzle) | Custom — auth attempt audit log                       |
+| `emulation_consent` | Us (Drizzle) | Custom — user-level impersonation consent             |
 
 `verification` and `jwks` are pure BetterAuth infrastructure — they never leave auth-infra and are not represented in the domain model.
 
@@ -1076,7 +1201,7 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 **Sign-in event retention:**
 
 - 90 days (matches WhoIs retention pattern)
-- Purge via scheduled job or Kysely query
+- Purge via scheduled job or Drizzle query
 
 **Invitation lifecycle:**
 
@@ -1108,7 +1233,7 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 }
 ```
 
-**Important**: When a user switches orgs or starts/stops emulation, the client must request a new JWT. The old JWT remains valid until its 15-minute expiry but carries stale org context. `@d2/auth-client` handles this: `setActiveOrg()` → `refreshJwt()` atomically.
+**Important**: When a user switches orgs or starts/stops emulation, the client must request a new JWT. The old JWT remains valid until its 15-minute expiry but carries stale org context. `@d2/auth-bff-client` handles this: `setActiveOrg()` → `refreshJwt()` atomically.
 
 **BetterAuth organization plugin — gap analysis (75% fit):**
 
@@ -1130,12 +1255,11 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 #### Auth Service — Configuration
 
 - **Framework**: Hono + BetterAuth v1.4.x (pin exact version)
-- **Database adapter**: Built-in Kysely adapter with `pg.Pool` + dedicated PG schema (`search_path=auth`)
-  - Kysely is BetterAuth's native adapter — zero extra packages, CLI `migrate` works directly
-  - If issues arise, Drizzle adapter is the fallback (separate package, requires defining BA tables in Drizzle schema)
-  - BetterAuth manages its own connection pool; auth-api provides the `Pool` at startup
+- **Database adapter**: Drizzle adapter (`drizzleAdapter(db, { provider: "pg", schema })`) — see ADR-009
+  - Single ORM (Drizzle) for all tables: BetterAuth's 8 managed tables + 3 custom tables
   - `casing: "snake_case"` — matches our PG conventions
-  - For our custom auth tables (`org_contact`, `sign_in_event`, `emulation_consent`), use the same Kysely instance
+  - Drizzle Kit for migrations (`drizzle-kit generate` + `drizzle-kit migrate`)
+  - BetterAuth manages its own connection pool; auth-api provides the `Pool` at startup
 - **Secondary storage**: `SecondaryStorage` interface wrapping `@d2/interfaces` distributed cache handlers
   - Interface is minimal: `get(key): string | null`, `set(key, value, ttl?)`, `delete(key)`
   - TTL is in **seconds** (not milliseconds)
@@ -1196,7 +1320,7 @@ Only `customer` orgs can be created with "a couple clicks." `third_party` orgs a
 - Auth proxy in `hooks.server.ts` (`/api/auth/*` → Auth Service)
 - Session population hook (forward cookie to Auth Service for validation, or decode cookie cache locally)
 - `createAuthClient` setup (no `baseURL` needed — same-origin proxy)
-- Client-side JWT manager (part of `@d2/auth-client` — obtain, store in memory, auto-refresh)
+- Client-side JWT manager (part of `@d2/auth-bff-client` — obtain, store in memory, auto-refresh)
 - CORS configuration for direct gateway access (Pattern C, ADR-005)
 
 **UI sharding by org type** (decided 2026-02-07):
@@ -1229,45 +1353,9 @@ clients/web/src/routes/
 - CORS middleware for SvelteKit origin
 - JWKS caching with periodic refresh
 
-#### Notifications Service (Phase 2 co-dependency)
+#### ~~Notifications Service (Phase 2 co-dependency)~~ — RESOLVED
 
-Auth requires email sending for: verification, password reset, and invitation emails. Rather than building a throwaway email sender, we scaffold a notifications service with the right foundational shape so it can grow into a full multi-channel notification hub later.
-
-**Reference**: DeCAF's `DeCAF.Features.Messaging.Default` (`/old/DeCAF-DCSV/BE_NET/`)
-
-**DeCAF messaging pattern** (notification hub):
-
-```
-Notify (orchestrator)
-  ├─ Reads user notification preferences
-  ├─ Routes to enabled channels:
-  │  ├─ Email:  Notify → EnqueueEmail → TrySendEmail (with retry)
-  │  ├─ SMS:    Notify → EnqueueSms → TrySendSMS (with retry)
-  │  ├─ Push:   Notify → SendPushNotification
-  │  └─ In-app: Notify → CreateDirectMessage / SupportMessage
-  └─ Partial success (channels fail independently)
-
-Background retry: scheduled job finds "Retrying" messages, re-attempts delivery
-Message states: Pending → Sent | Retrying → Sent | Failed
-```
-
-**Phase 2 scaffold** (minimum viable for auth):
-
-- **Email channel only** — verification, password reset, invitation emails
-- **Provider abstraction** — `IEmailProvider` interface (swap SMTP/SendGrid/SES later)
-- **Template abstraction** — `ITemplateProvider` interface (compile templates with variables)
-- **Enqueue + retry** — persist to DB, attempt immediate send, background retry on failure
-- **Notification preferences** — user-level settings (at minimum: email enabled/disabled)
-
-**Foundational shape to preserve** (so we don't redo later):
-
-- Multi-channel `Notify` orchestrator entry point (even if only email is wired initially)
-- Channel-agnostic message envelope (recipient, channel, template, variables)
-- Provider pattern for each channel (pluggable implementations)
-- Retry with configurable max attempts and backoff intervals
-- RabbitMQ integration for async dispatch (auth publishes, notifications consumes)
-
-**NOT needed in Phase 2**: SMS, push notifications, in-app messaging, SignalR real-time, support chat. These are Phase 3+ features that plug into the existing foundation.
+> **Superseded by the Comms service** (`backends/node/services/comms/`). The Comms service Phase 1 implements the delivery engine originally planned here: multi-channel `Deliver` orchestrator, `IEmailProvider` + `ISmsProvider` abstractions, per-contact channel preferences, DLX-based retry via RabbitMQ tier queues, and `@d2/comms-client` for consumer services. Auth publishes via `@d2/comms-client` to `comms.notifications` fanout exchange. See `COMMS.md` for full details.
 
 ### Phase 3: Auth Features (Future)
 
@@ -1275,8 +1363,8 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 2. **Org emulation** (support/admin can view any org's data in read-only mode)
 3. **User impersonation** (escalated support — act as a specific user, audit-logged, time-limited)
 4. **Admin control panel** (cross-org visibility, user/org management, system diagnostics)
-5. **Admin alerting** (rate limit threshold alerts via notifications service)
-6. **Notifications expansion** — SMS, push, in-app messaging, SignalR real-time, support chat
+5. **Admin alerting** (rate limit threshold alerts via Comms service)
+6. **Comms expansion** — In-app notifications, push via SignalR, conversational messaging (Comms Phases 2-4)
 
 ### Completed Phases
 
@@ -1298,14 +1386,141 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ---
 
-## Technical Debt
+## Scheduled Jobs (Dkron)
 
-| Item                              | Priority   | Notes                                                                                            |
-| --------------------------------- | ---------- | ------------------------------------------------------------------------------------------------ |
-| **Validate redaction in OTEL**    | **High**   | Manually verify in Grafana/Loki that no PII (IPs, fingerprints) appears in production log output |
-| **Geo location cleanup job**      | **Medium** | Background job to remove locations with zero references (no contacts or WhoIs). Geo-owned responsibility. Auth deletes contacts on org_contact deletion; Geo cleans up orphaned locations separately. |
-| Test container sharing            | Medium     | Could speed up integration tests                                                                 |
-| Standardize error codes           | Medium     | Ensure consistency across services                                                               |
+**Infrastructure**: Dkron v4.0.9 runs as a persistent Aspire container (dashboard: `:8888`). Jobs call service HTTP endpoints on a cron schedule. Use Redis `SET NX` distributed locks when only one instance should execute a job.
+
+| Job                               | Owner | Schedule | Retention | Status              | Notes                                                                                                  |
+| --------------------------------- | ----- | -------- | --------- | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Sign-in event purge**           | Auth  | Daily    | 90 days   | Not implemented     | DELETE `sign_in_event` WHERE `created_at < NOW() - 90 days`                                            |
+| **Expired invitation cleanup**    | Auth  | Daily    | 7 days    | Not implemented     | DELETE expired invitations. Domain check `isInvitationExpired()` exists but no row deletion            |
+| **Expired emulation consent**     | Auth  | Weekly   | Per-grant | Not implemented     | DELETE WHERE `expires_at < NOW()` or `revoked_at IS NOT NULL`. Runtime filter works; rows accumulate   |
+| **Geo orphaned location cleanup** | Geo   | Daily    | N/A       | Not implemented     | DELETE locations with zero contact/WhoIs references. Auth swallows Geo delete failures relying on this |
+| **Orphaned contacts**             | Geo   | Weekly   | N/A       | Not implemented     | DELETE contacts with `context_key = 'auth_user'` + no matching user. Low priority ("harmless noise")   |
+| **Soft-deleted message cleanup**  | Comms | Weekly   | 90 days   | Not implemented     | DELETE `message` WHERE `deleted_at < NOW() - 90 days`                                                  |
+| **Delivery history retention**    | Comms | Monthly  | 1 year    | Not implemented     | Archive/DELETE old `delivery_request` + `delivery_attempt` rows                                        |
+| BetterAuth sessions (PG)          | Auth  | Weekly   | 7 days    | BetterAuth-managed? | Expired PG session rows may accumulate. Verify BetterAuth handles this                                 |
+| BetterAuth verification tokens    | Auth  | Weekly   | Per-token | BetterAuth-managed? | Expired tokens functionally inert. Verify BetterAuth handles cleanup                                   |
+
+**Already handled (no Dkron job needed):**
+
+- Idempotency keys: Redis TTL (24h)
+- Rate limit counters/blocks: Redis TTL
+- Redis cache entries: Redis TTL + LRU eviction
+- In-memory cache: Lazy TTL + LRU eviction
+- Comms delivery retries: RabbitMQ DLX + tier queue TTLs
+- JWKS key rotation: BetterAuth-managed
+
+---
+
+## Outstanding Items
+
+Consolidated from all sweep reports (now deleted). This is the single source of truth. Items marked ~~strikethrough~~ were fixed in R1/R2 sweeps or identified as false positives.
+
+**Sweep stats:** 303 module-level findings (30 high, 92 medium, 148 low, 33 info) + 73 deep-dive findings = all high fixed, all medium resolved, remaining items below.
+
+### 1. Can Fix Now
+
+Sorted by priority: security/breaking first, then bugs/data integrity, infrastructure, observability, tests, documentation, polish.
+
+**Triage (68→40):** 26 non-issues removed, 6 decisions resolved (3 accepted/closed). Remaining: 21 fixes (#5-25), 15 polish (#26-40). Items ~~1-8~~ fixed (security/auth + bugs/data integrity). Items ~~9-25~~ fixed (infrastructure, observability, code quality, tests, docs).
+
+#### Security / Auth Hardening
+
+| #     | Item                                                        | Owner   | Effort | Resolution                                                                                                                                                                     |
+| ----- | ----------------------------------------------------------- | ------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ~~1~~ | ~~RedactionSpec on all PII-handling handlers~~              | Various | Medium | **DONE:** Added `get redaction()` to 4 handlers: RecordSignInEvent, GetSignInEvents, CreateOrgContact (auth), RecipientResolver (comms). GetChannelPreference skipped (no PII) |
+| ~~2~~ | ~~Session update hook: emulation consent validation~~       | Auth    | Small  | **DONE:** Combined with #3 — single consent check in `scope.ts`                                                                                                                |
+| ~~3~~ | ~~Emulation consent expiry not enforced on active session~~ | Auth    | Medium | **DONE:** Added consent validation in `scope.ts` — resolves `IFindActiveConsentByUserIdAndOrgKey` when emulating, strips emulation if consent expired/revoked. 2 new tests     |
+| ~~4~~ | ~~2 handlers missing Zod `validateInput()`~~                | Comms   | Small  | **DONE:** Added Zod `zodGuid` schema + `this.validateInput()` to GetChannelPreference and RecipientResolver                                                                    |
+
+#### Bugs / Data Integrity
+
+| #     | Item                                                              | Owner | Effort | Resolution                                                                                                                                                              |
+| ----- | ----------------------------------------------------------------- | ----- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~5~~ | ~~sign_in_event schema: async whoIsId population~~                | Auth  | Medium | **DONE:** Auth self-consume pattern — onSignIn publishes to `auth.whois-resolution` queue, consumer calls FindWhoIs via geo-client, updates record. Fail-open by design |
+| ~~6~~ | ~~Comms infra: no constraint violation handling~~                 | Comms | Small  | **DONE:** Added `isPgUniqueViolation()` try/catch to `CreateDeliveryRequestRecord` — returns 409 Conflict on duplicate correlationId                                    |
+| ~~7~~ | ~~`deliveryAttempt.set(updates)` uses `Record<string, unknown>`~~ | Comms | Tiny   | **DONE:** Replaced with spread-based typed partial object                                                                                                               |
+| ~~8~~ | ~~No explicit cache invalidation on write (auth)~~                | Auth  | Small  | **DONE (doc only):** Added "Cache Invalidation Strategy" section to AUTH.md — documents intentional TTL-based approach per cache layer                                  |
+
+#### Infrastructure / Resilience
+
+| #      | Item                                             | Owner | Effort | Resolution                                                                                                                                                                     |
+| ------ | ------------------------------------------------ | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ~~9~~  | ~~geoClient `undefined as never` guard~~         | Both  | Tiny   | **DONE:** Replaced with `throw new Error("GEO_GRPC_ADDRESS and GEO_API_KEY are required")` at startup in both auth + comms composition roots                                  |
+| ~~10~~ | ~~Connection recovery backoff not configurable~~ | All   | Small  | **DONE:** Added `connectionOptions` (retryLow, retryHigh, maxRetries) to `MessageBusOptions`, pass-through to `Connection` constructor                                        |
+| ~~11~~ | ~~RabbitMQ down → verification email lost~~      | Auth  | Small  | **DONE:** Wrapped `publishVerificationEmail` callback in try/catch in `auth-factory.ts` — fail-open (RabbitMQ down doesn't crash sign-in/sign-up)                              |
+| ~~12~~ | ~~No readiness probe on RabbitMQ consumer~~      | Comms | Small  | **DONE:** Captured `consumer.ready` promise, awaited before returning from `createCommsService()`                                                                               |
+
+#### Observability
+
+| #      | Item                                                      | Owner   | Effort | Resolution                                                                                                                                                                             |
+| ------ | --------------------------------------------------------- | ------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~13~~ | ~~HTTP request ID not propagated as span attribute~~      | Gateway | Tiny   | **DONE:** Added `http.request_id` tag in `EnrichWithHttpResponse` callback in ServiceDefaults Extensions                                                                               |
+| ~~14~~ | ~~Error logs sometimes missing traceId context~~          | Various | Small  | **DONE:** Added `this.context.logger.warn` before `D2Result.bubbleFail` calls in RecordSignInEvent (validation + persistence failures)                                                 |
+| ~~15~~ | ~~No structured logging standard for cross-service corr~~ | All     | Small  | **DONE (doc only):** Added "Observability & Logging" section to CLAUDE.md with standard structured fields (traceId, correlationId, userId, orgId, service, handler)                     |
+
+#### Code Quality / Hardening
+
+| #      | Item                                                  | Owner | Effort | Resolution                                                                                                                                                                                              |
+| ------ | ----------------------------------------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~16~~ | ~~RetryHelper `CalculateDelay` overflow clamp~~       | .NET  | Tiny   | **DONE:** Added `Math.Min(retryIndex, 63)` guard before `Math.Pow` in RetryHelper.CalculateDelay                                                                                                       |
+| ~~17~~ | ~~Sign-in event logging doesn't record failure type~~ | Auth  | Small  | **DONE:** Added `failureReason` field (varchar 100, nullable) to sign-in event entity, schema, Zod schema, create/find handlers, migration 0003. Added structured failure logging in auth-routes        |
+| ~~18~~ | ~~FluentValidation version behind latest stable~~     | .NET  | Tiny   | **DONE:** Bumped FluentValidation 12.1.0 → 12.1.1 in Handler.csproj                                                                                                                                    |
+
+#### Test Gaps
+
+| #      | Item                                           | Owner  | Effort | Resolution                                                                                                                                                                          |
+| ------ | ---------------------------------------------- | ------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~19~~ | ~~UPDATE/DELETE rowCount=0 → notFound tests~~  | Both   | Small  | **DONE:** Added 6 notFound tests across auth (emulation consent revoke, org contact update/delete) and comms (delivery request markProcessed, delivery attempt updateStatus, channel preference update) |
+| ~~20~~ | ~~Consumer schema validation rejection tests~~ | Comms  | Small  | **DONE:** Added 3 integration tests — invalid UUID, missing required fields, empty message object — all dropped with warning log                                                    |
+| ~~21~~ | ~~Retry tier exhaustion (max attempts) tests~~ | Comms  | Small  | **DONE:** Added 5 unit tests for retry exhaustion boundaries (tier count, per-tier attempts, total attempts, TTL calculation, final tier identification)                             |
+| ~~22~~ | ~~Concurrent channel preference update tests~~ | Comms  | Small  | **DONE:** Added concurrent `Promise.all` test — 3 simultaneous updates for same contactId, all succeed without data corruption                                                      |
+| ~~23~~ | ~~Email provider unavailable scenario tests~~  | Comms  | Small  | **DONE:** Added unit test — email provider throws, delivery attempt correctly marked as failed with error message                                                                    |
+| ~~24~~ | ~~DI circular dependency negative-path test~~  | Shared | Small  | **DONE:** Added 6 tests — direct A→B→A cycle, self-referencing, 3-node chain, depth detection, cross-lifetime, independent chains                                                   |
+
+#### Documentation
+
+| #      | Item                                            | Owner | Effort | Resolution                                                                                                                                                           |
+| ------ | ----------------------------------------------- | ----- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~25~~ | ~~Singleton root provider behavior documented~~ | DI    | Tiny   | **DONE:** Added "Root Provider Behavior" section to DI.md — documents root provider scoped restriction, captive dependency rule, error caching semantics             |
+
+#### Polish / Nice-to-Have
+
+| #   | Item                                                | Owner  | Effort | Resolution                                                                                                                  |
+| --- | --------------------------------------------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------- |
+| 26  | `@d2/batch-pg`: Batch query utilities               | Node   | Medium | ✅ **DONE:** `batchQuery()` + `toBatchResult()` + `toBatchDictionaryResult()` in `@d2/batch-pg` (mirrors `Batch.Pg`)        |
+| 27  | Drizzle transaction helpers                         | Node   | Medium | ✅ **N/A — .NET-only:** Drizzle lacks ambient/scoped transactions. `db.transaction(cb)` requires all ops in one callback — no cross-handler Begin/Commit/Rollback like .NET `Transactions.Pg`. |
+| 28  | .NET: Shared PG error handling project              | .NET   | Small  | ✅ **DONE:** `Errors.Pg` project with `PgErrorCodes` static helpers (IsUniqueViolation, IsForeignKeyViolation, etc.)        |
+| 29  | Middleware chain order E2E test                     | Auth   | Medium | ✅ **DONE:** `middleware-chain-order.test.ts` — CORS, security headers, enrichment→rate-limiting ordering, 404 handling      |
+| 30  | Redis connection failure fallback tests             | Both   | Medium | ✅ **DONE:** `redis-failover.test.ts` in shared-tests (cache-redis handlers) + auth-tests (rate limiter fail-open)           |
+| 31  | Cross-platform parity checks documented             | All    | Small  | ✅ **DONE:** `backends/PARITY.md` with 17-concern parity table + API differences + platform-exclusive packages               |
+| 32  | Thundering herd protection on popular key expiry    | Shared | Medium | **FIX:** Add singleflight/lock pattern for cache-memory on popular key expiry                                               |
+| 33  | Negative caching (NOT_FOUND) for geo-client         | Geo    | Small  | ✅ **DONE:** FindWhoIs caches `null` sentinel for not-found IPs with `whoIsNegativeCacheExpirationMs` (1hr default)          |
+| 34  | LRU eviction stress testing                         | Shared | Medium | ✅ **DONE:** `lru-stress.test.ts` — capacity boundary, access promotion, 1000 concurrent ops, TTL+LRU interaction, bulk     |
+| 35  | DI debug logging for resolution troubleshooting     | DI     | Small  | ✅ **DONE:** `DEBUG_DI=true` env var for verbose resolution logging (zero-cost when disabled)                                |
+| 36  | E2E test wiring vs production divergence            | E2E    | Small  | ✅ **DONE:** "Stub vs Production Divergence" section appended to `E2E_TESTS.md`                                              |
+| 37  | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | ✅ **DONE:** `createPostgresTestHelper()` factory in `@d2/testing`, both auth-tests and comms-tests delegate to it           |
+| 38  | Integration test container reuse across files       | Tests  | Medium | ✅ **DONE:** `fileParallelism: false` in auth/comms vitest configs; shared helper supports URI mode for future globalSetup    |
+| 39  | Circuit breaker for non-critical cross-service gRPC | All    | Medium | **FIX:** Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure |
+| 40  | OTel alerting for service outages                   | All    | Medium | **FIX:** Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                |
+
+### 2. Can Only Fix Later
+
+Items blocked by work that hasn't been completed yet.
+
+| #   | Item                                        | Blocker                                       | Priority | Notes                                                                            |
+| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
+| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                    |
+| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                          |
+| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                  |
+| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra        |
+| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration               |
+| 6   | Validate PII redaction in OTel output       | Running observability stack (Grafana/Loki)    | High     | Manually verify no PII in production log/trace output                            |
+| 7   | OTel alerting rules                         | Running AlertManager/Grafana                  | Medium   | Error rate spikes, latency P99, rate limit blocks, delivery failures             |
+| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                            |
+| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes |
+| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | `sendVerificationEmail` callback is fail-open (try/catch) — if RabbitMQ is down, user gets "success" but no email is sent. Fix: FE should NOT show "email sent" immediately. Instead, show pending state ("Sending verification email..."), listen on SignalR channel for Comms delivery result, then update to success/failure. Pattern: sign-up response → pending UI → SignalR delivery confirmation → final UI. Generalizes to all async delivery feedback (password reset, invitations). `sendOnSignIn: true` auto-retries on recovery. Interim option: set a session/Redis flag on send failure, client checks on follow-up call |
 
 ---
 
@@ -1321,7 +1536,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 5. **Last-owner protection**: ✅ **Blocked from leaving**. Last owner presented two options: (a) transfer ownership to another member (email confirmation required, then original owner can leave), or (b) delete the org entirely (email confirmation required).
 
-6. **Notifications service scope**: ✅ **Foundational scaffold with email-only**. Shape mirrors DeCAF's notification hub pattern (multi-channel Notify orchestrator, provider abstraction, enqueue + retry, user preferences). Phase 2 wires email only; SMS/push/in-app/SignalR are Phase 3+ plugins into the same foundation.
+6. **Notifications service scope**: ✅ **Implemented as Comms service** (`backends/node/services/comms/`). Phase 1 delivery engine with Deliver orchestrator, email (Resend) + SMS (Twilio) providers, per-contact channel preferences, DLX retry, `@d2/comms-client` for publishers. In-app/push/SignalR are Phase 2-3.
 
 7. **Retry pattern**: ✅ **General-purpose utility, opt-in, exponential backoff** (1s→2s→4s→8s). Transient-only (5xx, timeout, 429). No retry on 4xx. Both platforms. See ADR-006.
 
@@ -1337,21 +1552,21 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ## Open Questions
 
-1. **Verify RS256 JWT interop**: Need an early integration test that generates a JWT from BetterAuth (with `alg: "RS256"`) and validates it with .NET's `Microsoft.IdentityModel.Tokens` + JWKS. Confirm the JWT header says `"alg": "RS256"` (not `"RSA256"`).
+1. ✅ **RS256 JWT interop**: **Validated** (2026-02-22). JWT header contains `"alg": "RS256"` (confirmed, not `"RSA256"`). JWKS table stores RSA key pairs (`kty: "RSA"`, modulus + exponent present). JWT has valid `iss`, `aud`, `iat`, `exp` claims compatible with .NET `AddJwtBearer()`. `typ` field may be omitted (allowed per RFC 7519). Full .NET validation deferred to E2E test when gateway is wired.
 
-2. **BetterAuth session sync bugs**: Issues #6987, #6993, #5144 affect our 3-tier session architecture. Need to test the full session lifecycle (create → update → revoke → list) with `storeSessionInDatabase: true` + `secondaryStorage` early. Pin BetterAuth version and re-test after each upgrade.
+2. ✅ **Session lifecycle**: **Validated** (2026-02-22). Full lifecycle tested: create (sign-in → DB row), update (setActiveOrganization → `active_organization_id` updated), revoke (session removed from DB), list (returns active sessions), revoke-others (keeps current, removes rest), multiple concurrent sessions per user. All working with `storeSessionInDatabase: true` against real PostgreSQL. Secondary storage (Redis) tested separately in `secondary-storage.test.ts`. Re-test after BetterAuth upgrades.
 
-3. **Custom session fields + cookie cache**: Our 4 session extensions (orgType, role, emulation) need to survive BetterAuth's cookie cache. If `customSession` data isn't cached, we may need to store org context in the cookie cache manually or accept an extra DB/Redis lookup per request when cookie cache is stale.
+3. ✅ **Custom session fields + cookie cache**: **Validated** (2026-02-22). `additionalFields` columns exist in DB and can be written/read. `getSession` returns them correctly when populated. BetterAuth's `setActiveOrganization` only sets `activeOrganizationId` natively — **resolved** via `databaseHooks.session.update.before` hook in `auth-factory.ts` that enriches the session patch with `activeOrganizationType` (from org table) + `activeOrganizationRole` (from member table) BEFORE BetterAuth writes to DB/Redis/cookie. All org-activation triggers (explicit setActive, org creation auto-activate, invitation acceptance, org deletion auto-clear) flow through this hook. Cookie cache persistence of `additionalFields` requires BetterAuth version containing PR #5735 (merged Nov 2025 canary). Tested: auto-populate on setActive, auto-enrich on org creation, clear on deactivation.
 
-4. **`definePayload` session access**: Need to verify that `definePayload` can access session data (for org context in JWT) or if we need a workaround (e.g., custom endpoint that builds the JWT with session context).
+4. ✅ **`definePayload` session access**: **Validated** (2026-02-22). `definePayload` receives `({ user, session })` — both parameters confirmed working. `session` contains `activeOrganizationId` (BetterAuth OOTB) and our custom `additionalFields` (auto-enriched by `session.update.before` hook — see Q3). `user` contains `id`, `email`, `username`. JWT claims are correctly derived from both. Org context claims (`orgType`, `role`) in JWT are automatically populated after `setActiveOrganization`.
 
 5. **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
 
-6. **`snake_case` + org/impersonation plugins**: Need early validation that `casing: "snake_case"` works correctly with our exact plugin set (bearer, jwt, organization, access, impersonation). First integration test priority.
+6. ✅ **`snake_case` + org/impersonation plugins**: **Validated** (2026-02-22). All 6 tables tested with explicit snake_case column queries: `user` (email_verified, created_at, display_username, ban_reason, ban_expires), `account` (user_id, provider_id, account_id, access_token, refresh_token, access_token_expires_at), `session` (user_id, ip_address, user_agent, active_organization_id, active_organization_type, active_organization_role, emulated_organization_id, emulated_organization_type), `organization` (org_type, created_at), `member` (user_id, organization_id, created_at), `invitation` (organization_id, inviter_id, expires_at). All pass with our plugin set (bearer, username, jwt, organization, admin).
 
-7. **`forceAllowId` request context passing**: Need to validate that the `databaseHooks.user.create.before` hook can access request-scoped data (the pre-generated userId) from Hono's `c.var`. The hook receives the user data but not the request context — may need AsyncLocalStorage or a module-level store to bridge the gap. Validate with an early integration test.
+7. ✅ **Pre-generated user ID**: **Validated** (2026-02-22). The `databaseHooks.user.create.before` hook sets `data.id` and returns `{ data }` — BetterAuth preserves the ID **without** needing `forceAllowId: true`. The hook-provided userId matches the created user's ID in DB. E2E sign-up tests (contact-before-user flow) also pass. No AsyncLocalStorage needed — the hook generates/reads the ID directly.
 
-8. **Geo location cleanup job**: ✅ **Decided** — Geo-owned background job removes locations with zero references (no contacts or WhoIs entries pointing to them). Contacts themselves are cleaned up by Auth on org_contact deletion. Still TODO: implement the actual Geo background job.
+8. **Geo location cleanup job**: ✅ **Decided** — Geo-owned background job removes locations with zero references (no contacts or WhoIs entries pointing to them). Contacts themselves are cleaned up by Auth on org_contact deletion. Scheduled via Dkron (daily). Still TODO: implement the actual job endpoint + Dkron job definition. See "Scheduled Jobs (Dkron)" section.
 
 ---
 
@@ -1406,8 +1621,8 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 ### 2026-02-07
 
 - **Phase 2 research completed**: DI patterns + BetterAuth customization deep-dive
-  - **DI decision: Manual factory functions** — each package exports `createXxxHandlers(deps, context)` matching .NET's `services.AddXxx()`. No DI library needed. Backup: `@snap/ts-inject` if complexity grows. Rejected: tsyringe, inversify (decorator-based), hono-netdi (too new + decorators).
-  - **BetterAuth database adapter: Kysely** (built-in) — NOT Drizzle. Kysely is BetterAuth's native adapter, supports CLI `migrate`, fewer edge cases. Dedicated PG schema (`search_path=auth`).
+  - **DI decision: Manual factory functions** — _(superseded by ADR-011: `@d2/di` container, 2026-02-21)_
+  - **BetterAuth database adapter: Kysely** (built-in) — _(superseded by ADR-009: Drizzle ORM, 2026-02-15)_
   - **BetterAuth casing: Use `casing: "snake_case"`** — matches PostgreSQL conventions. Known casing bugs (#5649) only affect SSO/OIDC plugins we don't use. Validate early with our plugin set. Own PG schema isolates any edge cases.
   - **Secondary storage: Wraps `@d2/interfaces`** — BetterAuth's `SecondaryStorage` is just `{ get, set, delete }`. Trivially wraps our distributed cache handlers.
   - **JWT algorithm: `"RS256"`** (standard JOSE name) — BetterAuth docs may show `"RSA256"` (typo). Code passes alg directly to jose which requires `"RS256"`. Need early interop test with .NET.
@@ -1423,7 +1638,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
   - **No-org onboarding state**: New users must join or create an org before accessing features.
   - **SvelteKit UI sharding**: Route groups by org type — `(customer)/`, `(support)/`, `(admin)/`, etc.
   - **JWT includes org context**: activeOrganizationId, type, role, emulation state. Client re-fetches JWT on org switch.
-  - **BetterAuth org plugin gap analysis**: 75% OOTB fit. Gaps (org type, session fields, emulation, JWT+org) all bridgeable with hooks and custom fields.
+  - **BetterAuth org plugin gap analysis**: 75% OOTB fit. Gaps (org type, session fields, emulation, JWT+org) all bridged with hooks and custom fields. Session enrichment solved via `session.update.before` hook.
 - **Contact architecture decided**: Auth stores NO contact data. Geo's Contact references userId directly for users. For orgs, auth has a thin `org_contact` junction (id, orgId, label, isPrimary). Geo's Contact references `org_contact.id`. Keeps auth thin.
   - **Sign-in audit designed**: Flat `sign_in_event` table (userId, successful, ipAddress, userAgent, whoIsId). Leverages existing `FindWhoIs` for location context. Failed attempts with unknown users have null userId.
   - **Emulation consent model decided**: USER-level (not org-level). `emulation_consent` table (userId, grantedToOrgId, expiresAt, revokedAt). Support needs consent; admin bypasses. Org emulation (read-only) requires no consent at all.
@@ -1431,12 +1646,12 @@ Message states: Pending → Sent | Retrying → Sent | Failed
   - **Domain aggregates finalized**: User aggregate (accounts[], sessions[], memberships[], invitations[], signInEvents[], emulationConsents[]) and Organization aggregate (members[], invitations[], contacts[]). Member + Invitation bidirectional — Org is write owner, User has read navigation.
   - **Business rules decided**: Only `customer` orgs self-created, `third_party` via workflow, rest admin-only. 90-day sign-in event retention. 7-day invitation expiry. One account per provider. Member removal = immediate session termination.
   - **OrgType/Role as text in PG** (not PG enums) — avoids migration pain. TS string unions for compile-time safety.
-  - **Two auth client libraries**: `@d2/auth-client` (BFF for SvelteKit, HTTP) + `@d2/auth-sdk` (backend for services, gRPC). Plus .NET `Auth.Client`.
+  - **Two auth client libraries**: `@d2/auth-bff-client` (BFF for SvelteKit, HTTP) + `@d2/auth-client` (backend for services, gRPC). Plus .NET `Auth.Client`.
   - **Proto contracts**: `contracts/protos/auth/v1/` — auth will have gRPC endpoints for inter-service communication.
   - **Notifications co-dependency**: Auth needs notifications scaffold for email verification, password reset, invitation emails.
-  - **Database**: Kysely (BetterAuth native) with `casing: "snake_case"`. Drizzle as fallback if issues arise.
+  - **Database**: Kysely (BetterAuth native) with `casing: "snake_case"` — _(superseded by ADR-009: Drizzle ORM, 2026-02-15)_
   - **Last-owner protection**: Blocked from leaving. Options: transfer ownership (email confirmation) or delete org (email confirmation).
-  - **Type boundary**: Domain types internal to auth service + BFF. Backend clients (`@d2/auth-sdk`, .NET `Auth.Client`) only see proto-generated types. Proto contract is the public API.
+  - **Type boundary**: Domain types internal to auth service + BFF. Backend clients (`@d2/auth-client`, .NET `Auth.Client`) only see proto-generated types. Proto contract is the public API.
   - **Notifications service shape**: Mirrors DeCAF notification hub (multi-channel Notify orchestrator, provider pattern, enqueue+retry). Phase 2 = email only. Foundation supports future SMS/push/in-app/SignalR.
   - **Invitation lifecycle**: 7-day expiry, accept or reject. Expired invitations cleaned up.
   - **Onboarding flow**: Signup (email/Google/LinkedIn) → email verify → create `customer` org or accept invite.
@@ -1523,7 +1738,7 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 - **Phase ordering clarified**: TypeScript shared infra (ratelimit, geo-cache) BEFORE auth service
 - All 4 prior open questions resolved
 
-### 2025-02-04
+### 2026-02-04
 
 - Removed Keycloak from infrastructure
 - Decided on BetterAuth with standalone Auth Service
@@ -1533,4 +1748,4 @@ Message states: Pending → Sent | Retrying → Sent | Failed
 
 ---
 
-_Last updated: 2026-02-10_
+_Last updated: 2026-02-23_

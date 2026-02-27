@@ -15,24 +15,12 @@ function createMockDelay() {
 // ---------------------------------------------------------------------------
 
 describe("isTransientError", () => {
-  it("returns true for gRPC UNAVAILABLE (code 14)", () => {
-    expect(isTransientError({ code: 14, details: "unavailable" })).toBe(true);
+  it("returns false for gRPC UNAVAILABLE (code 14) — gRPC detection moved to service-defaults", () => {
+    expect(isTransientError({ code: 14, details: "unavailable" })).toBe(false);
   });
 
-  it("returns true for gRPC DEADLINE_EXCEEDED (code 4)", () => {
-    expect(isTransientError({ code: 4 })).toBe(true);
-  });
-
-  it("returns true for gRPC RESOURCE_EXHAUSTED (code 8)", () => {
-    expect(isTransientError({ code: 8 })).toBe(true);
-  });
-
-  it("returns true for gRPC ABORTED (code 10)", () => {
-    expect(isTransientError({ code: 10 })).toBe(true);
-  });
-
-  it("returns true for gRPC INTERNAL (code 13)", () => {
-    expect(isTransientError({ code: 13 })).toBe(true);
+  it("returns false for gRPC DEADLINE_EXCEEDED (code 4) — gRPC detection moved to service-defaults", () => {
+    expect(isTransientError({ code: 4 })).toBe(false);
   });
 
   it("returns false for gRPC NOT_FOUND (code 5)", () => {
@@ -99,7 +87,7 @@ describe("retryAsync — exception handling", () => {
     const delay = createMockDelay();
     const op = vi
       .fn()
-      .mockRejectedValueOnce({ code: 14, details: "unavailable" })
+      .mockRejectedValueOnce(new Error("connection timeout"))
       .mockRejectedValueOnce(new Error("connect ECONNREFUSED"))
       .mockResolvedValueOnce("ok");
 

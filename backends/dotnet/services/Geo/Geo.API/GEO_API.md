@@ -4,28 +4,28 @@ gRPC service layer exposing geographic reference data endpoints. Thin pass-throu
 
 ## Files
 
-| File Name                                                       | Description                                                                                    |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [Program.cs](Program.cs)                                        | Service bootstrap with DI registration for Infra, GeoRefData provider, and App layers.         |
-| [GeoService.cs](Services/GeoService.cs)                         | gRPC service implementation delegating to `IComplex.IGetHandler` with proto result conversion. |
-| [ApiKeyInterceptor.cs](Interceptors/ApiKeyInterceptor.cs)       | gRPC server interceptor validating `x-api-key` header and context key authorization.           |
-| [RequiresApiKeyAttribute.cs](Interceptors/RequiresApiKeyAttribute.cs) | Attribute marking gRPC methods that require API key validation.                          |
+| File Name                                                             | Description                                                                                    |
+| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| [Program.cs](Program.cs)                                              | Service bootstrap with DI registration for Infra, GeoRefData provider, and App layers.         |
+| [GeoService.cs](Services/GeoService.cs)                               | gRPC service implementation delegating to `IComplex.IGetHandler` with proto result conversion. |
+| [ApiKeyInterceptor.cs](Interceptors/ApiKeyInterceptor.cs)             | gRPC server interceptor validating `x-api-key` header and context key authorization.           |
+| [RequiresApiKeyAttribute.cs](Interceptors/RequiresApiKeyAttribute.cs) | Attribute marking gRPC methods that require API key validation.                                |
 
 ## gRPC Endpoints
 
 Defined in [geo.proto](../../../../../contracts/protos/geo/v1/geo.proto):
 
-| RPC                          | Request                             | Response                             | Description                                                                                                              |
-| ---------------------------- | ----------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `GetReferenceData`           | `GetReferenceDataRequest`           | `GetReferenceDataResponse`           | Returns full geographic reference data (countries, subdivisions, currencies, languages, locales, geopolitical entities). |
-| `RequestReferenceDataUpdate` | `RequestReferenceDataUpdateRequest` | `RequestReferenceDataUpdateResponse` | Returns current version of reference data.                                                                               |
-| `FindWhoIs`                  | `FindWhoIsRequest`                  | `FindWhoIsResponse`                  | Lookup WhoIs by IP+fingerprint with cache check, external API fallback, and Location enrichment.                        |
-| `GetContacts`                | `GetContactsRequest`                | `GetContactsResponse`                | Internal only — batch Contact retrieval by IDs. Not exposed via client libraries.                                       |
-| `DeleteContacts`             | `DeleteContactsRequest`             | `DeleteContactsResponse`             | Internal only — batch Contact deletion by IDs. Not exposed via client libraries.                                        |
-| `GetContactsByExtKeys`       | `GetContactsByExtKeysRequest`       | `GetContactsByExtKeysResponse`       | Contact lookup by ContextKey/RelatedEntityId pairs with nested Location data.                                           |
-| `CreateContacts`             | `CreateContactsRequest`             | `CreateContactsResponse`             | Batch Contact creation with embedded locations, returning ContactDTOs.                                                  |
-| `DeleteContactsByExtKeys`    | `DeleteContactsByExtKeysRequest`    | `DeleteContactsByExtKeysResponse`    | Delete Contacts by ContextKey/RelatedEntityId pairs.                                                                    |
-| `UpdateContactsByExtKeys`    | `UpdateContactsByExtKeysRequest`    | `UpdateContactsByExtKeysResponse`    | Replace Contacts at given ext keys (Geo internally deletes old, creates new).                                           |
+| RPC                          | Request                             | Response                             | Description                                                                                                               |
+| ---------------------------- | ----------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `GetReferenceData`           | `GetReferenceDataRequest`           | `GetReferenceDataResponse`           | Returns full geographic reference data (countries, subdivisions, currencies, languages, locales, geopolitical entities).  |
+| `RequestReferenceDataUpdate` | `RequestReferenceDataUpdateRequest` | `RequestReferenceDataUpdateResponse` | Returns current version of reference data.                                                                                |
+| `FindWhoIs`                  | `FindWhoIsRequest`                  | `FindWhoIsResponse`                  | Lookup WhoIs by IP+fingerprint with cache check, external API fallback, and Location enrichment.                          |
+| `GetContacts`                | `GetContactsRequest`                | `GetContactsResponse`                | Internal only — batch Contact retrieval by IDs. Not exposed via client libraries.                                         |
+| `DeleteContacts`             | `DeleteContactsRequest`             | `DeleteContactsResponse`             | Internal only — batch Contact deletion by IDs. Not exposed via client libraries.                                          |
+| `GetContactsByExtKeys`       | `GetContactsByExtKeysRequest`       | `GetContactsByExtKeysResponse`       | Contact lookup by ContextKey/RelatedEntityId pairs with nested Location data.                                             |
+| `CreateContacts`             | `CreateContactsRequest`             | `CreateContactsResponse`             | Batch Contact creation with embedded locations, returning ContactDTOs.                                                    |
+| `DeleteContactsByExtKeys`    | `DeleteContactsByExtKeysRequest`    | `DeleteContactsByExtKeysResponse`    | Delete Contacts by ContextKey/RelatedEntityId pairs. Returns count + publishes cache eviction event.                      |
+| `UpdateContactsByExtKeys`    | `UpdateContactsByExtKeysRequest`    | `UpdateContactsByExtKeysResponse`    | Replace Contacts at given ext keys (delete old, create new). Returns old-to-new mapping + publishes cache eviction event. |
 
 ## Security — API Key Interceptor
 
@@ -34,13 +34,14 @@ Contact-related RPCs require API key authentication via `x-api-key` gRPC metadat
 1. **API key existence** — looks up key in `GeoAppOptions.ApiKeyMappings`
 2. **Context key authorization** — for RPCs with `[RequiresApiKey(ValidateContextKeys = true)]`, extracts context keys from the request and validates they're in the allowed list for that API key
 
-| Scenario                  | Response              |
-| ------------------------- | --------------------- |
-| Missing/invalid API key   | `Unauthenticated`     |
-| Unauthorized context keys | `PermissionDenied`    |
+| Scenario                  | Response                |
+| ------------------------- | ----------------------- |
+| Missing/invalid API key   | `Unauthenticated`       |
+| Unauthorized context keys | `PermissionDenied`      |
 | No attribute on method    | Pass-through (no check) |
 
 Configuration via `GeoAppOptions.ApiKeyMappings`:
+
 ```json
 {
   "GeoAppOptions": {

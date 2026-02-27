@@ -70,7 +70,7 @@ public class SetOnDisk : BaseHandler<SetOnDisk, I, O>, H
             var bytes = input.Data.ToByteArray();
             await File.WriteAllBytesAsync(r_filePath, bytes, ct);
 
-            return D2Result<O?>.Ok(new O(), traceId: TraceId);
+            return D2Result<O?>.Ok(new O());
         }
         catch (IOException ex)
         {
@@ -81,8 +81,7 @@ public class SetOnDisk : BaseHandler<SetOnDisk, I, O>, H
 
             return D2Result<O?>.Fail(
                 ["Unable to write to disk."],
-                HttpStatusCode.InternalServerError,
-                traceId: TraceId);
+                HttpStatusCode.InternalServerError);
         }
 
         // Let the base handler catch any other exceptions.

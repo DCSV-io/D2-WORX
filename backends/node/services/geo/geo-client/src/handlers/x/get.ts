@@ -50,7 +50,7 @@ export class Get extends BaseHandler<Input, Output> implements Complex.IGetHandl
     const memR = await this.deps.getFromMem.handleAsync({});
     const memData = memR.checkSuccess();
     if (memData) {
-      return D2Result.ok({ data: { data: memData.data }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: memData.data } });
     }
 
     // 2. Try distributed cache
@@ -58,7 +58,7 @@ export class Get extends BaseHandler<Input, Output> implements Complex.IGetHandl
     const distData = distR.checkSuccess();
     if (distData) {
       await this.setInMemoryAndOnDisk(distData.data);
-      return D2Result.ok({ data: { data: distData.data }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: distData.data } });
     }
 
     // 3. Tell Geo service to update the distributed cache
@@ -79,11 +79,11 @@ export class Get extends BaseHandler<Input, Output> implements Complex.IGetHandl
           `Failed to set data in memory cache (consumer). TraceId: ${this.traceId}`,
         );
       }
-      return D2Result.ok({ data: { data: diskData.data }, traceId: this.traceId });
+      return D2Result.ok({ data: { data: diskData.data } });
     }
 
     // All sources failed for this attempt
-    return D2Result.notFound({ traceId: this.traceId });
+    return D2Result.notFound();
   }
 
   private async setInMemoryAndOnDisk(data: GeoRefData): Promise<void> {

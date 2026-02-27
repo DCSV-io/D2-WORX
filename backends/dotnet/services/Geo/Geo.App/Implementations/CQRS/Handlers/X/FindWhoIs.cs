@@ -87,7 +87,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         // If the request was empty, return early.
         if (input.Request.Requests.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Validate each FindWhoIsKeys: IP must be valid.
@@ -105,7 +105,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         if (allErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
         // Step 1: Compute WhoIs hash IDs and build partial records for all requests.
@@ -160,7 +160,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         // If ALL records were found, return success.
         if (results.Count == input.Request.Requests.Count)
         {
-            return D2Result<O?>.Ok(new O(results), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(results));
         }
 
         // Step 3: Build partial WhoIs dictionary for missing records.
@@ -188,10 +188,10 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
             // Return what we have if population failed entirely.
             if (results.Count > 0)
             {
-                return D2Result<O?>.SomeFound(new O(results), traceId: TraceId);
+                return D2Result<O?>.SomeFound(new O(results));
             }
 
-            return D2Result<O?>.NotFound(traceId: TraceId);
+            return D2Result<O?>.NotFound();
         }
 
         var populatedRecords = populateOutput?.WhoIsRecords ?? [];
@@ -201,10 +201,10 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         {
             if (results.Count > 0)
             {
-                return D2Result<O?>.SomeFound(new O(results), traceId: TraceId);
+                return D2Result<O?>.SomeFound(new O(results));
             }
 
-            return D2Result<O?>.NotFound(traceId: TraceId);
+            return D2Result<O?>.NotFound();
         }
 
         // Step 5: Persist populated WhoIs records.
@@ -239,10 +239,10 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         // Return appropriate result based on completeness.
         if (results.Count == input.Request.Requests.Count)
         {
-            return D2Result<O?>.Ok(new O(results), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(results));
         }
 
-        return D2Result<O?>.SomeFound(new O(results), traceId: TraceId);
+        return D2Result<O?>.SomeFound(new O(results));
     }
 
     private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(

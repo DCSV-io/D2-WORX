@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { SIGN_IN_THROTTLE, computeSignInDelay } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
+import { AUTH_CACHE_KEYS } from "../../../../cache-keys.js";
 import type { ISignInThrottleStore } from "../../../../interfaces/repository/sign-in-throttle-store.js";
 
 export interface RecordSignInOutcomeInput {
@@ -61,10 +62,10 @@ export class RecordSignInOutcome extends BaseHandler<
       }
 
       // Other status codes (e.g. 500) — no-op
-      return D2Result.ok({ data: { recorded: false }, traceId: this.traceId });
+      return D2Result.ok({ data: { recorded: false } });
     } catch {
       // Fail-open: swallow all store errors
-      return D2Result.ok({ data: { recorded: false }, traceId: this.traceId });
+      return D2Result.ok({ data: { recorded: false } });
     }
   }
 
@@ -78,7 +79,7 @@ export class RecordSignInOutcome extends BaseHandler<
 
     // Update local cache
     if (this.cache) {
-      const cacheKey = `${input.identifierHash}:${input.identityHash}`;
+      const cacheKey = AUTH_CACHE_KEYS.signInThrottle(input.identifierHash, input.identityHash);
       this.cache.set
         .handleAsync({
           key: cacheKey,
@@ -88,7 +89,7 @@ export class RecordSignInOutcome extends BaseHandler<
         .catch(() => {});
     }
 
-    return D2Result.ok({ data: { recorded: true }, traceId: this.traceId });
+    return D2Result.ok({ data: { recorded: true } });
   }
 
   private async handleFailure(
@@ -102,6 +103,6 @@ export class RecordSignInOutcome extends BaseHandler<
       await this.store.setLocked(input.identifierHash, input.identityHash, delaySec);
     }
 
-    return D2Result.ok({ data: { recorded: true }, traceId: this.traceId });
+    return D2Result.ok({ data: { recorded: true } });
   }
 }

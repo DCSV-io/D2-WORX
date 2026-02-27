@@ -7,7 +7,7 @@ import type {
   ICreateOrgContactRecordHandler,
 } from "@d2/auth-app";
 import { orgContact } from "../../schema/custom-tables.js";
-import { isPgUniqueViolation } from "../../utils/pg-errors.js";
+import { isPgUniqueViolation } from "@d2/errors-pg";
 
 export class CreateOrgContactRecord
   extends BaseHandler<I, O>
@@ -31,14 +31,13 @@ export class CreateOrgContactRecord
         updatedAt: input.contact.updatedAt,
       });
 
-      return D2Result.ok({ data: {}, traceId: this.traceId });
+      return D2Result.ok({ data: {} });
     } catch (err) {
       if (isPgUniqueViolation(err)) {
         return D2Result.fail({
           messages: ["Record already exists."],
           statusCode: HttpStatusCode.Conflict,
           errorCode: ErrorCodes.CONFLICT,
-          traceId: this.traceId,
         });
       }
       throw err;

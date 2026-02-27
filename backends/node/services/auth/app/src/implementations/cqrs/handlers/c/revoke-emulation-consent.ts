@@ -50,7 +50,7 @@ export class RevokeEmulationConsent extends BaseHandler<
 
     const findResult = await this.findById.handleAsync({ id: input.consentId });
     if (!findResult.success || !findResult.data) {
-      return D2Result.notFound({ traceId: this.traceId });
+      return D2Result.notFound();
     }
 
     const existing = findResult.data.consent;
@@ -61,7 +61,6 @@ export class RevokeEmulationConsent extends BaseHandler<
         messages: ["Not authorized to revoke this consent."],
         statusCode: HttpStatusCode.Forbidden,
         errorCode: ErrorCodes.FORBIDDEN,
-        traceId: this.traceId,
       });
     }
 
@@ -70,7 +69,6 @@ export class RevokeEmulationConsent extends BaseHandler<
         messages: ["Consent is already revoked or expired."],
         statusCode: HttpStatusCode.Conflict,
         errorCode: ErrorCodes.CONFLICT,
-        traceId: this.traceId,
       });
     }
 
@@ -78,6 +76,6 @@ export class RevokeEmulationConsent extends BaseHandler<
     const revokeResult = await this.revokeRecord.handleAsync({ id: input.consentId });
     if (!revokeResult.success) return D2Result.bubbleFail(revokeResult);
 
-    return D2Result.ok({ data: { consent: revoked }, traceId: this.traceId });
+    return D2Result.ok({ data: { consent: revoked } });
   }
 }

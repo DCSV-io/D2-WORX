@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { handleGrpcCall } from "@d2/result-extensions";
 import type { GeoServiceClient, CreateContactsResponse } from "@d2/protos";
+import { Metadata } from "@grpc/grpc-js";
 import { z } from "zod";
 import type { GeoClientOptions } from "../../geo-client-options.js";
 import { Commands } from "../../interfaces/index.js";
@@ -23,11 +24,13 @@ export class CreateContacts
   }
 
   private readonly geoClient: GeoServiceClient;
+  private readonly options: GeoClientOptions;
   private readonly inputSchema: z.ZodType<Input>;
 
   constructor(geoClient: GeoServiceClient, options: GeoClientOptions, context: IHandlerContext) {
     super(context);
     this.geoClient = geoClient;
+    this.options = options;
     this.inputSchema = z
       .object({
         contacts: z.array(
@@ -46,10 +49,15 @@ export class CreateContacts
     const r = await handleGrpcCall(
       () =>
         new Promise<CreateContactsResponse>((resolve, reject) => {
-          this.geoClient.createContacts({ contactsToCreate: input.contacts }, (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          });
+          this.geoClient.createContacts(
+            { contactsToCreate: input.contacts },
+            new Metadata(),
+            { deadline: Date.now() + this.options.grpcTimeoutMs },
+            (err, res) => {
+              if (err) reject(err);
+              else resolve(res);
+            },
+          );
         }),
       (res) => res.result!,
       (res) => ({ data: res.data }),

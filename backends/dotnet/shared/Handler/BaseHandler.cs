@@ -76,9 +76,21 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         // Add metadata to the activity.
         activity?.SetTag("handler.type", typeof(THandler).FullName ?? typeof(THandler).Name);
         activity?.SetTag("trace.id", Context.Request.TraceId);
-        activity?.SetTag("user.id", Context.Request.UserId);
-        activity?.SetTag("agent.org.id", Context.Request.AgentOrgId);
-        activity?.SetTag("target.org.id", Context.Request.TargetOrgId);
+
+        if (Context.Request.UserId is not null)
+        {
+            activity?.SetTag("user.id", Context.Request.UserId);
+        }
+
+        if (Context.Request.AgentOrgId is not null)
+        {
+            activity?.SetTag("agent.org.id", Context.Request.AgentOrgId);
+        }
+
+        if (Context.Request.TargetOrgId is not null)
+        {
+            activity?.SetTag("target.org.id", Context.Request.TargetOrgId);
+        }
 
         // Start the stopwatch to measure elapsed time.
         var sw = Stopwatch.StartNew();
@@ -111,6 +123,9 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
 
             // Execute the handler's logic.
             var result = await ExecuteAsync(input, ct);
+
+            // Auto-inject traceId if the handler didn't set it explicitly.
+            result = InjectTraceId(result);
 
             // Stop the stopwatch to measure elapsed time.
             sw.Stop();
@@ -247,7 +262,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         // If valid, return OK.
         if (validationResult.IsValid)
         {
-            return D2Result.Ok(Context.Request.TraceId);
+            return D2Result.Ok();
         }
 
         // Group errors by property name and select into a 2D list.
@@ -261,8 +276,28 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
 
         // Return validation failed result with errors.
         return D2Result.ValidationFailed(
-            inputErrors: errors,
-            traceId: Context.Request.TraceId);
+            inputErrors: errors);
+    }
+
+    /// <summary>
+    /// Injects the ambient TraceId into the result if the handler didn't set it explicitly.
+    /// This eliminates the need for every handler to pass <c>traceId: TraceId</c> manually.
+    /// </summary>
+    private D2Result<TOutput?> InjectTraceId(D2Result<TOutput?> result)
+    {
+        if (result.TraceId is not null || TraceId is null)
+        {
+            return result;
+        }
+
+        return new D2Result<TOutput?>(
+            result.Success,
+            result.Data,
+            result.Messages,
+            result.InputErrors,
+            result.StatusCode,
+            result.ErrorCode,
+            TraceId);
     }
 
     /// <summary>

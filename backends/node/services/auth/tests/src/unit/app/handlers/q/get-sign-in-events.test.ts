@@ -289,11 +289,15 @@ describe("GetSignInEvents", () => {
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { value: undefined } }));
 
-      const events = [createEvent("evt-1")];
+      const eventDate = new Date("2026-02-08");
+      const events = [createEvent("evt-1", eventDate)];
       repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 1 } }));
+      repo.getLatestEventDate.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { date: eventDate } }));
 
       const result = await handler.handleAsync({ userId: "user-123" });
 
@@ -303,7 +307,7 @@ describe("GetSignInEvents", () => {
       // Should populate cache
       expect(cache.set.handleAsync).toHaveBeenCalledOnce();
       const setCalls = cache.set.handleAsync.mock.calls[0][0];
-      expect(setCalls.key).toContain("sign-in-events:user-123:");
+      expect(setCalls.key).toContain("auth:sign-in-events:user-123:");
       expect(setCalls.value.total).toBe(1);
     });
 
@@ -324,23 +328,30 @@ describe("GetSignInEvents", () => {
       expect(result.data?.events).toHaveLength(1);
     });
 
-    it("should include correct latestDate in cached value", async () => {
+    it("should store global latestDate from getLatestEventDate in cached value", async () => {
       // Cache miss
       cache.get.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { value: undefined } }));
 
-      const eventDate = new Date("2026-02-10T12:00:00.000Z");
-      const events = [createEvent("evt-1", eventDate)];
+      const globalLatest = new Date("2026-02-10T12:00:00.000Z");
+      const pageEventDate = new Date("2026-02-09T12:00:00.000Z"); // older event on this page
+      const events = [createEvent("evt-1", pageEventDate)];
       repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
       repo.countByUserId.handleAsync = vi
         .fn()
-        .mockResolvedValue(D2Result.ok({ data: { count: 1 } }));
+        .mockResolvedValue(D2Result.ok({ data: { count: 5 } }));
+      // Global latest is different from the page's first event
+      repo.getLatestEventDate.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { date: globalLatest } }));
 
       await handler.handleAsync({ userId: "user-123" });
 
       const setCalls = cache.set.handleAsync.mock.calls[0][0];
-      expect(setCalls.value.latestDate).toBe(eventDate.toISOString());
+      // Must store the global latest date, NOT the page event date
+      expect(setCalls.value.latestDate).toBe(globalLatest.toISOString());
+      expect(setCalls.value.latestDate).not.toBe(pageEventDate.toISOString());
     });
 
     it("should set latestDate to null in cache when no events exist", async () => {
@@ -354,11 +365,99 @@ describe("GetSignInEvents", () => {
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 0 } }));
+      // getLatestEventDate returns null when no events
+      repo.getLatestEventDate.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { date: null } }));
 
       await handler.handleAsync({ userId: "user-123" });
 
       const setCalls = cache.set.handleAsync.mock.calls[0][0];
       expect(setCalls.value.latestDate).toBeNull();
     });
+
+    it("should correctly validate cache for page 2 (offset > 0)", async () => {
+      const globalLatest = new Date("2026-02-10T12:00:00.000Z");
+
+      // Cache has page 2 data with the global latest date
+      cache.get.handleAsync = vi.fn().mockResolvedValue(
+        D2Result.ok({
+          data: {
+            value: {
+              events: [createEvent("evt-page2", new Date("2026-02-05"))],
+              total: 10,
+              latestDate: globalLatest.toISOString(),
+            },
+          },
+        }),
+      );
+
+      // DB says the global latest date is still the same — cache is fresh
+      repo.getLatestEventDate.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { date: globalLatest } }));
+
+      const result = await handler.handleAsync({ userId: "user-123", limit: 5, offset: 5 });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.events).toHaveLength(1);
+      expect(result.data?.events[0].id).toBe("evt-page2");
+
+      // Should NOT hit the DB for events/count — cache was valid even for page 2
+      expect(repo.findByUserId.handleAsync).not.toHaveBeenCalled();
+      expect(repo.countByUserId.handleAsync).not.toHaveBeenCalled();
+    });
+
+    it("should invalidate cache for page 2 when a new event is added", async () => {
+      const oldGlobalLatest = new Date("2026-02-10T12:00:00.000Z");
+      const newGlobalLatest = new Date("2026-02-11T12:00:00.000Z");
+
+      // Cache has page 2 data cached with the OLD global latest date
+      cache.get.handleAsync = vi.fn().mockResolvedValue(
+        D2Result.ok({
+          data: {
+            value: {
+              events: [createEvent("evt-stale")],
+              total: 10,
+              latestDate: oldGlobalLatest.toISOString(),
+            },
+          },
+        }),
+      );
+
+      // DB says there's a newer event now
+      repo.getLatestEventDate.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { date: newGlobalLatest } }));
+
+      // Fresh data from DB
+      const freshEvents = [createEvent("evt-fresh")];
+      repo.findByUserId.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { events: freshEvents } }));
+      repo.countByUserId.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.ok({ data: { count: 11 } }));
+
+      const result = await handler.handleAsync({ userId: "user-123", limit: 5, offset: 5 });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.events[0].id).toBe("evt-fresh");
+      expect(result.data?.total).toBe(11);
+
+      // Should have hit DB since cache was stale
+      expect(repo.findByUserId.handleAsync).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("should define redaction spec that suppresses output", () => {
+    const handler = new GetSignInEvents(
+      { handleAsync: vi.fn() } as unknown as IFindSignInEventsByUserIdHandler,
+      { handleAsync: vi.fn() } as unknown as ICountSignInEventsByUserIdHandler,
+      { handleAsync: vi.fn() } as unknown as IGetLatestSignInEventDateHandler,
+      createTestContext(),
+    );
+    expect(handler.redaction).toBeDefined();
+    expect(handler.redaction?.suppressOutput).toBe(true);
   });
 });

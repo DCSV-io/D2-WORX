@@ -1,6 +1,7 @@
 import type Redis from "ioredis";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
-import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
+import { redisErrorResult } from "../../redis-error-result.js";
 import type { DistributedCache } from "@d2/interfaces";
 
 type Input = DistributedCache.GetTtlInput;
@@ -20,14 +21,9 @@ export class GetTtl extends BaseHandler<Input, Output> implements DistributedCac
 
       // -2 = key doesn't exist, -1 = no expiry
       const timeToLiveMs = pttl > 0 ? pttl : undefined;
-      return D2Result.ok({ data: { timeToLiveMs }, traceId: this.traceId });
+      return D2Result.ok({ data: { timeToLiveMs } });
     } catch {
-      return D2Result.fail({
-        messages: ["Unable to connect to Redis."],
-        statusCode: HttpStatusCode.ServiceUnavailable,
-        errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-        traceId: this.traceId,
-      });
+      return redisErrorResult();
     }
   }
 }

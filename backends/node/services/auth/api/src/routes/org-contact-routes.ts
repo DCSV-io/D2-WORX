@@ -1,19 +1,17 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { type D2Result, HttpStatusCode } from "@d2/result";
+import { HttpStatusCode } from "@d2/result";
 import { SESSION_FIELDS } from "@d2/auth-domain";
+import {
+  ICreateOrgContactKey,
+  IUpdateOrgContactKey,
+  IDeleteOrgContactKey,
+  IGetOrgContactsKey,
+} from "@d2/auth-app";
 import type { SessionVariables } from "../middleware/session.js";
+import { type ScopeVariables } from "../middleware/scope.js";
+import { SCOPE_KEY, SESSION_KEY } from "../context-keys.js";
 import { requireOrg, requireRole } from "../middleware/authorization.js";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Handler = { handleAsync: (input: any) => Promise<D2Result<any>> };
-
-interface OrgContactHandlers {
-  create: Handler;
-  update: Handler;
-  delete: Handler;
-  getByOrg: Handler;
-}
 
 /** Default and maximum page sizes for list endpoints. */
 const DEFAULT_LIMIT = 50;
@@ -23,16 +21,18 @@ const MAX_LIMIT = 100;
  * Thin routes for org contact junction management.
  * Authorization is visible at route declaration via middleware.
  * All validation, IDOR checks, and business logic live in handlers.
+ * Handlers are resolved from the per-request DI scope.
  */
-export function createOrgContactRoutes(handlers: OrgContactHandlers) {
-  const app = new Hono<{ Variables: SessionVariables }>();
+export function createOrgContactRoutes() {
+  const app = new Hono<{ Variables: SessionVariables & ScopeVariables }>();
 
   // POST — Create contact (org member, officer+)
   // Body: { label, isPrimary?, contact: { contactMethods?, personalDetails?, ... } }
   app.post("/api/org-contacts", requireOrg(), requireRole("officer"), async (c) => {
     const body = await c.req.json();
-    const result = await handlers.create.handleAsync({
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+    const handler = c.get(SCOPE_KEY).resolve(ICreateOrgContactKey);
+    const result = await handler.handleAsync({
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
       label: body.label,
       isPrimary: body.isPrimary,
       contact: body.contact ?? {},
@@ -47,9 +47,10 @@ export function createOrgContactRoutes(handlers: OrgContactHandlers) {
   // Body: { label?, isPrimary?, contact?: { ... } }
   app.patch("/api/org-contacts/:id", requireOrg(), requireRole("officer"), async (c) => {
     const body = await c.req.json();
-    const result = await handlers.update.handleAsync({
+    const handler = c.get(SCOPE_KEY).resolve(IUpdateOrgContactKey);
+    const result = await handler.handleAsync({
       id: c.req.param("id"),
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
       updates: { label: body.label, isPrimary: body.isPrimary, contact: body.contact },
     });
     const status = (
@@ -60,9 +61,10 @@ export function createOrgContactRoutes(handlers: OrgContactHandlers) {
 
   // DELETE — Delete contact (org member, officer+)
   app.delete("/api/org-contacts/:id", requireOrg(), requireRole("officer"), async (c) => {
-    const result = await handlers.delete.handleAsync({
+    const handler = c.get(SCOPE_KEY).resolve(IDeleteOrgContactKey);
+    const result = await handler.handleAsync({
       id: c.req.param("id"),
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
     });
     const status = (
       result.success ? HttpStatusCode.OK : (result.statusCode ?? HttpStatusCode.BadRequest)
@@ -80,8 +82,9 @@ export function createOrgContactRoutes(handlers: OrgContactHandlers) {
     );
     const offset = Number.isFinite(offsetParam) && offsetParam >= 0 ? offsetParam : 0;
 
-    const result = await handlers.getByOrg.handleAsync({
-      organizationId: c.get("session")![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
+    const handler = c.get(SCOPE_KEY).resolve(IGetOrgContactsKey);
+    const result = await handler.handleAsync({
+      organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
       limit,
       offset,
     });

@@ -49,7 +49,7 @@ Summary:
 - Geo infrastructure layer
   - Caching provider registration
   - EF Core + PostgreSQL repository pattern
-  - MassTransit + RabbitMQ messaging integration
+  - Raw AMQP + RabbitMQ messaging with Protocol Buffer event contracts
 - Geo service application layer
   - CQRS handlers for geographic reference data retrieval and update requests
 - Geo service gRPC API layer
@@ -59,12 +59,12 @@ Summary:
 - Geo.Client: Service-owned client library (messages, interfaces, WhoIs cache handler)
 - Request enrichment middleware (IP resolution, fingerprinting, WhoIs geolocation lookup)
 - Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
-- 1,287+ .NET tests (unit + integration) passing (565 shared + 722 Geo)
+- 1,436+ .NET tests (unit + integration) passing (677 shared + 759 Geo)
 - Node.js pnpm workspace with shared TypeScript config and Vitest
 - ESLint 9 + Prettier monorepo-wide code quality tooling
-- TypeScript shared infrastructure (Phase 1 complete — 17 `@d2/*` packages, 663 tests):
+- TypeScript shared infrastructure (Phase 1 complete — 18 `@d2/*` shared packages, 837 tests):
   - Layer 0: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing`, `@d2/messaging`
-  - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction)
+  - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction), `@d2/di` (DI container)
   - Layer 2: `@d2/interfaces`, `@d2/result-extensions`
   - Layer 3: `@d2/cache-memory`, `@d2/cache-redis`
   - Layer 4: `@d2/geo-client` (full .NET Geo.Client parity)
@@ -73,22 +73,29 @@ Summary:
 
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
-- Auth service Stage B (Node.js + Hono + BetterAuth):
-  - Domain model (entities, value objects, business rules) — 485 auth tests passing
-  - Application layer (9 CQRS handlers, interfaces)
+- Auth service Stage B (Node.js + Hono + BetterAuth) — 853 auth tests passing:
+  - Domain model (entities, value objects, business rules)
+  - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
+- Comms service Phase 1 (delivery engine) — 552 comms tests passing:
+  - Email delivery via Resend, SMS via Twilio
+  - `@d2/comms-client` — thin RabbitMQ publishing client (universal notification shape)
+  - RabbitMQ consumer for notification requests, gRPC API layer + Aspire wiring
+- E2E cross-service tests (Auth → Geo → Comms pipeline, 5 tests)
+- Production-readiness deep dive sweep — 21-agent cross-cutting audit, P1 fixes applied (see `sweep-reports/`)
 
 **🚧 In Progress:**
 
-- Auth service Stage C — client libraries (`@d2/auth-client` for SvelteKit BFF, `@d2/auth-sdk` for backend gRPC)
+- Scheduled jobs (Dkron) — data maintenance jobs for expired/orphaned record cleanup across Auth, Geo, and Comms services
 
 **📋 Planned:**
 
-- SignalR Gateway (WebSocket to gRPC routing)
+- Auth service Stage C — client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC)
 - SvelteKit auth integration (proxy pattern to Auth Service)
-- OTEL alerting and notification integration
-- Kestra for scheduled task management
+- SignalR Gateway (WebSocket to gRPC routing)
+- OTel alerting and notification integration
+- Production-readiness sweep deferred items (see `sweep-reports/DEEP-DIVE-FINDINGS.md`)
 - Much, much more...
 
 **📝 Internal Planning:**
@@ -238,9 +245,9 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 > | Request Enrichment | [RequestEnrichment.Default](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | [@d2/request-enrichment](backends/node/shared/implementations/middleware/request-enrichment/default/REQUEST_ENRICHMENT.md) | IP resolution, fingerprinting, and WhoIs geolocation |
 > | Rate Limiting      | [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | [@d2/ratelimit](backends/node/shared/implementations/middleware/ratelimit/default/RATELIMIT.md)                            | Multi-dimensional sliding-window rate limiting       |
-> | Idempotency        | [Idempotency.Default](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                   | [@d2/idempotency](backends/node/shared/implementations/middleware/idempotency/default/IDEMPOTENCY.md)                      | Idempotency-Key header middleware (Redis-backed)     |
+> | Idempotency        | [Idempotency.Default](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                    | [@d2/idempotency](backends/node/shared/implementations/middleware/idempotency/default/IDEMPOTENCY.md)                      | Idempotency-Key header middleware (Redis-backed)     |
 >
-> _Messaging (Node.js only — .NET uses MassTransit directly):_
+> _Messaging:_
 >
 > | Component                                                    | Description                                            |
 > | ------------------------------------------------------------ | ------------------------------------------------------ |
@@ -250,18 +257,20 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 > _Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async)._
 >
-> | Service                                            | Platform | Status     | Description                                                                       |
-> | -------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------- |
-> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)                         | .NET    | ✅ Done        | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
-> | [Auth](backends/node/services/auth/AUTH.md)                                | Node.js | 🚧 Stage C     | Standalone Hono + BetterAuth + Drizzle — DDD layers done (485 tests), client libs next |
+> | Service                                            | Platform | Status      | Description                                                                               |
+> | -------------------------------------------------- | -------- | ----------- | ----------------------------------------------------------------------------------------- |
+> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done     | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching         |
+> | [Auth](backends/node/services/auth/AUTH.md)        | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers done (853 tests), scheduled jobs next |
+> | [Comms](backends/node/services/comms/COMMS.md)     | Node.js  | ✅ Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API (552 tests)                      |
 >
 > **Client Libraries:**
 >
 > _Service-owned client libraries for consumers. Each service publishes a client package so consumers don't need to know gRPC details._
 >
-> | Client     | .NET                                                                | Node.js                                                               | Description                    |
-> | ---------- | ------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------ |
-> | Geo Client | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md) | Service-owned consumer library |
+> | Client       | .NET                                                                | Node.js                                                                 | Description                     |
+> | ------------ | ------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------- |
+> | Geo Client   | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md)   | Service-owned consumer library  |
+> | Comms Client | —                                                                   | [@d2/comms-client](backends/node/services/comms/client/COMMS_CLIENT.md) | RabbitMQ notification publisher |
 >
 > **Gateways:**
 >
@@ -308,7 +317,7 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
 ![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
 ![Serilog](https://img.shields.io/badge/Serilog-9.0-512BD4?logo=dotnet)
-![MassTransit](https://img.shields.io/badge/MassTransit-9.0-512BD4?logo=dotnet)
+![RabbitMQ.Client](https://img.shields.io/badge/RabbitMQ.Client-7.1-FF6600?logo=rabbitmq)
 
 #### Node.js Backend
 

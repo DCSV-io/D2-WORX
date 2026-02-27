@@ -15,6 +15,7 @@ using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ClientCacheKeys = D2.Geo.Client.CacheKeys;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.IGetContactsByIdsHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.GetContactsByIdsInput;
 using O = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.GetContactsByIdsOutput;
@@ -77,7 +78,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         // If the request was empty, return early.
         if (input.Request.Ids.Count == 0)
         {
-            return D2Result<O?>.Ok(new O([]), traceId: TraceId);
+            return D2Result<O?>.Ok(new O([]));
         }
 
         // Validate: all IDs must be valid, non-empty GUIDs.
@@ -98,12 +99,12 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         if (allErrors.Count > 0)
         {
             return D2Result<O?>.BubbleFail(
-                D2Result.ValidationFailed(inputErrors: allErrors, traceId: TraceId));
+                D2Result.ValidationFailed(inputErrors: allErrors));
         }
 
         // First, try to get Contacts from in-memory cache.
         var getFromCacheR = await r_memoryCacheGetMany.HandleAsync(
-            new(GetCacheKeys(requestedIds)), ct);
+            new(requestedIds.Select(id => ClientCacheKeys.Contact(id)).ToList()), ct);
 
         // If that failed (for any reason other than "NOT or SOME found"), bubble up the failure.
         if (getFromCacheR.CheckFailure(out var getFromCache)
@@ -154,7 +155,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
                 }
 
                 // Otherwise, return (fail, NOT found).
-                return D2Result<O?>.NotFound(traceId: TraceId);
+                return D2Result<O?>.NotFound();
             }
 
             // If SOME Contacts were found, add to list, cache and return [fail, SOME found].
@@ -177,11 +178,6 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         }
     }
 
-    private static string GetCacheKey(Guid id) => $"{nameof(GetContactsByIds)}:{id}";
-
-    private static List<string> GetCacheKeys(IEnumerable<Guid> ids) =>
-        ids.Select(GetCacheKey).ToList();
-
     private static Location? GetLocation(string? hashId, Dictionary<string, Location> locations) =>
         hashId is not null && locations.TryGetValue(hashId, out var loc) ? loc : null;
 
@@ -192,7 +188,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         var setInCacheR = await r_memoryCacheSetMany.HandleAsync(
             new(
                 fromDbDict.ToDictionary(
-                    kvp => GetCacheKey(kvp.Key),
+                    kvp => ClientCacheKeys.Contact(kvp.Key),
                     kvp => kvp.Value),
                 r_options.ContactExpirationDuration),
             ct);
@@ -216,7 +212,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         var dtoDict = contacts.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
-        return D2Result<O?>.Ok(new O(dtoDict), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(dtoDict));
     }
 
     private async ValueTask<D2Result<O?>> SomeFoundAsync(
@@ -227,7 +223,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         var dtoDict = contacts.ToDictionary(
             kvp => kvp.Key,
             kvp => kvp.Value.ToDTO(GetLocation(kvp.Value.LocationHashId, locations)));
-        return D2Result<O?>.SomeFound(new O(dtoDict), traceId: TraceId);
+        return D2Result<O?>.SomeFound(new O(dtoDict));
     }
 
     private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(

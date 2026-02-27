@@ -34,8 +34,9 @@ public enum OrgType
     Customer,
 
     /// <summary>
-    /// A customer client organization represents an external client or subsidiary associated
-    /// with a customer organization.
+    /// A third-party organization represents an external client or partner associated
+    /// with a customer organization. More distinct naming than "CustomerClient" to
+    /// avoid confusion with the "Customer" type.
     /// </summary>
-    CustomerClient,
+    ThirdParty,
 }

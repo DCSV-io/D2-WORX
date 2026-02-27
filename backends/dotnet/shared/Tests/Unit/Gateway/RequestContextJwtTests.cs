@@ -109,10 +109,10 @@ public class RequestContextJwtTests
     }
 
     /// <summary>
-    /// Tests that orgType "third_party" maps to OrgType.CustomerClient (known mismatch).
+    /// Tests that orgType "third_party" maps to OrgType.ThirdParty.
     /// </summary>
     [Fact]
-    public void RequestContext_MapsThirdParty_ToCustomerClient()
+    public void RequestContext_MapsThirdParty_ToThirdParty()
     {
         var context = CreateContextWithClaims(
             new Claim("sub", Guid.NewGuid().ToString()),
@@ -120,7 +120,7 @@ public class RequestContextJwtTests
 
         var rc = new RequestContext(CreateAccessor(context));
 
-        rc.AgentOrgType.Should().Be(OrgType.CustomerClient);
+        rc.AgentOrgType.Should().Be(OrgType.ThirdParty);
     }
 
     /// <summary>

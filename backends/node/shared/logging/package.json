@@ -17,6 +17,10 @@
     "dist"
   ],
   "dependencies": {
+    "@d2/di": "workspace:*",
     "pino": "9.6.0"
+  },
+  "devDependencies": {
+    "pino-pretty": "13.0.0"
   }
 }

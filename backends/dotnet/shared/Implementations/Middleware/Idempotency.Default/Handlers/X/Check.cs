@@ -79,8 +79,7 @@ public class Check : BaseHandler<Check, I, O>, H
             {
                 // Lock acquired — caller should proceed with request processing.
                 return D2Result<O?>.Ok(
-                    new O(IdempotencyState.Acquired, null),
-                    traceId: TraceId);
+                    new O(IdempotencyState.Acquired, null));
             }
 
             // 2. Key exists — check if it's a sentinel or a cached response.
@@ -97,16 +96,14 @@ public class Check : BaseHandler<Check, I, O>, H
                     TraceId);
 
                 return D2Result<O?>.Ok(
-                    new O(IdempotencyState.Acquired, null),
-                    traceId: TraceId);
+                    new O(IdempotencyState.Acquired, null));
             }
 
             // 3. Check if sentinel (in-flight) or cached response.
             if (getOutput.Value == _SENTINEL)
             {
                 return D2Result<O?>.Ok(
-                    new O(IdempotencyState.InFlight, null),
-                    traceId: TraceId);
+                    new O(IdempotencyState.InFlight, null));
             }
 
             // 4. Try to parse as CachedResponse.
@@ -116,8 +113,7 @@ public class Check : BaseHandler<Check, I, O>, H
                 if (cachedResponse is not null)
                 {
                     return D2Result<O?>.Ok(
-                        new O(IdempotencyState.Cached, cachedResponse),
-                        traceId: TraceId);
+                        new O(IdempotencyState.Cached, cachedResponse));
                 }
             }
             catch (JsonException ex)
@@ -130,8 +126,7 @@ public class Check : BaseHandler<Check, I, O>, H
 
             // Could not parse — fail-open: treat as acquired.
             return D2Result<O?>.Ok(
-                new O(IdempotencyState.Acquired, null),
-                traceId: TraceId);
+                new O(IdempotencyState.Acquired, null));
         }
         catch (Exception ex)
         {
@@ -142,8 +137,7 @@ public class Check : BaseHandler<Check, I, O>, H
                 TraceId);
 
             return D2Result<O?>.Ok(
-                new O(IdempotencyState.Acquired, null),
-                traceId: TraceId);
+                new O(IdempotencyState.Acquired, null));
         }
     }
 }

@@ -6,8 +6,11 @@
 
 namespace D2.Geo.Infra.Repository.Handlers.C;
 
+using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.Repository.Errors.Pg;
 using D2.Shared.Result;
+using Microsoft.EntityFrameworkCore;
 using H = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.ICreateContactsHandler;
 using I = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsInput;
 using O = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsOutput;
@@ -18,7 +21,8 @@ using O = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate.CreateContactsOutp
 ///
 /// <remarks>
 /// Unlike content-addressable entities (Location, WhoIs), Contacts have GUID primary keys
-/// and are always inserted as new records. Duplicate detection is the caller's responsibility.
+/// and are always inserted as new records. A unique constraint on (context_key, related_entity_id)
+/// prevents duplicate ext-key combinations.
 /// </remarks>
 public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
 {
@@ -50,13 +54,21 @@ public class CreateContacts : BaseHandler<CreateContacts, I, O>, H
         // If the request was empty, return early.
         if (input.Contacts.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(), traceId: TraceId);
+            return D2Result<O?>.Ok(new O());
         }
 
-        // Insert all contacts - they have GUID keys, so no duplicate checking needed.
-        r_db.Contacts.AddRange(input.Contacts);
-        await r_db.SaveChangesAsync(ct);
+        try
+        {
+            r_db.Contacts.AddRange(input.Contacts);
+            await r_db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (PgErrorCodes.IsUniqueViolation(ex))
+        {
+            return D2Result<O?>.Fail(
+                ["A contact with the same context key and related entity ID already exists."],
+                HttpStatusCode.Conflict);
+        }
 
-        return D2Result<O?>.Ok(new O(), traceId: TraceId);
+        return D2Result<O?>.Ok(new O());
     }
 }

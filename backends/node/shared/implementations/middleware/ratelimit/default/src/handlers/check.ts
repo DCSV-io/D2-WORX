@@ -4,6 +4,7 @@ import { type DistributedCache, RateLimit } from "@d2/interfaces";
 import { isLocalhost } from "@d2/request-enrichment";
 import { z } from "zod";
 import { DEFAULT_RATE_LIMIT_OPTIONS, type RateLimitOptions } from "../rate-limit-options.js";
+import { RATELIMIT_CACHE_KEYS } from "../cache-keys.js";
 
 type CheckInput = RateLimit.CheckInput;
 type CheckOutput = RateLimit.CheckOutput;
@@ -53,6 +54,13 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
   }) as unknown as z.ZodType<CheckInput>;
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
+    // Trusted services bypass all rate limiting (mirrors .NET Check handler).
+    if (input.requestInfo.isTrustedService) {
+      return D2Result.ok({
+        data: { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined },
+      });
+    }
+
     // Validate input.
     const validation = this.validateInput(Check.checkSchema, input);
     if (validation.failed) {
@@ -61,64 +69,63 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
 
     const { requestInfo } = input;
 
-    // Check dimensions in hierarchy order: fingerprint -> IP -> city -> country.
-    // Short-circuit if any dimension is already blocked.
+    // Build the list of applicable dimension checks, then fire them all concurrently.
+    // Each dimension's internal Redis operations (GetTtl + 2x Increment) also run
+    // concurrently. This reduces total latency from N*3 sequential Redis round-trips
+    // to a single round-trip time (~5-8ms regardless of dimension count).
+    const checks: Promise<CheckOutput>[] = [];
 
-    // 1. Check client fingerprint (if present).
     if (requestInfo.clientFingerprint) {
-      const result = await this.checkDimension(
-        RateLimit.RateLimitDimension.ClientFingerprint,
-        requestInfo.clientFingerprint,
-        this.options.clientFingerprintThreshold,
+      checks.push(
+        this.checkDimension(
+          RateLimit.RateLimitDimension.ClientFingerprint,
+          requestInfo.clientFingerprint,
+          this.options.clientFingerprintThreshold,
+        ),
       );
-      if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
-      }
     }
 
-    // 2. Check IP (if not localhost).
     if (!isLocalhost(requestInfo.clientIp)) {
-      const result = await this.checkDimension(
-        RateLimit.RateLimitDimension.Ip,
-        requestInfo.clientIp,
-        this.options.ipThreshold,
+      checks.push(
+        this.checkDimension(
+          RateLimit.RateLimitDimension.Ip,
+          requestInfo.clientIp,
+          this.options.ipThreshold,
+        ),
       );
-      if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
-      }
     }
 
-    // 3. Check city (if WhoIs resolved).
     if (requestInfo.city) {
-      const result = await this.checkDimension(
-        RateLimit.RateLimitDimension.City,
-        requestInfo.city,
-        this.options.cityThreshold,
+      checks.push(
+        this.checkDimension(
+          RateLimit.RateLimitDimension.City,
+          requestInfo.city,
+          this.options.cityThreshold,
+        ),
       );
-      if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
-      }
     }
 
-    // 4. Check country (if WhoIs resolved and not whitelisted).
     if (
       requestInfo.countryCode &&
       !this.options.whitelistedCountryCodes.includes(requestInfo.countryCode)
     ) {
-      const result = await this.checkDimension(
-        RateLimit.RateLimitDimension.Country,
-        requestInfo.countryCode,
-        this.options.countryThreshold,
+      checks.push(
+        this.checkDimension(
+          RateLimit.RateLimitDimension.Country,
+          requestInfo.countryCode,
+          this.options.countryThreshold,
+        ),
       );
-      if (result.isBlocked) {
-        return D2Result.ok({ data: result, traceId: this.traceId });
-      }
     }
 
-    // All dimensions passed.
+    const results = await Promise.all(checks);
+    const blocked = results.find((r) => r.isBlocked);
+    if (blocked) {
+      return D2Result.ok({ data: blocked });
+    }
+
     return D2Result.ok({
       data: { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined },
-      traceId: this.traceId,
     });
   }
 
@@ -143,11 +150,30 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
     threshold: number,
   ): Promise<CheckOutput> {
     const dimensionKey = dimension.toLowerCase();
-    const blockedKey = `blocked:${dimensionKey}:${value}`;
+    const blockedKey = RATELIMIT_CACHE_KEYS.blocked(dimensionKey, value);
 
     try {
+      // Compute window keys upfront so all Redis operations can fire concurrently.
+      const now = new Date();
+      const windowSeconds = this.options.windowMs / 1000;
+      const currentWindowId = Check.getWindowId(now);
+      const previousTime = new Date(now.getTime() - this.options.windowMs);
+      const previousWindowId = Check.getWindowId(previousTime);
+
+      const currentKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, currentWindowId);
+      const previousKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, previousWindowId);
+      const counterTtlMs = this.options.windowMs * 2;
+
+      // Fire all three Redis operations concurrently: blocked check, previous
+      // window read, and current window increment. If already blocked, the
+      // extra increment is harmless (counter auto-expires via TTL).
+      const [ttlResult, prevResult, incrResult] = await Promise.all([
+        this.getTtl.handleAsync({ key: blockedKey }),
+        this.increment.handleAsync({ key: previousKey, amount: 0, expirationMs: counterTtlMs }),
+        this.increment.handleAsync({ key: currentKey, amount: 1, expirationMs: counterTtlMs }),
+      ]);
+
       // 1. Check if already blocked.
-      const ttlResult = await this.getTtl.handleAsync({ key: blockedKey });
       if (ttlResult.success && ttlResult.data?.timeToLiveMs !== undefined) {
         // Do not log raw `value` — it may be an IP address or fingerprint (PII).
         this.context.logger.debug(
@@ -160,32 +186,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
         };
       }
 
-      // 2. Get current and previous window IDs.
-      const now = new Date();
-      const windowSeconds = this.options.windowMs / 1000;
-      const currentWindowId = Check.getWindowId(now);
-      const previousTime = new Date(now.getTime() - this.options.windowMs);
-      const previousWindowId = Check.getWindowId(previousTime);
-
-      const currentKey = `ratelimit:${dimensionKey}:${value}:${currentWindowId}`;
-      const previousKey = `ratelimit:${dimensionKey}:${value}:${previousWindowId}`;
-      const counterTtlMs = this.options.windowMs * 2;
-
-      // 3. Get previous window count (increment by 0 to read current value).
-      const prevResult = await this.increment.handleAsync({
-        key: previousKey,
-        amount: 0,
-        expirationMs: counterTtlMs,
-      });
-      const prevCount = prevResult.success ? (prevResult.data?.newValue ?? 0) : 0;
-
-      // 4. Increment current window and get new count.
-      const incrResult = await this.increment.handleAsync({
-        key: currentKey,
-        amount: 1,
-        expirationMs: counterTtlMs,
-      });
-
+      // 2. Evaluate increment results.
       if (!incrResult.success) {
         // Fail-open on cache errors. Do not log raw `value` — may be PII.
         this.context.logger.warn(
@@ -194,14 +195,15 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
         return { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined };
       }
 
+      const prevCount = prevResult.success ? (prevResult.data?.newValue ?? 0) : 0;
       const currCount = incrResult.data?.newValue ?? 0;
 
-      // 5. Calculate weighted estimate.
+      // 3. Calculate weighted estimate.
       const secondsIntoCurrentWindow = now.getUTCSeconds() + now.getUTCMilliseconds() / 1000;
       const weight = 1.0 - secondsIntoCurrentWindow / windowSeconds;
       const estimated = Math.floor(prevCount * weight + currCount);
 
-      // 6. Check if over threshold.
+      // 4. Check if over threshold.
       if (estimated > threshold) {
         // Block the dimension.
         await this.set.handleAsync({

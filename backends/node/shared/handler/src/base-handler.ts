@@ -82,12 +82,18 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     BaseHandler.instruments!.invocations.add(1, attrs);
 
     return BaseHandler.tracer.startActiveSpan(handlerName, async (span) => {
-      // Set span tags (mirrors .NET activity tags exactly)
+      // Set span tags (mirrors .NET activity tags exactly).
+      // Note: user.id, agent.org.id, target.org.id are PII — only set when
+      // present to avoid leaking empty-string placeholders to external
+      // observability backends. Production deployments should configure
+      // OTel exporters to redact or filter these attributes as needed.
       span.setAttribute("handler.type", handlerName);
       span.setAttribute("trace.id", this.context.request.traceId ?? "");
-      span.setAttribute("user.id", this.context.request.userId ?? "");
-      span.setAttribute("agent.org.id", this.context.request.agentOrgId ?? "");
-      span.setAttribute("target.org.id", this.context.request.targetOrgId ?? "");
+      if (this.context.request.userId) span.setAttribute("user.id", this.context.request.userId);
+      if (this.context.request.agentOrgId)
+        span.setAttribute("agent.org.id", this.context.request.agentOrgId);
+      if (this.context.request.targetOrgId)
+        span.setAttribute("target.org.id", this.context.request.targetOrgId);
 
       const startTime = performance.now();
 
@@ -103,12 +109,16 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
             ? this.redactForLogging(input, this.redaction.inputFields)
             : input;
           this.context.logger.debug(
-            `Handler ${handlerName} received input: ${JSON.stringify(inputToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} received input: ${BaseHandler.safeStringify(inputToLog)}. TraceId: ${this.context.request.traceId}.`,
           );
         }
 
         // Execute the handler's logic
-        const result = await this.executeAsync(input);
+        const rawResult = await this.executeAsync(input);
+
+        // Auto-inject ambient traceId into result if handler didn't set it.
+        // This eliminates the need for every handler to pass `traceId: this.traceId`.
+        const result = this._injectTraceId(rawResult);
 
         // Stop timing
         const elapsedMs = performance.now() - startTime;
@@ -120,7 +130,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
               ? { ...result, data: this.redactForLogging(result.data, this.redaction.outputFields) }
               : result;
           this.context.logger.debug(
-            `Handler ${handlerName} produced result: ${JSON.stringify(resultToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} produced result: ${BaseHandler.safeStringify(resultToLog)}. TraceId: ${this.context.request.traceId}.`,
           );
         }
 
@@ -208,14 +218,44 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
   protected validateInput(schema: ZodType<TInput>, input: TInput): D2Result<void> {
     const result = schema.safeParse(input);
     if (result.success) {
-      return D2Result.ok({ traceId: this.traceId });
+      return D2Result.ok();
     }
 
     const inputErrors: InputError[] = (result as { error: ZodError }).error.issues.map((issue) => [
       issue.path.join("."),
       issue.message,
     ]);
-    return D2Result.validationFailed({ inputErrors, traceId: this.traceId });
+    return D2Result.validationFailed({ inputErrors });
+  }
+
+  /**
+   * Injects the ambient traceId into a result if the handler didn't set one.
+   * This enables handlers to omit `traceId: this.traceId` from every D2Result call.
+   */
+  private _injectTraceId<T>(result: D2Result<T>): D2Result<T> {
+    if (result.traceId || !this.traceId) return result;
+    return new D2Result({
+      success: result.success,
+      data: result.data,
+      messages: [...result.messages],
+      inputErrors: result.inputErrors.map((ie) => [...ie]),
+      statusCode: result.statusCode,
+      errorCode: result.errorCode,
+      traceId: this.traceId,
+    });
+  }
+
+  /** Safely serializes a value to JSON with size limiting and circular reference protection. */
+  private static safeStringify(value: unknown, maxLength = 10_000): string {
+    try {
+      const json = JSON.stringify(value);
+      if (json.length > maxLength) {
+        return json.slice(0, maxLength) + `...[truncated, ${json.length} total chars]`;
+      }
+      return json;
+    } catch {
+      return "[unserializable]";
+    }
   }
 
   /** Replaces specified top-level fields with "[REDACTED]" for logging. */

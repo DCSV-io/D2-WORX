@@ -10,7 +10,6 @@ using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.Result;
-using Constants = D2.Shared.Utilities.Constants.Constants;
 using H = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.ISetInDistHandler;
 using I = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.SetInDistInput;
 using O = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.SetInDistOutput;
@@ -63,11 +62,11 @@ public class SetInDist : BaseHandler<SetInDist, I, O>, H
         CancellationToken ct = default)
     {
         var setR = await r_distCacheSet.HandleAsync(
-            new(Constants.DIST_CACHE_KEY_GEO_REF_DATA, input.Data),
+            new(CacheKeys.REFDATA, input.Data),
             ct);
 
         return setR.Success
-            ? D2Result<O?>.Ok(traceId: TraceId)
+            ? D2Result<O?>.Ok()
             : D2Result<O?>.BubbleFail(setR);
     }
 }

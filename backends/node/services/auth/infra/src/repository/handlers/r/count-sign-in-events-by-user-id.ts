@@ -26,6 +26,6 @@ export class CountSignInEventsByUserId
       .from(signInEvent)
       .where(eq(signInEvent.userId, input.userId));
 
-    return D2Result.ok({ data: { count: result?.count ?? 0 }, traceId: this.traceId });
+    return D2Result.ok({ data: { count: result?.count ?? 0 } });
   }
 }

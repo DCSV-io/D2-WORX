@@ -7,5 +7,5 @@ export enum OrgType {
   Support = "Support",
   Affiliate = "Affiliate",
   Customer = "Customer",
-  CustomerClient = "CustomerClient",
+  ThirdParty = "ThirdParty",
 }

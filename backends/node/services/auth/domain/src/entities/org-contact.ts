@@ -4,7 +4,7 @@ import { AuthValidationError } from "../exceptions/auth-validation-error.js";
 /**
  * Junction entity linking an Organization to a Geo Contact via ext key.
  * Auth stores no contact data directly — the junction row's own ID is used
- * as the relatedEntityId with contextKey="org_contact" to access Geo contacts.
+ * as the relatedEntityId with contextKey="auth_org_contact" to access Geo contacts.
  */
 export interface OrgContact {
   readonly id: string;

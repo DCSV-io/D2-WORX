@@ -1,0 +1,114 @@
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import type { ServiceCollection } from "@d2/di";
+import { IHandlerContextKey } from "@d2/handler";
+import {
+  IPingDbKey,
+  ICreateSignInEventKey,
+  IFindSignInEventsByUserIdKey,
+  ICountSignInEventsByUserIdKey,
+  IGetLatestSignInEventDateKey,
+  IUpdateSignInEventWhoIsIdKey,
+  ICreateEmulationConsentRecordKey,
+  IFindEmulationConsentByIdKey,
+  IFindActiveConsentsByUserIdKey,
+  IFindActiveConsentByUserIdAndOrgKey,
+  IRevokeEmulationConsentRecordKey,
+  ICreateOrgContactRecordKey,
+  IFindOrgContactByIdKey,
+  IFindOrgContactsByOrgIdKey,
+  IUpdateOrgContactRecordKey,
+  IDeleteOrgContactRecordKey,
+} from "@d2/auth-app";
+import { CreateSignInEvent } from "./repository/handlers/c/create-sign-in-event.js";
+import { FindSignInEventsByUserId } from "./repository/handlers/r/find-sign-in-events-by-user-id.js";
+import { CountSignInEventsByUserId } from "./repository/handlers/r/count-sign-in-events-by-user-id.js";
+import { GetLatestSignInEventDate } from "./repository/handlers/r/get-latest-sign-in-event-date.js";
+import { CreateEmulationConsentRecord } from "./repository/handlers/c/create-emulation-consent-record.js";
+import { FindEmulationConsentById } from "./repository/handlers/r/find-emulation-consent-by-id.js";
+import { FindActiveConsentsByUserId } from "./repository/handlers/r/find-active-consents-by-user-id.js";
+import { FindActiveConsentByUserIdAndOrg } from "./repository/handlers/r/find-active-consent-by-user-id-and-org.js";
+import { RevokeEmulationConsentRecord } from "./repository/handlers/u/revoke-emulation-consent-record.js";
+import { UpdateSignInEventWhoIsId } from "./repository/handlers/u/update-sign-in-event-who-is-id.js";
+import { CreateOrgContactRecord } from "./repository/handlers/c/create-org-contact-record.js";
+import { FindOrgContactById } from "./repository/handlers/r/find-org-contact-by-id.js";
+import { FindOrgContactsByOrgId } from "./repository/handlers/r/find-org-contacts-by-org-id.js";
+import { UpdateOrgContactRecord } from "./repository/handlers/u/update-org-contact-record.js";
+import { DeleteOrgContactRecord } from "./repository/handlers/d/delete-org-contact-record.js";
+import { PingDb } from "./repository/handlers/q/ping-db.js";
+
+/**
+ * Registers auth infrastructure services (repository handlers) with the DI container.
+ * Mirrors .NET's `services.AddAuthInfra(configuration)` pattern.
+ *
+ * All repo handlers are transient — new instance per resolve, receiving scoped IHandlerContext.
+ */
+export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void {
+  // Health check handler
+  services.addTransient(IPingDbKey, (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)));
+
+  // Sign-in event repo handlers
+  services.addTransient(
+    ICreateSignInEventKey,
+    (sp) => new CreateSignInEvent(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IFindSignInEventsByUserIdKey,
+    (sp) => new FindSignInEventsByUserId(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    ICountSignInEventsByUserIdKey,
+    (sp) => new CountSignInEventsByUserId(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IGetLatestSignInEventDateKey,
+    (sp) => new GetLatestSignInEventDate(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IUpdateSignInEventWhoIsIdKey,
+    (sp) => new UpdateSignInEventWhoIsId(db, sp.resolve(IHandlerContextKey)),
+  );
+
+  // Emulation consent repo handlers
+  services.addTransient(
+    ICreateEmulationConsentRecordKey,
+    (sp) => new CreateEmulationConsentRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IFindEmulationConsentByIdKey,
+    (sp) => new FindEmulationConsentById(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IFindActiveConsentsByUserIdKey,
+    (sp) => new FindActiveConsentsByUserId(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IFindActiveConsentByUserIdAndOrgKey,
+    (sp) => new FindActiveConsentByUserIdAndOrg(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IRevokeEmulationConsentRecordKey,
+    (sp) => new RevokeEmulationConsentRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+
+  // Org contact repo handlers
+  services.addTransient(
+    ICreateOrgContactRecordKey,
+    (sp) => new CreateOrgContactRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IFindOrgContactByIdKey,
+    (sp) => new FindOrgContactById(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IFindOrgContactsByOrgIdKey,
+    (sp) => new FindOrgContactsByOrgId(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IUpdateOrgContactRecordKey,
+    (sp) => new UpdateOrgContactRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IDeleteOrgContactRecordKey,
+    (sp) => new DeleteOrgContactRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+}

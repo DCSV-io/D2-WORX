@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
 import { D2Result } from "@d2/result";
 import { createAuthRoutes } from "@d2/auth-api";
-import type { SignInThrottleHandlers } from "@d2/auth-app";
 
 /**
  * Creates a mock Auth object with a controllable handler function.
@@ -19,9 +18,10 @@ function createMockAuth(responseBody = "ok", responseStatus = 200) {
   };
 }
 
+/** Mock throttle handlers matching { check, record } shape. */
 function createMockThrottleHandlers(
   checkResult: { blocked: boolean; retryAfterSec?: number } = { blocked: false },
-): SignInThrottleHandlers {
+) {
   return {
     check: {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: checkResult })),
@@ -29,8 +29,10 @@ function createMockThrottleHandlers(
     record: {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { recorded: true } })),
     },
-  } as any;
+  };
 }
+
+type MockThrottle = ReturnType<typeof createMockThrottleHandlers>;
 
 /**
  * Creates a Hono app with optional enrichment middleware that sets requestInfo,
@@ -38,7 +40,7 @@ function createMockThrottleHandlers(
  */
 function createApp(
   mockAuth: any,
-  throttle?: SignInThrottleHandlers,
+  throttle?: MockThrottle,
   requestInfo?: { clientIp?: string; serverFingerprint?: string },
 ) {
   const app = new Hono();
@@ -49,7 +51,7 @@ function createApp(
       await next();
     });
   }
-  app.route("/", createAuthRoutes(mockAuth, throttle));
+  app.route("/", createAuthRoutes(mockAuth, throttle as any));
   return app;
 }
 

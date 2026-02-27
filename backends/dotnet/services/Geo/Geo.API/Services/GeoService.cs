@@ -8,6 +8,7 @@ namespace Geo.API.Services;
 
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
+using D2.Services.Protos.Common.V1;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Result.Extensions;
 using Geo.API.Interceptors;
@@ -21,17 +22,23 @@ using SB = D2.Services.Protos.Geo.V1.GeoService.GeoServiceBase;
 /// </summary>
 public class GeoService : SB
 {
+    private readonly IQueries.ICheckHealthHandler r_checkHealth;
     private readonly GeoRefDataComplex.IGetHandler r_get;
     private readonly GeoComplex.IFindWhoIsHandler r_findWhoIs;
     private readonly IQueries.IGetContactsByIdsHandler r_getContacts;
     private readonly IQueries.IGetContactsByExtKeysHandler r_getContactsByExtKeys;
     private readonly ICommands.ICreateContactsHandler r_createContacts;
     private readonly ICommands.IDeleteContactsHandler r_deleteContacts;
+    private readonly ICommands.IDeleteContactsByExtKeysHandler r_deleteContactsByExtKeys;
+    private readonly GeoComplex.IUpdateContactsByExtKeysHandler r_updateContactsByExtKeys;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GeoService"/> class.
     /// </summary>
     ///
+    /// <param name="checkHealth">
+    /// The handler for checking service health.
+    /// </param>
     /// <param name="get">
     /// The handler for getting geographic reference data.
     /// </param>
@@ -50,20 +57,62 @@ public class GeoService : SB
     /// <param name="deleteContacts">
     /// The handler for deleting contacts.
     /// </param>
+    /// <param name="deleteContactsByExtKeys">
+    /// The handler for deleting contacts by external keys.
+    /// </param>
+    /// <param name="updateContactsByExtKeys">
+    /// The handler for updating contacts by external keys.
+    /// </param>
     public GeoService(
+        IQueries.ICheckHealthHandler checkHealth,
         GeoRefDataComplex.IGetHandler get,
         GeoComplex.IFindWhoIsHandler findWhoIs,
         IQueries.IGetContactsByIdsHandler getContacts,
         IQueries.IGetContactsByExtKeysHandler getContactsByExtKeys,
         ICommands.ICreateContactsHandler createContacts,
-        ICommands.IDeleteContactsHandler deleteContacts)
+        ICommands.IDeleteContactsHandler deleteContacts,
+        ICommands.IDeleteContactsByExtKeysHandler deleteContactsByExtKeys,
+        GeoComplex.IUpdateContactsByExtKeysHandler updateContactsByExtKeys)
     {
+        r_checkHealth = checkHealth;
         r_get = get;
         r_findWhoIs = findWhoIs;
         r_getContacts = getContacts;
         r_getContactsByExtKeys = getContactsByExtKeys;
         r_createContacts = createContacts;
         r_deleteContacts = deleteContacts;
+        r_deleteContactsByExtKeys = deleteContactsByExtKeys;
+        r_updateContactsByExtKeys = updateContactsByExtKeys;
+    }
+
+    /// <inheritdoc/>
+    public override async Task<CheckHealthResponse> CheckHealth(
+        CheckHealthRequest request,
+        ServerCallContext context)
+    {
+        var result = await r_checkHealth.HandleAsync(
+            new IQueries.CheckHealthInput(), context.CancellationToken);
+
+        var response = new CheckHealthResponse
+        {
+            Status = result.Data?.Status ?? "unhealthy",
+            Timestamp = DateTime.UtcNow.ToString("o"),
+        };
+
+        if (result.Data?.Components is not null)
+        {
+            foreach (var (key, comp) in result.Data.Components)
+            {
+                response.Components.Add(key, new ComponentHealth
+                {
+                    Status = comp.Status,
+                    LatencyMs = comp.LatencyMs ?? 0,
+                    Error = comp.Error ?? string.Empty,
+                });
+            }
+        }
+
+        return response;
     }
 
     /// <inheritdoc/>
@@ -208,23 +257,51 @@ public class GeoService : SB
 
     /// <inheritdoc/>
     [RequiresApiKey(ValidateContextKeys = true)]
-    public override Task<DeleteContactsByExtKeysResponse> DeleteContactsByExtKeys(
+    public override async Task<DeleteContactsByExtKeysResponse> DeleteContactsByExtKeys(
         DeleteContactsByExtKeysRequest request,
         ServerCallContext context)
     {
-        // TODO: Implement when Geo.App ext-key delete handler is built.
-        throw new RpcException(new Status(
-            StatusCode.Unimplemented, "DeleteContactsByExtKeys not yet implemented."));
+        var keys = request.Keys
+            .Select(k => (k.ContextKey, Guid.TryParse(k.RelatedEntityId, out var g) ? g : Guid.Empty))
+            .Where(t => t.Item2 != Guid.Empty)
+            .ToList();
+
+        var input = new ICommands.DeleteContactsByExtKeysInput(keys);
+        var result = await r_deleteContactsByExtKeys.HandleAsync(input, context.CancellationToken);
+
+        return new DeleteContactsByExtKeysResponse
+        {
+            Result = result.ToProto(),
+            Deleted = result.Data?.Deleted ?? 0,
+        };
     }
 
     /// <inheritdoc/>
     [RequiresApiKey(ValidateContextKeys = true)]
-    public override Task<UpdateContactsByExtKeysResponse> UpdateContactsByExtKeys(
+    public override async Task<UpdateContactsByExtKeysResponse> UpdateContactsByExtKeys(
         UpdateContactsByExtKeysRequest request,
         ServerCallContext context)
     {
-        // TODO: Implement when Geo.App ext-key update handler is built.
-        throw new RpcException(new Status(
-            StatusCode.Unimplemented, "UpdateContactsByExtKeys not yet implemented."));
+        var input = new GeoComplex.UpdateContactsByExtKeysInput(request);
+        var result = await r_updateContactsByExtKeys.HandleAsync(input, context.CancellationToken);
+
+        var response = new UpdateContactsByExtKeysResponse { Result = result.ToProto() };
+
+        if (result.Data is not null)
+        {
+            response.Replacements.AddRange(
+                result.Data.Replacements.Select(r => new ContactReplacement
+                {
+                    Key = new ContactReplacementKey
+                    {
+                        ContextKey = r.ContextKey,
+                        RelatedEntityId = r.RelatedEntityId.ToString(),
+                        OldContactId = r.OldContactId.ToString(),
+                    },
+                    NewContact = r.NewContact,
+                }));
+        }
+
+        return response;
     }
 }

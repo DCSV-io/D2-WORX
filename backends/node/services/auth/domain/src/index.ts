@@ -8,7 +8,9 @@ export {
   REQUEST_HEADERS,
   PASSWORD_POLICY,
   SIGN_IN_THROTTLE,
+  GEO_CONTEXT_KEYS,
 } from "./constants/auth-constants.js";
+export { AUTH_MESSAGING } from "./constants/messaging.js";
 
 // --- Enums ---
 export { ORG_TYPES, isValidOrgType } from "./enums/org-type.js";

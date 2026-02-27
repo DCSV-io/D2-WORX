@@ -53,7 +53,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         // If the request was empty, return early.
         if (input.ContactIds.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(0), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(0));
         }
 
         // Find contacts to delete using batched query.
@@ -72,13 +72,13 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         // If no contacts found, return early.
         if (contactsToDelete.Count == 0)
         {
-            return D2Result<O?>.Ok(new O(0), traceId: TraceId);
+            return D2Result<O?>.Ok(new O(0));
         }
 
         // Delete the found contacts.
         r_db.Contacts.RemoveRange(contactsToDelete);
         await r_db.SaveChangesAsync(ct);
 
-        return D2Result<O?>.Ok(new O(contactsToDelete.Count), traceId: TraceId);
+        return D2Result<O?>.Ok(new O(contactsToDelete.Count));
     }
 }

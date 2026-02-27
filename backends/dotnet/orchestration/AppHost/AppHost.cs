@@ -263,22 +263,53 @@ var broker = builder.AddRabbitMQ("d2-rabbitmq", mqUsername, mqPassword, 15672)
     .WithLifetime(ContainerLifetime.Persistent)
     .WithManagementPlugin();
 
+// Dkron - Distributed Job Scheduler.
+var dkron = builder.AddContainer("d2-dkron", "dkron/dkron", "4.0.9")
+    .WithContainerName("d2-dkron")
+    .WithIconName("CalendarClock")
+    .WithHttpEndpoint(port: 8888, targetPort: 8080, name: "dkron-dashboard")
+    .WithVolume("d2-dkron-data", "/dkron.data")
+    .WithArgs("agent", "--server", "--bootstrap-expect=1")
+    .WithLifetime(ContainerLifetime.Persistent);
+
 /******************************************
  **************** Services ****************
  ******************************************/
 
-// Auth - Service.
-// var authService = builder.AddProject<Projects.Auth_API>("d2-auth")
-//     .WithIconName("PersonAccounts")
-//     .DefaultInfraRefs(db, cache, broker)
-//     .WithOtelRefs();
-
-// Geo - Service.
+// Geo - Service (.NET gRPC).
 var geoDb = db.AddDatabase("d2-services-geo");
 var geoService = builder.AddProject<Projects.Geo_API>("d2-geo")
     .WithIconName("Location")
     .WithReference(geoDb)
     .DefaultInfraRefs(db, cache, broker)
+    .WithOtelRefs();
+
+// Auth - Service (Node.js / Hono).
+var authDb = db.AddDatabase("d2-services-auth");
+var authService = builder.AddJavaScriptApp("d2-auth", "../../../../backends/node/services/auth/api", "dev")
+    .WithPnpm()
+    .WithIconName("ShieldPerson")
+    .WithReference(authDb)
+    .WaitFor(db)
+    .WaitFor(cache)
+    .WithReference(cache)
+    .WaitFor(broker)
+    .WithReference(broker)
+    .WaitFor(geoService)
+    .WithHttpEndpoint(port: 5100, targetPort: 5100, name: "auth-http", isProxied: false)
+    .WithOtelRefs();
+
+// Comms - Service (Node.js / headless consumer + gRPC).
+var commsDb = db.AddDatabase("d2-services-comms");
+var commsService = builder.AddJavaScriptApp("d2-comms", "../../../../backends/node/services/comms/api", "dev")
+    .WithPnpm()
+    .WithIconName("Mail")
+    .WithReference(commsDb)
+    .WaitFor(db)
+    .WaitFor(broker)
+    .WithReference(broker)
+    .WaitFor(geoService)
+    .WithHttpEndpoint(port: 5200, targetPort: 5200, name: "comms-grpc", isProxied: false)
     .WithOtelRefs();
 
 // REST API - Gateway.
@@ -288,6 +319,10 @@ var restGateway = builder.AddProject<Projects.REST>("d2-rest")
     // Geo service dependency.
     .WaitFor(geoService)
     .WithReference(geoService)
+
+    // Auth + Comms service refs (for aggregated health check fan-out).
+    .WithReference(authService)
+    .WithReference(commsService)
 
     // Redis dependency for rate limiting.
     .WaitFor(cache)

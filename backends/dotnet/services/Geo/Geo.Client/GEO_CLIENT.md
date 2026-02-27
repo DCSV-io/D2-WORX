@@ -4,11 +4,11 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 
 ## Files
 
-| File Name                                  | Description                                                                                                                                |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| [Extensions.cs](Extensions.cs)             | DI extension methods: `AddGeoRefDataConsumer`, `AddGeoRefDataProvider`, `AddWhoIsCache`, `AddContactHandlers`.    |
-| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, and `ApiKey` for gRPC authentication. |
-| [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and MassTransit.Abstractions. |
+| File Name                                  | Description                                                                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [Extensions.cs](Extensions.cs)             | DI extension methods: `AddGeoRefDataConsumer`, `AddGeoRefDataProvider`, `AddWhoIsCache`, `AddContactHandlers`.                       |
+| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, and `ApiKey` for gRPC authentication.                    |
+| [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and Messaging.RabbitMQ. |
 
 ---
 
@@ -50,14 +50,6 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 
 ---
 
-## Messages
-
-| File Name                                             | Description                                                                  |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [GeoRefDataUpdated.cs](Messages/GeoRefDataUpdated.cs) | Record representing a geographic reference data update event with a Version. |
-
----
-
 ## Interfaces
 
 > ### CQRS
@@ -66,34 +58,34 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > ##### C (Commands)
 >
-> | File Name                                                                   | Description                                                                                            |
-> | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-> | [ICommands.cs](Interfaces/CQRS/Handlers/C/ICommands.cs)                     | Partial interface defining command operations for geographic reference data state-changing operations. |
-> | [ICommands.ReqUpdate.cs](Interfaces/CQRS/Handlers/C/ICommands.ReqUpdate.cs) | Extends ICommands with IReqUpdateHandler for requesting reference data updates via gRPC.               |
-> | [ICommands.SetInDist.cs](Interfaces/CQRS/Handlers/C/ICommands.SetInDist.cs) | Extends ICommands with ISetInDistHandler for storing reference data in Redis distributed cache.        |
-> | [ICommands.SetInMem.cs](Interfaces/CQRS/Handlers/C/ICommands.SetInMem.cs)   | Extends ICommands with ISetInMemHandler for storing reference data in memory cache.                    |
-> | [ICommands.SetOnDisk.cs](Interfaces/CQRS/Handlers/C/ICommands.SetOnDisk.cs)         | Extends ICommands with ISetOnDiskHandler for persisting reference data to disk.                        |
-> | [ICommands.CreateContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateContacts.cs)             | Extends ICommands with ICreateContactsHandler for creating Geo contacts via gRPC. Validates `AllowedContextKeys`. |
+> | File Name                                                                                               | Description                                                                                                             |
+> | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+> | [ICommands.cs](Interfaces/CQRS/Handlers/C/ICommands.cs)                                                 | Partial interface defining command operations for geographic reference data state-changing operations.                  |
+> | [ICommands.ReqUpdate.cs](Interfaces/CQRS/Handlers/C/ICommands.ReqUpdate.cs)                             | Extends ICommands with IReqUpdateHandler for requesting reference data updates via gRPC.                                |
+> | [ICommands.SetInDist.cs](Interfaces/CQRS/Handlers/C/ICommands.SetInDist.cs)                             | Extends ICommands with ISetInDistHandler for storing reference data in Redis distributed cache.                         |
+> | [ICommands.SetInMem.cs](Interfaces/CQRS/Handlers/C/ICommands.SetInMem.cs)                               | Extends ICommands with ISetInMemHandler for storing reference data in memory cache.                                     |
+> | [ICommands.SetOnDisk.cs](Interfaces/CQRS/Handlers/C/ICommands.SetOnDisk.cs)                             | Extends ICommands with ISetOnDiskHandler for persisting reference data to disk.                                         |
+> | [ICommands.CreateContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateContacts.cs)                   | Extends ICommands with ICreateContactsHandler for creating Geo contacts via gRPC. Validates `AllowedContextKeys`.       |
 > | [ICommands.DeleteContactsByExtKeys.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContactsByExtKeys.cs) | Extends ICommands with IDeleteContactsByExtKeysHandler for deleting Geo contacts by ext keys via gRPC + cache eviction. |
 >
 > ##### Q (Queries)
 >
-> | File Name                                                                     | Description                                                                                     |
-> | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-> | [IQueries.cs](Interfaces/CQRS/Handlers/Q/IQueries.cs)                         | Partial interface defining query operations for geographic reference data read-only operations. |
-> | [IQueries.GetFromDisk.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetFromDisk.cs) | Extends IQueries with IGetFromDiskHandler for retrieving reference data from disk storage.      |
-> | [IQueries.GetFromDist.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetFromDist.cs) | Extends IQueries with IGetFromDistHandler for retrieving reference data from Redis.             |
-> | [IQueries.GetFromMem.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetFromMem.cs)                         | Extends IQueries with IGetFromMemHandler for retrieving reference data from memory cache.                          |
-> | [IQueries.GetContactsByExtKeys.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetContactsByExtKeys.cs)     | Extends IQueries with IGetContactsByExtKeysHandler for fetching contacts by ext keys with local cache-aside.       |
+> | File Name                                                                                       | Description                                                                                                  |
+> | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+> | [IQueries.cs](Interfaces/CQRS/Handlers/Q/IQueries.cs)                                           | Partial interface defining query operations for geographic reference data read-only operations.              |
+> | [IQueries.GetFromDisk.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetFromDisk.cs)                   | Extends IQueries with IGetFromDiskHandler for retrieving reference data from disk storage.                   |
+> | [IQueries.GetFromDist.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetFromDist.cs)                   | Extends IQueries with IGetFromDistHandler for retrieving reference data from Redis.                          |
+> | [IQueries.GetFromMem.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetFromMem.cs)                     | Extends IQueries with IGetFromMemHandler for retrieving reference data from memory cache.                    |
+> | [IQueries.GetContactsByExtKeys.cs](Interfaces/CQRS/Handlers/Q/IQueries.GetContactsByExtKeys.cs) | Extends IQueries with IGetContactsByExtKeysHandler for fetching contacts by ext keys with local cache-aside. |
 >
 > ##### X (Complex)
 >
-> | File Name                                                                 | Description                                                                                               |
-> | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-> | [IComplex.cs](Interfaces/CQRS/Handlers/X/IComplex.cs)                     | Partial interface defining complex operations for geographic reference data operations with side effects. |
-> | [IComplex.Get.cs](Interfaces/CQRS/Handlers/X/IComplex.Get.cs)                                         | Extends IComplex with IGetHandler for orchestrating multi-tier cache retrieval with fallback chain.                |
-> | [IComplex.FindWhoIs.cs](Interfaces/CQRS/Handlers/X/IComplex.FindWhoIs.cs)                             | Extends IComplex with IFindWhoIsHandler for WhoIs lookup with local caching and gRPC fallback.                     |
-> | [IComplex.UpdateContactsByExtKeys.cs](Interfaces/CQRS/Handlers/X/IComplex.UpdateContactsByExtKeys.cs) | Extends IComplex with IUpdateContactsByExtKeysHandler for replacing contacts at ext keys via gRPC.                 |
+> | File Name                                                                                             | Description                                                                                               |
+> | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+> | [IComplex.cs](Interfaces/CQRS/Handlers/X/IComplex.cs)                                                 | Partial interface defining complex operations for geographic reference data operations with side effects. |
+> | [IComplex.Get.cs](Interfaces/CQRS/Handlers/X/IComplex.Get.cs)                                         | Extends IComplex with IGetHandler for orchestrating multi-tier cache retrieval with fallback chain.       |
+> | [IComplex.FindWhoIs.cs](Interfaces/CQRS/Handlers/X/IComplex.FindWhoIs.cs)                             | Extends IComplex with IFindWhoIsHandler for WhoIs lookup with local caching and gRPC fallback.            |
+> | [IComplex.UpdateContactsByExtKeys.cs](Interfaces/CQRS/Handlers/X/IComplex.UpdateContactsByExtKeys.cs) | Extends IComplex with IUpdateContactsByExtKeysHandler for replacing contacts at ext keys via gRPC.        |
 
 > ### Messaging
 >
@@ -101,10 +93,11 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > ##### Sub (Subscribers)
 >
-> | File Name                                                              | Description                                                                                 |
-> | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-> | [ISubs.cs](Interfaces/Messaging/Handlers/Sub/ISubs.cs)                 | Partial interface defining subscription operations for geographic reference data messaging. |
-> | [ISubs.Updated.cs](Interfaces/Messaging/Handlers/Sub/ISubs.Updated.cs) | Extends ISubs with IUpdatedHandler for processing GeoRefDataUpdated messages.               |
+> | File Name                                                                              | Description                                                                                    |
+> | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+> | [ISubs.cs](Interfaces/Messaging/Handlers/Sub/ISubs.cs)                                 | Partial interface defining subscription operations for geographic reference data messaging.    |
+> | [ISubs.Updated.cs](Interfaces/Messaging/Handlers/Sub/ISubs.Updated.cs)                 | Extends ISubs with IUpdatedHandler for processing GeoRefDataUpdatedEvent events.               |
+> | [ISubs.ContactsEvicted.cs](Interfaces/Messaging/Handlers/Sub/ISubs.ContactsEvicted.cs) | Extends ISubs with IContactsEvictedHandler for processing ContactsEvictedEvent cache eviction. |
 
 ---
 
@@ -114,31 +107,31 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > #### C (Commands)
 >
-> | File Name                                    | Description                                                                                                  |
-> | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-> | [ReqUpdate.cs](CQRS/Handlers/C/ReqUpdate.cs) | Handler requesting reference data update from Geo service via gRPC, returning the response.                  |
-> | [SetInDist.cs](CQRS/Handlers/C/SetInDist.cs) | Handler storing serialized GetReferenceDataResponse in Redis distributed cache with configurable expiration. |
-> | [SetInMem.cs](CQRS/Handlers/C/SetInMem.cs)   | Handler storing GetReferenceDataResponse in memory cache with configurable expiration.                       |
-> | [SetOnDisk.cs](CQRS/Handlers/C/SetOnDisk.cs)             | Handler persisting serialized GetReferenceDataResponse to a local file for disk-tier fallback.               |
-> | [CreateContacts.cs](CQRS/Handlers/C/CreateContacts.cs)                       | Handler creating Geo contacts via gRPC. Validates `AllowedContextKeys`. PII redacted.                        |
-> | [DeleteContactsByExtKeys.cs](CQRS/Handlers/C/DeleteContactsByExtKeys.cs)     | Handler deleting Geo contacts by ext keys via gRPC + evicting from local IMemoryCache.                       |
+> | File Name                                                                | Description                                                                                                  |
+> | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+> | [ReqUpdate.cs](CQRS/Handlers/C/ReqUpdate.cs)                             | Handler requesting reference data update from Geo service via gRPC, returning the response.                  |
+> | [SetInDist.cs](CQRS/Handlers/C/SetInDist.cs)                             | Handler storing serialized GetReferenceDataResponse in Redis distributed cache with configurable expiration. |
+> | [SetInMem.cs](CQRS/Handlers/C/SetInMem.cs)                               | Handler storing GetReferenceDataResponse in memory cache with configurable expiration.                       |
+> | [SetOnDisk.cs](CQRS/Handlers/C/SetOnDisk.cs)                             | Handler persisting serialized GetReferenceDataResponse to a local file for disk-tier fallback.               |
+> | [CreateContacts.cs](CQRS/Handlers/C/CreateContacts.cs)                   | Handler creating Geo contacts via gRPC. Validates `AllowedContextKeys`. PII redacted.                        |
+> | [DeleteContactsByExtKeys.cs](CQRS/Handlers/C/DeleteContactsByExtKeys.cs) | Handler deleting Geo contacts by ext keys via gRPC + evicting from local IMemoryCache.                       |
 >
 > #### Q (Queries)
 >
-> | File Name                                        | Description                                                                                         |
-> | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
-> | [GetFromDisk.cs](CQRS/Handlers/Q/GetFromDisk.cs) | Handler retrieving GetReferenceDataResponse from disk by deserializing the persisted protobuf file. |
-> | [GetFromDist.cs](CQRS/Handlers/Q/GetFromDist.cs) | Handler retrieving GetReferenceDataResponse from Redis distributed cache.                           |
-> | [GetFromMem.cs](CQRS/Handlers/Q/GetFromMem.cs)                               | Handler retrieving GetReferenceDataResponse from memory cache.                                                       |
-> | [GetContactsByExtKeys.cs](CQRS/Handlers/Q/GetContactsByExtKeys.cs)           | Handler fetching Geo contacts by ext keys with local cache-aside (immutable, no TTL). Fail-open on gRPC failure.     |
+> | File Name                                                          | Description                                                                                                      |
+> | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+> | [GetFromDisk.cs](CQRS/Handlers/Q/GetFromDisk.cs)                   | Handler retrieving GetReferenceDataResponse from disk by deserializing the persisted protobuf file.              |
+> | [GetFromDist.cs](CQRS/Handlers/Q/GetFromDist.cs)                   | Handler retrieving GetReferenceDataResponse from Redis distributed cache.                                        |
+> | [GetFromMem.cs](CQRS/Handlers/Q/GetFromMem.cs)                     | Handler retrieving GetReferenceDataResponse from memory cache.                                                   |
+> | [GetContactsByExtKeys.cs](CQRS/Handlers/Q/GetContactsByExtKeys.cs) | Handler fetching Geo contacts by ext keys with local cache-aside (immutable, no TTL). Fail-open on gRPC failure. |
 >
 > #### X (Complex)
 >
-> | File Name                                    | Description                                                                                                                     |
-> | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-> | [Get.cs](CQRS/Handlers/X/Get.cs)                                             | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.     |
-> | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs)                                 | Handler for WhoIs lookups with local IMemoryCache caching and Geo gRPC service fallback. Used by request enrichment middleware. |
-> | [UpdateContactsByExtKeys.cs](CQRS/Handlers/X/UpdateContactsByExtKeys.cs)     | Handler replacing contacts at ext keys via gRPC (atomic delete + create) + ext-key cache eviction. PII redacted.               |
+> | File Name                                                                | Description                                                                                                                     |
+> | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+> | [Get.cs](CQRS/Handlers/X/Get.cs)                                         | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.     |
+> | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs)                             | Handler for WhoIs lookups with local IMemoryCache caching and Geo gRPC service fallback. Used by request enrichment middleware. |
+> | [UpdateContactsByExtKeys.cs](CQRS/Handlers/X/UpdateContactsByExtKeys.cs) | Handler replacing contacts at ext keys via gRPC (atomic delete + create) + ext-key cache eviction. PII redacted.                |
 
 ---
 
@@ -148,17 +141,17 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > #### Sub (Subscribers)
 >
-> | File Name                                       | Description                                                                                                      |
-> | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-> | [Updated.cs](Messaging/Handlers/Sub/Updated.cs) | Handler processing GeoRefDataUpdated messages by requesting fresh data from Geo service and updating all caches. |
+> | File Name                                                       | Description                                                                                                           |
+> | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+> | [Updated.cs](Messaging/Handlers/Sub/Updated.cs)                 | Handler processing GeoRefDataUpdatedEvent events by requesting fresh data from Geo service and updating all caches.   |
+> | [ContactsEvicted.cs](Messaging/Handlers/Sub/ContactsEvicted.cs) | Handler processing ContactsEvictedEvent by evicting matching contact IDs and ext-keys from the local in-memory cache. |
 >
-> ### MT (MassTransit)
+> ### Consumers
 >
-> #### Consumers
->
-> | File Name                                                       | Description                                                                                                |
-> | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-> | [UpdatedConsumer.cs](Messaging/MT/Consumers/UpdatedConsumer.cs) | MassTransit IConsumer implementation that delegates GeoRefDataUpdated messages to the Updated sub handler. |
+> | File Name                                                                                  | Description                                                                                                                                                         |
+> | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | [UpdatedConsumerService.cs](Messaging/Consumers/UpdatedConsumerService.cs)                 | BackgroundService hosting a ProtoConsumer<GeoRefDataUpdatedEvent> that delegates to the Updated sub handler.                                                        |
+> | [ContactEvictionConsumerService.cs](Messaging/Consumers/ContactEvictionConsumerService.cs) | BackgroundService hosting a broadcast ProtoConsumer<ContactsEvictedEvent> (exclusive auto-delete queue per instance) that delegates to the ContactsEvicted handler. |
 
 ---
 
@@ -168,18 +161,18 @@ Contacts are only accessible externally via ext keys (`contextKey` + `relatedEnt
 
 ### Defense-in-Depth Layers
 
-| Layer              | Mechanism                                              | Enforced By                                     |
-| ------------------ | ------------------------------------------------------ | ----------------------------------------------- |
-| **Transport**      | gRPC metadata `x-api-key` header                       | Client `CallCredentials` + Geo.API server interceptor |
-| **Ownership**      | API key → allowed context keys mapping                  | Geo.API `ApiKeyInterceptor` (server-side)       |
-| **Client validation** | `AllowedContextKeys` in `GeoClientOptions`          | All contact handlers (defense-in-depth)         |
-| **Access pattern** | Ext-key-only (no PK-based get/delete externally)        | Client library (ID handlers removed)            |
+| Layer                 | Mechanism                                        | Enforced By                                           |
+| --------------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| **Transport**         | gRPC metadata `x-api-key` header                 | Client `CallCredentials` + Geo.API server interceptor |
+| **Ownership**         | API key → allowed context keys mapping           | Geo.API `ApiKeyInterceptor` (server-side)             |
+| **Client validation** | `AllowedContextKeys` in `GeoClientOptions`       | All contact handlers (defense-in-depth)               |
+| **Access pattern**    | Ext-key-only (no PK-based get/delete externally) | Client library (ID handlers removed)                  |
 
 ### Cache Key Conventions
 
-| Cache Key Pattern                                  | Value          | Populated By           | Evicted By                                     |
-| -------------------------------------------------- | -------------- | ---------------------- | ---------------------------------------------- |
-| `contact-ext:{contextKey}:{relatedEntityId}`       | `ContactDTO[]` | GetContactsByExtKeys   | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
+| Cache Key Pattern                            | Value          | Populated By         | Evicted By                                       |
+| -------------------------------------------- | -------------- | -------------------- | ------------------------------------------------ |
+| `contact-ext:{contextKey}:{relatedEntityId}` | `ContactDTO[]` | GetContactsByExtKeys | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
 
 Single `IMemoryCache` instance. No TTL — contacts are immutable.
 
@@ -189,9 +182,9 @@ Single `IMemoryCache` instance. No TTL — contacts are immutable.
 
 Reusable FluentValidation validators for proto-generated DTOs, exported as single source of truth. Any service creating contacts via Geo should compose these via `.SetValidator()` instead of duplicating rules.
 
-| File Name                                                                | Description                                                                                      |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| [ContactToCreateValidator.cs](Validators/ContactToCreateValidator.cs)    | Aggregate validator for `ContactToCreateDTO`. Mirrors Geo domain factory constraints (names 255, company 255, website 2048, emails, phones). Supports indexed property names for bulk validation. |
+| File Name                                                             | Description                                                                                                                                                                                       |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ContactToCreateValidator.cs](Validators/ContactToCreateValidator.cs) | Aggregate validator for `ContactToCreateDTO`. Mirrors Geo domain factory constraints (names 255, company 255, website 2048, emails, phones). Supports indexed property names for bulk validation. |
 
 ---
 

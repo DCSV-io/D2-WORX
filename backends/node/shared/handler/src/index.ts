@@ -22,3 +22,5 @@ export {
   zodNonEmptyArray,
   zodAllowedContextKey,
 } from "./validators.js";
+export { IRequestContextKey, IHandlerContextKey } from "./service-keys.js";
+export { createServiceScope } from "./create-service-scope.js";

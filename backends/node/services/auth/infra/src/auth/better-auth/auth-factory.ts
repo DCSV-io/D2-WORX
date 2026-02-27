@@ -6,7 +6,7 @@ import { admin } from "better-auth/plugins/admin";
 import { organization } from "better-auth/plugins/organization";
 import { username } from "better-auth/plugins/username";
 import type { SecondaryStorage } from "better-auth";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { JWT_CLAIM_TYPES, SESSION_FIELDS } from "@d2/auth-domain";
 import type { AuthServiceConfig } from "./auth-config.js";
@@ -49,6 +49,34 @@ export interface AuthHooks {
     hash: (password: string) => Promise<string>;
     verify: (data: { hash: string; password: string }) => Promise<boolean>;
   };
+  /**
+   * Publishes a verification email event to RabbitMQ for the comms service.
+   * Called by BetterAuth's `emailVerification.sendVerificationEmail` callback.
+   */
+  publishVerificationEmail?: (input: {
+    userId: string;
+    email: string;
+    name: string;
+    verificationUrl: string;
+    token: string;
+  }) => Promise<void>;
+  /**
+   * Publishes a password reset email event to RabbitMQ for the comms service.
+   * Called by BetterAuth's `emailAndPassword.sendResetPassword` callback.
+   */
+  publishPasswordReset?: (input: {
+    userId: string;
+    email: string;
+    name: string;
+    resetUrl: string;
+    token: string;
+  }) => Promise<void>;
+  /**
+   * Creates a Geo contact for a newly registered user.
+   * Called in databaseHooks.user.create.before (Contact BEFORE User pattern).
+   * If this throws, sign-up fails entirely (fail-fast — no stale users).
+   */
+  createUserContact?: (data: { userId: string; email: string; name: string }) => Promise<void>;
 }
 
 /**
@@ -94,13 +122,40 @@ export function createAuth(
       minPasswordLength: config.passwordMinLength ?? AUTH_CONFIG_DEFAULTS.passwordMinLength,
       maxPasswordLength: config.passwordMaxLength ?? AUTH_CONFIG_DEFAULTS.passwordMaxLength,
       password: hooks?.passwordFunctions,
+      sendResetPassword: hooks?.publishPasswordReset
+        ? async ({ user, url, token }) => {
+            await hooks.publishPasswordReset!({
+              userId: user.id,
+              email: user.email,
+              name: user.name ?? "User",
+              resetUrl: url,
+              token,
+            });
+          }
+        : undefined,
     },
 
     emailVerification: {
       sendOnSignUp: true,
       sendOnSignIn: true,
       autoSignInAfterVerification: true,
-      // sendVerificationEmail: wired by composition root via RabbitMQ handler (not yet built)
+      sendVerificationEmail: hooks?.publishVerificationEmail
+        ? async ({ user, url, token }) => {
+            try {
+              await hooks.publishVerificationEmail!({
+                userId: user.id,
+                email: user.email,
+                name: user.name ?? "User",
+                verificationUrl: url,
+                token,
+              });
+            } catch {
+              // Fail-open: RabbitMQ down shouldn't crash sign-in/sign-up.
+              // BetterAuth awaits this callback — if it throws, the entire flow
+              // fails with 500. The user can re-trigger via sign-in (sendOnSignIn: true).
+            }
+          }
+        : undefined,
     },
 
     session: {
@@ -152,9 +207,18 @@ export function createAuth(
             // Ensure username fields are populated before persistence
             let data = ensureUsername(user as Record<string, unknown>);
 
-            // Ensure pre-generated IDs are preserved (forceAllowId pattern)
-            if (user.id) {
-              data = { ...data, id: user.id };
+            // Ensure pre-generated IDs are preserved (forceAllowId pattern).
+            // When no ID is pre-set, generate one so the Geo contact gets a stable userId.
+            const userId = (user.id as string) ?? generateId();
+            data = { ...data, id: userId };
+
+            // Create Geo contact BEFORE user (fail-fast if Geo unavailable)
+            if (hooks?.createUserContact) {
+              await hooks.createUserContact({
+                userId,
+                email: user.email as string,
+                name: (user.name as string) ?? "",
+              });
             }
 
             return { data };
@@ -162,6 +226,58 @@ export function createAuth(
         },
       },
       session: {
+        update: {
+          before: async (data, context) => {
+            const patch = data as Record<string, unknown>;
+            if (!("activeOrganizationId" in patch)) return;
+
+            const orgId = patch.activeOrganizationId as string | null;
+
+            // Clearing active org → clear custom fields too
+            if (!orgId) {
+              return {
+                data: {
+                  [SESSION_FIELDS.ACTIVE_ORG_TYPE]: null,
+                  [SESSION_FIELDS.ACTIVE_ORG_ROLE]: null,
+                },
+              };
+            }
+
+            // Extract userId from BetterAuth's endpoint context (set by orgSessionMiddleware)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const userId = (context as any)?.context?.session?.user?.id as string | undefined;
+            if (!userId) return;
+
+            try {
+              const [orgRow] = await db
+                .select({ orgType: betterAuthSchema.organization.orgType })
+                .from(betterAuthSchema.organization)
+                .where(eq(betterAuthSchema.organization.id, orgId))
+                .limit(1);
+
+              const [memberRow] = await db
+                .select({ role: betterAuthSchema.member.role })
+                .from(betterAuthSchema.member)
+                .where(
+                  and(
+                    eq(betterAuthSchema.member.organizationId, orgId),
+                    eq(betterAuthSchema.member.userId, userId),
+                  ),
+                )
+                .limit(1);
+
+              return {
+                data: {
+                  [SESSION_FIELDS.ACTIVE_ORG_TYPE]: orgRow?.orgType ?? null,
+                  [SESSION_FIELDS.ACTIVE_ORG_ROLE]: memberRow?.role ?? null,
+                },
+              };
+            } catch {
+              // DB error — don't block session update. Fields stay null.
+              return;
+            }
+          },
+        },
         create: {
           after: async (session) => {
             // Record sign-in event via app-layer callback

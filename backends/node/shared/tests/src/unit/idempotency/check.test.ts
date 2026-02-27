@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Check } from "@d2/idempotency";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { D2Result } from "@d2/result";
+import { D2Result, ErrorCodes } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 
 function createTestContext(traceId?: string): IHandlerContext {
@@ -282,6 +282,55 @@ describe("Idempotency Check handler", () => {
       expect(result).toBeSuccess();
       expect(result.data?.state).toBe("cached");
       expect(result.data?.cachedResponse?.statusCode).toBe(0);
+    });
+  });
+
+  describe("Input validation", () => {
+    it("should return validationFailed for empty idempotency key", async () => {
+      const handler = createCheck(mocks);
+      const result = await handler.handleAsync({ idempotencyKey: "" });
+
+      expect(result).toBeFailure();
+      expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
+      // Should not have tried any cache operations.
+      expect(mocks.setNxFn).not.toHaveBeenCalled();
+    });
+
+    it("should return validationFailed for key exceeding 256 characters", async () => {
+      const handler = createCheck(mocks);
+      const longKey = "a".repeat(257);
+      const result = await handler.handleAsync({ idempotencyKey: longKey });
+
+      expect(result).toBeFailure();
+      expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
+      // Should not have tried any cache operations.
+      expect(mocks.setNxFn).not.toHaveBeenCalled();
+    });
+
+    it("should accept a valid UUID key", async () => {
+      const handler = createCheck(mocks);
+      const result = await handler.handleAsync({
+        idempotencyKey: "550e8400-e29b-41d4-a716-446655440000",
+      });
+
+      expect(result).toBeSuccess();
+      expect(result.data?.state).toBe("acquired");
+    });
+
+    it("should accept a key at exactly 256 characters", async () => {
+      const handler = createCheck(mocks);
+      const result = await handler.handleAsync({ idempotencyKey: "x".repeat(256) });
+
+      expect(result).toBeSuccess();
+      expect(result.data?.state).toBe("acquired");
+    });
+
+    it("should accept a single character key", async () => {
+      const handler = createCheck(mocks);
+      const result = await handler.handleAsync({ idempotencyKey: "a" });
+
+      expect(result).toBeSuccess();
+      expect(result.data?.state).toBe("acquired");
     });
   });
 });

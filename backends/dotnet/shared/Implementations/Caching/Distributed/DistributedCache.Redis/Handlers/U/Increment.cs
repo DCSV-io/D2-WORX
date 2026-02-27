@@ -58,8 +58,7 @@ public class Increment : BaseHandler<S.IIncrementHandler, S.IncrementInput, S.In
             }
 
             return D2Result<S.IncrementOutput?>.Ok(
-                new S.IncrementOutput(newValue),
-                traceId: TraceId);
+                new S.IncrementOutput(newValue));
         }
         catch (RedisException ex)
         {
@@ -72,8 +71,7 @@ public class Increment : BaseHandler<S.IIncrementHandler, S.IncrementInput, S.In
             return D2Result<S.IncrementOutput?>.Fail(
                 ["Unable to connect to Redis."],
                 HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
+                errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
 
         // Let the base handler catch any other exceptions.

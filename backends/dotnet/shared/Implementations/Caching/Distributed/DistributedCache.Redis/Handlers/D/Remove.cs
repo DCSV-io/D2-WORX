@@ -53,8 +53,7 @@ public class Remove : BaseHandler<H, I, O>, H
 
             // Return success.
             return D2Result<O?>.Ok(
-                new O(),
-                traceId: TraceId);
+                new O());
         }
         catch (RedisException ex)
         {
@@ -67,8 +66,7 @@ public class Remove : BaseHandler<H, I, O>, H
             return D2Result<O?>.Fail(
                 ["Unable to connect to Redis."],
                 HttpStatusCode.ServiceUnavailable,
-                errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                traceId: TraceId);
+                errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
 
         // Let the base handler catch any other exceptions.
