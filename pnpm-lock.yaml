@@ -809,7 +809,14 @@ importers:
         specifier: workspace:*
         version: link:../../../../result
 
-  backends/node/shared/implementations/repository/pg/default: {}
+  backends/node/shared/implementations/repository/pg/default:
+    dependencies:
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../../../../result
+      drizzle-orm:
+        specifier: '>=0.40.0'
+        version: 0.45.1(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.11)(pg@8.18.0)
 
   backends/node/shared/interfaces:
     dependencies:
@@ -934,9 +941,22 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../result
+      '@testcontainers/postgresql':
+        specifier: '>=10.0.0'
+        version: 10.18.0
+      drizzle-orm:
+        specifier: '>=0.40.0'
+        version: 0.45.1(@opentelemetry/api@1.9.0)(@prisma/client@5.22.0)(@types/pg@8.16.0)(better-sqlite3@12.6.2)(kysely@0.28.11)(pg@8.18.0)
+      pg:
+        specifier: '>=8.0.0'
+        version: 8.18.0
       vitest:
         specifier: '>=3.0.0'
         version: 3.2.4(@types/node@22.18.8)(@vitest/browser@3.2.4)(jiti@2.6.1)(jsdom@28.1.0(@noble/hashes@2.0.1))(lightningcss@1.30.1)(tsx@4.21.0)(yaml@2.8.2)
+    devDependencies:
+      '@types/pg':
+        specifier: 8.16.0
+        version: 8.16.0
 
   backends/node/shared/tests:
     devDependencies:

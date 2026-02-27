@@ -1489,19 +1489,19 @@ Sorted by priority: security/breaking first, then bugs/data integrity, infrastru
 
 | #   | Item                                                | Owner  | Effort | Resolution                                                                                                                  |
 | --- | --------------------------------------------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------- |
-| 26  | `@d2/repository-pg`: Batch query utilities          | Node   | Medium | **FIX:** Add chunked IN-clause helper to `@d2/repository-pg` when batch query patterns become common across services        |
-| 27  | `@d2/repository-pg`: Drizzle transaction helpers    | Node   | Medium | **FIX:** Add Begin/Commit/Rollback handler pattern when transaction needs arise                                             |
-| 28  | .NET: Shared PG error handling project              | .NET   | Small  | **FIX:** Create shared EF Core constraint violation utilities mirroring `@d2/repository-pg`                                 |
-| 29  | Middleware chain order E2E test                     | Auth   | Medium | **FIX:** Add E2E middleware test when integration test infra matures                                                        |
-| 30  | Redis connection failure fallback tests             | Both   | Medium | **FIX:** Testcontainers Redis kill mid-test to verify fail-open behavior                                                    |
-| 31  | Cross-platform parity checks documented             | All    | Small  | **FIX:** Create parity checklist for verifying .NET/Node.js implementations are equivalent                                  |
+| 26  | `@d2/repository-pg`: Batch query utilities          | Node   | Medium | ✅ **DONE:** `batchQuery()` + `toBatchResult()` + `toBatchDictionaryResult()` added to `@d2/repository-pg`                  |
+| 27  | `@d2/repository-pg`: Drizzle transaction helpers    | Node   | Medium | ✅ **DONE:** `withTransaction(db, fn)` — D2Result-aware wrapper around Drizzle `db.transaction()`                            |
+| 28  | .NET: Shared PG error handling project              | .NET   | Small  | ✅ **DONE:** `Errors.Pg` project with `PgErrorCodes` static helpers (IsUniqueViolation, IsForeignKeyViolation, etc.)        |
+| 29  | Middleware chain order E2E test                     | Auth   | Medium | ✅ **DONE:** `middleware-chain-order.test.ts` — CORS, security headers, enrichment→rate-limiting ordering, 404 handling      |
+| 30  | Redis connection failure fallback tests             | Both   | Medium | ✅ **DONE:** `redis-failover.test.ts` in shared-tests (cache-redis handlers) + auth-tests (rate limiter fail-open)           |
+| 31  | Cross-platform parity checks documented             | All    | Small  | ✅ **DONE:** `backends/PARITY.md` with 17-concern parity table + API differences + platform-exclusive packages               |
 | 32  | Thundering herd protection on popular key expiry    | Shared | Medium | **FIX:** Add singleflight/lock pattern for cache-memory on popular key expiry                                               |
-| 33  | Negative caching (NOT_FOUND) for geo-client         | Geo    | Small  | **FIX:** Cache `undefined` NOT_FOUND results with shorter TTL (1hr vs 8hr) to avoid repeated Geo lookups                    |
-| 34  | LRU eviction stress testing                         | Shared | Medium | **FIX:** Add high-concurrency stress tests for cache-memory LRU eviction                                                    |
-| 35  | DI debug logging for resolution troubleshooting     | DI     | Small  | **FIX:** Add optional `DEBUG_DI` env var for verbose resolution logging                                                     |
-| 36  | E2E test wiring vs production divergence            | E2E    | Small  | **FIX:** Document where stubs diverge from real providers in E2E README                                                     |
-| 37  | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | **FIX:** Extract shared `createTestDb()` to `@d2/testing` — 70 lines duplicate postgres-test-helpers                        |
-| 38  | Integration test container reuse across files       | Tests  | Medium | **FIX:** Implement `vi.config.ts` global setup for shared Testcontainers across test files                                  |
+| 33  | Negative caching (NOT_FOUND) for geo-client         | Geo    | Small  | ✅ **DONE:** FindWhoIs caches `null` sentinel for not-found IPs with `whoIsNegativeCacheExpirationMs` (1hr default)          |
+| 34  | LRU eviction stress testing                         | Shared | Medium | ✅ **DONE:** `lru-stress.test.ts` — capacity boundary, access promotion, 1000 concurrent ops, TTL+LRU interaction, bulk     |
+| 35  | DI debug logging for resolution troubleshooting     | DI     | Small  | ✅ **DONE:** `DEBUG_DI=true` env var for verbose resolution logging (zero-cost when disabled)                                |
+| 36  | E2E test wiring vs production divergence            | E2E    | Small  | ✅ **DONE:** "Stub vs Production Divergence" section appended to `E2E_TESTS.md`                                              |
+| 37  | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | ✅ **DONE:** `createPostgresTestHelper()` factory in `@d2/testing`, both auth-tests and comms-tests delegate to it           |
+| 38  | Integration test container reuse across files       | Tests  | Medium | ✅ **DONE:** `fileParallelism: false` in auth/comms vitest configs; shared helper supports URI mode for future globalSetup    |
 | 39  | Circuit breaker for non-critical cross-service gRPC | All    | Medium | **FIX:** Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure |
 | 40  | OTel alerting for service outages                   | All    | Medium | **FIX:** Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                |
 
@@ -1520,6 +1520,7 @@ Items blocked by work that hasn't been completed yet.
 | 7   | OTel alerting rules                         | Running AlertManager/Grafana                  | Medium   | Error rate spikes, latency P99, rate limit blocks, delivery failures             |
 | 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                            |
 | 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes |
+| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | `sendVerificationEmail` callback is fail-open (try/catch) — if RabbitMQ is down, user gets "success" but no email is sent. Fix: FE should NOT show "email sent" immediately. Instead, show pending state ("Sending verification email..."), listen on SignalR channel for Comms delivery result, then update to success/failure. Pattern: sign-up response → pending UI → SignalR delivery confirmation → final UI. Generalizes to all async delivery feedback (password reset, invitations). `sendOnSignIn: true` auto-retries on recovery. Interim option: set a session/Redis flag on send failure, client checks on follow-up call |
 
 ---
 

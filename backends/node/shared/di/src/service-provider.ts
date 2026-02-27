@@ -2,6 +2,16 @@ import { Lifetime } from "./lifetime.js";
 import type { ServiceDescriptor } from "./service-collection.js";
 import type { ServiceKey } from "./service-key.js";
 
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+const _g = globalThis as Record<string, unknown>;
+const _proc = _g.process as { env?: Record<string, string | undefined> } | undefined;
+const DEBUG = _proc?.env?.DEBUG_DI === "true";
+/* eslint-enable @typescript-eslint/no-unsafe-member-access */
+
+function debugLog(msg: string): void {
+  if (DEBUG) (globalThis as { console?: { debug?: (...a: unknown[]) => void } }).console?.debug?.(`[DI] ${msg}`);
+}
+
 /**
  * Shared resolution interface implemented by both ServiceProvider and ServiceScope.
  * Used as the factory parameter type in ServiceDescriptor to avoid unsafe casts.
@@ -54,6 +64,7 @@ export class ServiceProvider implements ServiceResolver {
     if (!desc) {
       throw new Error(`Service not registered: ${key.id}`);
     }
+    debugLog(`Resolving ${key.id} (lifetime: ${Lifetime[desc.lifetime]})`);
     return this._resolveDescriptor(desc) as T;
   }
 
@@ -85,7 +96,10 @@ export class ServiceProvider implements ServiceResolver {
   _resolveDescriptor(desc: ServiceDescriptor): unknown {
     switch (desc.lifetime) {
       case Lifetime.Singleton: {
-        if (this._singletons.has(desc.key.id)) return this._singletons.get(desc.key.id);
+        if (this._singletons.has(desc.key.id)) {
+          debugLog(`Singleton cache hit: ${desc.key.id}`);
+          return this._singletons.get(desc.key.id);
+        }
         // Factory receives root provider (captive dependency prevention).
         const instance = this._invokeFactory(desc, this);
         this._singletons.set(desc.key.id, instance);
@@ -109,10 +123,12 @@ export class ServiceProvider implements ServiceResolver {
     const keyId = desc.key.id;
     if (this._resolvingStack.has(keyId)) {
       const chain = [...this._resolvingStack, keyId].join(" -> ");
+      debugLog(`CIRCULAR: ${chain}`);
       throw new Error(`Circular dependency detected: ${chain}`);
     }
     this._resolvingStack.add(keyId);
     try {
+      debugLog(`Creating ${keyId} via factory`);
       return desc.factory!(resolver);
     } finally {
       this._resolvingStack.delete(keyId);
@@ -151,6 +167,7 @@ export class ServiceScope implements ServiceResolver {
    */
   setInstance<T>(key: ServiceKey<T>, instance: T): void {
     this._ensureNotDisposed();
+    debugLog(`setInstance: ${key.id}`);
     this._scopedCache.set(key.id, instance);
   }
 
@@ -166,6 +183,7 @@ export class ServiceScope implements ServiceResolver {
     if (!desc) {
       throw new Error(`Service not registered: ${key.id}`);
     }
+    debugLog(`Resolving ${key.id} (lifetime: ${Lifetime[desc.lifetime]}, scope)`);
     return this._resolveDescriptor(desc) as T;
   }
 
@@ -201,13 +219,19 @@ export class ServiceScope implements ServiceResolver {
     switch (desc.lifetime) {
       case Lifetime.Singleton: {
         // Singletons always resolve from root cache.
-        if (this._root._singletons.has(desc.key.id)) return this._root._singletons.get(desc.key.id);
+        if (this._root._singletons.has(desc.key.id)) {
+          debugLog(`Singleton cache hit: ${desc.key.id}`);
+          return this._root._singletons.get(desc.key.id);
+        }
         const instance = this._root._invokeFactory(desc, this._root);
         this._root._singletons.set(desc.key.id, instance);
         return instance;
       }
       case Lifetime.Scoped: {
-        if (this._scopedCache.has(desc.key.id)) return this._scopedCache.get(desc.key.id);
+        if (this._scopedCache.has(desc.key.id)) {
+          debugLog(`Scope cache hit: ${desc.key.id}`);
+          return this._scopedCache.get(desc.key.id);
+        }
         // Scoped factory receives the scope (can depend on singletons + scoped).
         const instance = this._root._invokeFactory(desc, this);
         this._scopedCache.set(desc.key.id, instance);

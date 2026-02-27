@@ -53,10 +53,10 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
 
     const cacheKey = GEO_CACHE_KEYS.whois(input.ipAddress, input.fingerprint);
 
-    // Try cache first
-    const cached = this.store.get<WhoIsDTO>(cacheKey);
+    // Try cache first (null = negative cache sentinel, undefined = miss)
+    const cached = this.store.get<WhoIsDTO | null>(cacheKey);
     if (cached !== undefined) {
-      return D2Result.ok({ data: { whoIs: cached } });
+      return D2Result.ok({ data: { whoIs: cached ?? undefined } });
     }
 
     // Cache miss — call Geo service
@@ -84,6 +84,8 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
     }
 
     if (!response.result?.success || response.data.length === 0) {
+      // Negative cache: avoid repeated gRPC calls for unknown IPs
+      this.store.set(cacheKey, null, this.options.whoIsNegativeCacheExpirationMs);
       return D2Result.ok({ data: { whoIs: undefined } });
     }
 

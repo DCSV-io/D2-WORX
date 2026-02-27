@@ -1,44 +1,34 @@
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
-import pg from "pg";
-import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
+import { createPostgresTestHelper, type PostgresTestHelper } from "@d2/testing";
 import { runMigrations } from "@d2/auth-infra";
 
-let container: StartedPostgreSqlContainer;
-let pool: pg.Pool;
-let db: NodePgDatabase;
+const helper: PostgresTestHelper = createPostgresTestHelper(runMigrations);
 
 export async function startPostgres(): Promise<void> {
-  container = await new PostgreSqlContainer("postgres:18").start();
-  pool = new pg.Pool({ connectionString: container.getConnectionUri() });
-  db = drizzle(pool);
-  await runMigrations(pool);
+  await helper.start();
 }
 
 export async function stopPostgres(): Promise<void> {
-  await pool?.end();
-  await container?.stop();
+  await helper.stop();
 }
 
-export function getPool(): pg.Pool {
-  return pool;
+export function getPool() {
+  return helper.getPool();
 }
 
-export function getDb(): NodePgDatabase {
-  return db;
+export function getDb() {
+  return helper.getDb();
 }
 
 export function getConnectionUri(): string {
-  return container.getConnectionUri();
+  return helper.getConnectionUri();
 }
 
 export async function cleanCustomTables(): Promise<void> {
-  await pool.query("TRUNCATE sign_in_event, emulation_consent, org_contact CASCADE");
+  await helper.clean("TRUNCATE sign_in_event, emulation_consent, org_contact CASCADE");
 }
 
 export async function cleanAllTables(): Promise<void> {
-  // All tables (BetterAuth + custom) are created by Drizzle migration.
-  // Order matters: child tables (with FKs) before parent tables, or use CASCADE.
-  await pool.query(
+  await helper.clean(
     `TRUNCATE "invitation", "member", "session", "account", "verification", "jwks",
               "organization", "user",
               sign_in_event, emulation_consent, org_contact

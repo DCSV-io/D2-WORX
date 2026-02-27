@@ -147,3 +147,31 @@ Polling utilities for async assertions:
 | `pg`                         | PostgreSQL client + assertion pools            |
 | `rabbitmq-client`            | AMQP client (transitive, messaging)            |
 | `vitest`                     | Test runner                                    |
+
+## Stub vs Production Divergence
+
+E2E tests use stub providers for email and SMS delivery. All other infrastructure runs real containers matching production images. This section documents where stubs differ from production behavior.
+
+| Component    | Production              | E2E Stub                  | Divergence                                           |
+| ------------ | ----------------------- | ------------------------- | ---------------------------------------------------- |
+| Email        | Resend SDK (HTTP API)   | `StubEmailProvider`       | No HTTP calls; stores sent emails in-memory array    |
+| SMS          | Twilio SDK (HTTP API)   | `StubSmsProvider`         | No HTTP calls; stores sent messages in-memory array  |
+| Geo service  | gRPC to .NET Geo.API    | Real .NET child process   | Full parity (real Testcontainers PG + Redis)         |
+| PostgreSQL   | Managed / cloud         | Testcontainers `postgres:18` | Same image, ephemeral (destroyed after test run)  |
+| Redis        | Managed / cloud         | Testcontainers `redis:8.2`   | Same image, ephemeral (destroyed after test run)  |
+| RabbitMQ     | Managed / cloud         | Testcontainers `rabbitmq:4.1-management` | Same image, ephemeral               |
+| Auth service | Standalone Hono process | In-process (`createApp`)  | Same code, no network hop (direct function calls)    |
+| Comms service| Standalone gRPC process | In-process (DI wired)     | Same code, no network hop (direct consumer wiring)   |
+
+### What Stubs Capture
+
+| Stub                | Captured Fields                                                                 | Assertion Access         |
+| ------------------- | ------------------------------------------------------------------------------- | ------------------------ |
+| `StubEmailProvider` | `to`, `subject`, `html`, `plainText`, `providerMessageId`, `capturedAt`         | `getSentEmails()`, `getLastEmail()`, `sentCount()`, `clear()` |
+| `StubSmsProvider`   | `to`, `body`, `providerMessageId`, `capturedAt`                                 | `getSentMessages()`, `getLastMessage()`, `sentCount()`, `clear()` |
+
+### Key Invariants
+
+- **No mock boundaries**: Inter-service calls (Auth → Geo gRPC, Comms → Geo gRPC) use real gRPC over localhost. Only external HTTP APIs (Resend, Twilio) are stubbed.
+- **Same DB schema**: Testcontainers run the same PostgreSQL image and Drizzle migrations as production. Schema drift is impossible.
+- **Same message format**: RabbitMQ messages use the same JSON serialization as production. No message shape shortcuts.

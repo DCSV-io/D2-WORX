@@ -7,6 +7,7 @@ export default mergeConfig(
     test: {
       name: "comms-tests",
       setupFiles: ["./src/setup.ts"],
+      fileParallelism: false,
     },
   }),
 );

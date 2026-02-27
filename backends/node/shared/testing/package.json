@@ -19,7 +19,24 @@
   "dependencies": {
     "@d2/result": "workspace:*"
   },
+  "devDependencies": {
+    "@types/pg": "8.16.0"
+  },
   "peerDependencies": {
-    "vitest": ">=3.0.0"
+    "vitest": ">=3.0.0",
+    "@testcontainers/postgresql": ">=10.0.0",
+    "pg": ">=8.0.0",
+    "drizzle-orm": ">=0.40.0"
+  },
+  "peerDependenciesMeta": {
+    "@testcontainers/postgresql": {
+      "optional": true
+    },
+    "pg": {
+      "optional": true
+    },
+    "drizzle-orm": {
+      "optional": true
+    }
   }
 }
