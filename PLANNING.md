@@ -633,6 +633,12 @@ Each service package exports an `addXxx(services, ...)` registration function th
 12. **Geo jobs** — Orphaned location cleanup (daily), orphaned contacts cleanup (daily).
 13. **Comms jobs** — Soft-deleted message cleanup (daily, 90d), delivery history retention (daily, 1y).
 
+**Dependency Update — Q1 2026**
+
+> Bump all .NET, Node.js, and tooling dependencies to latest stable before starting SvelteKit work. This avoids pulling in a wave of client-side packages against stale foundations.
+
+14. **Dependency audit & update** — `dotnet outdated` + `pnpm outdated`, bump all packages, run full test suites, fix any breakage. Includes .NET SDK/runtime, NuGet packages, npm packages, Aspire container image tags, and dev tooling (ESLint, Prettier, Vitest, Drizzle Kit, etc.).
+
 **SvelteKit App Foundations**
 
 Set up the SvelteKit app shell before wiring auth flows.
@@ -1267,6 +1273,37 @@ clients/web/src/routes/
 - Comms delivery retries: RabbitMQ DLX + tier queue TTLs
 - JWKS key rotation: BetterAuth-managed
 - BetterAuth verification tokens: Lazy bulk-delete on any `findVerificationValue` call (since v1.2.0)
+
+---
+
+## Dependency Update Policy
+
+**Cadence**: Quarterly (March, June, September, December). Bump everything to latest stable.
+
+**Scope**:
+
+- .NET SDK/runtime, NuGet packages (`dotnet outdated`)
+- Node.js/pnpm packages (`pnpm outdated`, all `@d2/*` + third-party)
+- Aspire container image tags (PostgreSQL, Redis, RabbitMQ, Dkron, LGTM stack)
+- Dev tooling (ESLint, Prettier, Vitest, TypeScript, Drizzle Kit, Buf)
+- BetterAuth (pin exact, test thoroughly — check known gotchas list for regressions)
+
+**Process**:
+
+1. Run `dotnet outdated` and `pnpm outdated` to identify stale packages
+2. Bump in dependency order (shared packages first, then services, then clients)
+3. Run full test suites after each tier (.NET: `dotnet test`, Node: `pnpm vitest`)
+4. Fix any breakage before proceeding to next tier
+5. Update Aspire container image tags, verify orchestration starts cleanly
+6. Commit as a single `chore: quarterly dependency update (Q# YYYY)` PR
+
+**Timing rule**: Always do the quarterly bump **before** starting a new major feature phase — especially before pulling in new client-side dependencies (e.g., SvelteKit libraries). This keeps the foundation current and avoids version conflicts with freshly installed packages.
+
+**Update log**:
+
+| Quarter | Date | Notes  |
+| ------- | ---- | ------ |
+| Q1 2026 | TBD  | First update — post-Dkron, pre-SvelteKit |
 
 ---
 
