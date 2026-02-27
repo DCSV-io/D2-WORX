@@ -1420,7 +1420,7 @@ Consolidated from all sweep reports (now deleted). This is the single source of 
 
 Sorted by priority: security/breaking first, then bugs/data integrity, infrastructure, observability, tests, documentation, polish.
 
-**Triage (68→43):** 26 non-issues removed, 6 decisions resolved. Remaining: 28 fixes (do first), 15 polish (do last). 3 accepted/closed items kept for context.
+**Triage (68→40):** 26 non-issues removed, 6 decisions resolved (3 accepted/closed). Remaining: 25 fixes (#1-25), 15 polish (#26-40).
 
 #### Security / Auth Hardening
 
@@ -1429,81 +1429,78 @@ Sorted by priority: security/breaking first, then bugs/data integrity, infrastru
 | 1  | RedactionSpec on all PII-handling handlers              | Various | Medium | **FIX:** Add `get redaction()` to 5 handlers: RecordSignInEvent, GetSignInEvents, CreateOrgContact (auth), RecipientResolver, GetChannelPreference (comms) |
 | 2  | Session update hook: emulation consent validation       | Auth    | Small  | **FIX:** Add consent check in `scope.ts` only when `EMULATED_ORG_ID` is set — cheap conditional, only fires for rare emulation sessions                    |
 | 3  | Emulation consent expiry not enforced on active session | Auth    | Medium | **FIX:** Add consent TTL check in `scope.ts` middleware — verify emulation consent still valid before allowing `EMULATED_ORG_ID` to propagate              |
-| 4  | ~~JWKS cache fallback when auth unreachable~~           | Gateway | —      | **ACCEPTED:** 8hr proactive refresh + internal gateway is sufficient. Auth downtime >8h + gateway restart is extreme edge case. OTel alerting for service outages covers this operationally |
-| 5  | 2 handlers missing Zod `validateInput()`               | Comms   | Small  | **FIX:** Add Zod schema + `this.validateInput()` to GetChannelPreference and RecipientResolver                                                            |
+| 4  | 2 handlers missing Zod `validateInput()`               | Comms   | Small  | **FIX:** Add Zod schema + `this.validateInput()` to GetChannelPreference and RecipientResolver                                                            |
 
 #### Bugs / Data Integrity
 
 | #  | Item                                                          | Owner | Effort | Resolution                                                                                                                                               |
 | -- | ------------------------------------------------------------- | ----- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 6  | sign_in_event schema: async whoIsId population                | Auth  | Medium | **FIX:** Keep both columns. Auth emits `SignInOccurred` event (ip, fingerprint, signInEventId). Geo consumes → FindWhoIs → emits `WhoIsResolved` (signInEventId, whoIsId). Auth consumes → populates FK. Fail-open: if anything fails, ipAddress is still there for forensics |
-| 7  | ~~No transaction wrapping on multi-step org-contact ops~~     | Auth  | —      | **ACCEPTED:** Orphaned Geo contacts are harmless. Best-effort rollback is sufficient. Geo background cleanup job handles orphans (same pattern as location cleanup) |
-| 8  | Comms infra: no constraint violation handling                 | Comms | Small  | **FIX:** Add try/catch with `isPgUniqueViolation()` to `CreateDeliveryRequestRecord` for correlationId unique index. Return 409 instead of 500            |
-| 9  | `deliveryAttempt.set(updates)` uses `Record<string, unknown>` | Comms | Tiny   | **FIX:** Refactor to typed partial object with spread syntax                                                                                              |
-| 10 | No explicit cache invalidation on write (auth)                | Auth  | Small  | **FIX (doc only):** Document the intentional TTL-based approach. BetterAuth dual-writes to DB+Redis; cookie cache expires in 5min                         |
+| 5  | sign_in_event schema: async whoIsId population                | Auth  | Medium | **FIX:** Keep both columns. Auth emits `SignInOccurred` event (ip, fingerprint, signInEventId). Geo consumes → FindWhoIs → emits `WhoIsResolved` (signInEventId, whoIsId). Auth consumes → populates FK. Fail-open: if anything fails, ipAddress is still there for forensics |
+| 6  | Comms infra: no constraint violation handling                 | Comms | Small  | **FIX:** Add try/catch with `isPgUniqueViolation()` to `CreateDeliveryRequestRecord` for correlationId unique index. Return 409 instead of 500            |
+| 7  | `deliveryAttempt.set(updates)` uses `Record<string, unknown>` | Comms | Tiny   | **FIX:** Refactor to typed partial object with spread syntax                                                                                              |
+| 8  | No explicit cache invalidation on write (auth)                | Auth  | Small  | **FIX (doc only):** Document the intentional TTL-based approach. BetterAuth dual-writes to DB+Redis; cookie cache expires in 5min                         |
 
 #### Infrastructure / Resilience
 
 | #  | Item                                             | Owner | Effort | Resolution                                                                                                                                                     |
 | -- | ------------------------------------------------ | ----- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11 | geoClient `undefined as never` guard             | Both  | Tiny   | **FIX:** Replace `undefined as never` with `throw new Error("GEO_GRPC_ADDRESS required")` at startup in both auth + comms composition roots                    |
-| 12 | Connection recovery backoff not configurable     | All   | Small  | **FIX:** Expose `rabbitmq-client` reconnection options in `MessageBusOptions`. Pass through to `Connection` constructor                                        |
-| 13 | RabbitMQ down → verification email lost           | Auth  | Small  | **FIX:** No outbox needed. `sendOnSignIn: true` already re-triggers `publishVerificationEmail` callback on blocked sign-in attempts — no custom resend endpoint required. Fixes: (1) Wrap callback in try/catch — currently `await`ed by BetterAuth, so if it throws (RabbitMQ down), entire sign-in/sign-up fails with 500 instead of useful error. Make it fail-open. (2) Sign-up + RabbitMQ down: return "account created, try signing in later to resend verification." (3) Sign-in unverified + RabbitMQ up: "verification email sent, check inbox." (4) Sign-in unverified + RabbitMQ down: "email not verified, couldn't send email — try again later." |
-| 14 | ~~No circuit breaker on Geo gRPC calls~~         | All   | —      | **ACCEPTED (for now):** Fail-open behavior is correct (requests succeed without geo data). Latency penalty only matters under sustained failure. Move to Polish as future addition for non-critical cross-service gRPC calls |
-| 15 | No readiness probe on RabbitMQ consumer          | Comms | Small  | **FIX:** Capture `.ready` promise from `createNotificationConsumer()`, await before returning from `createCommsService()`                                      |
+| 9  | geoClient `undefined as never` guard             | Both  | Tiny   | **FIX:** Replace `undefined as never` with `throw new Error("GEO_GRPC_ADDRESS required")` at startup in both auth + comms composition roots                    |
+| 10 | Connection recovery backoff not configurable     | All   | Small  | **FIX:** Expose `rabbitmq-client` reconnection options in `MessageBusOptions`. Pass through to `Connection` constructor                                        |
+| 11 | RabbitMQ down → verification email lost           | Auth  | Small  | **FIX:** No outbox needed. `sendOnSignIn: true` already re-triggers `publishVerificationEmail` callback on blocked sign-in attempts — no custom resend endpoint required. Fixes: (1) Wrap callback in try/catch — currently `await`ed by BetterAuth, so if it throws (RabbitMQ down), entire sign-in/sign-up fails with 500 instead of useful error. Make it fail-open. (2) Sign-up + RabbitMQ down: return "account created, try signing in later to resend verification." (3) Sign-in unverified + RabbitMQ up: "verification email sent, check inbox." (4) Sign-in unverified + RabbitMQ down: "email not verified, couldn't send email — try again later." |
+| 12 | No readiness probe on RabbitMQ consumer          | Comms | Small  | **FIX:** Capture `.ready` promise from `createNotificationConsumer()`, await before returning from `createCommsService()`                                      |
 
 #### Observability
 
 | #  | Item                                                  | Owner   | Effort | Resolution                                                                                                                                     |
 | -- | ----------------------------------------------------- | ------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 16 | HTTP request ID not propagated as span attribute      | Gateway | Tiny   | **FIX:** Add `activity?.SetTag("http.request_id", context.TraceIdentifier)` in `EnrichWithHttpResponse` callback in ServiceDefaults Extensions |
-| 17 | Error logs sometimes missing traceId context          | Various | Small  | **FIX:** Audit error paths — confirmed gap in RecordSignInEvent (returns D2Result.bubbleFail without logging). Fix overlaps with item 20        |
-| 18 | No structured logging standard for cross-service corr | All     | Small  | **FIX (doc only):** Document standard fields (traceId, correlationId, userId, orgId) in CLAUDE.md observability section                         |
+| 13 | HTTP request ID not propagated as span attribute      | Gateway | Tiny   | **FIX:** Add `activity?.SetTag("http.request_id", context.TraceIdentifier)` in `EnrichWithHttpResponse` callback in ServiceDefaults Extensions |
+| 14 | Error logs sometimes missing traceId context          | Various | Small  | **FIX:** Audit error paths — confirmed gap in RecordSignInEvent (returns D2Result.bubbleFail without logging). Fix overlaps with item 17        |
+| 15 | No structured logging standard for cross-service corr | All     | Small  | **FIX (doc only):** Document standard fields (traceId, correlationId, userId, orgId) in CLAUDE.md observability section                         |
 
 #### Code Quality / Hardening
 
 | #  | Item                                              | Owner | Effort | Resolution                                                                                                                        |
 | -- | ------------------------------------------------- | ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| 19 | RetryHelper `CalculateDelay` overflow clamp       | .NET  | Tiny   | **FIX:** Add `Math.Min` guard before `Math.Pow` or document max retries contract. Cosmetic hardening                               |
-| 20 | Sign-in event logging doesn't record failure type | Auth  | Small  | **FIX:** Add structured failure reason (bad password, lockout, unverified, etc.) to sign-in hooks before calling RecordSignInEvent  |
-| 21 | FluentValidation version behind latest stable     | .NET  | Tiny   | **FIX:** Current: 12.1.0. Bump to latest stable in next dependency review. Non-breaking                                               |
+| 16 | RetryHelper `CalculateDelay` overflow clamp       | .NET  | Tiny   | **FIX:** Add `Math.Min` guard before `Math.Pow` or document max retries contract. Cosmetic hardening                               |
+| 17 | Sign-in event logging doesn't record failure type | Auth  | Small  | **FIX:** Add structured failure reason (bad password, lockout, unverified, etc.) to sign-in hooks before calling RecordSignInEvent  |
+| 18 | FluentValidation version behind latest stable     | .NET  | Tiny   | **FIX:** Current: 12.1.0. Bump to latest stable in next dependency review. Non-breaking                                           |
 
 #### Test Gaps
 
 | #  | Item                                                   | Owner  | Effort | Resolution                                                                                                                        |
 | -- | ------------------------------------------------------ | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| 22 | UPDATE/DELETE rowCount=0 → notFound tests              | Both   | Small  | **FIX:** Add unit tests for DELETE/UPDATE handlers returning notFound when rowCount=0                                              |
-| 23 | Consumer schema validation rejection tests             | Comms  | Small  | **FIX:** Add test — send malformed message payload, verify consumer drops it with warning log                                      |
-| 24 | Retry tier exhaustion (max attempts) tests             | Comms  | Small  | **FIX:** Add integration test — simulate message failing all 10 retry attempts, verify it's ACKed and logged                       |
-| 25 | Concurrent channel preference update tests             | Comms  | Small  | **FIX:** Add test — concurrent `Promise.all` updates for same contactId, verify no data corruption                                 |
-| 26 | Email provider unavailable scenario tests              | Comms  | Small  | **FIX:** Add unit test — mock email provider throwing, verify delivery attempt marked as failed                                    |
-| 27 | DI circular dependency negative-path test              | Shared | Small  | **FIX:** Add test — register A→B→A, verify `resolve(A)` throws circular dependency error                                          |
+| 19 | UPDATE/DELETE rowCount=0 → notFound tests              | Both   | Small  | **FIX:** Add unit tests for DELETE/UPDATE handlers returning notFound when rowCount=0                                              |
+| 20 | Consumer schema validation rejection tests             | Comms  | Small  | **FIX:** Add test — send malformed message payload, verify consumer drops it with warning log                                      |
+| 21 | Retry tier exhaustion (max attempts) tests             | Comms  | Small  | **FIX:** Add integration test — simulate message failing all 10 retry attempts, verify it's ACKed and logged                       |
+| 22 | Concurrent channel preference update tests             | Comms  | Small  | **FIX:** Add test — concurrent `Promise.all` updates for same contactId, verify no data corruption                                 |
+| 23 | Email provider unavailable scenario tests              | Comms  | Small  | **FIX:** Add unit test — mock email provider throwing, verify delivery attempt marked as failed                                    |
+| 24 | DI circular dependency negative-path test              | Shared | Small  | **FIX:** Add test — register A→B→A, verify `resolve(A)` throws circular dependency error                                          |
 
 #### Documentation
 
 | #  | Item                                            | Owner | Effort | Resolution                                                                                                                            |
 | -- | ----------------------------------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 28 | Singleton root provider behavior documented     | DI    | Tiny   | **FIX:** Add note to DI.md — document that singleton factories receive root provider (can't depend on scoped), error caching semantics |
+| 25 | Singleton root provider behavior documented     | DI    | Tiny   | **FIX:** Add note to DI.md — document that singleton factories receive root provider (can't depend on scoped), error caching semantics |
 
 #### Polish / Nice-to-Have
 
 | #  | Item                                                | Owner  | Effort | Resolution                                                                                                                      |
 | -- | --------------------------------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| 29 | `@d2/repository-pg`: Batch query utilities          | Node   | Medium | **FIX:** Add chunked IN-clause helper to `@d2/repository-pg` when batch query patterns become common across services            |
-| 30 | `@d2/repository-pg`: Drizzle transaction helpers    | Node   | Medium | **FIX:** Add Begin/Commit/Rollback handler pattern when transaction needs arise (item 7 may trigger this)                       |
-| 31 | .NET: Shared PG error handling project              | .NET   | Small  | **FIX:** Create shared EF Core constraint violation utilities mirroring `@d2/repository-pg`                                     |
-| 32 | Middleware chain order E2E test                      | Auth   | Medium | **FIX:** Ordering verified by code inspection. Add E2E middleware test when integration test infra matures                      |
-| 33 | Redis connection failure fallback tests              | Both   | Medium | **FIX:** Testcontainers Redis kill mid-test. Complex setup, fail-open behavior is well-understood                               |
-| 34 | Cross-platform parity checks documented             | All    | Small  | **FIX:** Create parity checklist for verifying .NET/Node.js implementations are equivalent                                      |
-| 35 | Thundering herd protection on popular key expiry    | Shared | Medium | **FIX:** Add singleflight/lock pattern for cache-memory on popular key expiry                                                   |
-| 36 | Negative caching (NOT_FOUND) for geo-client         | Geo    | Small  | **FIX:** Cache `undefined` NOT_FOUND results with shorter TTL (1hr vs 8hr) to avoid repeated Geo lookups                        |
-| 37 | LRU eviction stress testing                         | Shared | Medium | **FIX:** Add high-concurrency stress tests for cache-memory LRU eviction                                                       |
-| 38 | DI debug logging for resolution troubleshooting     | DI     | Small  | **FIX:** Add optional `DEBUG_DI` env var for verbose resolution logging                                                         |
-| 39 | E2E test wiring vs production divergence            | E2E    | Small  | **FIX:** Document where stubs diverge from real providers in E2E README                                                         |
-| 40 | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | **FIX:** Extract shared `createTestDb()` to `@d2/testing` — 70 lines duplicate postgres-test-helpers                            |
-| 41 | Integration test container reuse across files       | Tests  | Medium | **FIX:** Implement `vi.config.ts` global setup for shared Testcontainers across test files                                      |
-| 42 | Circuit breaker for non-critical cross-service gRPC | All    | Medium | **FIX:** Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure      |
-| 43 | OTel alerting for service outages                   | All    | Medium | **FIX:** Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                     |
+| 26 | `@d2/repository-pg`: Batch query utilities          | Node   | Medium | **FIX:** Add chunked IN-clause helper to `@d2/repository-pg` when batch query patterns become common across services            |
+| 27 | `@d2/repository-pg`: Drizzle transaction helpers    | Node   | Medium | **FIX:** Add Begin/Commit/Rollback handler pattern when transaction needs arise                                                 |
+| 28 | .NET: Shared PG error handling project              | .NET   | Small  | **FIX:** Create shared EF Core constraint violation utilities mirroring `@d2/repository-pg`                                     |
+| 29 | Middleware chain order E2E test                      | Auth   | Medium | **FIX:** Add E2E middleware test when integration test infra matures                                                            |
+| 30 | Redis connection failure fallback tests              | Both   | Medium | **FIX:** Testcontainers Redis kill mid-test to verify fail-open behavior                                                        |
+| 31 | Cross-platform parity checks documented             | All    | Small  | **FIX:** Create parity checklist for verifying .NET/Node.js implementations are equivalent                                      |
+| 32 | Thundering herd protection on popular key expiry    | Shared | Medium | **FIX:** Add singleflight/lock pattern for cache-memory on popular key expiry                                                   |
+| 33 | Negative caching (NOT_FOUND) for geo-client         | Geo    | Small  | **FIX:** Cache `undefined` NOT_FOUND results with shorter TTL (1hr vs 8hr) to avoid repeated Geo lookups                        |
+| 34 | LRU eviction stress testing                         | Shared | Medium | **FIX:** Add high-concurrency stress tests for cache-memory LRU eviction                                                       |
+| 35 | DI debug logging for resolution troubleshooting     | DI     | Small  | **FIX:** Add optional `DEBUG_DI` env var for verbose resolution logging                                                         |
+| 36 | E2E test wiring vs production divergence            | E2E    | Small  | **FIX:** Document where stubs diverge from real providers in E2E README                                                         |
+| 37 | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | **FIX:** Extract shared `createTestDb()` to `@d2/testing` — 70 lines duplicate postgres-test-helpers                            |
+| 38 | Integration test container reuse across files       | Tests  | Medium | **FIX:** Implement `vi.config.ts` global setup for shared Testcontainers across test files                                      |
+| 39 | Circuit breaker for non-critical cross-service gRPC | All    | Medium | **FIX:** Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure      |
+| 40 | OTel alerting for service outages                   | All    | Medium | **FIX:** Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                     |
 
 ### 2. Can Only Fix Later
 
