@@ -2,7 +2,7 @@
 
 Centralized test suite for all shared Node.js packages. Mirrors .NET `D2.Shared.Tests` — test projects are separate from source packages (source packages have zero test dependencies).
 
-**Total:** 844 tests (unit + integration) across 67 files
+**Total:** 857 tests (unit + integration) across 69 files
 
 ---
 
@@ -43,6 +43,7 @@ Centralized test suite for all shared Node.js packages. Mirrors .NET `D2.Shared.
 | `cache-memory/set-many.test.ts`                    | @d2/cache-memory       | 3     | SetMany handler.                                                  |
 | `cache-memory/remove.test.ts`                      | @d2/cache-memory       | 2     | Remove handler.                                                   |
 | `cache-memory/falsy-values.test.ts`                | @d2/cache-memory       | 10    | Handling of null/undefined/0/false values.                        |
+| `cache-memory/lru-stress.test.ts`                  | @d2/cache-memory       | 6     | LRU stress: capacity, promotion, concurrency, TTL interaction.    |
 | `cache-redis/serialization.test.ts`                | @d2/cache-redis        | 8     | JsonCacheSerializer.                                              |
 | `cache-redis/redis-error-paths.test.ts`            | @d2/cache-redis        | 8     | Error handling paths (includes SetNx).                            |
 | `cache-redis/ping-cache.test.ts`                   | @d2/cache-redis        | 4     | PingCache healthy, unhealthy, error, latency.                     |
@@ -83,6 +84,7 @@ Centralized test suite for all shared Node.js packages. Mirrors .NET `D2.Shared.
 | `cache-redis/increment.test.ts`               | @d2/cache-redis | 4     | @testcontainers/redis    |
 | `messaging/message-bus.integration.test.ts`   | @d2/messaging   | 3     | @testcontainers/rabbitmq |
 | `ratelimit/check.integration.test.ts`         | @d2/ratelimit   | 5     | @testcontainers/redis    |
+| `cache-redis/redis-failover.test.ts`          | @d2/cache-redis | 7     | @testcontainers/redis    |
 | `idempotency/idempotency-integration.test.ts` | @d2/idempotency | 12    | @testcontainers/redis    |
 
 ---

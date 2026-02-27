@@ -121,6 +121,20 @@ This enforces the **captive dependency rule**: singleton factories always receiv
 
 ---
 
+## Debug Logging
+
+Set `DEBUG_DI=true` environment variable to enable verbose resolution logging. Logs include:
+
+- `Resolving {key}` — every `resolve()` call
+- `Singleton cache hit: {key}` / `Scope cache hit: {key}` — cache hits
+- `Creating {key} via factory` — factory invocations
+- `setInstance: {key}` — instance overrides
+- `CIRCULAR: {chain}` — circular dependency detection
+
+Zero cost when `DEBUG_DI` is not set (single boolean check).
+
+---
+
 ## .NET Equivalent
 
 `Microsoft.Extensions.DependencyInjection` — `IServiceCollection`, `IServiceProvider`, `IServiceScope`. Same lifetime semantics, same captive dependency rules.

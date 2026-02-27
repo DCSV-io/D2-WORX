@@ -1,6 +1,6 @@
 # @d2/auth-tests
 
-Test suite for the Auth service — covers all four packages (`@d2/auth-domain`, `@d2/auth-app`, `@d2/auth-infra`, `@d2/auth-api`). 825 tests across 61 files.
+Test suite for the Auth service — covers all four packages (`@d2/auth-domain`, `@d2/auth-app`, `@d2/auth-infra`, `@d2/auth-api`). 874 tests across 66 files.
 
 ## Purpose
 
@@ -51,21 +51,25 @@ src/
                                 member-mapper, invitation-mapper tests
     api/
       middleware/               authorization, csrf, error-handler, jwt-fingerprint,
-                                scope, session, session-fingerprint tests
+                                scope, service-key, session, session-fingerprint tests
       routes/                   auth-routes, emulation-routes, invitation-routes,
                                 org-contact-routes tests
   integration/
     postgres-test-helpers.ts    Testcontainers PG setup + Drizzle migration runner
+    rabbitmq-test-helpers.ts    RabbitMQ Testcontainers setup
     redis-test-helpers.ts       Testcontainers Redis setup + ioredis client
     app-handlers.test.ts        App handler integration with real DB
     auth-factory.test.ts        BetterAuth instance creation + plugin verification
     better-auth-behavior.test.ts  BetterAuth API method behavior validation
     better-auth-tables.test.ts  BetterAuth table schema verification
     custom-table-repositories.test.ts  Repository handler CRUD against real PG
+    middleware-chain-order.test.ts  Middleware ordering (CORS, security, enrichment, rate limiting)
     migration.test.ts           Drizzle migration idempotency
+    redis-failover.test.ts      Redis failure fallback (rate limiter fail-open)
     secondary-storage.test.ts   Redis secondary storage round-trip
     session-fingerprint.test.ts Session fingerprint binding + stolen token detection
     sign-in-throttle-store.test.ts  Redis throttle store operations
+    whois-resolution-consumer.test.ts  WhoIs resolution consumer (RabbitMQ)
 ```
 
 ## Test Counts
@@ -75,14 +79,14 @@ src/
 | Domain      | 17     | Enums, entities, rules, exceptions                |
 | App         | 13     | CQRS handlers (8 command + 5 query)               |
 | Infra       | 10     | Mappers, hooks, throttle store, secondary storage |
-| API         | 11     | Middleware (7) + routes (4)                       |
-| Integration | 9      | Testcontainers (PG + Redis) + BetterAuth behavior |
-| Helpers     | 2      | Container setup helpers (not test files)          |
-| **Total**   | **63** | **853 tests**                                     |
+| API         | 12     | Middleware (8) + routes (4)                       |
+| Integration | 12     | Testcontainers (PG + Redis) + BetterAuth behavior |
+| Helpers     | 3      | Container setup helpers (not test files)          |
+| **Total**   | **66** | **874 tests**                                     |
 
 ## Test Categories
 
-### Unit Tests (52 files)
+### Unit Tests (54 files)
 
 **Domain** — Pure function tests for entity factories, enum validators, business rules, and domain exceptions. No mocks needed — domain has zero infrastructure dependencies.
 
@@ -92,21 +96,24 @@ src/
 
 **API** — Middleware tests using Hono test utilities (mock contexts). Route tests with mocked DI scopes and BetterAuth instances.
 
-### Integration Tests (9 files)
+### Integration Tests (12 files)
 
 All integration tests use Testcontainers for real infrastructure:
 
-| Test File                           | Infrastructure     | What It Tests                                              |
-| ----------------------------------- | ------------------ | ---------------------------------------------------------- |
-| `migration.test.ts`                 | PostgreSQL         | Drizzle migrations are idempotent                          |
-| `better-auth-tables.test.ts`        | PostgreSQL         | BetterAuth-managed table schemas match expectations        |
-| `custom-table-repositories.test.ts` | PostgreSQL         | Full CRUD on sign_in_event, emulation_consent, org_contact |
-| `auth-factory.test.ts`              | PostgreSQL + Redis | BetterAuth instance creates with all plugins               |
-| `better-auth-behavior.test.ts`      | PostgreSQL + Redis | Sign-up, sign-in, session, org creation flows              |
-| `secondary-storage.test.ts`         | Redis              | Set/get/delete round-trip via cache handlers               |
-| `sign-in-throttle-store.test.ts`    | Redis              | Known-good, lock, increment, clear operations              |
-| `session-fingerprint.test.ts`       | Redis              | Fingerprint binding, mismatch detection, revocation        |
-| `app-handlers.test.ts`              | PostgreSQL         | App handlers with real repository implementations          |
+| Test File                              | Infrastructure        | What It Tests                                              |
+| -------------------------------------- | --------------------- | ---------------------------------------------------------- |
+| `migration.test.ts`                    | PostgreSQL            | Drizzle migrations are idempotent                          |
+| `better-auth-tables.test.ts`           | PostgreSQL            | BetterAuth-managed table schemas match expectations        |
+| `custom-table-repositories.test.ts`    | PostgreSQL            | Full CRUD on sign_in_event, emulation_consent, org_contact |
+| `auth-factory.test.ts`                 | PostgreSQL + Redis    | BetterAuth instance creates with all plugins               |
+| `better-auth-behavior.test.ts`         | PostgreSQL + Redis    | Sign-up, sign-in, session, org creation flows              |
+| `middleware-chain-order.test.ts`       | Redis                 | CORS, security headers, enrichment→rate-limiting ordering  |
+| `redis-failover.test.ts`              | Redis                 | Rate limiter fail-open when Redis dies mid-operation       |
+| `secondary-storage.test.ts`            | Redis                 | Set/get/delete round-trip via cache handlers               |
+| `sign-in-throttle-store.test.ts`       | Redis                 | Known-good, lock, increment, clear operations              |
+| `session-fingerprint.test.ts`          | Redis                 | Fingerprint binding, mismatch detection, revocation        |
+| `whois-resolution-consumer.test.ts`    | PostgreSQL + RabbitMQ | WhoIs resolution consumer message processing              |
+| `app-handlers.test.ts`                 | PostgreSQL            | App handlers with real repository implementations          |
 
 ## Running Tests
 

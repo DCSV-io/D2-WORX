@@ -6,7 +6,7 @@ Service-owned client library for the Geo microservice. Full 1:1 mirror of .NET `
 
 | File Name                                                      | Description                                                                                                                      |
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| [geo-client-options.ts](src/geo-client-options.ts)             | `GeoClientOptions` + `DEFAULT_GEO_CLIENT_OPTIONS` (WhoIs cache TTL, max entries, contact cache, `allowedContextKeys`, `apiKey`). |
+| [geo-client-options.ts](src/geo-client-options.ts)             | `GeoClientOptions` + `DEFAULT_GEO_CLIENT_OPTIONS` (WhoIs cache TTL, negative cache TTL, max entries, contact cache, `allowedContextKeys`, `apiKey`). |
 | [index.ts](src/index.ts)                                       | Main barrel export for all interfaces, handlers, messages, options, and gRPC helpers.                                            |
 | [grpc/api-key-interceptor.ts](src/grpc/api-key-interceptor.ts) | gRPC client interceptor that adds `x-api-key` metadata to every outgoing call.                                                   |
 | [grpc/create-geo-client.ts](src/grpc/create-geo-client.ts)     | Factory function `createGeoServiceClient(address, apiKey)` with API key interceptor pre-wired.                                   |
@@ -83,7 +83,7 @@ Handler implementations organized in TLC hierarchy. All extend `BaseHandler` and
 >
 > | File                                                                            | Class                     | Description                                                                  |
 > | ------------------------------------------------------------------------------- | ------------------------- | ---------------------------------------------------------------------------- |
-> | [find-whois.ts](src/handlers/x/find-whois.ts)                                   | `FindWhoIs`               | WhoIs lookup with `MemoryCacheStore` (LRU) and Geo gRPC fallback.            |
+> | [find-whois.ts](src/handlers/x/find-whois.ts)                                   | `FindWhoIs`               | WhoIs lookup with `MemoryCacheStore` (LRU), negative caching, and Geo gRPC fallback. |
 > | [get.ts](src/handlers/x/get.ts)                                                 | `Get`                     | Orchestrator: Memory → Redis → Disk → gRPC, populating higher tiers on miss. |
 > | [update-contacts-by-ext-keys.ts](src/handlers/x/update-contacts-by-ext-keys.ts) | `UpdateContactsByExtKeys` | Replaces contacts at ext keys via gRPC. Evicts ext-key cache. PII redacted.  |
 
