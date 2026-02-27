@@ -7,7 +7,7 @@ import type {
   ICreateOrgContactRecordHandler,
 } from "@d2/auth-app";
 import { orgContact } from "../../schema/custom-tables.js";
-import { isPgUniqueViolation } from "@d2/repository-pg";
+import { isPgUniqueViolation } from "@d2/errors-pg";
 
 export class CreateOrgContactRecord
   extends BaseHandler<I, O>

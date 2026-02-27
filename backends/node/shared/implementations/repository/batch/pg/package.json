@@ -1,5 +1,5 @@
 {
-  "name": "@d2/repository-pg",
+  "name": "@d2/batch-pg",
   "version": "0.0.1",
   "private": true,
   "type": "module",

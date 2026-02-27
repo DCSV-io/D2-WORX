@@ -1,7 +1,7 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
-import { isPgUniqueViolation } from "@d2/repository-pg";
+import { isPgUniqueViolation } from "@d2/errors-pg";
 import type {
   CreateDeliveryRequestRecordInput as I,
   CreateDeliveryRequestRecordOutput as O,

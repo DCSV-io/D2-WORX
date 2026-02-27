@@ -10,7 +10,7 @@ namespace D2.Shared.Repository.Errors.Pg;
 
 /// <summary>
 /// PostgreSQL error code predicates for constraint violation handling.
-/// Mirrors <c>@d2/repository-pg</c> (Node.js) error helpers.
+/// Mirrors <c>@d2/errors-pg</c> (Node.js) error helpers.
 /// <para>
 /// These predicates inspect the <see cref="PostgresException.SqlState"/> to
 /// determine the type of constraint violation, enabling handlers to return

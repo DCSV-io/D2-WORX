@@ -21,9 +21,9 @@ Tracks which shared infrastructure packages exist on both .NET and Node.js platf
 | Request enrichment       | `RequestEnrichment.Default`          | `@d2/request-enrichment` | Parity      |
 | Rate limiting            | `RateLimit.Default`                  | `@d2/ratelimit`          | Parity      |
 | Idempotency              | `Idempotency.Default`                | `@d2/idempotency`        | Parity      |
-| PG batch queries         | `Batch.Pg`                           | `@d2/repository-pg`      | Parity      |
-| PG transactions          | `Transactions.Pg`                    | Drizzle `db.transaction()`| N/A         |
-| PG error helpers         | `Errors.Pg`                          | `@d2/repository-pg`      | Parity      |
+| PG batch queries         | `Batch.Pg`                           | `@d2/batch-pg`           | Parity      |
+| PG transactions          | `Transactions.Pg`                    | —                        | .NET-only   |
+| PG error helpers         | `Errors.Pg`                          | `@d2/errors-pg`          | Parity      |
 | Messaging                | MassTransit / RabbitMQ               | `@d2/messaging`          | Parity      |
 | Geo client               | `Geo.Client`                         | `@d2/geo-client`         | Parity      |
 | Comms client             | —                                    | `@d2/comms-client`       | Node-only   |
@@ -36,7 +36,7 @@ Where parity exists, the APIs are adapted to each platform's idioms:
 | ----------------- | ----------------------------------------------- | ------------------------------------------------ |
 | Batch queries     | `BatchQuery<T,K>` fluent builder + LINQ         | `batchQuery(ids, queryFn, options)` utility fn   |
 | Batch result      | `ToD2ResultAsync()` extension method             | `toBatchResult(results, count)` utility fn       |
-| Transactions      | Handler-based `Begin`/`Commit`/`Rollback` (needed because EF Core `SaveChangesAsync` commits immediately without explicit transaction) | Drizzle `db.transaction(cb)` is OOTB — auto-commits on success, auto-rollbacks on throw. No wrapper needed. |
+| Transactions      | Handler-based `Begin`/`Commit`/`Rollback` — scoped `DbContext` enables ambient transactions across multiple handler calls within a request | Drizzle lacks ambient/scoped transactions. `db.transaction(cb)` requires all operations inside one callback — no way to open a transaction in one handler and commit/rollback in another. |
 | PG error checking | `PgErrorCodes.IsUniqueViolation(ex)` (Npgsql)   | `isPgUniqueViolation(err)` (node-postgres)       |
 | Cache handler DI  | `IServiceCollection.Add*()` extension methods    | Handler constructors + `addInstance()` in DI      |
 | Extension methods | C# 14 `extension(T)` syntax                     | Standalone utility functions                      |
@@ -46,6 +46,7 @@ Where parity exists, the APIs are adapted to each platform's idioms:
 ### .NET Only
 
 - **Handler.Extensions** — JWT claim extraction, `IsBearerOrSession` helpers. Not needed in Node.js because BetterAuth handles auth directly (no JWT validation middleware in Node services).
+- **Transactions.Pg** — Handler-based Begin/Commit/Rollback for EF Core. Enables ambient transactions scoped to a request, spanning multiple handler calls. Drizzle lacks this capability — `db.transaction(cb)` forces all operations into a single callback with no cross-handler transaction support.
 
 ### Node.js Only
 

@@ -1,6 +1,6 @@
 # D2.Shared.Repository.Errors.Pg
 
-PostgreSQL error code predicates for constraint violation handling. Mirrors `@d2/repository-pg` (Node.js) error helpers, providing cross-platform parity.
+PostgreSQL error code predicates for constraint violation handling. Mirrors `@d2/errors-pg` (Node.js) error helpers, providing cross-platform parity.
 
 ## Purpose
 
@@ -35,7 +35,7 @@ catch (Exception ex) when (PgErrorCodes.IsUniqueViolation(ex))
 
 ## Cross-Platform Parity
 
-| .NET                     | Node.js (`@d2/repository-pg`)  |
+| .NET                     | Node.js (`@d2/errors-pg`)      |
 | ------------------------ | ------------------------------ |
 | `PgErrorCodes.IsUniqueViolation(ex)` | `isPgUniqueViolation(err)` |
 | `PgErrorCodes.IsForeignKeyViolation(ex)` | `isPgForeignKeyViolation(err)` |
