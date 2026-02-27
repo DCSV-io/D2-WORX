@@ -1,6 +1,11 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { z } from "zod";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { Queries } from "@d2/geo-client";
+
+const resolveRecipientSchema = z.object({
+  contactId: zodGuid,
+});
 
 export interface ResolveRecipientInput {
   readonly contactId: string;
@@ -21,6 +26,10 @@ export interface ResolveRecipientOutput {
 export class RecipientResolver extends BaseHandler<ResolveRecipientInput, ResolveRecipientOutput> {
   private readonly getContactsByIds: Queries.IGetContactsByIdsHandler;
 
+  get redaction(): RedactionSpec {
+    return { outputFields: ["email", "phone"] };
+  }
+
   constructor(getContactsByIds: Queries.IGetContactsByIdsHandler, context: IHandlerContext) {
     super(context);
     this.getContactsByIds = getContactsByIds;
@@ -29,9 +38,8 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
   protected async executeAsync(
     input: ResolveRecipientInput,
   ): Promise<D2Result<ResolveRecipientOutput | undefined>> {
-    if (!input.contactId) {
-      return D2Result.ok({ data: {} });
-    }
+    const validation = this.validateInput(resolveRecipientSchema, input);
+    if (!validation.success) return D2Result.bubbleFail(validation);
 
     const result = await this.getContactsByIds.handleAsync({
       ids: [input.contactId],

@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
@@ -42,6 +42,10 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
   private readonly findByUserId: IFindSignInEventsByUserIdHandler;
   private readonly countByUserId: ICountSignInEventsByUserIdHandler;
   private readonly getLatestEventDate: IGetLatestSignInEventDateHandler;
+
+  get redaction(): RedactionSpec {
+    return { suppressOutput: true };
+  }
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<CachedEvents>;
     set: InMemoryCache.ISetHandler<CachedEvents>;

@@ -4,6 +4,7 @@ import { IRequestContextKey, IHandlerContextKey, HandlerContext, OrgType } from 
 import { ILoggerKey } from "@d2/logging";
 import type { IRequestContext } from "@d2/handler";
 import { SESSION_FIELDS } from "@d2/auth-domain";
+import { IFindActiveConsentByUserIdAndOrgKey } from "@d2/auth-app";
 import { SCOPE_KEY, USER_KEY, SESSION_KEY } from "../context-keys.js";
 import type { SessionVariables } from "./session.js";
 
@@ -98,6 +99,29 @@ export function createScopeMiddleware(provider: ServiceProvider) {
       // Build IHandlerContext — scoped (new per request)
       const logger = provider.resolve(ILoggerKey);
       scope.setInstance(IHandlerContextKey, new HandlerContext(requestContext, logger));
+
+      // Validate emulation consent if emulating
+      if (requestContext.isOrgEmulating && requestContext.userId && requestContext.targetOrgId) {
+        const consentHandler = scope.resolve(IFindActiveConsentByUserIdAndOrgKey);
+        const consentResult = await consentHandler.handleAsync({
+          userId: requestContext.userId,
+          grantedToOrgId: requestContext.targetOrgId,
+        });
+
+        // If no active consent found, strip emulation from context
+        if (!consentResult.success || !consentResult.data?.consent) {
+          const stripped: IRequestContext = {
+            ...requestContext,
+            targetOrgId: requestContext.agentOrgId,
+            targetOrgType: requestContext.agentOrgType,
+            isOrgEmulating: false,
+            isTargetingStaff: requestContext.isAgentStaff,
+            isTargetingAdmin: requestContext.isAgentAdmin,
+          };
+          scope.setInstance(IRequestContextKey, stripped);
+          scope.setInstance(IHandlerContextKey, new HandlerContext(stripped, logger));
+        }
+      }
 
       c.set(SCOPE_KEY, scope);
       await next();

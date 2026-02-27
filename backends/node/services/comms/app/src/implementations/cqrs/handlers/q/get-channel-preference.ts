@@ -1,9 +1,14 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { z } from "zod";
+import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ChannelPreference } from "@d2/comms-domain";
 import type { ChannelPreferenceRepoHandlers } from "../../../../interfaces/repository/handlers/index.js";
 import type { InMemoryCache } from "@d2/interfaces";
 import { COMMS_CACHE_KEYS } from "../../../../cache-keys.js";
+
+const getChannelPreferenceSchema = z.object({
+  contactId: zodGuid,
+});
 
 export interface GetChannelPreferenceInput {
   readonly contactId: string;
@@ -39,11 +44,8 @@ export class GetChannelPreference extends BaseHandler<
   protected async executeAsync(
     input: GetChannelPreferenceInput,
   ): Promise<D2Result<GetChannelPreferenceOutput | undefined>> {
-    if (!input.contactId) {
-      return D2Result.validationFailed({
-        inputErrors: [["contactId", "Contact ID is required."]],
-      });
-    }
+    const validation = this.validateInput(getChannelPreferenceSchema, input);
+    if (!validation.success) return D2Result.bubbleFail(validation);
 
     const cacheKey = COMMS_CACHE_KEYS.channelPref(input.contactId);
 

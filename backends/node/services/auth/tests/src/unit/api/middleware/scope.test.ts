@@ -5,14 +5,33 @@ import { IRequestContextKey } from "@d2/handler";
 import type { IRequestContext } from "@d2/handler";
 import { ILoggerKey } from "@d2/logging";
 import { SESSION_FIELDS } from "@d2/auth-domain";
+import { IFindActiveConsentByUserIdAndOrgKey } from "@d2/auth-app";
+import { D2Result } from "@d2/result";
+
+/**
+ * Creates a mock consent handler that returns the specified result.
+ * Defaults to returning a valid (active) consent.
+ */
+function createMockConsentHandler(hasActiveConsent = true) {
+  return {
+    handleAsync: vi.fn(async () =>
+      hasActiveConsent
+        ? D2Result.ok({ data: { consent: { id: "consent-1" } } })
+        : D2Result.ok({ data: { consent: null } }),
+    ),
+  };
+}
 
 /**
  * Creates a mock ServiceProvider that returns controllable scopes.
  * Tracks setInstance calls and supports resolve for ILoggerKey.
+ *
+ * @param hasActiveConsent - Whether the mock consent handler returns a valid consent (default: true).
  */
-function createMockProvider() {
+function createMockProvider(hasActiveConsent = true) {
   const disposeFn = vi.fn();
   const instances = new Map<unknown, unknown>();
+  const consentHandler = createMockConsentHandler(hasActiveConsent);
 
   const scope = {
     setInstance: vi.fn((key: unknown, value: unknown) => {
@@ -20,6 +39,7 @@ function createMockProvider() {
     }),
     resolve: vi.fn((key: unknown) => {
       if (instances.has(key)) return instances.get(key);
+      if (key === IFindActiveConsentByUserIdAndOrgKey) return consentHandler;
       throw new Error(`Key not registered in scope: ${String(key)}`);
     }),
     dispose: disposeFn,
@@ -41,7 +61,7 @@ function createMockProvider() {
     }),
   };
 
-  return { provider, scope, disposeFn, logger };
+  return { provider, scope, disposeFn, logger, consentHandler };
 }
 
 type User = { id: string; email: string; name: string } | null;
@@ -211,6 +231,52 @@ describe("Scope Middleware", () => {
       expect(ctx.agentOrgId).toBe("org-admin");
       expect(ctx.targetOrgType).toBe("Customer");
       expect(ctx.agentOrgType).toBe("Admin");
+    });
+
+    it("should strip emulation when consent is expired or revoked", async () => {
+      const mock = createMockProvider(false);
+      const user = { id: "u1", email: "admin@test.com", name: "Admin" };
+      const session = {
+        [SESSION_FIELDS.ACTIVE_ORG_TYPE]: "admin",
+        [SESSION_FIELDS.ACTIVE_ORG_ID]: "org-admin",
+        [SESSION_FIELDS.EMULATED_ORG_ID]: "org-customer",
+        [SESSION_FIELDS.EMULATED_ORG_TYPE]: "customer",
+      };
+      const app = createTestApp(mock, user, session);
+
+      const res = await get(app);
+      const ctx = (await res.json()) as IRequestContext;
+
+      // Emulation should be stripped — falls back to agent's own org
+      expect(ctx.isOrgEmulating).toBe(false);
+      expect(ctx.targetOrgId).toBe("org-admin");
+      expect(ctx.targetOrgType).toBe("Admin");
+      expect(ctx.agentOrgId).toBe("org-admin");
+      expect(ctx.agentOrgType).toBe("Admin");
+      expect(ctx.isTargetingStaff).toBe(true);
+      expect(ctx.isTargetingAdmin).toBe(true);
+    });
+
+    it("should preserve emulation when consent is active", async () => {
+      const mock = createMockProvider(true);
+      const user = { id: "u1", email: "admin@test.com", name: "Admin" };
+      const session = {
+        [SESSION_FIELDS.ACTIVE_ORG_TYPE]: "admin",
+        [SESSION_FIELDS.ACTIVE_ORG_ID]: "org-admin",
+        [SESSION_FIELDS.EMULATED_ORG_ID]: "org-customer",
+        [SESSION_FIELDS.EMULATED_ORG_TYPE]: "customer",
+      };
+      const app = createTestApp(mock, user, session);
+
+      const res = await get(app);
+      const ctx = (await res.json()) as IRequestContext;
+
+      // Emulation should be preserved — consent is active
+      expect(ctx.isOrgEmulating).toBe(true);
+      expect(ctx.targetOrgId).toBe("org-customer");
+      expect(ctx.targetOrgType).toBe("Customer");
+      expect(ctx.agentOrgId).toBe("org-admin");
+      expect(mock.consentHandler.handleAsync).toHaveBeenCalledOnce();
     });
 
     it("should set targetOrgId equal to agentOrgId when not emulating", async () => {

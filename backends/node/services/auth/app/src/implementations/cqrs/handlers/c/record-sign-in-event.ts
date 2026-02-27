@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { createSignInEvent, type CreateSignInEventInput, type SignInEvent } from "@d2/auth-domain";
 import type { ICreateSignInEventHandler } from "../../../../interfaces/repository/handlers/index.js";
@@ -31,6 +31,10 @@ export class RecordSignInEvent extends BaseHandler<
   RecordSignInEventOutput
 > {
   private readonly createRecord: ICreateSignInEventHandler;
+
+  get redaction(): RedactionSpec {
+    return { inputFields: ["ipAddress", "userAgent"], suppressOutput: true };
+  }
 
   constructor(createRecord: ICreateSignInEventHandler, context: IHandlerContext) {
     super(context);
