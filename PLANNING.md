@@ -1420,24 +1420,24 @@ Consolidated from all sweep reports (now deleted). This is the single source of 
 
 Sorted by priority: security/breaking first, then bugs/data integrity, infrastructure, observability, tests, documentation, polish.
 
-**Triage (68→41):** 26 non-issues removed. Remaining: 28 fixes (do first), 6 decisions needed, 13 polish (do last).
+**Triage (68→43):** 26 non-issues removed, 6 decisions resolved. Remaining: 28 fixes (do first), 15 polish (do last). 3 accepted/closed items kept for context.
 
 #### Security / Auth Hardening
 
 | #  | Item                                                    | Owner   | Effort | Resolution                                                                                                                                                |
 | -- | ------------------------------------------------------- | ------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1  | RedactionSpec on all PII-handling handlers              | Various | Medium | **FIX:** Add `get redaction()` to 5 handlers: RecordSignInEvent, GetSignInEvents, CreateOrgContact (auth), RecipientResolver, GetChannelPreference (comms) |
-| 2  | Session update hook: emulation consent validation       | Auth    | Medium | **Q: DECISION NEEDED** — hook DOES re-fetch membership on org switch. Gap: no emulation consent validation. Gateway also checks. Worth adding?             |
+| 2  | Session update hook: emulation consent validation       | Auth    | Small  | **FIX:** Add consent check in `scope.ts` only when `EMULATED_ORG_ID` is set — cheap conditional, only fires for rare emulation sessions                    |
 | 3  | Emulation consent expiry not enforced on active session | Auth    | Medium | **FIX:** Add consent TTL check in `scope.ts` middleware — verify emulation consent still valid before allowing `EMULATED_ORG_ID` to propagate              |
-| 4  | JWKS cache fallback when auth unreachable               | Gateway | Medium | **Q: DECISION NEEDED** — 8hr proactive refresh + 5min forced refresh + internal gateway. Risk is low. Stale-while-revalidate worth adding?                 |
+| 4  | ~~JWKS cache fallback when auth unreachable~~           | Gateway | —      | **ACCEPTED:** 8hr proactive refresh + internal gateway is sufficient. Auth downtime >8h + gateway restart is extreme edge case. OTel alerting for service outages covers this operationally |
 | 5  | 2 handlers missing Zod `validateInput()`               | Comms   | Small  | **FIX:** Add Zod schema + `this.validateInput()` to GetChannelPreference and RecipientResolver                                                            |
 
 #### Bugs / Data Integrity
 
 | #  | Item                                                          | Owner | Effort | Resolution                                                                                                                                               |
 | -- | ------------------------------------------------------------- | ----- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 6  | sign_in_event schema: redundant ipAddress + empty whoIsId     | Auth  | Medium | **Q: DECISION NEEDED** — whoIsId FK never populated anywhere. Options: (a) remove whoIsId column, (b) populate async via FindWhoIs, (c) keep for future   |
-| 7  | No transaction wrapping on multi-step org-contact ops         | Auth  | Medium | **Q: DECISION NEEDED** — Geo gRPC + DB insert have best-effort rollback. Options: (a) Drizzle `db.transaction()`, (b) accept eventual consistency        |
+| 6  | sign_in_event schema: async whoIsId population                | Auth  | Medium | **FIX:** Keep both columns. Auth emits `SignInOccurred` event (ip, fingerprint, signInEventId). Geo consumes → FindWhoIs → emits `WhoIsResolved` (signInEventId, whoIsId). Auth consumes → populates FK. Fail-open: if anything fails, ipAddress is still there for forensics |
+| 7  | ~~No transaction wrapping on multi-step org-contact ops~~     | Auth  | —      | **ACCEPTED:** Orphaned Geo contacts are harmless. Best-effort rollback is sufficient. Geo background cleanup job handles orphans (same pattern as location cleanup) |
 | 8  | Comms infra: no constraint violation handling                 | Comms | Small  | **FIX:** Add try/catch with `isPgUniqueViolation()` to `CreateDeliveryRequestRecord` for correlationId unique index. Return 409 instead of 500            |
 | 9  | `deliveryAttempt.set(updates)` uses `Record<string, unknown>` | Comms | Tiny   | **FIX:** Refactor to typed partial object with spread syntax                                                                                              |
 | 10 | No explicit cache invalidation on write (auth)                | Auth  | Small  | **FIX (doc only):** Document the intentional TTL-based approach. BetterAuth dual-writes to DB+Redis; cookie cache expires in 5min                         |
@@ -1448,8 +1448,8 @@ Sorted by priority: security/breaking first, then bugs/data integrity, infrastru
 | -- | ------------------------------------------------ | ----- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 11 | geoClient `undefined as never` guard             | Both  | Tiny   | **FIX:** Replace `undefined as never` with `throw new Error("GEO_GRPC_ADDRESS required")` at startup in both auth + comms composition roots                    |
 | 12 | Connection recovery backoff not configurable     | All   | Small  | **FIX:** Expose `rabbitmq-client` reconnection options in `MessageBusOptions`. Pass through to `Connection` constructor                                        |
-| 13 | RabbitMQ down → verification email lost (outbox) | Auth  | High   | **Q: DECISION NEEDED** — No outbox pattern. If RabbitMQ down at sign-up, verification email lost. Options: (a) outbox table + poller, (b) accept risk, (c) inline fallback |
-| 14 | No circuit breaker on Geo gRPC calls             | All   | Medium | **Q: DECISION NEEDED** — Each failed request retries gRPC (no fast-fail). Options: (a) `opossum` library, (b) custom failure counter, (c) defer               |
+| 13 | RabbitMQ down → verification email lost           | Auth  | Small  | **FIX:** Accept risk (no outbox). Add resend-verification endpoint — BetterAuth blocks sign-in for unverified users (`requireEmailVerification: true`) and has NO built-in resend. Without a resend endpoint, accounts are permanently dead if first email fails. Also ensure `sendOnSignIn: true` config triggers resend on blocked sign-in attempt |
+| 14 | ~~No circuit breaker on Geo gRPC calls~~         | All   | —      | **ACCEPTED (for now):** Fail-open behavior is correct (requests succeed without geo data). Latency penalty only matters under sustained failure. Move to Polish as future addition for non-critical cross-service gRPC calls |
 | 15 | No readiness probe on RabbitMQ consumer          | Comms | Small  | **FIX:** Capture `.ready` promise from `createNotificationConsumer()`, await before returning from `createCommsService()`                                      |
 
 #### Observability
@@ -1502,6 +1502,8 @@ Sorted by priority: security/breaking first, then bugs/data integrity, infrastru
 | 39 | E2E test wiring vs production divergence            | E2E    | Small  | **FIX:** Document where stubs diverge from real providers in E2E README                                                         |
 | 40 | Test helper fixture sharing (auth ↔ comms)          | Tests  | Small  | **FIX:** Extract shared `createTestDb()` to `@d2/testing` — 70 lines duplicate postgres-test-helpers                            |
 | 41 | Integration test container reuse across files       | Tests  | Medium | **FIX:** Implement `vi.config.ts` global setup for shared Testcontainers across test files                                      |
+| 42 | Circuit breaker for non-critical cross-service gRPC | All    | Medium | **FIX:** Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure      |
+| 43 | OTel alerting for service outages                   | All    | Medium | **FIX:** Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                     |
 
 ### 2. Can Only Fix Later
 
