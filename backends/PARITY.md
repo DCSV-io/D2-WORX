@@ -22,7 +22,7 @@ Tracks which shared infrastructure packages exist on both .NET and Node.js platf
 | Rate limiting            | `RateLimit.Default`                  | `@d2/ratelimit`          | Parity      |
 | Idempotency              | `Idempotency.Default`                | `@d2/idempotency`        | Parity      |
 | PG batch queries         | `Batch.Pg`                           | `@d2/repository-pg`      | Parity      |
-| PG transactions          | `Transactions.Pg`                    | `@d2/repository-pg`      | Parity      |
+| PG transactions          | `Transactions.Pg`                    | Drizzle `db.transaction()`| N/A         |
 | PG error helpers         | `Errors.Pg`                          | `@d2/repository-pg`      | Parity      |
 | Messaging                | MassTransit / RabbitMQ               | `@d2/messaging`          | Parity      |
 | Geo client               | `Geo.Client`                         | `@d2/geo-client`         | Parity      |
@@ -36,7 +36,7 @@ Where parity exists, the APIs are adapted to each platform's idioms:
 | ----------------- | ----------------------------------------------- | ------------------------------------------------ |
 | Batch queries     | `BatchQuery<T,K>` fluent builder + LINQ         | `batchQuery(ids, queryFn, options)` utility fn   |
 | Batch result      | `ToD2ResultAsync()` extension method             | `toBatchResult(results, count)` utility fn       |
-| Transactions      | Handler-based `Begin`/`Commit`/`Rollback`        | `withTransaction(db, fn)` (Drizzle auto-manages) |
+| Transactions      | Handler-based `Begin`/`Commit`/`Rollback` (needed because EF Core `SaveChangesAsync` commits immediately without explicit transaction) | Drizzle `db.transaction(cb)` is OOTB — auto-commits on success, auto-rollbacks on throw. No wrapper needed. |
 | PG error checking | `PgErrorCodes.IsUniqueViolation(ex)` (Npgsql)   | `isPgUniqueViolation(err)` (node-postgres)       |
 | Cache handler DI  | `IServiceCollection.Add*()` extension methods    | Handler constructors + `addInstance()` in DI      |
 | Extension methods | C# 14 `extension(T)` syntax                     | Standalone utility functions                      |

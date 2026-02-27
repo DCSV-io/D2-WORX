@@ -18,8 +18,5 @@
   ],
   "dependencies": {
     "@d2/result": "workspace:*"
-  },
-  "peerDependencies": {
-    "drizzle-orm": ">=0.40.0"
   }
 }

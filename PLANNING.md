@@ -1490,7 +1490,7 @@ Sorted by priority: security/breaking first, then bugs/data integrity, infrastru
 | #   | Item                                                | Owner  | Effort | Resolution                                                                                                                  |
 | --- | --------------------------------------------------- | ------ | ------ | --------------------------------------------------------------------------------------------------------------------------- |
 | 26  | `@d2/repository-pg`: Batch query utilities          | Node   | Medium | ✅ **DONE:** `batchQuery()` + `toBatchResult()` + `toBatchDictionaryResult()` added to `@d2/repository-pg`                  |
-| 27  | `@d2/repository-pg`: Drizzle transaction helpers    | Node   | Medium | ✅ **DONE:** `withTransaction(db, fn)` — D2Result-aware wrapper around Drizzle `db.transaction()`                            |
+| 27  | `@d2/repository-pg`: Drizzle transaction helpers    | Node   | Medium | ✅ **N/A:** Drizzle `db.transaction()` is OOTB (auto-commit/rollback). No wrapper needed — .NET needs `Transactions.Pg` because EF Core lacks this. |
 | 28  | .NET: Shared PG error handling project              | .NET   | Small  | ✅ **DONE:** `Errors.Pg` project with `PgErrorCodes` static helpers (IsUniqueViolation, IsForeignKeyViolation, etc.)        |
 | 29  | Middleware chain order E2E test                     | Auth   | Medium | ✅ **DONE:** `middleware-chain-order.test.ts` — CORS, security headers, enrichment→rate-limiting ordering, 404 handling      |
 | 30  | Redis connection failure fallback tests             | Both   | Medium | ✅ **DONE:** `redis-failover.test.ts` in shared-tests (cache-redis handlers) + auth-tests (rate limiter fail-open)           |
