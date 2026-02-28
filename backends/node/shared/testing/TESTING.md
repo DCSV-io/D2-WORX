@@ -4,12 +4,12 @@ Shared test infrastructure and custom Vitest matchers for D2Result assertions. U
 
 ## Files
 
-| File Name                                                | Description                                                                                                                                        |
-| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [result-matchers.ts](src/result-matchers.ts)             | Custom Vitest matchers (`toBeSuccess`, `toBeFailure`, `toHaveData`, `toHaveErrorCode`, `toHaveStatusCode`, `toHaveMessages`, `toHaveInputErrors`). |
-| [test-helpers.ts](src/test-helpers.ts)                   | Test utility functions (`createTraceId` for test contexts).                                                                                        |
-| [postgres-test-helper.ts](src/postgres-test-helper.ts)   | `createPostgresTestHelper(runMigrations, options?)` — shared Testcontainers PG lifecycle, Drizzle setup, and table cleanup.                        |
-| [index.ts](src/index.ts)                                 | Side-effect import to register matchers; exports `createTraceId`, `createPostgresTestHelper`, `PostgresTestHelper`, `PostgresTestHelperOptions`.   |
+| File Name                                              | Description                                                                                                                                        |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [result-matchers.ts](src/result-matchers.ts)           | Custom Vitest matchers (`toBeSuccess`, `toBeFailure`, `toHaveData`, `toHaveErrorCode`, `toHaveStatusCode`, `toHaveMessages`, `toHaveInputErrors`). |
+| [test-helpers.ts](src/test-helpers.ts)                 | Test utility functions (`createTraceId` for test contexts).                                                                                        |
+| [postgres-test-helper.ts](src/postgres-test-helper.ts) | `createPostgresTestHelper(runMigrations, options?)` — shared Testcontainers PG lifecycle, Drizzle setup, and table cleanup.                        |
+| [index.ts](src/index.ts)                               | Side-effect import to register matchers; exports `createTraceId`, `createPostgresTestHelper`, `PostgresTestHelper`, `PostgresTestHelperOptions`.   |
 
 ## Usage
 

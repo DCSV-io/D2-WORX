@@ -109,6 +109,30 @@ export type {
   IDeleteOrgContactRecordHandler,
 } from "./d/delete-org-contact-record.js";
 
+export type {
+  PurgeExpiredSessionsInput,
+  PurgeExpiredSessionsOutput,
+  IPurgeExpiredSessionsHandler,
+} from "./d/purge-expired-sessions.js";
+
+export type {
+  PurgeSignInEventsInput,
+  PurgeSignInEventsOutput,
+  IPurgeSignInEventsHandler,
+} from "./d/purge-sign-in-events.js";
+
+export type {
+  PurgeExpiredInvitationsInput,
+  PurgeExpiredInvitationsOutput,
+  IPurgeExpiredInvitationsHandler,
+} from "./d/purge-expired-invitations.js";
+
+export type {
+  PurgeExpiredEmulationConsentsInput,
+  PurgeExpiredEmulationConsentsOutput,
+  IPurgeExpiredEmulationConsentsHandler,
+} from "./d/purge-expired-emulation-consents.js";
+
 // --- Query (Q) ---
 export type { PingDbInput, PingDbOutput, IPingDbHandler } from "./q/ping-db.js";
 

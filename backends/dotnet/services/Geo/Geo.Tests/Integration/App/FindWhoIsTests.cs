@@ -82,7 +82,7 @@ public class FindWhoIsTests : IAsyncLifetime
         }));
         services.AddSingleton(Options.Create(new GeoInfraOptions
         {
-            RepoQueryBatchSize = 100,
+            RepoBatchSize = 100,
         }));
 
         // Register database context.

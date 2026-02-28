@@ -18,10 +18,7 @@ import { D2Result } from "@d2/result";
  * @param requestedCount - Number of unique IDs that were requested (after dedup/filter).
  * @returns D2Result with Ok, SomeFound, or NotFound status.
  */
-export function toBatchResult<T>(
-  results: T[],
-  requestedCount: number,
-): D2Result<T[] | undefined> {
+export function toBatchResult<T>(results: T[], requestedCount: number): D2Result<T[] | undefined> {
   if (requestedCount === 0) {
     return D2Result.ok({ data: [] });
   }

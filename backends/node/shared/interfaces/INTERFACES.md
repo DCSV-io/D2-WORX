@@ -41,18 +41,18 @@ src/
 
 ## Caching — Distributed
 
-| File                      | Handler             | Description                                         |
-| ------------------------- | ------------------- | --------------------------------------------------- |
-| `handlers/c/set-nx.ts`       | `ISetNxHandler`        | SET if Not eXists with optional TTL (for locks).       |
-| `handlers/c/acquire-lock.ts` | `IAcquireLockHandler`  | Acquire distributed lock via SET NX PX (mandatory TTL). |
-| `handlers/r/get.ts`       | `IGetHandler`       | Retrieve typed value from distributed cache by key. |
-| `handlers/r/exists.ts`    | `IExistsHandler`    | Check key existence without retrieval.              |
-| `handlers/r/get-ttl.ts`   | `IGetTtlHandler`    | Get remaining TTL of a key in milliseconds.         |
-| `handlers/u/set.ts`       | `ISetHandler`       | Store typed value with optional TTL.                |
-| `handlers/u/increment.ts` | `IIncrementHandler` | Atomic counter increment with optional TTL.         |
-| `handlers/r/ping.ts`      | `IPingHandler`      | Verify distributed cache connectivity and latency.  |
-| `handlers/d/remove.ts`       | `IRemoveHandler`       | Delete key from distributed cache.                     |
-| `handlers/d/release-lock.ts` | `IReleaseLockHandler`  | Release distributed lock (safe compare-and-delete).    |
+| File                         | Handler               | Description                                             |
+| ---------------------------- | --------------------- | ------------------------------------------------------- |
+| `handlers/c/set-nx.ts`       | `ISetNxHandler`       | SET if Not eXists with optional TTL (for locks).        |
+| `handlers/c/acquire-lock.ts` | `IAcquireLockHandler` | Acquire distributed lock via SET NX PX (mandatory TTL). |
+| `handlers/r/get.ts`          | `IGetHandler`         | Retrieve typed value from distributed cache by key.     |
+| `handlers/r/exists.ts`       | `IExistsHandler`      | Check key existence without retrieval.                  |
+| `handlers/r/get-ttl.ts`      | `IGetTtlHandler`      | Get remaining TTL of a key in milliseconds.             |
+| `handlers/u/set.ts`          | `ISetHandler`         | Store typed value with optional TTL.                    |
+| `handlers/u/increment.ts`    | `IIncrementHandler`   | Atomic counter increment with optional TTL.             |
+| `handlers/r/ping.ts`         | `IPingHandler`        | Verify distributed cache connectivity and latency.      |
+| `handlers/d/remove.ts`       | `IRemoveHandler`      | Delete key from distributed cache.                      |
+| `handlers/d/release-lock.ts` | `IReleaseLockHandler` | Release distributed lock (safe compare-and-delete).     |
 
 ## Middleware — Request Enrichment
 

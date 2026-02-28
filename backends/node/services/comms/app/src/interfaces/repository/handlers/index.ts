@@ -87,6 +87,19 @@ export type {
   IUpdateChannelPreferenceRecordHandler,
 } from "./u/update-channel-preference-record.js";
 
+// --- Delete (D) ---
+export type {
+  PurgeDeletedMessagesInput,
+  PurgeDeletedMessagesOutput,
+  IPurgeDeletedMessagesHandler,
+} from "./d/purge-deleted-messages.js";
+
+export type {
+  PurgeDeliveryHistoryInput,
+  PurgeDeliveryHistoryOutput,
+  IPurgeDeliveryHistoryHandler,
+} from "./d/purge-delivery-history.js";
+
 // --- Query (Q) ---
 export type { PingDbInput, PingDbOutput, IPingDbHandler } from "./q/ping-db.js";
 

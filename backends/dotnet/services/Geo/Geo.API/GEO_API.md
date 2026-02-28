@@ -4,12 +4,13 @@ gRPC service layer exposing geographic reference data endpoints. Thin pass-throu
 
 ## Files
 
-| File Name                                                             | Description                                                                                    |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [Program.cs](Program.cs)                                              | Service bootstrap with DI registration for Infra, GeoRefData provider, and App layers.         |
-| [GeoService.cs](Services/GeoService.cs)                               | gRPC service implementation delegating to `IComplex.IGetHandler` with proto result conversion. |
-| [ApiKeyInterceptor.cs](Interceptors/ApiKeyInterceptor.cs)             | gRPC server interceptor validating `x-api-key` header and context key authorization.           |
-| [RequiresApiKeyAttribute.cs](Interceptors/RequiresApiKeyAttribute.cs) | Attribute marking gRPC methods that require API key validation.                                |
+| File Name                                                             | Description                                                                                                                          |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [Program.cs](Program.cs)                                              | Service bootstrap with DI registration for Infra, GeoRefData provider, and App layers.                                               |
+| [GeoService.cs](Services/GeoService.cs)                               | gRPC service implementation delegating to `IComplex.IGetHandler` with proto result conversion.                                       |
+| [GeoJobService.cs](Services/GeoJobService.cs)                         | gRPC service for scheduled jobs, delegating to `ICommands.IPurgeStaleWhoIsHandler` and `ICommands.ICleanupOrphanedLocationsHandler`. |
+| [ApiKeyInterceptor.cs](Interceptors/ApiKeyInterceptor.cs)             | gRPC server interceptor validating `x-api-key` header and context key authorization.                                                 |
+| [RequiresApiKeyAttribute.cs](Interceptors/RequiresApiKeyAttribute.cs) | Attribute marking gRPC methods that require API key validation.                                                                      |
 
 ## gRPC Endpoints
 
@@ -26,6 +27,33 @@ Defined in [geo.proto](../../../../../contracts/protos/geo/v1/geo.proto):
 | `CreateContacts`             | `CreateContactsRequest`             | `CreateContactsResponse`             | Batch Contact creation with embedded locations, returning ContactDTOs.                                                    |
 | `DeleteContactsByExtKeys`    | `DeleteContactsByExtKeysRequest`    | `DeleteContactsByExtKeysResponse`    | Delete Contacts by ContextKey/RelatedEntityId pairs. Returns count + publishes cache eviction event.                      |
 | `UpdateContactsByExtKeys`    | `UpdateContactsByExtKeysRequest`    | `UpdateContactsByExtKeysResponse`    | Replace Contacts at given ext keys (delete old, create new). Returns old-to-new mapping + publishes cache eviction event. |
+
+## gRPC Job Endpoints
+
+Defined in [geo_jobs.proto](../../../../../contracts/protos/geo/v1/geo_jobs.proto). Uses shared `TriggerJobRequest`/`TriggerJobResponse` from `common/v1/jobs.proto`.
+
+| RPC                        | Request             | Response             | Description                                                                                                                                                        |
+| -------------------------- | ------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PurgeStaleWhoIs`          | `TriggerJobRequest` | `TriggerJobResponse` | Deletes WhoIs records older than `WhoIsRetentionDays` (default 180) by Year/Month cutoff. Requires API key. Runs before `CleanupOrphanedLocations`.                |
+| `CleanupOrphanedLocations` | `TriggerJobRequest` | `TriggerJobResponse` | Deletes Location entities with zero Contact and zero WhoIs references. Requires API key. Returns `JobExecutionData` with rows affected, duration, and lock status. |
+
+```
+GeoJobService (gRPC)
+    │
+    ├──► ICommands.IPurgeStaleWhoIsHandler (App layer)
+    │       │
+    │       ├──► Distributed lock (Redis SET NX)
+    │       └──► IDelete.IDeleteStaleWhoIsHandler (Repository)
+    │               │
+    │               └──► BatchDelete (chunked Year/Month cutoff)
+    │
+    └──► ICommands.ICleanupOrphanedLocationsHandler (App layer)
+            │
+            ├──► Distributed lock (Redis SET NX)
+            └──► IDelete.IDeleteOrphanedLocationsHandler (Repository)
+                    │
+                    └──► BatchDelete (chunked EF Core ExecuteDeleteAsync)
+```
 
 ## Security — API Key Interceptor
 
@@ -44,7 +72,7 @@ Configuration via `GeoAppOptions.ApiKeyMappings`:
 
 ```json
 {
-  "GeoAppOptions": {
+  "GEO_APP": {
     "ApiKeyMappings": {
       "auth-service-key": ["org_contact", "user"],
       "billing-key": ["billing_contact"]

@@ -18,6 +18,10 @@ import {
   IFindOrgContactsByOrgIdKey,
   IUpdateOrgContactRecordKey,
   IDeleteOrgContactRecordKey,
+  IPurgeExpiredSessionsKey,
+  IPurgeSignInEventsKey,
+  IPurgeExpiredInvitationsKey,
+  IPurgeExpiredEmulationConsentsKey,
 } from "@d2/auth-app";
 import { CreateSignInEvent } from "./repository/handlers/c/create-sign-in-event.js";
 import { FindSignInEventsByUserId } from "./repository/handlers/r/find-sign-in-events-by-user-id.js";
@@ -34,6 +38,10 @@ import { FindOrgContactById } from "./repository/handlers/r/find-org-contact-by-
 import { FindOrgContactsByOrgId } from "./repository/handlers/r/find-org-contacts-by-org-id.js";
 import { UpdateOrgContactRecord } from "./repository/handlers/u/update-org-contact-record.js";
 import { DeleteOrgContactRecord } from "./repository/handlers/d/delete-org-contact-record.js";
+import { PurgeExpiredSessions } from "./repository/handlers/d/purge-expired-sessions.js";
+import { PurgeSignInEvents } from "./repository/handlers/d/purge-sign-in-events.js";
+import { PurgeExpiredInvitations } from "./repository/handlers/d/purge-expired-invitations.js";
+import { PurgeExpiredEmulationConsents } from "./repository/handlers/d/purge-expired-emulation-consents.js";
 import { PingDb } from "./repository/handlers/q/ping-db.js";
 
 /**
@@ -110,5 +118,23 @@ export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): v
   services.addTransient(
     IDeleteOrgContactRecordKey,
     (sp) => new DeleteOrgContactRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+
+  // Job purge repo handlers
+  services.addTransient(
+    IPurgeExpiredSessionsKey,
+    (sp) => new PurgeExpiredSessions(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IPurgeSignInEventsKey,
+    (sp) => new PurgeSignInEvents(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IPurgeExpiredInvitationsKey,
+    (sp) => new PurgeExpiredInvitations(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IPurgeExpiredEmulationConsentsKey,
+    (sp) => new PurgeExpiredEmulationConsents(db, sp.resolve(IHandlerContextKey)),
   );
 }

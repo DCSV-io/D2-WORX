@@ -64,7 +64,7 @@ public class GetContactsByIdsTests : IAsyncLifetime
     {
         _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
-        _infraOptions = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
+        _infraOptions = Options.Create(new GeoInfraOptions { RepoBatchSize = 100 });
         _appOptions = Options.Create(new GeoAppOptions { ContactExpirationDuration = TimeSpan.FromHours(1) });
 
         SetupMockCacheHandlers();

@@ -1,80 +1,10 @@
 import { serve } from "@hono/node-server";
 import { MessageBus, type IMessagePublisher } from "@d2/messaging";
 import { createLogger } from "@d2/logging";
+import { parseEnvArray, parsePostgresUrl, parseRedisUrl } from "@d2/service-defaults/config";
 import { createApp } from "./composition-root.js";
 
 const logger = createLogger({ serviceName: "auth-service" });
-
-/**
- * Parses indexed environment variables into an array.
- * Reads `${prefix}__0`, `${prefix}__1`, ... until a gap is found.
- * Matches .NET's indexed-array binding convention.
- */
-function parseEnvArray(prefix: string): string[] {
-  const result: string[] = [];
-  for (let i = 0; ; i++) {
-    const value = process.env[`${prefix}__${i}`];
-    if (value === undefined) break;
-    result.push(value);
-  }
-  return result;
-}
-
-/**
- * Converts a .NET ADO.NET PostgreSQL connection string to a libpq URI.
- * Passes through strings that are already URIs (standalone / test mode).
- *
- * ADO.NET: `Host=host;Port=port;Username=user;Password=pass;Database=db`
- * URI:     `postgresql://user:pass@host:port/db`
- */
-function parsePostgresUrl(connectionString: string): string {
-  if (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://")) {
-    return connectionString;
-  }
-
-  const params = new Map<string, string>();
-  for (const part of connectionString.split(";")) {
-    const eq = part.indexOf("=");
-    if (eq === -1) continue;
-    params.set(part.slice(0, eq).trim().toLowerCase(), part.slice(eq + 1).trim());
-  }
-
-  const host = params.get("host") ?? "localhost";
-  const port = params.get("port") ?? "5432";
-  const user = encodeURIComponent(params.get("username") ?? "postgres");
-  const password = encodeURIComponent(params.get("password") ?? "");
-  const database = params.get("database") ?? "";
-
-  return `postgresql://${user}:${password}@${host}:${port}/${database}`;
-}
-
-/**
- * Converts a .NET StackExchange.Redis connection string to a Redis URI.
- * Passes through strings that are already URIs (standalone / test mode).
- *
- * StackExchange: `host:port,password=pass`
- * URI:           `redis://:pass@host:port`
- */
-function parseRedisUrl(connectionString: string): string {
-  if (connectionString.startsWith("redis://") || connectionString.startsWith("rediss://")) {
-    return connectionString;
-  }
-
-  const [hostPort = "", ...options] = connectionString.split(",");
-  const params = new Map<string, string>();
-  for (const opt of options) {
-    const eq = opt.indexOf("=");
-    if (eq === -1) continue;
-    params.set(opt.slice(0, eq).trim().toLowerCase(), opt.slice(eq + 1).trim());
-  }
-
-  const password = params.get("password");
-  const [host, port] = hostPort.includes(":") ? hostPort.split(":") : [hostPort, "6379"];
-
-  return password
-    ? `redis://:${encodeURIComponent(password)}@${host}:${port}`
-    : `redis://${host}:${port}`;
-}
 
 // Aspire injects connection strings in .NET formats (ADO.NET for PG, StackExchange for Redis).
 // Parsers convert to URI format for Node.js clients, passing through URIs unchanged.
@@ -94,8 +24,16 @@ const config = {
   jwtIssuer: process.env.AUTH_JWT_ISSUER ?? "d2-worx",
   jwtAudience: process.env.AUTH_JWT_AUDIENCE ?? "d2-services",
   geoAddress: process.env.GEO_GRPC_ADDRESS,
-  geoApiKey: process.env.AUTHGEOCLIENTOPTIONS_APIKEY,
+  geoApiKey: process.env.AUTH_GEO_CLIENT__APIKEY,
   authApiKeys: parseEnvArray("AUTH_API_KEYS"),
+  grpcPort: process.env.AUTH_GRPC_PORT ? parseInt(process.env.AUTH_GRPC_PORT, 10) : undefined,
+  jobOptions: process.env.AUTH_APP__SIGNINEVENTRETENTIONDAYS
+    ? {
+        signInEventRetentionDays: parseInt(process.env.AUTH_APP__SIGNINEVENTRETENTIONDAYS, 10),
+        invitationRetentionDays: parseInt(process.env.AUTH_APP__INVITATIONRETENTIONDAYS ?? "7", 10),
+        lockTtlMs: parseInt(process.env.AUTH_APP__JOBLOCKTTLMS ?? "300000", 10),
+      }
+    : undefined,
 };
 
 if (!config.databaseUrl) {

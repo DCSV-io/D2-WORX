@@ -269,7 +269,7 @@ var dkron = builder.AddContainer("d2-dkron", "dkron/dkron", "4.0.9")
     .WithIconName("CalendarClock")
     .WithHttpEndpoint(port: 8888, targetPort: 8080, name: "dkron-dashboard")
     .WithVolume("d2-dkron-data", "/dkron.data")
-    .WithArgs("agent", "--server", "--bootstrap-expect=1")
+    .WithArgs("agent", "--server", "--bootstrap-expect=1", "--node-name=dkron")
     .WithLifetime(ContainerLifetime.Persistent);
 
 /******************************************
@@ -297,6 +297,7 @@ var authService = builder.AddJavaScriptApp("d2-auth", "../../../../backends/node
     .WithReference(broker)
     .WaitFor(geoService)
     .WithHttpEndpoint(port: 5100, targetPort: 5100, name: "auth-http", isProxied: false)
+    .WithHttpEndpoint(port: 5101, targetPort: 5101, name: "auth-grpc", isProxied: false)
     .WithOtelRefs();
 
 // Comms - Service (Node.js / headless consumer + gRPC).
@@ -330,6 +331,15 @@ var restGateway = builder.AddProject<Projects.REST>("d2-rest")
 
     .WithHttpHealthCheck("/health")
     .WithExternalHttpEndpoints()
+    .WithOtelRefs();
+
+// Dkron Manager — Job reconciler (Node.js loop service).
+builder.AddJavaScriptApp(
+        "d2-dkron-mgr", "../../../../backends/node/services/dkron-mgr", "dev")
+    .WithPnpm()
+    .WithIconName("CalendarSync")
+    .WaitFor(dkron)
+    .WaitFor(restGateway)
     .WithOtelRefs();
 
 // SvelteKit - Frontend.

@@ -71,7 +71,7 @@ public class CreateLocations : BaseHandler<CreateLocations, I, O>, H
             .BatchGetByIds(
                 inputHashIds,
                 l => l.HashId,
-                opts => opts.BatchSize = r_options.RepoQueryBatchSize)
+                opts => opts.BatchSize = r_options.RepoBatchSize)
             .ToDictionaryAsync(ct);
 
         // Filter to only new locations (not already in database) and deduplicate by HashId.

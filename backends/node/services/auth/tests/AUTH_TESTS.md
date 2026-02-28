@@ -100,20 +100,20 @@ src/
 
 All integration tests use Testcontainers for real infrastructure:
 
-| Test File                              | Infrastructure        | What It Tests                                              |
-| -------------------------------------- | --------------------- | ---------------------------------------------------------- |
-| `migration.test.ts`                    | PostgreSQL            | Drizzle migrations are idempotent                          |
-| `better-auth-tables.test.ts`           | PostgreSQL            | BetterAuth-managed table schemas match expectations        |
-| `custom-table-repositories.test.ts`    | PostgreSQL            | Full CRUD on sign_in_event, emulation_consent, org_contact |
-| `auth-factory.test.ts`                 | PostgreSQL + Redis    | BetterAuth instance creates with all plugins               |
-| `better-auth-behavior.test.ts`         | PostgreSQL + Redis    | Sign-up, sign-in, session, org creation flows              |
-| `middleware-chain-order.test.ts`       | Redis                 | CORS, security headers, enrichment→rate-limiting ordering  |
-| `redis-failover.test.ts`              | Redis                 | Rate limiter fail-open when Redis dies mid-operation       |
-| `secondary-storage.test.ts`            | Redis                 | Set/get/delete round-trip via cache handlers               |
-| `sign-in-throttle-store.test.ts`       | Redis                 | Known-good, lock, increment, clear operations              |
-| `session-fingerprint.test.ts`          | Redis                 | Fingerprint binding, mismatch detection, revocation        |
-| `whois-resolution-consumer.test.ts`    | PostgreSQL + RabbitMQ | WhoIs resolution consumer message processing              |
-| `app-handlers.test.ts`                 | PostgreSQL            | App handlers with real repository implementations          |
+| Test File                           | Infrastructure        | What It Tests                                              |
+| ----------------------------------- | --------------------- | ---------------------------------------------------------- |
+| `migration.test.ts`                 | PostgreSQL            | Drizzle migrations are idempotent                          |
+| `better-auth-tables.test.ts`        | PostgreSQL            | BetterAuth-managed table schemas match expectations        |
+| `custom-table-repositories.test.ts` | PostgreSQL            | Full CRUD on sign_in_event, emulation_consent, org_contact |
+| `auth-factory.test.ts`              | PostgreSQL + Redis    | BetterAuth instance creates with all plugins               |
+| `better-auth-behavior.test.ts`      | PostgreSQL + Redis    | Sign-up, sign-in, session, org creation flows              |
+| `middleware-chain-order.test.ts`    | Redis                 | CORS, security headers, enrichment→rate-limiting ordering  |
+| `redis-failover.test.ts`            | Redis                 | Rate limiter fail-open when Redis dies mid-operation       |
+| `secondary-storage.test.ts`         | Redis                 | Set/get/delete round-trip via cache handlers               |
+| `sign-in-throttle-store.test.ts`    | Redis                 | Known-good, lock, increment, clear operations              |
+| `session-fingerprint.test.ts`       | Redis                 | Fingerprint binding, mismatch detection, revocation        |
+| `whois-resolution-consumer.test.ts` | PostgreSQL + RabbitMQ | WhoIs resolution consumer message processing               |
+| `app-handlers.test.ts`              | PostgreSQL            | App handlers with real repository implementations          |
 
 ## Running Tests
 

@@ -8,6 +8,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@d2/batch-pg": "workspace:*",
     "@d2/di": "workspace:*",
     "@d2/cache-memory": "workspace:*",
     "@d2/cache-redis": "workspace:*",

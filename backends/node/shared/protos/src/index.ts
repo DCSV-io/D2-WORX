@@ -170,3 +170,43 @@ export {
   CommsServiceClient as CommsServiceClientCtor,
   CommsServiceService,
 } from "./generated/comms/v1/comms.js";
+
+// Job types (shared)
+export type {
+  TriggerJobRequest,
+  TriggerJobResponse,
+  JobExecutionData,
+} from "./generated/common/v1/jobs.js";
+
+export {
+  TriggerJobRequest as TriggerJobRequestFns,
+  TriggerJobResponse as TriggerJobResponseFns,
+  JobExecutionData as JobExecutionDataFns,
+} from "./generated/common/v1/jobs.js";
+
+// Auth job service
+export type { AuthJobServiceClient, AuthJobServiceServer } from "./generated/auth/v1/auth_jobs.js";
+
+export {
+  AuthJobServiceClient as AuthJobServiceClientCtor,
+  AuthJobServiceService,
+} from "./generated/auth/v1/auth_jobs.js";
+
+// Geo job service
+export type { GeoJobServiceClient, GeoJobServiceServer } from "./generated/geo/v1/geo_jobs.js";
+
+export {
+  GeoJobServiceClient as GeoJobServiceClientCtor,
+  GeoJobServiceService,
+} from "./generated/geo/v1/geo_jobs.js";
+
+// Comms job service
+export type {
+  CommsJobServiceClient,
+  CommsJobServiceServer,
+} from "./generated/comms/v1/comms_jobs.js";
+
+export {
+  CommsJobServiceClient as CommsJobServiceClientCtor,
+  CommsJobServiceService,
+} from "./generated/comms/v1/comms_jobs.js";

@@ -64,7 +64,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
                 c => c.Id,
                 opts =>
                 {
-                    opts.BatchSize = r_options.RepoQueryBatchSize;
+                    opts.BatchSize = r_options.RepoBatchSize;
                     opts.AsNoTracking = false;
                 })
             .ToListAsync(ct);

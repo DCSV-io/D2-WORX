@@ -15,6 +15,8 @@ import {
   ICreateChannelPreferenceRecordKey,
   IFindChannelPreferenceByContactIdKey,
   IUpdateChannelPreferenceRecordKey,
+  IPurgeDeletedMessagesKey,
+  IPurgeDeliveryHistoryKey,
 } from "@d2/comms-app";
 import { CreateMessageRecord } from "./repository/handlers/c/create-message-record.js";
 import { CreateDeliveryRequestRecord } from "./repository/handlers/c/create-delivery-request-record.js";
@@ -29,6 +31,8 @@ import { MarkDeliveryRequestProcessed } from "./repository/handlers/u/mark-deliv
 import { UpdateDeliveryAttemptStatus } from "./repository/handlers/u/update-delivery-attempt-status.js";
 import { UpdateChannelPreferenceRecord } from "./repository/handlers/u/update-channel-preference-record.js";
 import { PingDb } from "./repository/handlers/q/ping-db.js";
+import { PurgeDeletedMessages } from "./repository/handlers/d/purge-deleted-messages.js";
+import { PurgeDeliveryHistory } from "./repository/handlers/d/purge-delivery-history.js";
 
 /**
  * Registers comms infrastructure services (repository handlers)
@@ -96,5 +100,15 @@ export function addCommsInfra(services: ServiceCollection, db: NodePgDatabase): 
   services.addTransient(
     IUpdateChannelPreferenceRecordKey,
     (sp) => new UpdateChannelPreferenceRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+
+  // --- Job Repository (Purge Handlers) ---
+  services.addTransient(
+    IPurgeDeletedMessagesKey,
+    (sp) => new PurgeDeletedMessages(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IPurgeDeliveryHistoryKey,
+    (sp) => new PurgeDeliveryHistory(db, sp.resolve(IHandlerContextKey)),
   );
 }

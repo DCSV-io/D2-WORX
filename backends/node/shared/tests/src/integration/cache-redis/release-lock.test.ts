@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { AcquireLock, ReleaseLock } from "@d2/cache-redis";
-import { startRedis, stopRedis, getRedis, flushRedis, createTestContext } from "./redis-test-helpers.js";
+import {
+  startRedis,
+  stopRedis,
+  getRedis,
+  flushRedis,
+  createTestContext,
+} from "./redis-test-helpers.js";
 
 describe("DistributedCache.ReleaseLock", () => {
   beforeAll(startRedis, 60_000);

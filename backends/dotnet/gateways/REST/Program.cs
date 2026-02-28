@@ -48,6 +48,9 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 
 // Register gRPC clients.
 builder.Services.AddGeoGrpcClient(builder.Configuration);
+builder.Services.AddAuthJobsGrpcClient(builder.Configuration);
+builder.Services.AddGeoJobsGrpcClient(builder.Configuration);
+builder.Services.AddCommsJobsGrpcClient(builder.Configuration);
 
 // Register WhoIs cache for request enrichment.
 builder.Services.AddWhoIsCache(builder.Configuration);
@@ -113,6 +116,9 @@ app.MapDefaultEndpoints();
 
 // Map versioned API endpoints.
 app.MapGeoEndpointsV1();
+app.MapAuthJobEndpointsV1();
+app.MapGeoJobEndpointsV1();
+app.MapCommsJobEndpointsV1();
 app.MapHealthEndpointsV1();
 
 try

@@ -61,7 +61,7 @@ public static class Extensions
             string messageQueueConnectionString)
         {
             // Add configuration options.
-            services.Configure<GeoInfraOptions>(configuration.GetSection(nameof(GeoInfraOptions)));
+            services.Configure<GeoInfraOptions>(configuration.GetSection("GEO_INFRA"));
 
             // Database context.
             services.AddDbContext<GeoDbContext>(options => options.UseNpgsql(dbConnectionString));
@@ -100,6 +100,8 @@ public static class Extensions
             // Repository (delete) handlers.
             services.AddTransient<App.Interfaces.Repository.Handlers.D.IDelete.IDeleteContactsHandler, DeleteContacts>();
             services.AddTransient<App.Interfaces.Repository.Handlers.D.IDelete.IDeleteContactsByExtKeysHandler, DeleteContactsByExtKeys>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.D.IDelete.IDeleteOrphanedLocationsHandler, DeleteOrphanedLocations>();
+            services.AddTransient<App.Interfaces.Repository.Handlers.D.IDelete.IDeleteStaleWhoIsHandler, DeleteStaleWhoIs>();
 
             // Messaging (publish) handlers.
             services.AddTransient<App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler, Update>();

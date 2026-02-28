@@ -19,12 +19,18 @@ import type {
 } from "./interfaces/repository/handlers/index.js";
 import type { IEmailProvider } from "./interfaces/providers/email/index.js";
 import type { ISmsProvider } from "./interfaces/providers/sms/index.js";
+import type {
+  IPurgeDeletedMessagesHandler,
+  IPurgeDeliveryHistoryHandler,
+} from "./interfaces/repository/handlers/index.js";
 
 // Import app-layer handler types
 import type { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
 import type { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
 import type { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
 import type { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
+import type { RunDeletedMessagePurge } from "./implementations/cqrs/handlers/c/run-deleted-message-purge.js";
+import type { RunDeliveryHistoryPurge } from "./implementations/cqrs/handlers/c/run-delivery-history-purge.js";
 
 // =============================================================================
 // Infrastructure-layer keys (interfaces defined here, implemented in comms-infra)
@@ -78,6 +84,14 @@ export const IUpdateChannelPreferenceRecordKey =
 // --- Health Check Repository Handler ---
 export const IPingDbKey = createServiceKey<IPingDbHandler>("Comms.Repo.PingDb");
 
+// --- Job Repository ---
+export const IPurgeDeletedMessagesKey = createServiceKey<IPurgeDeletedMessagesHandler>(
+  "Comms.Repo.PurgeDeletedMessages",
+);
+export const IPurgeDeliveryHistoryKey = createServiceKey<IPurgeDeliveryHistoryHandler>(
+  "Comms.Repo.PurgeDeliveryHistory",
+);
+
 // --- Providers ---
 export const IEmailProviderKey = createServiceKey<IEmailProvider>("Comms.Infra.EmailProvider");
 export const ISmsProviderKey = createServiceKey<ISmsProvider>("Comms.Infra.SmsProvider");
@@ -102,3 +116,11 @@ export const IGetChannelPreferenceKey = createServiceKey<GetChannelPreference>(
   "Comms.App.GetChannelPreference",
 );
 export const ICheckHealthKey = createServiceKey<CheckHealth>("Comms.App.CheckHealth");
+
+// --- Job Handlers (Command) ---
+export const IRunDeletedMessagePurgeKey = createServiceKey<RunDeletedMessagePurge>(
+  "Comms.App.RunDeletedMessagePurge",
+);
+export const IRunDeliveryHistoryPurgeKey = createServiceKey<RunDeliveryHistoryPurge>(
+  "Comms.App.RunDeliveryHistoryPurge",
+);

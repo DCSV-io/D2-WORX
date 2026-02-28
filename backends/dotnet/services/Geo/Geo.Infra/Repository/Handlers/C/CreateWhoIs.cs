@@ -71,7 +71,7 @@ public class CreateWhoIs : BaseHandler<CreateWhoIs, I, O>, H
             .BatchGetByIds(
                 inputHashIds,
                 w => w.HashId,
-                opts => opts.BatchSize = r_options.RepoQueryBatchSize)
+                opts => opts.BatchSize = r_options.RepoBatchSize)
             .ToDictionaryAsync(ct);
 
         // Filter to only new records (not already in database) and deduplicate by HashId.

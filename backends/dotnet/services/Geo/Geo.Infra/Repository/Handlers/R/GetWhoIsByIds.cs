@@ -54,7 +54,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
             .BatchGetByIds(
                 input.WhoIsHashIds,
                 w => w.HashId,
-                opts => opts.BatchSize = r_options.RepoQueryBatchSize)
+                opts => opts.BatchSize = r_options.RepoBatchSize)
             .ToDictionaryD2ResultAsync(TraceId, ct);
 
         // Handle success case first.

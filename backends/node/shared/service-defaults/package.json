@@ -8,6 +8,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "default": "./dist/config/index.js"
+    },
     "./register": "./dist/register.js",
     "./grpc": {
       "types": "./dist/grpc/index.d.ts",
@@ -23,8 +27,11 @@
   ],
   "dependencies": {
     "@d2/di": "workspace:*",
+    "@d2/protos": "workspace:*",
     "@d2/handler": "workspace:*",
     "@d2/logging": "workspace:*",
+    "@d2/result": "workspace:*",
+    "@d2/result-extensions": "workspace:*",
     "@d2/utilities": "workspace:*",
     "@grpc/grpc-js": "1.14.3",
     "import-in-the-middle": "1.14.4",

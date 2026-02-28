@@ -43,7 +43,7 @@ public static class Extensions
         /// </returns>
         public IServiceCollection AddGeoApp(IConfiguration configuration)
         {
-            services.Configure<GeoAppOptions>(configuration.GetSection(nameof(GeoAppOptions)));
+            services.Configure<GeoAppOptions>(configuration.GetSection("GEO_APP"));
 
             // Complex handlers.
             services.AddTransient<IComplex.IGetHandler, Get>();
@@ -63,6 +63,8 @@ public static class Extensions
             services.AddTransient<ICommands.ICreateContactsHandler, CreateContacts>();
             services.AddTransient<ICommands.IDeleteContactsHandler, DeleteContacts>();
             services.AddTransient<ICommands.IDeleteContactsByExtKeysHandler, DeleteContactsByExtKeys>();
+            services.AddTransient<ICommands.ICleanupOrphanedLocationsHandler, CleanupOrphanedLocations>();
+            services.AddTransient<ICommands.IPurgeStaleWhoIsHandler, PurgeStaleWhoIs>();
 
             return services;
         }

@@ -526,6 +526,49 @@ public class SetInMem : BaseHandler<SetInMem, I, O>, H
 
 ---
 
+## Scheduled Jobs — Dkron
+
+### Overview
+
+Background maintenance jobs (data purge, cleanup) are triggered by [Dkron](https://dkron.io/) (v4.0.9), a distributed cron service running as a Docker container via Aspire.
+
+**Flow:** `Dkron (cron) → REST Gateway (HTTP POST) → gRPC Service (handler)`
+
+Dkron calls the REST gateway's job endpoints using the `X-Api-Key` header for authentication. The gateway validates the key via `ServiceKeyMiddleware`, then proxies the request as a gRPC call to the target service.
+
+### Job Definitions
+
+All jobs run daily during a 2–4 AM UTC maintenance window, staggered by 15 minutes to avoid thundering herd on shared Redis locks.
+
+| Job Name                          | Schedule (UTC) | Gateway Endpoint                                    |
+| --------------------------------- | -------------- | --------------------------------------------------- |
+| `geo-purge-stale-whois`           | 02:00          | `POST /api/v1/geo/jobs/purge-stale-whois`           |
+| `geo-cleanup-orphaned-locations`  | 02:15          | `POST /api/v1/geo/jobs/cleanup-orphaned-locations`  |
+| `auth-purge-sessions`             | 02:30          | `POST /api/v1/auth/jobs/purge-sessions`             |
+| `auth-purge-sign-in-events`       | 02:45          | `POST /api/v1/auth/jobs/purge-sign-in-events`       |
+| `auth-cleanup-invitations`        | 03:00          | `POST /api/v1/auth/jobs/cleanup-invitations`        |
+| `auth-cleanup-emulation-consents` | 03:15          | `POST /api/v1/auth/jobs/cleanup-emulation-consents` |
+| `comms-purge-deleted-messages`    | 03:30          | `POST /api/v1/comms/jobs/purge-deleted-messages`    |
+| `comms-purge-delivery-history`    | 03:45          | `POST /api/v1/comms/jobs/purge-delivery-history`    |
+
+**Ordering:** Geo WhoIs purge runs _before_ orphaned location cleanup — deleting WhoIs records may orphan locations.
+
+### Provisioning
+
+Jobs are automatically provisioned by the `@d2/dkron-mgr` service — a continuously running Node.js reconciler that manages Dkron job state. It creates missing jobs, updates changed jobs, and deletes orphaned managed jobs every 5 minutes (configurable). See `backends/node/services/dkron-mgr/DKRON_MGR.md` for full details.
+
+All managed jobs are tagged with `metadata.managed_by = "d2-dkron-mgr"`. Untagged jobs (manually created) are left untouched.
+
+### Authentication
+
+The Dkron service key is configured in `.env.local` as `GATEWAY_SERVICEKEY__VALIDKEYS__1`. The gateway's `ServiceKeyMiddleware` validates the `X-Api-Key` header and sets `IsTrustedService = true`, which bypasses rate limiting and JWT validation.
+
+### Dashboard
+
+Dkron dashboard: check the Aspire dashboard for the mapped port (container port 8080).
+
+---
+
 ## Evolution & Flexibility
 
 This structure is **descriptive, not prescriptive**. As D²-WORX evolves:

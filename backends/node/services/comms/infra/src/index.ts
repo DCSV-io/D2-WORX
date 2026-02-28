@@ -40,6 +40,10 @@ export { createNotificationConsumer } from "./messaging/consumers/notification-c
 export type { NotificationConsumerDeps } from "./messaging/consumers/notification-consumer.js";
 export { declareRetryTopology, getRetryTierQueue } from "./messaging/retry-topology.js";
 
+// --- Purge Handlers (used by integration tests) ---
+export { PurgeDeletedMessages } from "./repository/handlers/d/purge-deleted-messages.js";
+export { PurgeDeliveryHistory } from "./repository/handlers/d/purge-delivery-history.js";
+
 // --- Repository Ping ---
 export { PingDb } from "./repository/handlers/q/ping-db.js";
 

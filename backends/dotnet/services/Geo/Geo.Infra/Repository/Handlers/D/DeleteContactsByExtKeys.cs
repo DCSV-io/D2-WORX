@@ -64,7 +64,7 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
         // Collect all contacts to delete across batches.
         List<Guid> deletedIds = [];
 
-        foreach (var batch in uniqueKeys.Chunk(r_options.RepoQueryBatchSize))
+        foreach (var batch in uniqueKeys.Chunk(r_options.RepoBatchSize))
         {
             // Build an OR predicate for exact (ContextKey, RelatedEntityId) pair matching.
             // This avoids the cross-product false positives from separate IN clauses.

@@ -18,6 +18,9 @@ HTTP/REST gateway providing public API access to D² microservices via gRPC back
 | [ServiceKeyEndpointFilter.cs](Auth/ServiceKeyEndpointFilter.cs) | Endpoint filter checking `IsTrustedService` flag (used by `RequireServiceKey()` extension).                    |
 | [ServiceKeyExtensions.cs](Auth/ServiceKeyExtensions.cs)         | `AddServiceKeyAuth()`, `UseServiceKeyDetection()`, `RequireServiceKey()` extension methods.                    |
 | [ServiceKeyOptions.cs](Auth/ServiceKeyOptions.cs)               | Configuration: `ValidKeys` list of trusted service API keys.                                                   |
+| [AuthJobEndpoints.cs](Endpoints/AuthJobEndpoints.cs)            | Auth scheduled job endpoints — proxies to Auth gRPC `AuthJobService`.                                          |
+| [GeoJobEndpoints.cs](Endpoints/GeoJobEndpoints.cs)              | Geo scheduled job endpoints — proxies to Geo gRPC `GeoJobService`.                                             |
+| [CommsJobEndpoints.cs](Endpoints/CommsJobEndpoints.cs)          | Comms scheduled job endpoints — proxies to Comms gRPC `CommsJobService`.                                       |
 | [HealthEndpoints.cs](Endpoints/HealthEndpoints.cs)              | Aggregated health check endpoint fanning out to Geo, Auth, Comms, and gateway cache.                           |
 
 ## API Versioning
@@ -45,18 +48,47 @@ Returns `200` (all healthy) or `503` (degraded) with per-service status, latency
 | GET    | `/reference-data`        | Returns full geographic reference data.                                          |
 | POST   | `/reference-data/update` | Requests that geographic reference data be updated. Returns the updated version. |
 
+### Auth Jobs (`/api/v1/auth/jobs`)
+
+All job endpoints require `RequireServiceKey()` — accessible only to Dkron or internal callers.
+
+| Method | Path                          | Description                                        |
+| ------ | ----------------------------- | -------------------------------------------------- |
+| POST   | `/purge-sessions`             | Purges expired auth sessions.                      |
+| POST   | `/purge-sign-in-events`       | Purges old sign-in events beyond retention period. |
+| POST   | `/cleanup-invitations`        | Cleans up expired org invitations.                 |
+| POST   | `/cleanup-emulation-consents` | Cleans up expired or revoked emulation consents.   |
+
+### Geo Jobs (`/api/v1/geo/jobs`)
+
+| Method | Path                          | Description                                              |
+| ------ | ----------------------------- | -------------------------------------------------------- |
+| POST   | `/purge-stale-whois`          | Purges WhoIs records older than the retention period.    |
+| POST   | `/cleanup-orphaned-locations` | Cleans up locations with no contact or WhoIs references. |
+
+### Comms Jobs (`/api/v1/comms/jobs`)
+
+| Method | Path                      | Description                                           |
+| ------ | ------------------------- | ----------------------------------------------------- |
+| POST   | `/purge-deleted-messages` | Purges soft-deleted messages beyond retention period. |
+| POST   | `/purge-delivery-history` | Purges old delivery request and attempt history.      |
+
 ## Endpoint Organization
 
 Endpoints are organized by service/area using C# 14 extension blocks:
 
 ```csharp
-// Program.cs
-builder.Services.AddGeoGrpcClient();  // Register gRPC client
-app.MapGeoEndpointsV1();              // Map endpoints
+// Program.cs — gRPC client registration
+builder.Services.AddGeoGrpcClient(builder.Configuration);
+builder.Services.AddAuthJobsGrpcClient(builder.Configuration);
+builder.Services.AddGeoJobsGrpcClient(builder.Configuration);
+builder.Services.AddCommsJobsGrpcClient(builder.Configuration);
 
-// Future services follow the same pattern:
-// builder.Services.AddAuthGrpcClient();
-// app.MapAuthEndpointsV1();
+// Program.cs — endpoint mapping
+app.MapGeoEndpointsV1();
+app.MapAuthJobEndpointsV1();
+app.MapGeoJobEndpointsV1();
+app.MapCommsJobEndpointsV1();
 ```
 
 Each `*Endpoints.cs` file contains:
@@ -66,24 +98,40 @@ Each `*Endpoints.cs` file contains:
 
 ## gRPC Client Registration
 
-Clients use Aspire service configuration for service discovery. Example for Geo service:
+Clients use Aspire service configuration for service discovery. Job-service clients also attach `x-api-key` via `AddCallCredentials` so the target gRPC server can validate trusted callers.
 
 ```csharp
+// Standard pattern — Geo data client (no API key needed)
 const string config_key = "services:d2-geo:http:0";
 var geoAddress = configuration[config_key];
-if (geoAddress.Falsey())
-{
-    throw new ArgumentException(
-        $"Geo service address not configured. Missing '{config_key}' configuration.");
-}
-
 services.AddGrpcClient<GeoService.GeoServiceClient>(o =>
 {
     o.Address = new Uri(geoAddress!);
 });
 
-return services;
+// Job client pattern — Auth job client (with API key call credentials)
+var apiKey = configuration["GATEWAY_AUTH_GRPC_API_KEY"];
+services.AddGrpcClient<AuthJobService.AuthJobServiceClient>(o =>
+{
+    o.Address = new Uri(authGrpcAddress!);
+})
+.AddCallCredentials((context, metadata) =>
+{
+    if (!string.IsNullOrWhiteSpace(apiKey))
+    {
+        metadata.Add("x-api-key", apiKey);
+    }
+    return Task.CompletedTask;
+});
 ```
+
+### Job Client Configuration Keys
+
+| Client                                  | Aspire Config Key                | API Key Env Var              |
+| --------------------------------------- | -------------------------------- | ---------------------------- |
+| `AuthJobService.AuthJobServiceClient`   | `services:d2-auth:auth-grpc:0`   | `GATEWAY_AUTH_GRPC_API_KEY`  |
+| `GeoJobService.GeoJobServiceClient`     | `services:d2-geo:http:0`         | `GATEWAY_GEO_GRPC_API_KEY`   |
+| `CommsJobService.CommsJobServiceClient` | `services:d2-comms:comms-grpc:0` | `GATEWAY_COMMS_GRPC_API_KEY` |
 
 ## Error Handling
 

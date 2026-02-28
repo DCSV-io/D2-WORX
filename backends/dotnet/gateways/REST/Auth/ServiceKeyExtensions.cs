@@ -24,7 +24,7 @@ public static class ServiceKeyExtensions
         /// The application configuration.
         /// </param>
         /// <param name="sectionName">
-        /// The configuration section name. Defaults to "ServiceKeyOptions".
+        /// The configuration section name. Defaults to "GATEWAY_SERVICEKEY".
         /// </param>
         ///
         /// <returns>
@@ -32,7 +32,7 @@ public static class ServiceKeyExtensions
         /// </returns>
         public IServiceCollection AddServiceKeyAuth(
             IConfiguration configuration,
-            string sectionName = nameof(ServiceKeyOptions))
+            string sectionName = "GATEWAY_SERVICEKEY")
         {
             services.Configure<ServiceKeyOptions>(configuration.GetSection(sectionName));
             return services;

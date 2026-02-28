@@ -54,7 +54,7 @@ public class CreateLocationsTests : IAsyncLifetime
     {
         _db = r_fixture.CreateDbContext();
         _context = CreateHandlerContext();
-        _options = Options.Create(new GeoInfraOptions { RepoQueryBatchSize = 100 });
+        _options = Options.Create(new GeoInfraOptions { RepoBatchSize = 100 });
         return ValueTask.CompletedTask;
     }
 

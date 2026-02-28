@@ -78,6 +78,12 @@ export {
 // --- Migrations ---
 export { runMigrations } from "./repository/migrate.js";
 
+// --- Purge Handlers (used by integration tests) ---
+export { PurgeExpiredSessions } from "./repository/handlers/d/purge-expired-sessions.js";
+export { PurgeSignInEvents } from "./repository/handlers/d/purge-sign-in-events.js";
+export { PurgeExpiredInvitations } from "./repository/handlers/d/purge-expired-invitations.js";
+export { PurgeExpiredEmulationConsents } from "./repository/handlers/d/purge-expired-emulation-consents.js";
+
 // --- Messaging Consumers ---
 export { createWhoIsResolutionConsumer } from "./messaging/consumers/whois-resolution-consumer.js";
 export type { WhoIsResolutionConsumerDeps } from "./messaging/consumers/whois-resolution-consumer.js";

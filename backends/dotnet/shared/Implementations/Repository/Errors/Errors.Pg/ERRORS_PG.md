@@ -8,12 +8,12 @@ Services catch database constraint violations and return structured `D2Result` f
 
 ## API
 
-| Method                  | PG Code | Use Case                                    |
-| ----------------------- | ------- | ------------------------------------------- |
-| `IsUniqueViolation()`   | `23505` | Duplicate key → 409 Conflict                |
-| `IsForeignKeyViolation()` | `23503` | Missing parent row → 422 or 404           |
-| `IsNotNullViolation()`  | `23502` | Required field missing → 422                |
-| `IsCheckViolation()`    | `23514` | Domain constraint failed → 422              |
+| Method                    | PG Code | Use Case                        |
+| ------------------------- | ------- | ------------------------------- |
+| `IsUniqueViolation()`     | `23505` | Duplicate key → 409 Conflict    |
+| `IsForeignKeyViolation()` | `23503` | Missing parent row → 422 or 404 |
+| `IsNotNullViolation()`    | `23502` | Required field missing → 422    |
+| `IsCheckViolation()`      | `23514` | Domain constraint failed → 422  |
 
 ## Usage
 
@@ -35,11 +35,11 @@ catch (Exception ex) when (PgErrorCodes.IsUniqueViolation(ex))
 
 ## Cross-Platform Parity
 
-| .NET                     | Node.js (`@d2/errors-pg`)      |
-| ------------------------ | ------------------------------ |
-| `PgErrorCodes.IsUniqueViolation(ex)` | `isPgUniqueViolation(err)` |
+| .NET                                     | Node.js (`@d2/errors-pg`)      |
+| ---------------------------------------- | ------------------------------ |
+| `PgErrorCodes.IsUniqueViolation(ex)`     | `isPgUniqueViolation(err)`     |
 | `PgErrorCodes.IsForeignKeyViolation(ex)` | `isPgForeignKeyViolation(err)` |
-| `PgErrorCodes.IsNotNullViolation(ex)` | `isPgNotNullViolation(err)` |
-| `PgErrorCodes.IsCheckViolation(ex)` | `isPgCheckViolation(err)` |
+| `PgErrorCodes.IsNotNullViolation(ex)`    | `isPgNotNullViolation(err)`    |
+| `PgErrorCodes.IsCheckViolation(ex)`      | `isPgCheckViolation(err)`      |
 
 Both check the direct exception and wrapped inner exceptions for compatibility with their respective ORMs (EF Core wraps in `DbUpdateException`, Drizzle wraps in `DrizzleQueryError`).

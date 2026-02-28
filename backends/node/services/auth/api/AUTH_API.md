@@ -1,10 +1,10 @@
 # @d2/auth-api
 
-Hono HTTP server, composition root, route definitions, and middleware for the Auth service. Wires together all DDD layers (`@d2/auth-domain`, `@d2/auth-app`, `@d2/auth-infra`) with shared infrastructure packages into a running service.
+Hono HTTP server, gRPC job server, composition root, route definitions, and middleware for the Auth service. Wires together all DDD layers (`@d2/auth-domain`, `@d2/auth-app`, `@d2/auth-infra`) with shared infrastructure packages into a running service.
 
 ## Purpose
 
-Serves as the entry point and composition root for the Auth service. Creates the Hono HTTP application with middleware pipeline, mounts BetterAuth at `/api/auth/*`, exposes custom authenticated routes for emulation, org contacts, and invitations, and manages service lifecycle (startup, shutdown).
+Serves as the entry point and composition root for the Auth service. Creates the Hono HTTP application with middleware pipeline, mounts BetterAuth at `/api/auth/*`, exposes custom authenticated routes for emulation, org contacts, and invitations, runs a gRPC server for scheduled job RPCs, and manages service lifecycle (startup, shutdown).
 
 ## Design Decisions
 
@@ -18,6 +18,9 @@ Serves as the entry point and composition root for the Auth service. Creates the
 | Auth middleware visible at route    | `requireOrg()`, `requireRole()`, `requireStaff()` declared inline for auditability |
 | AppOverrides for testability        | Tests inject stub password functions to skip HIBP API calls                        |
 | Separate Hono apps for route groups | Auth routes, protected routes, and health mounted as sub-apps                      |
+| gRPC server for jobs                | Scheduled job RPCs on a separate port — keeps HTTP and gRPC concerns isolated      |
+| Lock handlers as singletons         | AcquireLock/ReleaseLock share the Redis connection — registered once in DI         |
+| withApiKeyAuth on gRPC              | Service key validation on gRPC RPCs mirrors HTTP service key middleware            |
 
 ## Package Structure
 
@@ -43,25 +46,29 @@ src/
     health.ts               Health check endpoint
     invitation-routes.ts    Org invitation with dual-path contact resolution
     org-contact-routes.ts   Org contact CRUD (POST, PATCH, DELETE, GET)
+  services/
+    auth-jobs-grpc-service.ts  gRPC AuthJobServiceServer (4 job RPCs)
 ```
 
 ## Composition Root
 
-`createApp(config, publisher?, overrides?)` performs startup in order:
+`createApp(config, publisher?, overrides?, messageBus?)` performs startup in order:
 
 | Step | Action                                                                               |
 | ---- | ------------------------------------------------------------------------------------ |
 | 1    | Create singletons: `pg.Pool`, `ioredis`, Pino logger                                 |
 | 2    | Run Drizzle migrations, create Drizzle instance                                      |
 | 3    | Build `ServiceCollection` — register logger, handler context, cache, geo, infra, app |
+| 3a   | Register `AcquireLock` / `ReleaseLock` singleton instances for job locking           |
 | 4    | Build `ServiceProvider`                                                              |
 | 5    | Create pre-auth singletons (FindWhoIs, RateLimitCheck, Throttle handlers)            |
 | 6    | Create password functions (domain validation + HIBP k-anonymity cache)               |
 | 7    | Create BetterAuth instance with scoped callback hooks                                |
 | 8    | Configure session fingerprint middleware (Redis-backed, 7-day TTL)                   |
 | 9    | Build Hono app with global + route-specific middleware                               |
+| 10   | Start gRPC server on `grpcPort` (if configured) with `withApiKeyAuth` wrapper        |
 
-Returns `{ app, auth, shutdown }`.
+Returns `{ app, auth, grpcServer, shutdown }`.
 
 ## Middleware Pipeline
 
@@ -135,6 +142,27 @@ Sign-in throttle flow: extract identifier, check throttle (429 if blocked), forw
 
 Invitation flow: validate input, look up user by email, create BetterAuth invitation, create Geo contact for non-existing invitees (contextKey=auth_org_invitation), resolve recipient contactId (via ext-keys for existing users), publish notification via comms-client.
 
+## gRPC Server (Scheduled Jobs)
+
+A secondary `@grpc/grpc-js` server runs on `AUTH_GRPC_PORT` (default: 5101) alongside the Hono HTTP server on port 5100. This server exposes `AuthJobService` RPCs for the .NET REST gateway to invoke on behalf of Dkron.
+
+### Service: `auth-jobs-grpc-service.ts`
+
+`createAuthJobsGrpcService(provider)` implements `AuthJobServiceServer` with 4 RPCs. Each RPC creates a DI scope via `createRpcScope`, resolves its handler, and disposes when done. Trace context is propagated via `withTraceContext`.
+
+| RPC                               | Handler Key                      | Job Name                             |
+| --------------------------------- | -------------------------------- | ------------------------------------ |
+| `PurgeExpiredSessions`            | `IRunSessionPurgeKey`            | `purge-expired-sessions`             |
+| `PurgeSignInEvents`               | `IRunSignInEventPurgeKey`        | `purge-sign-in-events`               |
+| `CleanupExpiredInvitations`       | `IRunInvitationCleanupKey`       | `cleanup-expired-invitations`        |
+| `CleanupExpiredEmulationConsents` | `IRunEmulationConsentCleanupKey` | `cleanup-expired-emulation-consents` |
+
+All RPCs return `{ result: D2ResultProto, data: { jobName, rowsAffected, durationMs, lockAcquired, executedAt } }`.
+
+### Authentication
+
+When `authApiKeys` is configured, the gRPC server wraps all handlers with `withApiKeyAuth` from `@d2/service-defaults/grpc`, validating the `x-api-key` metadata header against the same key set used by the HTTP service key middleware.
+
 ## Authorization Middleware
 
 | Middleware         | Purpose                                                  |
@@ -149,19 +177,32 @@ Invitation flow: validate input, look up user by email, create BetterAuth invita
 
 `AuthServiceConfig` fields (from `@d2/auth-infra`):
 
-| Field                  | Required | Default                      |
-| ---------------------- | -------- | ---------------------------- |
-| `databaseUrl`          | Yes      | —                            |
-| `redisUrl`             | Yes      | —                            |
-| `rabbitMqUrl`          | No       | — (events logged, not sent)  |
-| `baseUrl`              | Yes      | —                            |
-| `corsOrigin`           | Yes      | —                            |
-| `jwtIssuer`            | Yes      | —                            |
-| `jwtAudience`          | Yes      | —                            |
-| `jwtExpirationSeconds` | No       | 900 (15 min)                 |
-| `jwksRotationDays`     | No       | 30                           |
-| `geoAddress`           | No       | — (contact ops fail without) |
-| `geoApiKey`            | No       | — (contact ops fail without) |
+| Field                  | Required | Default                       |
+| ---------------------- | -------- | ----------------------------- |
+| `databaseUrl`          | Yes      | —                             |
+| `redisUrl`             | Yes      | —                             |
+| `rabbitMqUrl`          | No       | — (events logged, not sent)   |
+| `baseUrl`              | Yes      | —                             |
+| `corsOrigin`           | Yes      | —                             |
+| `jwtIssuer`            | Yes      | —                             |
+| `jwtAudience`          | Yes      | —                             |
+| `jwtExpirationSeconds` | No       | 900 (15 min)                  |
+| `jwksRotationDays`     | No       | 30                            |
+| `geoAddress`           | No       | — (contact ops fail without)  |
+| `geoApiKey`            | No       | — (contact ops fail without)  |
+| `authApiKeys`          | No       | — (service key auth disabled) |
+| `grpcPort`             | No       | — (gRPC server not started)   |
+
+### Job Options (env vars)
+
+| Env Var                              | Field                      | Default |
+| ------------------------------------ | -------------------------- | ------- |
+| `AUTH_GRPC_PORT`                     | `grpcPort`                 | — (off) |
+| `AUTH_APP__SIGNINEVENTRETENTIONDAYS` | `signInEventRetentionDays` | —       |
+| `AUTH_APP__INVITATIONRETENTIONDAYS`  | `invitationRetentionDays`  | 7       |
+| `AUTH_APP__JOBLOCKTTLMS`             | `lockTtlMs`                | 300000  |
+
+Job options are only parsed when `AUTH_APP__SIGNINEVENTRETENTIONDAYS` is set. When absent, `DEFAULT_AUTH_JOB_OPTIONS` from `@d2/auth-app` is used.
 
 ## Dependencies
 
@@ -181,9 +222,12 @@ Invitation flow: validate input, look up user by email, create BetterAuth invita
 | `@d2/ratelimit`          | Distributed rate limit check                           |
 | `@d2/request-enrichment` | IP/fingerprint/WhoIs middleware (imported indirectly)  |
 | `@d2/result`             | `D2Result`, `HttpStatusCode`                           |
-| `@d2/service-defaults`   | `setupTelemetry()` (OTel SDK bootstrap)                |
+| `@d2/protos`             | `AuthJobServiceService` definition for gRPC server     |
+| `@d2/result-extensions`  | `d2ResultToProto()` for gRPC response conversion       |
+| `@d2/service-defaults`   | `setupTelemetry()`, `withApiKeyAuth`, `createRpcScope` |
 | `@d2/utilities`          | General utilities                                      |
 | `hono`                   | HTTP framework                                         |
+| `@grpc/grpc-js`          | gRPC server for scheduled job RPCs                     |
 | `@hono/node-server`      | Node.js adapter for Hono                               |
 | `ioredis`                | Redis client (direct for session fingerprint binding)  |
 | `drizzle-orm`            | Database queries in invitation routes                  |

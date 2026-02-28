@@ -1,7 +1,16 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { RedisContainer, type StartedRedisContainer } from "@testcontainers/redis";
 import Redis from "ioredis";
-import { Get, Set, Exists, Remove, GetTtl, Increment, AcquireLock, ReleaseLock } from "@d2/cache-redis";
+import {
+  Get,
+  Set,
+  Exists,
+  Remove,
+  GetTtl,
+  Increment,
+  AcquireLock,
+  ReleaseLock,
+} from "@d2/cache-redis";
 import { ErrorCodes } from "@d2/result";
 import { createTestContext } from "./redis-test-helpers.js";
 

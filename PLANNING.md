@@ -22,11 +22,12 @@
 - **Phase 2 Stage A: Cross-cutting foundations** ✅ — Retry utility, idempotency middleware, UUIDv7
 - **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (874 tests, 64 test files)
 - **Comms Service Phase 1** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (566 tests, 43 test files)
-- **E2E Cross-Service Tests** ✅ — 5 tests (sign-up → Geo contact → notification → email delivery)
+- **E2E Cross-Service Tests** ✅ — 12 tests (Auth → Geo → Comms delivery pipeline + Dkron job chain)
 - **Cross-platform Parity** ✅ — `@d2/batch-pg`, `@d2/errors-pg`, .NET `Errors.Pg`, documented in `backends/PARITY.md`
 - **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware
 - **Geo Service** ✅ — Complete (.NET), 759 tests
 - **Production-readiness Sweep** ✅ — 40 items triaged, all high/medium fixed, polish items done
+- **Scheduled Jobs (Dkron)** ✅ — 8 daily maintenance jobs (Auth 4, Geo 2, Comms 2), `@d2/dkron-mgr` reconciler (64 tests), full-chain E2E tested (12 E2E tests)
 - **Shared tests** — 857 passing (67 test files)
 
 ---
@@ -528,14 +529,14 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 ### Infrastructure
 
-| Component     | Status     | Notes                                                    |
-| ------------- | ---------- | -------------------------------------------------------- |
-| PostgreSQL 18 | ✅ Done    | Aspire-managed                                           |
-| Redis 8.2     | ✅ Done    | Aspire-managed                                           |
-| RabbitMQ 4.1  | ✅ Done    | Aspire-managed                                           |
-| MinIO         | ✅ Done    | Aspire-managed                                           |
-| Dkron 4.0.9   | ✅ Done    | Aspire-managed, persistent container, dashboard on :8888 |
-| LGTM Stack    | ✅ Done    | Full observability                                       |
+| Component     | Status  | Notes                                                    |
+| ------------- | ------- | -------------------------------------------------------- |
+| PostgreSQL 18 | ✅ Done | Aspire-managed                                           |
+| Redis 8.2     | ✅ Done | Aspire-managed                                           |
+| RabbitMQ 4.1  | ✅ Done | Aspire-managed                                           |
+| MinIO         | ✅ Done | Aspire-managed                                           |
+| Dkron 4.0.9   | ✅ Done | Aspire-managed, persistent container, dashboard on :8888 |
+| LGTM Stack    | ✅ Done | Full observability                                       |
 
 ### Shared Packages (.NET)
 
@@ -590,16 +591,16 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 ### Services
 
-| Service          | Status         | Notes                                                                                                           |
-| ---------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
-| Geo.Domain       | ✅ Done        | Entities, value objects                                                                                         |
-| Geo.App          | ✅ Done        | CQRS handlers, mappers                                                                                          |
-| Geo.Infra        | ✅ Done        | Repository, messaging                                                                                           |
-| Geo.API          | ✅ Done        | gRPC service                                                                                                    |
-| Geo.Client       | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                   |
-| Geo.Tests        | ✅ Done        | 759 tests passing                                                                                               |
-| **Auth Service** | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E    |
-| **Auth.Tests**   | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 874 tests passing                                   |
+| Service           | Status         | Notes                                                                                                            |
+| ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Geo.Domain        | ✅ Done        | Entities, value objects                                                                                          |
+| Geo.App           | ✅ Done        | CQRS handlers, mappers                                                                                           |
+| Geo.Infra         | ✅ Done        | Repository, messaging                                                                                            |
+| Geo.API           | ✅ Done        | gRPC service                                                                                                     |
+| Geo.Client        | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
+| Geo.Tests         | ✅ Done        | 759 tests passing                                                                                                |
+| **Auth Service**  | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E     |
+| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 874 tests passing                                    |
 | **Comms Service** | 🚧 In Progress | Node.js delivery engine (`backends/node/services/comms/`). Phase 1 done (email + SMS + gRPC + RabbitMQ consumer) |
 | **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 566 tests passing                                  |
 
@@ -624,14 +625,15 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 ### Phase 2: Auth Service + SvelteKit Integration
 
-**Stage B.5 — Scheduled Jobs (Dkron) ← CURRENT**
+**Stage B.5 — Scheduled Jobs (Dkron) ✅**
 
-> These data maintenance jobs should be implemented before client libraries. Without them, expired/orphaned data accumulates silently in production. See the "Scheduled Jobs (Dkron)" section below for the full job table.
+> Data maintenance jobs implemented across all three services. `@d2/dkron-mgr` reconciler manages 8 jobs. Full-chain E2E tested (Dkron → Gateway → Geo → PostgreSQL). See the "Scheduled Jobs (Dkron)" section below for the full job table.
 
-10. **Job infrastructure** — HTTP endpoint pattern for Dkron callbacks, Redis `SET NX` distributed lock helper, shared job utilities.
-11. **Auth jobs** — Expired session purge (daily), sign-in event purge (daily, 90d), expired invitation cleanup (daily, 7d), expired emulation consent cleanup (daily).
-12. **Geo jobs** — Orphaned location cleanup (daily), orphaned contacts cleanup (daily).
-13. **Comms jobs** — Soft-deleted message cleanup (daily, 90d), delivery history retention (daily, 1y).
+10. **Job infrastructure** ✅ — HTTP endpoint pattern for Dkron callbacks, Redis `SET NX` distributed lock helper, `handleJobRpc()` / `handleRpc()` utilities, `BatchDelete` (both platforms), proto contracts (`jobs.proto`, `geo_jobs.proto`, `auth_jobs.proto`, `comms_jobs.proto`).
+11. **Auth jobs** ✅ — Expired session purge (daily), sign-in event purge (daily, 90d), expired invitation cleanup (daily, 7d), expired emulation consent cleanup (daily). 4 app handlers + 4 infra purge handlers.
+12. **Geo jobs** ✅ — Stale WhoIs purge (daily, 180d), orphaned location cleanup (daily). 2 app handlers + 2 infra delete handlers + `GeoJobService` gRPC service.
+13. **Comms jobs** ✅ — Soft-deleted message cleanup (daily, 90d), delivery history retention (daily, 1y). 2 app handlers + 2 infra purge handlers + `CommsJobServiceServer` gRPC service.
+14. **dkron-mgr** ✅ — Declarative job reconciler (drift detection, orphan cleanup, idempotent reconciliation loop). 64 tests (unit + integration + E2E).
 
 **Dependency Update — Q1 2026**
 
@@ -1251,18 +1253,18 @@ clients/web/src/routes/
 
 ## Scheduled Jobs (Dkron)
 
-**Infrastructure**: Dkron v4.0.9 runs as a persistent Aspire container (dashboard: `:8888`). Jobs call service HTTP endpoints on a cron schedule. Use Redis `SET NX` distributed locks when only one instance should execute a job.
+**Infrastructure**: Dkron v4.0.9 runs as a persistent Aspire container (dashboard: `:8888`, `--node-name=dkron`). `@d2/dkron-mgr` reconciles job definitions against Dkron REST API. Jobs call REST Gateway HTTP endpoints with service key auth, Gateway forwards via gRPC with API key auth. Handlers acquire Redis `SET NX PX` distributed locks before executing batch deletes.
 
-| Job                               | Owner | Schedule | Retention | Status          | Notes                                                                                                  |
-| --------------------------------- | ----- | -------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------ |
-| **Expired session purge (PG)**    | Auth  | Daily    | 0 days    | Not implemented | DELETE `session` WHERE `expires_at < NOW()`. BetterAuth only lazy-deletes on token presentation        |
-| **Sign-in event purge**           | Auth  | Daily    | 90 days   | Not implemented | DELETE `sign_in_event` WHERE `created_at < NOW() - 90 days`                                            |
-| **Expired invitation cleanup**    | Auth  | Daily    | 7 days    | Not implemented | DELETE expired invitations. Domain check `isInvitationExpired()` exists but no row deletion            |
-| **Expired emulation consent**     | Auth  | Daily    | 0 days    | Not implemented | DELETE WHERE `expires_at < NOW()` OR `revoked_at IS NOT NULL`. Runtime filter works; rows accumulate   |
-| **Geo orphaned location cleanup** | Geo   | Daily    | N/A       | Not implemented | DELETE locations with zero contact/WhoIs references. Auth swallows Geo delete failures relying on this |
-| **Orphaned contacts**             | Geo   | Daily    | N/A       | Not implemented | DELETE contacts with `context_key = 'auth_user'` + no matching user                                   |
-| **Soft-deleted message cleanup**  | Comms | Daily    | 90 days   | Not implemented | DELETE `message` WHERE `deleted_at < NOW() - 90 days`                                                  |
-| **Delivery history retention**    | Comms | Daily    | 1 year    | Not implemented | Archive/DELETE old `delivery_request` + `delivery_attempt` rows                                        |
+| Job                                 | Owner | Schedule      | Retention | Status | Notes                                                                                           |
+| ----------------------------------- | ----- | ------------- | --------- | ------ | ----------------------------------------------------------------------------------------------- |
+| **Purge expired sessions (PG)**     | Auth  | Daily 02:30   | 0 days    | ✅     | `auth-purge-sessions` — DELETE `session` WHERE `expires_at < NOW()`                             |
+| **Purge sign-in events**            | Auth  | Daily 02:45   | 90 days   | ✅     | `auth-purge-sign-in-events` — batch delete via `batchDelete()`                                  |
+| **Cleanup expired invitations**     | Auth  | Daily 03:00   | 7 days    | ✅     | `auth-cleanup-invitations` — DELETE expired invitations past retention grace period              |
+| **Cleanup emulation consents**      | Auth  | Daily 03:15   | 0 days    | ✅     | `auth-cleanup-emulation-consents` — DELETE WHERE expired OR revoked                             |
+| **Purge stale WhoIs**               | Geo   | Daily 02:00   | 180 days  | ✅     | `geo-purge-stale-whois` — BatchDelete by cutoff year/month. Runs BEFORE location cleanup        |
+| **Cleanup orphaned locations**      | Geo   | Daily 02:15   | N/A       | ✅     | `geo-cleanup-orphaned-locations` — DELETE locations with zero contact + zero WhoIs references    |
+| **Purge soft-deleted messages**     | Comms | Daily 03:30   | 90 days   | ✅     | `comms-purge-deleted-messages` — batch delete messages past retention                           |
+| **Purge delivery history**          | Comms | Daily 03:45   | 365 days  | ✅     | `comms-purge-delivery-history` — batch delete old delivery_request + delivery_attempt rows      |
 
 **Already handled (no Dkron job needed):**
 
@@ -1301,8 +1303,8 @@ clients/web/src/routes/
 
 **Update log**:
 
-| Quarter | Date | Notes  |
-| ------- | ---- | ------ |
+| Quarter | Date | Notes                                    |
+| ------- | ---- | ---------------------------------------- |
 | Q1 2026 | TBD  | First update — post-Dkron, pre-SvelteKit |
 
 ---
@@ -1311,11 +1313,11 @@ clients/web/src/routes/
 
 ### Open — Can Fix Now
 
-| #   | Item                                                | Owner  | Effort | Notes                                                                                                       |
-| --- | --------------------------------------------------- | ------ | ------ | ----------------------------------------------------------------------------------------------------------- |
-| 32  | Thundering herd protection on popular key expiry    | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                        |
+| #   | Item                                                | Owner  | Effort | Notes                                                                                                              |
+| --- | --------------------------------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| 32  | Thundering herd protection on popular key expiry    | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                               |
 | 39  | Circuit breaker for non-critical cross-service gRPC | All    | Medium | Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure |
-| 40  | OTel alerting for service outages                   | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)         |
+| 40  | OTel alerting for service outages                   | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                |
 
 ### Open Questions
 
@@ -1323,17 +1325,17 @@ clients/web/src/routes/
 
 ### Blocked — Can Only Fix Later
 
-| #   | Item                                        | Blocker                                       | Priority | Notes                                                                            |
-| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------- |
-| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                    |
-| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                          |
-| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                  |
-| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra        |
-| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration               |
-| 6   | Validate PII redaction in OTel output       | Running observability stack (Grafana/Loki)    | High     | Manually verify no PII in production log/trace output                            |
-| 7   | OTel alerting rules                         | Running AlertManager/Grafana                  | Medium   | Error rate spikes, latency P99, rate limit blocks, delivery failures             |
-| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                            |
-| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes |
+| #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
+| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
+| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
+| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
+| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
+| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
+| 6   | Validate PII redaction in OTel output       | Running observability stack (Grafana/Loki)    | High     | Manually verify no PII in production log/trace output                                                                                                          |
+| 7   | OTel alerting rules                         | Running AlertManager/Grafana                  | Medium   | Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                                           |
+| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
+| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
 | 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
 
 ---

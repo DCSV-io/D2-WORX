@@ -158,7 +158,7 @@ Repository handlers use `input.HashIds.Chunk(_BATCH_SIZE)` to avoid large IN cla
 
 ### Options Pattern
 
-Configuration uses `IOptions<T>` with sensible defaults. App options in `ServiceName.App/Options/`, infra options in `ServiceName.Infra/Options/`. Register via `services.Configure<T>(config.GetSection(nameof(T)))`.
+Configuration uses `IOptions<T>` with sensible defaults. App options in `ServiceName.App/`, infra options in `ServiceName.Infra/`. Config section names follow the `SERVICE_LAYER` convention (e.g., `"GEO_APP"`, `"GEO_INFRA"`, `"GATEWAY_AUTH"`) -- NOT `nameof(T)`. Register via `services.Configure<T>(config.GetSection("SERVICE_LAYER"))`.
 
 ### Partial Interface Extension Pattern
 
@@ -188,7 +188,7 @@ public static class Extensions
     {
         public IServiceCollection AddMyService(IConfiguration config)
         {
-            services.Configure<MyOptions>(config.GetSection(nameof(MyOptions)));
+            services.Configure<MyOptions>(config.GetSection("SERVICE_LAYER"));
             services.AddTransient<IMyHandler, MyHandler>();
             return services;
         }
@@ -267,6 +267,7 @@ D2-WORX/
 │   │       │   ├── client/           # @d2/comms-client (thin RabbitMQ publisher)
 │   │       │   ├── domain/app/infra/api/  # DDD layers
 │   │       │   └── tests/            # Comms service tests
+│   │       ├── dkron-mgr/            # @d2/dkron-mgr (Dkron job reconciler)
 │   │       ├── e2e/                  # Cross-service E2E tests
 │   │       └── geo/
 │   │           └── geo-client/       # @d2/geo-client (mirrors .NET Geo.Client)
@@ -383,13 +384,13 @@ Update `.md` files when:
 
 All logs and spans MUST include these fields for cross-service correlation:
 
-| Field         | Type   | Source                                                             | Purpose                           |
-| ------------- | ------ | ------------------------------------------------------------------ | --------------------------------- |
+| Field         | Type   | Source                                                            | Purpose                           |
+| ------------- | ------ | ----------------------------------------------------------------- | --------------------------------- |
 | traceId       | string | `IRequestContext.traceId` (auto on BaseHandler, auto in D2Result) | End-to-end request tracing        |
-| correlationId | string | `Idempotency-Key` header / RabbitMQ message correlationId        | Async message tracking across svc |
+| correlationId | string | `Idempotency-Key` header / RabbitMQ message correlationId         | Async message tracking across svc |
 | userId        | string | JWT `sub` claim / session                                         | User context for audit trails     |
 | orgId         | string | JWT `activeOrganizationId` / session                              | Org context for multi-tenant logs |
-| service       | string | `OTEL_SERVICE_NAME`                                                | Service origin                    |
+| service       | string | `OTEL_SERVICE_NAME`                                               | Service origin                    |
 
 ### Automatic Instrumentation
 
@@ -563,11 +564,11 @@ When adding routes or handlers, follow the full checklist in `backends/node/serv
 
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 853 tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms delivery engine simplified with `@d2/comms-client` — universal message shape, contactId-only resolution, no event-specific sub-handlers — 552 tests. E2E cross-service tests passing (5 tests).
+Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 853 tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms delivery engine simplified with `@d2/comms-client` — universal message shape, contactId-only resolution, no event-specific sub-handlers — 552 tests. E2E cross-service tests passing (12 tests). Scheduled jobs (Dkron) complete — 8 daily maintenance jobs across Auth/Geo/Comms, `@d2/dkron-mgr` reconciler service (64 tests).
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
-**Next:** Phase 2 Stage C — Auth client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC), SvelteKit auth integration
+**Next:** Dependency update (Q1 2026), then Phase 2 Stage C — Auth client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC), SvelteKit auth integration
 
 ### When in Doubt
 
@@ -678,6 +679,20 @@ No sticky sessions required. Any instance can handle any request:
 - **Packages**: `@d2/geo-client` (Node.js - done), Geo.Client `FindWhoIs` handler (C# - done)
 - Local memory cache for WhoIs data to avoid Geo service bombardment
 - TTL: 8 hours (configurable via `GeoClientOptions`), LRU eviction (10,000 entries)
+
+### Scheduled Jobs (Dkron)
+
+- **Dkron 4.0.9**: Persistent Aspire container, dashboard at `:8888`, single-node Raft (`--node-name=dkron`)
+- **`@d2/dkron-mgr`**: Node.js reconciler at `backends/node/services/dkron-mgr/`. Declarative job definitions → Dkron REST API. Drift detection, orphan cleanup, idempotent reconciliation loop
+- **Job execution flow**: Dkron (cron) → HTTP POST to REST Gateway (service key auth via `X-Api-Key`) → Gateway forwards via gRPC (API key via `AddCallCredentials`) → Service handler acquires Redis distributed lock (`SET NX PX`) → Batch delete loop → Returns result
+- **8 daily jobs** (staggered 15 min apart, 2:00-3:45 AM UTC):
+  - Geo: `purge-stale-whois` (180d retention), `cleanup-orphaned-locations` (zero references)
+  - Auth: `purge-sessions` (expired), `purge-sign-in-events` (90d), `cleanup-invitations` (7d post-expiry), `cleanup-emulation-consents` (expired/revoked)
+  - Comms: `purge-deleted-messages` (90d), `purge-delivery-history` (365d)
+- **Job endpoint pattern**: `.NET Gateway` registers gRPC clients with `AddCallCredentials` + `UnsafeUseInsecureChannelCallCredentials = true` (plaintext dev). Node.js services use `handleJobRpc()` from `@d2/service-defaults`
+- **Lock pattern**: Each job handler acquires a Redis lock (configurable TTL via Options), returns early if lock held by another instance. Lock released on completion
+- **Env vars**: `DKRON_MGR__DKRON_URL`, `DKRON_MGR__GATEWAY_URL`, `DKRON_MGR__SERVICE_KEY` — all in `.env.local`
+- **Documentation**: See [`DKRON_MGR.md`](backends/node/services/dkron-mgr/DKRON_MGR.md) for full details
 
 ---
 

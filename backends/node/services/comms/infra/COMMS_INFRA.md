@@ -14,7 +14,7 @@ Implements the repository and provider interfaces defined in `@d2/comms-app`. Ow
 | Decision                           | Rationale                                                                        |
 | ---------------------------------- | -------------------------------------------------------------------------------- |
 | Drizzle ORM (not Kysely)           | Consistent with Auth service -- single ORM across all Node.js services (ADR-009) |
-| 12 handler-per-file repo pattern   | Mirrors .NET TLC convention: one handler per file, organized by C/R/U            |
+| 14 handler-per-file repo pattern   | Mirrors .NET TLC convention: one handler per file, organized by C/R/U/D          |
 | Factory functions for repo bundles | `createMessageRepoHandlers(db, ctx)` groups related handlers for composition     |
 | Providers as singleton             | Hold API client connections (Resend, Twilio) -- shared across all requests       |
 | DLX-based retry topology           | Tier queues with escalating TTLs dead-letter back to main queue on expiry        |
@@ -55,6 +55,9 @@ src/
         mark-delivery-request-processed.ts      MarkDeliveryRequestProcessed
         update-delivery-attempt-status.ts       UpdateDeliveryAttemptStatus
         update-channel-preference-record.ts     UpdateChannelPreferenceRecord
+      d/
+        purge-deleted-messages.ts               PurgeDeletedMessages (batchDelete soft-deleted messages)
+        purge-delivery-history.ts               PurgeDeliveryHistory (FK-aware: attempts then requests)
   providers/
     email/
       resend/
@@ -82,9 +85,9 @@ Four tables in the comms database (PostgreSQL 18):
 
 All primary keys are UUIDv7 (varchar 36). Timestamps use `timestamptz`. Column names are `snake_case`.
 
-## Repository Handlers (12)
+## Repository Handlers (14)
 
-Organized by TLC convention (C/R/U):
+Organized by TLC convention (C/R/U/D):
 
 ### Create (C/) -- 4 handlers
 
@@ -112,6 +115,15 @@ Organized by TLC convention (C/R/U):
 | MarkDeliveryRequestProcessed  | `{ id }`                                                   | `{ request }` |
 | UpdateDeliveryAttemptStatus   | `{ id, status, providerMessageId?, error?, nextRetryAt? }` | `{ attempt }` |
 | UpdateChannelPreferenceRecord | `{ pref }`                                                 | `{ pref }`    |
+
+### Delete (D/) -- 2 handlers
+
+| Handler              | Input            | Output             | Notes                                                                  |
+| -------------------- | ---------------- | ------------------ | ---------------------------------------------------------------------- |
+| PurgeDeletedMessages | `{ cutoffDate }` | `{ rowsAffected }` | `batchDelete` on `message` where `deletedAt < cutoff`                  |
+| PurgeDeliveryHistory | `{ cutoffDate }` | `{ rowsAffected }` | FK-aware: deletes `delivery_attempt` then `delivery_request` per batch |
+
+Both use `batchDelete` from `@d2/batch-pg` with `DEFAULT_BATCH_SIZE` (500) internally -- batch size is not passed via handler input. Select IDs in batches, delete in chunks to avoid long-running transactions. `PurgeDeliveryHistory` handles the FK dependency by deleting child `delivery_attempt` rows before parent `delivery_request` rows within each batch.
 
 ## Providers
 
@@ -157,7 +169,7 @@ import { addCommsInfra } from "@d2/comms-infra";
 addCommsInfra(services, db);
 ```
 
-`addCommsInfra` registers **only** the 12 repository handlers + PingDb health-check handler as **transient**.
+`addCommsInfra` registers **only** the 14 repository handlers (12 CRUD + 2 purge) + PingDb health-check handler as **transient**.
 
 Delivery providers (Resend email, Twilio SMS) are registered as **singleton instances** in the composition root (`@d2/comms-api`), not here -- they hold API client connections and use service-level HandlerContext. See `COMMS_API.md` for provider wiring.
 
@@ -196,6 +208,7 @@ src/integration/
 | `@d2/messaging`    | MessageBus, IMessagePublisher, ConsumerResult  |
 | `@d2/result`       | D2Result return type                           |
 | `@d2/utilities`    | UUIDv7 generation                              |
+| `@d2/batch-pg`     | batchDelete utility for purge handlers         |
 | `drizzle-orm`      | ORM for PostgreSQL repository handlers         |
 | `pg`               | PostgreSQL driver                              |
 | `resend`           | Resend API client for email delivery           |

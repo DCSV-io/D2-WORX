@@ -1,6 +1,6 @@
 # Batch.Pg
 
-Batched database query utilities for EF Core, chunking large ID lookups to avoid PostgreSQL parameter limits and IN clause performance issues. Integrates with D2Result for consistent OK/SOME_FOUND/NOT_FOUND status handling.
+Batched database utilities for EF Core, chunking large ID lookups and bulk deletes to avoid PostgreSQL parameter limits and IN clause performance issues. Integrates with D2Result for consistent OK/SOME_FOUND/NOT_FOUND status handling.
 
 ## Problem
 
@@ -9,6 +9,8 @@ PostgreSQL has limits on IN clause parameters (~32K) and performance degrades wi
 ## Solution
 
 `BatchQuery<TEntity, TKey>` chunks ID lookups into configurable batch sizes (default 500), executes them sequentially, and aggregates results. Provides fluent API via DbSet extension methods.
+
+`BatchDelete` chunks purge/cleanup operations into select-then-delete loops, avoiding large transactions and unbounded deletes.
 
 ## Usage
 
@@ -32,6 +34,21 @@ var locations = await db.Locations
         opts.AsNoTracking = false;  // Enable change tracking
     })
     .ToListAsync(ct);
+
+// Batch delete — select-then-delete loop
+var totalDeleted = await BatchDelete.ExecuteAsync<string>(
+    selectBatch: (limit, ct) => db.Locations
+        .Where(l => l.CreatedAt < cutoff)
+        .OrderBy(l => l.CreatedAt)
+        .Select(l => l.HashId)
+        .Take(limit)
+        .ToListAsync(ct),
+    deleteBatch: (ids, ct) => db.Locations
+        .Where(l => ids.Contains(l.HashId))
+        .ExecuteDeleteAsync(ct)
+        .AsTask(),
+    batchSize: 500,
+    ct: ct);
 ```
 
 ## Files
@@ -39,6 +56,7 @@ var locations = await db.Locations
 | File Name                                      | Description                                                                                          |
 | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [BatchQuery.cs](BatchQuery.cs)                 | Core batched query class with ToListAsync, ToDictionaryAsync, ToAsyncEnumerable, GetMissingIdsAsync. |
+| [BatchDelete.cs](BatchDelete.cs)               | Batched select-then-delete loop for chunked purge/cleanup operations. Returns total deleted count.   |
 | [BatchOptions.cs](BatchOptions.cs)             | Configuration options: BatchSize, AsNoTracking, DeduplicateIds, FilterNullIds.                       |
 | [Extensions.cs](Extensions.cs)                 | DbSet extension method `BatchGetByIds` for fluent batch query creation.                              |
 | [D2ResultExtensions.cs](D2ResultExtensions.cs) | BatchQuery extensions for ToD2ResultAsync and ToDictionaryD2ResultAsync with status code handling.   |
@@ -60,3 +78,16 @@ var locations = await db.Locations
 | Some IDs found             | SOME_FOUND  | Partial list |
 | No IDs found               | NOT_FOUND   | null         |
 | Empty input (not an error) | OK          | Empty list   |
+
+## BatchDelete
+
+Chunked purge/cleanup utility. Pattern: select IDs matching a condition (LIMIT) then delete by IDs, repeating until no more rows match. Avoids large transactions, unbounded deletes, and parameter-list overflows.
+
+| Parameter     | Type                                            | Description                                                  |
+| ------------- | ----------------------------------------------- | ------------------------------------------------------------ |
+| `selectBatch` | `Func<int, CancellationToken, Task<List<TId>>>` | Selects up to `batchSize` IDs matching the delete condition. |
+| `deleteBatch` | `Func<List<TId>, CancellationToken, Task>`      | Deletes the given IDs. Must handle FK ordering if needed.    |
+| `batchSize`   | `int`                                           | Maximum IDs per batch. Default: 500.                         |
+| `ct`          | `CancellationToken`                             | Cancellation token.                                          |
+
+Returns total number of rows deleted across all batches. Stops when a batch returns fewer IDs than `batchSize` or zero IDs.
