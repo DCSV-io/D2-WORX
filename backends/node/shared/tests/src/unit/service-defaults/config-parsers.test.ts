@@ -97,6 +97,14 @@ describe("parsePostgresUrl", () => {
     const ado = "HOST=myhost;PORT=5433;USERNAME=admin;PASSWORD=secret;DATABASE=mydb";
     expect(parsePostgresUrl(ado)).toBe("postgresql://admin:secret@myhost:5433/mydb");
   });
+
+  it("returns empty string for empty input", () => {
+    expect(parsePostgresUrl("")).toBe("");
+  });
+
+  it("returns empty string for whitespace-only input", () => {
+    expect(parsePostgresUrl("   ")).toBe("");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -132,5 +140,13 @@ describe("parseRedisUrl", () => {
   it("URL-encodes special characters in password", () => {
     const se = "redis-host:6380,password=p@ss=w/rd";
     expect(parseRedisUrl(se)).toBe("redis://:p%40ss%3Dw%2Frd@redis-host:6380");
+  });
+
+  it("returns empty string for empty input", () => {
+    expect(parseRedisUrl("")).toBe("");
+  });
+
+  it("returns empty string for whitespace-only input", () => {
+    expect(parseRedisUrl("   ")).toBe("");
   });
 });

@@ -15,6 +15,8 @@
  * ```
  */
 export function parsePostgresUrl(connectionString: string): string {
+  if (!connectionString.trim()) return "";
+
   if (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://")) {
     return connectionString;
   }

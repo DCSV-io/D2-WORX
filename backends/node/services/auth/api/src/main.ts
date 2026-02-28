@@ -34,7 +34,9 @@ const config = {
   geoAddress: process.env.GEO_GRPC_ADDRESS,
   geoApiKey: process.env.AUTH_GEO_CLIENT__APIKEY,
   authApiKeys: parseEnvArray("AUTH_API_KEYS"),
-  grpcPort: process.env.AUTH_GRPC_PORT ? parseInt(process.env.AUTH_GRPC_PORT, 10) : undefined,
+  grpcPort: process.env.AUTH_GRPC_PORT
+    ? parseIntStrict(process.env.AUTH_GRPC_PORT, "AUTH_GRPC_PORT")
+    : undefined,
   jobOptions: process.env.AUTH_APP__SIGNINEVENTRETENTIONDAYS
     ? {
         signInEventRetentionDays: parseIntStrict(

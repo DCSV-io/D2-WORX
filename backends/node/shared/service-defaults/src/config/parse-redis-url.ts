@@ -15,6 +15,8 @@
  * ```
  */
 export function parseRedisUrl(connectionString: string): string {
+  if (!connectionString.trim()) return "";
+
   if (connectionString.startsWith("redis://") || connectionString.startsWith("rediss://")) {
     return connectionString;
   }
