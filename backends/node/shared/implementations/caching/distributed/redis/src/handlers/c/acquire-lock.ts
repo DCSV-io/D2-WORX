@@ -19,6 +19,12 @@ export class AcquireLock
   }
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
+    if (!Number.isFinite(input.expirationMs) || input.expirationMs <= 0) {
+      return D2Result.validationFailed({
+        inputErrors: [["expirationMs", "Must be a finite positive number."]],
+      });
+    }
+
     try {
       const wasSet = await this.redis.set(input.key, input.lockId, "PX", input.expirationMs, "NX");
       return D2Result.ok({ data: { acquired: wasSet === "OK" } });
