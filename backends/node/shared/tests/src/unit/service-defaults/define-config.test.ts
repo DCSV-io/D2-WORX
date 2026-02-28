@@ -427,4 +427,27 @@ describe("frozen result", () => {
     const config = defineConfig("test", { v: requiredString("TEST_FREEZE") });
     expect(Object.isFrozen(config)).toBe(true);
   });
+
+  it("deep-freezes section objects from optionalSection", () => {
+    setEnv("TEST_FREEZE_SEC__DAYS", "30");
+    const config = defineConfig("test", {
+      opts: optionalSection("TEST_FREEZE_SEC", { days: 90, limit: 500 }),
+    });
+    expect(Object.isFrozen(config.opts)).toBe(true);
+    // In strict mode (ESM), assigning to a frozen property throws
+    expect(() => {
+      (config.opts as Record<string, number>).days = 999;
+    }).toThrow();
+  });
+
+  it("deep-freezes arrays from envArray", () => {
+    setEnv("TEST_FREEZE_ARR__0", "a");
+    setEnv("TEST_FREEZE_ARR__1", "b");
+    const config = defineConfig("test", { items: envArray("TEST_FREEZE_ARR") });
+    expect(Object.isFrozen(config.items)).toBe(true);
+    // In strict mode (ESM), push on a frozen array throws
+    expect(() => {
+      (config.items as string[]).push("c");
+    }).toThrow();
+  });
 });

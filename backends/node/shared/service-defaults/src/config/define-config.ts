@@ -212,7 +212,7 @@ export function envArray(prefix: string): FieldDescriptor<string[]> {
         if (value === undefined) break;
         result.push(value);
       }
-      return result;
+      return Object.freeze(result) as string[];
     },
   };
 }
@@ -248,7 +248,7 @@ export function optionalSection<T extends { [K in keyof T]: number }>(
         }
       }
 
-      return anyFound ? result : undefined;
+      return anyFound ? Object.freeze(result) : undefined;
     },
   };
 }

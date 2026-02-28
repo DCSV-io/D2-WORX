@@ -5,6 +5,11 @@
  * StackExchange: `host:port,password=pass`
  * URI:           `redis://:pass@host:port`
  *
+ * **Limitations:** Passwords containing commas are not supported — this matches
+ * StackExchange.Redis itself, which uses commas as option delimiters without an
+ * escape mechanism. Extra StackExchange options (ssl, abortConnect, etc.) are
+ * silently ignored; only `password` is extracted.
+ *
  * @example
  * ```ts
  * parseRedisUrl("redis-host:6380,password=s3cr3t");
@@ -22,7 +27,8 @@ export function parseRedisUrl(connectionString: string): string {
     return input;
   }
 
-  const [hostPort = "", ...options] = input.split(",");
+  const [rawHostPort = "", ...options] = input.split(",");
+  const hostPort = rawHostPort.trim();
   const params = new Map<string, string>();
   for (const opt of options) {
     const eq = opt.indexOf("=");
@@ -31,7 +37,11 @@ export function parseRedisUrl(connectionString: string): string {
   }
 
   const password = params.get("password");
-  const [host, port] = hostPort.includes(":") ? hostPort.split(":") : [hostPort, "6379"];
+  const lastColon = hostPort.lastIndexOf(":");
+  const [host, port] =
+    lastColon !== -1
+      ? [hostPort.slice(0, lastColon), hostPort.slice(lastColon + 1) || "6379"]
+      : [hostPort, "6379"];
 
   return password
     ? `redis://:${encodeURIComponent(password)}@${host}:${port}`

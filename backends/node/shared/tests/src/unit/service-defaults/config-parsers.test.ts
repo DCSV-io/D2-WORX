@@ -105,6 +105,45 @@ describe("parsePostgresUrl", () => {
   it("returns empty string for whitespace-only input", () => {
     expect(parsePostgresUrl("   ")).toBe("");
   });
+
+  // -- Single-quote support (Npgsql convention) --
+
+  it("handles single-quoted password containing semicolons", () => {
+    const ado = "Host=db;Port=5432;Username=admin;Password='p;a;ss';Database=app";
+    expect(parsePostgresUrl(ado)).toBe("postgresql://admin:p%3Ba%3Bss@db:5432/app");
+  });
+
+  it("handles doubled single quotes inside a quoted value (literal quote)", () => {
+    const ado = "Host=db;Password='it''s secret';Database=app";
+    expect(parsePostgresUrl(ado)).toBe("postgresql://postgres:it's%20secret@db:5432/app");
+  });
+
+  it("handles quoted value with no special characters", () => {
+    const ado = "Host=db;Password='plain';Database=app";
+    expect(parsePostgresUrl(ado)).toBe("postgresql://postgres:plain@db:5432/app");
+  });
+
+  // -- Additional edge cases --
+
+  it("handles password containing equals signs", () => {
+    const ado = "Host=db;Password=abc=def=ghi;Database=app";
+    expect(parsePostgresUrl(ado)).toBe("postgresql://postgres:abc%3Ddef%3Dghi@db:5432/app");
+  });
+
+  it("handles host-only connection string (no other fields)", () => {
+    const ado = "Host=myhost";
+    expect(parsePostgresUrl(ado)).toBe("postgresql://postgres:@myhost:5432/");
+  });
+
+  it("handles trailing semicolon", () => {
+    const ado = "Host=db;Port=5432;Database=app;";
+    expect(parsePostgresUrl(ado)).toBe("postgresql://postgres:@db:5432/app");
+  });
+
+  it("URL-encodes special characters in username", () => {
+    const ado = "Host=db;Username=admin@corp;Password=pass;Database=app";
+    expect(parsePostgresUrl(ado)).toBe("postgresql://admin%40corp:pass@db:5432/app");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -148,5 +187,35 @@ describe("parseRedisUrl", () => {
 
   it("returns empty string for whitespace-only input", () => {
     expect(parseRedisUrl("   ")).toBe("");
+  });
+
+  // -- Additional edge cases --
+
+  it("handles host-only (no port, no options)", () => {
+    expect(parseRedisUrl("redis-host")).toBe("redis://redis-host:6379");
+  });
+
+  it("defaults port when host has trailing colon (host:)", () => {
+    expect(parseRedisUrl("redis-host:")).toBe("redis://redis-host:6379");
+  });
+
+  it("handles password containing equals signs", () => {
+    const se = "redis-host:6380,password=abc=def=ghi";
+    expect(parseRedisUrl(se)).toBe("redis://:abc%3Ddef%3Dghi@redis-host:6380");
+  });
+
+  it("ignores extra StackExchange options (ssl, abortConnect)", () => {
+    const se = "redis-host:6380,password=secret,ssl=true,abortConnect=false";
+    expect(parseRedisUrl(se)).toBe("redis://:secret@redis-host:6380");
+  });
+
+  it("handles whitespace around host and options", () => {
+    const se = "  redis-host:6380 , password = s3cr3t  ";
+    expect(parseRedisUrl(se)).toBe("redis://:s3cr3t@redis-host:6380");
+  });
+
+  it("handles host with trailing colon and password", () => {
+    const se = "redis-host:,password=secret";
+    expect(parseRedisUrl(se)).toBe("redis://:secret@redis-host:6379");
   });
 });
