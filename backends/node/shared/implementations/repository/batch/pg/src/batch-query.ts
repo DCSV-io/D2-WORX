@@ -15,7 +15,7 @@ export interface BatchOptions {
   filterNullIds?: boolean;
 }
 
-const DEFAULT_BATCH_SIZE = 500;
+export const DEFAULT_BATCH_SIZE = 500;
 
 /**
  * Chunk an array of IDs, run queries in parallel, and merge results.

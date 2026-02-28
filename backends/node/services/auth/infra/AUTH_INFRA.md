@@ -73,7 +73,11 @@ src/
         revoke-emulation-consent-record.ts  Sets revokedAt timestamp
         update-org-contact-record.ts        Updates label/isPrimary + updatedAt
       d/
-        delete-org-contact-record.ts        Deletes junction row by ID
+        delete-org-contact-record.ts              Deletes junction row by ID
+        purge-expired-sessions.ts                 Batch-deletes sessions past expiresAt
+        purge-sign-in-events.ts                   Batch-deletes sign-in events before cutoff
+        purge-expired-invitations.ts              Batch-deletes invitations past expiresAt
+        purge-expired-emulation-consents.ts       Batch-deletes expired/revoked consents
     migrations/
       0000_init.sql          Initial migration for custom tables
 ```
@@ -189,13 +193,24 @@ Hierarchical role permissions (each level inherits from below):
 | `emulation_consent` | id, user_id, granted_to_org_id, expires_at, revoked_at, created_at     | idx_emulation_consent_user_id, unique(user_id, granted_to_org_id) WHERE revoked_at IS NULL |
 | `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at         | idx_org_contact_organization_id                                                            |
 
+## Purge Repository Handlers
+
+Four batch-delete handlers for scheduled job cleanup. All use `batchDelete` from `@d2/batch-pg` (select IDs in batches, delete by `IN` clause, loop until zero rows remain):
+
+| Handler                         | Table               | Where Clause                                 | Notes                            |
+| ------------------------------- | ------------------- | -------------------------------------------- | -------------------------------- |
+| `PurgeExpiredSessions`          | `session`           | `expiresAt < now()`                          | BetterAuth-managed table         |
+| `PurgeSignInEvents`             | `sign_in_event`     | `createdAt < cutoffDate`                     | Cutoff computed by job handler   |
+| `PurgeExpiredInvitations`       | `invitation`        | `expiresAt < cutoffDate`                     | BetterAuth-managed table         |
+| `PurgeExpiredEmulationConsents` | `emulation_consent` | `expiresAt < now() OR revokedAt IS NOT NULL` | Removes both expired and revoked |
+
 ## DI Registration
 
 ```typescript
 addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void
 ```
 
-Registers all 14 repository handlers as **transient** (new instance per resolve). Each handler receives the Drizzle `db` instance and scoped `IHandlerContext` from the container.
+Registers all 20 repository handlers as **transient** (new instance per resolve). Each handler receives the Drizzle `db` instance and scoped `IHandlerContext` from the container.
 
 ## Dependencies
 
@@ -203,6 +218,7 @@ Registers all 14 repository handlers as **transient** (new instance per resolve)
 | ----------------- | --------------------------------------------------- |
 | `@d2/auth-app`    | Repository interface types and service keys         |
 | `@d2/auth-domain` | Domain entities, constants, password validation     |
+| `@d2/batch-pg`    | Batched delete utility for purge handlers           |
 | `@d2/di`          | `ServiceCollection` for DI registration             |
 | `@d2/handler`     | `BaseHandler`, `IHandlerContext`                    |
 | `@d2/interfaces`  | Distributed cache handler types (secondary storage) |

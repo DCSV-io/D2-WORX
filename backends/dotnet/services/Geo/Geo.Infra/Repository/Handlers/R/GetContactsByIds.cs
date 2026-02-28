@@ -54,7 +54,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
             .BatchGetByIds(
                 input.ContactIds,
                 c => c.Id,
-                opts => opts.BatchSize = r_options.RepoQueryBatchSize)
+                opts => opts.BatchSize = r_options.RepoBatchSize)
             .ToDictionaryD2ResultAsync(TraceId, ct);
 
         // Handle success case first.

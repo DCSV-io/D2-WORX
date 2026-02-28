@@ -34,7 +34,7 @@ public static class Extensions
         /// The configuration to read options from.
         /// </param>
         /// <param name="sectionName">
-        /// The configuration section name for options. Defaults to "RateLimitOptions".
+        /// The configuration section name for options. Defaults to "GATEWAY_RATELIMIT".
         /// </param>
         ///
         /// <returns>
@@ -45,7 +45,7 @@ public static class Extensions
         /// </remarks>
         public IServiceCollection AddRateLimiting(
             IConfiguration configuration,
-            string sectionName = nameof(RateLimitOptions))
+            string sectionName = "GATEWAY_RATELIMIT")
         {
             services.Configure<RateLimitOptions>(configuration.GetSection(sectionName));
             services.AddTransient<IRateLimit.ICheckHandler, Check>();

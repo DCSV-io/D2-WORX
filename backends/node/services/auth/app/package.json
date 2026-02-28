@@ -18,6 +18,7 @@
   ],
   "dependencies": {
     "@d2/auth-domain": "workspace:*",
+    "@d2/batch-pg": "workspace:*",
     "@d2/cache-redis": "workspace:*",
     "@d2/di": "workspace:*",
     "@d2/geo-client": "workspace:*",

@@ -58,10 +58,16 @@ describe("Middleware chain order", () => {
     const getTtl = new CacheRedis.GetTtl(redis, ctx);
     const increment = new CacheRedis.Increment(redis, ctx);
     const set = new CacheRedis.Set<string>(redis, ctx);
-    const rateLimitCheck = new RateLimitCheck(getTtl, increment, set, {
-      clientFingerprintThreshold: 3,
-      ipThreshold: 3,
-    }, ctx);
+    const rateLimitCheck = new RateLimitCheck(
+      getTtl,
+      increment,
+      set,
+      {
+        clientFingerprintThreshold: 3,
+        ipThreshold: 3,
+      },
+      ctx,
+    );
 
     // FindWhoIs with stub gRPC client (always returns empty — no real Geo service)
     const whoIsCacheStore = new MemoryCacheStore();

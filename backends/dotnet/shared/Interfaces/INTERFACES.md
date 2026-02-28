@@ -12,16 +12,19 @@ Interface definitions for handler-based operations across caching, repositories,
 >
 > ##### C (Create)
 >
-> | File Name                                               | Description                                                       |
-> | ------------------------------------------------------- | ----------------------------------------------------------------- |
-> | [ICreate.cs](Caching/Distributed/Handlers/C/ICreate.cs) | Partial interface defining distributed cache creation operations. |
+> | File Name                                                                       | Description                                                                            |
+> | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+> | [ICreate.cs](Caching/Distributed/Handlers/C/ICreate.cs)                         | Partial interface defining distributed cache creation operations.                      |
+> | [ICreate.SetNx.cs](Caching/Distributed/Handlers/C/ICreate.SetNx.cs)             | Extends ICreate with ISetNxHandler for SET if Not eXists with optional TTL.            |
+> | [ICreate.AcquireLock.cs](Caching/Distributed/Handlers/C/ICreate.AcquireLock.cs) | Extends ICreate with IAcquireLockHandler for distributed lock acquire (mandatory TTL). |
 >
 > ##### D (Delete)
 >
-> | File Name                                                             | Description                                                                               |
-> | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-> | [IDelete.cs](Caching/Distributed/Handlers/D/IDelete.cs)               | Partial interface defining distributed cache deletion operations.                         |
-> | [IDelete.Remove.cs](Caching/Distributed/Handlers/D/IDelete.Remove.cs) | Extends IDelete with IRemoveHandler for explicit distributed cache entry deletion by key. |
+> | File Name                                                                       | Description                                                                               |
+> | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+> | [IDelete.cs](Caching/Distributed/Handlers/D/IDelete.cs)                         | Partial interface defining distributed cache deletion operations.                         |
+> | [IDelete.Remove.cs](Caching/Distributed/Handlers/D/IDelete.Remove.cs)           | Extends IDelete with IRemoveHandler for explicit distributed cache entry deletion by key. |
+> | [IDelete.ReleaseLock.cs](Caching/Distributed/Handlers/D/IDelete.ReleaseLock.cs) | Extends IDelete with IReleaseLockHandler for safe distributed lock release.               |
 >
 > ##### R (Read)
 >

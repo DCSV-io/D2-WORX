@@ -64,6 +64,19 @@ export type {
   PingDbInput,
   PingDbOutput,
   IPingDbHandler,
+  // Delete (D) — Job purge handlers
+  PurgeExpiredSessionsInput,
+  PurgeExpiredSessionsOutput,
+  IPurgeExpiredSessionsHandler,
+  PurgeSignInEventsInput,
+  PurgeSignInEventsOutput,
+  IPurgeSignInEventsHandler,
+  PurgeExpiredInvitationsInput,
+  PurgeExpiredInvitationsOutput,
+  IPurgeExpiredInvitationsHandler,
+  PurgeExpiredEmulationConsentsInput,
+  PurgeExpiredEmulationConsentsOutput,
+  IPurgeExpiredEmulationConsentsHandler,
 } from "./interfaces/repository/handlers/index.js";
 
 export type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
@@ -274,8 +287,38 @@ export type {
   ComponentHealth,
 } from "./implementations/cqrs/handlers/q/check-health.js";
 
+// --- Job Handlers ---
+export { RunSessionPurge } from "./implementations/cqrs/handlers/c/run-session-purge.js";
+export type {
+  RunSessionPurgeInput,
+  RunSessionPurgeOutput,
+} from "./implementations/cqrs/handlers/c/run-session-purge.js";
+
+export { RunSignInEventPurge } from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
+export type {
+  RunSignInEventPurgeInput,
+  RunSignInEventPurgeOutput,
+} from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
+
+export { RunInvitationCleanup } from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
+export type {
+  RunInvitationCleanupInput,
+  RunInvitationCleanupOutput,
+} from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
+
+export { RunEmulationConsentCleanup } from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
+export type {
+  RunEmulationConsentCleanupInput,
+  RunEmulationConsentCleanupOutput,
+} from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
+
+// --- Job Options ---
+export type { AuthJobOptions } from "./auth-job-options.js";
+export { DEFAULT_AUTH_JOB_OPTIONS } from "./auth-job-options.js";
+
 // --- DI Registration ---
 export { addAuthApp, type AddAuthAppOptions } from "./registration.js";
+export { IAuthAcquireLockKey, IAuthReleaseLockKey } from "./registration.js";
 export {
   // Infra-layer keys (interfaces defined here, implemented in auth-infra)
   ICreateSignInEventKey,
@@ -309,4 +352,13 @@ export {
   ICheckSignInThrottleKey,
   IPingDbKey,
   ICheckHealthKey,
+  // Job keys
+  IPurgeExpiredSessionsKey,
+  IPurgeSignInEventsKey,
+  IPurgeExpiredInvitationsKey,
+  IPurgeExpiredEmulationConsentsKey,
+  IRunSessionPurgeKey,
+  IRunSignInEventPurgeKey,
+  IRunInvitationCleanupKey,
+  IRunEmulationConsentCleanupKey,
 } from "./service-keys.js";

@@ -301,10 +301,7 @@ describe("NotificationConsumer (integration)", () => {
     });
 
     // Send a completely empty object
-    await publisher.send(
-      { exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" },
-      {},
-    );
+    await publisher.send({ exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE, routingKey: "" }, {});
 
     await new Promise((resolve) => setTimeout(resolve, 2_000));
 

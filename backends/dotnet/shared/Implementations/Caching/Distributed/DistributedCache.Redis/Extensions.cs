@@ -61,6 +61,8 @@ public static class Extensions
             services.AddTransient<IRead.IGetTtlHandler, GetTtl>();
             services.AddTransient<IRead.IPingHandler, Handlers.Q.Ping>();
             services.AddTransient<IUpdate.IIncrementHandler, Increment>();
+            services.AddTransient<ICreate.IAcquireLockHandler, AcquireLock>();
+            services.AddTransient<IDelete.IReleaseLockHandler, Handlers.D.ReleaseLock>();
 
             return services;
         }

@@ -12,90 +12,68 @@
 // patches are applied before module imports are resolved.
 
 import { createLogger } from "@d2/logging";
+import { DEFAULT_COMMS_JOB_OPTIONS } from "@d2/comms-app";
+import {
+  defineConfig,
+  requiredParsed,
+  requiredString,
+  optionalString,
+  optionalParsed,
+  defaultInt,
+  envArray,
+  optionalSection,
+  parsePostgresUrl,
+  parseRedisUrl,
+} from "@d2/service-defaults/config";
 import { createCommsService } from "./composition-root.js";
 
 const logger = createLogger({ serviceName: "comms-service" });
 
-/**
- * Parses indexed environment variables into an array.
- * Reads `${prefix}__0`, `${prefix}__1`, ... until a gap is found.
- * Matches .NET's indexed-array binding convention.
- */
-function parseEnvArray(prefix: string): string[] {
-  const result: string[] = [];
-  for (let i = 0; ; i++) {
-    const value = process.env[`${prefix}__${i}`];
-    if (value === undefined) break;
-    result.push(value);
-  }
-  return result;
-}
-
-/**
- * Converts a .NET ADO.NET PostgreSQL connection string to a libpq URI.
- * Passes through strings that are already URIs (standalone / test mode).
- *
- * ADO.NET: `Host=host;Port=port;Username=user;Password=pass;Database=db`
- * URI:     `postgresql://user:pass@host:port/db`
- */
-function parsePostgresUrl(connectionString: string): string {
-  if (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://")) {
-    return connectionString;
-  }
-
-  const params = new Map<string, string>();
-  for (const part of connectionString.split(";")) {
-    const eq = part.indexOf("=");
-    if (eq === -1) continue;
-    params.set(part.slice(0, eq).trim().toLowerCase(), part.slice(eq + 1).trim());
-  }
-
-  const host = params.get("host") ?? "localhost";
-  const port = params.get("port") ?? "5432";
-  const user = encodeURIComponent(params.get("username") ?? "postgres");
-  const password = encodeURIComponent(params.get("password") ?? "");
-  const database = params.get("database") ?? "";
-
-  return `postgresql://${user}:${password}@${host}:${port}/${database}`;
-}
-
 // Aspire injects connection strings in .NET formats (ADO.NET for PG).
 // Parser converts to URI format for Node.js clients, passing through URIs unchanged.
-const config = {
-  databaseUrl: parsePostgresUrl(
-    process.env["ConnectionStrings__d2-services-comms"] ??
-      process.env.ConnectionStrings__d2_services_comms ??
-      "",
+const config = defineConfig("comms-service", {
+  databaseUrl: requiredParsed(
+    parsePostgresUrl,
+    "ConnectionStrings__d2-services-comms",
+    "ConnectionStrings__d2_services_comms",
   ),
-  rabbitMqUrl:
-    process.env["ConnectionStrings__d2-rabbitmq"] ??
-    process.env.ConnectionStrings__d2_rabbitmq ??
-    "",
-  redisUrl: process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis,
-  grpcPort: parseInt(process.env.GRPC_PORT ?? "5200", 10),
-  resendApiKey: process.env.RESEND_API_KEY,
-  resendFromAddress: process.env.RESEND_FROM_ADDRESS,
-  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
-  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
-  twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
-  geoAddress: process.env.GEO_GRPC_ADDRESS,
-  geoApiKey: process.env.COMMSGEOCLIENTOPTIONS_APIKEY,
-  commsApiKeys: parseEnvArray("COMMS_API_KEYS"),
-};
-
-if (!config.databaseUrl) {
-  logger.error("Missing required env var: ConnectionStrings__d2_services_comms");
-  process.exit(1);
-}
+  rabbitMqUrl: requiredString(
+    "ConnectionStrings__d2-rabbitmq",
+    "ConnectionStrings__d2_rabbitmq",
+  ),
+  redisUrl: optionalParsed(
+    parseRedisUrl,
+    "ConnectionStrings__d2-redis",
+    "ConnectionStrings__d2_redis",
+  ),
+  grpcPort: defaultInt(5200, "GRPC_PORT"),
+  resendApiKey: optionalString("RESEND_API_KEY"),
+  resendFromAddress: optionalString("RESEND_FROM_ADDRESS"),
+  twilioAccountSid: optionalString("TWILIO_ACCOUNT_SID"),
+  twilioAuthToken: optionalString("TWILIO_AUTH_TOKEN"),
+  twilioPhoneNumber: optionalString("TWILIO_PHONE_NUMBER"),
+  geoAddress: optionalString("GEO_GRPC_ADDRESS"),
+  geoApiKey: optionalString("COMMS_GEO_CLIENT__APIKEY"),
+  commsApiKeys: envArray("COMMS_API_KEYS"),
+  jobOptions: optionalSection("COMMS_APP", DEFAULT_COMMS_JOB_OPTIONS),
+});
 
 const { server, shutdown } = await createCommsService(config);
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, async () => {
     logger.info(`Received ${signal}, shutting down...`);
-    server.tryShutdown(async () => {
-      await shutdown();
-      process.exit(0);
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        server.forceShutdown();
+        resolve();
+      }, 5_000);
+      server.tryShutdown(() => {
+        clearTimeout(timeout);
+        resolve();
+      });
     });
+    await shutdown();
+    process.exit(0);
   });
 }

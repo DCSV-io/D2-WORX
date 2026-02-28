@@ -637,6 +637,204 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
     }
 
+    // ── AcquireLock ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tests that AcquireLock acquires when the key does not exist.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task AcquireLock_WhenKeyDoesNotExist_AcquiresAndReturnsTrue()
+    {
+        var handler = new AcquireLock(_redis, _context);
+
+        var result = await handler.HandleAsync(
+            new ICreate.AcquireLockInput("lock:test", "owner-1", TimeSpan.FromMinutes(1)),
+            Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.Acquired.Should().BeTrue();
+
+        var db = _redis.GetDatabase();
+        var stored = await db.StringGetAsync("lock:test");
+        stored.ToString().Should().Be("owner-1");
+    }
+
+    /// <summary>
+    /// Tests that AcquireLock does not overwrite when the key is already held.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task AcquireLock_WhenKeyAlreadyHeld_DoesNotOverwriteAndReturnsFalse()
+    {
+        var handler = new AcquireLock(_redis, _context);
+
+        await handler.HandleAsync(
+            new ICreate.AcquireLockInput("lock:contest", "owner-1", TimeSpan.FromMinutes(1)),
+            Ct);
+
+        var result = await handler.HandleAsync(
+            new ICreate.AcquireLockInput("lock:contest", "owner-2", TimeSpan.FromMinutes(1)),
+            Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.Acquired.Should().BeFalse();
+
+        var db = _redis.GetDatabase();
+        var stored = await db.StringGetAsync("lock:contest");
+        stored.ToString().Should().Be("owner-1");
+    }
+
+    /// <summary>
+    /// Tests that AcquireLock sets the expected TTL on the key.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task AcquireLock_SetsExpiration()
+    {
+        var handler = new AcquireLock(_redis, _context);
+
+        await handler.HandleAsync(
+            new ICreate.AcquireLockInput("lock:ttl-test", "owner-1", TimeSpan.FromSeconds(30)),
+            Ct);
+
+        var db = _redis.GetDatabase();
+        var ttl = await db.KeyTimeToLiveAsync("lock:ttl-test");
+        ttl.Should().NotBeNull();
+        ttl!.Value.Should().BeGreaterThan(TimeSpan.Zero);
+        ttl.Value.Should().BeLessThanOrEqualTo(TimeSpan.FromSeconds(30));
+    }
+
+    /// <summary>
+    /// Tests that AcquireLock returns ServiceUnavailable when Redis is unavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task AcquireLock_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        await EnsureContainerStoppedAsync();
+        var handler = new AcquireLock(_redis, _context);
+
+        var result = await handler.HandleAsync(
+            new ICreate.AcquireLockInput("any-key", "any-id", TimeSpan.FromMinutes(1)),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
+    // ── ReleaseLock ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tests that ReleaseLock releases when the lockId matches.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task ReleaseLock_WhenLockIdMatches_ReleasesAndReturnsTrue()
+    {
+        var acquireHandler = new AcquireLock(_redis, _context);
+        await acquireHandler.HandleAsync(
+            new ICreate.AcquireLockInput("lock:release-test", "owner-1", TimeSpan.FromMinutes(1)),
+            Ct);
+
+        var handler = new ReleaseLock(_redis, _context);
+        var result = await handler.HandleAsync(
+            new IDelete.ReleaseLockInput("lock:release-test", "owner-1"),
+            Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.Released.Should().BeTrue();
+
+        var db = _redis.GetDatabase();
+        var stored = await db.StringGetAsync("lock:release-test");
+        stored.HasValue.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that ReleaseLock does not release when the lockId does not match.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task ReleaseLock_WhenLockIdDoesNotMatch_DoesNotReleaseAndReturnsFalse()
+    {
+        var acquireHandler = new AcquireLock(_redis, _context);
+        await acquireHandler.HandleAsync(
+            new ICreate.AcquireLockInput("lock:mismatch-test", "owner-1", TimeSpan.FromMinutes(1)),
+            Ct);
+
+        var handler = new ReleaseLock(_redis, _context);
+        var result = await handler.HandleAsync(
+            new IDelete.ReleaseLockInput("lock:mismatch-test", "owner-2"),
+            Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.Released.Should().BeFalse();
+
+        var db = _redis.GetDatabase();
+        var stored = await db.StringGetAsync("lock:mismatch-test");
+        stored.ToString().Should().Be("owner-1");
+    }
+
+    /// <summary>
+    /// Tests that ReleaseLock returns false when the key does not exist.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task ReleaseLock_WhenKeyDoesNotExist_ReturnsFalse()
+    {
+        var handler = new ReleaseLock(_redis, _context);
+        var result = await handler.HandleAsync(
+            new IDelete.ReleaseLockInput("lock:nonexistent", "owner-1"),
+            Ct);
+
+        result.Success.Should().BeTrue();
+        result.Data!.Released.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Tests that ReleaseLock returns ServiceUnavailable when Redis is unavailable.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the result of the asynchronous operation.
+    /// </returns>
+    [Fact]
+    public async Task ReleaseLock_WhenRedisUnavailable_ReturnsServiceUnavailable()
+    {
+        await EnsureContainerStoppedAsync();
+        var handler = new ReleaseLock(_redis, _context);
+
+        var result = await handler.HandleAsync(
+            new IDelete.ReleaseLockInput("any-key", "any-id"),
+            CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        result.ErrorCode.Should().Be(ErrorCodes.SERVICE_UNAVAILABLE);
+    }
+
     // ── GetTtl ─────────────────────────────────────────────────────────────
 
     /// <summary>

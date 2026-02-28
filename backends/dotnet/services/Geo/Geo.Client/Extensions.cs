@@ -95,10 +95,10 @@ public static class Extensions
         /// The configuration to read options from.
         /// </param>
         /// <param name="servicePrefix">
-        /// Optional service prefix for layered configuration. When provided,
-        /// shared defaults from <c>GeoClientOptions</c> are bound first, then
-        /// service-specific overrides from <c>{prefix}GeoClientOptions</c> are
-        /// overlaid. For example, <c>"Auth"</c> reads from <c>AuthGeoClientOptions</c>.
+        /// Optional uppercase service prefix for layered configuration. When provided,
+        /// shared defaults from <c>GEO_CLIENT</c> are bound first, then
+        /// service-specific overrides from <c>{PREFIX}_GEO_CLIENT</c> are
+        /// overlaid. For example, <c>"AUTH"</c> reads from <c>AUTH_GEO_CLIENT</c>.
         /// </param>
         ///
         /// <returns>
@@ -127,10 +127,10 @@ public static class Extensions
         /// The configuration to read options from.
         /// </param>
         /// <param name="servicePrefix">
-        /// Optional service prefix for layered configuration. When provided,
-        /// shared defaults from <c>GeoClientOptions</c> are bound first, then
-        /// service-specific overrides from <c>{prefix}GeoClientOptions</c> are
-        /// overlaid. For example, <c>"Auth"</c> reads from <c>AuthGeoClientOptions</c>.
+        /// Optional uppercase service prefix for layered configuration. When provided,
+        /// shared defaults from <c>GEO_CLIENT</c> are bound first, then
+        /// service-specific overrides from <c>{PREFIX}_GEO_CLIENT</c> are
+        /// overlaid. For example, <c>"AUTH"</c> reads from <c>AUTH_GEO_CLIENT</c>.
         /// </param>
         ///
         /// <returns>
@@ -156,13 +156,14 @@ public static class Extensions
 
         /// <summary>
         /// Binds <see cref="GeoClientOptions"/> using a layered approach: shared defaults
-        /// first, then service-specific overrides on top.
+        /// from <c>GEO_CLIENT</c> first, then service-specific overrides from
+        /// <c>{PREFIX}_GEO_CLIENT</c> on top.
         /// </summary>
         private void ConfigureGeoClientOptions(
             IConfiguration configuration,
             string? servicePrefix)
         {
-            const string baseSectionName = nameof(GeoClientOptions);
+            const string baseSectionName = "GEO_CLIENT";
 
             // Always bind shared defaults.
             services.Configure<GeoClientOptions>(configuration.GetSection(baseSectionName));
@@ -171,7 +172,7 @@ public static class Extensions
             if (!string.IsNullOrEmpty(servicePrefix))
             {
                 services.Configure<GeoClientOptions>(
-                    configuration.GetSection($"{servicePrefix}{baseSectionName}"));
+                    configuration.GetSection($"{servicePrefix}_{baseSectionName}"));
             }
         }
     }

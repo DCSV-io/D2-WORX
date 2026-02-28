@@ -12,9 +12,12 @@ namespace D2.Geo.Infra;
 public class GeoInfraOptions
 {
     /// <summary>
-    /// Gets or sets the batch size for repository queries.
+    /// Gets or sets the batch size for repository operations (queries and deletes).
     /// </summary>
-    public int RepoQueryBatchSize { get; set; } = 500;
+    /// <remarks>
+    /// Default is 500. Safe range is 100–2000.
+    /// </remarks>
+    public int RepoBatchSize { get; set; } = 500;
 
     /// <summary>
     /// Gets or sets the IPinfo.io API access token.

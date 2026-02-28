@@ -56,6 +56,7 @@ var app = builder.Build();
 app.UseStructuredRequestLogging();
 app.MapPrometheusEndpointWithIpRestriction();
 app.MapGrpcService<GeoService>();
+app.MapGrpcService<GeoJobService>();
 
 // Map default REST endpoints (for health checks).
 app.MapGet(

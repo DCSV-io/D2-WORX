@@ -54,7 +54,7 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
             .BatchGetByIds(
                 input.LocationHashIds,
                 l => l.HashId,
-                opts => opts.BatchSize = r_options.RepoQueryBatchSize)
+                opts => opts.BatchSize = r_options.RepoBatchSize)
             .ToDictionaryD2ResultAsync(TraceId, ct);
 
         // Handle success case first.

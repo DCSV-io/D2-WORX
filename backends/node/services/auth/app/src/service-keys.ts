@@ -19,6 +19,10 @@ import type {
   IUpdateOrgContactRecordHandler,
   IDeleteOrgContactRecordHandler,
   IUpdateSignInEventWhoIsIdHandler,
+  IPurgeExpiredSessionsHandler,
+  IPurgeSignInEventsHandler,
+  IPurgeExpiredInvitationsHandler,
+  IPurgeExpiredEmulationConsentsHandler,
 } from "./interfaces/repository/handlers/index.js";
 import type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 import type { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
@@ -33,6 +37,10 @@ import type { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign
 import type { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
 import type { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 import type { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
+import type { RunSessionPurge } from "./implementations/cqrs/handlers/c/run-session-purge.js";
+import type { RunSignInEventPurge } from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
+import type { RunInvitationCleanup } from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
+import type { RunEmulationConsentCleanup } from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
 // =============================================================================
 // Infrastructure-layer keys (interfaces defined in auth-app, implemented in auth-infra)
 // =============================================================================
@@ -90,6 +98,22 @@ export const IDeleteOrgContactRecordKey = createServiceKey<IDeleteOrgContactReco
   "Auth.Repo.DeleteOrgContactRecord",
 );
 
+// --- Job Repository Handlers ---
+
+export const IPurgeExpiredSessionsKey = createServiceKey<IPurgeExpiredSessionsHandler>(
+  "Auth.Repo.PurgeExpiredSessions",
+);
+export const IPurgeSignInEventsKey = createServiceKey<IPurgeSignInEventsHandler>(
+  "Auth.Repo.PurgeSignInEvents",
+);
+export const IPurgeExpiredInvitationsKey = createServiceKey<IPurgeExpiredInvitationsHandler>(
+  "Auth.Repo.PurgeExpiredInvitations",
+);
+export const IPurgeExpiredEmulationConsentsKey =
+  createServiceKey<IPurgeExpiredEmulationConsentsHandler>(
+    "Auth.Repo.PurgeExpiredEmulationConsents",
+  );
+
 // --- Health Check Repository Handler ---
 
 export const IPingDbKey = createServiceKey<IPingDbHandler>("Auth.Repo.PingDb");
@@ -138,3 +162,16 @@ export const ICheckSignInThrottleKey = createServiceKey<CheckSignInThrottle>(
   "Auth.App.CheckSignInThrottle",
 );
 export const ICheckHealthKey = createServiceKey<CheckHealth>("Auth.App.CheckHealth");
+
+// --- Job Handlers (Command) ---
+
+export const IRunSessionPurgeKey = createServiceKey<RunSessionPurge>("Auth.App.RunSessionPurge");
+export const IRunSignInEventPurgeKey = createServiceKey<RunSignInEventPurge>(
+  "Auth.App.RunSignInEventPurge",
+);
+export const IRunInvitationCleanupKey = createServiceKey<RunInvitationCleanup>(
+  "Auth.App.RunInvitationCleanup",
+);
+export const IRunEmulationConsentCleanupKey = createServiceKey<RunEmulationConsentCleanup>(
+  "Auth.App.RunEmulationConsentCleanup",
+);

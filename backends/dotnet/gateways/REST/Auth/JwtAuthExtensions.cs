@@ -28,7 +28,7 @@ public static class JwtAuthExtensions
         /// The application configuration.
         /// </param>
         /// <param name="sectionName">
-        /// The configuration section name. Defaults to "JwtAuthOptions".
+        /// The configuration section name. Defaults to "GATEWAY_AUTH".
         /// </param>
         ///
         /// <returns>
@@ -36,7 +36,7 @@ public static class JwtAuthExtensions
         /// </returns>
         public IServiceCollection AddJwtAuth(
             IConfiguration configuration,
-            string sectionName = nameof(JwtAuthOptions))
+            string sectionName = "GATEWAY_AUTH")
         {
             var options = new JwtAuthOptions();
             configuration.GetSection(sectionName).Bind(options);

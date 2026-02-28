@@ -1,6 +1,6 @@
 # @d2/e2e-tests
 
-Cross-service E2E tests validating the full Auth → Comms delivery pipeline. Each test exercises the real infrastructure stack end-to-end: sign-up triggers a Geo contact creation via gRPC, Auth publishes an event to RabbitMQ, Comms consumes the event, resolves the recipient via Geo gRPC, delivers through a stub email provider, and writes delivery records to its database.
+Cross-service E2E tests validating the full Auth → Comms delivery pipeline and Dkron job execution chain. Auth pipeline tests exercise sign-up → Geo contact creation → RabbitMQ → Comms → email delivery. Dkron tests exercise job registration, reconciliation, and the full-chain Dkron → REST Gateway → gRPC → service → database cleanup.
 
 ## Purpose
 
@@ -28,6 +28,8 @@ All infrastructure starts in `beforeAll` (per test file) and tears down in `afte
 | Redis      | `redis:8.2`               | Distributed cache for Geo service                                     |
 | RabbitMQ   | `rabbitmq:4.1-management` | Async event bus (Auth → Comms)                                        |
 | Geo.API    | .NET child process        | gRPC service for contacts + WhoIs                                     |
+| Gateway    | .NET child process        | REST → gRPC routing gateway (for Dkron job chain tests)               |
+| Dkron      | `dkron/dkron:4.0.9`      | Distributed job scheduler (GenericContainer, for job chain tests)     |
 | Auth       | In-process (`createApp`)  | BetterAuth + Hono, publishes to RabbitMQ                              |
 | Comms      | In-process (DI wired)     | Notification consumer + stub email provider                           |
 
@@ -38,7 +40,7 @@ All infrastructure starts in `beforeAll` (per test file) and tears down in `afte
 | `testTimeout`     | 30,000 ms         | Async pipeline needs time to propagate events          |
 | `hookTimeout`     | 180,000 ms        | Container startup (PG + Redis + RabbitMQ + .NET build) |
 | `fileParallelism` | `false`           | Avoids .NET build lock contention between test files   |
-| `globalSetup`     | `global-setup.ts` | Pre-builds Geo.API so test files use `--no-build`      |
+| `globalSetup`     | `global-setup.ts` | Pre-builds Geo.API + REST Gateway so test files use `--no-build` |
 | `setupFiles`      | `setup.ts`        | Registers `@d2/testing` custom D2Result matchers       |
 
 Run: `pnpm vitest run --project e2e-tests`
@@ -65,6 +67,21 @@ Run: `pnpm vitest run --project e2e-tests`
 | Should deliver invitation email to a non-existing user (contactId path)  | Creates invitation contact via Geo, resolves via `GetContactsByIds`                 |
 | Should deliver invitation email to an existing user (ext-key resolution) | Existing user already has Geo contact, resolves via `GetContactsByExtKeys` (userId) |
 
+### `job-execution.test.ts` (4 tests)
+
+| Test                                                                        | Validates                                                                            |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Should register all 8 jobs on initial reconciliation                        | dkron-mgr reconciler creates all jobs in a fresh Dkron container                     |
+| Should report all unchanged on second reconciliation                        | Idempotent — re-running reconciliation produces no changes                           |
+| Should detect and correct schedule drift                                    | Tampered job schedule is restored to the declared definition                         |
+| Should delete orphaned managed jobs while leaving unmanaged jobs untouched  | Orphan cleanup removes stale managed jobs, ignores manually-created Dkron jobs       |
+
+### `dkron-job-chain.test.ts` (1 test)
+
+| Test                                                                       | Validates                                                                                  |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Should execute a Dkron job through the full chain (Dkron → Gateway → Geo)  | Dkron fires HTTP → Gateway (service key auth) → gRPC (API key) → Geo handler → DB cleanup |
+
 ### `geo-unavailable.test.ts` (2 tests)
 
 | Test                                                                   | Validates                                                                    |
@@ -77,10 +94,11 @@ Run: `pnpm vitest run --project e2e-tests`
 ```
 src/
   setup.ts                  Registers @d2/testing custom matchers
-  global-setup.ts           Pre-builds .NET Geo.API (dotnet build, 120s timeout)
+  global-setup.ts           Pre-builds .NET Geo.API + REST Gateway (dotnet build, 120s timeout each)
   helpers/
     containers.ts           Starts/stops Testcontainers (PG, Redis, RabbitMQ), creates per-service DBs
     geo-dotnet-service.ts   Spawns .NET Geo.API child process, converts connection URIs to .NET formats
+    gateway-service.ts      Spawns .NET REST Gateway child process, configures service key + gRPC API key auth
     auth-service.ts         Wires Auth in-process via createApp(), connects RabbitMQ publisher
     comms-service.ts        Wires Comms via DI (mirrors production composition root), injects StubEmailProvider
     stub-email-provider.ts  BaseHandler-based IEmailProvider that captures emails in memory
@@ -94,6 +112,10 @@ Manages the three Testcontainers. PostgreSQL hosts three databases in one contai
 ### `geo-dotnet-service.ts`
 
 Spawns Geo.API as a child process with `dotnet run --no-build`. Converts PostgreSQL URIs to ADO.NET format (`Host=...;Port=...`) and Redis URIs to StackExchange format (`host:port`). Allocates random ports for HTTP/1.1 (health) and HTTP/2 (gRPC). Polls `/health` until ready (60s timeout). Configured with `AUTO_MIGRATE=true` for test container schema setup.
+
+### `gateway-service.ts`
+
+Spawns the .NET REST Gateway as a child process with `dotnet run --no-build`. Configures service key auth (`GATEWAY_SERVICEKEY__ValidKeys__0`), Geo gRPC API key (`GATEWAY_GEO_GRPC_API_KEY`), Redis connection, and Geo service address. Allocates a random HTTP port, polls `/health` until ready. Used by `dkron-job-chain.test.ts` to test the full Dkron → Gateway → Geo pipeline.
 
 ### `auth-service.ts`
 
@@ -139,6 +161,8 @@ Polling utilities for async assertions:
 | `@d2/result`                 | D2Result pattern                               |
 | `@d2/testing`                | Custom Vitest matchers                         |
 | `@d2/utilities`              | UUIDv7 generation                              |
+| `@d2/dkron-mgr`             | Dkron job definitions + reconciler             |
+| `testcontainers`             | GenericContainer for Dkron                     |
 | `@testcontainers/postgresql` | PostgreSQL container                           |
 | `@testcontainers/rabbitmq`   | RabbitMQ container                             |
 | `@testcontainers/redis`      | Redis container                                |
@@ -152,23 +176,23 @@ Polling utilities for async assertions:
 
 E2E tests use stub providers for email and SMS delivery. All other infrastructure runs real containers matching production images. This section documents where stubs differ from production behavior.
 
-| Component    | Production              | E2E Stub                  | Divergence                                           |
-| ------------ | ----------------------- | ------------------------- | ---------------------------------------------------- |
-| Email        | Resend SDK (HTTP API)   | `StubEmailProvider`       | No HTTP calls; stores sent emails in-memory array    |
-| SMS          | Twilio SDK (HTTP API)   | `StubSmsProvider`         | No HTTP calls; stores sent messages in-memory array  |
-| Geo service  | gRPC to .NET Geo.API    | Real .NET child process   | Full parity (real Testcontainers PG + Redis)         |
-| PostgreSQL   | Managed / cloud         | Testcontainers `postgres:18` | Same image, ephemeral (destroyed after test run)  |
-| Redis        | Managed / cloud         | Testcontainers `redis:8.2`   | Same image, ephemeral (destroyed after test run)  |
-| RabbitMQ     | Managed / cloud         | Testcontainers `rabbitmq:4.1-management` | Same image, ephemeral               |
-| Auth service | Standalone Hono process | In-process (`createApp`)  | Same code, no network hop (direct function calls)    |
-| Comms service| Standalone gRPC process | In-process (DI wired)     | Same code, no network hop (direct consumer wiring)   |
+| Component     | Production              | E2E Stub                                 | Divergence                                          |
+| ------------- | ----------------------- | ---------------------------------------- | --------------------------------------------------- |
+| Email         | Resend SDK (HTTP API)   | `StubEmailProvider`                      | No HTTP calls; stores sent emails in-memory array   |
+| SMS           | Twilio SDK (HTTP API)   | `StubSmsProvider`                        | No HTTP calls; stores sent messages in-memory array |
+| Geo service   | gRPC to .NET Geo.API    | Real .NET child process                  | Full parity (real Testcontainers PG + Redis)        |
+| PostgreSQL    | Managed / cloud         | Testcontainers `postgres:18`             | Same image, ephemeral (destroyed after test run)    |
+| Redis         | Managed / cloud         | Testcontainers `redis:8.2`               | Same image, ephemeral (destroyed after test run)    |
+| RabbitMQ      | Managed / cloud         | Testcontainers `rabbitmq:4.1-management` | Same image, ephemeral                               |
+| Auth service  | Standalone Hono process | In-process (`createApp`)                 | Same code, no network hop (direct function calls)   |
+| Comms service | Standalone gRPC process | In-process (DI wired)                    | Same code, no network hop (direct consumer wiring)  |
 
 ### What Stubs Capture
 
-| Stub                | Captured Fields                                                                 | Assertion Access         |
-| ------------------- | ------------------------------------------------------------------------------- | ------------------------ |
-| `StubEmailProvider` | `to`, `subject`, `html`, `plainText`, `providerMessageId`, `capturedAt`         | `getSentEmails()`, `getLastEmail()`, `sentCount()`, `clear()` |
-| `StubSmsProvider`   | `to`, `body`, `providerMessageId`, `capturedAt`                                 | `getSentMessages()`, `getLastMessage()`, `sentCount()`, `clear()` |
+| Stub                | Captured Fields                                                         | Assertion Access                                                  |
+| ------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `StubEmailProvider` | `to`, `subject`, `html`, `plainText`, `providerMessageId`, `capturedAt` | `getSentEmails()`, `getLastEmail()`, `sentCount()`, `clear()`     |
+| `StubSmsProvider`   | `to`, `body`, `providerMessageId`, `capturedAt`                         | `getSentMessages()`, `getLastMessage()`, `sentCount()`, `clear()` |
 
 ### Key Invariants
 

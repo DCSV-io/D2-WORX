@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import pg from "pg";
 import Redis from "ioredis";
+import * as grpc from "@grpc/grpc-js";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -16,6 +17,7 @@ import {
   createServiceScope,
 } from "@d2/handler";
 import * as CacheRedis from "@d2/cache-redis";
+import { AcquireLock, ReleaseLock } from "@d2/cache-redis";
 import { PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
 import * as CacheMemory from "@d2/cache-memory";
 import {
@@ -52,9 +54,16 @@ import {
   ISignInThrottleStoreKey,
   IRecordSignInEventKey,
   ICreateUserContactKey,
+  IAuthAcquireLockKey,
+  IAuthReleaseLockKey,
   CheckSignInThrottle,
   RecordSignInOutcome,
+  DEFAULT_AUTH_JOB_OPTIONS,
+  type AuthJobOptions,
 } from "@d2/auth-app";
+import { AuthJobServiceService } from "@d2/protos";
+import { withApiKeyAuth } from "@d2/service-defaults/grpc";
+import { createAuthJobsGrpcService } from "./services/auth-jobs-grpc-service.js";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createSessionMiddleware } from "./middleware/session.js";
 import { createCsrfMiddleware } from "./middleware/csrf.js";
@@ -95,7 +104,11 @@ export interface AppOverrides {
  *   7. Build Hono app with scope middleware on protected routes
  */
 export async function createApp(
-  config: AuthServiceConfig & { authApiKeys?: string[] },
+  config: AuthServiceConfig & {
+    authApiKeys?: string[];
+    grpcPort?: number;
+    jobOptions?: AuthJobOptions;
+  },
   publisher?: IMessagePublisher,
   overrides?: AppOverrides,
   messageBus?: import("@d2/messaging").MessageBus,
@@ -209,9 +222,13 @@ export async function createApp(
   services.addInstance(IGetContactsByExtKeysKey, getContactsByExtKeys);
   services.addInstance(IUpdateContactsByExtKeysKey, updateContactsByExtKeys);
 
+  // Lock handlers for job execution (singleton — shared Redis connection)
+  services.addInstance(IAuthAcquireLockKey, new AcquireLock(redis, serviceContext));
+  services.addInstance(IAuthReleaseLockKey, new ReleaseLock(redis, serviceContext));
+
   // Layer registrations (mirrors services.AddAuthInfra(), services.AddAuthApp())
   addAuthInfra(services, db);
-  addAuthApp(services, { checkOrgExists });
+  addAuthApp(services, { checkOrgExists }, config.jobOptions ?? DEFAULT_AUTH_JOB_OPTIONS);
   addCommsClient(services, { publisher });
 
   // Shared health check handlers (cache + messaging)
@@ -472,12 +489,49 @@ export async function createApp(
     });
   }
 
+  // gRPC server for job RPCs (Auth → gateway communication)
+  let grpcServer: grpc.Server | undefined;
+  if (config.grpcPort) {
+    grpcServer = new grpc.Server();
+    const jobsGrpcService = createAuthJobsGrpcService(provider);
+
+    if (config.authApiKeys?.length) {
+      grpcServer.addService(
+        AuthJobServiceService,
+        withApiKeyAuth(jobsGrpcService, { validKeys: new Set(config.authApiKeys), logger }),
+      );
+    } else {
+      grpcServer.addService(AuthJobServiceService, jobsGrpcService);
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      grpcServer!.bindAsync(
+        `0.0.0.0:${config.grpcPort}`,
+        grpc.ServerCredentials.createInsecure(),
+        (err) => (err ? reject(err) : resolve()),
+      );
+    });
+    logger.info(`Auth gRPC server listening on 0.0.0.0:${config.grpcPort}`);
+  }
+
   // Cleanup function for graceful shutdown
   async function shutdown() {
+    if (grpcServer) {
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          grpcServer!.forceShutdown();
+          resolve();
+        }, 5_000);
+        grpcServer!.tryShutdown(() => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
+    }
     provider.dispose();
     redis.disconnect();
     await pool.end();
   }
 
-  return { app, auth, shutdown };
+  return { app, auth, grpcServer, shutdown };
 }

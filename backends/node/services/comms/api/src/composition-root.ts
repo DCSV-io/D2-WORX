@@ -20,8 +20,16 @@ import {
 import Redis from "ioredis";
 import { ICachePingKey, PingCache } from "@d2/cache-redis";
 import { MessageBus, PingMessageBus, IMessageBusPingKey } from "@d2/messaging";
-import { CommsServiceService } from "@d2/protos";
-import { addCommsApp, IEmailProviderKey, ISmsProviderKey } from "@d2/comms-app";
+import { CommsServiceService, CommsJobServiceService } from "@d2/protos";
+import {
+  addCommsApp,
+  IEmailProviderKey,
+  ISmsProviderKey,
+  ICommsAcquireLockKey,
+  ICommsReleaseLockKey,
+} from "@d2/comms-app";
+import { DEFAULT_COMMS_JOB_OPTIONS, type CommsJobOptions } from "@d2/comms-app";
+import { AcquireLock, ReleaseLock } from "@d2/cache-redis";
 import {
   addCommsInfra,
   runMigrations,
@@ -31,6 +39,7 @@ import {
   TwilioSmsProvider,
 } from "@d2/comms-infra";
 import { createCommsGrpcService } from "./services/comms-grpc-service.js";
+import { createCommsJobsGrpcService } from "./services/comms-jobs-grpc-service.js";
 import { withApiKeyAuth } from "@d2/service-defaults/grpc";
 
 export interface CommsServiceConfig {
@@ -48,6 +57,8 @@ export interface CommsServiceConfig {
   commsApiKeys?: string[];
   /** When true, allow startup without API key auth. Default false. */
   allowUnauthenticated?: boolean;
+  /** Job options (retention periods, lock TTL). */
+  jobOptions?: CommsJobOptions;
 }
 
 /**
@@ -115,7 +126,7 @@ export async function createCommsService(config: CommsServiceConfig) {
 
   // Layer registrations (mirrors services.AddCommsInfra(), services.AddCommsApp())
   addCommsInfra(services, db);
-  addCommsApp(services);
+  addCommsApp(services, config.jobOptions ?? DEFAULT_COMMS_JOB_OPTIONS);
 
   // Delivery providers — singleton instances with service-level context.
   // Created here (not in addCommsInfra) because they hold API client connections
@@ -154,12 +165,23 @@ export async function createCommsService(config: CommsServiceConfig) {
     logger.warn("No RabbitMQ URL configured — event consumption disabled");
   }
 
-  // Optional Redis connection (for distributed cache health check)
+  // Job handlers need distributed locks (Redis). Fail fast if jobs are configured without Redis.
+  if (config.jobOptions && !config.redisUrl) {
+    throw new Error(
+      "Job options are configured but no Redis URL provided. Distributed locks require Redis.",
+    );
+  }
+
+  // Optional Redis connection (for distributed cache health check + distributed locks)
   let redis: Redis | undefined;
   if (config.redisUrl) {
     redis = new Redis(config.redisUrl);
     services.addInstance(ICachePingKey, new PingCache(redis, serviceContext));
-    logger.info("Redis connected (cache ping registered)");
+
+    // Distributed lock handlers (singleton — shared Redis connection)
+    services.addInstance(ICommsAcquireLockKey, new AcquireLock(redis, serviceContext));
+    services.addInstance(ICommsReleaseLockKey, new ReleaseLock(redis, serviceContext));
+    logger.info("Redis connected (cache ping + distributed locks registered)");
   }
 
   // 5. Build ServiceProvider
@@ -169,6 +191,9 @@ export async function createCommsService(config: CommsServiceConfig) {
   const server = new grpc.Server();
   const grpcService = createCommsGrpcService(provider);
 
+  // Job gRPC service requires Redis (distributed locks). Only register when available.
+  const jobsGrpcService = redis ? createCommsJobsGrpcService(provider) : undefined;
+
   if (config.commsApiKeys?.length) {
     const validKeys = new Set(config.commsApiKeys);
     const publicRpcs = new Set(["checkHealth"]);
@@ -176,9 +201,18 @@ export async function createCommsService(config: CommsServiceConfig) {
       CommsServiceService,
       withApiKeyAuth(grpcService, { validKeys, logger, exempt: publicRpcs }),
     );
+    if (jobsGrpcService) {
+      server.addService(
+        CommsJobServiceService,
+        withApiKeyAuth(jobsGrpcService, { validKeys, logger }),
+      );
+    }
     logger.info(`Comms gRPC API key authentication enabled (${validKeys.size} key(s))`);
   } else if (config.allowUnauthenticated) {
     server.addService(CommsServiceService, grpcService);
+    if (jobsGrpcService) {
+      server.addService(CommsJobServiceService, jobsGrpcService);
+    }
     logger.warn(
       "No COMMS_API_KEYS configured — gRPC API key authentication disabled (allowUnauthenticated=true)",
     );
@@ -186,6 +220,10 @@ export async function createCommsService(config: CommsServiceConfig) {
     throw new Error(
       "COMMS_API_KEYS not configured. Set COMMS_API_KEYS environment variable or pass allowUnauthenticated=true for local development.",
     );
+  }
+
+  if (!jobsGrpcService) {
+    logger.warn("No Redis configured — job gRPC service disabled (distributed locks unavailable)");
   }
 
   await new Promise<void>((resolve, reject) => {

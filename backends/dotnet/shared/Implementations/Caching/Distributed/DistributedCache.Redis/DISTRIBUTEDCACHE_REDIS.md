@@ -12,13 +12,16 @@ Redis distributed cache implementation using StackExchange.Redis with handler-ba
 
 ### C (Create)
 
-No create handlers - Redis Set operation is upsert (create or update).
+| File Name                                   | Description                                                                              |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [AcquireLock.cs](Handlers/C/AcquireLock.cs) | Handler for acquiring a distributed lock via SET NX PX (plain string, no serialization). |
 
 ### D (Delete)
 
-| File Name                         | Description                                  |
-| --------------------------------- | -------------------------------------------- |
-| [Remove.cs](Handlers/D/Remove.cs) | Handler for removing data from Redis by key. |
+| File Name                                   | Description                                                                        |
+| ------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [Remove.cs](Handlers/D/Remove.cs)           | Handler for removing data from Redis by key.                                       |
+| [ReleaseLock.cs](Handlers/D/ReleaseLock.cs) | Handler for safely releasing a distributed lock via Lua compare-and-delete script. |
 
 ### R (Read)
 

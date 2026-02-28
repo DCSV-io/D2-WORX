@@ -19,6 +19,7 @@
     "dist"
   ],
   "dependencies": {
+    "@d2/batch-pg": "workspace:*",
     "@d2/comms-app": "workspace:*",
     "@d2/comms-client": "workspace:*",
     "@d2/comms-domain": "workspace:*",

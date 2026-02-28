@@ -63,6 +63,13 @@ export type {
   UpdateDeliveryAttemptStatusOutput,
   UpdateChannelPreferenceRecordInput,
   UpdateChannelPreferenceRecordOutput,
+  // Delete (D) — Purge handlers
+  PurgeDeletedMessagesInput,
+  PurgeDeletedMessagesOutput,
+  IPurgeDeletedMessagesHandler,
+  PurgeDeliveryHistoryInput,
+  PurgeDeliveryHistoryOutput,
+  IPurgeDeliveryHistoryHandler,
   // Query (Q) — PingDb
   PingDbInput,
   PingDbOutput,
@@ -96,6 +103,23 @@ export type {
   SetChannelPreferenceInput,
   SetChannelPreferenceOutput,
 } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
+
+// --- Job Handlers (Command) ---
+export { RunDeletedMessagePurge } from "./implementations/cqrs/handlers/c/run-deleted-message-purge.js";
+export type {
+  RunDeletedMessagePurgeInput,
+  RunDeletedMessagePurgeOutput,
+} from "./implementations/cqrs/handlers/c/run-deleted-message-purge.js";
+
+export { RunDeliveryHistoryPurge } from "./implementations/cqrs/handlers/c/run-delivery-history-purge.js";
+export type {
+  RunDeliveryHistoryPurgeInput,
+  RunDeliveryHistoryPurgeOutput,
+} from "./implementations/cqrs/handlers/c/run-delivery-history-purge.js";
+
+// --- Job Options ---
+export type { CommsJobOptions } from "./comms-job-options.js";
+export { DEFAULT_COMMS_JOB_OPTIONS } from "./comms-job-options.js";
 
 // --- Query Handlers ---
 export { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
@@ -205,4 +229,10 @@ export {
   IGetChannelPreferenceKey,
   IPingDbKey,
   ICheckHealthKey,
+  IPurgeDeletedMessagesKey,
+  IPurgeDeliveryHistoryKey,
+  IRunDeletedMessagePurgeKey,
+  IRunDeliveryHistoryPurgeKey,
 } from "./service-keys.js";
+
+export { ICommsAcquireLockKey, ICommsReleaseLockKey } from "./registration.js";

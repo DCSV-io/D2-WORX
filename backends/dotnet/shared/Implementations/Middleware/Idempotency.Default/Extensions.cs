@@ -34,7 +34,7 @@ public static class Extensions
         /// The configuration to read options from.
         /// </param>
         /// <param name="sectionName">
-        /// The configuration section name for options. Defaults to "IdempotencyOptions".
+        /// The configuration section name for options. Defaults to "GATEWAY_IDEMPOTENCY".
         /// </param>
         ///
         /// <returns>
@@ -45,7 +45,7 @@ public static class Extensions
         /// </remarks>
         public IServiceCollection AddIdempotency(
             IConfiguration configuration,
-            string sectionName = nameof(IdempotencyOptions))
+            string sectionName = "GATEWAY_IDEMPOTENCY")
         {
             services.Configure<IdempotencyOptions>(configuration.GetSection(sectionName));
             services.AddTransient<IIdempotency.ICheckHandler, Check>();

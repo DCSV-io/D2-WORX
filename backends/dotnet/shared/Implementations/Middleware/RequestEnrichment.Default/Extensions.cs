@@ -32,7 +32,7 @@ public static class Extensions
         /// The configuration to read options from.
         /// </param>
         /// <param name="sectionName">
-        /// The configuration section name for options. Defaults to "RequestEnrichmentOptions".
+        /// The configuration section name for options. Defaults to "GATEWAY_ENRICHMENT".
         /// </param>
         ///
         /// <returns>
@@ -40,7 +40,7 @@ public static class Extensions
         /// </returns>
         public IServiceCollection AddRequestEnrichment(
             IConfiguration configuration,
-            string sectionName = nameof(RequestEnrichmentOptions))
+            string sectionName = "GATEWAY_ENRICHMENT")
         {
             services.Configure<RequestEnrichmentOptions>(configuration.GetSection(sectionName));
 

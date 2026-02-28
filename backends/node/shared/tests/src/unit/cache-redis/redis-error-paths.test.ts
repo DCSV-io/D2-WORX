@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Get, Set, SetNx, Remove, Exists, GetTtl, Increment } from "@d2/cache-redis";
+import { AcquireLock, Get, Set, SetNx, Remove, Exists, GetTtl, Increment } from "@d2/cache-redis";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { HttpStatusCode, ErrorCodes } from "@d2/result";
@@ -106,5 +106,43 @@ describe("DistributedCache Redis error paths (SERVICE_UNAVAILABLE)", () => {
     const result = await handler.handleAsync({ key: "k" });
 
     expect(result.traceId).toBe("trace-123");
+  });
+});
+
+describe("AcquireLock input validation", () => {
+  // Use a broken redis — validation should return before hitting Redis
+  const redis = createBrokenRedis();
+
+  it("returns VALIDATION_FAILED for zero expirationMs", async () => {
+    const handler = new AcquireLock(redis, createTestContext());
+    const result = await handler.handleAsync({ key: "k", lockId: "id", expirationMs: 0 });
+
+    expect(result).toBeFailure();
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(result.inputErrors).toEqual([["expirationMs", "Must be a finite positive number."]]);
+  });
+
+  it("returns VALIDATION_FAILED for negative expirationMs", async () => {
+    const handler = new AcquireLock(redis, createTestContext());
+    const result = await handler.handleAsync({ key: "k", lockId: "id", expirationMs: -100 });
+
+    expect(result).toBeFailure();
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+  });
+
+  it("returns VALIDATION_FAILED for NaN expirationMs", async () => {
+    const handler = new AcquireLock(redis, createTestContext());
+    const result = await handler.handleAsync({ key: "k", lockId: "id", expirationMs: NaN });
+
+    expect(result).toBeFailure();
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+  });
+
+  it("returns VALIDATION_FAILED for Infinity expirationMs", async () => {
+    const handler = new AcquireLock(redis, createTestContext());
+    const result = await handler.handleAsync({ key: "k", lockId: "id", expirationMs: Infinity });
+
+    expect(result).toBeFailure();
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
   });
 });

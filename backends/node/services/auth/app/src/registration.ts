@@ -52,8 +52,38 @@ import { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-
 import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 import { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
 import { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
-import { ICachePingKey } from "@d2/cache-redis";
+import {
+  ICachePingKey,
+  createRedisAcquireLockKey,
+  createRedisReleaseLockKey,
+} from "@d2/cache-redis";
+import type { ServiceKey } from "@d2/di";
+import type { DistributedCache } from "@d2/interfaces";
 import { IMessageBusPingKey } from "@d2/messaging";
+import { RunSessionPurge } from "./implementations/cqrs/handlers/c/run-session-purge.js";
+import { RunSignInEventPurge } from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
+import { RunInvitationCleanup } from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
+import { RunEmulationConsentCleanup } from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
+import type { AuthJobOptions } from "./auth-job-options.js";
+import { DEFAULT_AUTH_JOB_OPTIONS } from "./auth-job-options.js";
+import {
+  IPurgeExpiredSessionsKey,
+  IPurgeSignInEventsKey,
+  IPurgeExpiredInvitationsKey,
+  IPurgeExpiredEmulationConsentsKey,
+  IRunSessionPurgeKey,
+  IRunSignInEventPurgeKey,
+  IRunInvitationCleanupKey,
+  IRunEmulationConsentCleanupKey,
+} from "./service-keys.js";
+
+/** DI key for the auth-scoped AcquireLock handler (registered in composition root). */
+export const IAuthAcquireLockKey: ServiceKey<DistributedCache.IAcquireLockHandler> =
+  createRedisAcquireLockKey("auth");
+/** DI key for the auth-scoped ReleaseLock handler (registered in composition root). */
+export const IAuthReleaseLockKey: ServiceKey<DistributedCache.IReleaseLockHandler> =
+  createRedisReleaseLockKey("auth");
+
 export interface AddAuthAppOptions {
   checkOrgExists: (orgId: string) => Promise<boolean>;
 }
@@ -64,7 +94,11 @@ export interface AddAuthAppOptions {
  *
  * All CQRS handlers are transient — new instance per resolve.
  */
-export function addAuthApp(services: ServiceCollection, options: AddAuthAppOptions): void {
+export function addAuthApp(
+  services: ServiceCollection,
+  options: AddAuthAppOptions,
+  jobOptions: AuthJobOptions = DEFAULT_AUTH_JOB_OPTIONS,
+): void {
   // --- Command Handlers ---
 
   services.addTransient(
@@ -184,6 +218,56 @@ export function addAuthApp(services: ServiceCollection, options: AddAuthAppOptio
         sp.resolve(ICachePingKey),
         sp.resolve(IHandlerContextKey),
         sp.tryResolve(IMessageBusPingKey),
+      ),
+  );
+
+  // --- Job Handlers ---
+
+  services.addTransient(
+    IRunSessionPurgeKey,
+    (sp) =>
+      new RunSessionPurge(
+        sp.resolve(IAuthAcquireLockKey),
+        sp.resolve(IAuthReleaseLockKey),
+        sp.resolve(IPurgeExpiredSessionsKey),
+        jobOptions,
+        sp.resolve(IHandlerContextKey),
+      ),
+  );
+
+  services.addTransient(
+    IRunSignInEventPurgeKey,
+    (sp) =>
+      new RunSignInEventPurge(
+        sp.resolve(IAuthAcquireLockKey),
+        sp.resolve(IAuthReleaseLockKey),
+        sp.resolve(IPurgeSignInEventsKey),
+        jobOptions,
+        sp.resolve(IHandlerContextKey),
+      ),
+  );
+
+  services.addTransient(
+    IRunInvitationCleanupKey,
+    (sp) =>
+      new RunInvitationCleanup(
+        sp.resolve(IAuthAcquireLockKey),
+        sp.resolve(IAuthReleaseLockKey),
+        sp.resolve(IPurgeExpiredInvitationsKey),
+        jobOptions,
+        sp.resolve(IHandlerContextKey),
+      ),
+  );
+
+  services.addTransient(
+    IRunEmulationConsentCleanupKey,
+    (sp) =>
+      new RunEmulationConsentCleanup(
+        sp.resolve(IAuthAcquireLockKey),
+        sp.resolve(IAuthReleaseLockKey),
+        sp.resolve(IPurgeExpiredEmulationConsentsKey),
+        jobOptions,
+        sp.resolve(IHandlerContextKey),
       ),
   );
 }

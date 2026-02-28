@@ -8,6 +8,7 @@ namespace D2.Geo.Tests.Unit;
 
 using D2.Geo.App;
 using D2.Geo.Client;
+using D2.Geo.Infra;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Xunit;
@@ -32,13 +33,13 @@ public class ConfigBindingTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["GeoAppOptions:ApiKeyMappings:dev-auth-api-key:0"] = "org_contact",
-                ["GeoAppOptions:ApiKeyMappings:dev-auth-api-key:1"] = "user",
+                ["GEO_APP:ApiKeyMappings:dev-auth-api-key:0"] = "org_contact",
+                ["GEO_APP:ApiKeyMappings:dev-auth-api-key:1"] = "user",
             })
             .Build();
 
         var options = new GeoAppOptions();
-        config.GetSection(nameof(GeoAppOptions)).Bind(options);
+        config.GetSection("GEO_APP").Bind(options);
 
         options.ApiKeyMappings.Should().ContainKey("dev-auth-api-key");
         options.ApiKeyMappings["dev-auth-api-key"]
@@ -54,14 +55,14 @@ public class ConfigBindingTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["GeoAppOptions:ApiKeyMappings:auth-key:0"] = "org_contact",
-                ["GeoAppOptions:ApiKeyMappings:auth-key:1"] = "user",
-                ["GeoAppOptions:ApiKeyMappings:billing-key:0"] = "billing_contact",
+                ["GEO_APP:ApiKeyMappings:auth-key:0"] = "org_contact",
+                ["GEO_APP:ApiKeyMappings:auth-key:1"] = "user",
+                ["GEO_APP:ApiKeyMappings:billing-key:0"] = "billing_contact",
             })
             .Build();
 
         var options = new GeoAppOptions();
-        config.GetSection(nameof(GeoAppOptions)).Bind(options);
+        config.GetSection("GEO_APP").Bind(options);
 
         options.ApiKeyMappings.Should().HaveCount(2);
         options.ApiKeyMappings["auth-key"]
@@ -81,7 +82,7 @@ public class ConfigBindingTests
             .Build();
 
         var options = new GeoAppOptions();
-        config.GetSection(nameof(GeoAppOptions)).Bind(options);
+        config.GetSection("GEO_APP").Bind(options);
 
         options.ApiKeyMappings.Should().BeEmpty();
     }
@@ -92,12 +93,12 @@ public class ConfigBindingTests
 
     /// <summary>
     /// Tests that environment variable format keys (using __ as separator) bind correctly
-    /// to <see cref="GeoAppOptions.ApiKeyMappings"/>. This simulates what D2Env produces.
+    /// to <see cref="GeoAppOptions.ApiKeyMappings"/>. This simulates production env var binding.
     /// </summary>
     [Fact]
     public void GeoAppOptions_ApiKeyMappings_BindsFromEnvironmentVariableFormat()
     {
-        // D2Env produces: GEOAPPOPTIONS__APIKEYMAPPINGS__dev-auth-api-key__0=org_contact
+        // Env var: GEO_APP__APIKEYMAPPINGS__dev-auth-api-key__0=org_contact
         // .NET env var provider converts __ to : automatically.
         // AddEnvironmentVariables reads these and feeds them to IConfiguration.
         const string prefix = "D2TEST_CFGBIND_";
@@ -105,16 +106,16 @@ public class ConfigBindingTests
         try
         {
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoAppOptions__ApiKeyMappings__dev-auth-api-key__0", "org_contact");
+                $"{prefix}GEO_APP__ApiKeyMappings__dev-auth-api-key__0", "org_contact");
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoAppOptions__ApiKeyMappings__dev-auth-api-key__1", "user");
+                $"{prefix}GEO_APP__ApiKeyMappings__dev-auth-api-key__1", "user");
 
             var config = new ConfigurationBuilder()
                 .AddEnvironmentVariables(prefix)
                 .Build();
 
             var options = new GeoAppOptions();
-            config.GetSection(nameof(GeoAppOptions)).Bind(options);
+            config.GetSection("GEO_APP").Bind(options);
 
             options.ApiKeyMappings.Should().ContainKey("dev-auth-api-key");
             options.ApiKeyMappings["dev-auth-api-key"]
@@ -123,9 +124,9 @@ public class ConfigBindingTests
         finally
         {
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoAppOptions__ApiKeyMappings__dev-auth-api-key__0", null);
+                $"{prefix}GEO_APP__ApiKeyMappings__dev-auth-api-key__0", null);
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoAppOptions__ApiKeyMappings__dev-auth-api-key__1", null);
+                $"{prefix}GEO_APP__ApiKeyMappings__dev-auth-api-key__1", null);
         }
     }
 
@@ -142,12 +143,12 @@ public class ConfigBindingTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["GeoClientOptions:ApiKey"] = "dev-auth-api-key",
+                ["GEO_CLIENT:ApiKey"] = "dev-auth-api-key",
             })
             .Build();
 
         var options = new GeoClientOptions();
-        config.GetSection(nameof(GeoClientOptions)).Bind(options);
+        config.GetSection("GEO_CLIENT").Bind(options);
 
         options.ApiKey.Should().Be("dev-auth-api-key");
     }
@@ -165,13 +166,13 @@ public class ConfigBindingTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["GeoClientOptions:AllowedContextKeys:0"] = "org_contact",
-                ["GeoClientOptions:AllowedContextKeys:1"] = "user",
+                ["GEO_CLIENT:AllowedContextKeys:0"] = "org_contact",
+                ["GEO_CLIENT:AllowedContextKeys:1"] = "user",
             })
             .Build();
 
         var options = new GeoClientOptions();
-        config.GetSection(nameof(GeoClientOptions)).Bind(options);
+        config.GetSection("GEO_CLIENT").Bind(options);
 
         options.AllowedContextKeys.Should().BeEquivalentTo(["org_contact", "user"]);
     }
@@ -187,7 +188,7 @@ public class ConfigBindingTests
             .Build();
 
         var options = new GeoClientOptions();
-        config.GetSection(nameof(GeoClientOptions)).Bind(options);
+        config.GetSection("GEO_CLIENT").Bind(options);
 
         options.AllowedContextKeys.Should().BeEmpty();
     }
@@ -208,18 +209,18 @@ public class ConfigBindingTests
         try
         {
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__ApiKey", "dev-auth-api-key");
+                $"{prefix}GEO_CLIENT__ApiKey", "dev-auth-api-key");
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__AllowedContextKeys__0", "org_contact");
+                $"{prefix}GEO_CLIENT__AllowedContextKeys__0", "org_contact");
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__AllowedContextKeys__1", "user");
+                $"{prefix}GEO_CLIENT__AllowedContextKeys__1", "user");
 
             var config = new ConfigurationBuilder()
                 .AddEnvironmentVariables(prefix)
                 .Build();
 
             var options = new GeoClientOptions();
-            config.GetSection(nameof(GeoClientOptions)).Bind(options);
+            config.GetSection("GEO_CLIENT").Bind(options);
 
             options.ApiKey.Should().Be("dev-auth-api-key");
             options.AllowedContextKeys.Should().BeEquivalentTo(["org_contact", "user"]);
@@ -227,11 +228,11 @@ public class ConfigBindingTests
         finally
         {
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__ApiKey", null);
+                $"{prefix}GEO_CLIENT__ApiKey", null);
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__AllowedContextKeys__0", null);
+                $"{prefix}GEO_CLIENT__AllowedContextKeys__0", null);
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__AllowedContextKeys__1", null);
+                $"{prefix}GEO_CLIENT__AllowedContextKeys__1", null);
         }
     }
 
@@ -249,12 +250,12 @@ public class ConfigBindingTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["GeoAppOptions:ApiKeyMappings:some-key:0"] = "ctx",
+                ["GEO_APP:ApiKeyMappings:some-key:0"] = "ctx",
             })
             .Build();
 
         var options = new GeoAppOptions();
-        config.GetSection(nameof(GeoAppOptions)).Bind(options);
+        config.GetSection("GEO_APP").Bind(options);
 
         // Existing defaults should remain.
         options.LocationExpirationDuration.Should().Be(TimeSpan.FromHours(4));
@@ -275,13 +276,13 @@ public class ConfigBindingTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["GeoClientOptions:ApiKey"] = "my-key",
-                ["GeoClientOptions:AllowedContextKeys:0"] = "ctx",
+                ["GEO_CLIENT:ApiKey"] = "my-key",
+                ["GEO_CLIENT:AllowedContextKeys:0"] = "ctx",
             })
             .Build();
 
         var options = new GeoClientOptions();
-        config.GetSection(nameof(GeoClientOptions)).Bind(options);
+        config.GetSection("GEO_CLIENT").Bind(options);
 
         // Existing defaults should remain.
         options.WhoIsCacheExpiration.Should().Be(TimeSpan.FromHours(8));
@@ -298,7 +299,7 @@ public class ConfigBindingTests
 
     /// <summary>
     /// Tests that service-specific overrides layer on top of shared defaults.
-    /// Simulates: GeoClientOptions (shared) + AuthGeoClientOptions (service-specific).
+    /// Simulates: GEO_CLIENT (shared) + AUTH_GEO_CLIENT (service-specific).
     /// </summary>
     [Fact]
     public void GeoClientOptions_LayeredBinding_ServiceOverridesSharedDefaults()
@@ -307,19 +308,19 @@ public class ConfigBindingTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 // Shared defaults.
-                ["GeoClientOptions:WhoIsCacheMaxEntries"] = "20000",
+                ["GEO_CLIENT:WhoIsCacheMaxEntries"] = "20000",
 
                 // Auth-specific overrides.
-                ["AuthGeoClientOptions:ApiKey"] = "d2.auth.api.key",
-                ["AuthGeoClientOptions:AllowedContextKeys:0"] = "org_contact",
+                ["AUTH_GEO_CLIENT:ApiKey"] = "d2.auth.api.key",
+                ["AUTH_GEO_CLIENT:AllowedContextKeys:0"] = "org_contact",
             })
             .Build();
 
         var options = new GeoClientOptions();
 
         // Bind shared first, then overlay.
-        config.GetSection(nameof(GeoClientOptions)).Bind(options);
-        config.GetSection("AuthGeoClientOptions").Bind(options);
+        config.GetSection("GEO_CLIENT").Bind(options);
+        config.GetSection("AUTH_GEO_CLIENT").Bind(options);
 
         // Shared value should be set.
         options.WhoIsCacheMaxEntries.Should().Be(20_000);
@@ -342,17 +343,17 @@ public class ConfigBindingTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 // Shared sets WhoIsCacheMaxEntries to 10000.
-                ["GeoClientOptions:WhoIsCacheMaxEntries"] = "10000",
+                ["GEO_CLIENT:WhoIsCacheMaxEntries"] = "10000",
 
                 // Service-specific overrides the same property.
-                ["AuthGeoClientOptions:WhoIsCacheMaxEntries"] = "5000",
-                ["AuthGeoClientOptions:ApiKey"] = "auth-key",
+                ["AUTH_GEO_CLIENT:WhoIsCacheMaxEntries"] = "5000",
+                ["AUTH_GEO_CLIENT:ApiKey"] = "auth-key",
             })
             .Build();
 
         var options = new GeoClientOptions();
-        config.GetSection(nameof(GeoClientOptions)).Bind(options);
-        config.GetSection("AuthGeoClientOptions").Bind(options);
+        config.GetSection("GEO_CLIENT").Bind(options);
+        config.GetSection("AUTH_GEO_CLIENT").Bind(options);
 
         // Service-specific override wins.
         options.WhoIsCacheMaxEntries.Should().Be(5_000);
@@ -368,15 +369,15 @@ public class ConfigBindingTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["GeoClientOptions:WhoIsCacheMaxEntries"] = "15000",
+                ["GEO_CLIENT:WhoIsCacheMaxEntries"] = "15000",
             })
             .Build();
 
         var options = new GeoClientOptions();
-        config.GetSection(nameof(GeoClientOptions)).Bind(options);
+        config.GetSection("GEO_CLIENT").Bind(options);
 
         // Binding a non-existent section is a no-op.
-        config.GetSection("AuthGeoClientOptions").Bind(options);
+        config.GetSection("AUTH_GEO_CLIENT").Bind(options);
 
         options.WhoIsCacheMaxEntries.Should().Be(15_000);
         options.ApiKey.Should().Be(string.Empty);
@@ -384,7 +385,7 @@ public class ConfigBindingTests
     }
 
     /// <summary>
-    /// Tests layered binding with environment variables, simulating D2Env output.
+    /// Tests layered binding with environment variables, simulating production env var format.
     /// </summary>
     [Fact]
     public void GeoClientOptions_LayeredBinding_WorksWithEnvironmentVariableFormat()
@@ -395,23 +396,23 @@ public class ConfigBindingTests
         {
             // Shared defaults.
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__WhoIsCacheMaxEntries", "12000");
+                $"{prefix}GEO_CLIENT__WhoIsCacheMaxEntries", "12000");
 
             // Auth-specific overrides.
             Environment.SetEnvironmentVariable(
-                $"{prefix}AuthGeoClientOptions__ApiKey", "d2.auth.api.key");
+                $"{prefix}AUTH_GEO_CLIENT__ApiKey", "d2.auth.api.key");
             Environment.SetEnvironmentVariable(
-                $"{prefix}AuthGeoClientOptions__AllowedContextKeys__0", "org_contact");
+                $"{prefix}AUTH_GEO_CLIENT__AllowedContextKeys__0", "org_contact");
             Environment.SetEnvironmentVariable(
-                $"{prefix}AuthGeoClientOptions__AllowedContextKeys__1", "user");
+                $"{prefix}AUTH_GEO_CLIENT__AllowedContextKeys__1", "user");
 
             var config = new ConfigurationBuilder()
                 .AddEnvironmentVariables(prefix)
                 .Build();
 
             var options = new GeoClientOptions();
-            config.GetSection(nameof(GeoClientOptions)).Bind(options);
-            config.GetSection("AuthGeoClientOptions").Bind(options);
+            config.GetSection("GEO_CLIENT").Bind(options);
+            config.GetSection("AUTH_GEO_CLIENT").Bind(options);
 
             options.WhoIsCacheMaxEntries.Should().Be(12_000);
             options.ApiKey.Should().Be("d2.auth.api.key");
@@ -420,14 +421,126 @@ public class ConfigBindingTests
         finally
         {
             Environment.SetEnvironmentVariable(
-                $"{prefix}GeoClientOptions__WhoIsCacheMaxEntries", null);
+                $"{prefix}GEO_CLIENT__WhoIsCacheMaxEntries", null);
             Environment.SetEnvironmentVariable(
-                $"{prefix}AuthGeoClientOptions__ApiKey", null);
+                $"{prefix}AUTH_GEO_CLIENT__ApiKey", null);
             Environment.SetEnvironmentVariable(
-                $"{prefix}AuthGeoClientOptions__AllowedContextKeys__0", null);
+                $"{prefix}AUTH_GEO_CLIENT__AllowedContextKeys__0", null);
             Environment.SetEnvironmentVariable(
-                $"{prefix}AuthGeoClientOptions__AllowedContextKeys__1", null);
+                $"{prefix}AUTH_GEO_CLIENT__AllowedContextKeys__1", null);
         }
+    }
+
+    #endregion
+
+    #region GeoInfraOptions — RepoBatchSize (int)
+
+    /// <summary>
+    /// Tests that <see cref="GeoInfraOptions.RepoBatchSize"/> binds from a flat config key.
+    /// </summary>
+    [Fact]
+    public void GeoInfraOptions_RepoBatchSize_BindsFromFlatConfigKey()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["GEO_INFRA:RepoBatchSize"] = "1000",
+            })
+            .Build();
+
+        var options = new GeoInfraOptions();
+        config.GetSection("GEO_INFRA").Bind(options);
+
+        options.RepoBatchSize.Should().Be(1000);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="GeoInfraOptions.RepoBatchSize"/> defaults to 500 when no config is present.
+    /// </summary>
+    [Fact]
+    public void GeoInfraOptions_RepoBatchSize_DefaultsTo500WhenNoConfig()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>())
+            .Build();
+
+        var options = new GeoInfraOptions();
+        config.GetSection("GEO_INFRA").Bind(options);
+
+        options.RepoBatchSize.Should().Be(500);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="GeoInfraOptions"/> binds from environment variable format.
+    /// </summary>
+    [Fact]
+    public void GeoInfraOptions_BindsFromEnvironmentVariableFormat()
+    {
+        const string prefix = "D2TEST_INFRA_";
+
+        try
+        {
+            Environment.SetEnvironmentVariable(
+                $"{prefix}GEO_INFRA__RepoBatchSize", "750");
+            Environment.SetEnvironmentVariable(
+                $"{prefix}GEO_INFRA__IpInfoAccessToken", "test-token");
+
+            var config = new ConfigurationBuilder()
+                .AddEnvironmentVariables(prefix)
+                .Build();
+
+            var options = new GeoInfraOptions();
+            config.GetSection("GEO_INFRA").Bind(options);
+
+            options.RepoBatchSize.Should().Be(750);
+            options.IpInfoAccessToken.Should().Be("test-token");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(
+                $"{prefix}GEO_INFRA__RepoBatchSize", null);
+            Environment.SetEnvironmentVariable(
+                $"{prefix}GEO_INFRA__IpInfoAccessToken", null);
+        }
+    }
+
+    #endregion
+
+    #region GeoAppOptions — WhoIsRetentionDays (int)
+
+    /// <summary>
+    /// Tests that <see cref="GeoAppOptions.WhoIsRetentionDays"/> binds from a flat config key.
+    /// </summary>
+    [Fact]
+    public void GeoAppOptions_WhoIsRetentionDays_BindsFromFlatConfigKey()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["GEO_APP:WhoIsRetentionDays"] = "90",
+            })
+            .Build();
+
+        var options = new GeoAppOptions();
+        config.GetSection("GEO_APP").Bind(options);
+
+        options.WhoIsRetentionDays.Should().Be(90);
+    }
+
+    /// <summary>
+    /// Tests that <see cref="GeoAppOptions.WhoIsRetentionDays"/> defaults to 180 when no config is present.
+    /// </summary>
+    [Fact]
+    public void GeoAppOptions_WhoIsRetentionDays_DefaultsTo180WhenNoConfig()
+    {
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>())
+            .Build();
+
+        var options = new GeoAppOptions();
+        config.GetSection("GEO_APP").Bind(options);
+
+        options.WhoIsRetentionDays.Should().Be(180);
     }
 
     #endregion

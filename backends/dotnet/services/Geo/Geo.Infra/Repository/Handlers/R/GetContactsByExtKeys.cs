@@ -66,7 +66,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         var results = new Dictionary<(string ContextKey, Guid RelatedEntityId), List<Contact>>();
 
         // Query in batches to avoid large IN clauses.
-        foreach (var batch in uniqueKeys.Chunk(r_options.RepoQueryBatchSize))
+        foreach (var batch in uniqueKeys.Chunk(r_options.RepoBatchSize))
         {
             // Build an OR predicate for exact (ContextKey, RelatedEntityId) pair matching.
             // This avoids the cross-product false positives from separate IN clauses.

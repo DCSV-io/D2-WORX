@@ -4,10 +4,10 @@ Application layer for the Geo microservice defining handler interfaces and imple
 
 ## Files
 
-| File Name                            | Description                                                                                              |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| [Extensions.cs](Extensions.cs)       | DI extension method AddGeoApp registering CQRS handlers for Location, WhoIs, Contact operations.         |
-| [GeoAppOptions.cs](GeoAppOptions.cs) | Options for application configuration including cache expiration times for Location, WhoIs, and Contact. |
+| File Name                            | Description                                                                                                                                                                                                                                                           |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Extensions.cs](Extensions.cs)       | DI extension method AddGeoApp registering CQRS handlers for Location, WhoIs, Contact operations.                                                                                                                                                                      |
+| [GeoAppOptions.cs](GeoAppOptions.cs) | Options for application configuration (config section: `GEO_APP`) including cache expiration times, API key mappings, JobLockTtlSeconds (default 300), and WhoIsRetentionDays (default 180). Note: `RepoBatchSize` has moved to `GeoInfraOptions` in the infra layer. |
 
 ---
 
@@ -19,13 +19,15 @@ Application layer for the Geo microservice defining handler interfaces and imple
 >
 > ##### C (Commands)
 >
-> | File Name                                                                                | Description                                                                                                                                                  |
-> | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-> | [CreateLocations.cs](Implementations/CQRS/Handlers/C/CreateLocations.cs)                 | Command handler creating Locations via repository with cache population on success.                                                                          |
-> | [CreateWhoIs.cs](Implementations/CQRS/Handlers/C/CreateWhoIs.cs)                         | Command handler creating WhoIs records via repository with cache population on success.                                                                      |
-> | [CreateContacts.cs](Implementations/CQRS/Handlers/C/CreateContacts.cs)                   | Command handler creating Contacts with embedded locations, returning ContactDTOs with nested Location data on success.                                       |
-> | [DeleteContacts.cs](Implementations/CQRS/Handlers/C/DeleteContacts.cs)                   | Command handler deleting Contacts via repository with cache invalidation for deleted IDs.                                                                    |
-> | [DeleteContactsByExtKeys.cs](Implementations/CQRS/Handlers/C/DeleteContactsByExtKeys.cs) | Command handler deleting Contacts by ext-key (ContextKey+RelatedEntityId) via repository, returns count of deleted contacts, publishes cache eviction event. |
+> | File Name                                                                                  | Description                                                                                                                                                                                                                     |
+> | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | [CreateLocations.cs](Implementations/CQRS/Handlers/C/CreateLocations.cs)                   | Command handler creating Locations via repository with cache population on success.                                                                                                                                             |
+> | [CreateWhoIs.cs](Implementations/CQRS/Handlers/C/CreateWhoIs.cs)                           | Command handler creating WhoIs records via repository with cache population on success.                                                                                                                                         |
+> | [CreateContacts.cs](Implementations/CQRS/Handlers/C/CreateContacts.cs)                     | Command handler creating Contacts with embedded locations, returning ContactDTOs with nested Location data on success.                                                                                                          |
+> | [DeleteContacts.cs](Implementations/CQRS/Handlers/C/DeleteContacts.cs)                     | Command handler deleting Contacts via repository with cache invalidation for deleted IDs.                                                                                                                                       |
+> | [DeleteContactsByExtKeys.cs](Implementations/CQRS/Handlers/C/DeleteContactsByExtKeys.cs)   | Command handler deleting Contacts by ext-key (ContextKey+RelatedEntityId) via repository, returns count of deleted contacts, publishes cache eviction event.                                                                    |
+> | [CleanupOrphanedLocations.cs](Implementations/CQRS/Handlers/C/CleanupOrphanedLocations.cs) | Job handler acquiring distributed lock, deleting orphaned locations via repository, then releasing lock. Reports rows affected, lock status, and duration.                                                                      |
+> | [PurgeStaleWhoIs.cs](Implementations/CQRS/Handlers/C/PurgeStaleWhoIs.cs)                   | Job handler acquiring distributed lock, deleting WhoIs records older than WhoIsRetentionDays (default 180) via repository, then releasing lock. Runs before CleanupOrphanedLocations since deleting WhoIs may orphan Locations. |
 >
 > ##### Q (Queries)
 >
@@ -58,14 +60,16 @@ Application layer for the Geo microservice defining handler interfaces and imple
 >
 > ##### C (Commands)
 >
-> | File Name                                                                                               | Description                                                                                                 |
-> | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-> | [ICommands.cs](Interfaces/CQRS/Handlers/C/ICommands.cs)                                                 | Partial interface defining command operations for CQRS handlers.                                            |
-> | [ICommands.CreateLocations.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateLocations.cs)                 | Extends ICommands with ICreateLocationsHandler for batch Location creation.                                 |
-> | [ICommands.CreateWhoIs.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateWhoIs.cs)                         | Extends ICommands with ICreateWhoIsHandler for batch WhoIs creation.                                        |
-> | [ICommands.CreateContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateContacts.cs)                   | Extends ICommands with ICreateContactsHandler for batch Contact creation.                                   |
-> | [ICommands.DeleteContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContacts.cs)                   | Extends ICommands with IDeleteContactsHandler for batch Contact deletion.                                   |
-> | [ICommands.DeleteContactsByExtKeys.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContactsByExtKeys.cs) | Extends ICommands with IDeleteContactsByExtKeysHandler for Contact deletion by ext-key with eviction event. |
+> | File Name                                                                                                 | Description                                                                                                          |
+> | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+> | [ICommands.cs](Interfaces/CQRS/Handlers/C/ICommands.cs)                                                   | Partial interface defining command operations for CQRS handlers.                                                     |
+> | [ICommands.CreateLocations.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateLocations.cs)                   | Extends ICommands with ICreateLocationsHandler for batch Location creation.                                          |
+> | [ICommands.CreateWhoIs.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateWhoIs.cs)                           | Extends ICommands with ICreateWhoIsHandler for batch WhoIs creation.                                                 |
+> | [ICommands.CreateContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.CreateContacts.cs)                     | Extends ICommands with ICreateContactsHandler for batch Contact creation.                                            |
+> | [ICommands.DeleteContacts.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContacts.cs)                     | Extends ICommands with IDeleteContactsHandler for batch Contact deletion.                                            |
+> | [ICommands.DeleteContactsByExtKeys.cs](Interfaces/CQRS/Handlers/C/ICommands.DeleteContactsByExtKeys.cs)   | Extends ICommands with IDeleteContactsByExtKeysHandler for Contact deletion by ext-key with eviction event.          |
+> | [ICommands.CleanupOrphanedLocations.cs](Interfaces/CQRS/Handlers/C/ICommands.CleanupOrphanedLocations.cs) | Extends ICommands with ICleanupOrphanedLocationsHandler for orphaned location cleanup job with lock/duration output. |
+> | [ICommands.PurgeStaleWhoIs.cs](Interfaces/CQRS/Handlers/C/ICommands.PurgeStaleWhoIs.cs)                   | Extends ICommands with IPurgeStaleWhoIsHandler for stale WhoIs purge job with lock/duration output.                  |
 >
 > ##### Q (Queries)
 >
@@ -116,11 +120,13 @@ Application layer for the Geo microservice defining handler interfaces and imple
 >
 > ##### D (Delete)
 >
-> | File Name                                                                                                 | Description                                                                                              |
-> | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-> | [IDelete.cs](Interfaces/Repository/Handlers/D/IDelete.cs)                                                 | Partial interface defining delete operations for geographic repository access.                           |
-> | [IDelete.DeleteContacts.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteContacts.cs)                   | Extends IDelete with IDeleteContactsHandler for batch Contact deletion.                                  |
-> | [IDelete.DeleteContactsByExtKeys.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteContactsByExtKeys.cs) | Extends IDelete with IDeleteContactsByExtKeysHandler for Contact deletion by ContextKey/RelatedEntityId. |
+> | File Name                                                                                                 | Description                                                                                                                    |
+> | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+> | [IDelete.cs](Interfaces/Repository/Handlers/D/IDelete.cs)                                                 | Partial interface defining delete operations for geographic repository access.                                                 |
+> | [IDelete.DeleteContacts.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteContacts.cs)                   | Extends IDelete with IDeleteContactsHandler for batch Contact deletion.                                                        |
+> | [IDelete.DeleteContactsByExtKeys.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteContactsByExtKeys.cs) | Extends IDelete with IDeleteContactsByExtKeysHandler for Contact deletion by ContextKey/RelatedEntityId.                       |
+> | [IDelete.DeleteOrphanedLocations.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteOrphanedLocations.cs) | Extends IDelete with IDeleteOrphanedLocationsHandler for batch deletion of locations with zero references.                     |
+> | [IDelete.DeleteStaleWhoIs.cs](Interfaces/Repository/Handlers/D/IDelete.DeleteStaleWhoIs.cs)               | Extends IDelete with IDeleteStaleWhoIsHandler for deleting WhoIs records older than a given cutoff year/month via BatchDelete. |
 >
 > ##### R (Read)
 >

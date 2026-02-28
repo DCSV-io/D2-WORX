@@ -55,7 +55,7 @@ public class JwtAuthConfigTests
     {
         var config = CreateConfig(new Dictionary<string, string?>
         {
-            ["JwtAuthOptions:JwksAutoRefreshInterval"] = "04:00:00", // 4 hours
+            ["GATEWAY_AUTH:JwksAutoRefreshInterval"] = "04:00:00", // 4 hours
         });
 
         var jwtOptions = ResolveJwtBearerOptions(config);
@@ -71,7 +71,7 @@ public class JwtAuthConfigTests
     {
         var config = CreateConfig(new Dictionary<string, string?>
         {
-            ["JwtAuthOptions:JwksRefreshInterval"] = "00:10:00", // 10 minutes
+            ["GATEWAY_AUTH:JwksRefreshInterval"] = "00:10:00", // 10 minutes
         });
 
         var jwtOptions = ResolveJwtBearerOptions(config);
@@ -154,9 +154,9 @@ public class JwtAuthConfigTests
     {
         var defaults = new Dictionary<string, string?>
         {
-            ["JwtAuthOptions:AuthServiceBaseUrl"] = "https://auth.example.com",
-            ["JwtAuthOptions:Issuer"] = "https://auth.example.com",
-            ["JwtAuthOptions:Audience"] = "d2-gateway",
+            ["GATEWAY_AUTH:AuthServiceBaseUrl"] = "https://auth.example.com",
+            ["GATEWAY_AUTH:Issuer"] = "https://auth.example.com",
+            ["GATEWAY_AUTH:Audience"] = "d2-gateway",
         };
 
         if (overrides != null)

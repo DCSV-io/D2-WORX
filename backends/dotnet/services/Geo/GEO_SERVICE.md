@@ -223,6 +223,10 @@ IP address geolocation and network metadata with device fingerprinting.
 - Enrich analytics with geographic data
 - Rate limit by network (ASN) rather than just IP
 
+**Lifecycle & Purge:**
+
+WhoIs records accumulate over time (new hash per IP+fingerprint+month). The `PurgeStaleWhoIs` scheduled job deletes records older than `WhoIsRetentionDays` (default 180 days) by comparing their Year/Month fields against a cutoff date. This job runs **before** `CleanupOrphanedLocations` because deleting WhoIs records may orphan their referenced Locations.
+
 #### Country
 
 Sovereign state with ISO codes and metadata.

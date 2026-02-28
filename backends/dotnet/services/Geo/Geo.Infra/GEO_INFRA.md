@@ -4,10 +4,10 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 
 ## Files
 
-| File Name                                | Description                                                                                                                                                                             |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Extensions.cs](Extensions.cs)           | DI extension method AddGeoInfra registering GeoDbContext, RabbitMQ messaging (raw AMQP), repository handlers, messaging publisher handlers, and UpdatedConsumerService from Geo.Client. |
-| [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration including BatchSize for repository operations.                                                                                                 |
+| File Name                                | Description                                                                                                                                                                                                                                                     |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Extensions.cs](Extensions.cs)           | DI extension method AddGeoInfra registering GeoDbContext, RabbitMQ messaging (raw AMQP), repository handlers, messaging publisher handlers, and UpdatedConsumerService from Geo.Client.                                                                         |
+| [GeoInfraOptions.cs](GeoInfraOptions.cs) | Options for infrastructure configuration (config section: `GEO_INFRA`) including `RepoBatchSize` (default 500) for repository batch operations and `IpInfoAccessToken` for WhoIs API. `RepoBatchSize` is infra-owned — app layer does not control batch sizing. |
 
 ---
 
@@ -76,10 +76,12 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 >
 > #### D (Delete)
 >
-> | File Name                                                                      | Description                                                                                                                    |
-> | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-> | [DeleteContacts.cs](Repository/Handlers/D/DeleteContacts.cs)                   | Handler for batch deleting Contact entities by GUID IDs with OK/SOME_FOUND/NOT_FOUND status.                                   |
-> | [DeleteContactsByExtKeys.cs](Repository/Handlers/D/DeleteContactsByExtKeys.cs) | Handler for deleting Contact entities by ContextKey/RelatedEntityId pairs, returns count of deleted contacts and ext-key list. |
+> | File Name                                                                      | Description                                                                                                                                                                                                                |
+> | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | [DeleteContacts.cs](Repository/Handlers/D/DeleteContacts.cs)                   | Handler for batch deleting Contact entities by GUID IDs with OK/SOME_FOUND/NOT_FOUND status.                                                                                                                               |
+> | [DeleteContactsByExtKeys.cs](Repository/Handlers/D/DeleteContactsByExtKeys.cs) | Handler for deleting Contact entities by ContextKey/RelatedEntityId pairs, returns count of deleted contacts and ext-key list.                                                                                             |
+> | [DeleteOrphanedLocations.cs](Repository/Handlers/D/DeleteOrphanedLocations.cs) | Handler for batch deleting Location entities with zero Contact and zero WhoIs references using BatchDelete chunked deletion.                                                                                               |
+> | [DeleteStaleWhoIs.cs](Repository/Handlers/D/DeleteStaleWhoIs.cs)               | Handler for deleting WhoIs records older than a cutoff year/month using BatchDelete chunked deletion. Batch size from `GeoInfraOptions.RepoBatchSize`. Staleness: `(Year < cutoff) OR (Year = cutoff AND Month < cutoff)`. |
 >
 > #### R (Read)
 >

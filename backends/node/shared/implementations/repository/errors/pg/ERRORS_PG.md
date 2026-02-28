@@ -4,10 +4,10 @@ PostgreSQL error code predicates for constraint violation handling. Mirrors .NET
 
 ## Files
 
-| File Name                              | Description                                                                               |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [pg-errors.ts](src/pg-errors.ts)       | PostgreSQL error code predicates (`isPgUniqueViolation`, `isPgForeignKeyViolation`, etc.). |
-| [index.ts](src/index.ts)               | Barrel export of all predicates.                                                          |
+| File Name                        | Description                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------ |
+| [pg-errors.ts](src/pg-errors.ts) | PostgreSQL error code predicates (`isPgUniqueViolation`, `isPgForeignKeyViolation`, etc.). |
+| [index.ts](src/index.ts)         | Barrel export of all predicates.                                                           |
 
 ---
 
@@ -46,11 +46,11 @@ try {
 
 ## .NET Equivalent
 
-| Node.js (`@d2/errors-pg`)         | .NET (`Errors.Pg`)                     |
-| ---------------------------------- | -------------------------------------- |
-| `isPgUniqueViolation(err)`         | `PgErrorCodes.IsUniqueViolation(ex)`   |
-| `isPgForeignKeyViolation(err)`     | `PgErrorCodes.IsForeignKeyViolation(ex)` |
-| `isPgNotNullViolation(err)`        | `PgErrorCodes.IsNotNullViolation(ex)`  |
-| `isPgCheckViolation(err)`          | `PgErrorCodes.IsCheckViolation(ex)`    |
+| Node.js (`@d2/errors-pg`)      | .NET (`Errors.Pg`)                       |
+| ------------------------------ | ---------------------------------------- |
+| `isPgUniqueViolation(err)`     | `PgErrorCodes.IsUniqueViolation(ex)`     |
+| `isPgForeignKeyViolation(err)` | `PgErrorCodes.IsForeignKeyViolation(ex)` |
+| `isPgNotNullViolation(err)`    | `PgErrorCodes.IsNotNullViolation(ex)`    |
+| `isPgCheckViolation(err)`      | `PgErrorCodes.IsCheckViolation(ex)`      |
 
 Both check the direct exception and wrapped inner exceptions for compatibility with their respective ORMs (EF Core wraps in `DbUpdateException`, Drizzle wraps in `DrizzleQueryError`).

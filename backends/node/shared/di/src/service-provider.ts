@@ -9,7 +9,10 @@ const DEBUG = _proc?.env?.DEBUG_DI === "true";
 /* eslint-enable @typescript-eslint/no-unsafe-member-access */
 
 function debugLog(msg: string): void {
-  if (DEBUG) (globalThis as { console?: { debug?: (...a: unknown[]) => void } }).console?.debug?.(`[DI] ${msg}`);
+  if (DEBUG)
+    (globalThis as { console?: { debug?: (...a: unknown[]) => void } }).console?.debug?.(
+      `[DI] ${msg}`,
+    );
 }
 
 /**

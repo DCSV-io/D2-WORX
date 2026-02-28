@@ -273,6 +273,60 @@ jobs:
       - name: Run integration tests
         run: pnpm vitest run --project shared-tests "integration"
 
+  node-dkron-mgr-unit:
+    name: D2 Node.js dkron-mgr - Unit Tests (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run unit tests
+        run: pnpm vitest run --project dkron-mgr-tests --exclude "**/integration/**" --exclude "**/e2e/**"
+
+  node-dkron-mgr-integration:
+    name: D2 Node.js dkron-mgr - Integration + E2E Tests (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run integration and E2E tests
+        run: pnpm vitest run --project dkron-mgr-tests integration e2e
+
   node-e2e:
     name: D2 Node.js E2E - Cross-Service Tests (v1)
     runs-on: ubuntu-latest
@@ -304,10 +358,14 @@ jobs:
         run: pnpm build
 
       - name: Restore .NET packages
-        run: dotnet restore backends/dotnet/services/Geo/Geo.API
+        run: |
+          dotnet restore backends/dotnet/services/Geo/Geo.API
+          dotnet restore backends/dotnet/gateways/REST
 
-      - name: Build .NET Geo service
-        run: dotnet build backends/dotnet/services/Geo/Geo.API -c Release --no-restore
+      - name: Build .NET projects
+        run: |
+          dotnet build backends/dotnet/services/Geo/Geo.API -c Release --no-restore
+          dotnet build backends/dotnet/gateways/REST -c Release --no-restore
 
       - name: Run E2E tests
         run: pnpm vitest run --project e2e-tests
