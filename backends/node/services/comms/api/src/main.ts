@@ -40,7 +40,7 @@ const config = {
   redisUrl: parseRedisUrl(
     process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis ?? "",
   ) || undefined,
-  grpcPort: parseInt(process.env.GRPC_PORT ?? "5200", 10),
+  grpcPort: parseIntStrict(process.env.GRPC_PORT ?? "5200", "GRPC_PORT"),
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromAddress: process.env.RESEND_FROM_ADDRESS,
   twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,

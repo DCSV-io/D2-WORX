@@ -77,7 +77,7 @@ if (config.rabbitMqUrl) {
 }
 
 const { app, shutdown } = await createApp(config, publisher, undefined, messageBus);
-const port = parseInt(process.env.PORT ?? "5100", 10);
+const port = parseIntStrict(process.env.PORT ?? "5100", "PORT");
 
 const server = serve({ fetch: app.fetch, port }, (info) => {
   logger.info(`Auth service listening on http://localhost:${info.port}`);
