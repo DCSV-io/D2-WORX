@@ -325,7 +325,7 @@ jobs:
         run: pnpm build
 
       - name: Run integration and E2E tests
-        run: pnpm vitest run --project dkron-mgr-tests "integration|e2e"
+        run: pnpm vitest run --project dkron-mgr-tests integration e2e
 
   node-e2e:
     name: D2 Node.js E2E - Cross-Service Tests (v1)

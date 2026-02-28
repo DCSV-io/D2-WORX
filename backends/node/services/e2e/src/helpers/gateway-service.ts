@@ -90,8 +90,11 @@ export async function startGateway(opts: {
     "services__d2-auth__auth-http__0": "http://localhost:1",
     // Service key config: allow Dkron's X-Api-Key to pass
     "GATEWAY_SERVICEKEY__ValidKeys__0": opts.serviceKey,
-    // Geo gRPC API key (sent as call credential to Geo service)
+    // gRPC API keys (sent as call credentials to downstream services)
     GATEWAY_GEO_GRPC_API_KEY: opts.geoApiKey,
+    // Auth + Comms keys required by startup validation but not called in Geo-only tests
+    GATEWAY_AUTH_GRPC_API_KEY: "e2e-dummy-auth-key",
+    GATEWAY_COMMS_GRPC_API_KEY: "e2e-dummy-comms-key",
     // JWT config (required by service registration, but service-key endpoints skip JWT)
     GATEWAY_AUTH__AuthServiceBaseUrl: "http://localhost:1",
     GATEWAY_AUTH__Issuer: "e2e-test",

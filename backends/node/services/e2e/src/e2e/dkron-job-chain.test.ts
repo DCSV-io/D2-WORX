@@ -55,6 +55,9 @@ describe("E2E: Dkron -> Gateway -> Geo full job chain", () => {
       new GenericContainer("dkron/dkron:4.0.9")
         .withExposedPorts(8080)
         .withCommand(["agent", "--server", "--bootstrap-expect=1"])
+        // Allow Dkron container to reach host-bound Gateway via host.docker.internal
+        // (not automatic on Linux — only Docker Desktop adds it by default)
+        .withExtraHosts([{ host: "host.docker.internal", ipAddress: "host-gateway" }])
         .withWaitStrategy(
           Wait.forAll([
             Wait.forHttp("/health", 8080).forStatusCode(200),
