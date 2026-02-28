@@ -15,14 +15,15 @@
  * ```
  */
 export function parsePostgresUrl(connectionString: string): string {
-  if (!connectionString.trim()) return "";
+  const input = connectionString.trim();
+  if (!input) return "";
 
-  if (connectionString.startsWith("postgresql://") || connectionString.startsWith("postgres://")) {
-    return connectionString;
+  if (input.startsWith("postgresql://") || input.startsWith("postgres://")) {
+    return input;
   }
 
   const params = new Map<string, string>();
-  for (const part of connectionString.split(";")) {
+  for (const part of input.split(";")) {
     const eq = part.indexOf("=");
     if (eq === -1) continue;
     params.set(part.slice(0, eq).trim().toLowerCase(), part.slice(eq + 1).trim());

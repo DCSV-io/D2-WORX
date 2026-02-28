@@ -15,13 +15,14 @@
  * ```
  */
 export function parseRedisUrl(connectionString: string): string {
-  if (!connectionString.trim()) return "";
+  const input = connectionString.trim();
+  if (!input) return "";
 
-  if (connectionString.startsWith("redis://") || connectionString.startsWith("rediss://")) {
-    return connectionString;
+  if (input.startsWith("redis://") || input.startsWith("rediss://")) {
+    return input;
   }
 
-  const [hostPort = "", ...options] = connectionString.split(",");
+  const [hostPort = "", ...options] = input.split(",");
   const params = new Map<string, string>();
   for (const opt of options) {
     const eq = opt.indexOf("=");
