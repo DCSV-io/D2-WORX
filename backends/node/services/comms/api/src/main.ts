@@ -63,9 +63,17 @@ const { server, shutdown } = await createCommsService(config);
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, async () => {
     logger.info(`Received ${signal}, shutting down...`);
-    server.tryShutdown(async () => {
-      await shutdown();
-      process.exit(0);
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(() => {
+        server.forceShutdown();
+        resolve();
+      }, 5_000);
+      server.tryShutdown(() => {
+        clearTimeout(timeout);
+        resolve();
+      });
     });
+    await shutdown();
+    process.exit(0);
   });
 }

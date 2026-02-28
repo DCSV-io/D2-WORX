@@ -584,21 +584,21 @@ describe("Invitation routes", () => {
       expect(body.messages).toContain("Failed to create invitation.");
     });
 
-    it("should log internal error for debugging via console.warn", async () => {
-      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    it("should not leak error details even when logger is unavailable", async () => {
       mockCreateInvitation.mockRejectedValue(new Error("Internal BetterAuth error details"));
       const app = createTestApp(handlers);
 
-      await app.request("/api/invitations", {
+      const res = await app.request("/api/invitations", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(BASE_BODY),
       });
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        "Invitation creation failed: Internal BetterAuth error details",
-      );
-      warnSpy.mockRestore();
+      // Should still return 400 with generic message even if logger resolve fails
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { messages?: string[] };
+      expect(body.messages).toContain("Failed to create invitation.");
+      expect(body.messages).not.toContain("Internal BetterAuth error details");
     });
   });
 

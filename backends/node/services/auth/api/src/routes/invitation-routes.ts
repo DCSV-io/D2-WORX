@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result, HttpStatusCode } from "@d2/result";
+import { ILoggerKey } from "@d2/logging";
 import { SESSION_FIELDS, GEO_CONTEXT_KEYS, ROLES, type Role } from "@d2/auth-domain";
 import { INotifyKey } from "@d2/comms-client";
 import { ICreateContactsKey, IGetContactsByExtKeysKey } from "@d2/geo-client";
@@ -109,9 +110,15 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
       })) as { id: string };
       invitationId = invitationResult.id;
     } catch (err) {
-      // Log the actual error for debugging but never expose internal details to clients
-      if (err instanceof Error) {
-        console.warn(`Invitation creation failed: ${err.message}`);
+      // Log error type for debugging but never log the message (may contain sensitive data)
+      try {
+        const scope = c.get(SCOPE_KEY);
+        const logger = scope.resolve(ILoggerKey);
+        logger.warn("Invitation creation failed", {
+          errorType: err instanceof Error ? err.constructor.name : "Unknown",
+        });
+      } catch {
+        // Logging is best-effort — never let it break the error response
       }
       return c.json(
         D2Result.fail({
