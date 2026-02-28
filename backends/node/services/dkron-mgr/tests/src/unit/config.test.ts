@@ -136,7 +136,7 @@ describe("parseConfig", () => {
 });
 
 describe("logConfig", () => {
-  it("should redact long service keys", () => {
+  it("should partially redact keys of 12+ characters (first 2 + last 2)", () => {
     const logger = createSilentLogger();
     const config: DkronMgrConfig = {
       dkronUrl: "http://localhost:8888",
@@ -151,16 +151,16 @@ describe("logConfig", () => {
       string,
       unknown
     >;
-    expect(logged.serviceKey).toBe("super-se...");
-    expect(logged.serviceKey).not.toContain("12345");
+    expect(logged.serviceKey).toBe("su***45");
+    expect(logged.serviceKey).not.toContain("secret");
   });
 
-  it("should fully redact short service keys", () => {
+  it("should fully redact keys shorter than 12 characters", () => {
     const logger = createSilentLogger();
     const config: DkronMgrConfig = {
       dkronUrl: "http://localhost:8888",
       gatewayUrl: "http://gateway:5461",
-      serviceKey: "short",
+      serviceKey: "short-key",
       reconcileIntervalMs: 300_000,
     };
 

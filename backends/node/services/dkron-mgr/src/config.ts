@@ -58,13 +58,13 @@ export function parseConfig(_logger: ILogger): DkronMgrConfig {
   });
 }
 
-const REDACT_VISIBLE_CHARS = 8;
+const MIN_PARTIAL_REDACT_LENGTH = 12;
 
 /** Log config with the service key redacted. */
 export function logConfig(config: DkronMgrConfig, logger: ILogger): void {
   const redactedKey =
-    config.serviceKey.length > REDACT_VISIBLE_CHARS
-      ? `${config.serviceKey.slice(0, REDACT_VISIBLE_CHARS)}...`
+    config.serviceKey.length >= MIN_PARTIAL_REDACT_LENGTH
+      ? `${config.serviceKey.slice(0, 2)}***${config.serviceKey.slice(-2)}`
       : "***";
 
   logger.info("Configuration loaded", {

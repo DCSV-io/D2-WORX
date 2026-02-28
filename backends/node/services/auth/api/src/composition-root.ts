@@ -517,7 +517,16 @@ export async function createApp(
   // Cleanup function for graceful shutdown
   async function shutdown() {
     if (grpcServer) {
-      grpcServer.forceShutdown();
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          grpcServer!.forceShutdown();
+          resolve();
+        }, 5_000);
+        grpcServer!.tryShutdown(() => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
     }
     provider.dispose();
     redis.disconnect();
