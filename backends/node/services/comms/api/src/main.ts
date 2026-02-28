@@ -12,65 +12,51 @@
 // patches are applied before module imports are resolved.
 
 import { createLogger } from "@d2/logging";
-import { parseEnvArray, parsePostgresUrl, parseRedisUrl } from "@d2/service-defaults/config";
+import { DEFAULT_COMMS_JOB_OPTIONS } from "@d2/comms-app";
+import {
+  defineConfig,
+  requiredParsed,
+  requiredString,
+  optionalString,
+  optionalParsed,
+  defaultInt,
+  envArray,
+  optionalSection,
+  parsePostgresUrl,
+  parseRedisUrl,
+} from "@d2/service-defaults/config";
 import { createCommsService } from "./composition-root.js";
-
-function parseIntStrict(value: string, name: string): number {
-  const parsed = parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error(`Invalid numeric env var ${name}="${value}" — must be a positive integer`);
-  }
-  return parsed;
-}
 
 const logger = createLogger({ serviceName: "comms-service" });
 
 // Aspire injects connection strings in .NET formats (ADO.NET for PG).
 // Parser converts to URI format for Node.js clients, passing through URIs unchanged.
-const config = {
-  databaseUrl: parsePostgresUrl(
-    process.env["ConnectionStrings__d2-services-comms"] ??
-      process.env.ConnectionStrings__d2_services_comms ??
-      "",
+const config = defineConfig("comms-service", {
+  databaseUrl: requiredParsed(
+    parsePostgresUrl,
+    "ConnectionStrings__d2-services-comms",
+    "ConnectionStrings__d2_services_comms",
   ),
-  rabbitMqUrl:
-    process.env["ConnectionStrings__d2-rabbitmq"] ??
-    process.env.ConnectionStrings__d2_rabbitmq ??
-    "",
-  redisUrl: parseRedisUrl(
-    process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis ?? "",
-  ) || undefined,
-  grpcPort: parseIntStrict(process.env.GRPC_PORT ?? "5200", "GRPC_PORT"),
-  resendApiKey: process.env.RESEND_API_KEY,
-  resendFromAddress: process.env.RESEND_FROM_ADDRESS,
-  twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
-  twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
-  twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
-  geoAddress: process.env.GEO_GRPC_ADDRESS,
-  geoApiKey: process.env.COMMS_GEO_CLIENT__APIKEY,
-  commsApiKeys: parseEnvArray("COMMS_API_KEYS"),
-  jobOptions: process.env.COMMS_APP__DELETEDMESSAGERETENTIONDAYS
-    ? {
-        deletedMessageRetentionDays: parseIntStrict(
-          process.env.COMMS_APP__DELETEDMESSAGERETENTIONDAYS!,
-          "COMMS_APP__DELETEDMESSAGERETENTIONDAYS",
-        ),
-        deliveryHistoryRetentionDays: parseIntStrict(
-          process.env.COMMS_APP__DELIVERYHISTORYRETENTIONDAYS ?? "365",
-          "COMMS_APP__DELIVERYHISTORYRETENTIONDAYS",
-        ),
-        lockTtlMs: parseIntStrict(
-          process.env.COMMS_APP__JOBLOCKTTLMS ?? "300000",
-          "COMMS_APP__JOBLOCKTTLMS",
-        ),
-      }
-    : undefined,
-};
-
-if (!config.databaseUrl) {
-  logger.error("Missing required env var: ConnectionStrings__d2_services_comms");
-  process.exit(1);
-}
+  rabbitMqUrl: requiredString(
+    "ConnectionStrings__d2-rabbitmq",
+    "ConnectionStrings__d2_rabbitmq",
+  ),
+  redisUrl: optionalParsed(
+    parseRedisUrl,
+    "ConnectionStrings__d2-redis",
+    "ConnectionStrings__d2_redis",
+  ),
+  grpcPort: defaultInt(5200, "GRPC_PORT"),
+  resendApiKey: optionalString("RESEND_API_KEY"),
+  resendFromAddress: optionalString("RESEND_FROM_ADDRESS"),
+  twilioAccountSid: optionalString("TWILIO_ACCOUNT_SID"),
+  twilioAuthToken: optionalString("TWILIO_AUTH_TOKEN"),
+  twilioPhoneNumber: optionalString("TWILIO_PHONE_NUMBER"),
+  geoAddress: optionalString("GEO_GRPC_ADDRESS"),
+  geoApiKey: optionalString("COMMS_GEO_CLIENT__APIKEY"),
+  commsApiKeys: envArray("COMMS_API_KEYS"),
+  jobOptions: optionalSection("COMMS_APP", DEFAULT_COMMS_JOB_OPTIONS),
+});
 
 const { server, shutdown } = await createCommsService(config);
 

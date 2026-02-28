@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { parseConfig, logConfig, type DkronMgrConfig } from "@d2/dkron-mgr";
+import { ConfigError } from "@d2/service-defaults/config";
 import type { ILogger } from "@d2/logging";
 
 function createSilentLogger(): ILogger {
@@ -70,27 +71,24 @@ describe("parseConfig", () => {
     expect(config.gatewayUrl).toBe("http://gateway:5461");
   });
 
-  it("should exit when DKRON_URL is missing", () => {
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+  it("should throw ConfigError when DKRON_URL is missing", () => {
     process.env.DKRON_MGR__GATEWAY_URL = "http://gateway:5461";
     process.env.DKRON_MGR__SERVICE_KEY = "key";
 
-    parseConfig(logger);
-
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining("DKRON_MGR__DKRON_URL"));
+    expect(() => parseConfig(logger)).toThrow(ConfigError);
+    expect(() => parseConfig(logger)).toThrow(/DKRON_MGR__DKRON_URL/);
   });
 
-  it("should exit when multiple required vars are missing", () => {
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
-
-    parseConfig(logger);
-
-    expect(exitSpy).toHaveBeenCalledWith(1);
-    const errorMsg = (logger.error as ReturnType<typeof vi.fn>).mock.calls[0]![0] as string;
-    expect(errorMsg).toContain("DKRON_MGR__DKRON_URL");
-    expect(errorMsg).toContain("DKRON_MGR__GATEWAY_URL");
-    expect(errorMsg).toContain("DKRON_MGR__SERVICE_KEY");
+  it("should throw ConfigError listing all missing required vars", () => {
+    expect(() => parseConfig(logger)).toThrow(ConfigError);
+    try {
+      parseConfig(logger);
+    } catch (e) {
+      const msg = (e as Error).message;
+      expect(msg).toContain("DKRON_MGR__DKRON_URL");
+      expect(msg).toContain("DKRON_MGR__GATEWAY_URL");
+      expect(msg).toContain("DKRON_MGR__SERVICE_KEY");
+    }
   });
 
   it("should fall back to default when interval is non-numeric", () => {

@@ -5,9 +5,20 @@
 // -----------------------------------------------------------------------
 
 import type { ILogger } from "@d2/logging";
+import {
+  defineConfig,
+  requiredString,
+  requiredParsed,
+  optionalString,
+} from "@d2/service-defaults/config";
 
 const DEFAULT_RECONCILE_INTERVAL_MS = 300_000; // 5 minutes
 const MIN_RECONCILE_INTERVAL_MS = 1_000; // 1 second floor
+
+/** Strip trailing slashes from a URL. Returns the URL as-is if non-empty. */
+function stripTrailingSlashes(value: string): string {
+  return value.replace(/\/+$/, "");
+}
 
 export interface DkronMgrConfig {
   /** Dkron REST API base URL (e.g. http://localhost:8888). */
@@ -22,33 +33,27 @@ export interface DkronMgrConfig {
 
 /**
  * Parse and validate config from environment variables.
- * Exits the process if required variables are missing.
+ * Throws ConfigError if required variables are missing.
  */
-export function parseConfig(logger: ILogger): DkronMgrConfig {
-  const dkronUrl = process.env.DKRON_MGR__DKRON_URL?.replace(/\/+$/, "");
-  const gatewayUrl = process.env.DKRON_MGR__GATEWAY_URL?.replace(/\/+$/, "");
-  const serviceKey = process.env.DKRON_MGR__SERVICE_KEY;
+export function parseConfig(_logger: ILogger): DkronMgrConfig {
+  const raw = defineConfig("dkron-mgr", {
+    dkronUrl: requiredParsed(stripTrailingSlashes, "DKRON_MGR__DKRON_URL"),
+    gatewayUrl: requiredParsed(stripTrailingSlashes, "DKRON_MGR__GATEWAY_URL"),
+    serviceKey: requiredString("DKRON_MGR__SERVICE_KEY"),
+    reconcileIntervalRaw: optionalString("DKRON_MGR__RECONCILE_INTERVAL_MS"),
+  });
 
-  const missing: string[] = [];
-  if (!dkronUrl) missing.push("DKRON_MGR__DKRON_URL");
-  if (!gatewayUrl) missing.push("DKRON_MGR__GATEWAY_URL");
-  if (!serviceKey) missing.push("DKRON_MGR__SERVICE_KEY");
-
-  if (missing.length > 0) {
-    logger.error(`Missing required environment variables: ${missing.join(", ")}`);
-    process.exit(1);
-  }
-
-  const parsed = parseInt(process.env.DKRON_MGR__RECONCILE_INTERVAL_MS ?? "", 10);
+  // Graceful fallback: invalid or below-floor values use the default (no crash)
+  const parsed = raw.reconcileIntervalRaw ? parseInt(raw.reconcileIntervalRaw, 10) : NaN;
   const reconcileIntervalMs =
-    Number.isNaN(parsed) || parsed < MIN_RECONCILE_INTERVAL_MS
-      ? DEFAULT_RECONCILE_INTERVAL_MS
-      : parsed;
+    Number.isFinite(parsed) && parsed >= MIN_RECONCILE_INTERVAL_MS
+      ? parsed
+      : DEFAULT_RECONCILE_INTERVAL_MS;
 
   return Object.freeze({
-    dkronUrl: dkronUrl!,
-    gatewayUrl: gatewayUrl!,
-    serviceKey: serviceKey!,
+    dkronUrl: raw.dkronUrl,
+    gatewayUrl: raw.gatewayUrl,
+    serviceKey: raw.serviceKey,
     reconcileIntervalMs,
   });
 }
