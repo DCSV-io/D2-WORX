@@ -40,11 +40,13 @@ logger.info(
 );
 
 let shutdownRequested = false;
+let interruptSleep: (() => void) | undefined;
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
     logger.info(`Received ${signal}, shutting down`);
     shutdownRequested = true;
+    interruptSleep?.();
   });
 }
 
@@ -112,5 +114,11 @@ function logResult(result: ReconcileResult): void {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    interruptSleep = () => {
+      clearTimeout(timer);
+      resolve();
+    };
+  });
 }

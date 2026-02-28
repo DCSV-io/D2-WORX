@@ -12,8 +12,16 @@
 // patches are applied before module imports are resolved.
 
 import { createLogger } from "@d2/logging";
-import { parseEnvArray, parsePostgresUrl } from "@d2/service-defaults/config";
+import { parseEnvArray, parsePostgresUrl, parseRedisUrl } from "@d2/service-defaults/config";
 import { createCommsService } from "./composition-root.js";
+
+function parseIntStrict(value: string, name: string): number {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`Invalid numeric env var ${name}="${value}" — must be a positive integer`);
+  }
+  return parsed;
+}
 
 const logger = createLogger({ serviceName: "comms-service" });
 
@@ -29,7 +37,9 @@ const config = {
     process.env["ConnectionStrings__d2-rabbitmq"] ??
     process.env.ConnectionStrings__d2_rabbitmq ??
     "",
-  redisUrl: process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis,
+  redisUrl: parseRedisUrl(
+    process.env["ConnectionStrings__d2-redis"] ?? process.env.ConnectionStrings__d2_redis ?? "",
+  ) || undefined,
   grpcPort: parseInt(process.env.GRPC_PORT ?? "5200", 10),
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromAddress: process.env.RESEND_FROM_ADDRESS,
@@ -41,15 +51,18 @@ const config = {
   commsApiKeys: parseEnvArray("COMMS_API_KEYS"),
   jobOptions: process.env.COMMS_APP__DELETEDMESSAGERETENTIONDAYS
     ? {
-        deletedMessageRetentionDays: parseInt(
-          process.env.COMMS_APP__DELETEDMESSAGERETENTIONDAYS,
-          10,
+        deletedMessageRetentionDays: parseIntStrict(
+          process.env.COMMS_APP__DELETEDMESSAGERETENTIONDAYS!,
+          "COMMS_APP__DELETEDMESSAGERETENTIONDAYS",
         ),
-        deliveryHistoryRetentionDays: parseInt(
+        deliveryHistoryRetentionDays: parseIntStrict(
           process.env.COMMS_APP__DELIVERYHISTORYRETENTIONDAYS ?? "365",
-          10,
+          "COMMS_APP__DELIVERYHISTORYRETENTIONDAYS",
         ),
-        lockTtlMs: parseInt(process.env.COMMS_APP__JOBLOCKTTLMS ?? "300000", 10),
+        lockTtlMs: parseIntStrict(
+          process.env.COMMS_APP__JOBLOCKTTLMS ?? "300000",
+          "COMMS_APP__JOBLOCKTTLMS",
+        ),
       }
     : undefined,
 };

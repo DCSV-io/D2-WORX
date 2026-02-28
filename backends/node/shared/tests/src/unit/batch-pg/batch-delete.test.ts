@@ -127,6 +127,24 @@ describe("batchDelete", () => {
     expect(selectBatch).toHaveBeenCalledWith(100);
   });
 
+  it("should throw RangeError when batchSize is zero", async () => {
+    const selectBatch = vi.fn();
+    const deleteBatch = vi.fn();
+
+    await expect(batchDelete(selectBatch, deleteBatch, 0)).rejects.toThrow(RangeError);
+    expect(selectBatch).not.toHaveBeenCalled();
+    expect(deleteBatch).not.toHaveBeenCalled();
+  });
+
+  it("should throw RangeError when batchSize is negative", async () => {
+    const selectBatch = vi.fn();
+    const deleteBatch = vi.fn();
+
+    await expect(batchDelete(selectBatch, deleteBatch, -1)).rejects.toThrow(RangeError);
+    expect(selectBatch).not.toHaveBeenCalled();
+    expect(deleteBatch).not.toHaveBeenCalled();
+  });
+
   it("should handle batchSize of 1 (single item per batch)", async () => {
     const selectBatch = vi
       .fn()

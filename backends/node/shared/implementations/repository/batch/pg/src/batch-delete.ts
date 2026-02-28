@@ -20,6 +20,10 @@ export async function batchDelete<TId>(
   deleteBatch: (ids: TId[]) => Promise<void>,
   batchSize: number,
 ): Promise<number> {
+  if (batchSize <= 0) {
+    throw new RangeError(`batchSize must be positive, got ${batchSize}`);
+  }
+
   let totalDeleted = 0;
 
   for (;;) {

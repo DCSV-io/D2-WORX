@@ -1,5 +1,5 @@
 import * as grpc from "@grpc/grpc-js";
-import type { ServiceKey, ServiceProvider } from "@d2/di";
+import type { ServiceKey, ServiceProvider, ServiceScope } from "@d2/di";
 import type { D2Result } from "@d2/result";
 import { createRpcScope, type RpcScopeOptions } from "./create-rpc-scope.js";
 import { withTraceContext } from "./with-trace-context.js";
@@ -62,8 +62,9 @@ export function handleRpc<TRequest, TResponse, TInput, TOutput>(
   options: HandleRpcOptions<TRequest, TResponse, TInput, TOutput>,
 ): void {
   withTraceContext(call, async () => {
-    const scope = createRpcScope(provider, call, options.scopeOptions);
+    let scope: ServiceScope | undefined;
     try {
+      scope = createRpcScope(provider, call, options.scopeOptions);
       const handler = scope.resolve(options.handlerKey);
       const input = options.mapInput(call.request);
       const result = await handler.handleAsync(input);
@@ -75,7 +76,7 @@ export function handleRpc<TRequest, TResponse, TInput, TOutput>(
         message: err instanceof Error ? err.message : "Unknown error",
       });
     } finally {
-      scope.dispose();
+      scope?.dispose();
     }
   });
 }

@@ -4,6 +4,14 @@ import { createLogger } from "@d2/logging";
 import { parseEnvArray, parsePostgresUrl, parseRedisUrl } from "@d2/service-defaults/config";
 import { createApp } from "./composition-root.js";
 
+function parseIntStrict(value: string, name: string): number {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`Invalid numeric env var ${name}="${value}" — must be a positive integer`);
+  }
+  return parsed;
+}
+
 const logger = createLogger({ serviceName: "auth-service" });
 
 // Aspire injects connection strings in .NET formats (ADO.NET for PG, StackExchange for Redis).
@@ -29,9 +37,18 @@ const config = {
   grpcPort: process.env.AUTH_GRPC_PORT ? parseInt(process.env.AUTH_GRPC_PORT, 10) : undefined,
   jobOptions: process.env.AUTH_APP__SIGNINEVENTRETENTIONDAYS
     ? {
-        signInEventRetentionDays: parseInt(process.env.AUTH_APP__SIGNINEVENTRETENTIONDAYS, 10),
-        invitationRetentionDays: parseInt(process.env.AUTH_APP__INVITATIONRETENTIONDAYS ?? "7", 10),
-        lockTtlMs: parseInt(process.env.AUTH_APP__JOBLOCKTTLMS ?? "300000", 10),
+        signInEventRetentionDays: parseIntStrict(
+          process.env.AUTH_APP__SIGNINEVENTRETENTIONDAYS,
+          "AUTH_APP__SIGNINEVENTRETENTIONDAYS",
+        ),
+        invitationRetentionDays: parseIntStrict(
+          process.env.AUTH_APP__INVITATIONRETENTIONDAYS ?? "7",
+          "AUTH_APP__INVITATIONRETENTIONDAYS",
+        ),
+        lockTtlMs: parseIntStrict(
+          process.env.AUTH_APP__JOBLOCKTTLMS ?? "300000",
+          "AUTH_APP__JOBLOCKTTLMS",
+        ),
       }
     : undefined,
 };

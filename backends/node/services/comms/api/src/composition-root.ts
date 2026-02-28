@@ -165,6 +165,13 @@ export async function createCommsService(config: CommsServiceConfig) {
     logger.warn("No RabbitMQ URL configured — event consumption disabled");
   }
 
+  // Job handlers need distributed locks (Redis). Fail fast if jobs are configured without Redis.
+  if (config.jobOptions && !config.redisUrl) {
+    throw new Error(
+      "Job options are configured but no Redis URL provided. Distributed locks require Redis.",
+    );
+  }
+
   // Optional Redis connection (for distributed cache health check + distributed locks)
   let redis: Redis | undefined;
   if (config.redisUrl) {
