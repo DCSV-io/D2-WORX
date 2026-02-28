@@ -190,7 +190,9 @@ export async function createCommsService(config: CommsServiceConfig) {
   // 6. gRPC server (per-RPC scope via createCommsGrpcService)
   const server = new grpc.Server();
   const grpcService = createCommsGrpcService(provider);
-  const jobsGrpcService = createCommsJobsGrpcService(provider);
+
+  // Job gRPC service requires Redis (distributed locks). Only register when available.
+  const jobsGrpcService = redis ? createCommsJobsGrpcService(provider) : undefined;
 
   if (config.commsApiKeys?.length) {
     const validKeys = new Set(config.commsApiKeys);
@@ -199,14 +201,18 @@ export async function createCommsService(config: CommsServiceConfig) {
       CommsServiceService,
       withApiKeyAuth(grpcService, { validKeys, logger, exempt: publicRpcs }),
     );
-    server.addService(
-      CommsJobServiceService,
-      withApiKeyAuth(jobsGrpcService, { validKeys, logger }),
-    );
+    if (jobsGrpcService) {
+      server.addService(
+        CommsJobServiceService,
+        withApiKeyAuth(jobsGrpcService, { validKeys, logger }),
+      );
+    }
     logger.info(`Comms gRPC API key authentication enabled (${validKeys.size} key(s))`);
   } else if (config.allowUnauthenticated) {
     server.addService(CommsServiceService, grpcService);
-    server.addService(CommsJobServiceService, jobsGrpcService);
+    if (jobsGrpcService) {
+      server.addService(CommsJobServiceService, jobsGrpcService);
+    }
     logger.warn(
       "No COMMS_API_KEYS configured — gRPC API key authentication disabled (allowUnauthenticated=true)",
     );
@@ -214,6 +220,10 @@ export async function createCommsService(config: CommsServiceConfig) {
     throw new Error(
       "COMMS_API_KEYS not configured. Set COMMS_API_KEYS environment variable or pass allowUnauthenticated=true for local development.",
     );
+  }
+
+  if (!jobsGrpcService) {
+    logger.warn("No Redis configured — job gRPC service disabled (distributed locks unavailable)");
   }
 
   await new Promise<void>((resolve, reject) => {

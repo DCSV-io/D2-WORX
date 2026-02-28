@@ -21,6 +21,20 @@ const logger = createLogger({ serviceName: "dkron-mgr" });
 const INITIAL_BACKOFF_MS = 1_000;
 const MAX_BACKOFF_MS = 30_000;
 
+// ── Shutdown support ─────────────────────────────────────────────────────
+// Declared before waitForHealth() so sleep() can reference interruptSleep
+// during health-check retries without hitting temporal dead zone.
+let shutdownRequested = false;
+let interruptSleep: (() => void) | undefined;
+
+for (const signal of ["SIGINT", "SIGTERM"] as const) {
+  process.on(signal, () => {
+    logger.info(`Received ${signal}, shutting down`);
+    shutdownRequested = true;
+    interruptSleep?.();
+  });
+}
+
 // ── Config ───────────────────────────────────────────────────────────────
 const config = parseConfig(logger);
 logConfig(config, logger);
@@ -38,17 +52,6 @@ await runReconciliation();
 logger.info(
   `Starting reconciliation loop (interval: ${config.reconcileIntervalMs}ms)`,
 );
-
-let shutdownRequested = false;
-let interruptSleep: (() => void) | undefined;
-
-for (const signal of ["SIGINT", "SIGTERM"] as const) {
-  process.on(signal, () => {
-    logger.info(`Received ${signal}, shutting down`);
-    shutdownRequested = true;
-    interruptSleep?.();
-  });
-}
 
 while (!shutdownRequested) {
   await sleep(config.reconcileIntervalMs);
