@@ -150,7 +150,7 @@ Configuration for scheduled job handlers, provided via `addAuthApp()` (defaults 
 | -------------------------- | -------- | -------- | --------------------------------------------------- |
 | `signInEventRetentionDays` | `number` | `90`     | Days to retain sign-in events before purge          |
 | `invitationRetentionDays`  | `number` | `7`      | Days past expiry to retain invitations before purge |
-| `lockTtlMs`                | `number` | `300000` | Distributed lock TTL in milliseconds (5 min)        |
+| `jobLockTtlMs`             | `number` | `300000` | Distributed lock TTL in milliseconds (5 min)        |
 
 ## DI Registration
 

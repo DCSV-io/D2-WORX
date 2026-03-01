@@ -47,7 +47,7 @@ export class RunInvitationCleanup extends BaseHandler<
     const lockResult = await this.acquireLock.handleAsync({
       key: LOCK_KEY,
       lockId,
-      expirationMs: this.options.lockTtlMs,
+      expirationMs: this.options.jobLockTtlMs,
     });
 
     if (!lockResult.success || !lockResult.data?.acquired) {
