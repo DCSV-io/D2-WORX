@@ -11,7 +11,7 @@
     "@d2/dkron-mgr": "workspace:*",
     "@d2/logging": "workspace:*",
     "@d2/testing": "workspace:*",
-    "testcontainers": "10.18.0",
+    "testcontainers": "11.12.0",
     "vitest": "3.2.4"
   }
 }

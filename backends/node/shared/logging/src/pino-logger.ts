@@ -13,23 +13,28 @@ export class PinoLogger implements ILogger {
   }
 
   debug(msg: string, ...args: unknown[]): void {
-    this.logger.debug(msg, ...args);
+    if (args.length > 0) this.logger.debug({ args }, msg);
+    else this.logger.debug(msg);
   }
 
   info(msg: string, ...args: unknown[]): void {
-    this.logger.info(msg, ...args);
+    if (args.length > 0) this.logger.info({ args }, msg);
+    else this.logger.info(msg);
   }
 
   warn(msg: string, ...args: unknown[]): void {
-    this.logger.warn(msg, ...args);
+    if (args.length > 0) this.logger.warn({ args }, msg);
+    else this.logger.warn(msg);
   }
 
   error(msg: string, ...args: unknown[]): void {
-    this.logger.error(msg, ...args);
+    if (args.length > 0) this.logger.error({ args }, msg);
+    else this.logger.error(msg);
   }
 
   fatal(msg: string, ...args: unknown[]): void {
-    this.logger.fatal(msg, ...args);
+    if (args.length > 0) this.logger.fatal({ args }, msg);
+    else this.logger.fatal(msg);
   }
 
   child(bindings: Record<string, unknown>): ILogger {

@@ -665,19 +665,19 @@ Upgrade all `@opentelemetry/*` packages together. These span `@d2/service-defaul
 
 ---
 
-### Step 8 — Node.js Minor Breaking Changes
+### ~~Step 8 — Node.js Minor Breaking Changes~~ DONE
 
 **Effort: ~2 hours. Risk: Medium. Commit separately.**
 
-| # | Package | Current → Target | Migration Notes |
-| - | ------- | ---------------- | --------------- |
-| 8a | `pino` | 9.6.0 → **10.3.1** | Only breaks Node 18 (we're on 24). Simple bump. |
-| 8b | `import-in-the-middle` | 1.14.4 → **3.0.0** | Internal CJS→ESM. Public API unchanged. Test OTel after. |
-| 8c | `isomorphic-dompurify` | 2.36.0 → **3.0.0** | ESM named exports. Remove `@types/dompurify` if present. Test comms email rendering. Consider using `clearWindow()` for long-running service. |
-| 8d | `testcontainers` + all `@testcontainers/*` | 10.18.0 → **11.12.0** | Drops old Node.js. Node 24 satisfies. Run integration tests. |
-| 8e | `eslint` + `@eslint/js` | 9.39.2 → **10.0.2** / **10.0.1** | Requires Node ≥ 20.19. Already on flat config. Config lookup starts from file dir (monorepo root config should work). |
+| # | Package | Current → Target | Migration Notes | Status |
+| - | ------- | ---------------- | --------------- | ------ |
+| ~~8a~~ | ~~`pino`~~ | ~~9.6.0 → **10.3.1**~~ | ~~Log method signatures tightened. Fixed PinoLogger to use merging-object pattern `(obj, msg)` when args present.~~ | ~~DONE~~ |
+| ~~8b~~ | ~~`import-in-the-middle`~~ | ~~1.14.4 → **3.0.0**~~ | ~~Internal CJS→ESM. Public API unchanged.~~ | ~~DONE~~ |
+| ~~8c~~ | ~~`isomorphic-dompurify`~~ | ~~2.36.0 → **3.0.0**~~ | ~~Default import still works. No `@types/dompurify` to remove.~~ | ~~DONE~~ |
+| ~~8d~~ | ~~`testcontainers` + all `@testcontainers/*`~~ | ~~10.18.0 → **11.12.0**~~ | ~~All integration tests pass (12 files using containers).~~ | ~~DONE~~ |
+| ~~8e~~ | ~~`eslint` + `@eslint/js`~~ | ~~9.39.2 → **10.0.2** / **10.0.1**~~ | ~~Flat config works unchanged. 1 stale eslint-disable warning (non-blocking).~~ | ~~DONE~~ |
 
-**Validation:** `pnpm install`. `pnpm vitest run` (unit tests). `pnpm vitest run --project auth-tests` (integration tests — validates testcontainers). Lint check: `pnpm eslint .`.
+**Validation:** ~~`pnpm install`. `pnpm vitest run`. `pnpm vitest run --project auth-tests`. Lint check: `pnpm eslint .`.~~ **All verified.** Build clean. Tests: 2,551 passed. ESLint 10: 0 errors, 1 warning.
 
 ---
 
