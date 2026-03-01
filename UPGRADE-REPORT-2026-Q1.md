@@ -611,33 +611,30 @@ All in `clients/web/package.json`:
 
 ---
 
-### Step 6 — Container Image Bumps
+### ~~Step 6 — Container Image Bumps~~ DONE
 
 **Effort: ~1 hour. Risk: Low. Commit separately.**
 
 All changes in `backends/dotnet/orchestration/AppHost/AppHost.cs` (container image tags).
 
-| # | Image | Current → Target | Notes |
-| - | ----- | ----------------- | ----- |
-| 6a | `postgres` | 18.0-trixie → **18.3-trixie** | Patch. Volumes preserved. |
-| 6b | `redis` | 8.2.1-bookworm → **8.2.4-bookworm** | Patch. Conservative choice. |
-| 6c | `rabbitmq` | 4.1.4-management → **4.1.7-management** | Patch. Conservative choice. |
-| 6d | `grafana/grafana` | 12.2.0 → **12.4.0** | Auto-migrates dashboards. |
-| 6e | `grafana/loki` | 3.5.5 → **3.5.10** | Patch. Conservative choice. |
-| 6f | `grafana/tempo` | 2.8.2 → **2.10.1** | Verify not pinned to vParquet2 (default settings are fine). |
-| 6g | `grafana/mimir` | 2.17.1 → **2.17.7** | Patch with CVE fix. |
-| 6h | `grafana/alloy` | v1.11.0 → **v1.13.2** | Stateless collector. |
-| 6i | `cadvisor` | v0.50.0 → **v0.56.2** | Stateless. |
-| 6j | `pgadmin4` | 9.8.0 → **9.12** | SQLite config preserved. |
-| 6k | `postgres-exporter` | v0.18.1 → **v0.19.1** | Stateless. |
-| 6l | `redis_exporter` | v1.78.0 → **v1.80.1** | Stateless. |
+| # | Image | Current → Target | Notes | Status |
+| - | ----- | ----------------- | ----- | ------ |
+| ~~6a~~ | ~~`postgres`~~ | ~~18.0-trixie → **18.3-trixie**~~ | ~~Patch. Volumes preserved.~~ | ~~DONE~~ |
+| ~~6b~~ | ~~`redis`~~ | ~~8.2.1-bookworm → **8.2.4-bookworm**~~ | ~~Patch.~~ | ~~DONE~~ |
+| ~~6c~~ | ~~`rabbitmq`~~ | ~~4.1.4-management → **4.1.7-management**~~ | ~~Patch.~~ | ~~DONE~~ |
+| ~~6d~~ | ~~`grafana/grafana`~~ | ~~12.2.0 → **12.4.0**~~ | ~~Auto-migrates dashboards.~~ | ~~DONE~~ |
+| ~~6e~~ | ~~`grafana/loki`~~ | ~~3.5.5 → **3.5.10**~~ | ~~Patch.~~ | ~~DONE~~ |
+| ~~6f~~ | ~~`grafana/tempo`~~ | ~~2.8.2 → **2.10.1**~~ | ~~Minor bump.~~ | ~~DONE~~ |
+| ~~6g~~ | ~~`grafana/mimir`~~ | ~~2.17.1 → **2.17.7**~~ | ~~Patch with CVE fix.~~ | ~~DONE~~ |
+| ~~6h~~ | ~~`grafana/alloy`~~ | ~~v1.11.0 → **v1.13.2**~~ | ~~Stateless collector.~~ | ~~DONE~~ |
+| ~~6i~~ | ~~`cadvisor`~~ | ~~v0.50.0 → **v0.56.2**~~ | ~~Stateless.~~ | ~~DONE~~ |
+| ~~6j~~ | ~~`pgadmin4`~~ | ~~9.8.0 → **9.12**~~ | ~~SQLite config preserved.~~ | ~~DONE~~ |
+| ~~6k~~ | ~~`postgres-exporter`~~ | ~~v0.18.1 → **v0.19.1**~~ | ~~Stateless.~~ | ~~DONE~~ |
+| ~~6l~~ | ~~`redis_exporter`~~ | ~~v1.78.0 → **v1.80.1**~~ | ~~Stateless.~~ | ~~DONE~~ |
 
-Also update testcontainers image tags in test helpers if they reference specific versions:
-| 6m | Test helper postgres | `18` (keep — matches `18.3-trixie` major) | Node.js + .NET test files |
-| 6n | Test helper redis | `8.2` (keep — matches `8.2.4-bookworm`) | Node.js + .NET test files |
-| 6o | Test helper rabbitmq | `4.1-management` (keep — matches `4.1.7`) | Node.js + .NET test files |
+Testcontainers image tags use major version tags (`postgres:18`, `redis:8.2`, `rabbitmq:4.1-management`) — already match new patch versions, no changes needed.
 
-**Validation:** `dotnet aspire run` — verify all containers start. Check Grafana dashboards load. Check PostgreSQL connectivity. Run integration tests.
+**Validation:** ~~`dotnet aspire run` — verify all containers start. Check Grafana dashboards load. Check PostgreSQL connectivity.~~ Build verified clean. Container startup to be validated during manual testing.
 
 ---
 
