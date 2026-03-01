@@ -107,7 +107,7 @@ var mimir = builder.AddContainer("d2-mimir", "grafana/mimir", "2.17.7")
     .WithLifetime(ContainerLifetime.Persistent);
 
 // cAdvisor - Container Resource Monitoring.
-var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "v0.56.2")
+var cAdvisor = builder.AddContainer("d2-cadvisor", "ghcr.io/google/cadvisor", "v0.56.2")
     .WithContainerName("d2-cadvisor")
     .WithIconName("ChartMultiple")
     .WithHttpEndpoint(port: 8081, targetPort: 8080, name: "cadvisor-http", isProxied: false)
@@ -198,6 +198,7 @@ var db = builder.AddPostgres(
     .WithContainerName("d2-postgres")
     .WithIconName("DatabaseStack")
     .WithImageTag("18.3-trixie")
+    .WithEnvironment("PGDATA", "/var/lib/postgresql/data")
     .WithDataVolume("d2-postgres-data")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithPgAdmin(x =>
