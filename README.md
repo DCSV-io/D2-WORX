@@ -18,7 +18,7 @@ Summary:
 
 ### Getting started with local dev environment:
 
-1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.0 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.7.0+](https://nodejs.org/en/download), [PNPM 10.15.1+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
+1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK (10.0.103+)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.1 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.14.0+](https://nodejs.org/en/download), [PNPM 10.30.3+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
 2. Copy `.env.local.example` to `.env.local` in the project root and fill in your values (credentials for PostgreSQL, Redis, RabbitMQ, MinIO, Grafana, and your IPInfo API token). Env vars use `SECTION_PROPERTY` naming — `D2Env` auto-maps them to .NET configuration paths.
 3. Edit any `appsettings.*.json` files as needed.
 4. Run the AppHost project either via CLI or IDE of your choice.
@@ -349,9 +349,9 @@ While WORX itself will be a commercial product, this repository exists (for now,
 
 #### Infrastructure & Orchestration
 
-![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.0-512BD4?logo=dotnet)
+![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.1-512BD4?logo=dotnet)
 ![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)
-![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
+![pnpm](https://img.shields.io/badge/pnpm-10.30-F69220?logo=pnpm)
 
 #### Frontend
 

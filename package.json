@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.0.0",
-    "pnpm": ">=10.0.0"
+    "node": ">=24.0.0",
+    "pnpm": ">=10.15.0"
   },
   "scripts": {
     "build": "pnpm run format && pnpm run lint && pnpm -r run build",
