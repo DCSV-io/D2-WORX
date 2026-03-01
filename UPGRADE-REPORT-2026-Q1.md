@@ -36,8 +36,8 @@
 
 1. ~~**.NET SDK 10.0.100** needs immediate update to **10.0.103** — includes fix for **CVE-2026-21218** (security feature bypass vulnerability).~~ **DONE** — `global.json` pins SDK 10.0.103.
 2. ~~**Node.js 22 is EOL** (January 12, 2026). The `engines` field still allows `>=22.0.0`. Tighten to `>=24.0.0` and ensure Node 24.14.0 LTS is installed.~~ **DONE** — engines updated, Node 24.14.0 installed.
-3. **`Microsoft.Extensions.Caching.Memory`** is on `10.0.0-rc.2` — a release candidate on a GA package. Must fix.
-4. **gRPC packages** are on `2.76.0-pre1` — stable `2.76.0` is available. Must fix.
+3. ~~**`Microsoft.Extensions.Caching.Memory`** is on `10.0.0-rc.2` — a release candidate on a GA package. Must fix.~~ **DONE** — bumped to 10.0.3.
+4. ~~**gRPC packages** are on `2.76.0-pre1` — stable `2.76.0` is available. Must fix.~~ **DONE** — all 3 gRPC packages bumped to 2.76.0.
 5. ~~**CommunityToolkit Aspire extension** is on beta — stable `13.1.1` now available. Must fix.~~ **DONE** — bumped to 13.1.1 with Aspire 13.1.2 upgrade.
 6. **MinIO is archived.** The project was archived on GitHub on 2026-02-13. Current pinned images work, but no future updates. Evaluate alternatives (Garage, RustFS, SeaweedFS) as a separate effort.
 7. **Zod split versions** — backend on `3.25.76`, web on `4.1.11`. Unification to Zod 4 requires schema migration across all handlers.
@@ -129,14 +129,14 @@
 
 ## .NET Packages
 
-### Tier 1 — Fix Immediately (pre-release → stable)
+### ~~Tier 1 — Fix Immediately (pre-release → stable)~~ ALL DONE
 
 | Package | Current | Latest | Risk | Notes |
 | ------- | ------- | ------ | ---- | ----- |
-| `Microsoft.Extensions.Caching.Memory` | 10.0.0-rc.2.25502.107 | **10.0.3** | NONE | RC on a GA package — leftover from .NET 10 preview. Just bump version. |
-| `Grpc.AspNetCore` | 2.76.0-pre1 | **2.76.0** | NONE | Pre-release → same-version stable. No API changes. |
-| `Grpc.Net.Client` | 2.76.0-pre1 | **2.76.0** | NONE | Same as above. |
-| `Grpc.Net.ClientFactory` | 2.76.0-pre1 | **2.76.0** | NONE | Same as above. |
+| ~~`Microsoft.Extensions.Caching.Memory`~~ | ~~10.0.0-rc.2.25502.107~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~RC on a GA package — leftover from .NET 10 preview. Just bump version.~~ **DONE** |
+| ~~`Grpc.AspNetCore`~~ | ~~2.76.0-pre1~~ | ~~**2.76.0**~~ | ~~NONE~~ | ~~Pre-release → same-version stable. No API changes.~~ **DONE** |
+| ~~`Grpc.Net.Client`~~ | ~~2.76.0-pre1~~ | ~~**2.76.0**~~ | ~~NONE~~ | ~~Same as above.~~ **DONE** |
+| ~~`Grpc.Net.ClientFactory`~~ | ~~2.76.0-pre1~~ | ~~**2.76.0**~~ | ~~NONE~~ | ~~Same as above.~~ **DONE** |
 | ~~`CommunityToolkit.Aspire.Hosting.JavaScript.Extensions`~~ | ~~13.0.0-beta.444~~ | ~~**13.1.1**~~ | ~~NONE~~ | ~~Beta → stable. No API changes.~~ **DONE** |
 
 ### Tier 2 — Standard Upgrades (low risk)
@@ -144,20 +144,20 @@
 | Package | Current | Latest | Risk | Notes |
 | ------- | ------- | ------ | ---- | ----- |
 | ~~`Aspire.Hosting.*` (all 8 packages)~~ | ~~13.0.0~~ | ~~**13.1.2**~~ | ~~LOW~~ | ~~Verify Redis connection string in dev — 13.1 may add `ssl=true` by default.~~ **DONE** |
-| `Microsoft.EntityFrameworkCore` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.EntityFrameworkCore.Design` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.EntityFrameworkCore.InMemory` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Npgsql` | 10.0.0 | **10.0.1** | NONE | Bug fix patch. |
+| `Microsoft.EntityFrameworkCore` | 10.0.0 | **10.0.3** | — | **HELD** — `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins `EFCore.Relational` to 10.0.0. Bumping causes MSB3277 assembly conflict. Wait for Npgsql EF provider 10.0.x. |
+| `Microsoft.EntityFrameworkCore.Design` | 10.0.0 | **10.0.3** | — | **HELD** — same as above. |
+| `Microsoft.EntityFrameworkCore.InMemory` | 10.0.0 | **10.0.3** | — | **HELD** — same as above. |
+| ~~`Npgsql`~~ | ~~10.0.0~~ | ~~**10.0.1**~~ | ~~NONE~~ | ~~Bug fix patch.~~ **DONE** |
 | `Npgsql.EntityFrameworkCore.PostgreSQL` | 10.0.0 | **10.0.0** | — | Already at latest. |
-| `Microsoft.AspNetCore.Authentication.JwtBearer` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.AspNetCore.OpenApi` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.Extensions.Http.Resilience` | 10.0.0 | **10.3.0** | LOW | 3 minor bumps. Additive features, no breaking changes. |
-| `Microsoft.Extensions.ServiceDiscovery` | 10.0.0 | **10.3.0** | LOW | Same as above. |
-| `Microsoft.Extensions.Options.ConfigurationExtensions` | 10.0.2 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.Extensions.DependencyInjection.Abstractions` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.Extensions.Hosting.Abstractions` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.Extensions.Logging.Abstractions` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
-| `Microsoft.Extensions.Configuration` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
+| ~~`Microsoft.AspNetCore.Authentication.JwtBearer`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
+| ~~`Microsoft.AspNetCore.OpenApi`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
+| ~~`Microsoft.Extensions.Http.Resilience`~~ | ~~10.0.0~~ | ~~**10.3.0**~~ | ~~LOW~~ | ~~3 minor bumps. Additive features, no breaking changes.~~ **DONE** |
+| ~~`Microsoft.Extensions.ServiceDiscovery`~~ | ~~10.0.0~~ | ~~**10.3.0**~~ | ~~LOW~~ | ~~Same as above.~~ **DONE** |
+| ~~`Microsoft.Extensions.Options.ConfigurationExtensions`~~ | ~~10.0.2~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
+| ~~`Microsoft.Extensions.DependencyInjection.Abstractions`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
+| ~~`Microsoft.Extensions.Hosting.Abstractions`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
+| ~~`Microsoft.Extensions.Logging.Abstractions`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
+| ~~`Microsoft.Extensions.Configuration`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
 | `Grpc.Tools` | 2.76.0 | **2.78.0** | LOW | Proto compiler update. Regenerate protos after upgrade. |
 | `Google.Protobuf` | 3.33.1 | **3.34.0** | LOW | Minor bump. Regenerate protos. |
 | `StackExchange.Redis` | 2.9.32 | **2.11.8** | LOW | Check for `StringSet` call ambiguity after rebuild. New features: Redis 8.4 CAS/CAD operations. |
@@ -173,13 +173,13 @@
 | `OpenTelemetry.Exporter.Prometheus.AspNetCore` | 1.14.0-beta.1 | **1.15.0-beta.1** | LOW | Beta bump. Specify exact version. |
 | `OpenTelemetry.Instrumentation.GrpcNetClient` | 1.14.0-beta.1 | **1.15.0-beta.1** | LOW | Beta bump. |
 | `OpenTelemetry.Instrumentation.Process` | 1.14.0-beta.2 | **1.15.0-beta.1** | LOW | Beta bump. |
-| `Testcontainers.PostgreSql` | 4.9.0 | **4.10.0** | LOW | Minor bump. |
-| `Testcontainers.RabbitMq` | 4.9.0 | **4.10.0** | LOW | Minor bump. |
-| `Testcontainers.Redis` (Geo.Tests) | 4.9.0 | **4.10.0** | LOW | Minor bump. |
-| `Testcontainers.Redis` (Tests) | **4.8.1** | **4.10.0** | LOW | **Also fixes version inconsistency** — was 4.8.1 vs 4.9.0 in Geo.Tests. |
-| `xunit.v3` | 3.2.0 | **3.2.2** | NONE | Bug fix patches. |
-| `Microsoft.NET.Test.Sdk` | 18.0.1 | **18.3.0** | LOW | Minor bump. |
-| `JetBrains.Annotations` | 2025.2.2 | **2025.2.4** | NONE | Patch. Added code signing. |
+| ~~`Testcontainers.PostgreSql`~~ | ~~4.9.0~~ | ~~**4.10.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`Testcontainers.RabbitMq`~~ | ~~4.9.0~~ | ~~**4.10.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`Testcontainers.Redis` (Geo.Tests)~~ | ~~4.9.0~~ | ~~**4.10.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`Testcontainers.Redis` (Tests)~~ | ~~**4.8.1**~~ | ~~**4.10.0**~~ | ~~LOW~~ | ~~**Also fixes version inconsistency** — was 4.8.1 vs 4.9.0 in Geo.Tests.~~ **DONE** |
+| ~~`xunit.v3`~~ | ~~3.2.0~~ | ~~**3.2.2**~~ | ~~NONE~~ | ~~Bug fix patches.~~ **DONE** |
+| ~~`Microsoft.NET.Test.Sdk`~~ | ~~18.0.1~~ | ~~**18.3.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`JetBrains.Annotations`~~ | ~~2025.2.2~~ | ~~**2025.2.4**~~ | ~~NONE~~ | ~~Patch. Added code signing.~~ **DONE** |
 
 ### Tier 3 — Needs Investigation
 
@@ -503,30 +503,30 @@ Key breaking changes:
 
 ---
 
-### Step 2 — .NET Pre-release Cleanup + Servicing Patches (IN PROGRESS)
+### ~~Step 2 — .NET Pre-release Cleanup + Servicing Patches~~ DONE
 
 **Effort: ~1 hour. Risk: None. Commit separately.**
 
-Fix pre-release packages on GA products and apply all .NET servicing patches. Edit `.csproj` files directly.
+~~Fix pre-release packages on GA products and apply all .NET servicing patches. Edit `.csproj` files directly.~~
 
 | # | Action | Files to Edit | Status |
 | - | ------ | ------------- | ------ |
-| 2a | `Microsoft.Extensions.Caching.Memory` 10.0.0-rc.2 → **10.0.3** | `InMemoryCache.Default.csproj` | |
-| 2b | `Grpc.AspNetCore` 2.76.0-pre1 → **2.76.0** | `Geo.API.csproj` | |
-| 2c | `Grpc.Net.Client` 2.76.0-pre1 → **2.76.0** | `Protos.DotNet.csproj` | |
-| 2d | `Grpc.Net.ClientFactory` 2.76.0-pre1 → **2.76.0** | `REST.csproj`, `Geo.Client.csproj` | |
+| ~~2a~~ | ~~`Microsoft.Extensions.Caching.Memory` 10.0.0-rc.2 → **10.0.3**~~ | ~~`InMemoryCache.Default.csproj`~~ | ~~DONE~~ |
+| ~~2b~~ | ~~`Grpc.AspNetCore` 2.76.0-pre1 → **2.76.0**~~ | ~~`Geo.API.csproj`~~ | ~~DONE~~ |
+| ~~2c~~ | ~~`Grpc.Net.Client` 2.76.0-pre1 → **2.76.0**~~ | ~~`Protos.DotNet.csproj`~~ | ~~DONE~~ |
+| ~~2d~~ | ~~`Grpc.Net.ClientFactory` 2.76.0-pre1 → **2.76.0**~~ | ~~`REST.csproj`, `Geo.Client.csproj`~~ | ~~DONE~~ |
 | ~~2e~~ | ~~`CommunityToolkit.Aspire.Hosting.JavaScript.Extensions` beta → **13.1.1**~~ | ~~`AppHost.csproj`~~ | ~~DONE~~ |
 | ~~2f~~ | ~~All `Aspire.*` packages 13.0.0 → **13.1.2**~~ | ~~`AppHost.csproj`, `ServiceDefaults.csproj`~~ | ~~DONE~~ |
-| 2f+ | `Aspire.Hosting.Testing` 13.0.0 → **13.1.2** | `Tests.csproj`, `Geo.Tests.csproj` | |
-| 2g | All `Microsoft.EntityFrameworkCore.*` → **10.0.3** | `Geo.Infra.csproj`, `Batch.Pg.csproj`, `Transactions.Pg.csproj`, `Tests.csproj` | |
-| 2h | All `Microsoft.AspNetCore.*` → **10.0.3** | `REST.csproj` | |
-| 2i | All `Microsoft.Extensions.*` → **10.0.3** / **10.3.0** | Multiple shared `.csproj` files | |
-| 2j | `Npgsql` 10.0.0 → **10.0.1** | `Errors.Pg.csproj` | |
-| 2k | Fix `Testcontainers.Redis` inconsistency + all `Testcontainers.*` → **4.10.0** | `Tests.csproj` (was 4.8.1), `Geo.Tests.csproj` | |
-| 2l | `xunit.v3` → **3.2.2**, `Microsoft.NET.Test.Sdk` → **18.3.0** | `Geo.Tests.csproj`, `Tests.csproj` | |
-| 2m | `JetBrains.Annotations` → **2025.2.4** | `Utilities.csproj`, `Geo.Tests.csproj`, `Tests.csproj` | |
+| ~~2f+~~ | ~~`Aspire.Hosting.Testing` 13.0.0 → **13.1.2**~~ | ~~`Tests.csproj`, `Geo.Tests.csproj`~~ | ~~DONE~~ |
+| ~~2g~~ | ~~All `Microsoft.EntityFrameworkCore.*` → **10.0.3**~~ | — | ~~HELD~~ — `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins EF Core Relational to 10.0.0. Bumping EF Core causes assembly version conflict. Stay at 10.0.0 until Npgsql EF provider releases 10.0.x. |
+| ~~2h~~ | ~~All `Microsoft.AspNetCore.*` → **10.0.3**~~ | ~~`REST.csproj`~~ | ~~DONE~~ |
+| ~~2i~~ | ~~All `Microsoft.Extensions.*` → **10.0.3** / **10.3.0**~~ | ~~Multiple shared `.csproj` files~~ | ~~DONE~~ |
+| ~~2j~~ | ~~`Npgsql` 10.0.0 → **10.0.1**~~ | ~~`Errors.Pg.csproj`~~ | ~~DONE~~ |
+| ~~2k~~ | ~~Fix `Testcontainers.Redis` inconsistency + all `Testcontainers.*` → **4.10.0**~~ | ~~`Tests.csproj` (was 4.8.1), `Geo.Tests.csproj`~~ | ~~DONE~~ |
+| ~~2l~~ | ~~`xunit.v3` → **3.2.2**, `Microsoft.NET.Test.Sdk` → **18.3.0**~~ | ~~`Geo.Tests.csproj`, `Tests.csproj`~~ | ~~DONE~~ |
+| ~~2m~~ | ~~`JetBrains.Annotations` → **2025.2.4**~~ | ~~`Utilities.csproj`, `Geo.Tests.csproj`, `Tests.csproj`~~ | ~~DONE~~ |
 
-**Validation:** `dotnet build D2.sln` succeeds. `dotnet test` passes. Check Aspire Redis connectivity in dev (known 13.1 `ssl=true` issue).
+**Validation:** ~~`dotnet build D2.sln` succeeds. `dotnet test` passes.~~ **All verified.** Build: 0 warnings, 0 errors. Tests: 1,528 passed (798 Geo + 730 Shared).
 
 ---
 
