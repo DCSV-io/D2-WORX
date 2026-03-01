@@ -184,6 +184,14 @@ export {
   JobExecutionData as JobExecutionDataFns,
 } from "./generated/common/v1/jobs.js";
 
+// Auth service — client/server
+export type { AuthServiceClient, AuthServiceServer } from "./generated/auth/v1/auth.js";
+
+export {
+  AuthServiceClient as AuthServiceClientCtor,
+  AuthServiceService,
+} from "./generated/auth/v1/auth.js";
+
 // Auth job service
 export type { AuthJobServiceClient, AuthJobServiceServer } from "./generated/auth/v1/auth_jobs.js";
 

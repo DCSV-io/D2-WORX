@@ -61,8 +61,9 @@ import {
   DEFAULT_AUTH_JOB_OPTIONS,
   type AuthJobOptions,
 } from "@d2/auth-app";
-import { AuthJobServiceService } from "@d2/protos";
+import { AuthServiceService, AuthJobServiceService } from "@d2/protos";
 import { withApiKeyAuth } from "@d2/service-defaults/grpc";
+import { createAuthGrpcService } from "./services/auth-grpc-service.js";
 import { createAuthJobsGrpcService } from "./services/auth-jobs-grpc-service.js";
 import { createCorsMiddleware } from "./middleware/cors.js";
 import { createSessionMiddleware } from "./middleware/session.js";
@@ -80,7 +81,7 @@ import { createAuthRoutes } from "./routes/auth-routes.js";
 import { createEmulationRoutes } from "./routes/emulation-routes.js";
 import { createOrgContactRoutes } from "./routes/org-contact-routes.js";
 import { createInvitationRoutes } from "./routes/invitation-routes.js";
-import { createHealthRoutes } from "./routes/health.js";
+
 
 /**
  * Optional overrides for the composition root.
@@ -450,9 +451,6 @@ export async function createApp(
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);
 
-  // Health (no auth required)
-  app.route("/", createHealthRoutes(provider));
-
   // BetterAuth routes (handles its own auth)
   // Fingerprint + AsyncLocalStorage for JWT `fp` claim
   const authApp = new Hono();
@@ -489,18 +487,29 @@ export async function createApp(
     });
   }
 
-  // gRPC server for job RPCs (Auth → gateway communication)
+  // gRPC server for AuthService + AuthJobService (health check + job RPCs)
   let grpcServer: grpc.Server | undefined;
   if (config.grpcPort) {
     grpcServer = new grpc.Server();
+    const authGrpcService = createAuthGrpcService(provider);
     const jobsGrpcService = createAuthJobsGrpcService(provider);
+    const publicRpcs = new Set(["checkHealth"]);
 
     if (config.authApiKeys?.length) {
+      grpcServer.addService(
+        AuthServiceService,
+        withApiKeyAuth(authGrpcService, {
+          validKeys: new Set(config.authApiKeys),
+          logger,
+          exempt: publicRpcs,
+        }),
+      );
       grpcServer.addService(
         AuthJobServiceService,
         withApiKeyAuth(jobsGrpcService, { validKeys: new Set(config.authApiKeys), logger }),
       );
     } else {
+      grpcServer.addService(AuthServiceService, authGrpcService);
       grpcServer.addService(AuthJobServiceService, jobsGrpcService);
     }
 

@@ -7,9 +7,8 @@
 namespace D2.Gateways.REST.Endpoints;
 
 using System.Diagnostics;
-using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using D2.Services.Protos.Auth.V1;
 using D2.Services.Protos.Common.V1;
 using D2.Services.Protos.Comms.V1;
 using D2.Services.Protos.Geo.V1;
@@ -33,8 +32,8 @@ public static class HealthEndpoints
     extension(IServiceCollection services)
     {
         /// <summary>
-        /// Registers gRPC clients and HTTP clients needed for the health endpoint.
-        /// Geo and Comms use gRPC; Auth uses HTTP (no gRPC server).
+        /// Registers gRPC clients needed for the health endpoint.
+        /// All services (Geo, Comms, Auth) use gRPC.
         /// </summary>
         ///
         /// <param name="configuration">
@@ -56,18 +55,15 @@ public static class HealthEndpoints
                 });
             }
 
-            // Auth HTTP client (Auth is HTTP-only, no gRPC yet).
-            services.AddHttpClient("health-auth", client =>
+            // Auth gRPC client (checkHealth is exempt from API key auth).
+            var authGrpcAddress = configuration["services:d2-auth:auth-grpc:0"];
+            if (!string.IsNullOrWhiteSpace(authGrpcAddress))
             {
-                var address = configuration["services:d2-auth:auth-http:0"]
-                              ?? configuration["services:d2-auth:http:0"];
-                if (!string.IsNullOrWhiteSpace(address))
+                services.AddGrpcClient<AuthService.AuthServiceClient>(o =>
                 {
-                    client.BaseAddress = new Uri(address);
-                }
-
-                client.Timeout = TimeSpan.FromSeconds(5);
-            });
+                    o.Address = new Uri(authGrpcAddress);
+                });
+            }
 
             return services;
         }
@@ -109,7 +105,7 @@ public static class HealthEndpoints
     private static async Task<IResult> CheckAllHealthAsync(
         GeoService.GeoServiceClient geoClient,
         CommsService.CommsServiceClient commsClient,
-        IHttpClientFactory httpClientFactory,
+        AuthService.AuthServiceClient authClient,
         IRead.IPingHandler cachePingHandler,
         CancellationToken ct)
     {
@@ -119,7 +115,7 @@ public static class HealthEndpoints
         // Fan out to all services + gateway cache in parallel.
         var geoTask = CheckGrpcServiceAsync(geoClient, "geo", ct);
         var commsTask = CheckGrpcServiceAsync(commsClient, "comms", ct);
-        var authTask = CheckAuthServiceAsync(httpClientFactory, ct);
+        var authTask = CheckGrpcServiceAsync(authClient, "auth", ct);
         var cacheTask = CheckGatewayCacheAsync(cachePingHandler, ct);
 
         await Task.WhenAll(geoTask, authTask, commsTask, cacheTask);
@@ -174,9 +170,7 @@ public static class HealthEndpoints
     }
 
     /// <summary>
-    /// Calls a gRPC service's CheckHealth RPC and returns the mapped response.
-    /// Works for any service whose client has a CheckHealthAsync method
-    /// (Geo, Comms — both implement the CheckHealth RPC).
+    /// Calls the Geo gRPC service's CheckHealth RPC and returns the mapped response.
     /// </summary>
     private static async Task<object> CheckGrpcServiceAsync(
         GeoService.GeoServiceClient client,
@@ -274,6 +268,55 @@ public static class HealthEndpoints
     }
 
     /// <summary>
+    /// Calls the Auth gRPC service's CheckHealth RPC and returns the mapped response.
+    /// </summary>
+    private static async Task<object> CheckGrpcServiceAsync(
+        AuthService.AuthServiceClient client,
+        string serviceName,
+        CancellationToken ct)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var response = await client.CheckHealthAsync(
+                new CheckHealthRequest(),
+                deadline: DateTime.UtcNow.AddSeconds(5),
+                cancellationToken: ct);
+            sw.Stop();
+
+            return MapGrpcHealthResponse(response, sw.ElapsedMilliseconds);
+        }
+        catch (RpcException ex)
+        {
+            sw.Stop();
+            Log.Warning(ex, "gRPC health check to {ServiceName} failed: {StatusCode}", serviceName, ex.StatusCode);
+            return new
+            {
+                status = "unhealthy",
+                latencyMs = sw.ElapsedMilliseconds,
+                components = new Dictionary<string, object>
+                {
+                    ["error"] = new { status = "unhealthy", error = $"gRPC {ex.StatusCode}: {ex.Status.Detail}" },
+                },
+            };
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            Log.Warning(ex, "Health check to {ServiceName} failed", serviceName);
+            return new
+            {
+                status = "unhealthy",
+                latencyMs = sw.ElapsedMilliseconds,
+                components = new Dictionary<string, object>
+                {
+                    ["error"] = new { status = "unhealthy", error = ex.Message },
+                },
+            };
+        }
+    }
+
+    /// <summary>
     /// Maps a gRPC CheckHealthResponse to the gateway's anonymous response shape.
     /// </summary>
     private static object MapGrpcHealthResponse(CheckHealthResponse response, long latencyMs)
@@ -295,89 +338,6 @@ public static class HealthEndpoints
             latencyMs,
             components,
         };
-    }
-
-    /// <summary>
-    /// Calls the Auth service's /health-rich HTTP endpoint.
-    /// Auth is HTTP-only (no gRPC server).
-    /// </summary>
-    private static async Task<object> CheckAuthServiceAsync(
-        IHttpClientFactory factory,
-        CancellationToken ct)
-    {
-        var sw = Stopwatch.StartNew();
-        try
-        {
-            var client = factory.CreateClient("health-auth");
-            if (client.BaseAddress is null)
-            {
-                Log.Warning("Health client auth has no base address configured");
-                return new
-                {
-                    status = "not configured",
-                    latencyMs = 0L,
-                    components = new Dictionary<string, object>(),
-                };
-            }
-
-            var response = await client.GetAsync("/health-rich", ct);
-            sw.Stop();
-
-            if (response.IsSuccessStatusCode)
-            {
-                var body = await response.Content.ReadFromJsonAsync<JsonElement>(ct);
-                return new
-                {
-                    status = body.TryGetProperty("status", out var s) ? s.GetString() : "healthy",
-                    latencyMs = sw.ElapsedMilliseconds,
-                    components = body.TryGetProperty("components", out var c)
-                        ? c.Deserialize<Dictionary<string, object>>(sr_jsonOptions) ?? new()
-                        : new Dictionary<string, object>(),
-                };
-            }
-
-            var errorBody = await response.Content.ReadAsStringAsync(ct);
-
-            // Try to parse as JSON to get component details even on 503.
-            try
-            {
-                var body = JsonSerializer.Deserialize<JsonElement>(errorBody);
-                return new
-                {
-                    status = body.TryGetProperty("status", out var s) ? s.GetString() : "unhealthy",
-                    latencyMs = sw.ElapsedMilliseconds,
-                    components = body.TryGetProperty("components", out var c)
-                        ? c.Deserialize<Dictionary<string, object>>(sr_jsonOptions) ?? new()
-                        : new Dictionary<string, object>(),
-                };
-            }
-            catch
-            {
-                return new
-                {
-                    status = "unhealthy",
-                    latencyMs = sw.ElapsedMilliseconds,
-                    components = new Dictionary<string, object>
-                    {
-                        ["error"] = new { status = "unhealthy", error = $"HTTP {(int)response.StatusCode}" },
-                    },
-                };
-            }
-        }
-        catch (Exception ex)
-        {
-            sw.Stop();
-            Log.Warning(ex, "Health check to auth failed");
-            return new
-            {
-                status = "unhealthy",
-                latencyMs = sw.ElapsedMilliseconds,
-                components = new Dictionary<string, object>
-                {
-                    ["error"] = new { status = "unhealthy", error = ex.Message },
-                },
-            };
-        }
     }
 
     /// <summary>

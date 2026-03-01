@@ -39,7 +39,7 @@ All endpoints use URL path versioning (`/api/v1/...`). This approach was chosen 
 | ------ | ------------- | -------------------------------------------------------------------------- |
 | GET    | `/api/health` | Aggregated health check — fans out to Geo, Auth, Comms, and gateway cache. |
 
-Returns `200` (all healthy) or `503` (degraded) with per-service status, latency, and component breakdown. Geo/Comms via gRPC `CheckHealth`, Auth via HTTP `/health-rich`, gateway cache via distributed cache ping handler.
+Returns `200` (all healthy) or `503` (degraded) with per-service status, latency, and component breakdown. All services (Geo, Comms, Auth) via gRPC `CheckHealth`, gateway cache via distributed cache ping handler.
 
 ### Geo (`/api/v1/geo`)
 

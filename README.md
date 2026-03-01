@@ -145,7 +145,7 @@ graph TB
         end
 
         Gateways <-->|gRPC| Services
-        Gateways <-->|JWKS| AuthSvc
+        Gateways <-->|JWKS + gRPC| AuthSvc
         AuthSvc <-->|gRPC| Services
         DKRONMGR -->|REST API| DKRON
         DKRON -->|HTTP + API key| REST
@@ -268,8 +268,8 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                            | Platform | Status      | Description                                                                               |
 > | -------------------------------------------------- | -------- | ----------- | ----------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done     | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching         |
-> | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (874 tests) |
-> | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (566 tests)  |
+> | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (922 tests) |
+> | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (592 tests)  |
 > | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md) | Node.js  | ✅ Done      | Declarative Dkron job reconciler — drift detection, orphan cleanup (64 tests)         |
 >
 > **Client Libraries:**

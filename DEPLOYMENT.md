@@ -11,7 +11,7 @@ D²-WORX is a microservices platform with the following topology:
 | Component      | Technology        | Communication                     |
 | -------------- | ----------------- | --------------------------------- |
 | Geo Service    | .NET 10 / gRPC    | gRPC (sync), RabbitMQ (async)     |
-| Auth Service   | Node.js / Hono    | HTTP (BetterAuth), gRPC (planned) |
+| Auth Service   | Node.js / Hono    | HTTP (BetterAuth), gRPC (health + jobs) |
 | REST Gateway   | .NET 10 / ASP.NET | HTTP → gRPC (reverse proxy)       |
 | Web Client     | SvelteKit 5       | HTTP (SSR + client-side)          |
 | PostgreSQL     | 18                | Per-service databases             |

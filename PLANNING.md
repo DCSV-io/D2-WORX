@@ -20,8 +20,8 @@
 
 - **Phase 1: TypeScript Shared Infrastructure** ✅ — 19 shared `@d2/*` packages mirroring .NET (result, handler, DI, caching, messaging, middleware, batch-pg, errors-pg)
 - **Phase 2 Stage A: Cross-cutting foundations** ✅ — Retry utility, idempotency middleware, UUIDv7
-- **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (874 tests, 64 test files)
-- **Comms Service Phase 1** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (566 tests, 43 test files)
+- **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (922 tests, 71 test files)
+- **Comms Service Phase 1** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (592 tests, 46 test files)
 - **E2E Cross-Service Tests** ✅ — 12 tests (Auth → Geo → Comms delivery pipeline + Dkron job chain)
 - **Cross-platform Parity** ✅ — `@d2/batch-pg`, `@d2/errors-pg`, .NET `Errors.Pg`, documented in `backends/PARITY.md`
 - **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware
@@ -600,9 +600,9 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | Geo.Client        | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
 | Geo.Tests         | ✅ Done        | 759 tests passing                                                                                                |
 | **Auth Service**  | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E     |
-| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 874 tests passing                                    |
+| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 922 tests passing                                    |
 | **Comms Service** | 🚧 In Progress | Node.js delivery engine (`backends/node/services/comms/`). Phase 1 done (email + SMS + gRPC + RabbitMQ consumer) |
-| **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 566 tests passing                                  |
+| **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 592 tests passing                                  |
 
 ### Gateways
 
