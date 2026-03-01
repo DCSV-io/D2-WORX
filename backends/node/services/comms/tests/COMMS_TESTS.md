@@ -61,6 +61,9 @@ src/
         set-channel-preference.test.ts      SetChannelPreference handler (create/update, validation)
         get-channel-preference.test.ts      GetChannelPreference handler (found, not-found paths)
         check-health.test.ts                CheckHealth handler (aggregates DB + cache + bus pings)
+        c/
+          run-deleted-message-purge.test.ts   RunDeletedMessagePurge (lock, batch purge)
+          run-delivery-history-purge.test.ts  RunDeliveryHistoryPurge (lock, batch purge)
       helpers/
         mock-handlers.ts                    Reusable vi.fn() mock factories
     infra/
@@ -81,6 +84,7 @@ src/
     channel-preference-repository.test.ts   ChannelPreference CRUD (create, retrieve, update, isolation)
     deliver-handler.test.ts                 Full Deliver flow (Testcontainers PG + mocked providers)
     notification-consumer.test.ts           RabbitMQ consumer + DLX retry (Testcontainers RabbitMQ)
+    job-purge-handlers.test.ts             Purge job integration (Testcontainers PG + Redis lock)
     helpers/
       postgres-test-helpers.ts              startPostgres, stopPostgres, getDb, cleanAllTables
       rabbitmq-test-helpers.ts              RabbitMQ container lifecycle helpers
@@ -94,11 +98,11 @@ src/
 | ----------- | ------ | ----------------------------------------------------------- |
 | Unit/Domain | 23     | Entities, enums, exceptions, rules, constants               |
 | Unit/Client | 1      | Notify handler (validation, publish, no-publisher fallback) |
-| Unit/App    | 6      | CQRS handlers + factory + CheckHealth (mocked repos)        |
+| Unit/App    | 8      | CQRS handlers + factory + CheckHealth + purge jobs          |
 | Unit/Infra  | 4      | Providers (mocked clients) + retry topology + PingDb        |
 | Unit/API    | 3      | gRPC service + proto mappers + API key interceptor          |
-| Integration | 6      | Repository CRUD, Deliver flow, RabbitMQ consumer            |
-| **Total**   | **43** | **552 tests across 43 test files**                          |
+| Integration | 7      | Repository CRUD, Deliver flow, RabbitMQ consumer, job purge |
+| **Total**   | **46** | **592 tests across 46 test files**                          |
 
 ## Key Test Helpers
 

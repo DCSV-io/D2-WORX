@@ -187,17 +187,20 @@ All tests are in `@d2/comms-tests` (`backends/node/services/comms/tests/`):
 
 ```
 src/unit/app/
-  factories.test.ts                 createDeliveryHandlers factory tests
+  factories.test.ts                       createDeliveryHandlers factory tests
   handlers/
-    deliver.test.ts                 Deliver handler (mocked repos + providers)
-    resolve-recipient.test.ts       RecipientResolver handler (mocked geo-client)
+    deliver.test.ts                       Deliver handler (mocked repos + providers)
+    resolve-recipient.test.ts             RecipientResolver handler (mocked geo-client)
+    set-channel-preference.test.ts        SetChannelPreference handler
+    get-channel-preference.test.ts        GetChannelPreference handler
+    check-health.test.ts                  CheckHealth handler
+    c/
+      run-deleted-message-purge.test.ts   RunDeletedMessagePurge unit tests
+      run-delivery-history-purge.test.ts  RunDeliveryHistoryPurge unit tests
   helpers/
-    mock-handlers.ts                Shared mock handler factories
-src/unit/jobs/
-  run-deleted-message-purge.test.ts     RunDeletedMessagePurge unit tests
-  run-delivery-history-purge.test.ts    RunDeliveryHistoryPurge unit tests
+    mock-handlers.ts                      Shared mock handler factories
 src/integration/
-  job-purge-handlers.test.ts            PurgeDeletedMessages + PurgeDeliveryHistory integration tests
+  job-purge-handlers.test.ts              PurgeDeletedMessages + PurgeDeliveryHistory integration
 ```
 
 ## Dependencies
