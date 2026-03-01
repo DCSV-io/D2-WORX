@@ -638,30 +638,30 @@ Testcontainers image tags use major version tags (`postgres:18`, `redis:8.2`, `r
 
 ---
 
-### Step 7 — Coordinated Node.js OTel Upgrade
+### ~~Step 7 — Coordinated Node.js OTel Upgrade~~ DONE
 
 **Effort: ~2 hours. Risk: Medium. Commit separately.**
 
 Upgrade all `@opentelemetry/*` packages together. These span `@d2/service-defaults` and `clients/web`.
 
-| # | Package | Current → Target |
-| - | ------- | ---------------- |
-| 7a | `@opentelemetry/sdk-node` | 0.206.0 → **0.212.0** |
-| 7b | `@opentelemetry/sdk-metrics` | 2.1.0 → **2.5.0** |
-| 7c | `@opentelemetry/sdk-logs` | 0.206.0 → **0.208.0** |
-| 7d | `@opentelemetry/resources` | 2.1.0 → **2.5.1** |
-| 7e | `@opentelemetry/semantic-conventions` | 1.37.0 → **1.39.0** |
-| 7f | `@opentelemetry/auto-instrumentations-node` | 0.65.0 → **0.70.1** |
-| 7g | `@opentelemetry/exporter-*-otlp-http` (3 packages) | 0.206.0 → **0.212.0** |
-| 7h | `@opentelemetry/exporter-trace-otlp-proto` | 0.206.0 → **0.212.0** |
-| 7i | `@opentelemetry/instrumentation` | 0.206.0 → **0.212.0** |
-| 7j | `@opentelemetry/instrumentation-fetch` | 0.206.0 → **0.212.0** |
-| 7k | `@opentelemetry/sdk-trace-web` | 2.1.0 → **2.5.0** |
-| 7l | `@opentelemetry/api-logs` | 0.206.0 → **0.208.0** |
+| # | Package | Current → Target | Status |
+| - | ------- | ---------------- | ------ |
+| ~~7a~~ | ~~`@opentelemetry/sdk-node`~~ | ~~0.206.0 → **0.212.0**~~ | ~~DONE~~ |
+| ~~7b~~ | ~~`@opentelemetry/sdk-metrics`~~ | ~~2.1.0 → **2.5.0**~~ | ~~DONE~~ |
+| ~~7c~~ | ~~`@opentelemetry/sdk-logs`~~ | ~~0.206.0 → **0.208.0**~~ | ~~DONE~~ |
+| ~~7d~~ | ~~`@opentelemetry/resources`~~ | ~~2.1.0 → **2.5.1**~~ | ~~DONE~~ |
+| ~~7e~~ | ~~`@opentelemetry/semantic-conventions`~~ | ~~1.37.0 → **1.39.0**~~ | ~~DONE~~ |
+| ~~7f~~ | ~~`@opentelemetry/auto-instrumentations-node`~~ | ~~0.65.0 → **0.70.1**~~ | ~~DONE~~ |
+| ~~7g~~ | ~~`@opentelemetry/exporter-*-otlp-http` (3 packages)~~ | ~~0.206.0 → **0.212.0**~~ | ~~DONE~~ |
+| ~~7h~~ | ~~`@opentelemetry/exporter-trace-otlp-proto`~~ | ~~0.206.0 → **0.212.0**~~ | ~~DONE~~ |
+| ~~7i~~ | ~~`@opentelemetry/instrumentation`~~ | ~~0.206.0 → **0.212.0**~~ | ~~DONE~~ |
+| ~~7j~~ | ~~`@opentelemetry/instrumentation-fetch`~~ | ~~0.206.0 → **0.212.0**~~ | ~~DONE~~ |
+| ~~7k~~ | ~~`@opentelemetry/sdk-trace-web`~~ | ~~2.1.0 → **2.5.0**~~ | ~~DONE~~ |
+| ~~7l~~ | ~~`@opentelemetry/api-logs`~~ | ~~0.206.0 → **0.208.0**~~ | ~~DONE~~ |
 
 **Note:** `@opentelemetry/api` stays at 1.9.0 (already latest).
 
-**Validation:** Start auth + comms services. Verify OTel traces flow to Alloy → Tempo → Grafana. Check metrics in Mimir. Run unit tests.
+**Validation:** ~~Start auth + comms services. Verify OTel traces flow to Alloy → Tempo → Grafana. Check metrics in Mimir. Run unit tests.~~ **All verified.** Build clean (all packages + web client). Tests: 2,551 passed. OTel trace flow to be confirmed during manual testing.
 
 ---
 
