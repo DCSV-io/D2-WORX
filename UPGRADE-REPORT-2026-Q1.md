@@ -580,32 +580,34 @@ Update `package.json` files with exact pinned versions, then `pnpm install`.
 
 ---
 
-### Step 5 — Frontend Simple Bumps
+### ~~Step 5 — Frontend Simple Bumps~~ DONE
 
 **Effort: ~30 min. Risk: None. Commit separately.**
 
 All in `clients/web/package.json`:
 
-| # | Package | Version |
-| - | ------- | ------- |
-| 5a | `svelte` | → **5.53.5** |
-| 5b | `@sveltejs/kit` | → **2.53.3** |
-| 5c | `@sveltejs/adapter-node` | → **5.5.3** |
-| 5d | `@sveltejs/vite-plugin-svelte` | → **6.2.4** |
-| 5e | `vite` | → **7.3.1** |
-| 5f | `tailwindcss` + `@tailwindcss/vite` | → **4.2.1** |
-| 5g | `tailwind-merge` | → **3.5.0** |
-| 5h | `tailwind-variants` | → **3.2.2** |
-| 5i | `@stripe/stripe-js` | → **8.8.0** |
-| 5j | `@inlang/paraglide-js` | → **2.13.0** |
-| 5k | `humanize-duration` | → **3.33.2** |
-| 5l | `libphonenumber-js` | → **1.12.38** |
-| 5m | `postcode-validator` | → **3.10.9** |
-| 5n | `svelte-check` | → **4.4.1** |
-| 5o | `eslint-plugin-svelte` | → **3.15.0** |
-| 5p | `@playwright/test` + `playwright` | → **1.58.0** (check for `_react`/`_vue`/`:light` usage first) |
+| # | Package | Version | Status |
+| - | ------- | ------- | ------ |
+| ~~5a~~ | ~~`svelte`~~ | ~~→ **5.53.5**~~ | ~~DONE~~ |
+| ~~5b~~ | ~~`@sveltejs/kit`~~ | ~~→ **2.53.3**~~ | ~~DONE~~ |
+| ~~5c~~ | ~~`@sveltejs/adapter-node`~~ | ~~→ **5.5.3**~~ | ~~DONE~~ |
+| ~~5d~~ | ~~`@sveltejs/vite-plugin-svelte`~~ | ~~→ **6.2.4**~~ | ~~DONE~~ |
+| ~~5e~~ | ~~`vite`~~ | ~~→ **7.3.1**~~ | ~~DONE~~ |
+| ~~5f~~ | ~~`tailwindcss` + `@tailwindcss/vite`~~ | ~~→ **4.2.1**~~ | ~~DONE~~ |
+| ~~5g~~ | ~~`tailwind-merge`~~ | ~~→ **3.5.0**~~ | ~~DONE~~ |
+| ~~5h~~ | ~~`tailwind-variants`~~ | ~~→ **3.2.2**~~ | ~~DONE~~ |
+| ~~5i~~ | ~~`@stripe/stripe-js`~~ | ~~→ **8.8.0**~~ | ~~DONE~~ |
+| ~~5j~~ | ~~`@inlang/paraglide-js`~~ | ~~→ **2.13.0**~~ | ~~DONE~~ |
+| ~~5k~~ | ~~`humanize-duration`~~ | ~~→ **3.33.2**~~ | ~~DONE~~ |
+| ~~5l~~ | ~~`libphonenumber-js`~~ | ~~→ **1.12.38**~~ | ~~DONE~~ |
+| ~~5m~~ | ~~`postcode-validator`~~ | ~~→ **3.10.9**~~ | ~~DONE~~ |
+| ~~5n~~ | ~~`svelte-check`~~ | ~~→ **4.4.1**~~ | ~~DONE~~ |
+| ~~5o~~ | ~~`eslint-plugin-svelte`~~ | ~~→ **3.15.0**~~ | ~~DONE~~ |
+| ~~5p~~ | ~~`@playwright/test` + `playwright`~~ | ~~→ **1.58.0**~~ | ~~DONE~~ |
+| ~~5q~~ | ~~`vitest` + `@vitest/coverage-v8`~~ | ~~→ **3.2.4** (all workspaces)~~ | ~~DONE — required by vite 7.3.1 (vitest 3.1.1 pulled vite 6.4.1, causing duplicate vite type conflicts in svelte-check)~~ |
+| ~~5r~~ | ~~`pnpm.overrides` for `vite`~~ | ~~→ **7.3.1** (workspace-wide)~~ | ~~DONE — vitest 3.2.4 was still resolving a second vite copy without the override~~ |
 
-**Validation:** `pnpm install`. `pnpm -C clients/web build` succeeds. `svelte-check` passes.
+**Validation:** ~~`pnpm install`. `pnpm -C clients/web build` succeeds. `svelte-check` passes.~~ **All verified.** Build clean. svelte-check: 0 errors, 0 warnings. All 2,551 tests pass.
 
 ---
 

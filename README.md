@@ -381,11 +381,11 @@ While WORX itself will be a commercial product, this repository exists (for now,
 #### Testing & Quality
 
 ![xUnit](https://img.shields.io/badge/xUnit-3.2.2-512BD4)
-![Vitest](https://img.shields.io/badge/Vitest-3.1-6E9F18?logo=vitest)
+![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?logo=vitest)
 ![Testcontainers](https://img.shields.io/badge/Testcontainers-4.10-2496ED?logo=docker)
 ![FluentAssertions](https://img.shields.io/badge/FluentAssertions-8.8-5C2D91)
 ![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
-![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33?logo=playwright)
+![Playwright](https://img.shields.io/badge/Playwright-1.58-2EAD33?logo=playwright)
 
 #### CI/CD & Code Quality
 
