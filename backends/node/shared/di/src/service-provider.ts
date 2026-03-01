@@ -2,11 +2,9 @@ import { Lifetime } from "./lifetime.js";
 import type { ServiceDescriptor } from "./service-collection.js";
 import type { ServiceKey } from "./service-key.js";
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 const _g = globalThis as Record<string, unknown>;
 const _proc = _g.process as { env?: Record<string, string | undefined> } | undefined;
 const DEBUG = _proc?.env?.DEBUG_DI === "true";
-/* eslint-enable @typescript-eslint/no-unsafe-member-access */
 
 function debugLog(msg: string): void {
   if (DEBUG)
