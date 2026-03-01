@@ -107,7 +107,7 @@ var mimir = builder.AddContainer("d2-mimir", "grafana/mimir", "2.17.7")
     .WithLifetime(ContainerLifetime.Persistent);
 
 // cAdvisor - Container Resource Monitoring.
-var cAdvisor = builder.AddContainer("d2-cadvisor", "ghcr.io/google/cadvisor", "v0.56.2")
+var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "v0.52.1")
     .WithContainerName("d2-cadvisor")
     .WithIconName("ChartMultiple")
     .WithHttpEndpoint(port: 8081, targetPort: 8080, name: "cadvisor-http", isProxied: false)
