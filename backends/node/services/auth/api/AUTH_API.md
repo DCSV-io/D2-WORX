@@ -200,7 +200,7 @@ When `authApiKeys` is configured, the gRPC server wraps all handlers with `withA
 | `AUTH_GRPC_PORT`                     | `grpcPort`                 | — (off) |
 | `AUTH_APP__SIGNINEVENTRETENTIONDAYS` | `signInEventRetentionDays` | —       |
 | `AUTH_APP__INVITATIONRETENTIONDAYS`  | `invitationRetentionDays`  | 7       |
-| `AUTH_APP__JOBLOCKTTLMS`             | `lockTtlMs`                | 300000  |
+| `AUTH_APP__JOBLOCKTTLMS`             | `jobLockTtlMs`             | 300000  |
 
 Job options are only parsed when `AUTH_APP__SIGNINEVENTRETENTIONDAYS` is set. When absent, `DEFAULT_AUTH_JOB_OPTIONS` from `@d2/auth-app` is used.
 

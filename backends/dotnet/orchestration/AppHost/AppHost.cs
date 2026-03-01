@@ -307,6 +307,8 @@ var commsService = builder.AddJavaScriptApp("d2-comms", "../../../../backends/no
     .WithIconName("Mail")
     .WithReference(commsDb)
     .WaitFor(db)
+    .WaitFor(cache)
+    .WithReference(cache)
     .WaitFor(broker)
     .WithReference(broker)
     .WaitFor(geoService)

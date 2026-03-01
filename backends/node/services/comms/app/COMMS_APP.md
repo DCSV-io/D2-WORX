@@ -129,7 +129,7 @@ Configuration for scheduled job handlers, passed to `addCommsApp(services, jobOp
 | ------------------------------ | ------ | ------- | ------------------------------------------ |
 | `deletedMessageRetentionDays`  | number | 90      | Retention period for soft-deleted messages |
 | `deliveryHistoryRetentionDays` | number | 365     | Retention period for delivery history      |
-| `lockTtlMs`                    | number | 300,000 | Distributed lock TTL (5 minutes)           |
+| `jobLockTtlMs`                 | number | 300,000 | Distributed lock TTL (5 minutes)           |
 
 `DEFAULT_COMMS_JOB_OPTIONS` provides sensible defaults when no env vars are configured. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
 

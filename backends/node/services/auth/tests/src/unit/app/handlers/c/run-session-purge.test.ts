@@ -164,11 +164,11 @@ describe("RunSessionPurge", () => {
     expect(releaseLock.handleAsync).toHaveBeenCalledOnce();
   });
 
-  it("should pass lockTtlMs from options to acquireLock", async () => {
+  it("should pass jobLockTtlMs from options to acquireLock", async () => {
     await handler.handleAsync({});
 
     const lockCall = (acquireLock.handleAsync as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(lockCall.expirationMs).toBe(DEFAULT_AUTH_JOB_OPTIONS.lockTtlMs);
+    expect(lockCall.expirationMs).toBe(DEFAULT_AUTH_JOB_OPTIONS.jobLockTtlMs);
   });
 
   it("should not release lock when lock was not acquired", async () => {
