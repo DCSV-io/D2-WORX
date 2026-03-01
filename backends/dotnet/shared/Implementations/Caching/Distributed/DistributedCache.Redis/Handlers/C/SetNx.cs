@@ -66,7 +66,7 @@ public class SetNx<TValue> : BaseHandler<
             var wasSet = await db.StringSetAsync(
                 input.Key,
                 bytes,
-                input.Expiration,
+                input.Expiration is { } ttl ? ttl : Expiration.Default,
                 When.NotExists);
 
             // Return success with whether the key was set.

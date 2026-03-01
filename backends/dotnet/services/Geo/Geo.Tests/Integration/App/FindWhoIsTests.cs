@@ -57,8 +57,7 @@ public class FindWhoIsTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
     {
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
+        _pgContainer = new PostgreSqlBuilder("postgres:18")
             .Build();
         await _pgContainer.StartAsync(Ct);
 

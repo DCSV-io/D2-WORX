@@ -31,8 +31,7 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
     {
-        _container = new RabbitMqBuilder()
-            .WithImage("rabbitmq:4.1-management")
+        _container = new RabbitMqBuilder("rabbitmq:4.1-management")
             .Build();
         await _container.StartAsync(Ct);
 

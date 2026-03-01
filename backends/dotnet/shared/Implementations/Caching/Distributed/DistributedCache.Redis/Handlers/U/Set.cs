@@ -63,7 +63,10 @@ public class Set<TValue> : BaseHandler<
 
             // Connect to Redis and set the value.
             var db = r_redis.GetDatabase();
-            await db.StringSetAsync(input.Key, bytes, input.Expiration);
+            await db.StringSetAsync(
+                input.Key,
+                bytes,
+                input.Expiration is { } ttl ? ttl : Expiration.Default);
 
             // Return success.
             return D2Result<S.SetOutput?>.Ok(

@@ -121,9 +121,9 @@
 | **Current** | ~~13.0.0 (all packages)~~ → **13.1.2** (all Aspire packages), **CommunityToolkit 13.1.1** (stable) |
 | **Latest** | **13.1.2** (Feb 26, 2026). No Aspire 14 announced. |
 | **What's new** | MCP integration for AI coding agents, dashboard improvements (Parameters tab, GenAI visualizer), container registry support, TLS termination APIs, JavaScript starter template. |
-| **Breaking changes** | `AddAzureRedisEnterprise` renamed (not used by D2-WORX). **Known issue:** Redis connection strings may gain `ssl=true` — test `AddRedis` in dev environment. |
-| **Migration** | ~~`dotnet aspire update` or manually bump all `Aspire.*` packages to 13.1.2. Also bump `CommunityToolkit` from beta to 13.1.1 stable.~~ |
-| **Recommendation** | ~~**Recommended with testing.** Verify Redis connectivity in dev after upgrade.~~ **COMPLETE.** Build verified clean. |
+| **Breaking changes** | `AddAzureRedisEnterprise` renamed (not used by D2-WORX). **Redis TLS default:** `AddRedis` now enables TLS by default — clients connecting plaintext to port 6379 get SSL errors. Fixed with `.WithoutHttpsCertificate()` (experimental API, suppressed `ASPIRECERTIFICATES001`). |
+| **Migration** | ~~`dotnet aspire update` or manually bump all `Aspire.*` packages to 13.1.2. Also bump `CommunityToolkit` from beta to 13.1.1 stable. Add `.WithoutHttpsCertificate()` to Redis resource in AppHost.cs.~~ |
+| **Recommendation** | ~~**Recommended with testing.** Verify Redis connectivity in dev after upgrade.~~ **COMPLETE.** Build verified clean. Redis TLS fix applied. |
 
 ---
 
@@ -158,21 +158,21 @@
 | ~~`Microsoft.Extensions.Hosting.Abstractions`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
 | ~~`Microsoft.Extensions.Logging.Abstractions`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
 | ~~`Microsoft.Extensions.Configuration`~~ | ~~10.0.0~~ | ~~**10.0.3**~~ | ~~NONE~~ | ~~Servicing patch.~~ **DONE** |
-| `Grpc.Tools` | 2.76.0 | **2.78.0** | LOW | Proto compiler update. Regenerate protos after upgrade. |
-| `Google.Protobuf` | 3.33.1 | **3.34.0** | LOW | Minor bump. Regenerate protos. |
-| `StackExchange.Redis` | 2.9.32 | **2.11.8** | LOW | Check for `StringSet` call ambiguity after rebuild. New features: Redis 8.4 CAS/CAD operations. |
-| `RabbitMQ.Client` | 7.1.2 | **7.2.1** | LOW | Minor bump. Better disposable handling, OAuth2 v2. |
-| `Serilog.AspNetCore` | 9.0.0 | **10.0.0** | LOW | Major version number aligns with .NET 10 versioning — not an API overhaul. |
-| `Serilog.Enrichers.ClientInfo` | 2.6.0 | **2.9.0** | LOW | Minor bump. New enrichment capabilities. |
-| `Serilog.Sinks.Grafana.Loki` | 8.3.1 | **8.3.2** | NONE | Bug fix patch. |
-| `OpenTelemetry.Exporter.OpenTelemetryProtocol` | 1.14.0 | **1.15.0** | LOW | Minor bump. |
-| `OpenTelemetry.Extensions.Hosting` | 1.14.0 | **1.15.0** | LOW | Minor bump. |
-| `OpenTelemetry.Instrumentation.AspNetCore` | 1.14.0 | **1.15.0** | LOW | Minor bump. |
-| `OpenTelemetry.Instrumentation.Http` | 1.14.0 | **1.15.0** | LOW | Minor bump. |
-| `OpenTelemetry.Instrumentation.Runtime` | 1.14.0 | **1.15.0** | LOW | Minor bump. |
-| `OpenTelemetry.Exporter.Prometheus.AspNetCore` | 1.14.0-beta.1 | **1.15.0-beta.1** | LOW | Beta bump. Specify exact version. |
-| `OpenTelemetry.Instrumentation.GrpcNetClient` | 1.14.0-beta.1 | **1.15.0-beta.1** | LOW | Beta bump. |
-| `OpenTelemetry.Instrumentation.Process` | 1.14.0-beta.2 | **1.15.0-beta.1** | LOW | Beta bump. |
+| ~~`Grpc.Tools`~~ | ~~2.76.0~~ | ~~**2.78.0**~~ | ~~LOW~~ | ~~Proto compiler update. Regenerate protos after upgrade.~~ **DONE** |
+| ~~`Google.Protobuf`~~ | ~~3.33.1~~ | ~~**3.34.0**~~ | ~~LOW~~ | ~~Minor bump. Regenerate protos.~~ **DONE** |
+| ~~`StackExchange.Redis`~~ | ~~2.9.32~~ | ~~**2.11.8**~~ | ~~LOW~~ | ~~`StringSetAsync` overload changed `TimeSpan?` → `Expiration` struct. Fixed in `Set.cs`, `SetNx.cs` (pattern match: `is { } ttl ? ttl : Expiration.Default`). `AcquireLock.cs` (non-nullable `TimeSpan`) worked via implicit conversion.~~ **DONE** |
+| ~~`RabbitMQ.Client`~~ | ~~7.1.2~~ | ~~**7.2.1**~~ | ~~LOW~~ | ~~Minor bump. Better disposable handling, OAuth2 v2.~~ **DONE** |
+| ~~`Serilog.AspNetCore`~~ | ~~9.0.0~~ | ~~**10.0.0**~~ | ~~LOW~~ | ~~Major version number aligns with .NET 10 versioning — not an API overhaul.~~ **DONE** |
+| ~~`Serilog.Enrichers.ClientInfo`~~ | ~~2.6.0~~ | ~~**2.9.0**~~ | ~~LOW~~ | ~~Minor bump. New enrichment capabilities.~~ **DONE** |
+| ~~`Serilog.Sinks.Grafana.Loki`~~ | ~~8.3.1~~ | ~~**8.3.2**~~ | ~~NONE~~ | ~~Bug fix patch.~~ **DONE** |
+| ~~`OpenTelemetry.Exporter.OpenTelemetryProtocol`~~ | ~~1.14.0~~ | ~~**1.15.0**~~ | ~~LOW~~ | ~~Minor bump. **Breaking:** `OTEL_SDK_DISABLED=true` causes NullReferenceException in `OpenTelemetryMetricsListener`. Fixed by guarding `ConfigureOpenTelemetry()` call.~~ **DONE** |
+| ~~`OpenTelemetry.Extensions.Hosting`~~ | ~~1.14.0~~ | ~~**1.15.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`OpenTelemetry.Instrumentation.AspNetCore`~~ | ~~1.14.0~~ | ~~**1.15.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`OpenTelemetry.Instrumentation.Http`~~ | ~~1.14.0~~ | ~~**1.15.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`OpenTelemetry.Instrumentation.Runtime`~~ | ~~1.14.0~~ | ~~**1.15.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
+| ~~`OpenTelemetry.Exporter.Prometheus.AspNetCore`~~ | ~~1.14.0-beta.1~~ | ~~**1.15.0-beta.1**~~ | ~~LOW~~ | ~~Beta bump. Also guarded `MapPrometheusScrapingEndpoint()` when SDK disabled.~~ **DONE** |
+| ~~`OpenTelemetry.Instrumentation.GrpcNetClient`~~ | ~~1.14.0-beta.1~~ | ~~**1.15.0-beta.1**~~ | ~~LOW~~ | ~~Beta bump.~~ **DONE** |
+| ~~`OpenTelemetry.Instrumentation.Process`~~ | ~~1.14.0-beta.2~~ | ~~**1.15.0-beta.1**~~ | ~~LOW~~ | ~~Beta bump.~~ **DONE** |
 | ~~`Testcontainers.PostgreSql`~~ | ~~4.9.0~~ | ~~**4.10.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
 | ~~`Testcontainers.RabbitMq`~~ | ~~4.9.0~~ | ~~**4.10.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
 | ~~`Testcontainers.Redis` (Geo.Tests)~~ | ~~4.9.0~~ | ~~**4.10.0**~~ | ~~LOW~~ | ~~Minor bump.~~ **DONE** |
@@ -530,23 +530,25 @@ Key breaking changes:
 
 ---
 
-### Step 3 — .NET Library Bumps (minor versions)
+### ~~Step 3 — .NET Library Bumps (minor versions)~~ DONE
 
 **Effort: ~1 hour. Risk: Low. Commit separately.**
 
-| # | Action | Notes |
-| - | ------ | ----- |
-| 3a | `StackExchange.Redis` 2.9.32 → **2.11.8** | After rebuild, check for `StringSet` call ambiguity. New Redis 8.4 CAS/CAD ops. |
-| 3b | `RabbitMQ.Client` 7.1.2 → **7.2.1** | Better disposable handling. |
-| 3c | `Grpc.Tools` 2.76.0 → **2.78.0** | Proto compiler update. |
-| 3d | `Google.Protobuf` 3.33.1 → **3.34.0** | Compatible with Grpc.Tools 2.78.0. |
-| 3e | Regenerate .NET protos | After 3c + 3d. Rebuild `Protos.DotNet`. |
-| 3f | All `OpenTelemetry.*` → **1.15.0** / **1.15.0-beta.1** | Bump all 8 OTel packages together in `ServiceDefaults.csproj`. Use `--include-prerelease` for beta packages. |
-| 3g | `Serilog.AspNetCore` 9.0.0 → **10.0.0** | Major version number aligns with .NET 10 — not an API overhaul. |
-| 3h | `Serilog.Enrichers.ClientInfo` 2.6.0 → **2.9.0** | Minor bump. |
-| 3i | `Serilog.Sinks.Grafana.Loki` 8.3.1 → **8.3.2** | Bug fix. |
+| # | Action | Notes | Status |
+| - | ------ | ----- | ------ |
+| ~~3a~~ | ~~`StackExchange.Redis` 2.9.32 → **2.11.8**~~ | ~~`StringSetAsync` overload changed `TimeSpan?` → `Expiration` struct. Fixed `Set.cs`, `SetNx.cs` with pattern match (`is { } ttl ? ttl : Expiration.Default`). `AcquireLock.cs` used implicit `TimeSpan` → `Expiration` conversion.~~ | ~~DONE~~ |
+| ~~3b~~ | ~~`RabbitMQ.Client` 7.1.2 → **7.2.1**~~ | ~~Better disposable handling.~~ | ~~DONE~~ |
+| ~~3c~~ | ~~`Grpc.Tools` 2.76.0 → **2.78.0**~~ | ~~Proto compiler update.~~ | ~~DONE~~ |
+| ~~3d~~ | ~~`Google.Protobuf` 3.33.1 → **3.34.0**~~ | ~~Compatible with Grpc.Tools 2.78.0.~~ | ~~DONE~~ |
+| ~~3e~~ | ~~Regenerate .NET protos~~ | ~~Rebuilt `Protos.DotNet` — clean.~~ | ~~DONE~~ |
+| ~~3f~~ | ~~All `OpenTelemetry.*` → **1.15.0** / **1.15.0-beta.1**~~ | ~~**Breaking:** `OTEL_SDK_DISABLED=true` causes NullRefException in `OpenTelemetryMetricsListener` + `PrometheusExporterMiddleware`. Fixed by guarding `ConfigureOpenTelemetry()` and `MapPrometheusEndpointWithIpRestriction()` with env var check.~~ | ~~DONE~~ |
+| ~~3g~~ | ~~`Serilog.AspNetCore` 9.0.0 → **10.0.0**~~ | ~~Major version number aligns with .NET 10 — not an API overhaul.~~ | ~~DONE~~ |
+| ~~3h~~ | ~~`Serilog.Enrichers.ClientInfo` 2.6.0 → **2.9.0**~~ | ~~Minor bump.~~ | ~~DONE~~ |
+| ~~3i~~ | ~~`Serilog.Sinks.Grafana.Loki` 8.3.1 → **8.3.2**~~ | ~~Bug fix.~~ | ~~DONE~~ |
+| ~~3j~~ | ~~Testcontainers deprecated constructor fix~~ | ~~Migrated all 10 parameterless `new XxxBuilder().WithImage(...)` to `new XxxBuilder("image")` constructor pattern (Testcontainers 4.10.0 deprecation). Eliminated all 10 CS0618 warnings.~~ | ~~DONE~~ |
+| ~~3k~~ | ~~Aspire 13.1 Redis TLS fix~~ | ~~`AddRedis` now enables TLS by default — plaintext clients get SSL errors. Added `.WithoutHttpsCertificate()` to Redis resource in AppHost.cs. Suppressed experimental API diagnostic `ASPIRECERTIFICATES001` in AppHost.csproj.~~ | ~~DONE~~ |
 
-**Validation:** `dotnet build D2.sln` succeeds. `dotnet test` passes. Verify OTel traces appear in Grafana.
+**Validation:** ~~`dotnet build D2.sln` succeeds. `dotnet test` passes. Verify OTel traces appear in Grafana.~~ **All verified.** Build: 0 warnings, 0 errors. Tests: 1,528 .NET passed (798 Geo + 730 Shared). E2E: 12 passed (6 test files). Redis TLS fix confirmed working.
 
 ---
 
@@ -785,56 +787,56 @@ Steps 1–6 can be a single large PR (all safe, mechanical changes) or split int
 | ~~Aspire.Hosting.PostgreSQL~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
 | ~~Aspire.Hosting.RabbitMQ~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
 | ~~Aspire.Hosting.Redis~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
-| Aspire.Hosting.Testing | 13.0.0 | 13.1.2 | Geo.Tests, Tests | |
+| ~~Aspire.Hosting.Testing~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~Geo.Tests, Tests~~ | ~~DONE~~ |
 | ~~CommunityToolkit.Aspire.Hosting.JavaScript.Extensions~~ | ~~13.0.0-beta.444~~ | ~~13.1.1~~ | ~~AppHost~~ | ~~DONE~~ |
 | dotenv.net | 3.2.1 | 4.0.1 | Utilities |
 | FluentAssertions | 8.8.0 | 8.8.0 | Geo.Tests, Tests |
 | FluentValidation | 12.1.1 | 12.1.1 | Handler |
-| Google.Protobuf | 3.33.1 | 3.34.0 | Messaging.RabbitMQ, Protos.DotNet |
-| Grpc.AspNetCore | 2.76.0-pre1 | 2.76.0 | Geo.API |
-| Grpc.Net.Client | 2.76.0-pre1 | 2.76.0 | Protos.DotNet |
-| Grpc.Net.ClientFactory | 2.76.0-pre1 | 2.76.0 | REST, Geo.Client |
-| Grpc.Tools | 2.76.0 | 2.78.0 | Protos.DotNet |
+| ~~Google.Protobuf~~ | ~~3.33.1~~ | ~~3.34.0~~ | ~~Messaging.RabbitMQ, Protos.DotNet~~ | ~~DONE~~ |
+| ~~Grpc.AspNetCore~~ | ~~2.76.0-pre1~~ | ~~2.76.0~~ | ~~Geo.API~~ | ~~DONE~~ |
+| ~~Grpc.Net.Client~~ | ~~2.76.0-pre1~~ | ~~2.76.0~~ | ~~Protos.DotNet~~ | ~~DONE~~ |
+| ~~Grpc.Net.ClientFactory~~ | ~~2.76.0-pre1~~ | ~~2.76.0~~ | ~~REST, Geo.Client~~ | ~~DONE~~ |
+| ~~Grpc.Tools~~ | ~~2.76.0~~ | ~~2.78.0~~ | ~~Protos.DotNet~~ | ~~DONE~~ |
 | IPinfo | 3.3.0 | 3.3.0 | Geo.Infra |
-| JetBrains.Annotations | 2025.2.2 | 2025.2.4 | Utilities, Geo.Tests, Tests |
-| Microsoft.AspNetCore.Authentication.JwtBearer | 10.0.0 | 10.0.3 | REST |
-| Microsoft.AspNetCore.OpenApi | 10.0.0 | 10.0.3 | REST |
-| Microsoft.EntityFrameworkCore | 10.0.0 | 10.0.3 | Geo.Infra, Batch.Pg, Transactions.Pg |
-| Microsoft.EntityFrameworkCore.Design | 10.0.0 | 10.0.3 | Geo.Infra |
-| Microsoft.EntityFrameworkCore.InMemory | 10.0.0 | 10.0.3 | Tests |
-| Microsoft.Extensions.Caching.Memory | 10.0.0-rc.2.25502.107 | 10.0.3 | InMemoryCache.Default |
-| Microsoft.Extensions.Configuration | 10.0.0 | 10.0.3 | Geo.Client |
-| Microsoft.Extensions.DependencyInjection.Abstractions | 10.0.0 | 10.0.3 | DistributedCache.Redis, Messaging.RabbitMQ |
-| Microsoft.Extensions.Hosting.Abstractions | 10.0.0 | 10.0.3 | Geo.Client, Messaging.RabbitMQ |
-| Microsoft.Extensions.Http.Resilience | 10.0.0 | 10.3.0 | ServiceDefaults |
-| Microsoft.Extensions.Logging.Abstractions | 10.0.0 | 10.0.3 | Handler, Messaging.RabbitMQ |
-| Microsoft.Extensions.Options.ConfigurationExtensions | 10.0.2 | 10.0.3 | Geo.App |
-| Microsoft.Extensions.ServiceDiscovery | 10.0.0 | 10.3.0 | ServiceDefaults |
-| Microsoft.NET.Test.Sdk | 18.0.1 | 18.3.0 | Geo.Tests, Tests |
+| ~~JetBrains.Annotations~~ | ~~2025.2.2~~ | ~~2025.2.4~~ | ~~Utilities, Geo.Tests, Tests~~ | ~~DONE~~ |
+| ~~Microsoft.AspNetCore.Authentication.JwtBearer~~ | ~~10.0.0~~ | ~~10.0.3~~ | ~~REST~~ | ~~DONE~~ |
+| ~~Microsoft.AspNetCore.OpenApi~~ | ~~10.0.0~~ | ~~10.0.3~~ | ~~REST~~ | ~~DONE~~ |
+| Microsoft.EntityFrameworkCore | 10.0.0 | 10.0.3 | Geo.Infra, Batch.Pg, Transactions.Pg | HELD |
+| Microsoft.EntityFrameworkCore.Design | 10.0.0 | 10.0.3 | Geo.Infra | HELD |
+| Microsoft.EntityFrameworkCore.InMemory | 10.0.0 | 10.0.3 | Tests | HELD |
+| ~~Microsoft.Extensions.Caching.Memory~~ | ~~10.0.0-rc.2~~ | ~~10.0.3~~ | ~~InMemoryCache.Default~~ | ~~DONE~~ |
+| ~~Microsoft.Extensions.Configuration~~ | ~~10.0.0~~ | ~~10.0.3~~ | ~~Geo.Client~~ | ~~DONE~~ |
+| ~~Microsoft.Extensions.DependencyInjection.Abstractions~~ | ~~10.0.0~~ | ~~10.0.3~~ | ~~DistributedCache.Redis, Messaging.RabbitMQ~~ | ~~DONE~~ |
+| ~~Microsoft.Extensions.Hosting.Abstractions~~ | ~~10.0.0~~ | ~~10.0.3~~ | ~~Geo.Client, Messaging.RabbitMQ~~ | ~~DONE~~ |
+| ~~Microsoft.Extensions.Http.Resilience~~ | ~~10.0.0~~ | ~~10.3.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~Microsoft.Extensions.Logging.Abstractions~~ | ~~10.0.0~~ | ~~10.0.3~~ | ~~Handler, Messaging.RabbitMQ~~ | ~~DONE~~ |
+| ~~Microsoft.Extensions.Options.ConfigurationExtensions~~ | ~~10.0.2~~ | ~~10.0.3~~ | ~~Geo.App~~ | ~~DONE~~ |
+| ~~Microsoft.Extensions.ServiceDiscovery~~ | ~~10.0.0~~ | ~~10.3.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~Microsoft.NET.Test.Sdk~~ | ~~18.0.1~~ | ~~18.3.0~~ | ~~Geo.Tests, Tests~~ | ~~DONE~~ |
 | Moq | 4.20.72 | 4.20.72 | Geo.Tests, Tests |
-| Npgsql | 10.0.0 | 10.0.1 | Errors.Pg |
+| ~~Npgsql~~ | ~~10.0.0~~ | ~~10.0.1~~ | ~~Errors.Pg~~ | ~~DONE~~ |
 | Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.0 | 10.0.0 | Geo.Infra, Transactions.Pg |
-| OpenTelemetry.Exporter.OpenTelemetryProtocol | 1.14.0 | 1.15.0 | ServiceDefaults |
-| OpenTelemetry.Exporter.Prometheus.AspNetCore | 1.14.0-beta.1 | 1.15.0-beta.1 | ServiceDefaults |
-| OpenTelemetry.Extensions.Hosting | 1.14.0 | 1.15.0 | ServiceDefaults |
-| OpenTelemetry.Instrumentation.AspNetCore | 1.14.0 | 1.15.0 | ServiceDefaults |
-| OpenTelemetry.Instrumentation.GrpcNetClient | 1.14.0-beta.1 | 1.15.0-beta.1 | ServiceDefaults |
-| OpenTelemetry.Instrumentation.Http | 1.14.0 | 1.15.0 | ServiceDefaults |
-| OpenTelemetry.Instrumentation.Process | 1.14.0-beta.2 | 1.15.0-beta.1 | ServiceDefaults |
-| OpenTelemetry.Instrumentation.Runtime | 1.14.0 | 1.15.0 | ServiceDefaults |
-| RabbitMQ.Client | 7.1.2 | 7.2.1 | Messaging.RabbitMQ |
-| Serilog.AspNetCore | 9.0.0 | 10.0.0 | ServiceDefaults |
-| Serilog.Enrichers.ClientInfo | 2.6.0 | 2.9.0 | ServiceDefaults |
+| ~~OpenTelemetry.Exporter.OpenTelemetryProtocol~~ | ~~1.14.0~~ | ~~1.15.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~OpenTelemetry.Exporter.Prometheus.AspNetCore~~ | ~~1.14.0-beta.1~~ | ~~1.15.0-beta.1~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~OpenTelemetry.Extensions.Hosting~~ | ~~1.14.0~~ | ~~1.15.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~OpenTelemetry.Instrumentation.AspNetCore~~ | ~~1.14.0~~ | ~~1.15.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~OpenTelemetry.Instrumentation.GrpcNetClient~~ | ~~1.14.0-beta.1~~ | ~~1.15.0-beta.1~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~OpenTelemetry.Instrumentation.Http~~ | ~~1.14.0~~ | ~~1.15.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~OpenTelemetry.Instrumentation.Process~~ | ~~1.14.0-beta.2~~ | ~~1.15.0-beta.1~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~OpenTelemetry.Instrumentation.Runtime~~ | ~~1.14.0~~ | ~~1.15.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~RabbitMQ.Client~~ | ~~7.1.2~~ | ~~7.2.1~~ | ~~Messaging.RabbitMQ~~ | ~~DONE~~ |
+| ~~Serilog.AspNetCore~~ | ~~9.0.0~~ | ~~10.0.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~Serilog.Enrichers.ClientInfo~~ | ~~2.6.0~~ | ~~2.9.0~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
 | Serilog.Enrichers.Environment | 3.0.1 | 3.0.1 | ServiceDefaults |
 | Serilog.Enrichers.Span | 3.1.0 | 3.1.0 | ServiceDefaults |
-| Serilog.Sinks.Grafana.Loki | 8.3.1 | 8.3.2 | ServiceDefaults |
-| StackExchange.Redis | 2.9.32 | 2.11.8 | DistributedCache.Redis |
+| ~~Serilog.Sinks.Grafana.Loki~~ | ~~8.3.1~~ | ~~8.3.2~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~StackExchange.Redis~~ | ~~2.9.32~~ | ~~2.11.8~~ | ~~DistributedCache.Redis~~ | ~~DONE~~ |
 | StyleCop.Analyzers | 1.2.0-beta.556 | 1.2.0-beta.556 | (Global) |
-| Testcontainers.PostgreSql | 4.9.0 | 4.10.0 | Geo.Tests, Tests |
-| Testcontainers.RabbitMq | 4.9.0 | 4.10.0 | Geo.Tests |
-| Testcontainers.Redis | 4.9.0 / 4.8.1 | 4.10.0 | Geo.Tests / Tests |
+| ~~Testcontainers.PostgreSql~~ | ~~4.9.0~~ | ~~4.10.0~~ | ~~Geo.Tests, Tests~~ | ~~DONE~~ |
+| ~~Testcontainers.RabbitMq~~ | ~~4.9.0~~ | ~~4.10.0~~ | ~~Geo.Tests~~ | ~~DONE~~ |
+| ~~Testcontainers.Redis~~ | ~~4.9.0 / 4.8.1~~ | ~~4.10.0~~ | ~~Geo.Tests / Tests~~ | ~~DONE~~ |
 | xunit.runner.visualstudio | 3.1.5 | 3.1.5 | Geo.Tests, Tests |
-| xunit.v3 | 3.2.0 | 3.2.2 | Geo.Tests, Tests |
+| ~~xunit.v3~~ | ~~3.2.0~~ | ~~3.2.2~~ | ~~Geo.Tests, Tests~~ | ~~DONE~~ |
 
 </details>
 

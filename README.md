@@ -59,7 +59,7 @@ Summary:
 - Geo.Client: Service-owned client library (messages, interfaces, WhoIs cache handler)
 - Request enrichment middleware (IP resolution, fingerprinting, WhoIs geolocation lookup)
 - Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
-- 1,436+ .NET tests (unit + integration) passing (677 shared + 759 Geo service)
+- 1,528+ .NET tests (unit + integration) passing (730 shared + 798 Geo service)
 - Node.js pnpm workspace with shared TypeScript config and Vitest
 - ESLint 9 + Prettier monorepo-wide code quality tooling
 - TypeScript shared infrastructure (Phase 1 complete — 19 `@d2/*` shared packages, 857 tests):
@@ -325,9 +325,9 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 ![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
 ![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
-![StackExchange.Redis](https://img.shields.io/badge/StackExchange.Redis-2.9-DC382D?logo=redis)
-![Serilog](https://img.shields.io/badge/Serilog-9.0-512BD4?logo=dotnet)
-![RabbitMQ.Client](https://img.shields.io/badge/RabbitMQ.Client-7.1-FF6600?logo=rabbitmq)
+![StackExchange.Redis](https://img.shields.io/badge/StackExchange.Redis-2.11-DC382D?logo=redis)
+![Serilog](https://img.shields.io/badge/Serilog-10.0-512BD4?logo=dotnet)
+![RabbitMQ.Client](https://img.shields.io/badge/RabbitMQ.Client-7.2-FF6600?logo=rabbitmq)
 
 #### Node.js Backend
 
@@ -366,12 +366,12 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![REST](https://img.shields.io/badge/REST-API-009688)
 ![SignalR](https://img.shields.io/badge/SignalR-WebSocket-512BD4)
 ![gRPC](https://img.shields.io/badge/gRPC-HTTP%2F2-244c5a?logo=grpc)
-![Protobuf](https://img.shields.io/badge/Protobuf-3-0288D1)
+![Protobuf](https://img.shields.io/badge/Protobuf-3.34-0288D1)
 ![Buf](https://img.shields.io/badge/Buf-1.65-0A7AFF?logo=buf)
 
 #### Observability
 
-![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.14-5B5EA7?logo=opentelemetry)
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.15-5B5EA7?logo=opentelemetry)
 ![Loki](https://img.shields.io/badge/Loki-3.5-F46800?logo=grafana)
 ![Grafana](https://img.shields.io/badge/Grafana-12.2-F46800?logo=grafana)
 ![Tempo](https://img.shields.io/badge/Tempo-2.8-F46800?logo=grafana)

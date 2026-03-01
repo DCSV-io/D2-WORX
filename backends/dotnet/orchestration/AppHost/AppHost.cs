@@ -227,6 +227,7 @@ var postgresExporter = builder.AddContainer(
 
 // Redis - Cache.
 var cache = builder.AddRedis("d2-redis", 6379, cachePassword)
+    .WithoutHttpsCertificate()
     .WithContainerName("d2-redis")
     .WithIconName("Memory")
     .WithImageTag("8.2.1-bookworm")
