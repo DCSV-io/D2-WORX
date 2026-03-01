@@ -552,31 +552,31 @@ Key breaking changes:
 
 ---
 
-### Step 4 — Node.js Backend Bumps (including better-auth 1.5)
+### ~~Step 4 — Node.js Backend Bumps (including better-auth 1.5)~~ DONE
 
 **Effort: ~1 hour. Risk: Low. Commit separately.**
 
 Update `package.json` files with exact pinned versions, then `pnpm install`.
 
-| # | Package | Version | Files |
-| - | ------- | ------- | ----- |
-| 4a | `better-auth` | → **1.5.0** | `auth/infra/package.json` |
-| 4b | `@better-auth/cli` | **Remove** (deprecated — replaced by `npx auth`) | `auth/infra/package.json` devDeps |
-| 4c | `hono` | → **4.12.3** | `auth/api/package.json` |
-| 4d | `ioredis` | → **5.10.0** | `cache-redis/package.json`, `auth/api/package.json`, `comms/api/package.json` |
-| 4e | `pg` | → **8.19.0** | `auth/infra/package.json`, `auth/api/package.json`, `comms/infra/package.json`, `comms/api/package.json` |
-| 4f | `pino-pretty` | → **13.1.3** | `logging/package.json` |
-| 4g | `prettier-plugin-svelte` | → **3.5.0** | Root `package.json` |
-| 4h | `typescript-eslint` | → **8.56.1** | Root `package.json` |
+| # | Package | Version | Files | Status |
+| - | ------- | ------- | ----- | ------ |
+| ~~4a~~ | ~~`better-auth`~~ | ~~→ **1.5.0**~~ | ~~`auth/infra/package.json`~~ | ~~DONE~~ |
+| ~~4b~~ | ~~`@better-auth/cli`~~ | ~~**Remove** (deprecated — replaced by `npx auth`)~~ | ~~`auth/infra/package.json` devDeps~~ | ~~DONE~~ |
+| ~~4c~~ | ~~`hono`~~ | ~~→ **4.12.3**~~ | ~~`auth/api/package.json`~~ | ~~DONE~~ |
+| ~~4d~~ | ~~`ioredis`~~ | ~~→ **5.10.0**~~ | ~~`cache-redis/package.json`, `auth/api/package.json`, `comms/api/package.json`~~ | ~~DONE~~ |
+| ~~4e~~ | ~~`pg`~~ | ~~→ **8.19.0**~~ | ~~`auth/infra/package.json`, `auth/api/package.json`, `comms/infra/package.json`, `comms/api/package.json`~~ | ~~DONE~~ |
+| ~~4f~~ | ~~`pino-pretty`~~ | ~~→ **13.1.3**~~ | ~~`logging/package.json`~~ | ~~DONE~~ |
+| ~~4g~~ | ~~`prettier-plugin-svelte`~~ | ~~→ **3.5.0**~~ | ~~Root `package.json`~~ | ~~DONE~~ |
+| ~~4h~~ | ~~`typescript-eslint`~~ | ~~→ **8.56.1**~~ | ~~Root `package.json`~~ | ~~DONE~~ |
 
 **better-auth 1.5 specific validation:**
-- `pnpm vitest run --project auth-tests` — all 865 tests pass
+- ~~`pnpm vitest run --project auth-tests` — all 865 tests pass~~ **Confirmed** — 865 tests pass
 - Verify sign-up flow (Geo contact creation in `user.create.before` hook)
 - Verify sign-in audit event recording (`session.create.after` — now fires post-transaction, but already fire-and-forget)
 - Verify Redis secondary storage session reads/writes
 - Verify impersonation JWT payload generation
 
-**General validation:** `pnpm install` succeeds. `pnpm vitest run` passes (all 1400+ unit tests).
+**General validation:** ~~`pnpm install` succeeds. `pnpm vitest run` passes (all 1400+ unit tests).~~ **All verified.** Build: all 36 packages clean. Tests: 2,534 passed (973 shared + 865 auth + 553 comms + 64 dkron-mgr + 79 e2e-adjacent). 3 RabbitMQ container startup timeouts on first run (Docker flakiness, pass on retry).
 
 ---
 
