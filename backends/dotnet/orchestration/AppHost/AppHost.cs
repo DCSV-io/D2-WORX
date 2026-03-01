@@ -198,7 +198,7 @@ var db = builder.AddPostgres(
     .WithContainerName("d2-postgres")
     .WithIconName("DatabaseStack")
     .WithImageTag("18.3-trixie")
-    .WithEnvironment("PGDATA", "/var/lib/postgresql/data")
+    .WithEnvironment("PGDATA", "/var/lib/postgresql/data") // PG 18+ default changed; Aspire fix pending (dotnet/aspire#13792)
     .WithDataVolume("d2-postgres-data")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithPgAdmin(x =>
