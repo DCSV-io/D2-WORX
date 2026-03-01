@@ -73,10 +73,46 @@ describe("validators", () => {
   // isValidEmail
   // -------------------------------------------------------------------------
   describe("isValidEmail", () => {
-    it("should accept valid emails", () => {
+    it("should accept standard emails", () => {
       expect(validators.isValidEmail("user@example.com")).toBe(true);
       expect(validators.isValidEmail("a@b.co")).toBe(true);
       expect(validators.isValidEmail("test+tag@domain.org")).toBe(true);
+    });
+
+    it("should accept emails with dots in local part", () => {
+      expect(validators.isValidEmail("first.last@example.com")).toBe(true);
+      expect(validators.isValidEmail("a.b.c.d@example.com")).toBe(true);
+    });
+
+    it("should accept emails with subdomains", () => {
+      expect(validators.isValidEmail("user@mail.example.com")).toBe(true);
+      expect(validators.isValidEmail("user@a.b.c.example.com")).toBe(true);
+    });
+
+    it("should accept emails with country-code TLDs", () => {
+      expect(validators.isValidEmail("user@example.co.uk")).toBe(true);
+      expect(validators.isValidEmail("user@example.com.au")).toBe(true);
+      expect(validators.isValidEmail("user@example.co.jp")).toBe(true);
+      expect(validators.isValidEmail("user@example.org.br")).toBe(true);
+    });
+
+    it("should accept emails with long TLDs", () => {
+      expect(validators.isValidEmail("user@example.museum")).toBe(true);
+      expect(validators.isValidEmail("user@example.travel")).toBe(true);
+      expect(validators.isValidEmail("user@example.photography")).toBe(true);
+    });
+
+    it("should accept emails with numbers and hyphens in domain", () => {
+      expect(validators.isValidEmail("user@my-domain.com")).toBe(true);
+      expect(validators.isValidEmail("user@123.123.123.com")).toBe(true);
+      expect(validators.isValidEmail("user@domain123.com")).toBe(true);
+    });
+
+    it("should accept emails with special chars in local part", () => {
+      expect(validators.isValidEmail("user+tag@example.com")).toBe(true);
+      expect(validators.isValidEmail("user_name@example.com")).toBe(true);
+      expect(validators.isValidEmail("user-name@example.com")).toBe(true);
+      expect(validators.isValidEmail("user123@example.com")).toBe(true);
     });
 
     it("should reject invalid emails", () => {
@@ -84,25 +120,71 @@ describe("validators", () => {
       expect(validators.isValidEmail("not-an-email")).toBe(false);
       expect(validators.isValidEmail("@domain.com")).toBe(false);
       expect(validators.isValidEmail("user@")).toBe(false);
+      expect(validators.isValidEmail("user@ example.com")).toBe(false);
+      expect(validators.isValidEmail("user @example.com")).toBe(false);
+      expect(validators.isValidEmail("user@domain")).toBe(false);
     });
   });
 
   // -------------------------------------------------------------------------
-  // isValidPhoneE164
+  // isValidPhoneE164 (digits only, 7-15 — stored after stripping non-digits)
   // -------------------------------------------------------------------------
   describe("isValidPhoneE164", () => {
-    it("should accept valid phone numbers (7-15 digits)", () => {
-      expect(validators.isValidPhoneE164("1234567")).toBe(true); // 7 digits
-      expect(validators.isValidPhoneE164("123456789012345")).toBe(true); // 15 digits
-      expect(validators.isValidPhoneE164("15551234567")).toBe(true);
+    it("should accept US numbers (11 digits)", () => {
+      expect(validators.isValidPhoneE164("12125551234")).toBe(true);
+      expect(validators.isValidPhoneE164("18005551234")).toBe(true);
     });
 
-    it("should reject invalid phone numbers", () => {
+    it("should accept UK numbers (12 digits)", () => {
+      expect(validators.isValidPhoneE164("442071234567")).toBe(true);
+      expect(validators.isValidPhoneE164("447911123456")).toBe(true);
+    });
+
+    it("should accept German numbers (10-13 digits)", () => {
+      expect(validators.isValidPhoneE164("4930123456")).toBe(true);
+      expect(validators.isValidPhoneE164("4915112345678")).toBe(true);
+    });
+
+    it("should accept Japanese numbers (11-12 digits)", () => {
+      expect(validators.isValidPhoneE164("81312345678")).toBe(true);
+      expect(validators.isValidPhoneE164("819012345678")).toBe(true);
+    });
+
+    it("should accept Indian numbers (12 digits)", () => {
+      expect(validators.isValidPhoneE164("919876543210")).toBe(true);
+    });
+
+    it("should accept Australian numbers (11 digits)", () => {
+      expect(validators.isValidPhoneE164("61212345678")).toBe(true);
+      expect(validators.isValidPhoneE164("61412345678")).toBe(true);
+    });
+
+    it("should accept Brazilian numbers (12-13 digits)", () => {
+      expect(validators.isValidPhoneE164("551123456789")).toBe(true);
+      expect(validators.isValidPhoneE164("5511987654321")).toBe(true);
+    });
+
+    it("should accept Chinese numbers (13 digits)", () => {
+      expect(validators.isValidPhoneE164("8613812345678")).toBe(true);
+    });
+
+    it("should accept boundary lengths (7 and 15 digits)", () => {
+      expect(validators.isValidPhoneE164("1234567")).toBe(true);
+      expect(validators.isValidPhoneE164("123456789012345")).toBe(true);
+    });
+
+    it("should reject numbers that are too short or too long", () => {
       expect(validators.isValidPhoneE164("")).toBe(false);
-      expect(validators.isValidPhoneE164("123456")).toBe(false); // too short
-      expect(validators.isValidPhoneE164("1234567890123456")).toBe(false); // too long
-      expect(validators.isValidPhoneE164("+1234567")).toBe(false); // has +
-      expect(validators.isValidPhoneE164("123-456-7890")).toBe(false); // has dashes
+      expect(validators.isValidPhoneE164("123456")).toBe(false);
+      expect(validators.isValidPhoneE164("1234567890123456")).toBe(false);
+    });
+
+    it("should reject numbers with non-digit characters (pre-cleaning)", () => {
+      expect(validators.isValidPhoneE164("+1234567")).toBe(false);
+      expect(validators.isValidPhoneE164("123-456-7890")).toBe(false);
+      expect(validators.isValidPhoneE164("(212) 555-1234")).toBe(false);
+      expect(validators.isValidPhoneE164("123 456 7890")).toBe(false);
+      expect(validators.isValidPhoneE164("abc1234567")).toBe(false);
     });
   });
 
