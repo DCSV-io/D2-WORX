@@ -1323,6 +1323,17 @@ clients/web/src/routes/
 
 - **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
 
+### Deferred Upgrades (from Q1 2026 audit)
+
+| Item | Priority | Notes |
+| ---- | -------- | ----- |
+| MinIO replacement | Medium | Project archived Feb 2026. Pinned images still work. Evaluate Garage (AGPLv3), RustFS (Apache 2.0), or SeaweedFS (Apache 2.0) as a separate initiative. |
+| EF Core → 10.0.3 | Blocked | `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins EF Core Relational to 10.0.0. Wait for Npgsql EF provider 10.0.x release. |
+| Serilog.Enrichers.Span removal | Low | Deprecated upstream — Serilog now natively supports span data. Low-priority cleanup. |
+| dotenv.net 4.0 | Low | Major version with potential API changes. Only used in .NET Utilities. |
+| Mimir 3.0 | Low | Major architectural change (Kafka buffer, new MQE, Consul/etcd deprecated). Requires deploying second cluster. Dedicated sprint. |
+| RedisInsight 3.x | Low | Dev tool only. Major version with new UI + storage changes. 2.70.1 still works. |
+
 ### Blocked — Can Only Fix Later
 
 | #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
@@ -1340,4 +1351,4 @@ clients/web/src/routes/
 
 ---
 
-_Last updated: 2026-02-27_
+_Last updated: 2026-03-01_
