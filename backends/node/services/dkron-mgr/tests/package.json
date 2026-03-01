@@ -12,6 +12,6 @@
     "@d2/logging": "workspace:*",
     "@d2/testing": "workspace:*",
     "testcontainers": "11.12.0",
-    "vitest": "3.2.4"
+    "vitest": "4.0.18"
   }
 }

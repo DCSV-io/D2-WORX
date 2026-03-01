@@ -36,8 +36,8 @@ export const zodIpAddress = z
   .string()
   .refine(isValidIpAddress, "Must be a valid IPv4 or IPv6 address");
 
-/** Zod schema for a valid UUID. */
-export const zodGuid = z.string().uuid("Must be a valid UUID");
+/** Zod schema for a valid UUID (permissive — any version/variant). */
+export const zodGuid = z.string().refine(isValidGuid, "Must be a valid UUID");
 
 /** Zod schema for a valid email address. */
 export const zodEmail = z.string().refine(isValidEmail, "Must be a valid email address");
@@ -57,5 +57,5 @@ export const zodNonEmptyArray = <T extends z.ZodTypeAny>(schema: T) =>
 export const zodAllowedContextKey = (allowed: string[]) =>
   z.string().refine(
     (k) => allowed.length === 0 || allowed.includes(k),
-    (k) => ({ message: `Context key "${k}" is not allowed` }),
+    "Context key is not in the allowed list",
   );

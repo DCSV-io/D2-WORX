@@ -21,6 +21,6 @@
     "@d2/interfaces": "workspace:*",
     "@d2/logging": "workspace:*",
     "@d2/result": "workspace:*",
-    "zod": "3.25.76"
+    "zod": "4.3.6"
   }
 }

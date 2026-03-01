@@ -29,6 +29,6 @@
     "@d2/utilities": "workspace:*",
     "isomorphic-dompurify": "3.0.0",
     "marked": "17.0.3",
-    "zod": "3.25.76"
+    "zod": "4.3.6"
   }
 }

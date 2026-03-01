@@ -47,6 +47,7 @@ export default defineConfig({
     environment: "node",
     testTimeout: 10_000,
     hookTimeout: 60_000,
+    clearMocks: true,
     restoreMocks: true,
     include: ["**/*.test.ts", "**/*.spec.ts"],
   },

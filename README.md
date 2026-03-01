@@ -61,8 +61,8 @@ Summary:
 - Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
 - 1,528+ .NET tests (unit + integration) passing (730 shared + 798 Geo service)
 - Node.js pnpm workspace with shared TypeScript config and Vitest
-- ESLint 9 + Prettier monorepo-wide code quality tooling
-- TypeScript shared infrastructure (Phase 1 complete — 19 `@d2/*` shared packages, 857 tests):
+- ESLint 10 + Prettier monorepo-wide code quality tooling
+- TypeScript shared infrastructure (Phase 1 complete — 19 `@d2/*` shared packages, 973 tests):
   - Layer 0: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing`, `@d2/messaging`
   - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction), `@d2/di` (DI container)
   - Layer 2: `@d2/interfaces`, `@d2/result-extensions`
@@ -73,12 +73,12 @@ Summary:
 
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
-- Auth service Stage B (Node.js + Hono + BetterAuth) — 874 auth tests passing:
+- Auth service Stage B (Node.js + Hono + BetterAuth) — 922 auth tests passing:
   - Domain model (entities, value objects, business rules)
   - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
-- Comms service Phase 1 (delivery engine) — 566 comms tests passing:
+- Comms service Phase 1 (delivery engine) — 592 comms tests passing:
   - Email delivery via Resend, SMS via Twilio
   - `@d2/comms-client` — thin RabbitMQ publishing client (universal notification shape)
   - RabbitMQ consumer for notification requests, gRPC API layer + Aspire wiring
@@ -381,7 +381,7 @@ While WORX itself will be a commercial product, this repository exists (for now,
 #### Testing & Quality
 
 ![xUnit](https://img.shields.io/badge/xUnit-3.2.2-512BD4)
-![Vitest](https://img.shields.io/badge/Vitest-3.2-6E9F18?logo=vitest)
+![Vitest](https://img.shields.io/badge/Vitest-4.0-6E9F18?logo=vitest)
 ![Testcontainers](https://img.shields.io/badge/Testcontainers-4.10-2496ED?logo=docker)
 ![FluentAssertions](https://img.shields.io/badge/FluentAssertions-8.8-5C2D91)
 ![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
@@ -390,7 +390,7 @@ While WORX itself will be a commercial product, this repository exists (for now,
 #### CI/CD & Code Quality
 
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
-![ESLint](https://img.shields.io/badge/ESLint-9.39-4B32C3?logo=eslint)
+![ESLint](https://img.shields.io/badge/ESLint-10.0-4B32C3?logo=eslint)
 ![Prettier](https://img.shields.io/badge/Prettier-3.8-F7B93E?logo=prettier)
 ![StyleCop](https://img.shields.io/badge/StyleCop-Enforced-239120)
 ![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?logo=conventionalcommits)

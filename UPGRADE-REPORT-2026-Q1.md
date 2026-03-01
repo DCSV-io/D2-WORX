@@ -681,63 +681,53 @@ Upgrade all `@opentelemetry/*` packages together. These span `@d2/service-defaul
 
 ---
 
-### Step 9 — Major Upgrade: Vitest 4.0 (separate PR)
+### Step 9 — ~~Major Upgrade: Vitest 4.0~~ DONE
 
-**Effort: ~4 hours. Risk: High.**
-
-This touches every test project in the monorepo.
+**vitest 3.2.4 → 4.0.18, @vitest/coverage-v8 3.2.4 → 4.0.18, @vitest/browser 3.2.4 → 4.0.18, vitest-browser-svelte 1.1.0 → 2.0.2**
 
 | # | Action | Details |
 | - | ------ | ------- |
-| 9a | Rename `vitest.workspace.ts` | Migrate to `projects` array in `vitest.config.ts` (or rename key from `workspace` to `projects`). |
-| 9b | Bump `vitest` to **4.0.18** | Root `package.json` and all test project `package.json` files. |
-| 9c | Bump `@vitest/coverage-v8` to **4.0.18** | Root `package.json`. |
-| 9d | Bump `@vitest/browser` to **4.0.18** | `clients/web/package.json`. |
-| 9e | Install `@vitest/browser-playwright` | New required provider package for browser tests. |
-| 9f | Bump `vitest-browser-svelte` to **2.0.2** | `clients/web/package.json`. |
-| 9g | Review mock constructors | Search for `vi.fn()` used with `new` — behavior changed (now constructs instances). |
-| 9h | Review coverage config | May need explicit `include` patterns. |
-| 9i | Run full test suite | All 1400+ tests must pass. |
+| 9a | ~~Migrate workspace to projects~~ | Deleted `vitest.workspace.ts`, merged `projects` array into `vitest.config.ts`. |
+| 9b | ~~Bump `vitest` to 4.0.18~~ | Root + 5 test projects + web client (7 files). |
+| 9c | ~~Bump `@vitest/coverage-v8` to 4.0.18~~ | Root `package.json`. |
+| 9d | ~~Bump `@vitest/browser` to 4.0.18~~ | `clients/web/package.json`. |
+| 9e | ~~Install `@vitest/browser-playwright`~~ | New provider package added. Vite config updated: `provider: "playwright"` → `provider: playwright()`. |
+| 9f | ~~Bump `vitest-browser-svelte` to 2.0.2~~ | `clients/web/package.json`. |
+| 9g | ~~Fix mock constructors~~ | `vi.fn().mockReturnValue()` → `vi.fn(function() { ... })` for mocks used with `new` (message-bus.test.ts). |
+| 9h | ~~Fix mock clearing~~ | Added `clearMocks: true` to `vitest.shared.ts` — Vitest 4's `restoreMocks` no longer clears standalone `vi.fn()` call history. |
+| 9i | ~~Update `@d2/testing` peer dep~~ | `vitest: ">=3.0.0"` → `">=4.0.0"`. |
+| 9j | ~~Remove deprecated triple-slash ref~~ | Removed `@vitest/browser/providers/playwright` reference from `vitest-setup-client.ts`. |
 
-**Validation:** `pnpm vitest run` — all tests green. Coverage report generates correctly.
+**Breaking changes found:** (1) `vi.fn()` arrow functions can't be used as constructors — wrap in regular `function`. (2) `vi.restoreAllMocks()` no longer clears standalone `vi.fn()` call history — add `clearMocks: true`. (3) Browser provider now requires function call syntax `playwright()` instead of string `"playwright"`.
 
 ---
 
-### Step 10 — Major Upgrade: Zod 4 (separate PR)
+### Step 10 — ~~Major Upgrade: Zod 4~~ DONE
 
-**Effort: ~6 hours. Risk: High.**
-
-Unifies backend (3.25.76) and web (4.1.11) on Zod 4.3.6.
+**zod 3.25.76 → 4.3.6 (9 backend packages), zod 4.1.11 → 4.3.6 (web client)**
 
 | # | Action | Details |
 | - | ------ | ------- |
-| 10a | Run codemod | `npx zod-v3-to-v4` on all backend packages. Handles most mechanical changes. |
-| 10b | Manual schema audit | `z.string().email()` → `z.email()`, `z.string().uuid()` → `z.uuid()` or `z.guid()`. |
-| 10c | Fix `z.record()` calls | Now requires two args (key schema + value schema). |
-| 10d | Fix `.strict()` / `.passthrough()` | → `z.strictObject()` / `z.looseObject()`. |
-| 10e | Fix error customization | `message` param → `error` param in schema methods. |
-| 10f | Fix `error.errors` | → `error.issues` (if accessed in error handling). |
-| 10g | Bump all backend `zod` to **4.3.6** | 7 package.json files. |
-| 10h | Bump web `zod` to **4.3.6** | `clients/web/package.json` (from 4.1.11). |
-| 10i | Run full test suite | All handler tests validate schema behavior. |
+| 10a | ~~Bump all backend `zod` to 4.3.6~~ | 9 packages: handler, geo-client, shared-tests, comms-infra, comms-client, auth-app, comms-app, ratelimit, idempotency. |
+| 10b | ~~Bump web `zod` to 4.3.6~~ | `clients/web/package.json` (from 4.1.11). |
+| 10c | ~~Fix `z.record()` single-arg~~ | `z.record(z.unknown())` → `z.record(z.string(), z.unknown())` in 2 files (notify.ts, notification-consumer.ts). |
+| 10d | ~~Fix `.refine()` function-message~~ | `(k) => ({ message: ... })` form removed — changed to static string in `zodAllowedContextKey`. |
+| 10e | ~~Fix `z.string().uuid()` strictness~~ | Zod 4 enforces RFC 9562 variant bits. Changed `zodGuid` to use permissive regex `isValidGuid`. Replaced `z.string().uuid()` in comms-client and comms-infra with regex. |
 
-**Validation:** `pnpm vitest run` — all tests green. `pnpm tsc --noEmit` across all packages.
+**Breaking changes found:** (1) `z.record()` single-arg form removed. (2) `.refine()` no longer accepts function as second arg for dynamic messages. (3) `z.string().uuid()` now strictly validates RFC 9562 variant bits — test UUIDs with fabricated values would fail. Fixed by using our permissive regex validator. (4) `.passthrough()` and `.email()` on strings still work (deprecated, not removed).
 
 ---
 
-### Step 11 — Major Upgrade: Resend 6.x (separate PR)
+### Step 11 — ~~Major Upgrade: Resend 6.x~~ DONE
 
-**Effort: ~2 hours. Risk: Medium.**
+**resend 4.5.1 → 6.9.3**
 
 | # | Action | Details |
 | - | ------ | ------- |
-| 11a | Review v5.0.0 changelog | Check [GitHub releases](https://github.com/resend/resend-node/releases) for API changes. |
-| 11b | Review v6.0.0 changelog | Same. |
-| 11c | Bump `resend` to **6.9.3** | `comms/infra/package.json`. |
-| 11d | Update `@d2/comms-infra` email provider | Fix any constructor / response type changes. |
-| 11e | Run comms tests | Unit + integration tests for email delivery. |
+| 11a | ~~Bump `resend` to 6.9.3~~ | `comms/infra/package.json` + `comms/tests/package.json`. |
+| 11b | ~~Verify API compatibility~~ | `new Resend(apiKey)` + `client.emails.send()` API unchanged across v4→v6. No code changes needed. |
 
-**Validation:** `pnpm vitest run --project comms-tests`. E2E verification email test passes.
+**Breaking changes found:** None affecting our usage. The `Resend` constructor and `emails.send()` API are stable.
 
 ---
 
@@ -760,16 +750,11 @@ Unifies backend (3.25.76) and web (4.1.11) on Zod 4.3.6.
 
 ### Upgrade Summary by PR
 
-| PR | Steps | Scope | Risk | Estimated Effort | Status |
-| -- | ----- | ----- | ---- | ---------------- | ------ |
-| PR 1 | Steps 1–6 | Platform + all safe bumps (incl. better-auth 1.5) + containers | None–Low | ~5 hours | **IN PROGRESS** (Step 1 done, Aspire done, Step 2 remaining items next) |
-| PR 2 | Step 7 | Node.js OTel upgrade | Medium | ~2 hours | |
-| PR 3 | Step 8 | Node.js minor breaking changes | Medium | ~2 hours | |
-| PR 4 | Step 9 | Vitest 4.0 | High | ~4 hours | |
-| PR 5 | Step 10 | Zod 4 unification | High | ~6 hours | |
-| PR 6 | Step 11 | Resend 6.x | Medium | ~2 hours | |
+| PR    | Steps     | Scope                                                          | Risk     | Status     |
+| ----- | --------- | -------------------------------------------------------------- | -------- | ---------- |
+| PR 1  | Steps 1–11| All upgrades — platforms, .NET, Node.js, frontend, containers  | High     | **DONE**   |
 
-Steps 1–6 can be a single large PR (all safe, mechanical changes) or split into smaller PRs per step if preferred. Steps 7+ should each be their own PR due to increasing risk. Note: better-auth 1.5 is included in PR 1 because D2-WORX's codebase avoids all breaking changes — the auth test suite (865 tests) provides strong coverage for validation.
+All steps completed in a single PR on branch `chore/2026-Q1-pkg-upgrades`. 2,563 Node.js tests passing, 1,528 .NET tests passing. svelte-check: 0 errors. ESLint: 0 errors.
 
 ---
 

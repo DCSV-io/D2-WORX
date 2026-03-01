@@ -23,7 +23,7 @@ export interface NotificationConsumerDeps {
  * Matches the NotifyInput shape published by @d2/comms-client.
  */
 const notificationMessageSchema = z.object({
-  recipientContactId: z.string().uuid(),
+  recipientContactId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Must be a valid UUID"),
   title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
   plaintext: z.string().min(1).max(50_000),
@@ -31,7 +31,7 @@ const notificationMessageSchema = z.object({
   urgency: z.enum(["normal", "urgent"]).optional(),
   correlationId: z.string().min(1).max(36),
   senderService: z.string().min(1).max(50),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 type NotificationMessage = z.infer<typeof notificationMessageSchema>;

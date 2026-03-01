@@ -28,7 +28,7 @@ export interface NotifyInput {
 export interface NotifyOutput {}
 
 const notifySchema = z.object({
-  recipientContactId: z.string().uuid().min(1),
+  recipientContactId: z.string().min(1).regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Must be a valid UUID"),
   title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
   plaintext: z.string().min(1).max(50_000),
@@ -36,7 +36,7 @@ const notifySchema = z.object({
   urgency: z.enum(["normal", "urgent"]).optional().default("normal"),
   correlationId: z.string().min(1).max(36),
   senderService: z.string().min(1).max(50),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**
