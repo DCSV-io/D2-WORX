@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { IMessagePublisher } from "@d2/messaging";
 import { COMMS_EVENTS } from "../../comms-client-constants.js";
@@ -28,7 +28,7 @@ export interface NotifyInput {
 export interface NotifyOutput {}
 
 const notifySchema = z.object({
-  recipientContactId: z.string().min(1).regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Must be a valid UUID"),
+  recipientContactId: zodGuid,
   title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
   plaintext: z.string().min(1).max(50_000),

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zodGuid } from "@d2/handler";
 import type { MessageBus, IMessagePublisher, IncomingMessage } from "@d2/messaging";
 import { ConsumerResult } from "@d2/messaging";
 import type { ILogger } from "@d2/logging";
@@ -23,7 +24,7 @@ export interface NotificationConsumerDeps {
  * Matches the NotifyInput shape published by @d2/comms-client.
  */
 const notificationMessageSchema = z.object({
-  recipientContactId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Must be a valid UUID"),
+  recipientContactId: zodGuid,
   title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
   plaintext: z.string().min(1).max(50_000),
