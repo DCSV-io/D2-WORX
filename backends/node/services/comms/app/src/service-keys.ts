@@ -26,7 +26,7 @@ import type {
 
 // Import app-layer handler types
 import type { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
-import type { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
+import type { RecipientResolver } from "./implementations/cqrs/handlers/q/resolve-recipient.js";
 import type { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
 import type { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
 import type { RunDeletedMessagePurge } from "./implementations/cqrs/handlers/c/run-deleted-message-purge.js";

@@ -541,9 +541,9 @@ backends/node/services/comms/
 |       |   +-- providers/             (IEmailProvider, ISmsProvider)
 |       +-- implementations/
 |       |   +-- cqrs/handlers/
-|       |       +-- x/                 (Deliver, RecipientResolver)
+|       |       +-- x/                 (Deliver)
 |       |       +-- c/                 (SetChannelPreference)
-|       |       +-- q/                 (GetChannelPreference)
+|       |       +-- q/                 (GetChannelPreference, RecipientResolver)
 |       +-- registration.ts   (addCommsApp -- DI wiring)
 |       +-- service-keys.ts   (DI service key definitions)
 |       +-- index.ts
@@ -584,7 +584,7 @@ backends/node/services/comms/
 | Handler                | Type    | Category | Description                                                                                                                                                 |
 | ---------------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Deliver`              | Complex | `x/`     | Orchestrates full delivery: create Message + DeliveryRequest, resolve recipient, resolve channels, render markdown, dispatch via providers, record attempts |
-| `RecipientResolver`    | Complex | `x/`     | Resolves email/phone from contactId via geo-client `GetContactsByIds`                                                                                       |
+| `RecipientResolver`    | Query   | `q/`     | Resolves email/phone from contactId via geo-client `GetContactsByIds`                                                                                       |
 | `SetChannelPreference` | Command | `c/`     | Creates or updates channel preferences for a contact                                                                                                        |
 | `GetChannelPreference` | Query   | `q/`     | Returns channel preferences for a contact (creates defaults if missing)                                                                                     |
 
