@@ -60,7 +60,7 @@ export type {
   UpdateSignInEventWhoIsIdOutput,
   DeleteOrgContactRecordInput,
   DeleteOrgContactRecordOutput,
-  // Query (Q) — PingDb
+  // Read (R) — PingDb
   PingDbInput,
   PingDbOutput,
   IPingDbHandler,

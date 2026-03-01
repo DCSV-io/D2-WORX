@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Geo.Infra.Repository.Handlers.Q;
+namespace D2.Geo.Infra.Repository.Handlers.R;
 
 using System.Diagnostics;
 using D2.Shared.Handler;
@@ -12,9 +12,9 @@ using D2.Shared.Result;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-using H = D2.Geo.App.Interfaces.Repository.Handlers.Q.IRead.IPingDbHandler;
-using I = D2.Geo.App.Interfaces.Repository.Handlers.Q.IRead.PingDbInput;
-using O = D2.Geo.App.Interfaces.Repository.Handlers.Q.IRead.PingDbOutput;
+using H = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.IPingDbHandler;
+using I = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.PingDbInput;
+using O = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.PingDbOutput;
 
 /// <summary>
 /// Handler for pinging the Geo database to verify connectivity.

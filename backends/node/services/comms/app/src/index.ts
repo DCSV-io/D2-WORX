@@ -70,7 +70,7 @@ export type {
   PurgeDeliveryHistoryInput,
   PurgeDeliveryHistoryOutput,
   IPurgeDeliveryHistoryHandler,
-  // Query (Q) — PingDb
+  // Read (R) — PingDb
   PingDbInput,
   PingDbOutput,
   IPingDbHandler,

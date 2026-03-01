@@ -67,7 +67,7 @@ src/
       resend-email-provider.test.ts         ResendEmailProvider (mocked Resend client)
       twilio-sms-provider.test.ts           TwilioSmsProvider (mocked Twilio client)
       retry-topology.test.ts               getRetryTierQueue mapping + declareRetryTopology
-      repository/handlers/q/
+      repository/handlers/r/
         ping-db.test.ts                     PingDb handler (healthy, unhealthy, error, latency)
     api/
       comms-grpc-service.test.ts            gRPC service handlers (mocked DI provider)

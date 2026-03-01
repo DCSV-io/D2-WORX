@@ -100,8 +100,8 @@ export type {
   IPurgeDeliveryHistoryHandler,
 } from "./d/purge-delivery-history.js";
 
-// --- Query (Q) ---
-export type { PingDbInput, PingDbOutput, IPingDbHandler } from "./q/ping-db.js";
+// --- Read (R) ---
+export type { PingDbInput, PingDbOutput, IPingDbHandler } from "./r/ping-db.js";
 
 // ---------------------------------------------------------------------------
 // Bundle types — one per aggregate, used by app-layer factory functions
