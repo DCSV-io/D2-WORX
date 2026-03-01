@@ -12,15 +12,15 @@
 
 ### Current Platform Versions
 
-| Platform | Current | Latest Stable | Gap |
-| -------- | ------- | ------------- | --- |
-| .NET SDK | 10.0.100 (implicit) | **10.0.103** | 3 patches (**CVE-2026-21218**) |
-| Node.js | 24.7.0 (engines ≥22) | **24.14.0** LTS | 7 minor releases |
-| pnpm | 10.15.1 | **10.30.3** | 15 minor releases |
-| TypeScript | 5.9.3 | **5.9.3** | Current |
-| Svelte | 5.39.8 | **5.53.5** | 14 minor releases |
-| SvelteKit | 2.43.8 | **2.53.3** | 10 minor releases |
-| .NET Aspire | 13.0.0 | **13.1.2** | 1 minor + 2 patches |
+| Platform | Current | Latest Stable | Gap | Status |
+| -------- | ------- | ------------- | --- | ------ |
+| .NET SDK | 10.0.100 (implicit) | **10.0.103** | 3 patches (**CVE-2026-21218**) | ~~DONE~~ |
+| Node.js | 24.7.0 (engines ≥22) | **24.14.0** LTS | 7 minor releases | ~~DONE~~ |
+| pnpm | 10.15.1 | **10.30.3** | 15 minor releases | ~~DONE~~ |
+| TypeScript | 5.9.3 | **5.9.3** | Current | ~~N/A~~ |
+| Svelte | 5.39.8 | **5.53.5** | 14 minor releases | |
+| SvelteKit | 2.43.8 | **2.53.3** | 10 minor releases | |
+| .NET Aspire | 13.0.0 | **13.1.2** | 1 minor + 2 patches | ~~DONE~~ |
 
 ### Quick Stats
 
@@ -34,11 +34,11 @@
 
 ### Critical Findings
 
-1. **.NET SDK 10.0.100** needs immediate update to **10.0.103** — includes fix for **CVE-2026-21218** (security feature bypass vulnerability).
-2. **Node.js 22 is EOL** (January 12, 2026). The `engines` field still allows `>=22.0.0`. Tighten to `>=24.0.0` and ensure Node 24.14.0 LTS is installed.
+1. ~~**.NET SDK 10.0.100** needs immediate update to **10.0.103** — includes fix for **CVE-2026-21218** (security feature bypass vulnerability).~~ **DONE** — `global.json` pins SDK 10.0.103.
+2. ~~**Node.js 22 is EOL** (January 12, 2026). The `engines` field still allows `>=22.0.0`. Tighten to `>=24.0.0` and ensure Node 24.14.0 LTS is installed.~~ **DONE** — engines updated, Node 24.14.0 installed.
 3. **`Microsoft.Extensions.Caching.Memory`** is on `10.0.0-rc.2` — a release candidate on a GA package. Must fix.
 4. **gRPC packages** are on `2.76.0-pre1` — stable `2.76.0` is available. Must fix.
-5. **CommunityToolkit Aspire extension** is on beta — stable `13.1.1` now available. Must fix.
+5. ~~**CommunityToolkit Aspire extension** is on beta — stable `13.1.1` now available. Must fix.~~ **DONE** — bumped to 13.1.1 with Aspire 13.1.2 upgrade.
 6. **MinIO is archived.** The project was archived on GitHub on 2026-02-13. Current pinned images work, but no future updates. Evaluate alternatives (Garage, RustFS, SeaweedFS) as a separate effort.
 7. **Zod split versions** — backend on `3.25.76`, web on `4.1.11`. Unification to Zod 4 requires schema migration across all handlers.
 8. **Vitest 4.0** is available with breaking changes (workspace config rename, mock constructor behavior). Coordinated monorepo upgrade needed.
@@ -49,39 +49,39 @@
 
 ## Platform & Runtime Dependencies
 
-### .NET SDK / Runtime
+### ~~.NET SDK / Runtime~~ DONE
 
 | | |
 | --- | --- |
-| **Current** | SDK 10.0.100 (implicit — no `global.json`), Runtime 10.0.0, Target: `net10.0` |
+| **Current** | ~~SDK 10.0.100 (implicit — no `global.json`)~~ → **SDK 10.0.103** (pinned via `global.json`), Runtime 10.0.3, Target: `net10.0` |
 | **Latest** | SDK **10.0.103**, Runtime **10.0.3** (Feb 10, 2026) |
 | **Status** | .NET 10 is **LTS** (supported through Nov 2028). .NET 11 Preview 1 announced but not relevant. |
 | **Security** | **CVE-2026-21218**: ".NET Security Feature Bypass Vulnerability" — fixed in 10.0.3. |
 | **Breaking changes** | None. Pure servicing patches. TargetFramework stays `net10.0`. |
-| **Migration** | Install SDK 10.0.103. `dotnet build` + `dotnet test`. No code changes. Consider adding `global.json` to pin SDK version. |
-| **Recommendation** | **Immediate.** Security CVE. |
+| **Migration** | ~~Install SDK 10.0.103. `dotnet build` + `dotnet test`. No code changes. Consider adding `global.json` to pin SDK version.~~ |
+| **Recommendation** | ~~**Immediate.** Security CVE.~~ **COMPLETE.** |
 
-### Node.js
+### ~~Node.js~~ DONE
 
 | | |
 | --- | --- |
-| **Current** | 24.7.0 (engines field: `>=22.0.0`) |
+| **Current** | ~~24.7.0 (engines field: `>=22.0.0`)~~ → **24.14.0** (engines: `>=24.0.0`) |
 | **Latest** | **24.14.0** "Krypton" Active LTS (Feb 24, 2026) |
 | **Status** | Node 24 entered Active LTS in Oct 2025, maintained until Apr 2028. **Node 22 reached EOL on Jan 12, 2026.** |
 | **Breaking changes** | None within 24.x (24.7 → 24.14 is semver-minor). |
-| **Migration** | Install Node 24.14.0. Update `engines.node` in root `package.json` from `>=22.0.0` to `>=24.0.0` (Node 22 is EOL). `pnpm install` + test suite. |
-| **Recommendation** | **High priority.** Security patches + engines field cleanup. |
+| **Migration** | ~~Install Node 24.14.0. Update `engines.node` in root `package.json` from `>=22.0.0` to `>=24.0.0` (Node 22 is EOL). `pnpm install` + test suite.~~ |
+| **Recommendation** | ~~**High priority.** Security patches + engines field cleanup.~~ **COMPLETE.** |
 
-### pnpm
+### ~~pnpm~~ DONE
 
 | | |
 | --- | --- |
-| **Current** | 10.15.1 (engines: `>=10.0.0`, lockfileVersion: 9.0) |
+| **Current** | ~~10.15.1 (engines: `>=10.0.0`, lockfileVersion: 9.0)~~ → **10.30.3** (engines: `>=10.15.0`) |
 | **Latest** | **10.30.3** (Feb 26, 2026) |
 | **Status** | pnpm 11 is in alpha (not production-ready). 10.x is the stable line. |
 | **Breaking changes** | None within 10.x. Bug fixes for peer deps, Windows lifecycle scripts, audit endpoints. |
-| **Migration** | `corepack prepare pnpm@10.30.3 --activate` or `pnpm self-update`. `pnpm install` (may regenerate some lockfile entries). |
-| **Recommendation** | **Recommended.** Straightforward minor bump. |
+| **Migration** | ~~`corepack prepare pnpm@10.30.3 --activate` or `pnpm self-update`. `pnpm install` (may regenerate some lockfile entries).~~ |
+| **Recommendation** | ~~**Recommended.** Straightforward minor bump.~~ **COMPLETE.** |
 
 ### TypeScript
 
@@ -114,16 +114,16 @@
 | **Migration** | Bump version in `clients/web/package.json`. Update `@sveltejs/adapter-node` alongside. |
 | **Recommendation** | **Recommended.** Routine catchup, zero risk. |
 
-### .NET Aspire
+### ~~.NET Aspire~~ DONE
 
 | | |
 | --- | --- |
-| **Current** | 13.0.0 (all packages) |
+| **Current** | ~~13.0.0 (all packages)~~ → **13.1.2** (all Aspire packages), **CommunityToolkit 13.1.1** (stable) |
 | **Latest** | **13.1.2** (Feb 26, 2026). No Aspire 14 announced. |
 | **What's new** | MCP integration for AI coding agents, dashboard improvements (Parameters tab, GenAI visualizer), container registry support, TLS termination APIs, JavaScript starter template. |
 | **Breaking changes** | `AddAzureRedisEnterprise` renamed (not used by D2-WORX). **Known issue:** Redis connection strings may gain `ssl=true` — test `AddRedis` in dev environment. |
-| **Migration** | `dotnet aspire update` or manually bump all `Aspire.*` packages to 13.1.2. Also bump `CommunityToolkit` from beta to 13.1.1 stable. |
-| **Recommendation** | **Recommended with testing.** Verify Redis connectivity in dev after upgrade. |
+| **Migration** | ~~`dotnet aspire update` or manually bump all `Aspire.*` packages to 13.1.2. Also bump `CommunityToolkit` from beta to 13.1.1 stable.~~ |
+| **Recommendation** | ~~**Recommended with testing.** Verify Redis connectivity in dev after upgrade.~~ **COMPLETE.** Build verified clean. |
 
 ---
 
@@ -137,13 +137,13 @@
 | `Grpc.AspNetCore` | 2.76.0-pre1 | **2.76.0** | NONE | Pre-release → same-version stable. No API changes. |
 | `Grpc.Net.Client` | 2.76.0-pre1 | **2.76.0** | NONE | Same as above. |
 | `Grpc.Net.ClientFactory` | 2.76.0-pre1 | **2.76.0** | NONE | Same as above. |
-| `CommunityToolkit.Aspire.Hosting.JavaScript.Extensions` | 13.0.0-beta.444 | **13.1.1** | NONE | Beta → stable. No API changes. |
+| ~~`CommunityToolkit.Aspire.Hosting.JavaScript.Extensions`~~ | ~~13.0.0-beta.444~~ | ~~**13.1.1**~~ | ~~NONE~~ | ~~Beta → stable. No API changes.~~ **DONE** |
 
 ### Tier 2 — Standard Upgrades (low risk)
 
 | Package | Current | Latest | Risk | Notes |
 | ------- | ------- | ------ | ---- | ----- |
-| `Aspire.Hosting.*` (all 8 packages) | 13.0.0 | **13.1.2** | LOW | Verify Redis connection string in dev — 13.1 may add `ssl=true` by default. |
+| ~~`Aspire.Hosting.*` (all 8 packages)~~ | ~~13.0.0~~ | ~~**13.1.2**~~ | ~~LOW~~ | ~~Verify Redis connection string in dev — 13.1 may add `ssl=true` by default.~~ **DONE** |
 | `Microsoft.EntityFrameworkCore` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
 | `Microsoft.EntityFrameworkCore.Design` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
 | `Microsoft.EntityFrameworkCore.InMemory` | 10.0.0 | **10.0.3** | NONE | Servicing patch. |
@@ -483,47 +483,48 @@ Key breaking changes:
 
 ## Upgrade Plan
 
-### Step 1 — Platform Runtimes + Security Patches
+### ~~Step 1 — Platform Runtimes + Security Patches~~ DONE
 
 **Effort: ~30 min. Risk: None. Commit separately.**
 
-Update the core platform tooling first — everything else depends on these.
+~~Update the core platform tooling first — everything else depends on these.~~
 
-| # | Action | Details |
-| - | ------ | ------- |
-| 1a | Install .NET SDK 10.0.103 | Download from dotnet.microsoft.com. Fixes **CVE-2026-21218**. |
-| 1b | Add `global.json` at project root | Pin SDK version: `{ "sdk": { "version": "10.0.103" } }`. Prevents implicit SDK drift. |
-| 1c | Install Node.js 24.14.0 | Via nvm/fnm or direct download. Current LTS. |
-| 1d | Update `engines.node` in root `package.json` | `>=22.0.0` → `>=24.0.0` (Node 22 is EOL since Jan 2026). |
-| 1e | Update pnpm to 10.30.3 | `corepack prepare pnpm@10.30.3 --activate` |
-| 1f | Update `engines.pnpm` in root `package.json` | `>=10.0.0` → `>=10.15.0` (or `>=10.30.0` if you want to enforce current). |
-| 1g | `pnpm install` | Regenerate lockfile with new pnpm version. |
+| # | Action | Details | Status |
+| - | ------ | ------- | ------ |
+| ~~1a~~ | ~~Install .NET SDK 10.0.103~~ | ~~Download from dotnet.microsoft.com. Fixes **CVE-2026-21218**.~~ | ~~DONE~~ |
+| ~~1b~~ | ~~Add `global.json` at project root~~ | ~~Pin SDK version: `{ "sdk": { "version": "10.0.103" } }`. Prevents implicit SDK drift.~~ | ~~DONE~~ |
+| ~~1c~~ | ~~Install Node.js 24.14.0~~ | ~~Via nvm/fnm or direct download. Current LTS.~~ | ~~DONE~~ |
+| ~~1d~~ | ~~Update `engines.node` in root `package.json`~~ | ~~`>=22.0.0` → `>=24.0.0` (Node 22 is EOL since Jan 2026).~~ | ~~DONE~~ |
+| ~~1e~~ | ~~Update pnpm to 10.30.3~~ | ~~`corepack prepare pnpm@10.30.3 --activate`~~ | ~~DONE~~ |
+| ~~1f~~ | ~~Update `engines.pnpm` in root `package.json`~~ | ~~`>=10.0.0` → `>=10.15.0`.~~ | ~~DONE~~ |
+| ~~1g~~ | ~~`pnpm install`~~ | ~~Regenerate lockfile with new pnpm version.~~ | ~~DONE~~ |
 
-**Validation:** `dotnet --version` → 10.0.103. `node -v` → v24.14.0. `pnpm -v` → 10.30.3. `pnpm install` succeeds.
+**Validation:** ~~`dotnet --version` → 10.0.103. `node -v` → v24.14.0. `pnpm -v` → 10.30.3. `pnpm install` succeeds.~~ **All verified.** Committed as `e7e68892`.
 
 ---
 
-### Step 2 — .NET Pre-release Cleanup + Servicing Patches
+### Step 2 — .NET Pre-release Cleanup + Servicing Patches (IN PROGRESS)
 
 **Effort: ~1 hour. Risk: None. Commit separately.**
 
 Fix pre-release packages on GA products and apply all .NET servicing patches. Edit `.csproj` files directly.
 
-| # | Action | Files to Edit |
-| - | ------ | ------------- |
-| 2a | `Microsoft.Extensions.Caching.Memory` 10.0.0-rc.2 → **10.0.3** | `InMemoryCache.Default.csproj` |
-| 2b | `Grpc.AspNetCore` 2.76.0-pre1 → **2.76.0** | `Geo.API.csproj` |
-| 2c | `Grpc.Net.Client` 2.76.0-pre1 → **2.76.0** | `Protos.DotNet.csproj` |
-| 2d | `Grpc.Net.ClientFactory` 2.76.0-pre1 → **2.76.0** | `REST.csproj`, `Geo.Client.csproj` |
-| 2e | `CommunityToolkit.Aspire.Hosting.JavaScript.Extensions` beta → **13.1.1** | `AppHost.csproj` |
-| 2f | All `Aspire.*` packages 13.0.0 → **13.1.2** | `AppHost.csproj`, `ServiceDefaults.csproj`, `Tests.csproj`, `Geo.Tests.csproj` |
-| 2g | All `Microsoft.EntityFrameworkCore.*` → **10.0.3** | `Geo.Infra.csproj`, `Batch.Pg.csproj`, `Transactions.Pg.csproj`, `Tests.csproj` |
-| 2h | All `Microsoft.AspNetCore.*` → **10.0.3** | `REST.csproj` |
-| 2i | All `Microsoft.Extensions.*` → **10.0.3** / **10.3.0** | Multiple shared `.csproj` files |
-| 2j | `Npgsql` 10.0.0 → **10.0.1** | `Errors.Pg.csproj` |
-| 2k | Fix `Testcontainers.Redis` inconsistency + all `Testcontainers.*` → **4.10.0** | `Tests.csproj` (was 4.8.1), `Geo.Tests.csproj` |
-| 2l | `xunit.v3` → **3.2.2**, `Microsoft.NET.Test.Sdk` → **18.3.0** | `Geo.Tests.csproj`, `Tests.csproj` |
-| 2m | `JetBrains.Annotations` → **2025.2.4** | `Utilities.csproj`, `Geo.Tests.csproj`, `Tests.csproj` |
+| # | Action | Files to Edit | Status |
+| - | ------ | ------------- | ------ |
+| 2a | `Microsoft.Extensions.Caching.Memory` 10.0.0-rc.2 → **10.0.3** | `InMemoryCache.Default.csproj` | |
+| 2b | `Grpc.AspNetCore` 2.76.0-pre1 → **2.76.0** | `Geo.API.csproj` | |
+| 2c | `Grpc.Net.Client` 2.76.0-pre1 → **2.76.0** | `Protos.DotNet.csproj` | |
+| 2d | `Grpc.Net.ClientFactory` 2.76.0-pre1 → **2.76.0** | `REST.csproj`, `Geo.Client.csproj` | |
+| ~~2e~~ | ~~`CommunityToolkit.Aspire.Hosting.JavaScript.Extensions` beta → **13.1.1**~~ | ~~`AppHost.csproj`~~ | ~~DONE~~ |
+| ~~2f~~ | ~~All `Aspire.*` packages 13.0.0 → **13.1.2**~~ | ~~`AppHost.csproj`, `ServiceDefaults.csproj`~~ | ~~DONE~~ |
+| 2f+ | `Aspire.Hosting.Testing` 13.0.0 → **13.1.2** | `Tests.csproj`, `Geo.Tests.csproj` | |
+| 2g | All `Microsoft.EntityFrameworkCore.*` → **10.0.3** | `Geo.Infra.csproj`, `Batch.Pg.csproj`, `Transactions.Pg.csproj`, `Tests.csproj` | |
+| 2h | All `Microsoft.AspNetCore.*` → **10.0.3** | `REST.csproj` | |
+| 2i | All `Microsoft.Extensions.*` → **10.0.3** / **10.3.0** | Multiple shared `.csproj` files | |
+| 2j | `Npgsql` 10.0.0 → **10.0.1** | `Errors.Pg.csproj` | |
+| 2k | Fix `Testcontainers.Redis` inconsistency + all `Testcontainers.*` → **4.10.0** | `Tests.csproj` (was 4.8.1), `Geo.Tests.csproj` | |
+| 2l | `xunit.v3` → **3.2.2**, `Microsoft.NET.Test.Sdk` → **18.3.0** | `Geo.Tests.csproj`, `Tests.csproj` | |
+| 2m | `JetBrains.Annotations` → **2025.2.4** | `Utilities.csproj`, `Geo.Tests.csproj`, `Tests.csproj` | |
 
 **Validation:** `dotnet build D2.sln` succeeds. `dotnet test` passes. Check Aspire Redis connectivity in dev (known 13.1 `ssl=true` issue).
 
@@ -758,14 +759,14 @@ Unifies backend (3.25.76) and web (4.1.11) on Zod 4.3.6.
 
 ### Upgrade Summary by PR
 
-| PR | Steps | Scope | Risk | Estimated Effort |
-| -- | ----- | ----- | ---- | ---------------- |
-| PR 1 | Steps 1–6 | Platform + all safe bumps (incl. better-auth 1.5) + containers | None–Low | ~5 hours |
-| PR 2 | Step 7 | Node.js OTel upgrade | Medium | ~2 hours |
-| PR 3 | Step 8 | Node.js minor breaking changes | Medium | ~2 hours |
-| PR 4 | Step 9 | Vitest 4.0 | High | ~4 hours |
-| PR 5 | Step 10 | Zod 4 unification | High | ~6 hours |
-| PR 6 | Step 11 | Resend 6.x | Medium | ~2 hours |
+| PR | Steps | Scope | Risk | Estimated Effort | Status |
+| -- | ----- | ----- | ---- | ---------------- | ------ |
+| PR 1 | Steps 1–6 | Platform + all safe bumps (incl. better-auth 1.5) + containers | None–Low | ~5 hours | **IN PROGRESS** (Step 1 done, Aspire done, Step 2 remaining items next) |
+| PR 2 | Step 7 | Node.js OTel upgrade | Medium | ~2 hours | |
+| PR 3 | Step 8 | Node.js minor breaking changes | Medium | ~2 hours | |
+| PR 4 | Step 9 | Vitest 4.0 | High | ~4 hours | |
+| PR 5 | Step 10 | Zod 4 unification | High | ~6 hours | |
+| PR 6 | Step 11 | Resend 6.x | Medium | ~2 hours | |
 
 Steps 1–6 can be a single large PR (all safe, mechanical changes) or split into smaller PRs per step if preferred. Steps 7+ should each be their own PR due to increasing risk. Note: better-auth 1.5 is included in PR 1 because D2-WORX's codebase avoids all breaking changes — the auth test suite (865 tests) provides strong coverage for validation.
 
@@ -776,16 +777,16 @@ Steps 1–6 can be a single large PR (all safe, mechanical changes) or split int
 <details>
 <summary>Click to expand</summary>
 
-| Package | Current | Latest | Projects |
-| ------- | ------- | ------ | -------- |
-| Aspire.Hosting | 13.0.0 | 13.1.2 | ServiceDefaults |
-| Aspire.Hosting.AppHost | 13.0.0 | 13.1.2 | AppHost |
-| Aspire.Hosting.JavaScript | 13.0.0 | 13.1.2 | AppHost |
-| Aspire.Hosting.PostgreSQL | 13.0.0 | 13.1.2 | AppHost |
-| Aspire.Hosting.RabbitMQ | 13.0.0 | 13.1.2 | AppHost |
-| Aspire.Hosting.Redis | 13.0.0 | 13.1.2 | AppHost |
-| Aspire.Hosting.Testing | 13.0.0 | 13.1.2 | Geo.Tests, Tests |
-| CommunityToolkit.Aspire.Hosting.JavaScript.Extensions | 13.0.0-beta.444 | 13.1.1 | AppHost |
+| Package | Current | Latest | Projects | Status |
+| ------- | ------- | ------ | -------- | ------ |
+| ~~Aspire.Hosting~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~ServiceDefaults~~ | ~~DONE~~ |
+| ~~Aspire.Hosting.AppHost~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
+| ~~Aspire.Hosting.JavaScript~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
+| ~~Aspire.Hosting.PostgreSQL~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
+| ~~Aspire.Hosting.RabbitMQ~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
+| ~~Aspire.Hosting.Redis~~ | ~~13.0.0~~ | ~~13.1.2~~ | ~~AppHost~~ | ~~DONE~~ |
+| Aspire.Hosting.Testing | 13.0.0 | 13.1.2 | Geo.Tests, Tests | |
+| ~~CommunityToolkit.Aspire.Hosting.JavaScript.Extensions~~ | ~~13.0.0-beta.444~~ | ~~13.1.1~~ | ~~AppHost~~ | ~~DONE~~ |
 | dotenv.net | 3.2.1 | 4.0.1 | Utilities |
 | FluentAssertions | 8.8.0 | 8.8.0 | Geo.Tests, Tests |
 | FluentValidation | 12.1.1 | 12.1.1 | Handler |
