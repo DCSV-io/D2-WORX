@@ -16,7 +16,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 1    | Error Handling Foundation + Types   | Complete    | Fixed pre-existing Vitest 4 config (`environment: "browser"` → `browser.enabled`), installed Playwright Chromium, updated deprecated `@vitest/browser/context` imports |
 | 2    | shadcn-svelte + Theme + Tokens      | Complete    | Zinc OKLCH theme, Gabarito font, mode-watcher 3-way toggle, Sonner toasts. Added `optimizeDeps.include` for stable browser tests. Used `@lucide/svelte` (rebranded from `lucide-svelte`) |
 | 2.5  | Server-Side Middleware              | Complete    | Request enrichment, rate limiting, idempotency. Direct SvelteKit→Geo gRPC for FindWhoIs. Graceful degradation when Redis/Geo unavailable |
-| 3    | Design System Sprint (Kitchen Sink) | Pending     |       |
+| 3    | Design System Sprint (Kitchen Sink) | Complete    | Live theme editor at `/design` with 5 OKLCH presets, 27 shadcn-svelte components, 10 showcase sections. Client-only (`ssr: false`), theme overrides cleaned up on navigation away |
 | 4    | Route Groups + Layout System        | Pending     |       |
 | 5    | @d2/auth-bff-client + Auth Proxy    | Pending     |       |
 | 6    | API Client Layer (Gateway)          | Pending     |       |
@@ -121,9 +121,39 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 
 **Goal:** Living style guide at `/design` for visual decisions in-browser.
 
-**Additional shadcn components:** dialog, alert-dialog, dropdown-menu, select, input, textarea, label, checkbox, switch, tabs, accordion, popover, sheet, sidebar, skeleton, avatar, progress, scroll-area, calendar, date-picker, range-calendar, combobox, command, table, pagination, radio-group, slider, collapsible, context-menu, menubar, number-field.
+**Status:** Complete
 
-**Additional packages:** `@tanstack/table-core`, `intl-tel-input`
+**shadcn-svelte components added (19):** input, textarea, label, checkbox, radio-group, switch, select, slider, tabs, accordion, dialog, dropdown-menu, popover, sheet, skeleton, avatar, progress, scroll-area, table. Total: 27 component directories in `src/lib/components/ui/`.
+
+**Design system page (`/design`):**
+- Client-only (`ssr: false`) — DOM manipulation for live theme preview
+- 10 showcase sections: Colors, Typography, Buttons, Cards, Forms, Overlays, Navigation, Feedback, Data Display
+- Theme Editor side panel (Sheet) with:
+  - 5 OKLCH preset palettes (Zinc, Blue, Green, Orange, Rose)
+  - Sliders for primary hue/chroma/lightness, destructive hue, border radius
+  - Live preview via `document.documentElement.style.setProperty()` + dynamic `<style>` for dark tokens
+  - Export dialog with generated CSS (copy to clipboard)
+  - Cleanup on navigation away (all style overrides removed)
+
+**Files created:**
+- `src/routes/design/+page.ts` — SSR disabled
+- `src/routes/design/+page.svelte` — Main page with all sections + theme editor
+- `src/lib/components/design/theme-presets.ts` — 5 preset palette definitions
+- `src/lib/components/design/theme-utils.ts` — OKLCH derivation + CSS generation
+- `src/lib/components/design/theme-state.svelte.ts` — Shared reactive state (Svelte 5 runes)
+- `src/lib/components/design/theme-editor.svelte` — Side panel with sliders + presets
+- `src/lib/components/design/export-dialog.svelte` — CSS export modal with copy
+- `src/lib/components/design/section.svelte` — Reusable section wrapper
+- `src/lib/components/design/color-swatch.svelte` — Token display component
+- `src/lib/components/design/color-palette.svelte` — All tokens grid (light + dark)
+- `src/lib/components/design/typography-showcase.svelte` — Font scale + weights
+- `src/lib/components/design/button-showcase.svelte` — All variants x sizes
+- `src/lib/components/design/card-showcase.svelte` — Profile, stats, notification cards
+- `src/lib/components/design/form-showcase.svelte` — All form control types
+- `src/lib/components/design/overlay-showcase.svelte` — Dialog, dropdown, popover, sheet
+- `src/lib/components/design/navigation-showcase.svelte` — Tabs + accordion
+- `src/lib/components/design/feedback-showcase.svelte` — Progress, skeleton, toasts
+- `src/lib/components/design/data-display-showcase.svelte` — Avatar, badges, alerts, tooltip, toggle, separator, scroll-area, table
 
 **MAJOR PAUSE POINT:** User reviews all components visually and makes color/spacing decisions.
 
