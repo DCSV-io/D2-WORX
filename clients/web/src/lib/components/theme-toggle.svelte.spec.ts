@@ -20,4 +20,15 @@ describe("theme-toggle.svelte", () => {
     const svg = button.element().querySelector("svg");
     expect(svg).not.toBeNull();
   });
+
+  it("should open a dropdown with Light, Dark, and System options", async () => {
+    render(ThemeToggle);
+
+    const button = page.getByRole("button", { name: /toggle theme/i });
+    await button.click();
+
+    await expect.element(page.getByRole("menuitem", { name: /light/i })).toBeInTheDocument();
+    await expect.element(page.getByRole("menuitem", { name: /dark/i })).toBeInTheDocument();
+    await expect.element(page.getByRole("menuitem", { name: /system/i })).toBeInTheDocument();
+  });
 });
