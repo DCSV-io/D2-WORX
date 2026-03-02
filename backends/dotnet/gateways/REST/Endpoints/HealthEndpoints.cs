@@ -13,6 +13,7 @@ using D2.Services.Protos.Common.V1;
 using D2.Services.Protos.Comms.V1;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
+using D2.Shared.Utilities.Extensions;
 using D2.Shared.Utilities.Serialization;
 using Grpc.Core;
 using Serilog;
@@ -46,24 +47,32 @@ public static class HealthEndpoints
         public IServiceCollection AddHealthEndpointDependencies(IConfiguration configuration)
         {
             // Comms gRPC client (Geo client is already registered via AddGeoGrpcClient).
-            var commsAddress = configuration["services:d2-comms:comms-grpc:0"];
-            if (!string.IsNullOrWhiteSpace(commsAddress))
+            const string comms_config_key = "services:d2-comms:comms-grpc:0";
+            var commsAddress = configuration[comms_config_key];
+            if (commsAddress.Falsey())
             {
-                services.AddGrpcClient<CommsService.CommsServiceClient>(o =>
-                {
-                    o.Address = new Uri(commsAddress);
-                });
+                throw new ArgumentException(
+                    $"Comms gRPC service address not configured. Missing '{comms_config_key}' configuration.");
             }
 
-            // Auth gRPC client (checkHealth is exempt from API key auth).
-            var authGrpcAddress = configuration["services:d2-auth:auth-grpc:0"];
-            if (!string.IsNullOrWhiteSpace(authGrpcAddress))
+            services.AddGrpcClient<CommsService.CommsServiceClient>(o =>
             {
-                services.AddGrpcClient<AuthService.AuthServiceClient>(o =>
-                {
-                    o.Address = new Uri(authGrpcAddress);
-                });
+                o.Address = new Uri(commsAddress!);
+            });
+
+            // Auth gRPC client (checkHealth is exempt from API key auth).
+            const string auth_config_key = "services:d2-auth:auth-grpc:0";
+            var authGrpcAddress = configuration[auth_config_key];
+            if (authGrpcAddress.Falsey())
+            {
+                throw new ArgumentException(
+                    $"Auth gRPC service address not configured. Missing '{auth_config_key}' configuration.");
             }
+
+            services.AddGrpcClient<AuthService.AuthServiceClient>(o =>
+            {
+                o.Address = new Uri(authGrpcAddress!);
+            });
 
             return services;
         }
