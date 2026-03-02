@@ -30,6 +30,7 @@ x64/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
+test-results/
 [Bb]uild[Ll]og.*
 
 *_i.c
