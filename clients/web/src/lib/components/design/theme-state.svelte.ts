@@ -28,6 +28,12 @@ export const theme = $state({
   primaryHue: 285.885,
   primaryChroma: 0.006,
   primaryLightness: 0.21,
+  secondaryHue: 260,
+  secondaryChroma: 0.03,
+  secondaryLightness: 0.45,
+  accentHue: 250,
+  accentChroma: 0.08,
+  accentLightness: 0.55,
   destructiveHue: 27.325,
   destructiveChroma: 0.245,
   destructiveLightness: 0.577,
@@ -51,6 +57,16 @@ const _lightTokens = $derived.by(() =>
       hue: theme.primaryHue,
       chroma: theme.primaryChroma,
       lightness: theme.primaryLightness,
+    },
+    secondary: {
+      hue: theme.secondaryHue,
+      chroma: theme.secondaryChroma,
+      lightness: theme.secondaryLightness,
+    },
+    accent: {
+      hue: theme.accentHue,
+      chroma: theme.accentChroma,
+      lightness: theme.accentLightness,
     },
     destructive: {
       hue: theme.destructiveHue,
@@ -82,6 +98,16 @@ const _darkTokens = $derived.by(() =>
       hue: theme.primaryHue,
       chroma: theme.primaryChroma,
       lightness: theme.primaryLightness,
+    },
+    secondary: {
+      hue: theme.secondaryHue,
+      chroma: theme.secondaryChroma,
+      lightness: theme.secondaryLightness,
+    },
+    accent: {
+      hue: theme.accentHue,
+      chroma: theme.accentChroma,
+      lightness: theme.accentLightness,
     },
     destructive: {
       hue: theme.destructiveHue,
@@ -117,6 +143,10 @@ const _activePresetName = $derived.by(() => {
       Math.abs(p.primaryHue - theme.primaryHue) < 0.01 &&
       Math.abs(p.primaryChroma - theme.primaryChroma) < 0.001 &&
       Math.abs(p.primaryLightness - theme.primaryLightness) < 0.001 &&
+      Math.abs(p.secondaryHue - theme.secondaryHue) < 0.01 &&
+      Math.abs(p.secondaryChroma - theme.secondaryChroma) < 0.001 &&
+      Math.abs(p.accentHue - theme.accentHue) < 0.01 &&
+      Math.abs(p.accentChroma - theme.accentChroma) < 0.001 &&
       Math.abs(p.destructiveHue - theme.destructiveHue) < 0.01 &&
       Math.abs(p.radius - theme.radius) < 0.001,
   );
@@ -147,6 +177,12 @@ export function applyPreset(preset: ThemePreset): void {
   theme.primaryHue = preset.primaryHue;
   theme.primaryChroma = preset.primaryChroma;
   theme.primaryLightness = preset.primaryLightness;
+  theme.secondaryHue = preset.secondaryHue;
+  theme.secondaryChroma = preset.secondaryChroma;
+  theme.secondaryLightness = preset.secondaryLightness;
+  theme.accentHue = preset.accentHue;
+  theme.accentChroma = preset.accentChroma;
+  theme.accentLightness = preset.accentLightness;
   theme.destructiveHue = preset.destructiveHue;
   theme.destructiveChroma = preset.destructiveChroma;
   theme.destructiveLightness = preset.destructiveLightness;

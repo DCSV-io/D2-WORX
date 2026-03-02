@@ -4,8 +4,9 @@
   import PlusIcon from "@lucide/svelte/icons/plus";
   import MailIcon from "@lucide/svelte/icons/mail";
   import LoaderCircleIcon from "@lucide/svelte/icons/loader-circle";
+  import SparklesIcon from "@lucide/svelte/icons/sparkles";
 
-  const variants = ["default", "secondary", "destructive", "outline", "ghost", "link"] as const;
+  const variants = ["default", "secondary", "accent", "destructive", "outline", "ghost", "link"] as const;
   const sizes = ["sm", "default", "lg"] as const;
 </script>
 
@@ -53,6 +54,10 @@
         <Button variant="secondary">
           <PlusIcon class="size-4" />
           Add Item
+        </Button>
+        <Button variant="accent">
+          <SparklesIcon class="size-4" />
+          Try It
         </Button>
         <Button variant="outline">
           <LoaderCircleIcon class="size-4 animate-spin" />

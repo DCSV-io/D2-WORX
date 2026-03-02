@@ -3,6 +3,12 @@ export interface ThemePreset {
   primaryHue: number;
   primaryChroma: number;
   primaryLightness: number;
+  secondaryHue: number;
+  secondaryChroma: number;
+  secondaryLightness: number;
+  accentHue: number;
+  accentChroma: number;
+  accentLightness: number;
   destructiveHue: number;
   destructiveChroma: number;
   destructiveLightness: number;
@@ -19,69 +25,171 @@ export interface ThemePreset {
   builtIn?: boolean;
 }
 
-/** Shared defaults for status colors across all presets. */
-const STATUS_DEFAULTS = {
-  destructiveHue: 27.325,
-  destructiveChroma: 0.245,
-  destructiveLightness: 0.577,
-  infoHue: 262.881,
-  infoChroma: 0.245,
-  infoLightness: 0.546,
-  successHue: 149.214,
-  successChroma: 0.194,
-  successLightness: 0.627,
-  warningHue: 70.08,
-  warningChroma: 0.189,
-  warningLightness: 0.769,
-} as const;
-
 /**
- * Built-in presets — professional palettes suitable for SaaS applications.
- * Each is calibrated for good contrast and readability in both light and dark.
+ * Built-in presets — each has a complete, intentionally designed color story.
+ * Brand colors (primary, secondary, accent) AND status colors are chosen
+ * to harmonize, giving each theme a distinct identity.
  */
 export const builtInPresets: ThemePreset[] = [
   {
+    // Professional, understated — neutral backdrop lets standard status colors pop
     name: "Zinc",
     primaryHue: 285.885,
     primaryChroma: 0.006,
     primaryLightness: 0.21,
-    ...STATUS_DEFAULTS,
+    secondaryHue: 260,
+    secondaryChroma: 0.03,
+    secondaryLightness: 0.45,
+    accentHue: 250,
+    accentChroma: 0.08,
+    accentLightness: 0.55,
+    destructiveHue: 27.325,
+    destructiveChroma: 0.245,
+    destructiveLightness: 0.577,
+    infoHue: 262.881,
+    infoChroma: 0.245,
+    infoLightness: 0.546,
+    successHue: 149.214,
+    successChroma: 0.194,
+    successLightness: 0.627,
+    warningHue: 70.08,
+    warningChroma: 0.189,
+    warningLightness: 0.769,
     radius: 0.625,
     builtIn: true,
   },
   {
-    name: "Slate",
-    primaryHue: 264,
-    primaryChroma: 0.015,
-    primaryLightness: 0.208,
-    ...STATUS_DEFAULTS,
+    // DeCAF WORX heritage — teal-blue primary, blue-violet secondary, orange accent
+    name: "WORX",
+    primaryHue: 220,
+    primaryChroma: 0.12,
+    primaryLightness: 0.5,
+    secondaryHue: 250,
+    secondaryChroma: 0.1,
+    secondaryLightness: 0.5,
+    accentHue: 55,
+    accentChroma: 0.16,
+    accentLightness: 0.65,
+    destructiveHue: 25,
+    destructiveChroma: 0.22,
+    destructiveLightness: 0.55,
+    infoHue: 220,
+    infoChroma: 0.18,
+    infoLightness: 0.56,
+    successHue: 155,
+    successChroma: 0.18,
+    successLightness: 0.6,
+    warningHue: 65,
+    warningChroma: 0.17,
+    warningLightness: 0.75,
     radius: 0.625,
     builtIn: true,
   },
   {
-    name: "Blue",
-    primaryHue: 262,
+    // Corporate trust — deep blue primary, teal secondary, sea-green accent
+    name: "Ocean",
+    primaryHue: 255,
     primaryChroma: 0.14,
     primaryLightness: 0.5,
-    ...STATUS_DEFAULTS,
+    secondaryHue: 195,
+    secondaryChroma: 0.1,
+    secondaryLightness: 0.55,
+    accentHue: 165,
+    accentChroma: 0.12,
+    accentLightness: 0.6,
+    destructiveHue: 20,
+    destructiveChroma: 0.2,
+    destructiveLightness: 0.6,
+    infoHue: 245,
+    infoChroma: 0.2,
+    infoLightness: 0.58,
+    successHue: 165,
+    successChroma: 0.17,
+    successLightness: 0.62,
+    warningHue: 75,
+    warningChroma: 0.17,
+    warningLightness: 0.78,
     radius: 0.625,
     builtIn: true,
   },
   {
-    name: "Green",
-    primaryHue: 160,
+    // Natural, earthy — dark green primary, warm olive secondary, golden amber accent
+    name: "Forest",
+    primaryHue: 155,
     primaryChroma: 0.13,
     primaryLightness: 0.44,
-    ...STATUS_DEFAULTS,
+    secondaryHue: 70,
+    secondaryChroma: 0.08,
+    secondaryLightness: 0.5,
+    accentHue: 85,
+    accentChroma: 0.14,
+    accentLightness: 0.65,
+    destructiveHue: 30,
+    destructiveChroma: 0.2,
+    destructiveLightness: 0.56,
+    infoHue: 230,
+    infoChroma: 0.18,
+    infoLightness: 0.58,
+    successHue: 145,
+    successChroma: 0.2,
+    successLightness: 0.65,
+    warningHue: 80,
+    warningChroma: 0.18,
+    warningLightness: 0.76,
     radius: 0.625,
     builtIn: true,
   },
   {
-    name: "Amber",
-    primaryHue: 84,
+    // Warm, energetic — deep orange primary, warm rose secondary, golden accent
+    name: "Sunset",
+    primaryHue: 30,
     primaryChroma: 0.17,
     primaryLightness: 0.55,
-    ...STATUS_DEFAULTS,
+    secondaryHue: 350,
+    secondaryChroma: 0.12,
+    secondaryLightness: 0.5,
+    accentHue: 60,
+    accentChroma: 0.16,
+    accentLightness: 0.7,
+    destructiveHue: 15,
+    destructiveChroma: 0.22,
+    destructiveLightness: 0.52,
+    infoHue: 255,
+    infoChroma: 0.2,
+    infoLightness: 0.55,
+    successHue: 150,
+    successChroma: 0.18,
+    successLightness: 0.6,
+    warningHue: 70,
+    warningChroma: 0.19,
+    warningLightness: 0.77,
+    radius: 0.625,
+    builtIn: true,
+  },
+  {
+    // Friendly, approachable — rose primary, mauve secondary, peach/coral accent
+    name: "Rose",
+    primaryHue: 350,
+    primaryChroma: 0.15,
+    primaryLightness: 0.55,
+    secondaryHue: 300,
+    secondaryChroma: 0.1,
+    secondaryLightness: 0.5,
+    accentHue: 25,
+    accentChroma: 0.13,
+    accentLightness: 0.65,
+    destructiveHue: 20,
+    destructiveChroma: 0.23,
+    destructiveLightness: 0.55,
+    infoHue: 260,
+    infoChroma: 0.22,
+    infoLightness: 0.55,
+    successHue: 155,
+    successChroma: 0.17,
+    successLightness: 0.62,
+    warningHue: 68,
+    warningChroma: 0.18,
+    warningLightness: 0.77,
     radius: 0.625,
     builtIn: true,
   },
@@ -92,13 +200,47 @@ export let presets: ThemePreset[] = [...builtInPresets];
 
 const STORAGE_KEY = "d2-design-custom-presets";
 
+/** Fallback values for old custom presets missing secondary/accent fields. */
+function migratePreset(p: Partial<ThemePreset> & { name: string }): ThemePreset {
+  return {
+    ...p,
+    // Derive secondary/accent from primary if missing (matches old behavior)
+    secondaryHue: p.secondaryHue ?? p.primaryHue ?? 0,
+    secondaryChroma: p.secondaryChroma ?? (p.primaryChroma ?? 0) * 0.3,
+    secondaryLightness: p.secondaryLightness ?? 0.45,
+    accentHue: p.accentHue ?? p.primaryHue ?? 0,
+    accentChroma: p.accentChroma ?? (p.primaryChroma ?? 0) * 0.5,
+    accentLightness: p.accentLightness ?? 0.55,
+    primaryHue: p.primaryHue ?? 0,
+    primaryChroma: p.primaryChroma ?? 0,
+    primaryLightness: p.primaryLightness ?? 0.5,
+    destructiveHue: p.destructiveHue ?? 27.325,
+    destructiveChroma: p.destructiveChroma ?? 0.245,
+    destructiveLightness: p.destructiveLightness ?? 0.577,
+    infoHue: p.infoHue ?? 262.881,
+    infoChroma: p.infoChroma ?? 0.245,
+    infoLightness: p.infoLightness ?? 0.546,
+    successHue: p.successHue ?? 149.214,
+    successChroma: p.successChroma ?? 0.194,
+    successLightness: p.successLightness ?? 0.627,
+    warningHue: p.warningHue ?? 70.08,
+    warningChroma: p.warningChroma ?? 0.189,
+    warningLightness: p.warningLightness ?? 0.769,
+    radius: p.radius ?? 0.625,
+    builtIn: false,
+  } as ThemePreset;
+}
+
 /** Load custom presets from localStorage. */
 export function loadCustomPresets(): void {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const custom: ThemePreset[] = JSON.parse(raw);
-      presets = [...builtInPresets, ...custom.map((p) => ({ ...p, builtIn: false }))];
+      const custom: Partial<ThemePreset>[] = JSON.parse(raw);
+      presets = [
+        ...builtInPresets,
+        ...custom.map((p) => migratePreset(p as Partial<ThemePreset> & { name: string })),
+      ];
     }
   } catch {
     // Ignore corrupted data

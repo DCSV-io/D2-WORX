@@ -164,3 +164,6 @@ georefdata.bin
 # Coverage
 /Coverage
 nul
+
+# Playwright MCP screenshots
+/screenshots/

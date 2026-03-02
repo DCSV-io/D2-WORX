@@ -15,6 +15,8 @@ export interface OklchColor {
 
 export interface ThemeConfig {
   primary: OklchColor;
+  secondary: OklchColor;
+  accent: OklchColor;
   destructive: OklchColor;
   info: OklchColor;
   success: OklchColor;
@@ -99,6 +101,8 @@ export const SIDEBAR_TOKENS = [
 
 export function computeLightTokens(config: ThemeConfig): ThemeTokens {
   const { hue: h, chroma: c, lightness: l } = config.primary;
+  const sec = config.secondary;
+  const acc = config.accent;
   const d = config.destructive;
   const info = config.info;
   const success = config.success;
@@ -114,12 +118,12 @@ export function computeLightTokens(config: ThemeConfig): ThemeTokens {
     "--popover-foreground": oklch(l, c, h),
     "--primary": oklch(l, c, h),
     "--primary-foreground": oklch(0.985, 0, 0),
-    "--secondary": oklch(0.967, Math.min(c * 0.17, 0.03), h),
-    "--secondary-foreground": oklch(l, c, h),
-    "--muted": oklch(0.967, Math.min(c * 0.17, 0.03), h),
-    "--muted-foreground": oklch(0.552, Math.min(c * 2.7, 0.05), h),
-    "--accent": oklch(0.967, Math.min(c * 0.17, 0.03), h),
-    "--accent-foreground": oklch(l, c, h),
+    "--secondary": oklch(sec.lightness, sec.chroma, sec.hue),
+    "--secondary-foreground": autoForeground(sec.lightness),
+    "--muted": oklch(0.967, Math.min(sec.chroma * 0.15, 0.025), sec.hue),
+    "--muted-foreground": oklch(0.552, Math.min(sec.chroma * 1.5, 0.05), sec.hue),
+    "--accent": oklch(acc.lightness, acc.chroma, acc.hue),
+    "--accent-foreground": autoForeground(acc.lightness),
     "--destructive": oklch(d.lightness, d.chroma, d.hue),
     "--destructive-foreground": oklch(0.985, 0, 0),
     "--info": oklch(info.lightness, info.chroma, info.hue),
@@ -140,7 +144,7 @@ export function computeLightTokens(config: ThemeConfig): ThemeTokens {
     "--sidebar-foreground": oklch(l, c, h),
     "--sidebar-primary": oklch(l, c, h),
     "--sidebar-primary-foreground": oklch(0.985, 0, 0),
-    "--sidebar-accent": oklch(0.967, Math.min(c * 0.17, 0.03), h),
+    "--sidebar-accent": oklch(0.967, Math.min(acc.chroma * 0.15, 0.025), acc.hue),
     "--sidebar-accent-foreground": oklch(l, c, h),
     "--sidebar-border": oklch(0.92, Math.min(c * 0.67, 0.02), h),
     "--sidebar-ring": oklch(0.705, Math.min(c * 2.5, 0.06), h),
@@ -149,6 +153,8 @@ export function computeLightTokens(config: ThemeConfig): ThemeTokens {
 
 export function computeDarkTokens(config: ThemeConfig): ThemeTokens {
   const { hue: h, chroma: c } = config.primary;
+  const sec = config.secondary;
+  const acc = config.accent;
   const d = config.destructive;
   const info = config.info;
   const success = config.success;
@@ -174,11 +180,11 @@ export function computeDarkTokens(config: ThemeConfig): ThemeTokens {
     "--popover-foreground": oklch(0.985, 0, 0),
     "--primary": oklch(darkPrimaryL, darkPrimaryC, h),
     "--primary-foreground": oklch(0.21, c, h),
-    "--secondary": oklch(0.274, Math.min(c * 1.0, 0.015), h),
+    "--secondary": oklch(0.274, Math.min(sec.chroma * 0.4, 0.04), sec.hue),
     "--secondary-foreground": oklch(0.985, 0, 0),
-    "--muted": oklch(0.274, Math.min(c * 1.0, 0.015), h),
-    "--muted-foreground": oklch(0.705, Math.min(c * 2.5, 0.06), h),
-    "--accent": oklch(0.274, Math.min(c * 1.0, 0.015), h),
+    "--muted": oklch(0.274, Math.min(sec.chroma * 0.3, 0.02), sec.hue),
+    "--muted-foreground": oklch(0.705, Math.min(sec.chroma * 1.5, 0.05), sec.hue),
+    "--accent": oklch(0.274, Math.min(acc.chroma * 0.4, 0.04), acc.hue),
     "--accent-foreground": oklch(0.985, 0, 0),
     "--destructive": oklch(darkDestructiveL, d.chroma * 0.78, d.hue),
     "--destructive-foreground": autoForeground(darkDestructiveL),
@@ -200,7 +206,7 @@ export function computeDarkTokens(config: ThemeConfig): ThemeTokens {
     "--sidebar-foreground": oklch(0.985, 0, 0),
     "--sidebar-primary": oklch(0.488, 0.243, charts[0]),
     "--sidebar-primary-foreground": oklch(0.985, 0, 0),
-    "--sidebar-accent": oklch(0.274, Math.min(c * 1.0, 0.015), h),
+    "--sidebar-accent": oklch(0.274, Math.min(acc.chroma * 0.4, 0.04), acc.hue),
     "--sidebar-accent-foreground": oklch(0.985, 0, 0),
     "--sidebar-border": oklchAlpha(1, 0, 0, "10%"),
     "--sidebar-ring": oklch(0.552, Math.min(c * 2.7, 0.05), h),

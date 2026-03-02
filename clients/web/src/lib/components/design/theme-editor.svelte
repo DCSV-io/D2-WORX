@@ -10,6 +10,7 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { Separator } from "$lib/components/ui/separator/index.js";
+  import ColorPicker from "svelte-awesome-color-picker";
   import {
     presets,
     presetSwatchColor,
@@ -23,6 +24,7 @@
     applyPreset,
     reset,
   } from "./theme-state.svelte.js";
+  import { oklchToHex, hexToOklch } from "./color-convert.js";
   import ExportDialog from "./export-dialog.svelte";
   import RotateCcwIcon from "@lucide/svelte/icons/rotate-ccw";
   import DownloadIcon from "@lucide/svelte/icons/download";
@@ -41,6 +43,81 @@
     allPresets = presets;
   });
 
+  // --- Derived hex values from OKLCH state ---
+
+  const primaryHex = $derived(
+    oklchToHex(theme.primaryLightness, theme.primaryChroma, theme.primaryHue),
+  );
+  const secondaryHex = $derived(
+    oklchToHex(theme.secondaryLightness, theme.secondaryChroma, theme.secondaryHue),
+  );
+  const accentHex = $derived(
+    oklchToHex(theme.accentLightness, theme.accentChroma, theme.accentHue),
+  );
+  const destructiveHex = $derived(
+    oklchToHex(theme.destructiveLightness, theme.destructiveChroma, theme.destructiveHue),
+  );
+  const infoHex = $derived(
+    oklchToHex(theme.infoLightness, theme.infoChroma, theme.infoHue),
+  );
+  const successHex = $derived(
+    oklchToHex(theme.successLightness, theme.successChroma, theme.successHue),
+  );
+  const warningHex = $derived(
+    oklchToHex(theme.warningLightness, theme.warningChroma, theme.warningHue),
+  );
+
+  // --- Color change handlers ---
+
+  function handleColorChange(
+    role: "primary" | "secondary" | "accent" | "destructive" | "info" | "success" | "warning",
+    event: { hex: string | null },
+  ) {
+    if (!event.hex) return;
+    const oklch = hexToOklch(event.hex);
+    if (!oklch) return;
+
+    switch (role) {
+      case "primary":
+        theme.primaryHue = oklch.hue;
+        theme.primaryChroma = oklch.chroma;
+        theme.primaryLightness = oklch.lightness;
+        break;
+      case "secondary":
+        theme.secondaryHue = oklch.hue;
+        theme.secondaryChroma = oklch.chroma;
+        theme.secondaryLightness = oklch.lightness;
+        break;
+      case "accent":
+        theme.accentHue = oklch.hue;
+        theme.accentChroma = oklch.chroma;
+        theme.accentLightness = oklch.lightness;
+        break;
+      case "destructive":
+        theme.destructiveHue = oklch.hue;
+        theme.destructiveChroma = oklch.chroma;
+        theme.destructiveLightness = oklch.lightness;
+        break;
+      case "info":
+        theme.infoHue = oklch.hue;
+        theme.infoChroma = oklch.chroma;
+        theme.infoLightness = oklch.lightness;
+        break;
+      case "success":
+        theme.successHue = oklch.hue;
+        theme.successChroma = oklch.chroma;
+        theme.successLightness = oklch.lightness;
+        break;
+      case "warning":
+        theme.warningHue = oklch.hue;
+        theme.warningChroma = oklch.chroma;
+        theme.warningLightness = oklch.lightness;
+        break;
+    }
+  }
+
+  // --- Preset actions ---
+
   function handleSavePreset() {
     const name = saveName.trim();
     if (!name) return;
@@ -49,6 +126,12 @@
       primaryHue: theme.primaryHue,
       primaryChroma: theme.primaryChroma,
       primaryLightness: theme.primaryLightness,
+      secondaryHue: theme.secondaryHue,
+      secondaryChroma: theme.secondaryChroma,
+      secondaryLightness: theme.secondaryLightness,
+      accentHue: theme.accentHue,
+      accentChroma: theme.accentChroma,
+      accentLightness: theme.accentLightness,
       destructiveHue: theme.destructiveHue,
       destructiveChroma: theme.destructiveChroma,
       destructiveLightness: theme.destructiveLightness,
@@ -141,187 +224,114 @@
 
       <Separator />
 
-      <!-- Primary Color -->
-      <div class="flex flex-col gap-3">
+      <!-- Brand Colors -->
+      <div class="flex flex-col gap-4">
+        <span class="text-sm font-medium">Brand Colors</span>
+
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium">Primary Color</span>
-          <div
-            class="size-6 rounded border border-border"
-            style="background: oklch({theme.primaryLightness} {theme.primaryChroma} {theme.primaryHue})"
-          ></div>
+          <span class="text-muted-foreground text-xs">Primary</span>
+          <div class="color-picker-trigger">
+            <ColorPicker
+              hex={primaryHex}
+              isAlpha={false}
+              isTextInput={false}
+              position="responsive"
+              label="Primary"
+              onInput={(e) => handleColorChange("primary", e)}
+            />
+          </div>
         </div>
 
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Hue</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.primaryHue.toFixed(1)}</span>
+        <div class="flex items-center justify-between">
+          <span class="text-muted-foreground text-xs">Secondary</span>
+          <div class="color-picker-trigger">
+            <ColorPicker
+              hex={secondaryHex}
+              isAlpha={false}
+              isTextInput={false}
+              position="responsive"
+              label="Secondary"
+              onInput={(e) => handleColorChange("secondary", e)}
+            />
           </div>
-          <Slider type="single" bind:value={theme.primaryHue} min={0} max={360} step={0.1} />
-        </label>
+        </div>
 
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Chroma</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.primaryChroma.toFixed(4)}</span>
+        <div class="flex items-center justify-between">
+          <span class="text-muted-foreground text-xs">Accent</span>
+          <div class="color-picker-trigger">
+            <ColorPicker
+              hex={accentHex}
+              isAlpha={false}
+              isTextInput={false}
+              position="responsive"
+              label="Accent"
+              onInput={(e) => handleColorChange("accent", e)}
+            />
           </div>
-          <Slider type="single" bind:value={theme.primaryChroma} min={0} max={0.4} step={0.001} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Lightness</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.primaryLightness.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.primaryLightness} min={0.05} max={0.95} step={0.001} />
-        </label>
+        </div>
       </div>
 
       <Separator />
 
-      <!-- Destructive (Danger) -->
-      <div class="flex flex-col gap-3">
+      <!-- Status Colors -->
+      <div class="flex flex-col gap-4">
+        <span class="text-sm font-medium">Status Colors</span>
+
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium">Destructive</span>
-          <div
-            class="size-6 rounded border border-border"
-            style="background: oklch({theme.destructiveLightness} {theme.destructiveChroma} {theme.destructiveHue})"
-          ></div>
+          <span class="text-muted-foreground text-xs">Destructive</span>
+          <div class="color-picker-trigger">
+            <ColorPicker
+              hex={destructiveHex}
+              isAlpha={false}
+              isTextInput={false}
+              position="responsive"
+              label="Destructive"
+              onInput={(e) => handleColorChange("destructive", e)}
+            />
+          </div>
         </div>
 
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Hue</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.destructiveHue.toFixed(1)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.destructiveHue} min={0} max={360} step={0.1} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Chroma</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.destructiveChroma.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.destructiveChroma} min={0} max={0.4} step={0.001} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Lightness</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.destructiveLightness.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.destructiveLightness} min={0.2} max={0.85} step={0.001} />
-        </label>
-      </div>
-
-      <Separator />
-
-      <!-- Info -->
-      <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium">Info</span>
-          <div
-            class="size-6 rounded border border-border"
-            style="background: oklch({theme.infoLightness} {theme.infoChroma} {theme.infoHue})"
-          ></div>
+          <span class="text-muted-foreground text-xs">Info</span>
+          <div class="color-picker-trigger">
+            <ColorPicker
+              hex={infoHex}
+              isAlpha={false}
+              isTextInput={false}
+              position="responsive"
+              label="Info"
+              onInput={(e) => handleColorChange("info", e)}
+            />
+          </div>
         </div>
 
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Hue</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.infoHue.toFixed(1)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.infoHue} min={0} max={360} step={0.1} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Chroma</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.infoChroma.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.infoChroma} min={0} max={0.4} step={0.001} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Lightness</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.infoLightness.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.infoLightness} min={0.2} max={0.85} step={0.001} />
-        </label>
-      </div>
-
-      <Separator />
-
-      <!-- Success -->
-      <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium">Success</span>
-          <div
-            class="size-6 rounded border border-border"
-            style="background: oklch({theme.successLightness} {theme.successChroma} {theme.successHue})"
-          ></div>
+          <span class="text-muted-foreground text-xs">Success</span>
+          <div class="color-picker-trigger">
+            <ColorPicker
+              hex={successHex}
+              isAlpha={false}
+              isTextInput={false}
+              position="responsive"
+              label="Success"
+              onInput={(e) => handleColorChange("success", e)}
+            />
+          </div>
         </div>
 
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Hue</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.successHue.toFixed(1)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.successHue} min={0} max={360} step={0.1} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Chroma</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.successChroma.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.successChroma} min={0} max={0.4} step={0.001} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Lightness</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.successLightness.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.successLightness} min={0.2} max={0.85} step={0.001} />
-        </label>
-      </div>
-
-      <Separator />
-
-      <!-- Warning -->
-      <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
-          <span class="text-sm font-medium">Warning</span>
-          <div
-            class="size-6 rounded border border-border"
-            style="background: oklch({theme.warningLightness} {theme.warningChroma} {theme.warningHue})"
-          ></div>
+          <span class="text-muted-foreground text-xs">Warning</span>
+          <div class="color-picker-trigger">
+            <ColorPicker
+              hex={warningHex}
+              isAlpha={false}
+              isTextInput={false}
+              position="responsive"
+              label="Warning"
+              onInput={(e) => handleColorChange("warning", e)}
+            />
+          </div>
         </div>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Hue</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.warningHue.toFixed(1)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.warningHue} min={0} max={360} step={0.1} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Chroma</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.warningChroma.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.warningChroma} min={0} max={0.4} step={0.001} />
-        </label>
-
-        <label class="flex flex-col gap-1.5">
-          <div class="flex justify-between">
-            <span class="text-muted-foreground text-xs">Lightness</span>
-            <span class="text-muted-foreground text-xs tabular-nums">{theme.warningLightness.toFixed(3)}</span>
-          </div>
-          <Slider type="single" bind:value={theme.warningLightness} min={0.2} max={0.85} step={0.001} />
-        </label>
       </div>
 
       <Separator />
@@ -360,3 +370,35 @@
 </Sheet>
 
 <ExportDialog bind:open={exportOpen} />
+
+<style>
+  /* Color picker trigger: compact swatch button */
+  .color-picker-trigger :global(.color-picker) {
+    display: flex;
+    align-items: center;
+  }
+
+  .color-picker-trigger :global(label.color-picker--label) {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .color-picker-trigger :global(button.color-picker--button) {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  /* Ensure picker popup renders above the Sheet (z-50) */
+  .color-picker-trigger :global(.color-picker--picker-wrapper) {
+    z-index: 100;
+  }
+</style>

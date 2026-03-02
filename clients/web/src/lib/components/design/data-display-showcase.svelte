@@ -58,6 +58,7 @@
       <div class="flex flex-wrap items-center gap-3 rounded-lg border p-6">
         <Badge>Default</Badge>
         <Badge variant="secondary">Secondary</Badge>
+        <Badge variant="accent">New</Badge>
         <Badge variant="destructive">Destructive</Badge>
         <Badge variant="outline">Outline</Badge>
       </div>
