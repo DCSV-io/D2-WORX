@@ -13,6 +13,16 @@ export default defineConfig(({ mode }) => {
     server: {
       allowedHosts: allowedHosts,
     },
+    optimizeDeps: {
+      include: [
+        "bits-ui",
+        "mode-watcher",
+        "svelte-sonner",
+        "tailwind-variants",
+        "tailwind-merge",
+        "clsx",
+      ],
+    },
     plugins: [
       tailwindcss(),
       sveltekit(),
@@ -28,7 +38,6 @@ export default defineConfig(({ mode }) => {
           extends: "./vite.config.ts",
           test: {
             name: "client",
-            environment: "browser",
             browser: {
               enabled: true,
               provider: playwright(),
