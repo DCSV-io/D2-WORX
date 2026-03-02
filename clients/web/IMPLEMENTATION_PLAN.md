@@ -15,6 +15,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 0    | Document Implementation Plan        | Complete    |       |
 | 1    | Error Handling Foundation + Types   | Complete    | Fixed pre-existing Vitest 4 config (`environment: "browser"` → `browser.enabled`), installed Playwright Chromium, updated deprecated `@vitest/browser/context` imports |
 | 2    | shadcn-svelte + Theme + Tokens      | Complete    | Zinc OKLCH theme, Gabarito font, mode-watcher 3-way toggle, Sonner toasts. Added `optimizeDeps.include` for stable browser tests. Used `@lucide/svelte` (rebranded from `lucide-svelte`) |
+| 2.5  | Server-Side Middleware              | Complete    | Request enrichment, rate limiting, idempotency. Direct SvelteKit→Geo gRPC for FindWhoIs. Graceful degradation when Redis/Geo unavailable |
 | 3    | Design System Sprint (Kitchen Sink) | Pending     |       |
 | 4    | Route Groups + Layout System        | Pending     |       |
 | 5    | @d2/auth-bff-client + Auth Proxy    | Pending     |       |
@@ -86,6 +87,33 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 **Actions:** `npx shadcn-svelte@latest init`, add foundational components (button, card, separator, badge, alert, sonner, tooltip, toggle).
 
 **Files:** `src/app.css` (shadcn theme), `src/app.html` (Gabarito font), `src/routes/+layout.svelte` (Toaster, ModeWatcher), `src/lib/components/theme-toggle.svelte`.
+
+---
+
+### Step 2.5: Server-Side Middleware
+
+**Goal:** Request enrichment, rate limiting, and idempotency on the SvelteKit server — same protections as Auth service (Hono).
+
+**New communication path:** SvelteKit → Geo gRPC (direct, for FindWhoIs). Mirrors Auth service's pre-auth middleware needing WhoIs data before any request reaches downstream services.
+
+**Packages added:** `@d2/request-enrichment`, `@d2/ratelimit`, `@d2/idempotency`, `@d2/interfaces`, `@d2/handler`, `@d2/logging`, `@d2/geo-client`, `@d2/cache-redis`, `@d2/cache-memory`, `@d2/result`, `@d2/service-defaults`, `ioredis`
+
+**Files:**
+
+| File                                                       | Purpose                                                         |
+| ---------------------------------------------------------- | --------------------------------------------------------------- |
+| `src/lib/server/middleware.server.ts`                      | Lazy singleton composition (Redis, Geo gRPC, all handlers)      |
+| `src/lib/server/hooks/request-enrichment.server.ts`        | SvelteKit Handle wrapper for IP/fingerprint/WhoIs enrichment    |
+| `src/lib/server/hooks/rate-limit.server.ts`                | SvelteKit Handle wrapper for multi-dimension rate limiting      |
+| `src/lib/server/hooks/idempotency.server.ts`               | SvelteKit Handle wrapper for mutation dedup via Idempotency-Key |
+| `src/hooks.server.ts`                                      | Wired via `sequence()` — enrichment → rate-limit → idempotency → paraglide |
+| `src/app.d.ts`                                             | Added `requestInfo` to `App.Locals`                             |
+| `backends/dotnet/orchestration/AppHost/AppHost.cs`         | Added Redis + Geo references to SvelteKit resource              |
+| `.env.local` / `.env.local.example`                        | Added `SVELTEKIT_GEO_CLIENT__APIKEY` + Geo API key mapping      |
+
+**Graceful degradation:** If Redis/Geo env vars are missing, `getMiddlewareContext()` returns `null` and all hooks skip (no-op). SvelteKit remains usable for frontend-only development.
+
+**Status:** Complete
 
 ---
 
@@ -184,14 +212,14 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 ## Dependency Graph
 
 ```
-Step 0 → Step 1 → Step 2 → Step 3 (VISUAL PAUSE)
-                         → Step 4 → Step 5 → Step 6 → Step 8
-                                          → Step 9
-                   Step 2 → Step 7 ───────────────────→ Step 8
+Step 0 → Step 1 → Step 2 → Step 2.5 → Step 3 (VISUAL PAUSE)
+                                     → Step 4 → Step 5 → Step 6 → Step 8
+                                                       → Step 9
+                            Step 2 → Step 7 ──────────────────→ Step 8
 Step 8 → Step 10 → Step 11 → Step 12
 ```
 
-Steps 0-4 require no backend services.
+Steps 0-3 require no backend services (Step 2.5 middleware degrades gracefully).
 
 ---
 
@@ -202,6 +230,9 @@ Decisions made during implementation (appended as we go):
 | Date       | Decision | Rationale |
 | ---------- | -------- | --------- |
 | 2026-03-01 | Plan created | — |
+| 2026-03-01 | SvelteKit→Geo gRPC for FindWhoIs | Pre-auth middleware needs WhoIs data before requests reach downstream services. Calling REST gateway would be circular (gateway itself does enrichment). Direct gRPC mirrors Auth service pattern |
+| 2026-03-01 | Graceful middleware degradation | SvelteKit must remain usable for local frontend dev without Redis/Geo. `getMiddlewareContext()` returns null when env vars missing, all hooks skip |
+| 2026-03-01 | No DI container for SvelteKit middleware | Simplified composition — module-level lazy singletons instead of full ServiceCollection. SvelteKit only needs pre-auth handlers (no scoped request contexts yet) |
 
 ---
 
@@ -234,4 +265,4 @@ Individual pages only provide page-specific content + page-specific SEO override
 
 Changes from original plan (appended as needed):
 
-_None yet._
+- **Step 2.5 added** (Server-Side Middleware): Inserted between Steps 2 and 3. SvelteKit needed the same request enrichment, rate limiting, and idempotency as the Auth service before continuing to UI work. Adds direct SvelteKit→Geo gRPC for FindWhoIs lookups.

@@ -351,9 +351,12 @@ var svelte = builder.AddViteApp(
         "d2-sveltekit",
         "../../../../clients/web")
     .WaitFor(restGateway)
+    .WaitFor(geoService)
     .WithPnpm()
     .WithArgs("--host", "0.0.0.0", "--port", "5173")
     .WithIconName("DesktopCursor")
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithReference(cache)
+    .WithReference(geoService);
 
 builder.Build().Run();

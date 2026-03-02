@@ -1,8 +1,12 @@
 import "./instrumentation.server"; // Initialize instrumentation...
 import type { Handle, HandleServerError } from "@sveltejs/kit";
+import { sequence } from "@sveltejs/kit/hooks";
 import { paraglideMiddleware } from "$lib/paraglide/server";
 import { requestLogger } from "$lib/server/request-logger.server";
 import { logger } from "$lib/server/logger.server";
+import { createRequestEnrichmentHandle } from "$lib/server/hooks/request-enrichment.server";
+import { createRateLimitHandle } from "$lib/server/hooks/rate-limit.server";
+import { createIdempotencyHandle } from "$lib/server/hooks/idempotency.server";
 
 const handleParaglide: Handle = async ({ event, resolve }) => {
   try {
@@ -36,7 +40,17 @@ const handleParaglide: Handle = async ({ event, resolve }) => {
   }
 };
 
-export const handle: Handle = handleParaglide;
+// Middleware ordering (mirrors auth service pipeline):
+// 1. Request enrichment (IP, fingerprint, WhoIs)
+// 2. Rate limiting (uses requestInfo from step 1)
+// 3. Idempotency (mutation dedup)
+// 4. Paraglide + request logging
+export const handle: Handle = sequence(
+  createRequestEnrichmentHandle(),
+  createRateLimitHandle(),
+  createIdempotencyHandle(),
+  handleParaglide,
+);
 
 export const handleError: HandleServerError = async ({ error, status, message }) => {
   const traceId = crypto.randomUUID();

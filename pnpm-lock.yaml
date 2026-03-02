@@ -750,6 +750,9 @@ importers:
       '@d2/result-extensions':
         specifier: workspace:*
         version: link:../../../shared/result-extensions
+      '@d2/service-defaults':
+        specifier: workspace:*
+        version: link:../../../shared/service-defaults
       '@d2/utilities':
         specifier: workspace:*
         version: link:../../../shared/utilities
@@ -1110,6 +1113,39 @@ importers:
 
   clients/web:
     dependencies:
+      '@d2/cache-memory':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/implementations/caching/in-memory/default
+      '@d2/cache-redis':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/implementations/caching/distributed/redis
+      '@d2/geo-client':
+        specifier: workspace:*
+        version: link:../../backends/node/services/geo/geo-client
+      '@d2/handler':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/handler
+      '@d2/idempotency':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/implementations/middleware/idempotency/default
+      '@d2/interfaces':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/interfaces
+      '@d2/logging':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/logging
+      '@d2/ratelimit':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/implementations/middleware/ratelimit/default
+      '@d2/request-enrichment':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/implementations/middleware/request-enrichment/default
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/result
+      '@d2/service-defaults':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/service-defaults
       '@internationalized/date':
         specifier: 3.11.0
         version: 3.11.0
@@ -1170,6 +1206,9 @@ importers:
       import-in-the-middle:
         specifier: 3.0.0
         version: 3.0.0
+      ioredis:
+        specifier: 5.10.0
+        version: 5.10.0
       libphonenumber-js:
         specifier: 1.12.38
         version: 1.12.38
