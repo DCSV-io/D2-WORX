@@ -8,6 +8,10 @@
   import { Separator } from "$lib/components/ui/separator/index.js";
   import { ScrollArea } from "$lib/components/ui/scroll-area/index.js";
   import * as Table from "$lib/components/ui/table/index.js";
+  import * as Collapsible from "$lib/components/ui/collapsible/index.js";
+  import * as Carousel from "$lib/components/ui/carousel/index.js";
+  import * as Card from "$lib/components/ui/card/index.js";
+  import { AspectRatio } from "$lib/components/ui/aspect-ratio/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import CircleAlertIcon from "@lucide/svelte/icons/circle-alert";
   import InfoIcon from "@lucide/svelte/icons/info";
@@ -17,6 +21,8 @@
   import BoldIcon from "@lucide/svelte/icons/bold";
   import ItalicIcon from "@lucide/svelte/icons/italic";
   import UnderlineIcon from "@lucide/svelte/icons/underline";
+  import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
+  import ImageIcon from "@lucide/svelte/icons/image";
 
   const tableData = [
     { id: "INV001", status: "Paid", method: "Credit Card", amount: "$250.00" },
@@ -24,6 +30,16 @@
     { id: "INV003", status: "Unpaid", method: "Bank Transfer", amount: "$350.00" },
     { id: "INV004", status: "Paid", method: "Credit Card", amount: "$450.00" },
     { id: "INV005", status: "Paid", method: "PayPal", amount: "$550.00" },
+  ];
+
+  let collapsibleOpen = $state(false);
+
+  const carouselItems = [
+    { title: "Slide 1", color: "bg-primary/10" },
+    { title: "Slide 2", color: "bg-secondary/30" },
+    { title: "Slide 3", color: "bg-accent/30" },
+    { title: "Slide 4", color: "bg-muted" },
+    { title: "Slide 5", color: "bg-primary/20" },
   ];
 </script>
 
@@ -151,6 +167,86 @@
           <Toggle aria-label="Toggle underline">
             <UnderlineIcon class="size-4" />
           </Toggle>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapsible -->
+    <div class="flex flex-col gap-3">
+      <h3 class="text-sm font-medium text-muted-foreground">Collapsible</h3>
+      <div class="rounded-lg border p-6">
+        <Collapsible.Root bind:open={collapsibleOpen} class="w-full max-w-sm">
+          <div class="flex items-center justify-between">
+            <h4 class="text-sm font-semibold">@peduarte starred 3 repositories</h4>
+            <Collapsible.Trigger>
+              <Button variant="ghost" size="sm">
+                <ChevronsUpDownIcon class="size-4" />
+                <span class="sr-only">Toggle</span>
+              </Button>
+            </Collapsible.Trigger>
+          </div>
+          <div class="mt-2 rounded-md border px-4 py-2 text-sm">
+            @radix-ui/primitives
+          </div>
+          <Collapsible.Content>
+            <div class="mt-2 flex flex-col gap-2">
+              <div class="rounded-md border px-4 py-2 text-sm">
+                @radix-ui/colors
+              </div>
+              <div class="rounded-md border px-4 py-2 text-sm">
+                @stitches/react
+              </div>
+            </div>
+          </Collapsible.Content>
+        </Collapsible.Root>
+      </div>
+    </div>
+
+    <!-- Carousel -->
+    <div class="flex flex-col gap-3">
+      <h3 class="text-sm font-medium text-muted-foreground">Carousel</h3>
+      <div class="mx-auto w-full max-w-md rounded-lg border p-6">
+        <Carousel.Root class="w-full">
+          <Carousel.Content>
+            {#each carouselItems as item, i (i)}
+              <Carousel.Item>
+                <div class="p-1">
+                  <Card.Root>
+                    <Card.Content class="flex aspect-square items-center justify-center p-6 {item.color}">
+                      <span class="text-3xl font-semibold">{i + 1}</span>
+                    </Card.Content>
+                  </Card.Root>
+                </div>
+              </Carousel.Item>
+            {/each}
+          </Carousel.Content>
+          <Carousel.Previous />
+          <Carousel.Next />
+        </Carousel.Root>
+      </div>
+    </div>
+
+    <!-- Aspect Ratio -->
+    <div class="flex flex-col gap-3">
+      <h3 class="text-sm font-medium text-muted-foreground">Aspect Ratio</h3>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="flex flex-col gap-2">
+          <span class="text-xs text-muted-foreground">16:9</span>
+          <AspectRatio ratio={16 / 9} class="rounded-lg border bg-muted">
+            <div class="flex h-full items-center justify-center gap-2 text-muted-foreground">
+              <ImageIcon class="size-6" />
+              <span class="text-sm">16:9 Content</span>
+            </div>
+          </AspectRatio>
+        </div>
+        <div class="flex flex-col gap-2">
+          <span class="text-xs text-muted-foreground">1:1</span>
+          <AspectRatio ratio={1} class="rounded-lg border bg-muted">
+            <div class="flex h-full items-center justify-center gap-2 text-muted-foreground">
+              <ImageIcon class="size-6" />
+              <span class="text-sm">1:1 Content</span>
+            </div>
+          </AspectRatio>
         </div>
       </div>
     </div>

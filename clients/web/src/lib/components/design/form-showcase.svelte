@@ -9,11 +9,43 @@
   import * as Select from "$lib/components/ui/select/index.js";
   import { Slider } from "$lib/components/ui/slider/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
+  import { Calendar } from "$lib/components/ui/calendar/index.js";
+  import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
+  import * as Popover from "$lib/components/ui/popover/index.js";
+  import * as Command from "$lib/components/ui/command/index.js";
+  import { today, getLocalTimeZone } from "@internationalized/date";
+  import type { DateValue } from "@internationalized/date";
+  import CheckIcon from "@lucide/svelte/icons/check";
+  import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
+  import AlignLeftIcon from "@lucide/svelte/icons/align-left";
+  import AlignCenterIcon from "@lucide/svelte/icons/align-center";
+  import AlignRightIcon from "@lucide/svelte/icons/align-right";
+  import AlignJustifyIcon from "@lucide/svelte/icons/align-justify";
+  import WifiIcon from "@lucide/svelte/icons/wifi";
+  import BluetoothIcon from "@lucide/svelte/icons/bluetooth";
+  import MonitorIcon from "@lucide/svelte/icons/monitor";
 
   let switchChecked = $state(false);
   let checkboxChecked = $state(false);
   let sliderValue = $state(50);
   let selectValue = $state<string | undefined>(undefined);
+  let calendarValue = $state<DateValue | undefined>(today(getLocalTimeZone()));
+  let alignValue = $state("left");
+  let connectivityValues = $state<string[]>(["wifi"]);
+  let comboOpen = $state(false);
+  let comboValue = $state("");
+
+  const frameworks = [
+    { value: "sveltekit", label: "SvelteKit" },
+    { value: "nextjs", label: "Next.js" },
+    { value: "nuxt", label: "Nuxt" },
+    { value: "remix", label: "Remix" },
+    { value: "astro", label: "Astro" },
+  ];
+
+  const selectedFrameworkLabel = $derived(
+    frameworks.find((f) => f.value === comboValue)?.label ?? "Select framework...",
+  );
 </script>
 
 <Section id="forms" title="Form Controls">
@@ -95,6 +127,95 @@
       <div class="flex flex-col gap-2">
         <Label>Volume ({sliderValue}%)</Label>
         <Slider type="single" bind:value={sliderValue} min={0} max={100} step={1} />
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div class="flex flex-col gap-4 rounded-lg border p-6">
+      <h3 class="text-sm font-medium text-muted-foreground">Calendar</h3>
+      <div class="flex flex-col items-center gap-3">
+        <Calendar type="single" bind:value={calendarValue} class="rounded-md border" />
+        <p class="text-sm text-muted-foreground">
+          Selected: {calendarValue ? calendarValue.toString() : "none"}
+        </p>
+      </div>
+    </div>
+
+    <!-- Combobox + Toggle Group -->
+    <div class="flex flex-col gap-6 rounded-lg border p-6">
+      <!-- Combobox (Command + Popover) -->
+      <div class="flex flex-col gap-3">
+        <h3 class="text-sm font-medium text-muted-foreground">Combobox</h3>
+        <Popover.Root bind:open={comboOpen}>
+          <Popover.Trigger>
+            <Button variant="outline" role="combobox" class="w-full justify-between">
+              {selectedFrameworkLabel}
+              <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
+            </Button>
+          </Popover.Trigger>
+          <Popover.Content class="w-[--radix-popover-trigger-width] p-0" align="start">
+            <Command.Root>
+              <Command.Input placeholder="Search framework..." />
+              <Command.List>
+                <Command.Empty>No framework found.</Command.Empty>
+                <Command.Group>
+                  {#each frameworks as framework (framework.value)}
+                    <Command.Item
+                      value={framework.value}
+                      keywords={[framework.label]}
+                      onSelect={() => {
+                        comboValue = comboValue === framework.value ? "" : framework.value;
+                        comboOpen = false;
+                      }}
+                    >
+                      <CheckIcon
+                        class="mr-2 size-4 {comboValue === framework.value ? 'opacity-100' : 'opacity-0'}"
+                      />
+                      {framework.label}
+                    </Command.Item>
+                  {/each}
+                </Command.Group>
+              </Command.List>
+            </Command.Root>
+          </Popover.Content>
+        </Popover.Root>
+      </div>
+
+      <!-- Toggle Group -->
+      <div class="flex flex-col gap-3">
+        <h3 class="text-sm font-medium text-muted-foreground">Toggle Group (Single)</h3>
+        <ToggleGroup.Root type="single" bind:value={alignValue}>
+          <ToggleGroup.Item value="left" aria-label="Align left">
+            <AlignLeftIcon class="size-4" />
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value="center" aria-label="Align center">
+            <AlignCenterIcon class="size-4" />
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value="right" aria-label="Align right">
+            <AlignRightIcon class="size-4" />
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value="justify" aria-label="Justify">
+            <AlignJustifyIcon class="size-4" />
+          </ToggleGroup.Item>
+        </ToggleGroup.Root>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <h3 class="text-sm font-medium text-muted-foreground">Toggle Group (Multi)</h3>
+        <ToggleGroup.Root type="multiple" bind:value={connectivityValues}>
+          <ToggleGroup.Item value="wifi" aria-label="Wi-Fi">
+            <WifiIcon class="mr-1 size-4" />
+            Wi-Fi
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value="bluetooth" aria-label="Bluetooth">
+            <BluetoothIcon class="mr-1 size-4" />
+            Bluetooth
+          </ToggleGroup.Item>
+          <ToggleGroup.Item value="monitor" aria-label="Display">
+            <MonitorIcon class="mr-1 size-4" />
+            Display
+          </ToggleGroup.Item>
+        </ToggleGroup.Root>
       </div>
     </div>
 

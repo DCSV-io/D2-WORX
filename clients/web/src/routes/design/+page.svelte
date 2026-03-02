@@ -10,6 +10,7 @@
   import NavigationShowcase from "$lib/components/design/navigation-showcase.svelte";
   import FeedbackShowcase from "$lib/components/design/feedback-showcase.svelte";
   import DataDisplayShowcase from "$lib/components/design/data-display-showcase.svelte";
+  import LayoutShowcase from "$lib/components/design/layout-showcase.svelte";
   import {
     theme,
     getLightTokens,
@@ -30,6 +31,7 @@
     { id: "navigation", label: "Navigation" },
     { id: "feedback", label: "Feedback" },
     { id: "data-display", label: "Data Display" },
+    { id: "layout", label: "Layout & Patterns" },
   ] as const;
 
   // Build CSS overrides for live theme editing.
@@ -107,6 +109,7 @@
     <NavigationShowcase />
     <FeedbackShowcase />
     <DataDisplayShowcase />
+    <LayoutShowcase />
   </div>
 </div>
 
