@@ -2,6 +2,11 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    projects: [
+      "backends/node/shared/tests/vitest.config.ts",
+      "backends/node/services/*/vitest.config.ts",
+      "backends/node/services/*/tests/vitest.config.ts",
+    ],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

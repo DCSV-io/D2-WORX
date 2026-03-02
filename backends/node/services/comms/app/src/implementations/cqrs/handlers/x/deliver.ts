@@ -19,7 +19,7 @@ import type {
   DeliveryAttemptRepoHandlers,
   ChannelPreferenceRepoHandlers,
 } from "../../../../interfaces/repository/handlers/index.js";
-import type { RecipientResolver } from "./resolve-recipient.js";
+import type { RecipientResolver } from "../q/resolve-recipient.js";
 import type { IChannelDispatcher } from "./channel-dispatchers.js";
 
 export interface DeliverInput {

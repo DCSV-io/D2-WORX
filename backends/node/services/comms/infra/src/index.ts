@@ -45,7 +45,7 @@ export { PurgeDeletedMessages } from "./repository/handlers/d/purge-deleted-mess
 export { PurgeDeliveryHistory } from "./repository/handlers/d/purge-delivery-history.js";
 
 // --- Repository Ping ---
-export { PingDb } from "./repository/handlers/q/ping-db.js";
+export { PingDb } from "./repository/handlers/r/ping-db.js";
 
 // --- DI Registration ---
 export { addCommsInfra } from "./registration.js";

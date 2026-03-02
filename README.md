@@ -18,7 +18,7 @@ Summary:
 
 ### Getting started with local dev environment:
 
-1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.0 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.7.0+](https://nodejs.org/en/download), [PNPM 10.15.1+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
+1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK (10.0.103+)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.1 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.14.0+](https://nodejs.org/en/download), [PNPM 10.30.3+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
 2. Copy `.env.local.example` to `.env.local` in the project root and fill in your values (credentials for PostgreSQL, Redis, RabbitMQ, MinIO, Grafana, and your IPInfo API token). Env vars use `SECTION_PROPERTY` naming — `D2Env` auto-maps them to .NET configuration paths.
 3. Edit any `appsettings.*.json` files as needed.
 4. Run the AppHost project either via CLI or IDE of your choice.
@@ -59,10 +59,10 @@ Summary:
 - Geo.Client: Service-owned client library (messages, interfaces, WhoIs cache handler)
 - Request enrichment middleware (IP resolution, fingerprinting, WhoIs geolocation lookup)
 - Multi-dimensional rate limiting middleware (sliding-window algorithm using abstracted distributed cache)
-- 1,436+ .NET tests (unit + integration) passing (677 shared + 759 Geo service)
+- 1,528+ .NET tests (unit + integration) passing (730 shared + 798 Geo service)
 - Node.js pnpm workspace with shared TypeScript config and Vitest
-- ESLint 9 + Prettier monorepo-wide code quality tooling
-- TypeScript shared infrastructure (Phase 1 complete — 19 `@d2/*` shared packages, 857 tests):
+- ESLint 10 + Prettier monorepo-wide code quality tooling
+- TypeScript shared infrastructure (Phase 1 complete — 19 `@d2/*` shared packages, 973 tests):
   - Layer 0: `@d2/result`, `@d2/utilities`, `@d2/protos`, `@d2/testing`, `@d2/messaging`
   - Layer 0-1: `@d2/logging`, `@d2/service-defaults`, `@d2/handler` (BaseHandler + OTel + redaction), `@d2/di` (DI container)
   - Layer 2: `@d2/interfaces`, `@d2/result-extensions`
@@ -73,12 +73,12 @@ Summary:
 
 - Ext-key-only contact API with API key authentication (gRPC metadata `x-api-key`)
 - .NET Gateway JWT validation (RS256 via JWKS, fingerprint binding, authorization policies, service key filter)
-- Auth service Stage B (Node.js + Hono + BetterAuth) — 874 auth tests passing:
+- Auth service Stage B (Node.js + Hono + BetterAuth) — 922 auth tests passing:
   - Domain model (entities, value objects, business rules)
   - Application layer (CQRS handlers, notification publishers, interfaces)
   - Infrastructure layer (repositories, BetterAuth config + Drizzle adapter, auto-generated migrations)
   - API layer (Hono routes, middleware, composition root)
-- Comms service Phase 1 (delivery engine) — 566 comms tests passing:
+- Comms service Phase 1 (delivery engine) — 592 comms tests passing:
   - Email delivery via Resend, SMS via Twilio
   - `@d2/comms-client` — thin RabbitMQ publishing client (universal notification shape)
   - RabbitMQ consumer for notification requests, gRPC API layer + Aspire wiring
@@ -145,7 +145,7 @@ graph TB
         end
 
         Gateways <-->|gRPC| Services
-        Gateways <-->|JWKS| AuthSvc
+        Gateways <-->|JWKS + gRPC| AuthSvc
         AuthSvc <-->|gRPC| Services
         DKRONMGR -->|REST API| DKRON
         DKRON -->|HTTP + API key| REST
@@ -268,8 +268,8 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                            | Platform | Status      | Description                                                                               |
 > | -------------------------------------------------- | -------- | ----------- | ----------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md) | .NET     | ✅ Done     | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching         |
-> | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (874 tests) |
-> | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (566 tests)  |
+> | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (922 tests) |
+> | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (592 tests)  |
 > | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md) | Node.js  | ✅ Done      | Declarative Dkron job reconciler — drift detection, orphan cleanup (64 tests)         |
 >
 > **Client Libraries:**
@@ -325,9 +325,9 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)
 ![C#](https://img.shields.io/badge/C%23-14-512BD4?logo=dotnet)
 ![Entity Framework Core](https://img.shields.io/badge/EF_Core-10.0-512BD4?logo=dotnet)
-![StackExchange.Redis](https://img.shields.io/badge/StackExchange.Redis-2.9-DC382D?logo=redis)
-![Serilog](https://img.shields.io/badge/Serilog-9.0-512BD4?logo=dotnet)
-![RabbitMQ.Client](https://img.shields.io/badge/RabbitMQ.Client-7.1-FF6600?logo=rabbitmq)
+![StackExchange.Redis](https://img.shields.io/badge/StackExchange.Redis-2.11-DC382D?logo=redis)
+![Serilog](https://img.shields.io/badge/Serilog-10.0-512BD4?logo=dotnet)
+![RabbitMQ.Client](https://img.shields.io/badge/RabbitMQ.Client-7.2-FF6600?logo=rabbitmq)
 
 #### Node.js Backend
 
@@ -349,9 +349,9 @@ While WORX itself will be a commercial product, this repository exists (for now,
 
 #### Infrastructure & Orchestration
 
-![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.0-512BD4?logo=dotnet)
+![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.1-512BD4?logo=dotnet)
 ![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)
-![pnpm](https://img.shields.io/badge/pnpm-10.15-F69220?logo=pnpm)
+![pnpm](https://img.shields.io/badge/pnpm-10.30-F69220?logo=pnpm)
 
 #### Frontend
 
@@ -366,12 +366,12 @@ While WORX itself will be a commercial product, this repository exists (for now,
 ![REST](https://img.shields.io/badge/REST-API-009688)
 ![SignalR](https://img.shields.io/badge/SignalR-WebSocket-512BD4)
 ![gRPC](https://img.shields.io/badge/gRPC-HTTP%2F2-244c5a?logo=grpc)
-![Protobuf](https://img.shields.io/badge/Protobuf-3-0288D1)
+![Protobuf](https://img.shields.io/badge/Protobuf-3.34-0288D1)
 ![Buf](https://img.shields.io/badge/Buf-1.65-0A7AFF?logo=buf)
 
 #### Observability
 
-![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.14-5B5EA7?logo=opentelemetry)
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-1.15-5B5EA7?logo=opentelemetry)
 ![Loki](https://img.shields.io/badge/Loki-3.5-F46800?logo=grafana)
 ![Grafana](https://img.shields.io/badge/Grafana-12.2-F46800?logo=grafana)
 ![Tempo](https://img.shields.io/badge/Tempo-2.8-F46800?logo=grafana)
@@ -380,17 +380,17 @@ While WORX itself will be a commercial product, this repository exists (for now,
 
 #### Testing & Quality
 
-![xUnit](https://img.shields.io/badge/xUnit-3.2-512BD4)
-![Vitest](https://img.shields.io/badge/Vitest-3.1-6E9F18?logo=vitest)
-![Testcontainers](https://img.shields.io/badge/Testcontainers-4.9-2496ED?logo=docker)
+![xUnit](https://img.shields.io/badge/xUnit-3.2.2-512BD4)
+![Vitest](https://img.shields.io/badge/Vitest-4.0-6E9F18?logo=vitest)
+![Testcontainers](https://img.shields.io/badge/Testcontainers-4.10-2496ED?logo=docker)
 ![FluentAssertions](https://img.shields.io/badge/FluentAssertions-8.8-5C2D91)
 ![Moq](https://img.shields.io/badge/Moq-4.20-94C11F)
-![Playwright](https://img.shields.io/badge/Playwright-1.55-2EAD33?logo=playwright)
+![Playwright](https://img.shields.io/badge/Playwright-1.58-2EAD33?logo=playwright)
 
 #### CI/CD & Code Quality
 
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI%2FCD-2088FF?logo=github-actions)
-![ESLint](https://img.shields.io/badge/ESLint-9.39-4B32C3?logo=eslint)
+![ESLint](https://img.shields.io/badge/ESLint-10.0-4B32C3?logo=eslint)
 ![Prettier](https://img.shields.io/badge/Prettier-3.8-F7B93E?logo=prettier)
 ![StyleCop](https://img.shields.io/badge/StyleCop-Enforced-239120)
 ![Conventional Commits](https://img.shields.io/badge/Conventional_Commits-1.0.0-FE5196?logo=conventionalcommits)

@@ -249,7 +249,17 @@ public static partial class Extensions
             builder.Configuration.AddEnvironmentVariables();
 
             builder.AddStructuredLogging();
-            builder.ConfigureOpenTelemetry();
+
+            // OTel 1.15.0 throws NullReferenceException in OpenTelemetryMetricsListener
+            // when OTEL_SDK_DISABLED=true (e.g., E2E tests). Skip registration entirely.
+            if (!string.Equals(
+                    Environment.GetEnvironmentVariable("OTEL_SDK_DISABLED"),
+                    "true",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                builder.ConfigureOpenTelemetry();
+            }
+
             builder.AddDefaultHealthChecks();
 
             builder.Services.AddServiceDiscovery();

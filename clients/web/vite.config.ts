@@ -1,5 +1,6 @@
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import tailwindcss from "@tailwindcss/vite";
+import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { loadEnv } from "vite";
@@ -30,7 +31,7 @@ export default defineConfig(({ mode }) => {
             environment: "browser",
             browser: {
               enabled: true,
-              provider: "playwright",
+              provider: playwright(),
               instances: [{ browser: "chromium" }],
             },
             include: ["src/**/*.svelte.{test,spec}.{js,ts}"],

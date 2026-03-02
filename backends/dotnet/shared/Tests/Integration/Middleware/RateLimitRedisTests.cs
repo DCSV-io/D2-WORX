@@ -37,7 +37,7 @@ public class RateLimitRedisTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
     {
-        _container = new RedisBuilder().Build();
+        _container = new RedisBuilder("redis:8.2").Build();
         await _container.StartAsync(Ct);
         _redis = await ConnectionMultiplexer.ConnectAsync(_container.GetConnectionString());
 

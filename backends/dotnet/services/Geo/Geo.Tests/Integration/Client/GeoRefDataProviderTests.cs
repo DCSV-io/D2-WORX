@@ -36,7 +36,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         // Set up Redis container.
-        _container = new RedisBuilder().Build();
+        _container = new RedisBuilder("redis:8.2").Build();
         await _container.StartAsync(Ct);
 
         // Create handler context.

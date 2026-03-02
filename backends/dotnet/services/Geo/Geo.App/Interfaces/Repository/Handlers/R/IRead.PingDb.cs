@@ -4,7 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-namespace D2.Geo.App.Interfaces.Repository.Handlers.Q;
+namespace D2.Geo.App.Interfaces.Repository.Handlers.R;
 
 using D2.Shared.Handler;
 

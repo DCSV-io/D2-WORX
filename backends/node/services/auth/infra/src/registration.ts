@@ -42,7 +42,7 @@ import { PurgeExpiredSessions } from "./repository/handlers/d/purge-expired-sess
 import { PurgeSignInEvents } from "./repository/handlers/d/purge-sign-in-events.js";
 import { PurgeExpiredInvitations } from "./repository/handlers/d/purge-expired-invitations.js";
 import { PurgeExpiredEmulationConsents } from "./repository/handlers/d/purge-expired-emulation-consents.js";
-import { PingDb } from "./repository/handlers/q/ping-db.js";
+import { PingDb } from "./repository/handlers/r/ping-db.js";
 
 /**
  * Registers auth infrastructure services (repository handlers) with the DI container.

@@ -13,7 +13,7 @@ using ComponentHealth = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.Component
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.ICheckHealthHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.CheckHealthInput;
 using O = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.CheckHealthOutput;
-using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.Q.IRead;
+using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 
 /// <summary>
 /// Handler for checking the overall health of the Geo service by aggregating

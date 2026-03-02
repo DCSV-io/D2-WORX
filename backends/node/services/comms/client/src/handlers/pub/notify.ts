@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { IMessagePublisher } from "@d2/messaging";
 import { COMMS_EVENTS } from "../../comms-client-constants.js";
@@ -28,7 +28,7 @@ export interface NotifyInput {
 export interface NotifyOutput {}
 
 const notifySchema = z.object({
-  recipientContactId: z.string().uuid().min(1),
+  recipientContactId: zodGuid,
   title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
   plaintext: z.string().min(1).max(50_000),
@@ -36,7 +36,7 @@ const notifySchema = z.object({
   urgency: z.enum(["normal", "urgent"]).optional().default("normal"),
   correlationId: z.string().min(1).max(36),
   senderService: z.string().min(1).max(50),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 /**

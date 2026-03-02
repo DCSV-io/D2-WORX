@@ -20,7 +20,10 @@ const { mockConsumer, mockPublisher, mockConnection, MockConnection } = vi.hoist
     queueBind: vi.fn().mockResolvedValue(undefined),
   };
 
-  const MockConnection = vi.fn().mockReturnValue(mockConnection);
+  // Vitest 4: vi.fn() must wrap a regular function (not arrow) to support `new`
+  const MockConnection = vi.fn(function () {
+    return mockConnection;
+  });
 
   return { mockConsumer, mockPublisher, mockConnection, MockConnection };
 });
@@ -35,7 +38,9 @@ describe("MessageBus", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Re-establish return values after clearAllMocks wipes them
-    MockConnection.mockReturnValue(mockConnection);
+    MockConnection.mockImplementation(function () {
+      return mockConnection;
+    });
     mockConnection.createConsumer.mockReturnValue(mockConsumer);
     mockConnection.createPublisher.mockReturnValue(mockPublisher);
     mockConsumer.on.mockImplementation((_event: string, cb: () => void) => cb());

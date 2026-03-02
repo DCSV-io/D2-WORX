@@ -32,8 +32,7 @@ public class TransactionsPgTests : IAsyncLifetime
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
     {
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
+        _container = new PostgreSqlBuilder("postgres:18")
             .Build();
 
         await _container.StartAsync(Ct);

@@ -25,15 +25,15 @@
     "@d2/testing": "workspace:*",
     "@d2/utilities": "workspace:*",
     "@d2/messaging": "workspace:*",
-    "@testcontainers/postgresql": "10.18.0",
-    "@testcontainers/rabbitmq": "10.18.0",
-    "@testcontainers/redis": "10.18.0",
+    "@testcontainers/postgresql": "11.12.0",
+    "@testcontainers/rabbitmq": "11.12.0",
+    "@testcontainers/redis": "11.12.0",
     "@types/pg": "8.16.0",
     "better-auth": "1.4.18",
     "drizzle-orm": "0.45.1",
     "hono": "4.11.9",
     "ioredis": "5.8.0",
     "pg": "8.18.0",
-    "vitest": "3.1.1"
+    "vitest": "4.0.18"
   }
 }

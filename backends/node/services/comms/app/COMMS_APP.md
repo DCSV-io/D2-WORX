@@ -66,12 +66,12 @@ src/
       handlers/
         x/
           deliver.ts                    Deliver (Complex) -- core delivery orchestrator
-          resolve-recipient.ts          RecipientResolver (Complex) -- contactId to email/phone
         c/
           set-channel-preference.ts     SetChannelPreference (Command) -- upsert channel prefs
           run-deleted-message-purge.ts  RunDeletedMessagePurge (Command) -- purge soft-deleted messages
           run-delivery-history-purge.ts RunDeliveryHistoryPurge (Command) -- purge old delivery history
         q/
+          resolve-recipient.ts          RecipientResolver (Query) -- contactId to email/phone
           get-channel-preference.ts     GetChannelPreference (Query) -- read channel prefs
 ```
 
@@ -80,7 +80,7 @@ src/
 | Handler                 | Category | Dir  | Description                                                                                                                                     |
 | ----------------------- | -------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Deliver                 | Complex  | `x/` | Full delivery orchestrator: create Message + Request, resolve recipient, pick channels, render markdown, dispatch via providers, handle retries |
-| RecipientResolver       | Complex  | `x/` | Resolves contactId to email/phone via `GetContactsByIds` (geo-client)                                                                           |
+| RecipientResolver       | Query    | `q/` | Resolves contactId to email/phone via `GetContactsByIds` (geo-client)                                                                           |
 | SetChannelPreference    | Command  | `c/` | Upsert per-contact channel preferences (email/sms enabled flags)                                                                                |
 | RunDeletedMessagePurge  | Command  | `c/` | Acquires distributed lock, purges soft-deleted messages older than retention cutoff                                                             |
 | RunDeliveryHistoryPurge | Command  | `c/` | Acquires distributed lock, purges delivery requests/attempts older than retention cutoff                                                        |
@@ -187,17 +187,20 @@ All tests are in `@d2/comms-tests` (`backends/node/services/comms/tests/`):
 
 ```
 src/unit/app/
-  factories.test.ts                 createDeliveryHandlers factory tests
+  factories.test.ts                       createDeliveryHandlers factory tests
   handlers/
-    deliver.test.ts                 Deliver handler (mocked repos + providers)
-    resolve-recipient.test.ts       RecipientResolver handler (mocked geo-client)
+    deliver.test.ts                       Deliver handler (mocked repos + providers)
+    resolve-recipient.test.ts             RecipientResolver handler (mocked geo-client)
+    set-channel-preference.test.ts        SetChannelPreference handler
+    get-channel-preference.test.ts        GetChannelPreference handler
+    check-health.test.ts                  CheckHealth handler
+    c/
+      run-deleted-message-purge.test.ts   RunDeletedMessagePurge unit tests
+      run-delivery-history-purge.test.ts  RunDeliveryHistoryPurge unit tests
   helpers/
-    mock-handlers.ts                Shared mock handler factories
-src/unit/jobs/
-  run-deleted-message-purge.test.ts     RunDeletedMessagePurge unit tests
-  run-delivery-history-purge.test.ts    RunDeliveryHistoryPurge unit tests
+    mock-handlers.ts                      Shared mock handler factories
 src/integration/
-  job-purge-handlers.test.ts            PurgeDeletedMessages + PurgeDeliveryHistory integration tests
+  job-purge-handlers.test.ts              PurgeDeletedMessages + PurgeDeliveryHistory integration
 ```
 
 ## Dependencies

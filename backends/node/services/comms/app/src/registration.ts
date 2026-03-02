@@ -35,7 +35,7 @@ import {
   SmsDispatcher,
 } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 import type { IChannelDispatcher } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
-import { RecipientResolver } from "./implementations/cqrs/handlers/x/resolve-recipient.js";
+import { RecipientResolver } from "./implementations/cqrs/handlers/q/resolve-recipient.js";
 import { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
 import { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
 import { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";

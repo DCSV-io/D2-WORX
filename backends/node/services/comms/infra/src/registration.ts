@@ -30,7 +30,7 @@ import { FindChannelPreferenceByContactId } from "./repository/handlers/r/find-c
 import { MarkDeliveryRequestProcessed } from "./repository/handlers/u/mark-delivery-request-processed.js";
 import { UpdateDeliveryAttemptStatus } from "./repository/handlers/u/update-delivery-attempt-status.js";
 import { UpdateChannelPreferenceRecord } from "./repository/handlers/u/update-channel-preference-record.js";
-import { PingDb } from "./repository/handlers/q/ping-db.js";
+import { PingDb } from "./repository/handlers/r/ping-db.js";
 import { PurgeDeletedMessages } from "./repository/handlers/d/purge-deleted-messages.js";
 import { PurgeDeliveryHistory } from "./repository/handlers/d/purge-delivery-history.js";
 

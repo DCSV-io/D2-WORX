@@ -36,4 +36,6 @@ export { createAuthRoutes } from "./routes/auth-routes.js";
 export { createEmulationRoutes } from "./routes/emulation-routes.js";
 export { createOrgContactRoutes } from "./routes/org-contact-routes.js";
 export { createInvitationRoutes } from "./routes/invitation-routes.js";
-export { createHealthRoutes } from "./routes/health.js";
+
+// gRPC service factories (exported for testing)
+export { createAuthGrpcService } from "./services/auth-grpc-service.js";

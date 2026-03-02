@@ -54,13 +54,12 @@ public class GetTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         // Set up PostgreSQL container.
-        _pgContainer = new PostgreSqlBuilder()
-            .WithImage("postgres:18")
+        _pgContainer = new PostgreSqlBuilder("postgres:18")
             .Build();
         await _pgContainer.StartAsync(Ct);
 
         // Set up Redis container.
-        _redisContainer = new RedisBuilder().Build();
+        _redisContainer = new RedisBuilder("redis:8.2").Build();
         await _redisContainer.StartAsync(Ct);
 
         // Set up temp file path.

@@ -21,6 +21,6 @@
     "@d2/handler": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/result": "workspace:*",
-    "ioredis": "5.8.0"
+    "ioredis": "5.10.0"
   }
 }

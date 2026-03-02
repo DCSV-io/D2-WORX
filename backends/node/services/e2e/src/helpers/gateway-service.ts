@@ -83,11 +83,9 @@ export async function startGateway(opts: {
     "ConnectionStrings__d2-redis": redisUriToStackExchange(opts.redisUrl),
     // Geo gRPC address (the only service we actually call)
     "services__d2-geo__http__0": `http://${opts.geoGrpcAddress}`,
-    // Auth + Comms gRPC addresses (required by config validation, but not called)
+    // Auth + Comms gRPC addresses (required by config validation, but not called in Geo-only tests)
     "services__d2-auth__auth-grpc__0": "http://localhost:1",
     "services__d2-comms__comms-grpc__0": "http://localhost:1",
-    // Auth HTTP address (for health endpoint fan-out — not critical for jobs)
-    "services__d2-auth__auth-http__0": "http://localhost:1",
     // Service key config: allow Dkron's X-Api-Key to pass
     "GATEWAY_SERVICEKEY__ValidKeys__0": opts.serviceKey,
     // gRPC API keys (sent as call credentials to downstream services)

@@ -65,7 +65,7 @@ var minioInit = builder.AddContainer("d2-minio-init", "minio/mc", "RELEASE.2025-
  ******************************************/
 
 // Loki - Log Aggregation.
-var loki = builder.AddContainer("d2-loki", "grafana/loki", "3.5.5")
+var loki = builder.AddContainer("d2-loki", "grafana/loki", "3.5.10")
     .WithContainerName("d2-loki")
     .WithIconName("DocumentText")
     .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "loki-http", isProxied: false)
@@ -79,7 +79,7 @@ var loki = builder.AddContainer("d2-loki", "grafana/loki", "3.5.5")
     .WithLifetime(ContainerLifetime.Persistent);
 
 // Tempo - Distributed Tracing.
-var tempo = builder.AddContainer("d2-tempo", "grafana/tempo", "2.8.2")
+var tempo = builder.AddContainer("d2-tempo", "grafana/tempo", "2.10.1")
     .WithContainerName("d2-tempo")
     .WithIconName("Timeline")
     .WithHttpEndpoint(port: 3200, targetPort: 3200, name: "tempo-http", isProxied: false)
@@ -93,7 +93,7 @@ var tempo = builder.AddContainer("d2-tempo", "grafana/tempo", "2.8.2")
     .WithLifetime(ContainerLifetime.Persistent);
 
 // Mimir - Metrics.
-var mimir = builder.AddContainer("d2-mimir", "grafana/mimir", "2.17.1")
+var mimir = builder.AddContainer("d2-mimir", "grafana/mimir", "2.17.7")
     .WithContainerName("d2-mimir")
     .WithIconName("TopSpeed")
     .WithHttpEndpoint(port: 9009, targetPort: 9009, name: "mimir-http", isProxied: false)
@@ -107,7 +107,7 @@ var mimir = builder.AddContainer("d2-mimir", "grafana/mimir", "2.17.1")
     .WithLifetime(ContainerLifetime.Persistent);
 
 // cAdvisor - Container Resource Monitoring.
-var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "v0.50.0")
+var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "v0.52.1")
     .WithContainerName("d2-cadvisor")
     .WithIconName("ChartMultiple")
     .WithHttpEndpoint(port: 8081, targetPort: 8080, name: "cadvisor-http", isProxied: false)
@@ -121,7 +121,7 @@ var cAdvisor = builder.AddContainer("d2-cadvisor", "gcr.io/cadvisor/cadvisor", "
     .WithLifetime(ContainerLifetime.Persistent);
 
 // Grafana Alloy - Unified Agent for Metrics, Logs and Traces.
-var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1.11.0")
+var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1.13.2")
     .WithContainerName("d2-grafana-alloy")
     .WithIconName("Agents")
     .WithHttpEndpoint(port: 12345, targetPort: 12345, name: "alloy-http", isProxied: false)
@@ -151,7 +151,7 @@ var grafanaAlloy = builder.AddContainer("d2-grafana-alloy", "grafana/alloy", "v1
     .WithLifetime(ContainerLifetime.Persistent);
 
 // Grafana - Visualization.
-var grafana = builder.AddContainer("d2-grafana", "grafana/grafana", "12.2.0")
+var grafana = builder.AddContainer("d2-grafana", "grafana/grafana", "12.4.0")
     .WithContainerName("d2-grafana")
     .WithIconName("ChartPerson")
     .WithHttpEndpoint(port: 3000, targetPort: 3000, name: "grafana")
@@ -197,7 +197,8 @@ var db = builder.AddPostgres(
         54320)
     .WithContainerName("d2-postgres")
     .WithIconName("DatabaseStack")
-    .WithImageTag("18.0-trixie")
+    .WithImageTag("18.3-trixie")
+    .WithEnvironment("PGDATA", "/var/lib/postgresql/data") // PG 18+ default changed; Aspire fix pending (dotnet/aspire#13792)
     .WithDataVolume("d2-postgres-data")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithPgAdmin(x =>
@@ -205,7 +206,7 @@ var db = builder.AddPostgres(
         x.WithHostPort(5533);
         x.WithIconName("DatabasePerson");
         x.WithContainerName("d2-pgadmin4");
-        x.WithImageTag("9.8.0");
+        x.WithImageTag("9.12");
         x.WithLifetime(ContainerLifetime.Persistent);
         x.WithEnvironment("PGADMIN_DEFAULT_EMAIL", dbaEmail);
         x.WithEnvironment("PGADMIN_DEFAULT_PASSWORD", dbaPassword);
@@ -215,7 +216,7 @@ var db = builder.AddPostgres(
 
 // Postgres Exporter - PostgreSQL Server Monitoring.
 var postgresExporter = builder.AddContainer(
-        "d2-postgres-exporter", "prometheuscommunity/postgres-exporter", "v0.18.1")
+        "d2-postgres-exporter", "prometheuscommunity/postgres-exporter", "v0.19.1")
     .WithContainerName("d2-postgres-exporter")
     .WithIconName("DatabasePlugConnected")
     .WithEnvironment(
@@ -227,9 +228,10 @@ var postgresExporter = builder.AddContainer(
 
 // Redis - Cache.
 var cache = builder.AddRedis("d2-redis", 6379, cachePassword)
+    .WithoutHttpsCertificate()
     .WithContainerName("d2-redis")
     .WithIconName("Memory")
-    .WithImageTag("8.2.1-bookworm")
+    .WithImageTag("8.2.4-bookworm")
     .WithDataVolume("d2-redis-data")
     .WithLifetime(ContainerLifetime.Persistent)
     .WithRedisInsight(x =>
@@ -244,7 +246,7 @@ var cache = builder.AddRedis("d2-redis", 6379, cachePassword)
 
 // Redis Exporter - Redis Monitoring.
 var redisExporter = builder.AddContainer(
-        "d2-redis-exporter", "oliver006/redis_exporter", "v1.78.0")
+        "d2-redis-exporter", "oliver006/redis_exporter", "v1.80.1")
     .WithContainerName("d2-redis-exporter")
     .WithIconName("ChartLine")
     .WithEnvironment("REDIS_ADDR", "d2-redis:6379")
@@ -257,7 +259,7 @@ var redisExporter = builder.AddContainer(
 var broker = builder.AddRabbitMQ("d2-rabbitmq", mqUsername, mqPassword, 15672)
     .WithContainerName("d2-rabbitmq")
     .WithIconName("Mailbox")
-    .WithImageTag("4.1.4-management")
+    .WithImageTag("4.1.7-management")
     .WithDataVolume("d2-rabbitmq-data")
     .WithHttpEndpoint(port: 15692, targetPort: 15692, name: "metrics", isProxied: false)
     .WithLifetime(ContainerLifetime.Persistent)

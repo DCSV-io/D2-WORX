@@ -27,11 +27,11 @@
     "@d2/testing": "workspace:*",
     "@d2/utilities": "workspace:*",
     "@grpc/grpc-js": "1.14.3",
-    "@testcontainers/rabbitmq": "10.18.0",
-    "@testcontainers/redis": "10.18.0",
+    "@testcontainers/rabbitmq": "11.12.0",
+    "@testcontainers/redis": "11.12.0",
     "ioredis": "5.8.0",
     "rabbitmq-client": "5.0.8",
-    "vitest": "3.1.1",
-    "zod": "3.25.76"
+    "vitest": "4.0.18",
+    "zod": "4.3.6"
   }
 }

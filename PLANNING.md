@@ -20,8 +20,8 @@
 
 - **Phase 1: TypeScript Shared Infrastructure** ✅ — 19 shared `@d2/*` packages mirroring .NET (result, handler, DI, caching, messaging, middleware, batch-pg, errors-pg)
 - **Phase 2 Stage A: Cross-cutting foundations** ✅ — Retry utility, idempotency middleware, UUIDv7
-- **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (874 tests, 64 test files)
-- **Comms Service Phase 1** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (566 tests, 43 test files)
+- **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (922 tests, 71 test files)
+- **Comms Service Phase 1** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (592 tests, 46 test files)
 - **E2E Cross-Service Tests** ✅ — 12 tests (Auth → Geo → Comms delivery pipeline + Dkron job chain)
 - **Cross-platform Parity** ✅ — `@d2/batch-pg`, `@d2/errors-pg`, .NET `Errors.Pg`, documented in `backends/PARITY.md`
 - **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware
@@ -600,9 +600,9 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | Geo.Client        | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
 | Geo.Tests         | ✅ Done        | 759 tests passing                                                                                                |
 | **Auth Service**  | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E     |
-| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 874 tests passing                                    |
+| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 922 tests passing                                    |
 | **Comms Service** | 🚧 In Progress | Node.js delivery engine (`backends/node/services/comms/`). Phase 1 done (email + SMS + gRPC + RabbitMQ consumer) |
-| **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 566 tests passing                                  |
+| **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 592 tests passing                                  |
 
 ### Gateways
 
@@ -1323,6 +1323,17 @@ clients/web/src/routes/
 
 - **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
 
+### Deferred Upgrades (from Q1 2026 audit)
+
+| Item | Priority | Notes |
+| ---- | -------- | ----- |
+| MinIO replacement | Medium | Project archived Feb 2026. Pinned images still work. Evaluate Garage (AGPLv3), RustFS (Apache 2.0), or SeaweedFS (Apache 2.0) as a separate initiative. |
+| EF Core → 10.0.3 | Blocked | `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins EF Core Relational to 10.0.0. Wait for Npgsql EF provider 10.0.x release. |
+| Serilog.Enrichers.Span removal | Low | Deprecated upstream — Serilog now natively supports span data. Low-priority cleanup. |
+| dotenv.net 4.0 | Low | Major version with potential API changes. Only used in .NET Utilities. |
+| Mimir 3.0 | Low | Major architectural change (Kafka buffer, new MQE, Consul/etcd deprecated). Requires deploying second cluster. Dedicated sprint. |
+| RedisInsight 3.x | Low | Dev tool only. Major version with new UI + storage changes. 2.70.1 still works. |
+
 ### Blocked — Can Only Fix Later
 
 | #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
@@ -1340,4 +1351,4 @@ clients/web/src/routes/
 
 ---
 
-_Last updated: 2026-02-27_
+_Last updated: 2026-03-01_

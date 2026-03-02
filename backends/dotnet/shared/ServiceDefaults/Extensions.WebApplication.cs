@@ -88,6 +88,15 @@ public static partial class Extensions
         /// </summary>
         public void MapPrometheusEndpointWithIpRestriction()
         {
+            // Skip Prometheus endpoint when OTel SDK is disabled (e.g., in E2E tests).
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable("OTEL_SDK_DISABLED"),
+                    "true",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             app.MapPrometheusScrapingEndpoint()
                 .AddEndpointFilter(async (context, next) =>
                 {

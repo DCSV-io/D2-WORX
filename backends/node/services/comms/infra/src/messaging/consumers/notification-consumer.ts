@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zodGuid } from "@d2/handler";
 import type { MessageBus, IMessagePublisher, IncomingMessage } from "@d2/messaging";
 import { ConsumerResult } from "@d2/messaging";
 import type { ILogger } from "@d2/logging";
@@ -23,7 +24,7 @@ export interface NotificationConsumerDeps {
  * Matches the NotifyInput shape published by @d2/comms-client.
  */
 const notificationMessageSchema = z.object({
-  recipientContactId: z.string().uuid(),
+  recipientContactId: zodGuid,
   title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
   plaintext: z.string().min(1).max(50_000),
@@ -31,7 +32,7 @@ const notificationMessageSchema = z.object({
   urgency: z.enum(["normal", "urgent"]).optional(),
   correlationId: z.string().min(1).max(36),
   senderService: z.string().min(1).max(50),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 type NotificationMessage = z.infer<typeof notificationMessageSchema>;
