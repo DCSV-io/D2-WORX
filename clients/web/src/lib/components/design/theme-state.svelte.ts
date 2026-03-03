@@ -25,27 +25,27 @@ import {
 // --- Editable state (single object — mutate properties, never reassign) ---
 
 export const theme = $state({
-  primaryHue: 285.885,
-  primaryChroma: 0.006,
-  primaryLightness: 0.21,
-  secondaryHue: 260,
-  secondaryChroma: 0.03,
-  secondaryLightness: 0.45,
-  accentHue: 250,
-  accentChroma: 0.08,
-  accentLightness: 0.55,
-  destructiveHue: 27.325,
-  destructiveChroma: 0.245,
-  destructiveLightness: 0.577,
-  infoHue: 262.881,
-  infoChroma: 0.245,
-  infoLightness: 0.546,
-  successHue: 149.214,
-  successChroma: 0.194,
-  successLightness: 0.627,
-  warningHue: 70.08,
-  warningChroma: 0.189,
-  warningLightness: 0.769,
+  primaryHue: 220,
+  primaryChroma: 0.12,
+  primaryLightness: 0.5,
+  secondaryHue: 250,
+  secondaryChroma: 0.1,
+  secondaryLightness: 0.5,
+  accentHue: 55,
+  accentChroma: 0.16,
+  accentLightness: 0.65,
+  destructiveHue: 25,
+  destructiveChroma: 0.22,
+  destructiveLightness: 0.55,
+  infoHue: 220,
+  infoChroma: 0.18,
+  infoLightness: 0.56,
+  successHue: 155,
+  successChroma: 0.18,
+  successLightness: 0.6,
+  warningHue: 65,
+  warningChroma: 0.17,
+  warningLightness: 0.75,
   radius: 0.625,
 });
 
@@ -199,5 +199,5 @@ export function applyPreset(preset: ThemePreset): void {
 }
 
 export function reset(): void {
-  applyPreset(builtInPresets[0]); // Zinc
+  applyPreset(builtInPresets[0]); // WORX
 }

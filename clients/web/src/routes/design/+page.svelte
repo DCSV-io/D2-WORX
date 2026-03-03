@@ -1,5 +1,6 @@
 <script lang="ts">
   import ThemeToggle from "$lib/components/theme-toggle.svelte";
+  import ThemeSelector from "$lib/components/theme-selector.svelte";
   import ThemeEditor from "$lib/components/design/theme-editor.svelte";
   import ColorPalette from "$lib/components/design/color-palette.svelte";
   import TypographyShowcase from "$lib/components/design/typography-showcase.svelte";
@@ -76,6 +77,7 @@
       </p>
     </div>
     <div class="flex items-center gap-2">
+      <ThemeSelector />
       <ThemeToggle />
       <Button variant="outline" onclick={() => (editorOpen = true)}>
         <PaletteIcon class="size-4" />

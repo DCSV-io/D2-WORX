@@ -45,11 +45,10 @@ function chartHues(baseHue: number): number[] {
 
 /**
  * Compute a light-on-dark or dark-on-light foreground for a given background.
- * If the background lightness is >= 0.65, use dark foreground; else light.
- * Threshold at 0.65 ensures WCAG AA contrast on medium-lightness accent colors.
+ * If the background lightness is >= 0.7, use dark foreground; else light.
  */
 function autoForeground(bgLightness: number): string {
-  return bgLightness >= 0.65 ? oklch(0.21, 0.006, 285.885) : oklch(0.985, 0, 0);
+  return bgLightness >= 0.7 ? oklch(0.21, 0.006, 285.885) : oklch(0.985, 0, 0);
 }
 
 /** All semantic token names (without -- prefix). */
@@ -124,7 +123,7 @@ export function computeLightTokens(config: ThemeConfig): ThemeTokens {
     "--muted": oklch(0.967, Math.min(sec.chroma * 0.15, 0.025), sec.hue),
     "--muted-foreground": oklch(0.552, Math.min(sec.chroma * 1.5, 0.05), sec.hue),
     "--accent": oklch(acc.lightness, acc.chroma, acc.hue),
-    "--accent-foreground": autoForeground(acc.lightness),
+    "--accent-foreground": oklch(0.985, 0, 0),
     "--destructive": oklch(d.lightness, d.chroma, d.hue),
     "--destructive-foreground": oklch(0.985, 0, 0),
     "--info": oklch(info.lightness, info.chroma, info.hue),
@@ -186,7 +185,7 @@ export function computeDarkTokens(config: ThemeConfig): ThemeTokens {
     "--muted": oklch(0.274, Math.min(sec.chroma * 0.3, 0.02), sec.hue),
     "--muted-foreground": oklch(0.705, Math.min(sec.chroma * 1.5, 0.05), sec.hue),
     "--accent": oklch(acc.lightness, acc.chroma, acc.hue),
-    "--accent-foreground": autoForeground(acc.lightness),
+    "--accent-foreground": oklch(0.985, 0, 0),
     "--destructive": oklch(darkDestructiveL, d.chroma * 0.78, d.hue),
     "--destructive-foreground": autoForeground(darkDestructiveL),
     "--info": oklch(darkInfoL, info.chroma * 0.9, info.hue),
