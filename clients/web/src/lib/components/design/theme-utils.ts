@@ -45,10 +45,11 @@ function chartHues(baseHue: number): number[] {
 
 /**
  * Compute a light-on-dark or dark-on-light foreground for a given background.
- * If the background lightness is >= 0.7, use dark foreground; else light.
+ * If the background lightness is >= 0.65, use dark foreground; else light.
+ * Threshold at 0.65 ensures WCAG AA contrast on medium-lightness accent colors.
  */
 function autoForeground(bgLightness: number): string {
-  return bgLightness >= 0.7 ? oklch(0.21, 0.006, 285.885) : oklch(0.985, 0, 0);
+  return bgLightness >= 0.65 ? oklch(0.21, 0.006, 285.885) : oklch(0.985, 0, 0);
 }
 
 /** All semantic token names (without -- prefix). */
@@ -194,7 +195,7 @@ export function computeDarkTokens(config: ThemeConfig): ThemeTokens {
     "--success-foreground": autoForeground(darkSuccessL),
     "--warning": oklch(darkWarningL, warning.chroma * 0.9, warning.hue),
     "--warning-foreground": autoForeground(darkWarningL),
-    "--border": oklchAlpha(1, 0, 0, "10%"),
+    "--border": oklchAlpha(1, 0, 0, "13%"),
     "--input": oklchAlpha(1, 0, 0, "15%"),
     "--ring": oklch(0.552, Math.min(c * 2.7, 0.05), h),
     "--chart-1": oklch(0.488, 0.243, charts[0]),
@@ -208,7 +209,7 @@ export function computeDarkTokens(config: ThemeConfig): ThemeTokens {
     "--sidebar-primary-foreground": oklch(0.985, 0, 0),
     "--sidebar-accent": oklch(acc.lightness, acc.chroma, acc.hue),
     "--sidebar-accent-foreground": oklch(0.985, 0, 0),
-    "--sidebar-border": oklchAlpha(1, 0, 0, "10%"),
+    "--sidebar-border": oklchAlpha(1, 0, 0, "13%"),
     "--sidebar-ring": oklch(0.552, Math.min(c * 2.7, 0.05), h),
   };
 }
