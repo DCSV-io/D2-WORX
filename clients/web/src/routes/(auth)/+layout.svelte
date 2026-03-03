@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import ThemeToggle from "$lib/components/theme-toggle.svelte";
   import ThemeSelector from "$lib/components/theme-selector.svelte";
 
@@ -13,7 +14,7 @@
 
   <div class="w-full max-w-md">
     <div class="mb-8 flex justify-center">
-      <a href="/" class="flex items-center gap-2">
+      <a href={resolve("/")} class="flex items-center gap-2">
         <div
           class="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg text-sm font-bold"
         >

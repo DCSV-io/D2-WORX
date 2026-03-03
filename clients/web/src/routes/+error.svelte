@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { page } from "$app/state";
 </script>
 
@@ -19,7 +20,7 @@
 
   <div class="mt-8">
     <a
-      href="/"
+      href={resolve("/")}
       class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
     >
       Go home

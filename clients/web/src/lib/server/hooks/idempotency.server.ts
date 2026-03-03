@@ -14,12 +14,15 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 export function createIdempotencyHandle(): Handle {
   return async ({ event, resolve }) => {
     const ctx = getMiddlewareContext();
-    if (!ctx) return resolve(event);
 
     if (!MUTATION_METHODS.has(event.request.method)) return resolve(event);
 
     const idempotencyKey = event.request.headers.get("idempotency-key");
     if (!idempotencyKey) return resolve(event);
+
+    // Scope by userId to prevent cross-user cache collisions.
+    // Auth runs before idempotency in the middleware chain, so session is available.
+    const scopeId = event.locals.session?.userId;
 
     const result = await checkIdempotency(
       idempotencyKey,
@@ -28,6 +31,7 @@ export function createIdempotencyHandle(): Handle {
       ctx.redisRemove,
       undefined,
       ctx.logger,
+      scopeId,
     );
 
     // Return cached response on replay.

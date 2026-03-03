@@ -297,6 +297,40 @@ BetterAuth is session-based at its core. Sessions use 3-tier storage for perform
 1. **Revocation**: `revokeSession` deletes from Redis + PG. Cookie cache expires naturally in ≤5min
 1. **Expiry**: Session TTL enforced at all 3 tiers
 
+### Cookie Signing & Token Types
+
+BetterAuth distinguishes between **raw session tokens** and **signed cookie values**. This is critical for understanding how different auth paths work.
+
+#### Two cookies are set on sign-in
+
+| Cookie                         | Format                          | TTL    | Purpose                                              |
+| ------------------------------ | ------------------------------- | ------ | ---------------------------------------------------- |
+| `better-auth.session_token`    | `TOKEN.SIGNATURE`               | 7 days | Signed session token — used for DB/Redis lookup      |
+| `better-auth.session_data`     | Base64(JSON session + sig)      | 5 min  | Cookie cache — skips DB/Redis when fresh             |
+
+#### Raw token vs signed cookie value
+
+| Source                                     | Format              | Use with                      |
+| ------------------------------------------ | ------------------- | ----------------------------- |
+| `auth.api.signInEmail()` → `res.token`     | Raw token (`TOKEN`) | `Authorization: Bearer TOKEN` |
+| HTTP sign-in `set-cookie` header           | `TOKEN.SIGNATURE`   | `Cookie: better-auth.session_token=TOKEN.SIGNATURE` |
+| Database `session.token` column            | Raw token (`TOKEN`) | Internal lookups only         |
+
+The **raw token** from the in-process API is the same value stored in the `session` table. It works with the **Bearer plugin** (`Authorization: Bearer TOKEN`), which looks up the session by the raw token.
+
+The **signed cookie value** includes a signature appended after a `.` delimiter. BetterAuth validates this signature when parsing cookies. If the signature is missing or invalid, BetterAuth **silently returns `null`** (200 status with null body) — it does NOT return 401 or an error.
+
+#### Silent null on invalid cookies
+
+When `GET /api/auth/get-session` receives a cookie with an unsigned or tampered value, BetterAuth returns `200` with `null` body. This is indistinguishable from "no session" at the HTTP level. The `SessionResolver` in `@d2/auth-bff-client` detects this case (session cookie present but null response) and logs a warning for monitoring visibility.
+
+**Implications:**
+
+- Legitimate clients always have signed cookies (set by BetterAuth via `set-cookie` headers)
+- Attackers sending unsigned/tampered cookies are correctly rejected (treated as unauthenticated)
+- The `signInEmail` response shape is `{ redirect, token, url, user }` — there is no `session` property
+- E2E tests that need cookie-based auth must sign in via HTTP and extract cookies from the `set-cookie` response header — they CANNOT construct cookies from raw tokens
+
 ### Secondary Storage Adapter
 
 The `createSecondaryStorage` function wraps `@d2/interfaces` distributed cache handlers behind BetterAuth's `SecondaryStorage` contract:

@@ -40,5 +40,6 @@
 </script>
 
 <svelte:head>
-  {@html `<style data-theme-provider>${overrideCss}</style>`}
+  <!-- eslint-disable-next-line svelte/no-at-html-tags -- safe: overrideCss is derived from our own theme state, not user input -->
+  {@html `<style data-theme-provider>${overrideCss}${"</"}style>`}
 </svelte:head>

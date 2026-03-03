@@ -17,6 +17,7 @@
     <Button class="w-full" disabled>Sign In</Button>
     <p class="text-muted-foreground text-center text-sm">
       Don't have an account?
+      <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- route not yet created -->
       <a href="/sign-up" class="text-primary underline-offset-4 hover:underline">Sign up</a>
     </p>
   </Card.CardFooter>

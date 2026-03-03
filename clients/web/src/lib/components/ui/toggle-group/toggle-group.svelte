@@ -32,10 +32,14 @@
 		...restProps
 	}: ToggleGroupPrimitive.RootProps & ToggleVariants & { spacing?: number } = $props();
 
-	setToggleGroupCtx({
-		variant,
-		size,
-		spacing,
+	let toggleCtx = $state<ToggleGroupContext>({});
+	setToggleGroupCtx(toggleCtx);
+
+	// Sync reactive props; $effect.pre runs before DOM update so values are correct on first render
+	$effect.pre(() => {
+		toggleCtx.variant = variant;
+		toggleCtx.size = size;
+		toggleCtx.spacing = spacing;
 	});
 </script>
 

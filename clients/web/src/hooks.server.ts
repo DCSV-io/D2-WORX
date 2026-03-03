@@ -7,6 +7,7 @@ import { logger } from "$lib/server/logger.server";
 import { createRequestEnrichmentHandle } from "$lib/server/hooks/request-enrichment.server";
 import { createRateLimitHandle } from "$lib/server/hooks/rate-limit.server";
 import { createIdempotencyHandle } from "$lib/server/hooks/idempotency.server";
+import { createAuthHandle } from "$lib/server/hooks/auth.server";
 
 const handleParaglide: Handle = async ({ event, resolve }) => {
   try {
@@ -40,14 +41,16 @@ const handleParaglide: Handle = async ({ event, resolve }) => {
   }
 };
 
-// Middleware ordering (mirrors auth service pipeline):
+// Middleware ordering (mirrors .NET Gateway pipeline):
 // 1. Request enrichment (IP, fingerprint, WhoIs)
-// 2. Rate limiting (uses requestInfo from step 1)
-// 3. Idempotency (mutation dedup)
-// 4. Paraglide + request logging
+// 2. Rate limiting (uses requestInfo from step 1 — cheap rejection before auth)
+// 3. Auth session resolution (resolves session for downstream middleware)
+// 4. Idempotency (mutation dedup — auth available for future user-scoped keys)
+// 5. Paraglide + request logging
 export const handle: Handle = sequence(
   createRequestEnrichmentHandle(),
   createRateLimitHandle(),
+  createAuthHandle(),
   createIdempotencyHandle(),
   handleParaglide,
 );

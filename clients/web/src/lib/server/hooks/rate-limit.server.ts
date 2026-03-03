@@ -12,7 +12,8 @@ import { getMiddlewareContext } from "../middleware.server";
 export function createRateLimitHandle(): Handle {
   return async ({ event, resolve }) => {
     const ctx = getMiddlewareContext();
-    if (!ctx || !event.locals.requestInfo) return resolve(event);
+
+    if (!event.locals.requestInfo) return resolve(event);
 
     const result = await ctx.rateLimitCheck.handleAsync({
       requestInfo: event.locals.requestInfo,

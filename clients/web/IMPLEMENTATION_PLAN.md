@@ -18,8 +18,8 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 2.5  | Server-Side Middleware              | Complete    | Request enrichment, rate limiting, idempotency. Direct SvelteKit→Geo gRPC for FindWhoIs. Graceful degradation when Redis/Geo unavailable |
 | 3    | Design System Sprint (Kitchen Sink) | Complete    | Live theme editor at `/design` with 3 OKLCH presets (WORX, Zinc, Ocean), 27 shadcn-svelte components, 10 showcase sections. Client-only (`ssr: false`), theme overrides cleaned up on navigation away |
 | 3.5  | Design Review & Polish              | Complete    | Playwright-driven visual QA across all 6 theme/mode combos. Button hover visibility, ghost/outline differentiation, dark mode borders, overlay backdrops, Zinc accent fix, favicon |
-| 4    | Route Groups + Layout System        | Pending     |       |
-| 5    | @d2/auth-bff-client + Auth Proxy    | Pending     |       |
+| 4    | Route Groups + Layout System        | Complete    | Route groups, layouts, sidebar, branding, auth guard stubs |
+| 5    | @d2/auth-bff-client + Auth Proxy    | Complete    | 32 unit tests, session resolver, JWT manager, auth proxy, route guards, SvelteKit hooks integration |
 | 6    | API Client Layer (Gateway)          | Pending     |       |
 | 7    | Forms Architecture (Superforms)     | Pending     |       |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Pending     |       |
@@ -186,7 +186,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 
 **Goal:** Create the full route group folder structure with distinct layouts per group, functional sidebar shell, and placeholder pages. Auth guards are stubbed (wired in Step 5).
 
-**Status:** Pending
+**Status:** Complete
 
 #### Route Structure
 
@@ -341,11 +341,34 @@ interface Locals {
 
 **Goal:** BFF auth client library + SvelteKit BetterAuth proxy.
 
-**5A:** `@d2/auth-bff-client` package at `backends/node/services/auth/bff-client/` — JWT manager, gateway client, route protection.
+**Status:** Complete
 
-**5B:** SvelteKit integration — auth proxy catch-all, session resolution in hooks, route guards.
+**5A:** `@d2/auth-bff-client` package at `backends/node/services/auth/bff-client/` — SessionResolver, JwtManager, AuthProxy, route guards (requireAuth, requireOrg, redirectIfAuthenticated). 32 unit tests.
 
-**Requires:** Auth service running for full integration.
+**5B:** SvelteKit integration — auth proxy catch-all at `/api/auth/[...path]`, session resolution in hooks.server.ts (after enrichment, before paraglide), route guards wired in all layout.server.ts files. Client-side BetterAuth client store at `src/lib/stores/auth-client.ts`.
+
+**5C:** Environment — `SVELTEKIT_AUTH__URL` env var, Aspire wiring (`.WaitFor(authService)`, `.WithEnvironment()`).
+
+**Requires:** Auth service running for full integration. Graceful degradation when unavailable.
+
+#### Files Created/Modified
+
+| File | Action |
+| ---- | ------ |
+| `backends/node/services/auth/bff-client/` | Created — full package (6 source files, 4 test files) |
+| `clients/web/src/lib/server/auth.server.ts` | Created — lazy singleton auth context |
+| `clients/web/src/lib/server/hooks/auth.server.ts` | Created — auth hook for sequence() |
+| `clients/web/src/routes/api/auth/[...path]/+server.ts` | Created — auth proxy catch-all |
+| `clients/web/src/routes/(public)/+page.server.ts` | Created — auth-aware root redirect |
+| `clients/web/src/lib/stores/auth-client.ts` | Created — browser-side BetterAuth client |
+| `clients/web/src/hooks.server.ts` | Modified — added createAuthHandle to sequence |
+| `clients/web/src/app.d.ts` | Modified — imports AuthSession/AuthUser from bff-client |
+| `clients/web/src/routes/(auth)/+layout.server.ts` | Modified — wired redirectIfAuthenticated |
+| `clients/web/src/routes/(onboarding)/+layout.server.ts` | Modified — wired requireAuth |
+| `clients/web/src/routes/(app)/+layout.server.ts` | Modified — wired requireOrg |
+| `clients/web/package.json` | Modified — added @d2/auth-bff-client + better-auth deps |
+| `AppHost.cs` | Modified — added .WaitFor(authService) + .WithEnvironment() |
+| `.env.local` / `.env.local.example` | Modified — added SVELTEKIT_AUTH__URL |
 
 ---
 
@@ -429,6 +452,9 @@ Decisions made during implementation (appended as we go):
 
 | Date       | Decision | Rationale |
 | ---------- | -------- | --------- |
+| 2026-03-03 | HTTP proxy over local BetterAuth | Local BetterAuth would bypass Auth service's rate limiting, fingerprint binding, throttle tracking, sign-in event recording |
+| 2026-03-03 | Tests co-located in bff-client (not auth-tests) | Lightweight package with mocked HTTP — no Testcontainers needed, faster feedback loop |
+| 2026-03-03 | better-auth as SvelteKit dep | Client SDK needed for browser-side auth operations (sign-in, sign-out, reactive session). Pinned at 1.5.0 to match auth-infra |
 | 2026-03-01 | Plan created | — |
 | 2026-03-01 | SvelteKit→Geo gRPC for FindWhoIs | Pre-auth middleware needs WhoIs data before requests reach downstream services. Calling REST gateway would be circular (gateway itself does enrichment). Direct gRPC mirrors Auth service pattern |
 | 2026-03-01 | Graceful middleware degradation | SvelteKit must remain usable for local frontend dev without Redis/Geo. `getMiddlewareContext()` returns null when env vars missing, all hooks skip |

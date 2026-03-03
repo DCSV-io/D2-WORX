@@ -47,6 +47,7 @@
             <Sidebar.SidebarMenuItem>
               <Sidebar.SidebarMenuButton tooltipContent={item.label}>
                 {#snippet child({ props })}
+                  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- dynamic href from nav items data -->
                   <a href={item.href} {...props}>
                     <item.icon />
                     <span>{item.label}</span>

@@ -22,16 +22,23 @@
 		api: undefined,
 		scrollPrev,
 		scrollNext,
-		orientation,
+		orientation: "horizontal",
 		canScrollNext: false,
 		canScrollPrev: false,
 		handleKeyDown,
-		options: opts,
-		plugins,
+		options: {},
+		plugins: [],
 		onInit,
 		scrollSnaps: [],
 		selectedIndex: 0,
 		scrollTo,
+	});
+
+	// Sync reactive props; $effect.pre runs before DOM update so values are correct on first render
+	$effect.pre(() => {
+		carouselState.orientation = orientation;
+		carouselState.options = opts;
+		carouselState.plugins = plugins;
 	});
 
 	setEmblaContext(carouselState);

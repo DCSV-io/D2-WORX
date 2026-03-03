@@ -288,7 +288,7 @@ var geoService = builder.AddProject<Projects.Geo_API>("d2-geo")
 
 // Auth - Service (Node.js / Hono).
 var authDb = db.AddDatabase("d2-services-auth");
-var authService = builder.AddJavaScriptApp("d2-auth", "../../../../backends/node/services/auth/api", "dev")
+var authService = builder.AddJavaScriptApp("d2-auth", "../../../../backends/node/services/auth/api")
     .WithPnpm()
     .WithIconName("ShieldPerson")
     .WithReference(authDb)
@@ -304,7 +304,7 @@ var authService = builder.AddJavaScriptApp("d2-auth", "../../../../backends/node
 
 // Comms - Service (Node.js / headless consumer + gRPC).
 var commsDb = db.AddDatabase("d2-services-comms");
-var commsService = builder.AddJavaScriptApp("d2-comms", "../../../../backends/node/services/comms/api", "dev")
+var commsService = builder.AddJavaScriptApp("d2-comms", "../../../../backends/node/services/comms/api")
     .WithPnpm()
     .WithIconName("Mail")
     .WithReference(commsDb)
@@ -339,7 +339,7 @@ var restGateway = builder.AddProject<Projects.REST>("d2-rest")
 
 // Dkron Manager — Job reconciler (Node.js loop service).
 builder.AddJavaScriptApp(
-        "d2-dkron-mgr", "../../../../backends/node/services/dkron-mgr", "dev")
+        "d2-dkron-mgr", "../../../../backends/node/services/dkron-mgr")
     .WithPnpm()
     .WithIconName("CalendarSync")
     .WaitFor(dkron)
@@ -352,6 +352,7 @@ var svelte = builder.AddViteApp(
         "../../../../clients/web")
     .WaitFor(restGateway)
     .WaitFor(geoService)
+    .WaitFor(authService)
     .WithPnpm()
     .WithArgs("--host", "0.0.0.0", "--port", "5173")
     .WithIconName("DesktopCursor")
