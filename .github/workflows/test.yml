@@ -327,6 +327,70 @@ jobs:
       - name: Run integration and E2E tests
         run: pnpm vitest run --project dkron-mgr-tests integration e2e
 
+  web-vitest:
+    name: D2 Web Client - Vitest (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install Playwright browsers (for vitest-browser-svelte)
+        run: npx playwright install chromium
+        working-directory: clients/web
+
+      - name: Run Vitest
+        run: npx vitest run
+        working-directory: clients/web
+
+  web-e2e:
+    name: D2 Web Client - Playwright E2E (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+        working-directory: clients/web
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test
+        working-directory: clients/web
+
   node-e2e:
     name: D2 Node.js E2E - Cross-Service Tests (v1)
     runs-on: ubuntu-latest

@@ -256,7 +256,7 @@
       <h3 class="text-sm font-medium text-muted-foreground">Separator</h3>
       <div class="rounded-lg border p-6">
         <div class="flex flex-col gap-1">
-          <h4 class="text-sm font-medium">D2-WORX</h4>
+          <h4 class="text-sm font-medium">DCSV WORX</h4>
           <p class="text-xs text-muted-foreground">An open-source microservices framework</p>
         </div>
         <Separator class="my-4" />

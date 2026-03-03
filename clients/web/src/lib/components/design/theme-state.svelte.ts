@@ -171,9 +171,46 @@ export function getActivePresetName(): string | null {
   return _activePresetName;
 }
 
+// --- Persistence ---
+
+const ACTIVE_PRESET_KEY = "d2-active-theme-preset";
+
+/** Save the active preset name to localStorage. */
+function saveActivePreset(name: string | null): void {
+  try {
+    if (name) {
+      localStorage.setItem(ACTIVE_PRESET_KEY, name);
+    } else {
+      localStorage.removeItem(ACTIVE_PRESET_KEY);
+    }
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
+/** Load and apply the saved preset from localStorage. Defaults to WORX. */
+export function initTheme(): void {
+  loadCustomPresets();
+  try {
+    const saved = localStorage.getItem(ACTIVE_PRESET_KEY);
+    if (saved) {
+      const match = presets.find((p) => p.name === saved);
+      if (match) {
+        applyPresetValues(match);
+        return;
+      }
+    }
+  } catch {
+    // localStorage unavailable
+  }
+  // Default to WORX
+  applyPresetValues(builtInPresets[0]);
+}
+
 // --- Actions ---
 
-export function applyPreset(preset: ThemePreset): void {
+/** Internal: apply preset values without saving (used by initTheme). */
+function applyPresetValues(preset: ThemePreset): void {
   theme.primaryHue = preset.primaryHue;
   theme.primaryChroma = preset.primaryChroma;
   theme.primaryLightness = preset.primaryLightness;
@@ -196,6 +233,11 @@ export function applyPreset(preset: ThemePreset): void {
   theme.warningChroma = preset.warningChroma;
   theme.warningLightness = preset.warningLightness;
   theme.radius = preset.radius;
+}
+
+export function applyPreset(preset: ThemePreset): void {
+  applyPresetValues(preset);
+  saveActivePreset(preset.name);
 }
 
 export function reset(): void {

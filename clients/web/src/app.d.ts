@@ -12,10 +12,19 @@ declare global {
     interface Locals {
       /** Populated by request enrichment middleware (Step 2.5) */
       requestInfo?: RequestEnrichment.IRequestInfo;
-      /** Populated by auth hook (Step 5) */
-      session?: unknown;
-      /** Populated by auth hook (Step 5) */
-      user?: unknown;
+      /** Populated by auth hook (Step 5) — stub shape for now */
+      session?: {
+        userId: string;
+        activeOrganizationId?: string;
+        activeOrganizationType?: string;
+        activeOrganizationRole?: string;
+      };
+      /** Populated by auth hook (Step 5) — stub shape for now */
+      user?: {
+        id: string;
+        email: string;
+        name?: string;
+      };
     }
 
     // interface PageData {}

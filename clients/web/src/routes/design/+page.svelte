@@ -12,11 +12,6 @@
   import FeedbackShowcase from "$lib/components/design/feedback-showcase.svelte";
   import DataDisplayShowcase from "$lib/components/design/data-display-showcase.svelte";
   import LayoutShowcase from "$lib/components/design/layout-showcase.svelte";
-  import {
-    theme,
-    getLightTokens,
-    getDarkTokens,
-  } from "$lib/components/design/theme-state.svelte.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import PaletteIcon from "@lucide/svelte/icons/palette";
 
@@ -34,37 +29,10 @@
     { id: "data-display", label: "Data Display" },
     { id: "layout", label: "Layout & Patterns" },
   ] as const;
-
-  // Build CSS overrides for live theme editing.
-  // Targets the intermediate CSS variables (--background, --foreground, etc.)
-  // which Tailwind utilities reference via var() in @theme inline.
-  // Uses html.dark (specificity 0,1,1) to beat :root (0,1,0) for dark tokens.
-  const overrideCss = $derived.by(() => {
-    const light = getLightTokens();
-    const dark = getDarkTokens();
-
-    const lightLines = Object.entries(light)
-      .map(([k, v]) => `  ${k}: ${v};`)
-      .join("\n");
-    const darkLines = Object.entries(dark)
-      .map(([k, v]) => `  ${k}: ${v};`)
-      .join("\n");
-
-    return [
-      `:root {`,
-      `  --radius: ${theme.radius}rem;`,
-      lightLines,
-      `}`,
-      `html.dark {`,
-      darkLines,
-      `}`,
-    ].join("\n");
-  });
 </script>
 
 <svelte:head>
-  <title>Design System — D2-WORX</title>
-  {@html `<style data-design-theme>${overrideCss}</style>`}
+  <title>Design System — DCSV WORX</title>
 </svelte:head>
 
 <div class="mx-auto max-w-6xl px-4 py-8">
