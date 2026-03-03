@@ -118,7 +118,7 @@
           </AlertDialog.Header>
           <AlertDialog.Footer>
             <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-            <AlertDialog.Action>Delete</AlertDialog.Action>
+            <AlertDialog.Action class="bg-destructive text-white hover:bg-destructive/90 dark:bg-destructive/60 dark:hover:bg-destructive/80">Delete</AlertDialog.Action>
           </AlertDialog.Footer>
         </AlertDialog.Content>
       </AlertDialog.Root>

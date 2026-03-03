@@ -83,8 +83,8 @@
   --success-foreground: oklch(0.985 0 0);
   --warning: oklch(0.8 0.153 65);
   --warning-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 13%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 18%);
+  --input: oklch(1 0 0 / 22%);
   --ring: oklch(0.552 0.05 220);
   --chart-1: oklch(0.488 0.243 220);
   --chart-2: oklch(0.696 0.17 280);

@@ -349,6 +349,7 @@ Conventions for TypeScript and SvelteKit development:
 - Tailwind CSS v4.1 for styling
 - PascalCase for components, kebab-case for modules
 - Result patterns for error handling
+- **Playwright screenshots** must be saved to `clients/web/screenshots/` — never in the project root or monorepo root
 
 ---
 

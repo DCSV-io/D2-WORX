@@ -362,7 +362,7 @@
         </Button>
         <Button variant="outline" onclick={reset} class="w-full">
           <RotateCcwIcon class="size-4" />
-          Reset to Zinc
+          Reset to WORX
         </Button>
       </div>
     </div>
