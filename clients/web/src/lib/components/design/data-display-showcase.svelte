@@ -103,7 +103,7 @@
           </Alert.Description>
         </Alert.Root>
 
-        <Alert.Root class="border-info/50 text-info [&>svg]:text-info">
+        <Alert.Root variant="info">
           <InfoIcon />
           <Alert.Title>Info</Alert.Title>
           <Alert.Description>
@@ -111,7 +111,7 @@
           </Alert.Description>
         </Alert.Root>
 
-        <Alert.Root class="border-success/50 text-success [&>svg]:text-success">
+        <Alert.Root variant="success">
           <CheckCircleIcon />
           <Alert.Title>Success</Alert.Title>
           <Alert.Description>
@@ -119,7 +119,7 @@
           </Alert.Description>
         </Alert.Root>
 
-        <Alert.Root class="border-warning/50 text-warning [&>svg]:text-warning">
+        <Alert.Root variant="warning">
           <AlertTriangleIcon />
           <Alert.Title>Warning</Alert.Title>
           <Alert.Description>
@@ -127,7 +127,7 @@
           </Alert.Description>
         </Alert.Root>
 
-        <Alert.Root class="border-destructive/50 text-destructive [&>svg]:text-destructive">
+        <Alert.Root variant="destructive">
           <OctagonXIcon />
           <Alert.Title>Error</Alert.Title>
           <Alert.Description>
