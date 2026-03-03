@@ -168,3 +168,4 @@ nul
 
 # Playwright MCP screenshots
 /screenshots/
+**/screenshots/
