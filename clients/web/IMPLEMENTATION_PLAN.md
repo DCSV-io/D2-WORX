@@ -184,9 +184,156 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 
 ### Step 4: Route Groups + Layout System
 
-**Goal:** Four route groups with distinct layouts — `(public)/`, `(auth)/`, `(onboarding)/`, `(app)/`.
+**Goal:** Create the full route group folder structure with distinct layouts per group, functional sidebar shell, and placeholder pages. Auth guards are stubbed (wired in Step 5).
 
-**Layout components:** public-nav, app-sidebar, app-header, auth-card, footer.
+**Status:** Pending
+
+#### Route Structure
+
+```
+src/routes/
+├── +layout.svelte                    # Root: CSS, ModeWatcher, Toaster, favicon
+├── +layout.server.ts                 # Root: session resolution (stub until Step 5)
+├── +page.svelte                      # Root redirect → /app/dashboard or /sign-in
+├── +error.svelte                     # Global error page (exists)
+│
+├── (public)/                         # Marketing / unauthenticated pages
+│   ├── +layout.svelte                # PublicNav + footer, no sidebar
+│   └── +page.svelte                  # Landing / homepage placeholder
+│
+├── (auth)/                           # Auth flow pages (sign-in, sign-up, etc.)
+│   ├── +layout.svelte                # Centered card layout, no nav/sidebar
+│   ├── +layout.server.ts             # Redirect to /app if already authenticated
+│   └── sign-in/+page.svelte          # Placeholder (real form in Step 8)
+│
+├── (onboarding)/                     # Post-auth, no active org
+│   ├── +layout.svelte                # Minimal centered layout, no sidebar
+│   ├── +layout.server.ts             # Requires auth, no org needed (stub)
+│   └── welcome/+page.svelte          # Placeholder (real flow in Step 10)
+│
+├── (app)/                            # Main authenticated app
+│   ├── +layout.svelte                # App shell: sidebar + header + main area
+│   ├── +layout.server.ts             # Requires auth + active org (stub)
+│   ├── (customer)/
+│   │   └── dashboard/+page.svelte    # Customer dashboard placeholder
+│   ├── (support)/
+│   │   └── dashboard/+page.svelte    # Support dashboard placeholder
+│   ├── (admin)/
+│   │   └── dashboard/+page.svelte    # Admin dashboard placeholder
+│   └── (shared)/
+│       ├── settings/+page.svelte     # Settings placeholder
+│       └── profile/+page.svelte      # Profile placeholder
+│
+├── api/                              # API routes (exists)
+│   └── client-error/+server.ts       # Client error logging (exists)
+│
+└── design/                           # Design system kitchen sink (exists)
+    └── +page.svelte
+```
+
+#### Layout Components
+
+| Component | Location | Description |
+| --------- | -------- | ----------- |
+| `app-sidebar` | `src/lib/components/layout/app-sidebar.svelte` | shadcn-svelte `Sidebar` component — collapsible, responsive, icon+label nav items. Hardcoded placeholder items (Dashboard, Settings, Profile) replaced with org-specific items in Step 11 |
+| `app-header` | `src/lib/components/layout/app-header.svelte` | Sticky top bar — breadcrumb area (left), theme toggle + user avatar placeholder (right). Hamburger trigger for mobile sidebar |
+| `public-nav` | `src/lib/components/layout/public-nav.svelte` | Simple marketing header — D2-WORX logo, minimal nav links, sign-in CTA |
+| `public-footer` | `src/lib/components/layout/public-footer.svelte` | Minimal footer — copyright, links |
+
+#### Layout Details Per Group
+
+**`(public)/+layout.svelte`** — PublicNav at top, footer at bottom, content centered with max-width container. No sidebar.
+
+**`(auth)/+layout.svelte`** — Vertically centered card (like shadcn login pages). D2-WORX logo above, theme toggle in corner. No nav/sidebar. `+layout.server.ts` redirects authenticated users away.
+
+**`(onboarding)/+layout.svelte`** — Minimal centered layout (similar to auth but wider content area for org selection/creation). D2-WORX logo, sign-out link. `+layout.server.ts` requires auth, redirects if user already has an active org.
+
+**`(app)/+layout.svelte`** — Full app shell using shadcn-svelte `SidebarProvider` + `Sidebar` + `SidebarInset`. Collapsible sidebar on left, sticky header at top, scrollable main content area. `+layout.server.ts` requires auth + active org, redirects to onboarding if no org.
+
+#### Packages to Add
+
+- `npx shadcn-svelte@latest add sidebar` — Sidebar component (not yet installed)
+
+#### Sidebar Specifics
+
+- Uses shadcn-svelte `Sidebar` component (`SidebarProvider`, `Sidebar`, `SidebarInset`, etc.)
+- Desktop: collapsible (icon+label ↔ icon-only), persists preference
+- Mobile: sheet/drawer triggered by hamburger in header
+- Placeholder nav items for now: Dashboard, Settings, Profile (all link to `(shared)` routes)
+- Step 11 replaces with org-type-specific nav items based on JWT `orgType` claim
+
+#### Auth Guard Pattern (Stubbed)
+
+Until Step 5 wires real BetterAuth session resolution, `+layout.server.ts` files use a stub pattern:
+
+```typescript
+// (app)/+layout.server.ts — stub until Step 5
+export async function load({ locals }) {
+  // TODO: Step 5 — wire real session from locals
+  // if (!locals.session) throw redirect(303, '/sign-in');
+  // if (!locals.session.activeOrganizationId) throw redirect(303, '/onboarding/welcome');
+
+  return {
+    // Placeholder data until auth is wired
+    orgType: 'customer' as const,
+    role: 'owner' as const,
+  };
+}
+```
+
+#### App.d.ts Updates
+
+```typescript
+interface Locals {
+  requestInfo?: RequestEnrichment.IRequestInfo;  // exists
+  session?: {                                     // stub shape
+    userId: string;
+    activeOrganizationId?: string;
+    activeOrganizationType?: string;
+    activeOrganizationRole?: string;
+  };
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+}
+```
+
+#### Files to Create
+
+| File | Purpose |
+| ---- | ------- |
+| `src/lib/components/layout/app-sidebar.svelte` | App sidebar shell using shadcn Sidebar |
+| `src/lib/components/layout/app-header.svelte` | Sticky header with mobile trigger |
+| `src/lib/components/layout/public-nav.svelte` | Marketing header |
+| `src/lib/components/layout/public-footer.svelte` | Marketing footer |
+| `src/routes/+layout.server.ts` | Root server layout (session stub) |
+| `src/routes/(public)/+layout.svelte` | Public layout wrapper |
+| `src/routes/(public)/+page.svelte` | Landing page placeholder |
+| `src/routes/(auth)/+layout.svelte` | Auth centered card layout |
+| `src/routes/(auth)/+layout.server.ts` | Redirect if authenticated |
+| `src/routes/(auth)/sign-in/+page.svelte` | Sign-in placeholder |
+| `src/routes/(onboarding)/+layout.svelte` | Onboarding layout |
+| `src/routes/(onboarding)/+layout.server.ts` | Requires auth, no org |
+| `src/routes/(onboarding)/welcome/+page.svelte` | Welcome placeholder |
+| `src/routes/(app)/+layout.svelte` | App shell (sidebar + header) |
+| `src/routes/(app)/+layout.server.ts` | Requires auth + active org |
+| `src/routes/(app)/(customer)/dashboard/+page.svelte` | Customer dashboard placeholder |
+| `src/routes/(app)/(support)/dashboard/+page.svelte` | Support dashboard placeholder |
+| `src/routes/(app)/(admin)/dashboard/+page.svelte` | Admin dashboard placeholder |
+| `src/routes/(app)/(shared)/settings/+page.svelte` | Settings placeholder |
+| `src/routes/(app)/(shared)/profile/+page.svelte` | Profile placeholder |
+
+#### What This Step Does NOT Include
+
+- Real auth session resolution (Step 5)
+- Auth proxy routes `/api/auth/*` (Step 5)
+- Real sign-in/sign-up forms (Step 8)
+- Real onboarding flow (Step 10)
+- Org-type-specific nav items (Step 11)
+- Org switcher, emulation banner (Step 11)
+- Breadcrumb data from route metadata (Step 11)
 
 ---
 
