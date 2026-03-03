@@ -16,7 +16,8 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 1    | Error Handling Foundation + Types   | Complete    | Fixed pre-existing Vitest 4 config (`environment: "browser"` → `browser.enabled`), installed Playwright Chromium, updated deprecated `@vitest/browser/context` imports |
 | 2    | shadcn-svelte + Theme + Tokens      | Complete    | Zinc OKLCH theme, Gabarito font, mode-watcher 3-way toggle, Sonner toasts. Added `optimizeDeps.include` for stable browser tests. Used `@lucide/svelte` (rebranded from `lucide-svelte`) |
 | 2.5  | Server-Side Middleware              | Complete    | Request enrichment, rate limiting, idempotency. Direct SvelteKit→Geo gRPC for FindWhoIs. Graceful degradation when Redis/Geo unavailable |
-| 3    | Design System Sprint (Kitchen Sink) | Complete    | Live theme editor at `/design` with 5 OKLCH presets, 27 shadcn-svelte components, 10 showcase sections. Client-only (`ssr: false`), theme overrides cleaned up on navigation away |
+| 3    | Design System Sprint (Kitchen Sink) | Complete    | Live theme editor at `/design` with 3 OKLCH presets (WORX, Zinc, Ocean), 27 shadcn-svelte components, 10 showcase sections. Client-only (`ssr: false`), theme overrides cleaned up on navigation away |
+| 3.5  | Design Review & Polish              | Complete    | Playwright-driven visual QA across all 6 theme/mode combos. Button hover visibility, ghost/outline differentiation, dark mode borders, overlay backdrops, Zinc accent fix, favicon |
 | 4    | Route Groups + Layout System        | Pending     |       |
 | 5    | @d2/auth-bff-client + Auth Proxy    | Pending     |       |
 | 6    | API Client Layer (Gateway)          | Pending     |       |
@@ -127,13 +128,15 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 
 **Design system page (`/design`):**
 - Client-only (`ssr: false`) — DOM manipulation for live theme preview
-- 10 showcase sections: Colors, Typography, Buttons, Cards, Forms, Overlays, Navigation, Feedback, Data Display
+- 10 showcase sections: Colors, Typography, Buttons, Cards, Forms, Overlays, Navigation, Feedback, Data Display, Layout & Patterns
 - Theme Editor side panel (Sheet) with:
-  - 5 OKLCH preset palettes (Zinc, Blue, Green, Orange, Rose)
-  - Sliders for primary hue/chroma/lightness, destructive hue, border radius
+  - 3 built-in OKLCH preset palettes (WORX default, Zinc, Ocean) + custom preset save/delete
+  - Color pickers for all 7 roles (primary, secondary, accent, destructive, info, success, warning)
+  - Border radius slider
   - Live preview via `document.documentElement.style.setProperty()` + dynamic `<style>` for dark tokens
   - Export dialog with generated CSS (copy to clipboard)
   - Cleanup on navigation away (all style overrides removed)
+- Theme selector dropdown in header for quick preset switching
 
 **Files created:**
 - `src/routes/design/+page.ts` — SSR disabled
@@ -155,7 +158,27 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 - `src/lib/components/design/feedback-showcase.svelte` — Progress, skeleton, toasts
 - `src/lib/components/design/data-display-showcase.svelte` — Avatar, badges, alerts, tooltip, toggle, separator, scroll-area, table
 
-**MAJOR PAUSE POINT:** User reviews all components visually and makes color/spacing decisions.
+**MAJOR PAUSE POINT:** User reviews all components visually and makes color/spacing decisions. *(Done — see Step 3.5)*
+
+---
+
+### Step 3.5: Design Review & Polish
+
+**Goal:** Playwright-driven visual QA across all 6 theme/mode combinations (WORX/Zinc/Ocean × Light/Dark). Fix UX bugs found during review.
+
+**Status:** Complete
+
+**Fixes applied:**
+- Button hover visibility: default/destructive opacity increased for perceptible hover in both modes
+- Ghost vs outline hover differentiation: ghost uses `bg-muted`, outline uses `bg-accent/15`
+- Outline hover text: removed `text-accent-foreground` swap (white text on light tinted bg)
+- Disabled dark mode visibility: increased to `opacity-60`
+- Dark mode border/input contrast: `--border` 13%→18%, `--input` 15%→22%
+- Overlay backdrops: `dark:bg-black/60` on sheet, dialog, alert-dialog overlays
+- Zinc accent differentiation: shifted hue from 250 (blue-violet) → 310 (magenta) to separate from secondary
+- AlertDialog action button: uses destructive styling in overlay showcase
+- Theme editor reset label: corrected from "Reset to Zinc" → "Reset to WORX"
+- Added D2-branded SVG favicon + `<link>` in `app.html`
 
 ---
 
@@ -242,7 +265,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 ## Dependency Graph
 
 ```
-Step 0 → Step 1 → Step 2 → Step 2.5 → Step 3 (VISUAL PAUSE)
+Step 0 → Step 1 → Step 2 → Step 2.5 → Step 3 → Step 3.5 (VISUAL PAUSE ✓)
                                      → Step 4 → Step 5 → Step 6 → Step 8
                                                        → Step 9
                             Step 2 → Step 7 ──────────────────→ Step 8
@@ -263,6 +286,8 @@ Decisions made during implementation (appended as we go):
 | 2026-03-01 | SvelteKit→Geo gRPC for FindWhoIs | Pre-auth middleware needs WhoIs data before requests reach downstream services. Calling REST gateway would be circular (gateway itself does enrichment). Direct gRPC mirrors Auth service pattern |
 | 2026-03-01 | Graceful middleware degradation | SvelteKit must remain usable for local frontend dev without Redis/Geo. `getMiddlewareContext()` returns null when env vars missing, all hooks skip |
 | 2026-03-01 | No DI container for SvelteKit middleware | Simplified composition — module-level lazy singletons instead of full ServiceCollection. SvelteKit only needs pre-auth handlers (no scoped request contexts yet) |
+| 2026-03-02 | 3 built-in presets (WORX, Zinc, Ocean) | Cut Slate/Ember/Forest, refined remaining presets for distinct identity. WORX as default (heritage theme) |
+| 2026-03-02 | Design polish via Playwright QA | Systematic visual review of all 6 theme/mode combos before proceeding to route architecture |
 
 ---
 
@@ -296,3 +321,4 @@ Individual pages only provide page-specific content + page-specific SEO override
 Changes from original plan (appended as needed):
 
 - **Step 2.5 added** (Server-Side Middleware): Inserted between Steps 2 and 3. SvelteKit needed the same request enrichment, rate limiting, and idempotency as the Auth service before continuing to UI work. Adds direct SvelteKit→Geo gRPC for FindWhoIs lookups.
+- **Step 3.5 added** (Design Review & Polish): Post-Step-3 visual QA pass using Playwright. Systematic review of all theme/mode combinations caught 11 issues (button hover visibility, dark mode contrast, overlay backdrops, etc.).
