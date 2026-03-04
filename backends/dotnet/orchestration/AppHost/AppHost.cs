@@ -358,6 +358,8 @@ var svelte = builder.AddViteApp(
     .WithIconName("DesktopCursor")
     .WithExternalHttpEndpoints()
     .WithReference(cache)
-    .WithReference(geoService);
+    .WithReference(geoService)
+    .WithEnvironment("SVELTEKIT_GATEWAY__URL", restGateway.GetEndpoint("http"))
+    .WithEnvironment("PUBLIC_GATEWAY_URL", restGateway.GetEndpoint("http"));
 
 builder.Build().Run();

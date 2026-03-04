@@ -20,7 +20,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 3.5  | Design Review & Polish              | Complete    | Playwright-driven visual QA across all 6 theme/mode combos. Button hover visibility, ghost/outline differentiation, dark mode borders, overlay backdrops, Zinc accent fix, favicon |
 | 4    | Route Groups + Layout System        | Complete    | Route groups, layouts, sidebar, branding, auth guard stubs |
 | 5    | @d2/auth-bff-client + Auth Proxy    | Complete    | 32 unit tests, session resolver, JWT manager, auth proxy, route guards, SvelteKit hooks integration |
-| 6    | API Client Layer (Gateway)          | Pending     |       |
+| 6    | API Client Layer (Gateway)          | Complete    | 66 tests. camelCase normalizer for mixed-casing gateway. `$env/dynamic/public` for runtime URL. |
 | 7    | Forms Architecture (Superforms)     | Pending     |       |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Pending     |       |
 | 9    | Client Telemetry (Grafana Faro)     | Pending     |       |
@@ -374,7 +374,31 @@ interface Locals {
 
 ### Step 6: API Client Layer (Gateway)
 
-**Goal:** Dual-path API client — server-side (JWT) and client-side (JWT + fingerprint).
+**Goal:** Dual-path API client — server-side (JWT + service key) and client-side (JWT + fingerprint).
+
+**Status:** Complete
+
+**Files:**
+
+| File                                         | Purpose                                                      |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| `src/lib/utils/gateway-response.ts`          | Parse gateway Response → D2Result with camelCase normalizer  |
+| `src/lib/utils/idempotency.ts`               | Idempotency-Key UUID generation (isomorphic)                 |
+| `src/lib/server/gateway.server.ts`           | Server-side gateway client (lazy singleton, JWT + service key)|
+| `src/lib/utils/gateway-client.ts`            | Client-side gateway client (JWT + fingerprint, 401 retry)    |
+| `src/routes/+layout.server.ts`               | Modified — pass `clientFingerprint` to browser via layout data|
+| `src/routes/+layout.svelte`                  | Modified — initialize fingerprint on mount                   |
+| `.env.local.example`                         | Modified — add gateway env vars                              |
+| `backends/.../AppHost/AppHost.cs`            | Modified — wire gateway URLs to SvelteKit resource           |
+
+**Tests:** 66 tests across 5 files (gateway-response: 21, idempotency: 2, gateway.server: 17, gateway-client: 18, layout.server: 5 + 3 existing).
+
+**Key decisions:**
+- **Casing normalization**: Gateway sends PascalCase (endpoints) and camelCase (middleware errors). Single recursive `normalizeKeys()` function converts all keys to camelCase in one pass — no per-property `??` fallbacks
+- **HTTP status authority**: `response.status` is the authoritative statusCode, not the body field (avoids int vs string inconsistency)
+- **Dynamic env**: `$env/dynamic/public` for `PUBLIC_GATEWAY_URL` (runtime, not build-time)
+- **Service key bypass**: Server-side calls include `X-Api-Key` for trusted-service fingerprint bypass
+- **JWT caching (client)**: In-memory only (XSS safety), auto-refresh 2min before expiry, single 401 retry
 
 ---
 

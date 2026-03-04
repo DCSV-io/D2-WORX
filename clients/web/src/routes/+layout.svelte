@@ -4,8 +4,15 @@
   import { ModeWatcher } from "mode-watcher";
   import { Toaster } from "$lib/components/ui/sonner/index.js";
   import ThemeProvider from "$lib/components/theme-provider.svelte";
+  import { setClientFingerprint } from "$lib/utils/gateway-client.js";
 
-  let { children } = $props();
+  let { data, children } = $props();
+
+  $effect(() => {
+    if (data.clientFingerprint) {
+      setClientFingerprint(data.clientFingerprint);
+    }
+  });
 </script>
 
 <svelte:head>
