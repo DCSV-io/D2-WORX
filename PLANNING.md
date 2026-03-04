@@ -7,16 +7,47 @@
 
 ## Table of Contents
 
-1. [Completed Summary](#completed-summary)
-2. [Architecture Decisions](#architecture-decisions)
-3. [Implementation Status](#implementation-status)
-4. [Roadmap](#roadmap)
-5. [Scheduled Jobs (Dkron)](#scheduled-jobs-dkron)
-6. [Outstanding Items](#outstanding-items)
+1. [Roadmap](#roadmap)
+   - [Phase 2: Auth Service + SvelteKit Integration](#phase-2-auth-service--sveltekit-integration)
+   - [Phase 3: Auth Features (Future)](#phase-3-auth-features-future)
+2. [Issues](#issues)
+   - [Open — Can Fix Now](#open--can-fix-now)
+   - [Open Questions](#open-questions)
+   - [Deferred Upgrades](#deferred-upgrades)
+   - [Blocked — Can Only Fix Later](#blocked--can-only-fix-later)
+3. [Work in Progress](#work-in-progress)
+4. [Implementation Status](#implementation-status)
+   - [Infrastructure](#infrastructure)
+   - [Shared Packages (.NET)](#shared-packages-net)
+   - [Shared Packages (Node.js)](#shared-packages-nodejs)
+   - [Services](#services)
+   - [Gateways](#gateways)
+   - [Frontend](#frontend)
+5. [Architecture Decisions](#architecture-decisions)
+   - [ADR-001: Authentication Architecture](#adr-001-authentication-architecture)
+   - [ADR-002: Rate Limiting Strategy](#adr-002-rate-limiting-strategy)
+   - [ADR-003: Geo Data Caching Strategy](#adr-003-geo-data-caching-strategy)
+   - [ADR-004: Fingerprinting Approach](#adr-004-fingerprinting-approach)
+   - [ADR-005: Request Flow Pattern (Hybrid BFF + Direct Gateway)](#adr-005-request-flow-pattern-hybrid-bff--direct-gateway)
+   - [ADR-006: Retry & Resilience Pattern](#adr-006-retry--resilience-pattern)
+   - [ADR-007: Idempotency Middleware](#adr-007-idempotency-middleware)
+   - [ADR-008: Sign-Up Flow & Cross-Service Ordering](#adr-008-sign-up-flow--cross-service-ordering)
+   - [ADR-009: Drizzle ORM for Auth Database](#adr-009-drizzle-orm-for-auth-database-replacing-kysely)
+   - [ADR-010: Reserved](#adr-010-reserved)
+   - [ADR-011: Lightweight DI Container (`@d2/di`)](#adr-011-lightweight-di-container-d2di)
+   - [ADR-012: Service-to-Service Trust (S2S)](#adr-012-service-to-service-trust-s2s)
+   - [ADR-013: Scheduled Jobs (Dkron)](#adr-013-scheduled-jobs-dkron)
+   - [ADR-014: Comms Delivery Engine](#adr-014-comms-delivery-engine)
+   - [ADR-015: SvelteKit Strategy](#adr-015-sveltekit-strategy)
+   - [ADR-016: Environment Variable Architecture](#adr-016-environment-variable-architecture)
+   - [ADR-017: Auth BFF Client Pattern](#adr-017-auth-bff-client-pattern)
+   - [ADR-018: Dependency Update Policy](#adr-018-dependency-update-policy)
 
 ---
 
-## Completed Summary
+## Roadmap
+
+### Completed Milestones
 
 - **Phase 1: TypeScript Shared Infrastructure** ✅ — 19 shared `@d2/*` packages mirroring .NET (result, handler, DI, caching, messaging, middleware, batch-pg, errors-pg)
 - **Phase 2 Stage A: Cross-cutting foundations** ✅ — Retry utility, idempotency middleware, UUIDv7
@@ -29,6 +60,229 @@
 - **Production-readiness Sweep** ✅ — 40 items triaged, all high/medium fixed, polish items done
 - **Scheduled Jobs (Dkron)** ✅ — 8 daily maintenance jobs (Auth 4, Geo 2, Comms 2), `@d2/dkron-mgr` reconciler (64 tests), full-chain E2E tested (12 E2E tests)
 - **Shared tests** — 857 passing (67 test files)
+
+### Phase 2: Auth Service + SvelteKit Integration
+
+**Stage B.5 — Scheduled Jobs (Dkron) ✅** — See [ADR-013](#adr-013-scheduled-jobs-dkron).
+
+**Dependency Update — Q1 2026** — Pending. Quarterly bump before SvelteKit feature pages. See [ADR-018](#adr-018-dependency-update-policy).
+
+**SvelteKit App Foundations ✅** — Route groups, layouts, sidebar, shadcn-svelte, design system, server middleware (enrichment + rate limiting + idempotency), auth BFF proxy, API gateway client. See [WIP](#work-in-progress) for step-by-step progress.
+
+**Stage C — Auth Client Libraries (In Progress)**
+
+- **@d2/auth-bff-client** ✅ — BFF client for SvelteKit (ADR-017). SessionResolver, JwtManager, AuthProxy, route guards. 32 unit + 10 E2E tests.
+- **@d2/auth-client** — Backend gRPC client for other Node.js services (mirrors `@d2/geo-client` pattern). Planned.
+- **.NET Auth.Client** — JWT validation via JWKS + `AddJwtBearer()`, gRPC client. Planned.
+
+**Stage D — Auth Integration + Comms Con't**
+
+- **Forms architecture** — Superforms + Formsnap, Zod schemas, D2Result error mapping
+- **Auth pages** — Sign-in, sign-up, forgot/reset password, email verification
+- **Onboarding** — Post-verification: accept pending invitation(s) or create `customer` org
+- **Session management** — Org switching, active session list, sign-out
+- **Client telemetry** — Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir)
+- **App shell finalization** — Org-type nav, org switcher, emulation banner, breadcrumbs
+- **SignalR integration** — Browser → .NET gateway direct (`@microsoft/signalr`)
+- **Comms Phase 2** — In-app notifications, push via SignalR
+
+Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/AUTH.md).
+
+### Phase 3: Auth Features (Future)
+
+1. **Session management UI** (list sessions, revoke individual, revoke all others)
+2. **Org emulation** (support/admin can view any org's data in read-only mode)
+3. **User impersonation** (escalated support — act as a specific user, audit-logged, time-limited)
+4. **Admin control panel** (cross-org visibility, user/org management, system diagnostics)
+5. **Admin alerting** (rate limit threshold alerts via Comms service)
+6. **Comms expansion** — In-app notifications, push via SignalR, conversational messaging (Comms Phases 2-4)
+
+---
+
+## Issues
+
+### Open — Can Fix Now
+
+| #   | Item                                                | Owner  | Effort | Notes                                                                                                              |
+| --- | --------------------------------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
+| 32  | Thundering herd protection on popular key expiry    | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                               |
+| 39  | Circuit breaker for non-critical cross-service gRPC | All    | Medium | Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure |
+| 40  | OTel alerting for service outages                   | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                |
+
+### Open Questions
+
+- **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
+
+### Deferred Upgrades
+
+From Q1 2026 audit:
+
+| Item                             | Priority | Notes                                                                                                                                                         |
+| -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MinIO replacement                | Medium   | Project archived Feb 2026. Pinned images still work. Evaluate Garage (AGPLv3), RustFS (Apache 2.0), or SeaweedFS (Apache 2.0) as a separate initiative.       |
+| EF Core → 10.0.3                 | Blocked  | `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins EF Core Relational to 10.0.0. Wait for Npgsql EF provider 10.0.x release.                                |
+| Serilog.Enrichers.Span removal   | Low      | Deprecated upstream — Serilog now natively supports span data. Low-priority cleanup.                                                                          |
+| dotenv.net 4.0                   | Low      | Major version with potential API changes. Only used in .NET Utilities.                                                                                        |
+| Mimir 3.0                        | Low      | Major architectural change (Kafka buffer, new MQE, Consul/etcd deprecated). Requires deploying second cluster. Dedicated sprint.                              |
+| RedisInsight 3.x                 | Low      | Dev tool only. Major version with new UI + storage changes. 2.70.1 still works.                                                                               |
+
+### Blocked — Can Only Fix Later
+
+| #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
+| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
+| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
+| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
+| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
+| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
+| 6   | Validate PII redaction in OTel output       | Running observability stack (Grafana/Loki)    | High     | Manually verify no PII in production log/trace output                                                                                                          |
+| 7   | OTel alerting rules                         | Running AlertManager/Grafana                  | Medium   | Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                                           |
+| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
+| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
+| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
+
+---
+
+## Work in Progress
+
+Current focus: **Phase 2 Stage C — SvelteKit Web Client** (`feat/client-web` branch)
+
+Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMPLEMENTATION_PLAN.md)
+
+### SvelteKit Implementation Progress
+
+| Step | Name                                | Status   | Notes                                                                    |
+| ---- | ----------------------------------- | -------- | ------------------------------------------------------------------------ |
+| 0    | Document Implementation Plan        | ✅ Done  |                                                                          |
+| 1    | Error Handling Foundation + Types   | ✅ Done  | App.Error, hooks, error page, client-error endpoint                      |
+| 2    | shadcn-svelte + Theme + Tokens      | ✅ Done  | Zinc OKLCH theme, Gabarito font, mode-watcher, Sonner toasts             |
+| 2.5  | Server-Side Middleware              | ✅ Done  | Request enrichment, rate limiting, idempotency. SvelteKit→Geo gRPC       |
+| 3    | Design System Sprint (Kitchen Sink) | ✅ Done  | 27 components, 3 OKLCH presets, live theme editor at `/design`           |
+| 3.5  | Design Review & Polish              | ✅ Done  | Playwright visual QA, 11 fixes across 6 theme/mode combos               |
+| 4    | Route Groups + Layout System        | ✅ Done  | (auth), (onboarding), (app) groups, sidebar, auth guard stubs            |
+| 5    | @d2/auth-bff-client + Auth Proxy    | ✅ Done  | 32 unit + 10 E2E tests. Session resolver, JWT manager, route guards      |
+| 6    | API Client Layer (Gateway)          | ✅ Done  | 66 tests. camelCase normalizer, dynamic public URL, service key bypass   |
+| 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done  | 5 chart types: area, bar, line, donut, sparkline                         |
+| 7    | Forms Architecture (Superforms)     | Pending  | Superforms + Formsnap, Zod schemas, D2Result error mapping               |
+| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Pending  | Real auth forms — requires Auth service running                          |
+| 9    | Client Telemetry (Grafana Faro)     | Pending  | Errors → Loki, traces → Tempo, Web Vitals → Mimir                       |
+| 10   | Onboarding Flow                     | Pending  | Post-auth org selection/creation + Radar address autocomplete backend    |
+| 11   | App Shell (Sidebar, Header, Org)    | Pending  | Org-type nav, org switcher, emulation banner, breadcrumbs                |
+| 12   | SignalR Abstraction Layer           | Pending  | Browser → .NET SignalR gateway direct (`@microsoft/signalr`)             |
+
+### Other Active Work
+
+| Task                          | Status  | Related ADRs | Notes                                             |
+| ----------------------------- | ------- | ------------ | ------------------------------------------------- |
+| Dependency audit & update     | Pending | ADR-018      | Q1 2026 quarterly bump — pre-SvelteKit            |
+| @d2/auth-client (backend gRPC)| Planned | —            | Mirrors @d2/geo-client pattern, Stage C           |
+| .NET Auth.Client              | Planned | ADR-001      | JWT validation via JWKS + gRPC client             |
+
+### Recently Completed
+
+- @d2/auth-bff-client package (ADR-017) — 32 unit + 10 E2E tests
+- API client layer with camelCase normalizer (ADR-005)
+- Env var extraction + AppHost parameterization (ADR-016)
+- SvelteKit 500 fix (`loadEnv` in `instrumentation.server.ts`)
+- Design system page + chart showcase (LayerChart 2.0)
+
+---
+
+## Implementation Status
+
+### Infrastructure
+
+| Component     | Status  | Notes                                                    |
+| ------------- | ------- | -------------------------------------------------------- |
+| PostgreSQL 18 | ✅ Done | Aspire-managed                                           |
+| Redis 8.2     | ✅ Done | Aspire-managed                                           |
+| RabbitMQ 4.1  | ✅ Done | Aspire-managed                                           |
+| MinIO         | ✅ Done | Aspire-managed                                           |
+| Dkron 4.0.9   | ✅ Done | Aspire-managed, persistent container, dashboard on :8888 |
+| LGTM Stack    | ✅ Done | Full observability                                       |
+
+### Shared Packages (.NET)
+
+| Package                       | Status  | Location                                                                                        |
+| ----------------------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| D2.Result                     | ✅ Done | `backends/dotnet/shared/Result/`                                                                |
+| D2.Result.Extensions          | ✅ Done | `backends/dotnet/shared/Result.Extensions/`                                                     |
+| D2.Handler                    | ✅ Done | `backends/dotnet/shared/Handler/`                                                               |
+| D2.Interfaces                 | ✅ Done | `backends/dotnet/shared/Interfaces/` (includes GetTtl, Increment)                               |
+| D2.Utilities                  | ✅ Done | `backends/dotnet/shared/Utilities/`                                                             |
+| D2.ServiceDefaults            | ✅ Done | `backends/dotnet/shared/ServiceDefaults/`                                                       |
+| DistributedCache.Redis        | ✅ Done | `backends/dotnet/shared/Implementations/Caching/` (Get, Set, Remove, Exists, GetTtl, Increment) |
+| InMemoryCache.Default         | ✅ Done | `backends/dotnet/shared/Implementations/Caching/`                                               |
+| Transactions.Pg               | ✅ Done | `backends/dotnet/shared/Implementations/Repository/`                                            |
+| Batch.Pg                      | ✅ Done | `backends/dotnet/shared/Implementations/Repository/`                                            |
+| **RequestEnrichment.Default** | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/`                                            |
+| **RateLimit.Default**         | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (uses abstracted cache handlers)           |
+| **Handler.Extensions**        | ✅ Done | `backends/dotnet/shared/Handler.Extensions/` (JWT/auth extensions)                              |
+| **Errors.Pg**                 | ✅ Done | `backends/dotnet/shared/Implementations/Repository/Errors/Errors.Pg/` (PG error code helpers)   |
+| **Geo.Client**                | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (includes WhoIs cache handler)                       |
+
+### Shared Packages (Node.js)
+
+> Mirrors .NET shared project structure under `backends/node/shared/`. All packages use `@d2/` scope.
+> Workspace root is at project root (`D2-WORX/`) — SvelteKit and other clients can consume any `@d2/*` package.
+
+| Package                    | Status     | Location                                                                      | .NET Equivalent                            |
+| -------------------------- | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
+| **@d2/result**             | ✅ Done    | `backends/node/shared/result/`                                                | `D2.Shared.Result`                         |
+| **@d2/utilities**          | ✅ Done    | `backends/node/shared/utilities/`                                             | `D2.Shared.Utilities`                      |
+| **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                                | `Protos.DotNet`                            |
+| **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                               | `D2.Shared.Tests` (infra)                  |
+| **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                                 | `D2.Shared.Tests` (tests)                  |
+| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                               | `Microsoft.Extensions.Logging` (ILogger)   |
+| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                                      | `D2.Shared.ServiceDefaults`                |
+| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                               | `D2.Shared.Handler`                        |
+| **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                            | `D2.Shared.Interfaces`                     |
+| **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                                     | `D2.Shared.Result.Extensions`              |
+| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`             | `InMemoryCache.Default`                    |
+| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`             | `DistributedCache.Redis`                   |
+| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                             | Messaging.RabbitMQ (raw AMQP + proto JSON) |
+| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                                      | `Geo.Client` (full parity)                 |
+| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`                |
+| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                        |
+| **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
+| **@d2/di**                 | ✅ Done    | `backends/node/shared/di/`                                                    | `Microsoft.Extensions.DependencyInjection` |
+| **@d2/batch-pg**           | ✅ Done    | `backends/node/shared/implementations/repository/batch/pg/`                   | `Batch.Pg`                                 |
+| **@d2/errors-pg**          | ✅ Done    | `backends/node/shared/implementations/repository/errors/pg/`                  | `Errors.Pg`                                |
+| **@d2/comms-client**       | ✅ Done    | `backends/node/services/comms/client/`                                        | — (RabbitMQ notification publisher)        |
+| **@d2/auth-bff-client**    | ✅ Done    | `backends/node/services/auth/bff-client/`                                     | — (BFF client, HTTP — no .NET equivalent)  |
+| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/client/`                                         | `Auth.Client` (gRPC, service-to-service)   |
+
+### Services
+
+| Service           | Status         | Notes                                                                                                            |
+| ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Geo.Domain        | ✅ Done        | Entities, value objects                                                                                          |
+| Geo.App           | ✅ Done        | CQRS handlers, mappers                                                                                           |
+| Geo.Infra         | ✅ Done        | Repository, messaging                                                                                            |
+| Geo.API           | ✅ Done        | gRPC service                                                                                                     |
+| Geo.Client        | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
+| Geo.Tests         | ✅ Done        | 759 tests passing                                                                                                |
+| **Auth Service**  | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E     |
+| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 922 tests passing                                    |
+| **Comms Service** | 🚧 In Progress | Node.js delivery engine (`backends/node/services/comms/`). Phase 1 done (email + SMS + gRPC + RabbitMQ consumer) |
+| **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 592 tests passing                                  |
+
+### Gateways
+
+| Gateway         | Status     | Notes                                                    |
+| --------------- | ---------- | -------------------------------------------------------- |
+| REST Gateway    | ✅ Done    | HTTP/REST → gRPC with request enrichment + rate limiting |
+| SignalR Gateway | 📋 Planned | WebSocket → gRPC                                         |
+
+### Frontend
+
+| Component            | Status         | Notes                                                                   |
+| -------------------- | -------------- | ----------------------------------------------------------------------- |
+| SvelteKit App        | 🚧 In Progress | Steps 0–6.5 done (design, routing, auth BFF, gateway). Step 7+ pending |
+| Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)            |
+| API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)               |
+| Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit             |
+| OpenTelemetry        | ✅ Done        | Server instrumentation. Client telemetry (Faro) pending Step 9          |
 
 ---
 
@@ -259,6 +513,8 @@ Auth (always proxied):
 - Client needs a JWT manager utility (Svelte store/module)
 - Two auth validation paths to maintain (SvelteKit server + direct browser)
 - SvelteKit `hooks.server.ts` handles both auth proxy and session population
+
+---
 
 ### ADR-006: Retry & Resilience Pattern
 
@@ -525,748 +781,108 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 ---
 
-## Implementation Status
+### ADR-012: Service-to-Service Trust (S2S)
 
-### Infrastructure
+**Status**: Implemented (2026-02)
 
-| Component     | Status  | Notes                                                    |
-| ------------- | ------- | -------------------------------------------------------- |
-| PostgreSQL 18 | ✅ Done | Aspire-managed                                           |
-| Redis 8.2     | ✅ Done | Aspire-managed                                           |
-| RabbitMQ 4.1  | ✅ Done | Aspire-managed                                           |
-| MinIO         | ✅ Done | Aspire-managed                                           |
-| Dkron 4.0.9   | ✅ Done | Aspire-managed, persistent container, dashboard on :8888 |
-| LGTM Stack    | ✅ Done | Full observability                                       |
+**Context**: Backend services need to call each other (e.g., Dkron → Gateway → Geo for scheduled jobs). These calls should bypass rate limiting and fingerprint validation — they're trusted internal traffic, not browser requests. Need a mechanism to establish trust without coupling services to each other's auth systems.
 
-### Shared Packages (.NET)
+**Decision**: `X-Api-Key` header validated by `ServiceKeyMiddleware`, setting an `IsTrustedService` flag that downstream middleware and endpoint filters can check.
 
-| Package                       | Status  | Location                                                                                        |
-| ----------------------------- | ------- | ----------------------------------------------------------------------------------------------- |
-| D2.Result                     | ✅ Done | `backends/dotnet/shared/Result/`                                                                |
-| D2.Result.Extensions          | ✅ Done | `backends/dotnet/shared/Result.Extensions/`                                                     |
-| D2.Handler                    | ✅ Done | `backends/dotnet/shared/Handler/`                                                               |
-| D2.Interfaces                 | ✅ Done | `backends/dotnet/shared/Interfaces/` (includes GetTtl, Increment)                               |
-| D2.Utilities                  | ✅ Done | `backends/dotnet/shared/Utilities/`                                                             |
-| D2.ServiceDefaults            | ✅ Done | `backends/dotnet/shared/ServiceDefaults/`                                                       |
-| DistributedCache.Redis        | ✅ Done | `backends/dotnet/shared/Implementations/Caching/` (Get, Set, Remove, Exists, GetTtl, Increment) |
-| InMemoryCache.Default         | ✅ Done | `backends/dotnet/shared/Implementations/Caching/`                                               |
-| Transactions.Pg               | ✅ Done | `backends/dotnet/shared/Implementations/Repository/`                                            |
-| Batch.Pg                      | ✅ Done | `backends/dotnet/shared/Implementations/Repository/`                                            |
-| **RequestEnrichment.Default** | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/`                                            |
-| **RateLimit.Default**         | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (uses abstracted cache handlers)           |
-| **Handler.Extensions**        | ✅ Done | `backends/dotnet/shared/Handler.Extensions/` (JWT/auth extensions)                              |
-| **Errors.Pg**                 | ✅ Done | `backends/dotnet/shared/Implementations/Repository/Errors/Errors.Pg/` (PG error code helpers)   |
-| **Geo.Client**                | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (includes WhoIs cache handler)                       |
+**Mechanism:**
 
-### Shared Packages (Node.js)
+| Aspect               | Decision                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| Header               | `X-Api-Key` (single shared key for all services)                                                  |
+| Middleware            | `ServiceKeyMiddleware` — runs early in pipeline, validates header against configured key           |
+| Trust flag            | `IRequestInfo.IsTrustedService` — set by middleware, consumed by downstream components            |
+| Invalid key           | 401 immediately (fail fast, before rate limiting)                                                 |
+| No key                | Treated as browser request, continues normally through full pipeline                              |
+| Pipeline order        | RequestEnrichment → ServiceKeyDetection → RateLimiting → Auth → Fingerprint → Authz             |
+| Endpoint filter       | `RequireServiceKey()` on endpoints checks `IsTrustedService` flag (no re-validation)             |
 
-> Mirrors .NET shared project structure under `backends/node/shared/`. All packages use `@d2/` scope.
-> Workspace root is at project root (`D2-WORX/`) — SvelteKit and other clients can consume any `@d2/*` package.
+**Design principle**: Service key = TRUST (bypasses security layers). JWT = IDENTITY (carries user context). They are independent — a request can have both, either, or neither.
 
-| Package                    | Status     | Location                                                                      | .NET Equivalent                            |
-| -------------------------- | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
-| **@d2/result**             | ✅ Done    | `backends/node/shared/result/`                                                | `D2.Shared.Result`                         |
-| **@d2/utilities**          | ✅ Done    | `backends/node/shared/utilities/`                                             | `D2.Shared.Utilities`                      |
-| **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                                | `Protos.DotNet`                            |
-| **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                               | `D2.Shared.Tests` (infra)                  |
-| **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                                 | `D2.Shared.Tests` (tests)                  |
-| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                               | `Microsoft.Extensions.Logging` (ILogger)   |
-| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                                      | `D2.Shared.ServiceDefaults`                |
-| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                               | `D2.Shared.Handler`                        |
-| **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                            | `D2.Shared.Interfaces`                     |
-| **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                                     | `D2.Shared.Result.Extensions`              |
-| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`             | `InMemoryCache.Default`                    |
-| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`             | `DistributedCache.Redis`                   |
-| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                             | Messaging.RabbitMQ (raw AMQP + proto JSON) |
-| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                                      | `Geo.Client` (full parity)                 |
-| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`                |
-| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                        |
-| **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
-| **@d2/di**                 | ✅ Done    | `backends/node/shared/di/`                                                    | `Microsoft.Extensions.DependencyInjection` |
-| **@d2/batch-pg**           | ✅ Done    | `backends/node/shared/implementations/repository/batch/pg/`                   | `Batch.Pg`                                 |
-| **@d2/errors-pg**          | ✅ Done    | `backends/node/shared/implementations/repository/errors/pg/`                  | `Errors.Pg`                                |
-| **@d2/comms-client**       | ✅ Done    | `backends/node/services/comms/client/`                                        | — (RabbitMQ notification publisher)        |
-| **@d2/auth-bff-client**    | 📋 Phase 2 | `backends/node/services/auth/bff-client/`                                     | — (BFF client, HTTP — no .NET equivalent)  |
-| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/client/`                                         | `Auth.Client` (gRPC, service-to-service)   |
+**Trusted service bypasses:**
 
-### Services
+- Rate limiting — all dimensions skipped (early return in Check handler)
+- JWT fingerprint validation — skipped entirely
 
-| Service           | Status         | Notes                                                                                                            |
-| ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Geo.Domain        | ✅ Done        | Entities, value objects                                                                                          |
-| Geo.App           | ✅ Done        | CQRS handlers, mappers                                                                                           |
-| Geo.Infra         | ✅ Done        | Repository, messaging                                                                                            |
-| Geo.API           | ✅ Done        | gRPC service                                                                                                     |
-| Geo.Client        | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
-| Geo.Tests         | ✅ Done        | 759 tests passing                                                                                                |
-| **Auth Service**  | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E     |
-| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 922 tests passing                                    |
-| **Comms Service** | 🚧 In Progress | Node.js delivery engine (`backends/node/services/comms/`). Phase 1 done (email + SMS + gRPC + RabbitMQ consumer) |
-| **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 592 tests passing                                  |
+**Rationale:**
 
-### Gateways
+- Simple and effective for dev/pre-prod environments with a single shared key
+- Clear separation of trust (service key) and identity (JWT)
+- Fail-fast on invalid key prevents wasting resources on malicious requests
+- `IsTrustedService` flag is a clean abstraction — no tight coupling between middleware layers
 
-| Gateway         | Status     | Notes                                                    |
-| --------------- | ---------- | -------------------------------------------------------- |
-| REST Gateway    | ✅ Done    | HTTP/REST → gRPC with request enrichment + rate limiting |
-| SignalR Gateway | 📋 Planned | WebSocket → gRPC                                         |
-
-### Frontend
-
-| Component        | Status      | Notes                           |
-| ---------------- | ----------- | ------------------------------- |
-| SvelteKit App    | 🚧 Scaffold | Basic setup done                |
-| Auth Integration | 📋 Planned  | Proxy to Auth Service           |
-| OpenTelemetry    | ✅ Done     | Client + server instrumentation |
+**Future considerations:** Per-service keys, mTLS, or service mesh for production hardening.
 
 ---
 
-## Roadmap
+### ADR-013: Scheduled Jobs (Dkron)
 
-### Phase 2: Auth Service + SvelteKit Integration
+**Status**: Implemented (2026-02)
 
-**Stage B.5 — Scheduled Jobs (Dkron) ✅**
+**Context**: Multiple services need periodic data maintenance (purging expired sessions, cleaning stale WhoIs data, removing soft-deleted messages). Need a distributed job scheduler that works with the existing Aspire infrastructure and supports the handler pattern.
 
-> Data maintenance jobs implemented across all three services. `@d2/dkron-mgr` reconciler manages 8 jobs. Full-chain E2E tested (Dkron → Gateway → Geo → PostgreSQL). See the "Scheduled Jobs (Dkron)" section below for the full job table.
+**Decision**: **Dkron 4.0.9** as the scheduler with `@d2/dkron-mgr` as a declarative job reconciler. Jobs execute via HTTP→gRPC chain through the .NET REST gateway.
 
-10. **Job infrastructure** ✅ — HTTP endpoint pattern for Dkron callbacks, Redis `SET NX` distributed lock helper, `handleJobRpc()` / `handleRpc()` utilities, `BatchDelete` (both platforms), proto contracts (`jobs.proto`, `geo_jobs.proto`, `auth_jobs.proto`, `comms_jobs.proto`).
-11. **Auth jobs** ✅ — Expired session purge (daily), sign-in event purge (daily, 90d), expired invitation cleanup (daily, 7d), expired emulation consent cleanup (daily). 4 app handlers + 4 infra purge handlers.
-12. **Geo jobs** ✅ — Stale WhoIs purge (daily, 180d), orphaned location cleanup (daily). 2 app handlers + 2 infra delete handlers + `GeoJobService` gRPC service.
-13. **Comms jobs** ✅ — Soft-deleted message cleanup (daily, 90d), delivery history retention (daily, 1y). 2 app handlers + 2 infra purge handlers + `CommsJobServiceServer` gRPC service.
-14. **dkron-mgr** ✅ — Declarative job reconciler (drift detection, orphan cleanup, idempotent reconciliation loop). 64 tests (unit + integration + E2E).
-
-**Dependency Update — Q1 2026**
-
-> Bump all .NET, Node.js, and tooling dependencies to latest stable before starting SvelteKit work. This avoids pulling in a wave of client-side packages against stale foundations.
-
-14. **Dependency audit & update** — `dotnet outdated` + `pnpm outdated`, bump all packages, run full test suites, fix any breakage. Includes .NET SDK/runtime, NuGet packages, npm packages, Aspire container image tags, and dev tooling (ESLint, Prettier, Vitest, Drizzle Kit, etc.).
-
-**SvelteKit App Foundations**
-
-Set up the SvelteKit app shell before wiring auth flows.
-
-15. **Route group structure** — `(auth)/`, `(onboarding)/`, `(app)/` with org-type sub-groups (`(customer)/`, `(support)/`, `(admin)/`, etc.)
-16. **Layout system** — Base layouts per org type, error/loading pages, "Viewing as [Org Name]" emulation banner
-17. **Component library** — shadcn-svelte or equivalent, Tailwind v4 integration
-18. **Auth proxy setup** — Proxy in `hooks.server.ts` (`/api/auth/*` → Auth Service), session population hook
-
-**Stage C — Auth Client Libraries**
-
-19. **@d2/auth-bff-client** — BFF client for SvelteKit: proxy helper, JWT lifecycle, `createAuthClient()`, client-side JWT manager (memory-only, auto-refresh)
-20. **@d2/auth-client** — Backend gRPC client for other Node.js services (mirrors `@d2/geo-client` pattern)
-21. **.NET Auth.Client** — JWT validation via JWKS + `AddJwtBearer()`, gRPC client
-
-**Stage D — Auth Integration + Comms Con't**
-
-22. **Sign-up flow** — SvelteKit sign-up page → Auth Service → Geo contact → verification email → onboarding
-23. **Sign-in flow** — SvelteKit sign-in page → Auth Service → session → JWT for gateway
-24. **Session management** — Org switching, active session list, sign-out
-25. **Onboarding** — Post-verification: accept pending invitation(s) or create `customer` org
-26. **.NET gateway integration** — JWT validation middleware, CORS for SvelteKit origin
-27. **Comms Phase 2** — In-app notifications, push via SignalR
-
-#### Auth Service — DDD Structure
-
-The Auth Service follows the same DDD layering as Geo, with BetterAuth encapsulated in the infra layer:
+**Architecture:**
 
 ```
-backends/node/services/auth/
-├── domain/            # @d2/auth-domain — Entities, value objects, domain types (the public contract)
-├── app/               # @d2/auth-app — CQRS handlers, interfaces (TLC: implementations/cqrs/, interfaces/repository/, interfaces/geo/)
-├── infra/             # @d2/auth-infra — BetterAuth config, repos, mappers (TLC: auth/better-auth/, repository/, mappers/)
-├── api/               # @d2/auth-api — Hono entry point, routes, composition root, geo gateway impl
-├── tests/             # @d2/auth-tests — Tests (unit + integration)
-├── bff-client/        # @d2/auth-bff-client — BFF client for SvelteKit (HTTP, proxy, JWT manager) [planned]
-├── client/            # @d2/auth-client — Backend client for other services (gRPC, like Geo.Client) [planned]
+Dkron (cron) → HTTP POST to REST Gateway (X-Api-Key)
+  → Gateway forwards via gRPC (API key via AddCallCredentials)
+    → Service handler acquires Redis lock (SET NX PX)
+      → Batch delete loop
+        → Returns result
 ```
 
-Mirrors .NET Geo:
-
-```
-Geo.Client / Geo.Domain / Geo.App / Geo.Infra / Geo.API / Geo.Tests
-```
-
-**Two client libraries** (auth serves two distinct consumer types):
-
-| Client             | Package               | Consumers                    | Protocol | Purpose                                         |
-| ------------------ | --------------------- | ---------------------------- | -------- | ----------------------------------------------- |
-| **BFF Client**     | `@d2/auth-bff-client` | SvelteKit                    | HTTP     | Auth proxy, session management, JWT lifecycle   |
-| **Backend Client** | `@d2/auth-client`     | .NET gateway, other services | gRPC     | User/org lookups, JWT validation, JWKS fetching |
-
-- `@d2/auth-bff-client`: BFF-oriented. Proxies BetterAuth endpoints (`/api/auth/*`), manages JWT obtain/store/refresh, exposes `createAuthClient()` for SvelteKit. Works with **domain types** (tightly coupled, same codebase).
-- `@d2/auth-client`: Service-oriented. gRPC stubs from `contracts/protos/auth/v1/`, handler-based (mirrors Geo.Client pattern). Works with **proto-generated types only** — no domain types exposed. Used by .NET services and future Node services that need auth data.
-- **.NET side**: `Auth.Client` at `backends/dotnet/services/Auth/Auth.Client/` — gRPC client + JWT validation (`AddJwtBearer` + JWKS). Works with proto-generated C# types.
-
-**Type boundary principle**: Domain types are internal to the auth service (and BFF). Backend consumers only see proto-generated types via gRPC. This prevents leaking domain logic between services — the proto contract IS the public API. Same pattern as Geo: `Geo.Domain` types are internal, `Geo.API` maps to proto responses, `Geo.Client` consumers only see proto types.
-
-**Proto contracts**: `contracts/protos/auth/v1/` — auth service gRPC definitions. Mirrors `contracts/protos/geo/v1/` pattern. Needed for inter-service communication (e.g., notifications service querying user data, other services validating org membership). Service definitions will mirror how we handled Geo.
-
-**Key design decisions:**
-
-- **Framework-agnostic by design**: BetterAuth is an infra concern only. Domain and app layers have zero BetterAuth imports. If BetterAuth is ever swapped, only auth-infra changes.
-- **Mappers in auth-app/auth-infra**: infra→domain (BetterAuth types → domain types, lives in auth-infra), domain→proto (domain types → gRPC responses, lives in auth-app). Similar to Geo's `LocationMapper`, `WhoIsMapper`, etc.
-- **SignInEvent purge**: Dkron scheduled job (daily). 90-day retention. See "Scheduled Jobs (Dkron)" section.
-- **Notifications service co-dependency**: Auth needs a notifications service scaffold for email verification, password reset, invitation emails. See "Notifications Service" section below.
-
-**TLC concerns within auth-infra:**
-
-```
-auth-infra/src/
-└── auth/                    # TLC concern: "Auth" (like "Repository", "Messaging")
-    └── better-auth/         # Implementation (like "Pg", "MT", "Redis")
-```
-
-**Abstraction boundaries:**
-
-- **Caching (Redis secondary storage)**: Fully abstracted. BetterAuth's `secondaryStorage` interface (`get`, `set`, `delete`) implemented by wrapping `@d2/interfaces` distributed cache handlers (IDistributedCacheGet, Set, Remove). auth-infra never imports ioredis directly.
-- **Database (PostgreSQL)**: BetterAuth owns its DB connection via the Drizzle adapter (`drizzleAdapter(db, { provider: "pg", schema })`) with a dedicated `pg.Pool`. Uses `casing: "snake_case"` for PG conventions. Drizzle manages all tables (BetterAuth's 8 managed tables + 3 custom tables) with a single ORM. See ADR-009 for migration details.
-- **Auth-app defines interfaces** for auth operations (sign-up, sign-in, session management, token issuance). auth-infra implements these using BetterAuth under the hood.
-- **Abstraction boundary for consumers**: JWTs validated via JWKS are the inter-service boundary. Only the auth service itself depends on BetterAuth. .NET services validate JWTs statelessly via `AddJwtBearer()`.
-
-**Dependency injection**: **`@d2/di` container** (ADR-011, implemented 2026-02-21). Replaces the earlier manual factory function approach. Each package exports an `addXxx(services, ...)` registration function (mirrors .NET `services.AddXxx()`). `ServiceCollection` + `ServiceProvider` with `Singleton`/`Scoped`/`Transient` lifetimes. `ServiceKey<T>` branded tokens for type-safe resolution. Per-request scoping via `createScopeMiddleware(provider)` (HTTP) or `createServiceScope(provider)` (gRPC/RabbitMQ).
-
-#### Auth Domain Model (decided 2026-02-07)
-
-**Multi-tenant, multi-org architecture.** Users are people; organizations are the tenancy unit that owns all business data. Users belong to zero or more organizations via memberships. All orgs are flat peers — no parent-child hierarchy at the auth layer.
-
-**Organization types** (determines UI shell, capabilities, and permission scope):
-
-| Type          | Who                                | Purpose                                          |
-| ------------- | ---------------------------------- | ------------------------------------------------ |
-| `admin`       | D2 site admins and engineers       | Full system access, admin control panel          |
-| `support`     | D2 support team                    | Customer support, org emulation, ticket handling |
-| `customer`    | Our direct customers (SMBs)        | Primary tenants — workflows, invoicing, clients  |
-| `third_party` | Our customer's customers/suppliers | Limited scope — communication, shared data       |
-| `affiliate`   | Referral partners                  | Referral tracking, commission dashboards         |
-
-Org type is a required custom field on the `organization` table (via `schema.additionalFields`), validated in `beforeCreateOrganization` hook.
-
-**When a Customer registers one of their own customers/suppliers**, a new `third_party` org is created in the system with its own members, roles, and data. The _business relationship_ between the two orgs is tracked in a domain-level table (e.g., `org_relationships` in the CRM/workflow service), NOT in the auth layer. Auth sees them as two independent orgs.
-
-**Roles** (per-membership, hierarchical by convention):
-
-| Role      | Permissions                                                             |
-| --------- | ----------------------------------------------------------------------- |
-| `auditor` | Read-only across all org data. Used for guests and emulation mode.      |
-| `agent`   | Read + limited write (create/update, no delete, no org settings)        |
-| `officer` | Full read/write, billing access, but cannot modify owner-level settings |
-| `owner`   | Everything — org settings, member management, invitations, billing      |
-
-Roles are defined via BetterAuth's `createAccessControl` with manual permission composition (no built-in hierarchy — spread agent perms into officer, officer into owner). Same role set applies across all org types; the org type determines which _features_ are available, not which roles exist.
-
-**Membership model:**
-
-- A person signs up → exists as a user with zero memberships
-- Must join (via invite) or create an org to access the app
-- Can belong to multiple orgs simultaneously (e.g., own a Customer org + be agent in another)
-- Can switch active org at any time without re-authenticating
-- Roles are per-membership (can be owner of one org and agent in another)
-
-**Session extensions** (custom fields on BetterAuth's session table):
-
-| Field                      | Type          | Purpose                                               |
-| -------------------------- | ------------- | ----------------------------------------------------- |
-| `activeOrganizationType`   | string (null) | Cached org type for the active org (avoids DB lookup) |
-| `activeOrganizationRole`   | string (null) | User's role in the active org (avoids member lookup)  |
-| `emulatedOrganizationId`   | string (null) | Org being viewed during support/admin emulation       |
-| `emulatedOrganizationType` | string (null) | Type of the emulated org (for UI sharding)            |
-
-BetterAuth's org plugin adds `activeOrganizationId` natively. Our 4 fields extend it.
-
-**Org context resolution** (used by SvelteKit layouts, Hono middleware, JWT payload):
-
-```
-isEmulating = session.emulatedOrganizationId != null
-effectiveOrgId   = isEmulating ? emulatedOrganizationId : activeOrganizationId
-effectiveOrgType = isEmulating ? emulatedOrganizationType : activeOrganizationType
-effectiveRole    = isEmulating ? "auditor" (forced read-only) : activeOrganizationRole
-```
-
-**Org emulation** (for support/admin — decided 2026-02-07):
-
-- Only users whose `activeOrganizationType` is `support` or `admin` can emulate
-- Sets `emulatedOrganizationId` + `emulatedOrganizationType` on the session
-- Forces `auditor` role during emulation — **read-only, no exceptions**
-- UI renders the target org's interface with a "Viewing as [Org Name]" banner
-- Ending emulation nulls both fields — instant return to real org context
-- All emulation actions are audit-logged (who emulated which org, when, duration)
-
-**User impersonation** (for escalated support — BetterAuth `impersonation` plugin):
-
-- Separate from org emulation — this is acting _as a specific user_
-- Used when support needs to reproduce a user-specific issue
-- **Consent model (USER-level):** A _user_ grants permission for staff to impersonate _them_ — not org-level
-  - Support staff (agent+) need the target user's explicit consent to impersonate
-  - Admin org members bypass consent entirely (emergency access)
-  - Consent is recorded, time-limited, and revocable
-- BetterAuth handles session management (creates impersonation session, "stop impersonating" returns to real session)
-- More powerful and more dangerous than emulation — use sparingly
-
-**Two-mode access model** (decided 2026-02-07):
-
-| Mode                   | Who                     | What                    | Consent Required?  | Destructive? |
-| ---------------------- | ----------------------- | ----------------------- | ------------------ | ------------ |
-| **Org emulation**      | support, admin          | View another org's data | No (read-only)     | No           |
-| **User impersonation** | support (agent+), admin | Act as a specific user  | Yes (user-level)\* | Yes          |
-
-\*Admin bypasses consent requirement.
-
-**Emulation consent table** (`emulation_consent` in auth schema):
-
-```
-emulation_consent
-  id              UUID PK
-  userId          FK → user (the user granting consent)
-  grantedToOrgId  FK → organization (the support/admin org receiving permission)
-  expiresAt       timestamp (time-limited consent)
-  revokedAt       timestamp (nullable — null = active)
-  createdAt       timestamp
-```
-
-- Consent is per-user, per-org (e.g., user X grants org "Support Team" impersonation rights)
-- Admin org bypasses this table entirely — they have implicit consent
-- Revoking consent immediately blocks future impersonation (but doesn't kill active sessions — see BetterAuth's `impersonation` plugin for session lifecycle)
-
-**Contact architecture** (decided 2026-02-07):
-
-Auth stores **no contact data** (names, phones, addresses, etc.). Contact info lives in the Geo service's `Contact` entity, which is a shared cross-service resource.
-
-- **For users:** Geo's `Contact` references the user directly (`relatedEntityId = userId`). No auth-side table needed.
-- **For orgs:** Auth has a thin `org_contact` junction table that provides the address-book structure (labels, primary flag). Geo's `Contact` records reference `org_contact.id` for the foreign key relationship.
-
-```
-org_contact (auth schema)
-  id          UUID PK
-  orgId       FK → organization
-  label       string ("primary", "billing", "shipping", "warehouse", etc.)
-  isPrimary   boolean (at most one per org)
-  createdAt   timestamp
-  updatedAt   timestamp
-```
-
-Geo's Contact then stores the actual address/phone/email data:
-
-```
-contact (geo schema, existing entity)
-  hashId              content-addressable PK
-  relatedEntityId     string (userId for personal, org_contact.id for org addresses)
-  relatedEntityType   string ("user" | "org_contact")
-  ...address fields, phone, email, etc.
-```
-
-This keeps auth thin (identity + org structure only) while letting Geo own all geographic/contact data. Deleting an org_contact row cascades logically to its Geo Contact records.
-
-**Sign-in audit** (decided 2026-02-07):
-
-Flat event log for authentication attempts. Not a session table — captures individual sign-in attempts for security auditing.
-
-```
-sign_in_event (auth schema)
-  id          UUID PK
-  userId      FK → user (nullable — null for failed attempts with unknown user)
-  successful  boolean
-  ipAddress   string (encrypted at rest — PII)
-  userAgent   string
-  whoIsId     string (nullable — FK to Geo's WhoIs for location context at time of sign-in)
-  createdAt   timestamp
-```
-
-- Leverages existing `FindWhoIs` handler from `@d2/geo-client` to resolve IP → location at sign-in time
-- `whoIsId` is content-addressable (same IP+month+fingerprint = same hash), so location data is deduplicated
-- Failed attempts with a valid email but wrong password still log with the userId
-- Truly unknown attempts (invalid email) log with `userId = null`
-- Used for: suspicious login detection, account lockout decisions, compliance audit trails
-
-#### Auth Domain Aggregates & Entities (decided 2026-02-07)
-
-Data that leaves the auth service (except raw BetterAuth proxy to SvelteKit) is always represented as domain types, never BetterAuth internal types. BetterAuth is an infra detail — the domain model is the public contract.
-
-**Database conventions:**
-
-- `OrgType` and `Role` are stored as **plain text** in PG (NOT PG enums — avoids migration pain)
-- TypeScript types use string unions for compile-time safety
-- All tables in the `auth` PG schema (`search_path=auth`)
-
-##### User Aggregate (root: `User`)
-
-The User aggregate owns all identity-related data. BetterAuth manages the core `user` and `account` tables; our domain layer defines the canonical types and auth-infra maps between them.
-
-```
-User (BetterAuth-managed table: user)
-  id                string       PK
-  email             string       unique
-  name              string
-  emailVerified     boolean
-  image             string?
-  createdAt         Date
-  updatedAt         Date
-  ├── accounts            Account[]            1:N  (linked auth providers)
-  ├── sessions            Session[]            1:N  (active sessions)
-  ├── memberships         Member[]             1:N  (orgs this user belongs to — read navigation)
-  ├── invitations         Invitation[]         1:N  (pending invites for this user's email — read navigation)
-  ├── signInEvents        SignInEvent[]         1:N  (auth attempt audit log)
-  └── emulationConsents   EmulationConsent[]   1:N  (impersonation grants given by this user)
-```
-
-**Child entities:**
-
-```
-Account (BetterAuth-managed table: account)
-  id                      string    PK
-  userId                  string    FK → User (cascade delete)
-  providerId              string    "credential" | "google" | "github" | etc.
-  accountId               string    provider-specific user identifier
-  accessToken             string?   OAuth access token
-  refreshToken            string?   OAuth refresh token
-  idToken                 string?   OAuth ID token
-  accessTokenExpiresAt    Date?
-  refreshTokenExpiresAt   Date?
-  scope                   string?   OAuth scopes granted
-  password                string?   hashed (credential provider only)
-  createdAt               Date
-  updatedAt               Date
-
-Session (BetterAuth-managed table: session)
-  id                          string    PK
-  userId                      string    FK → User (cascade delete)
-  token                       string    opaque session token
-  ipAddress                   string?
-  userAgent                   string?
-  expiresAt                   Date
-  createdAt                   Date
-  updatedAt                   Date
-  activeOrganizationId        string?   (BetterAuth org plugin — native)
-  activeOrganizationType      string?   (custom extension)
-  activeOrganizationRole      string?   (custom extension)
-  emulatedOrganizationId      string?   (custom extension)
-  emulatedOrganizationType    string?   (custom extension)
-
-SignInEvent (custom table: sign_in_event)
-  id          string    PK (UUID v7)
-  userId      string?   FK → User (nullable — null for unknown-user attempts)
-  successful  boolean
-  ipAddress   string    (encrypted at rest — PII)
-  userAgent   string
-  whoIsId     string?   (nullable — references Geo WhoIs for location context)
-  createdAt   Date
-
-EmulationConsent (custom table: emulation_consent)
-  id              string    PK (UUID v7)
-  userId          string    FK → User (the user granting consent)
-  grantedToOrgId  string    FK → Organization (the support/admin org)
-  expiresAt       Date      (time-limited)
-  revokedAt       Date?     (nullable — null = active)
-  createdAt       Date
-```
-
-##### Organization Aggregate (root: `Organization`)
-
-The Organization aggregate owns org structure — members, invitations, and address book entries. Organization is the write owner for Member and Invitation; User has read-only navigation to the same entities.
-
-```
-Organization (BetterAuth-managed table: organization)
-  id          string    PK
-  name        string
-  slug        string    unique
-  type        OrgType   (custom field via schema.additionalFields — text in DB)
-  logo        string?
-  metadata    string?
-  createdAt   Date
-  ├── members      Member[]      1:N  (people in this org — write owner)
-  ├── invitations  Invitation[]  1:N  (invites sent by this org — write owner)
-  └── contacts     OrgContact[]  1:N  (address book entries → Geo Contact)
-```
-
-**Child entities:**
-
-```
-Member (BetterAuth-managed table: member)
-  id              string    PK
-  userId          string    FK → User
-  organizationId  string    FK → Organization (cascade delete)
-  role            Role      text in DB
-  createdAt       Date
-
-Invitation (BetterAuth-managed table: invitation)
-  id              string    PK
-  email           string    (target user's email)
-  organizationId  string    FK → Organization (cascade delete)
-  role            Role      text in DB (role to assign on acceptance)
-  inviterId       string    FK → User (who sent the invite)
-  status          string    "pending" | "accepted" | "rejected" | "expired"
-  expiresAt       Date
-  createdAt       Date
-
-OrgContact (custom table: org_contact)
-  id          string    PK (UUID v7)
-  orgId       string    FK → Organization (cascade delete)
-  label       string    "primary" | "billing" | "shipping" | "warehouse" | etc.
-  isPrimary   boolean   (at most one per org)
-  createdAt   Date
-  updatedAt   Date
-```
-
-##### Value Objects
-
-```
-OrgType = "admin" | "support" | "customer" | "third_party" | "affiliate"
-  Stored as text in DB. Determines UI shell, capabilities, permission scope.
-
-Role = "auditor" | "agent" | "officer" | "owner"
-  Stored as text in DB. Per-membership, composed via createAccessControl.
-
-SessionContext (computed, not persisted)
-  effectiveOrgId      string?     resolved from session (emulated or active)
-  effectiveOrgType    OrgType?    resolved from session
-  effectiveRole       Role?       forced to "auditor" during emulation
-  isEmulating         boolean     true if emulatedOrganizationId is set
-```
-
-##### Bidirectional Relationships
-
-`Member` and `Invitation` appear in both aggregates. The **Organization aggregate** is the write owner (add/remove/update operations go through the org). The **User aggregate** has read-only navigation for "which orgs am I in?" and "what invitations do I have?".
-
-| Entity       | Write Owner  | Read Navigation | Join Key                                  |
-| ------------ | ------------ | --------------- | ----------------------------------------- |
-| `Member`     | Organization | User            | `member.userId` ↔ `member.organizationId` |
-| `Invitation` | Organization | User            | `invitation.email` ↔ `user.email`         |
-
-##### BetterAuth-Managed vs Custom Tables
-
-| Table               | Managed By   | Notes                                                 |
-| ------------------- | ------------ | ----------------------------------------------------- |
-| `user`              | BetterAuth   | Core; we add no custom fields                         |
-| `account`           | BetterAuth   | Core; 1:N per user (multi-provider)                   |
-| `session`           | BetterAuth   | Core + org plugin + 4 custom extension fields         |
-| `verification`      | BetterAuth   | Email verification tokens (infra only, not in domain) |
-| `jwks`              | BetterAuth   | JWT key pairs (infra only, not in domain)             |
-| `organization`      | BetterAuth   | Org plugin + custom `type` field                      |
-| `member`            | BetterAuth   | Org plugin; role stored as text                       |
-| `invitation`        | BetterAuth   | Org plugin                                            |
-| `org_contact`       | Us (Drizzle) | Custom — address book junction → Geo Contact          |
-| `sign_in_event`     | Us (Drizzle) | Custom — auth attempt audit log                       |
-| `emulation_consent` | Us (Drizzle) | Custom — user-level impersonation consent             |
-
-`verification` and `jwks` are pure BetterAuth infrastructure — they never leave auth-infra and are not represented in the domain model.
-
-##### Business Rules (decided 2026-02-07)
-
-**Org creation authorization:**
-
-| Org Type      | Who Can Create                | How                                             |
-| ------------- | ----------------------------- | ----------------------------------------------- |
-| `customer`    | Any user (self-service)       | Directly during onboarding or later via UI      |
-| `third_party` | `customer` users (indirectly) | Via product workflow (registering their client) |
-| `support`     | `admin` only                  | Admin control panel                             |
-| `admin`       | `admin` only                  | Admin control panel                             |
-| `affiliate`   | `admin` only                  | Admin control panel                             |
-
-Only `customer` orgs can be created with "a couple clicks." `third_party` orgs are created as a side effect of customer workflows, not directly by the user.
-
-**Onboarding flow:**
-
-1. User signs up (email/password or Google/LinkedIn)
-2. Email verification required
-3. Post-verification screen: accept pending invitation(s) OR create a `customer` org
-4. No app access until at least one org membership exists
-5. SvelteKit redirects unauthenticated users to `(auth)/`, no-org users to `(onboarding)/`
-
-**Member removal cascading:**
-
-- When a user is removed from an org, all their sessions with that org as `activeOrganizationId` are **immediately terminated**
-- SignalR gateway signs them out in real-time (WebSocket disconnect)
-- If removed from their only org, user returns to onboarding state (join/create)
-- **Last-owner protection**: The last `owner` is blocked from leaving or downgrading. Two options presented:
-  1. **Transfer ownership** — select another member → email confirmation → ownership transferred → original owner can then leave
-  2. **Delete the org** — email confirmation required → org and all associated data deleted
-
-**Account linking constraints:**
-
-- One account per provider per user (no duplicate Google accounts, etc.)
-- BetterAuth's `accountLinking.trustedProviders` controls which OAuth providers auto-link on matching email
-
-**Sign-in event retention:**
-
-- 90 days (matches WhoIs retention pattern)
-- Purge via scheduled job or Drizzle query
-
-**Invitation lifecycle:**
-
-- Invitations expire after **7 days**
-- Org owners can revoke pending invitations
-- Users can **accept** or **reject** invitations
-- Expired invitations are cleaned up (scheduled job or on-read purge)
-
-**No-org state:**
-
-- Freshly signed-up users have no `activeOrganizationId`
-- SvelteKit redirects to onboarding flow: accept pending invites or create an org
-- No access to any app features until at least one org membership exists
-
-**JWT payload** (includes org context for .NET gateway and services):
-
-```json
-{
-  "sub": "user-id",
-  "email": "user@example.com",
-  "name": "Display Name",
-  "activeOrganizationId": "org-123",
-  "activeOrganizationType": "customer",
-  "activeOrganizationRole": "officer",
-  "emulatedOrganizationId": null,
-  "isEmulating": false,
-  "iat": 1234567890,
-  "exp": 1234568790
-}
-```
-
-**Important**: When a user switches orgs or starts/stops emulation, the client must request a new JWT. The old JWT remains valid until its 15-minute expiry but carries stale org context. `@d2/auth-bff-client` handles this: `setActiveOrg()` → `refreshJwt()` atomically.
-
-**BetterAuth organization plugin — gap analysis (75% fit):**
-
-| Requirement                     | OOTB? | Gap                                    | Effort |
-| ------------------------------- | ----- | -------------------------------------- | ------ |
-| Users belong to 0+ orgs         | Yes   | None                                   | —      |
-| Sign up, join/create orgs later | Yes   | None                                   | —      |
-| 5 organization types            | No    | Add custom field + validation hook     | Low    |
-| Custom roles (4 levels)         | Yes   | No hierarchy syntax, compose manually  | Low    |
-| Org-specific session switching  | Yes   | Known bugs (#4708, #3233)              | Low    |
-| Org type in session             | No    | Custom session fields                  | Low    |
-| Org emulation                   | No    | Custom session fields + middleware     | Medium |
-| User impersonation              | Yes   | Built-in `impersonation` plugin        | —      |
-| Org context in JWT              | No    | `definePayload` needs session lookup   | Medium |
-| Invitation per org type         | No    | Branch logic in hooks                  | Low    |
-| Admin cross-org visibility      | No    | Query DB directly                      | Medium |
-| Member list privacy per role    | No    | Security issue #6038, need hook filter | Medium |
-
-#### Auth Service — Configuration
-
-- **Framework**: Hono + BetterAuth v1.4.x (pin exact version)
-- **Database adapter**: Drizzle adapter (`drizzleAdapter(db, { provider: "pg", schema })`) — see ADR-009
-  - Single ORM (Drizzle) for all tables: BetterAuth's 8 managed tables + 3 custom tables
-  - `casing: "snake_case"` — matches our PG conventions
-  - Drizzle Kit for migrations (`drizzle-kit generate` + `drizzle-kit migrate`)
-  - BetterAuth manages its own connection pool; auth-api provides the `Pool` at startup
-- **Secondary storage**: `SecondaryStorage` interface wrapping `@d2/interfaces` distributed cache handlers
-  - Interface is minimal: `get(key): string | null`, `set(key, value, ttl?)`, `delete(key)`
-  - TTL is in **seconds** (not milliseconds)
-- **Plugins**:
-  - `bearer()` — session token via Authorization header
-  - `jwt({ jwks: { keyPairConfig: { alg: "RS256", modulusLength: 2048 } } })` — RS256 JWTs for .NET services
-  - `organization({ ... })` — multi-org membership, roles, invitations, `activeOrganizationId` on session
-  - `access` — RBAC with `createAccessControl` for custom role-permission definitions
-  - `impersonation()` — user-level impersonation for escalated support (audit-logged)
-  - **Important**: Config value is `"RS256"` (standard JOSE name). BetterAuth docs may show `"RSA256"` (typo). The alg is passed directly to jose's `generateKeyPair()` which requires `"RS256"`.
-- **JWT**: `expirationTime: "15m"`, custom `definePayload` for D2 claims (sub, email, name, org context, role). Must include `activeOrganizationId`, `activeOrganizationType`, `activeOrganizationRole`, `emulatedOrganizationId`, and `isEmulating`. Client must re-fetch JWT after org switch or emulation start/stop.
-- **Cookie cache**: `{ enabled: true, maxAge: 300, strategy: "compact" }` (5min, base64url + HMAC-SHA256)
-- **Session**: `expiresIn: 7 days`, `updateAge: 1 day`, `storeSessionInDatabase: true` (dual-write Redis + PG)
-- **Key rotation**: `rotationInterval: 30 days`, `gracePeriod: 30 days`
-- **Session management**: list, revoke individual, revoke others, revoke all (OOTB from BetterAuth)
-- **Hono integration**: Route-based mount `app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw))`
-- **CORS**: Must be registered BEFORE BetterAuth routes; allow SvelteKit origin with credentials
-
-#### Auth Service — Known Gotchas (from research 2026-02-07)
-
-**HIGH — Session + Secondary Storage bugs (monitor these issues):**
-
-| Issue                                                           | Description                                                                    | Mitigation                                                            |
-| --------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| [#6987](https://github.com/better-auth/better-auth/issues/6987) | `updateSession` doesn't sync back to Redis (stale data)                        | Monitor; may need to manually invalidate Redis on profile update      |
-| [#6993](https://github.com/better-auth/better-auth/issues/6993) | Session in Redis missing `id` field with `storeSessionInDatabase: true`        | Test early; may be fixed in newer versions                            |
-| [#5144](https://github.com/better-auth/better-auth/issues/5144) | `revokeSession` removes from Redis but not PG with `preserveSessionInDatabase` | Don't use `preserveSessionInDatabase` initially; test revocation flow |
-| [#4203](https://github.com/better-auth/better-auth/issues/4203) | Redis TTL expiry doesn't fall back to DB (premature invalidation)              | Set Redis TTL >= session `expiresIn` to avoid premature expiry        |
-| [#3819](https://github.com/better-auth/better-auth/issues/3819) | `active-sessions` list not cleaned on sign-out                                 | Test `listSessions()` after sign-out; may need workaround             |
-
-**MODERATE — Schema/casing:**
-
-| Issue                                                           | Description                                                  | Mitigation                                                    |
-| --------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------- |
-| [#5649](https://github.com/better-auth/better-auth/issues/5649) | SSO/OIDC plugins bypass `casing: "snake_case"` field mapping | We don't use SSO/OIDC initially; test if added later          |
-| [#3774](https://github.com/better-auth/better-auth/issues/3774) | `modelName` hardcoded in some internal paths                 | Test custom table names with our plugin combination           |
-| [#3954](https://github.com/better-auth/better-auth/issues/3954) | JWKS table queried on every `getSession()` (not cached)      | Performance concern; monitor and potentially cache externally |
-
-**MODERATE — Organization plugin:**
-
-| Issue                                                           | Description                                                   | Mitigation                                         |
-| --------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------- |
-| [#4708](https://github.com/better-auth/better-auth/issues/4708) | `set-active` endpoint sometimes has null session context      | Use `getSessionFromCtx` workaround                 |
-| [#6038](https://github.com/better-auth/better-auth/issues/6038) | `/get-full-organization` exposes member list to all roles     | Hook-based filter or endpoint wrapper              |
-| [#6081](https://github.com/better-auth/better-auth/issues/6081) | `hasPermission` silently returns false for unknown roles      | Fix in progress (PR #6097); add defensive logging  |
-| [#2100](https://github.com/better-auth/better-auth/issues/2100) | `updateMemberRole` fails on members with existing multi-roles | Avoid multi-role per member initially; monitor fix |
-
-**LOW — Design considerations:**
-
-- `customSession` plugin data is NOT cached in Redis or cookie cache (function runs every `getSession()`)
-- BetterAuth's built-in rate limiter is per-path only — we use our own `@d2/ratelimit` instead
-- Cookie cache invalidation is version-based (`cookieCache.version`), not per-user
-- No built-in role hierarchy — must compose permissions manually (spread pattern)
-- `definePayload` receives user, not session — need session lookup for org context in JWT
-
-#### SvelteKit Auth Integration
-
-- Auth proxy in `hooks.server.ts` (`/api/auth/*` → Auth Service)
-- Session population hook (forward cookie to Auth Service for validation, or decode cookie cache locally)
-- `createAuthClient` setup (no `baseURL` needed — same-origin proxy)
-- Client-side JWT manager (part of `@d2/auth-bff-client` — obtain, store in memory, auto-refresh)
-- CORS configuration for direct gateway access (Pattern C, ADR-005)
-
-**UI sharding by org type** (decided 2026-02-07):
-
-SvelteKit routes are grouped by org type. The `(app)/+layout.server.ts` resolves org context from the session and renders the appropriate layout group:
-
-```
-clients/web/src/routes/
-├── (auth)/                    # Unauthenticated (login, signup)
-├── (onboarding)/              # Authenticated, no active org (join/create)
-├── (app)/                     # Authenticated, org-scoped
-│   ├── +layout.server.ts      # Resolves orgType → renders correct layout
-│   ├── (customer)/            # Customer org: workflows, invoicing, clients
-│   ├── (third-party)/         # Third-party org: communication, limited data
-│   ├── (affiliate)/           # Affiliate: referral tracking, commissions
-│   ├── (support)/             # Support: tickets, customer lookup, org emulation
-│   └── (admin)/               # Admin: system control panel, user/org management
-```
-
-- Layout server load reads `effectiveOrgType` from session (resolved via `resolveOrgContext()`)
-- Redirects to `(onboarding)` if no active org
-- Returns 403 if accessing a route for a different org type
-- During emulation: renders the target org's UI with "Viewing as [Org Name]" banner
-
-#### .NET Gateway JWT Validation
-
-- `Auth.Client` at `backends/dotnet/services/Auth/Auth.Client/`
-- `AddJwtBearer()` with JWKS from Auth Service
-- RS256 validation (native `Microsoft.IdentityModel.Tokens`)
-- CORS middleware for SvelteKit origin
-- JWKS caching with periodic refresh
-
-### Phase 3: Auth Features (Future)
-
-1. **Session management UI** (list sessions, revoke individual, revoke all others)
-2. **Org emulation** (support/admin can view any org's data in read-only mode)
-3. **User impersonation** (escalated support — act as a specific user, audit-logged, time-limited)
-4. **Admin control panel** (cross-org visibility, user/org management, system diagnostics)
-5. **Admin alerting** (rate limit threshold alerts via Comms service)
-6. **Comms expansion** — In-app notifications, push via SignalR, conversational messaging (Comms Phases 2-4)
-
----
-
-## Scheduled Jobs (Dkron)
-
-**Infrastructure**: Dkron v4.0.9 runs as a persistent Aspire container (dashboard: `:8888`, `--node-name=dkron`). `@d2/dkron-mgr` reconciles job definitions against Dkron REST API. Jobs call REST Gateway HTTP endpoints with service key auth, Gateway forwards via gRPC with API key auth. Handlers acquire Redis `SET NX PX` distributed locks before executing batch deletes.
-
-| Job                                 | Owner | Schedule      | Retention | Status | Notes                                                                                           |
-| ----------------------------------- | ----- | ------------- | --------- | ------ | ----------------------------------------------------------------------------------------------- |
-| **Purge expired sessions (PG)**     | Auth  | Daily 02:30   | 0 days    | ✅     | `auth-purge-sessions` — DELETE `session` WHERE `expires_at < NOW()`                             |
-| **Purge sign-in events**            | Auth  | Daily 02:45   | 90 days   | ✅     | `auth-purge-sign-in-events` — batch delete via `batchDelete()`                                  |
-| **Cleanup expired invitations**     | Auth  | Daily 03:00   | 7 days    | ✅     | `auth-cleanup-invitations` — DELETE expired invitations past retention grace period              |
-| **Cleanup emulation consents**      | Auth  | Daily 03:15   | 0 days    | ✅     | `auth-cleanup-emulation-consents` — DELETE WHERE expired OR revoked                             |
-| **Purge stale WhoIs**               | Geo   | Daily 02:00   | 180 days  | ✅     | `geo-purge-stale-whois` — BatchDelete by cutoff year/month. Runs BEFORE location cleanup        |
-| **Cleanup orphaned locations**      | Geo   | Daily 02:15   | N/A       | ✅     | `geo-cleanup-orphaned-locations` — DELETE locations with zero contact + zero WhoIs references    |
-| **Purge soft-deleted messages**     | Comms | Daily 03:30   | 90 days   | ✅     | `comms-purge-deleted-messages` — batch delete messages past retention                           |
-| **Purge delivery history**          | Comms | Daily 03:45   | 365 days  | ✅     | `comms-purge-delivery-history` — batch delete old delivery_request + delivery_attempt rows      |
-
-**Already handled (no Dkron job needed):**
+**Key components:**
+
+| Component        | Role                                                                             |
+| ---------------- | -------------------------------------------------------------------------------- |
+| Dkron 4.0.9      | Persistent Aspire container, dashboard at `:8888`, single-node Raft              |
+| `@d2/dkron-mgr`  | Node.js reconciler — declarative job definitions → Dkron REST API                |
+| REST Gateway     | Receives Dkron HTTP callbacks, forwards via gRPC with service key auth           |
+| Service handlers | App-layer CQRS handlers with Redis distributed locks and batch delete operations |
+
+**Job execution flow:**
+
+1. Dkron fires HTTP POST to REST Gateway endpoint
+2. Gateway validates `X-Api-Key` header (service key auth)
+3. Gateway calls target service via gRPC (API key passed via `AddCallCredentials`)
+4. Service handler acquires Redis distributed lock (`SET NX PX`) to prevent concurrent execution
+5. Handler performs batch deletes in configurable chunk sizes
+6. Returns result (deleted count, lock status)
+
+**`@d2/dkron-mgr` reconciler:**
+
+- Declarative job definitions (cron schedule, endpoint URL, metadata)
+- Drift detection — compares desired state against Dkron REST API
+- Orphan cleanup — removes jobs not in the desired state
+- Idempotent reconciliation loop — safe to run repeatedly
+- 64 tests (unit + integration + E2E)
+
+**`handleJobRpc()` utility**: Shared helper in `@d2/service-defaults` that wraps a gRPC job handler with distributed lock acquisition, timeout handling, and structured logging.
+
+**Lock pattern**: Each job handler acquires a Redis lock with configurable TTL via Options pattern. Returns early if lock held by another instance. Lock is released on completion.
+
+**Env vars**: `DKRON_MGR__DKRON_URL`, `DKRON_MGR__GATEWAY_URL`, `DKRON_MGR__SERVICE_KEY` — all in `.env.local`.
+
+**Job schedule (8 daily jobs, staggered 15 min apart, 2:00–3:45 AM UTC):**
+
+| Job                                 | Owner | Schedule    | Retention | Notes                                                                                        |
+| ----------------------------------- | ----- | ----------- | --------- | -------------------------------------------------------------------------------------------- |
+| **Purge stale WhoIs**               | Geo   | Daily 02:00 | 180 days  | `geo-purge-stale-whois` — BatchDelete by cutoff year/month. Runs BEFORE location cleanup     |
+| **Cleanup orphaned locations**      | Geo   | Daily 02:15 | N/A       | `geo-cleanup-orphaned-locations` — DELETE locations with zero contact + zero WhoIs references |
+| **Purge expired sessions (PG)**     | Auth  | Daily 02:30 | 0 days    | `auth-purge-sessions` — DELETE `session` WHERE `expires_at < NOW()`                          |
+| **Purge sign-in events**            | Auth  | Daily 02:45 | 90 days   | `auth-purge-sign-in-events` — batch delete via `batchDelete()`                               |
+| **Cleanup expired invitations**     | Auth  | Daily 03:00 | 7 days    | `auth-cleanup-invitations` — DELETE expired invitations past retention grace period           |
+| **Cleanup emulation consents**      | Auth  | Daily 03:15 | 0 days    | `auth-cleanup-emulation-consents` — DELETE WHERE expired OR revoked                          |
+| **Purge soft-deleted messages**     | Comms | Daily 03:30 | 90 days   | `comms-purge-deleted-messages` — batch delete messages past retention                        |
+| **Purge delivery history**          | Comms | Daily 03:45 | 365 days  | `comms-purge-delivery-history` — batch delete old delivery_request + delivery_attempt rows   |
+
+**Items already handled by existing TTL/eviction (no Dkron job needed):**
 
 - Idempotency keys: Redis TTL (24h)
 - Rate limit counters/blocks: Redis TTL
@@ -1276,9 +892,259 @@ clients/web/src/routes/
 - JWKS key rotation: BetterAuth-managed
 - BetterAuth verification tokens: Lazy bulk-delete on any `findVerificationValue` call (since v1.2.0)
 
+**Rationale:**
+
+- Dkron is a lightweight, Raft-based scheduler that fits the Aspire container model
+- Reconciler pattern ensures job definitions are version-controlled and drift-resistant
+- HTTP→gRPC chain reuses existing gateway infrastructure and auth patterns
+- Redis distributed locks prevent concurrent job execution across instances
+- Batch delete pattern avoids long-running transactions
+
 ---
 
-## Dependency Update Policy
+### ADR-014: Comms Delivery Engine
+
+**Status**: Implemented (2026-02, Phase 1)
+
+**Context**: D²-WORX needs a communications service for transactional notifications (email verification, password reset, invitation emails) and eventually conversational messaging (threads, chat, forums). The old DeCAF system used PG polling with Quartz cron for retries — slow and fragile.
+
+**Decision**: Standalone Node.js delivery engine (`@d2/comms-api`) consuming from RabbitMQ, with a thin publisher client (`@d2/comms-client`) for senders.
+
+**Universal message shape:**
+
+All notifications use a single `NotifyInput` shape — no per-event templates, no event-specific sub-handlers:
+
+| Field                | Type                     | Required | Description                                       |
+| -------------------- | ------------------------ | -------- | ------------------------------------------------- |
+| `recipientContactId` | `string` (UUID)          | Yes      | Geo contact ID — the ONLY recipient identifier    |
+| `title`              | `string` (max 255)       | Yes      | Email subject, SMS prefix, push title             |
+| `content`            | `string` (max 50,000)    | Yes      | Markdown body — rendered to HTML for email        |
+| `plaintext`          | `string` (max 50,000)    | Yes      | Plain text — SMS body, email fallback             |
+| `sensitive`          | `boolean`                | No       | Default `false`. `true` = email only              |
+| `urgency`            | `"normal"` \| `"urgent"` | No       | Default `"normal"`. `"urgent"` bypasses prefs     |
+| `correlationId`      | `string` (max 36)        | Yes      | Idempotency key for deduplication                 |
+| `senderService`      | `string` (max 50)        | Yes      | Source service identifier (e.g., `"auth"`)        |
+
+**Channel resolution rules:**
+
+1. `sensitive: true` → email ONLY (tokens/PII must not leak via SMS)
+2. `urgency: "urgent"` → all channels, bypasses preferences
+3. `urgency: "normal"` → respects per-contact channel preferences
+
+**Providers:**
+
+| Channel | Provider   | Notes                                                     |
+| ------- | ---------- | --------------------------------------------------------- |
+| Email   | Resend     | Markdown → HTML via `marked` + `isomorphic-dompurify`     |
+| SMS     | Twilio     | Plain text content, trial mode until 10DLC registration   |
+| Push    | SignalR GW | gRPC client → SignalR gateway (future, Phase 2)           |
+
+**RabbitMQ topology:**
+
+- `comms.notifications` fanout exchange — all senders publish here
+- DLX-based retry: 5 tier queues with escalating TTLs (5s → 10s → 30s → 60s → 5min)
+- Max 10 attempts, then drop with structured error log
+- Always ACK original message — retry via re-publish to tier queues
+
+**Key simplifications over DeCAF:**
+
+- No per-event sub-handlers — single Deliver handler handles everything
+- No event registry — consumer dispatches directly to Deliver
+- No template wrappers — single hardcoded HTML email template
+- No quiet hours — channel resolution uses only `sensitive` and `urgency`
+- No userId resolution — contactId only (senders resolve userId → contactId before publishing)
+- Two urgency levels only: `"normal"` and `"urgent"`
+
+**Rationale:**
+
+- Universal message shape drastically simplifies the sender API (one handler, one shape)
+- RabbitMQ DLX retry replaces fragile PG polling from DeCAF
+- contactId-only resolution decouples Comms from Auth (no user lookups)
+- Fire-and-forget from sender's perspective — Comms handles delivery lifecycle
+
+See [`backends/node/services/comms/COMMS.md`](backends/node/services/comms/COMMS.md) for full details.
+
+---
+
+### ADR-015: SvelteKit Strategy
+
+**Status**: Decided (2026-03-01)
+
+**Context**: Building the D²-WORX web client on SvelteKit 5. Needed to analyze the old DeCAF frontend, identify what to keep/discard, and select libraries for the new architecture. Comprehensive strategy report at [`clients/web/SVELTEKIT_STRATEGY.md`](clients/web/SVELTEKIT_STRATEGY.md).
+
+**Decision**: SvelteKit 5 + Svelte 5 with the following stack:
+
+| Concern              | Library / Approach                                                    |
+| -------------------- | --------------------------------------------------------------------- |
+| UI components        | shadcn-svelte (Bits UI underneath) — copy-paste, own the code         |
+| Forms                | Superforms + Formsnap (Zod integration, progressive enhancement)      |
+| Toasts               | svelte-sonner (integrated with shadcn-svelte)                         |
+| Phone input          | intl-tel-input (official Svelte 5 wrapper)                            |
+| Data tables          | shadcn-svelte data table (wraps @tanstack/table-core)                 |
+| Date/time            | Bits UI date components + date-fns                                    |
+| Icons                | Lucide (tree-shakeable, shadcn-svelte default)                        |
+| Font                 | Gabarito (Google Fonts, weight variations for hierarchy)              |
+| Theme                | Dark + Light + System (three-way toggle via mode-watcher)             |
+| Styling              | Tailwind CSS v4.1                                                     |
+| Address autocomplete | Radar — as a **Geo service backend** concern, not a frontend dep      |
+| Real-time            | Browser → .NET SignalR gateway directly (`@microsoft/signalr`)        |
+| Client telemetry     | Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir)     |
+
+**Testing strategy:**
+
+| Layer       | Tool                   | Purpose                              |
+| ----------- | ---------------------- | ------------------------------------ |
+| Component   | vitest-browser-svelte  | Isolated component tests             |
+| E2E         | Playwright             | Full user flow tests                 |
+| A11y        | axe-core               | Accessibility validation             |
+| Performance | Lighthouse CI          | Web Vitals budgets                   |
+
+**Key architectural decisions:**
+
+- **Address autocomplete is a backend concern** — frontend calls a D2 gateway endpoint, gets `LocationDTO`s in D2 format. Provider (Radar) is swappable at the Geo infra layer. NOT a frontend dependency.
+- **Real-time via SignalR direct from browser** (Option A) — SvelteKit stays stateless. Auth via JWT. Connection lifecycle tied to auth state.
+- **Design system sprint first** — build kitchen sink/style guide page, make visual decisions in browser before building real pages.
+
+**Rationale:**
+
+- shadcn-svelte provides maximum control (own the code) while maintaining consistency
+- Superforms eliminates the custom form system complexity from DeCAF
+- Grafana Faro integrates natively with existing LGTM observability stack
+- SignalR direct from browser avoids adding WebSocket complexity to SvelteKit
+
+---
+
+### ADR-016: Environment Variable Architecture
+
+**Status**: Implemented (2026-03)
+
+**Context**: The .NET Aspire AppHost had hardcoded configuration values (ports, URLs, connection strings) scattered across `Program.cs`. Node.js services used `process.env` directly with no validation. SvelteKit couldn't use Node.js `--import` flag for early env loading. Needed a consistent, typed, validated approach to environment configuration across all platforms.
+
+**Decision**: Platform-specific typed config systems with Aspire AppHost as the orchestration layer that injects env vars into all services.
+
+**Three layers:**
+
+| Layer              | Platform | Mechanism                                                             |
+| ------------------ | -------- | --------------------------------------------------------------------- |
+| Aspire AppHost     | .NET     | `Env()`/`EnvInt()` helpers read from `.env.local`, inject into child  |
+| Node.js services   | Node     | `defineConfig()` typed schema with `requiredString`/`defaultInt`/etc. |
+| SvelteKit          | Node     | `loadEnv()` in `instrumentation.server.ts` (earliest server hook)     |
+
+**Aspire AppHost (`ServiceExtensions.cs`):**
+
+- `Env(name)` / `EnvInt(name, default)` static helpers read from process environment
+- AppHost loads `.env.local` via `dotenv.net` at startup
+- All hardcoded values extracted into env vars with sensible defaults
+- Child services receive env vars via `.WithEnvironment()` on resource builders
+- Clean env var names (e.g., `AUTH_HTTP_PORT`, `GATEWAY_GRPC_PORT`) replace Aspire's `services__*` format
+
+**Node.js `defineConfig()` (`@d2/service-defaults`):**
+
+```typescript
+const config = defineConfig("auth-service", {
+  databaseUrl: requiredParsed(parsePostgresUrl, "AUTH_DATABASE_URL"),
+  port: defaultInt(5100, "AUTH_HTTP_PORT", "PORT"),
+  grpcPort: optionalInt("AUTH_GRPC_PORT"),
+});
+```
+
+- Declarative schema — each field is `required`, `default`, or `optional`
+- Multi-key support — first non-empty env var wins (fallback keys)
+- Aggregate error reporting — collects ALL missing required fields, throws ONE error
+- Returns frozen, fully-typed config object
+- `optionalSection()` mirrors .NET's `IOptions<T>` with `Configure<T>(section)` pattern
+
+**SvelteKit `loadEnv()`:**
+
+- SvelteKit can't use `--import` flag (Vite manages the Node.js process)
+- `loadEnv()` in `instrumentation.server.ts` — earliest hook SvelteKit provides
+- Reads `.env.local` and populates `process.env` before any server code runs
+
+**`.env.local` organization:**
+
+- Sections grouped by service: `# === Auth ===`, `# === Geo ===`, etc.
+- `.env.local.example` maintained in parity — same structure, placeholder values
+- Both files committed (`.env.local` is gitignored, `.example` is tracked)
+
+**Rationale:**
+
+- Type-safe config catches missing env vars at startup, not at runtime
+- Single source of truth (`.env.local`) for all services during local development
+- Aspire AppHost orchestrates env var injection — services don't read `.env.local` directly
+- `defineConfig()` provides .NET-style Options pattern for Node.js services
+- Aggregate errors prevent the "fix one, find another" debugging loop
+
+---
+
+### ADR-017: Auth BFF Client Pattern
+
+**Status**: Implemented (2026-03)
+
+**Context**: SvelteKit needs to authenticate users, proxy auth requests to the Auth service, obtain JWTs for gateway calls, and protect routes based on auth state. Running a local BetterAuth instance in SvelteKit would bypass the Auth service's security middleware (rate limiting, fingerprint binding, sign-in event recording).
+
+**Decision**: `@d2/auth-bff-client` — a backend-only HTTP client library for SvelteKit that proxies all auth operations through the Auth service. No BetterAuth dependency in SvelteKit.
+
+**Components:**
+
+| Module             | Purpose                                                                   |
+| ------------------ | ------------------------------------------------------------------------- |
+| `SessionResolver`  | Forwards cookies to Auth service `GET /api/auth/get-session`              |
+| `JwtManager`       | Obtains, caches (in memory), and auto-refreshes RS256 JWTs for gateway   |
+| `AuthProxy`        | Catch-all proxy for `/api/auth/[...path]` → Auth service                 |
+| Route guards       | `requireAuth()`, `requireOrg()`, `redirectIfAuthenticated()` for layouts  |
+
+**Cookie signing behavior:**
+
+BetterAuth cookie values are **signed** (`TOKEN.SIGNATURE`), not raw tokens. The raw token from `auth.api.signInEmail()` works with `Authorization: Bearer` but **cannot** be used as a cookie value — BetterAuth silently returns null for unsigned cookies. This is critical for E2E tests and any code that constructs cookies manually.
+
+**SvelteKit integration points:**
+
+- `hooks.server.ts` — SessionResolver runs on every request, populates `event.locals`
+- `/api/auth/[...path]/+server.ts` — AuthProxy catch-all route
+- `(auth)/+layout.server.ts` — `redirectIfAuthenticated()` for login/signup pages
+- `(onboarding)/+layout.server.ts` — `requireAuth()` for post-signup flows
+- `(app)/+layout.server.ts` — `requireOrg()` for org-scoped pages
+
+**JwtManager lifecycle:**
+
+1. First gateway call triggers JWT obtain via Auth service
+2. JWT cached in memory (never localStorage — XSS risk)
+3. Auto-refresh at ~12 minutes (before 15-minute expiry)
+4. Concurrent requests share the same pending refresh promise (dedup)
+5. `invalidate()` called on sign-out to clear cache
+
+**Type narrowing:**
+
+```typescript
+// After requireAuth() — session and user are guaranteed non-null
+const { session, user } = requireAuth(locals);
+
+// After requireOrg() — org fields are guaranteed non-null
+const { session } = requireOrg(locals);
+session.activeOrganizationId; // string (not string | null)
+```
+
+**Testing:** 34 unit tests + 10 E2E integration tests (real Auth service over HTTP).
+
+**Rationale:**
+
+- All auth requests flow through the Auth service's full security pipeline
+- No BetterAuth dependency in SvelteKit — only HTTP to the Auth service
+- SessionResolver is fail-closed — any error returns null session (safe default)
+- JwtManager handles the complexity of token lifecycle in one place
+- Route guards provide type-safe narrowing at the layout level
+
+See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md) for full API reference.
+
+---
+
+### ADR-018: Dependency Update Policy
+
+**Status**: Decided (2026-02)
+
+**Context**: The project spans .NET, Node.js, Go, and containerized infrastructure. Dependencies can drift silently — stale packages accumulate security vulnerabilities, miss performance improvements, and cause version conflicts when new libraries are added. Needed a repeatable process to keep everything current without disrupting active feature work.
+
+**Decision**: Quarterly dependency update cycle with a strict "update before new feature phase" timing rule.
 
 **Cadence**: Quarterly (March, June, September, December). Bump everything to latest stable.
 
@@ -1288,7 +1154,7 @@ clients/web/src/routes/
 - Node.js/pnpm packages (`pnpm outdated`, all `@d2/*` + third-party)
 - Aspire container image tags (PostgreSQL, Redis, RabbitMQ, Dkron, LGTM stack)
 - Dev tooling (ESLint, Prettier, Vitest, TypeScript, Drizzle Kit, Buf)
-- BetterAuth (pin exact, test thoroughly — check known gotchas list for regressions)
+- BetterAuth (pin exact, test thoroughly — check known gotchas list in AUTH.md for regressions)
 
 **Process**:
 
@@ -1301,6 +1167,14 @@ clients/web/src/routes/
 
 **Timing rule**: Always do the quarterly bump **before** starting a new major feature phase — especially before pulling in new client-side dependencies (e.g., SvelteKit libraries). This keeps the foundation current and avoids version conflicts with freshly installed packages.
 
+**Rationale**:
+
+- Quarterly cadence balances freshness against update fatigue
+- Tiered bumping (shared → services → clients) catches breakage at the source before it propagates
+- "Update before feature phase" rule prevents version conflicts when adding new dependencies
+- Single PR per quarter keeps the git history clean and makes rollback straightforward
+- Exact version pinning (ADR: `.npmrc` `save-exact=true`) means updates are explicit, never implicit
+
 **Update log**:
 
 | Quarter | Date | Notes                                    |
@@ -1309,46 +1183,4 @@ clients/web/src/routes/
 
 ---
 
-## Outstanding Items
-
-### Open — Can Fix Now
-
-| #   | Item                                                | Owner  | Effort | Notes                                                                                                              |
-| --- | --------------------------------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| 32  | Thundering herd protection on popular key expiry    | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                               |
-| 39  | Circuit breaker for non-critical cross-service gRPC | All    | Medium | Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure |
-| 40  | OTel alerting for service outages                   | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                |
-
-### Open Questions
-
-- **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
-
-### Deferred Upgrades (from Q1 2026 audit)
-
-| Item | Priority | Notes |
-| ---- | -------- | ----- |
-| MinIO replacement | Medium | Project archived Feb 2026. Pinned images still work. Evaluate Garage (AGPLv3), RustFS (Apache 2.0), or SeaweedFS (Apache 2.0) as a separate initiative. |
-| EF Core → 10.0.3 | Blocked | `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins EF Core Relational to 10.0.0. Wait for Npgsql EF provider 10.0.x release. |
-| Serilog.Enrichers.Span removal | Low | Deprecated upstream — Serilog now natively supports span data. Low-priority cleanup. |
-| dotenv.net 4.0 | Low | Major version with potential API changes. Only used in .NET Utilities. |
-| Mimir 3.0 | Low | Major architectural change (Kafka buffer, new MQE, Consul/etcd deprecated). Requires deploying second cluster. Dedicated sprint. |
-| RedisInsight 3.x | Low | Dev tool only. Major version with new UI + storage changes. 2.70.1 still works. |
-
-### Blocked — Can Only Fix Later
-
-| #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
-| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
-| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
-| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
-| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
-| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
-| 6   | Validate PII redaction in OTel output       | Running observability stack (Grafana/Loki)    | High     | Manually verify no PII in production log/trace output                                                                                                          |
-| 7   | OTel alerting rules                         | Running AlertManager/Grafana                  | Medium   | Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                                           |
-| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
-| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
-| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
-
----
-
-_Last updated: 2026-03-01_
+_Last updated: 2026-03-04_
