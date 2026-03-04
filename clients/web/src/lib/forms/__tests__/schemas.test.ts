@@ -32,6 +32,17 @@ describe("nameField", () => {
     expect(short.safeParse("a".repeat(10)).success).toBe(true);
     expect(short.safeParse("a".repeat(11)).success).toBe(false);
   });
+
+  it("rejects whitespace-only strings", () => {
+    expect(schema.safeParse("   ").success).toBe(false);
+    expect(schema.safeParse(" \t ").success).toBe(false);
+  });
+
+  it("trims leading/trailing whitespace before validation", () => {
+    const result = schema.safeParse("  Jane  ");
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toBe("Jane");
+  });
 });
 
 describe("emailField", () => {
@@ -54,6 +65,16 @@ describe("emailField", () => {
   it("rejects overly long emails", () => {
     expect(schema.safeParse("a".repeat(250) + "@x.com").success).toBe(false);
   });
+
+  it("rejects whitespace-only strings", () => {
+    expect(schema.safeParse("   ").success).toBe(false);
+  });
+
+  it("trims whitespace before validation", () => {
+    const result = schema.safeParse("  user@example.com  ");
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toBe("user@example.com");
+  });
 });
 
 describe("phoneField", () => {
@@ -71,6 +92,10 @@ describe("phoneField", () => {
 
   it("rejects empty string", () => {
     expect(schema.safeParse("").success).toBe(false);
+  });
+
+  it("rejects whitespace-only strings", () => {
+    expect(schema.safeParse("   ").success).toBe(false);
   });
 });
 
@@ -102,6 +127,11 @@ describe("postcodeField", () => {
     expect(schema.safeParse("").success).toBe(false);
   });
 
+  it("rejects whitespace-only strings", () => {
+    const schema = postcodeField();
+    expect(schema.safeParse("  ").success).toBe(false);
+  });
+
   it("validates US postal codes", () => {
     const schema = postcodeField("US");
     expect(schema.safeParse("12345").success).toBe(true);
@@ -125,6 +155,16 @@ describe("streetField", () => {
 
   it("rejects empty string", () => {
     expect(schema.safeParse("").success).toBe(false);
+  });
+
+  it("rejects whitespace-only strings", () => {
+    expect(schema.safeParse("   ").success).toBe(false);
+  });
+
+  it("trims whitespace before validation", () => {
+    const result = schema.safeParse("  123 Main St  ");
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toBe("123 Main St");
   });
 
   it("respects max length", () => {

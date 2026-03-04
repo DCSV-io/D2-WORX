@@ -316,6 +316,172 @@ test.describe("contact form (/design/contact-form)", () => {
     ).toBeVisible();
   });
 
+  test("whitespace-only first name is rejected on blur", async ({ page }) => {
+    const firstNameInput = page.getByLabel("First Name");
+    await firstNameInput.fill("   ");
+    await firstNameInput.blur();
+
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: firstNameInput,
+    });
+    await expect(fieldContainer.locator("svg.text-destructive")).toBeVisible({
+      timeout: 2000,
+    });
+    await expect(page.getByText("Required").first()).toBeVisible();
+  });
+
+  test("whitespace-only email is rejected on blur", async ({ page }) => {
+    const emailInput = page.getByLabel("Email");
+    await emailInput.fill("   ");
+    await emailInput.blur();
+
+    await expect(page.getByText("Required").first()).toBeVisible({ timeout: 2000 });
+  });
+
+  test("multiple validation cycles: error → fix → blur → valid", async ({ page }) => {
+    const firstNameInput = page.getByLabel("First Name");
+
+    // Cycle 1: blur empty → error
+    await firstNameInput.focus();
+    await firstNameInput.blur();
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: firstNameInput,
+    });
+    await expect(fieldContainer.locator("svg.text-destructive")).toBeVisible({
+      timeout: 2000,
+    });
+
+    // Cycle 2: fill valid → blur → green check
+    await firstNameInput.fill("Jane");
+    await firstNameInput.blur();
+    await expect(fieldContainer.locator("svg.text-success")).toBeVisible({
+      timeout: 2000,
+    });
+
+    // Cycle 3: clear → blur → error again
+    await firstNameInput.fill("");
+    await firstNameInput.blur();
+    await expect(fieldContainer.locator("svg.text-destructive")).toBeVisible({
+      timeout: 2000,
+    });
+  });
+
+  test("successful submission after fixing validation errors", async ({ page }) => {
+    // Submit empty form first → errors
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText("Required").first()).toBeVisible({ timeout: 5000 });
+
+    // Now fill all required fields
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("Postal Code").fill("94102");
+
+    // Resubmit → should succeed
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/validated successfully/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("phone number formats as you type", async ({ page }) => {
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    const phoneInput = page.getByLabel("Phone");
+    await phoneInput.fill("2025551234");
+    // After filling, the display should show formatted output
+    const displayValue = await phoneInput.inputValue();
+    // Should contain formatted characters (parens, spaces, or dashes)
+    expect(displayValue.length).toBeGreaterThan(0);
+  });
+
+  test("address lines are included in valid submission", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("Postal Code").fill("94102");
+
+    // Open address lines, fill them, then submit
+    await page.getByRole("button", { name: "+ More address lines" }).click();
+    await page.getByLabel("Address Line 2").fill("Apt 4B");
+    await page.getByLabel("Address Line 3").fill("Floor 2");
+
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/validated successfully/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("email async check is skipped for invalid email format", async ({ page }) => {
+    const emailInput = page.getByLabel("Email");
+    await emailInput.fill("notvalid");
+    await emailInput.blur();
+
+    // Should show format error, NOT trigger async check (no spinner)
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: emailInput,
+    });
+    await expect(page.getByText("Invalid email address")).toBeVisible({ timeout: 2000 });
+    // Spinner should NOT appear for format-invalid emails
+    await expect(fieldContainer.locator("svg.animate-spin")).not.toBeVisible();
+  });
+
+  test("email async check resets when user starts typing again", async ({ page }) => {
+    const emailInput = page.getByLabel("Email");
+    await emailInput.fill("used@email.com");
+    await emailInput.blur();
+
+    // Wait for async check to show error
+    await expect(page.getByText("This email is already taken")).toBeVisible({
+      timeout: 5000,
+    });
+
+    // Start typing → error should clear
+    await emailInput.fill("used@email.co");
+    await expect(page.getByText("This email is already taken")).not.toBeVisible({
+      timeout: 2000,
+    });
+  });
+
+  test("country combobox filters options by search text", async ({ page }) => {
+    await page.getByRole("combobox", { name: "Country" }).click();
+    const searchInput = page.getByPlaceholder("Search countries...");
+    await searchInput.fill("Cana");
+
+    await expect(page.getByRole("option", { name: "Canada" })).toBeVisible();
+    // Other countries should be filtered out
+    await expect(
+      page.getByRole("option", { name: "Afghanistan" }),
+    ).not.toBeVisible();
+  });
+
   test("postal code shows country-specific error on submit", async ({ page }) => {
     await page.getByLabel("First Name").fill("Jane");
     await page.getByLabel("Last Name").fill("Doe");

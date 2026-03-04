@@ -157,7 +157,7 @@
                         class="mr-2 h-3 w-4 shrink-0 object-cover"
                       />
                       <span class="truncate">{country.label}</span>
-                      <span class="ml-auto text-xs text-muted-foreground">
+                      <span class="ml-auto text-xs opacity-70">
                         {country.phonePrefix}
                       </span>
                     </Command.Item>
