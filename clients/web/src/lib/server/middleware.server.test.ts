@@ -53,6 +53,14 @@ vi.mock("@d2/cache-memory", () => ({
 vi.mock("@d2/geo-client", () => ({
   createGeoServiceClient: vi.fn().mockReturnValue({}),
   FindWhoIs: mockClass(),
+  Get: mockClass(),
+  GetFromMem: mockClass(),
+  GetFromDist: mockClass(),
+  GetFromDisk: mockClass(),
+  ReqUpdate: mockClass(),
+  SetInMem: mockClass(),
+  SetOnDisk: mockClass(),
+  GeoRefDataSerializer: class GeoRefDataSerializer {},
   DEFAULT_GEO_CLIENT_OPTIONS: { allowedContextKeys: [], apiKey: "" },
 }));
 
@@ -64,6 +72,8 @@ vi.mock("@d2/idempotency", () => ({
   Check: mockClass(),
   checkIdempotency: vi.fn(),
 }));
+
+vi.mock("@d2/protos", () => ({}));
 
 vi.mock("@d2/request-enrichment", () => ({
   enrichRequest: vi.fn(),
@@ -141,6 +151,7 @@ describe("middleware.server", () => {
     expect(ctx!.idempotencyCheck).toBeDefined();
     expect(ctx!.redisSet).toBeDefined();
     expect(ctx!.redisRemove).toBeDefined();
+    expect(ctx!.getGeoRefData).toBeDefined();
   });
 
   it("returns cached singleton on subsequent calls", async () => {

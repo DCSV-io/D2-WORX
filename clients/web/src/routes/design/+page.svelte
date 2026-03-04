@@ -31,6 +31,10 @@
     { id: "charts", label: "Charts" },
     { id: "layout", label: "Layout & Patterns" },
   ] as const;
+
+  const demos = [
+    { href: "/design/contact-form", label: "Contact Form", description: "Superforms + geo data, phone formatting, cascading selects" },
+  ] as const;
 </script>
 
 <svelte:head>
@@ -69,6 +73,21 @@
       {/each}
     </div>
   </nav>
+
+  <!-- Demo pages -->
+  {#if demos.length > 0}
+    <div class="mb-8 flex flex-wrap gap-3">
+      {#each demos as demo (demo.href)}
+        <a
+          href={demo.href}
+          class="group rounded-lg border p-4 transition-colors hover:border-primary hover:bg-accent"
+        >
+          <span class="font-medium group-hover:text-primary">{demo.label}</span>
+          <p class="mt-1 text-xs text-muted-foreground">{demo.description}</p>
+        </a>
+      {/each}
+    </div>
+  {/if}
 
   <!-- Showcase sections -->
   <div class="flex flex-col gap-16">

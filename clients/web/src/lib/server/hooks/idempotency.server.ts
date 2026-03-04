@@ -14,6 +14,7 @@ const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 export function createIdempotencyHandle(): Handle {
   return async ({ event, resolve }) => {
     const ctx = getMiddlewareContext();
+    if (!ctx) return resolve(event);
 
     if (!MUTATION_METHODS.has(event.request.method)) return resolve(event);
 

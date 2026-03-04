@@ -22,7 +22,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 5    | @d2/auth-bff-client + Auth Proxy    | Complete    | 32 unit tests, session resolver, JWT manager, auth proxy, route guards, SvelteKit hooks integration |
 | 6    | API Client Layer (Gateway)          | Complete    | 66 tests. camelCase normalizer for mixed-casing gateway. `$env/dynamic/public` for runtime URL. |
 | 6.5  | Chart Showcase (LayerChart 2.0)     | Complete    | layerchart@next + shadcn-svelte chart. 5 chart types: area, bar, line, donut, sparkline. Uses `--chart-1`..`--chart-5` tokens. |
-| 7    | Forms Architecture (Superforms)     | Pending     |       |
+| 7    | Forms Architecture (Superforms)     | Complete    | 73 unit tests. Superforms + Formsnap + Zod 4. Geo ref data via geo-client. Mock contact form at `/design/contact-form` with cascading selects, phone formatting, flag icons |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Pending     |       |
 | 9    | Client Telemetry (Grafana Faro)     | Pending     |       |
 | 10   | Onboarding Flow                     | Pending     |       |
@@ -408,6 +408,42 @@ interface Locals {
 **Goal:** Forms stack, preset fields, Zod schemas, D2Result error mapping.
 
 **Packages:** `sveltekit-superforms`, `formsnap`
+
+**Status:** Complete
+
+**Dependencies installed:** `sveltekit-superforms` 2.30.0, `formsnap` 2.0.1, `@d2/protos` (workspace). shadcn `form` component added.
+
+**Assets:** 271 country flag SVGs copied to `static/flags/4x3/` from old DeCAF.
+
+**Middleware:** Geo reference data handler chain (Memory -> Redis -> Disk -> gRPC) wired into `MiddlewareContext` via `@d2/geo-client` `Get` orchestrator. Convenience wrapper at `src/lib/server/geo-ref-data.server.ts`.
+
+**Form utilities (`src/lib/forms/`):**
+
+| File              | Purpose                                                        |
+| ----------------- | -------------------------------------------------------------- |
+| `schemas.ts`      | Composable Zod 4 field builders (name, email, phone, postcode) |
+| `form-helpers.ts` | D2Result InputError -> Superforms error mapping bridge         |
+| `input-filters.ts`| Cursor-preserving input masks (digits, alpha, uppercase, etc.) |
+| `phone-format.ts` | libphonenumber-js wrappers (display, as-you-type, prefix)      |
+| `geo-ref-data.ts` | GeoRefData proto -> combobox option array transforms           |
+| `index.ts`        | Barrel export                                                  |
+
+**Form components (`src/lib/components/forms/`):**
+
+| Component              | Purpose                                              |
+| ---------------------- | ---------------------------------------------------- |
+| `form-input.svelte`    | Text input with label, error, description            |
+| `form-select.svelte`   | Select dropdown with Formsnap integration            |
+| `form-combobox.svelte` | Searchable combobox with flag icons + cascading      |
+| `form-phone-input.svelte` | Phone with country prefix selector + flags + as-you-type |
+| `form-checkbox.svelte` | Checkbox with label and description                  |
+| `form-textarea.svelte` | Textarea with label and description                  |
+
+**Server-side:** `form-actions.server.ts` — `validateAndSubmit` helper integrating Superforms + Zod 4 + D2Result error mapping.
+
+**Mock contact form (`/design/contact-form`):** Parity proof demonstrating all capabilities — cascading country/state comboboxes with flag icons, phone formatting, cross-field postal code validation. Uses real geo ref data when infrastructure is running, falls back to mock data (10 countries, US/CA subdivisions) for offline development.
+
+**Tests:** 73 unit tests across 5 test files (schemas 27, form-helpers 8, input-filters 11, phone-format 16, geo-ref-data 11).
 
 ---
 

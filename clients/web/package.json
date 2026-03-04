@@ -61,6 +61,7 @@
     "@d2/idempotency": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/logging": "workspace:*",
+    "@d2/protos": "workspace:*",
     "@d2/ratelimit": "workspace:*",
     "@d2/request-enrichment": "workspace:*",
     "@d2/result": "workspace:*",
@@ -85,12 +86,14 @@
     "@stripe/stripe-js": "8.8.0",
     "better-auth": "1.5.0",
     "culori": "4.0.2",
+    "formsnap": "2.0.1",
     "humanize-duration": "3.33.2",
     "import-in-the-middle": "3.0.0",
     "ioredis": "5.10.0",
     "libphonenumber-js": "1.12.38",
     "postcode-validator": "3.10.9",
     "svelte-awesome-color-picker": "4.1.1",
+    "sveltekit-superforms": "2.30.0",
     "zod": "4.3.6"
   }
 }
