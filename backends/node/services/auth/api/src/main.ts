@@ -21,20 +21,9 @@ const logger = createLogger({ serviceName: "auth-service" });
 // Aspire injects connection strings in .NET formats (ADO.NET for PG, StackExchange for Redis).
 // Parsers convert to URI format for Node.js clients, passing through URIs unchanged.
 const config = defineConfig("auth-service", {
-  databaseUrl: requiredParsed(
-    parsePostgresUrl,
-    "ConnectionStrings__d2-services-auth",
-    "ConnectionStrings__d2_services_auth",
-  ),
-  redisUrl: requiredParsed(
-    parseRedisUrl,
-    "ConnectionStrings__d2-redis",
-    "ConnectionStrings__d2_redis",
-  ),
-  rabbitMqUrl: optionalString(
-    "ConnectionStrings__d2-rabbitmq",
-    "ConnectionStrings__d2_rabbitmq",
-  ),
+  databaseUrl: requiredParsed(parsePostgresUrl, "AUTH_DATABASE_URL"),
+  redisUrl: requiredParsed(parseRedisUrl, "REDIS_URL"),
+  rabbitMqUrl: optionalString("RABBITMQ_URL"),
   baseUrl: defaultString("http://localhost:5100", "AUTH_BASE_URL"),
   corsOrigin: defaultString("http://localhost:5173", "AUTH_CORS_ORIGIN"),
   jwtIssuer: defaultString("d2-worx", "AUTH_JWT_ISSUER"),
@@ -43,7 +32,7 @@ const config = defineConfig("auth-service", {
   geoApiKey: optionalString("AUTH_GEO_CLIENT__APIKEY"),
   authApiKeys: envArray("AUTH_API_KEYS"),
   grpcPort: optionalInt("AUTH_GRPC_PORT"),
-  port: defaultInt(5100, "PORT"),
+  port: defaultInt(5100, "AUTH_HTTP_PORT", "PORT"),
   jobOptions: optionalSection("AUTH_APP", DEFAULT_AUTH_JOB_OPTIONS),
 });
 

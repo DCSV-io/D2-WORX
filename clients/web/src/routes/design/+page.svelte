@@ -11,6 +11,7 @@
   import NavigationShowcase from "$lib/components/design/navigation-showcase.svelte";
   import FeedbackShowcase from "$lib/components/design/feedback-showcase.svelte";
   import DataDisplayShowcase from "$lib/components/design/data-display-showcase.svelte";
+  import ChartShowcase from "$lib/components/design/chart-showcase.svelte";
   import LayoutShowcase from "$lib/components/design/layout-showcase.svelte";
   import { Button } from "$lib/components/ui/button/index.js";
   import PaletteIcon from "@lucide/svelte/icons/palette";
@@ -27,6 +28,7 @@
     { id: "navigation", label: "Navigation" },
     { id: "feedback", label: "Feedback" },
     { id: "data-display", label: "Data Display" },
+    { id: "charts", label: "Charts" },
     { id: "layout", label: "Layout & Patterns" },
   ] as const;
 </script>
@@ -79,6 +81,7 @@
     <NavigationShowcase />
     <FeedbackShowcase />
     <DataDisplayShowcase />
+    <ChartShowcase />
     <LayoutShowcase />
   </div>
 </div>

@@ -404,7 +404,6 @@ describe("gateway-client", () => {
       // Temporarily remove the env var from the mock
       const dynamicEnv = await import("$env/dynamic/public");
       const original = dynamicEnv.env.PUBLIC_GATEWAY_URL;
-      // @ts-expect-error — mutating mock for test
       dynamicEnv.env.PUBLIC_GATEWAY_URL = "";
 
       fetchSpy.mockResolvedValue(
@@ -416,7 +415,6 @@ describe("gateway-client", () => {
         await expect(apiCallAnon("/api/v1/test")).rejects.toThrow("PUBLIC_GATEWAY_URL");
       } finally {
         // Restore for other tests
-        // @ts-expect-error — restoring mock
         dynamicEnv.env.PUBLIC_GATEWAY_URL = original;
       }
     });

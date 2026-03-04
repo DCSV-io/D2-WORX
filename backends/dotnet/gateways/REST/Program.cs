@@ -14,16 +14,13 @@ using D2.Shared.Idempotency.Default;
 using D2.Shared.RateLimit.Default;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.ServiceDefaults;
+using D2.Shared.Utilities.Configuration;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Validate required configuration.
-var redisConnectionString = builder.Configuration.GetConnectionString("d2-redis");
-if (string.IsNullOrWhiteSpace(redisConnectionString))
-{
-    throw new InvalidOperationException("Redis connection string 'd2-redis' is missing.");
-}
+// Get Redis connection string from env var (set via .env.local or Aspire).
+var redisConnectionString = ConnectionStringHelper.GetRedis();
 
 builder.AddServiceDefaults();
 builder.Services.AddHandlerContext();
@@ -47,10 +44,10 @@ builder.Services.ConfigureHttpJsonOptions(opts =>
 });
 
 // Register gRPC clients.
-builder.Services.AddGeoGrpcClient(builder.Configuration);
-builder.Services.AddAuthJobsGrpcClient(builder.Configuration);
-builder.Services.AddGeoJobsGrpcClient(builder.Configuration);
-builder.Services.AddCommsJobsGrpcClient(builder.Configuration);
+builder.Services.AddGeoGrpcClient();
+builder.Services.AddAuthJobsGrpcClient();
+builder.Services.AddGeoJobsGrpcClient();
+builder.Services.AddCommsJobsGrpcClient();
 
 // Register WhoIs cache for request enrichment.
 builder.Services.AddWhoIsCache(builder.Configuration);
@@ -84,7 +81,7 @@ builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 256 * 1024);
 builder.Services.AddIdempotency(builder.Configuration);
 
 // Register gRPC clients + HTTP client for health endpoint fan-out.
-builder.Services.AddHealthEndpointDependencies(builder.Configuration);
+builder.Services.AddHealthEndpointDependencies();
 
 var app = builder.Build();
 

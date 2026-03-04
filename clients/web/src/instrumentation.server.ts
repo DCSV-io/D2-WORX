@@ -1,14 +1,20 @@
+import { loadEnv } from "@d2/service-defaults/config";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http"; // ADD
-import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics"; // ADD
+import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-http";
+import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { LoggerProvider, BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { createAddHookMessageChannel } from "import-in-the-middle";
 import { register } from "node:module";
+
+// Load .env.local BEFORE anything else — mirrors Node.js services which use
+// `--import @d2/service-defaults/register`. SvelteKit can't use --import
+// (Vite manages the process), so we call loadEnv() here instead.
+loadEnv();
 
 const serviceName = "d2-sveltekit-server";
 

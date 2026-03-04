@@ -27,24 +27,24 @@ public static class GeoEndpoints
     {
         /// <summary>
         /// Adds a gRPC client for the Geo service to the service collection.
+        /// Reads the <c>GEO_GRPC_ADDRESS</c> environment variable (bare <c>host:port</c>).
         /// </summary>
         ///
         /// <returns>
         /// The updated service collection.
         /// </returns>
-        public IServiceCollection AddGeoGrpcClient(IConfiguration configuration)
+        public IServiceCollection AddGeoGrpcClient()
         {
-            const string config_key = "services:d2-geo:http:0";
-            var geoAddress = configuration[config_key];
+            var geoAddress = Environment.GetEnvironmentVariable("GEO_GRPC_ADDRESS");
             if (geoAddress.Falsey())
             {
                 throw new ArgumentException(
-                    $"Geo service address not configured. Missing '{config_key}' configuration.");
+                    "Geo service address not configured. Missing 'GEO_GRPC_ADDRESS' environment variable.");
             }
 
             services.AddGrpcClient<GeoService.GeoServiceClient>(o =>
             {
-                o.Address = new Uri(geoAddress!);
+                o.Address = new Uri($"http://{geoAddress}");
             });
 
             return services;

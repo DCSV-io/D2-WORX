@@ -25,8 +25,8 @@ storage:
   trace:
     backend: s3
     s3:
-      bucket: tempo-traces
-      endpoint: d2-minio:9000
+      bucket: ${MINIO_BUCKET_TEMPO}
+      endpoint: ${MINIO_NAME}:9000
       access_key: ${MINIO_ROOT_USER}
       secret_key: ${MINIO_ROOT_PASSWORD}
       insecure: true

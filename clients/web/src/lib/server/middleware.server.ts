@@ -54,14 +54,13 @@ let cached: MiddlewareContext | undefined;
 export function getMiddlewareContext(): MiddlewareContext {
   if (cached) return cached;
 
-  const redisConnectionString =
-    process.env.ConnectionStrings__d2_redis ?? process.env["ConnectionStrings__d2-redis"];
+  const redisConnectionString = process.env.REDIS_URL;
   const geoAddress = process.env.GEO_GRPC_ADDRESS;
   const geoApiKey = process.env.SVELTEKIT_GEO_CLIENT__APIKEY;
 
   if (!redisConnectionString || !geoAddress || !geoApiKey) {
     const missing: string[] = [];
-    if (!redisConnectionString) missing.push("ConnectionStrings__d2-redis");
+    if (!redisConnectionString) missing.push("REDIS_URL");
     if (!geoAddress) missing.push("GEO_GRPC_ADDRESS");
     if (!geoApiKey) missing.push("SVELTEKIT_GEO_CLIENT__APIKEY");
 

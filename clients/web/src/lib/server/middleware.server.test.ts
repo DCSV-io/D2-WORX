@@ -78,7 +78,7 @@ describe("middleware.server", () => {
   }
 
   function setRequiredEnv() {
-    setEnv("ConnectionStrings__d2-redis", "localhost:6379,password=pass");
+    setEnv("REDIS_URL", "redis://:pass@localhost:6379");
     setEnv("GEO_GRPC_ADDRESS", "localhost:5138");
     setEnv("SVELTEKIT_GEO_CLIENT__APIKEY", "test-key");
   }
@@ -109,7 +109,7 @@ describe("middleware.server", () => {
   });
 
   it("returns null when GEO_GRPC_ADDRESS is missing", async () => {
-    setEnv("ConnectionStrings__d2-redis", "localhost:6379,password=pass");
+    setEnv("REDIS_URL", "redis://:pass@localhost:6379");
     setEnv("SVELTEKIT_GEO_CLIENT__APIKEY", "test-key");
 
     const { getMiddlewareContext } = await import("./middleware.server");
@@ -119,7 +119,7 @@ describe("middleware.server", () => {
   });
 
   it("returns null when SVELTEKIT_GEO_CLIENT__APIKEY is missing", async () => {
-    setEnv("ConnectionStrings__d2-redis", "localhost:6379,password=pass");
+    setEnv("REDIS_URL", "redis://:pass@localhost:6379");
     setEnv("GEO_GRPC_ADDRESS", "localhost:5138");
 
     const { getMiddlewareContext } = await import("./middleware.server");

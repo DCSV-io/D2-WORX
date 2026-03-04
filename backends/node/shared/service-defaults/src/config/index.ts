@@ -17,3 +17,4 @@ export { parsePositiveInt } from "./parse-positive-int.js";
 export { parseEnvArray } from "./parse-env-array.js";
 export { parsePostgresUrl } from "./parse-postgres-url.js";
 export { parseRedisUrl } from "./parse-redis-url.js";
+export { loadEnv } from "./load-env.js";

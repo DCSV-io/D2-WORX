@@ -8,9 +8,8 @@
  * @example
  * ```ts
  * const config = defineConfig("auth-service", {
- *   databaseUrl: requiredParsed(parsePostgresUrl,
- *     "ConnectionStrings__d2-services-auth", "ConnectionStrings__d2_services_auth"),
- *   port: defaultInt(5100, "PORT"),
+ *   databaseUrl: requiredParsed(parsePostgresUrl, "AUTH_DATABASE_URL"),
+ *   port: defaultInt(5100, "AUTH_HTTP_PORT", "PORT"),
  *   grpcPort: optionalInt("AUTH_GRPC_PORT"),
  * });
  * ```

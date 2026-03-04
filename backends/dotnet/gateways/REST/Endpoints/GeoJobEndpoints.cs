@@ -28,36 +28,31 @@ public static class GeoJobEndpoints
     {
         /// <summary>
         /// Adds a gRPC client for the Geo job service to the service collection.
-        /// Uses the same Geo service address with API key call credentials.
+        /// Reads <c>GEO_GRPC_ADDRESS</c> (bare <c>host:port</c>) and <c>GATEWAY_GEO_GRPC_API_KEY</c>.
         /// </summary>
-        ///
-        /// <param name="configuration">
-        /// The application configuration.
-        /// </param>
         ///
         /// <returns>
         /// The updated service collection.
         /// </returns>
-        public IServiceCollection AddGeoJobsGrpcClient(IConfiguration configuration)
+        public IServiceCollection AddGeoJobsGrpcClient()
         {
-            const string config_key = "services:d2-geo:http:0";
-            var geoAddress = configuration[config_key];
+            var geoAddress = Environment.GetEnvironmentVariable("GEO_GRPC_ADDRESS");
             if (geoAddress.Falsey())
             {
                 throw new ArgumentException(
-                    $"Geo service address not configured. Missing '{config_key}' configuration.");
+                    "Geo service address not configured. Missing 'GEO_GRPC_ADDRESS' environment variable.");
             }
 
-            var apiKey = configuration["GATEWAY_GEO_GRPC_API_KEY"];
+            var apiKey = Environment.GetEnvironmentVariable("GATEWAY_GEO_GRPC_API_KEY");
             if (apiKey.Falsey())
             {
                 throw new ArgumentException(
-                    "Geo gRPC API key not configured. Missing 'GATEWAY_GEO_GRPC_API_KEY' configuration.");
+                    "Geo gRPC API key not configured. Missing 'GATEWAY_GEO_GRPC_API_KEY' environment variable.");
             }
 
             services.AddGrpcClient<GeoJobService.GeoJobServiceClient>(o =>
             {
-                o.Address = new Uri(geoAddress!);
+                o.Address = new Uri($"http://{geoAddress}");
             })
             .AddCallCredentials((context, metadata) =>
             {

@@ -1,5 +1,8 @@
 // Grafana Alloy Configuration for D²-WORX
 // Handles metrics scraping, log collection, and trace forwarding
+//
+// All container names and endpoints are injected as env vars by AppHost.cs.
+// Use env("VAR") to reference them — values come from .env.local.
 
 logging {
   level  = "info"
@@ -18,7 +21,7 @@ prometheus.scrape "infrastructure" {
   targets = [
     // Docker monitoring (container)
     {
-      __address__ = "d2-cadvisor:8080",
+      __address__ = env("CADVISOR_NAME") + ":8080",
       job         = "cadvisor",
       service     = "cadvisor",
     },
@@ -27,48 +30,48 @@ prometheus.scrape "infrastructure" {
     // Note: Node.js services (Auth, Comms) push metrics via OTLP, not Prometheus scrape.
     // Only .NET services expose /metrics endpoints for pull-based scraping.
     {
-      __address__ = "host.docker.internal:5461",
-      job         = "gateway-rest",
-      service     = "REST",
+      __address__      = env("GATEWAY_METRICS_ENDPOINT"),
+      job              = "gateway-rest",
+      service          = "REST",
       __metrics_path__ = "/metrics",
     },
     {
-      __address__ = "host.docker.internal:5138",
-      job         = "service-geo",
-      service     = "Geo.API",
+      __address__      = env("GEO_METRICS_ENDPOINT"),
+      job              = "service-geo",
+      service          = "Geo.API",
       __metrics_path__ = "/metrics",
     },
 
     // Infrastructure exporters (containers)
     {
-      __address__ = "d2-postgres-exporter:9187",
+      __address__ = env("PG_EXPORTER_NAME") + ":9187",
       job         = "postgresql-exporter",
       service     = "postgresql",
     },
     {
-      __address__ = "d2-redis-exporter:9121",
+      __address__ = env("REDIS_EXPORTER_NAME") + ":9121",
       job         = "redis-exporter",
       service     = "redis",
     },
     {
-      __address__ = "d2-rabbitmq:15692",
+      __address__ = env("RABBITMQ_NAME") + ":15692",
       job         = "rabbitmq",
       service     = "rabbitmq",
     },
 
     // LGTM stack (containers)
     {
-      __address__ = "d2-mimir:9009",
+      __address__ = env("MIMIR_NAME") + ":9009",
       job         = "mimir",
       service     = "mimir",
     },
     {
-      __address__ = "d2-loki:3100",
+      __address__ = env("LOKI_NAME") + ":3100",
       job         = "loki",
       service     = "loki",
     },
     {
-      __address__ = "d2-tempo:3200",
+      __address__ = env("TEMPO_NAME") + ":3200",
       job         = "tempo",
       service     = "tempo",
     },
@@ -89,12 +92,12 @@ prometheus.relabel "drop_excessive_labels" {
 
 prometheus.remote_write "mimir" {
   endpoint {
-    url = "http://d2-mimir:9009/api/v1/push"
+    url = "http://" + env("MIMIR_NAME") + ":9009/api/v1/push"
   }
 
   external_labels = {
-    cluster     = "d2-local-dev",
-    environment = "Development",
+    cluster     = env("OTEL_CLUSTER_NAME"),
+    environment = env("OTEL_ENVIRONMENT"),
   }
 }
 
@@ -107,7 +110,7 @@ local.file "minio_config" {
 prometheus.scrape "minio" {
   targets = [
     {
-      __address__ = "d2-minio:9000",
+      __address__ = env("MINIO_NAME") + ":9000",
       job         = "minio",
       service     = "minio",
     },
@@ -169,12 +172,12 @@ loki.source.docker "containers" {
 
 loki.write "local" {
   endpoint {
-    url = "http://d2-loki:3100/loki/api/v1/push"
+    url = "http://" + env("LOKI_NAME") + ":3100/loki/api/v1/push"
   }
 
   external_labels = {
-    cluster     = "d2-local-dev",
-    environment = "Development",
+    cluster     = env("OTEL_CLUSTER_NAME"),
+    environment = env("OTEL_ENVIRONMENT"),
   }
 }
 
@@ -208,7 +211,7 @@ otelcol.exporter.loki "default" {
 
 otelcol.exporter.otlp "tempo" {
   client {
-    endpoint = "d2-tempo:4317"
+    endpoint = env("TEMPO_NAME") + ":4317"
     tls {
       insecure = true
     }

@@ -79,10 +79,10 @@ Endpoints are organized by service/area using C# 14 extension blocks:
 
 ```csharp
 // Program.cs — gRPC client registration
-builder.Services.AddGeoGrpcClient(builder.Configuration);
-builder.Services.AddAuthJobsGrpcClient(builder.Configuration);
-builder.Services.AddGeoJobsGrpcClient(builder.Configuration);
-builder.Services.AddCommsJobsGrpcClient(builder.Configuration);
+builder.Services.AddGeoGrpcClient();
+builder.Services.AddAuthJobsGrpcClient();
+builder.Services.AddGeoJobsGrpcClient();
+builder.Services.AddCommsJobsGrpcClient();
 
 // Program.cs — endpoint mapping
 app.MapGeoEndpointsV1();
@@ -93,45 +93,42 @@ app.MapCommsJobEndpointsV1();
 
 Each `*Endpoints.cs` file contains:
 
-- `Add*GrpcClient()` — Registers the gRPC client with Aspire service discovery
+- `Add*GrpcClient()` — Registers the gRPC client using env var addresses (`*_GRPC_ADDRESS`)
 - `Map*EndpointsV1()` — Maps the REST endpoints using `MapGroup()` for route prefixing
 
 ## gRPC Client Registration
 
-Clients use Aspire service configuration for service discovery. Job-service clients also attach `x-api-key` via `AddCallCredentials` so the target gRPC server can validate trusted callers.
+Clients read service addresses from environment variables (bare `host:port` format, Gateway prepends `http://`). Job-service clients also attach `x-api-key` via `AddCallCredentials` so the target gRPC server can validate trusted callers.
 
 ```csharp
 // Standard pattern — Geo data client (no API key needed)
-const string config_key = "services:d2-geo:http:0";
-var geoAddress = configuration[config_key];
+var geoAddress = Environment.GetEnvironmentVariable("GEO_GRPC_ADDRESS");
 services.AddGrpcClient<GeoService.GeoServiceClient>(o =>
 {
-    o.Address = new Uri(geoAddress!);
+    o.Address = new Uri($"http://{geoAddress}");
 });
 
 // Job client pattern — Auth job client (with API key call credentials)
-var apiKey = configuration["GATEWAY_AUTH_GRPC_API_KEY"];
+var apiKey = Environment.GetEnvironmentVariable("GATEWAY_AUTH_GRPC_API_KEY");
 services.AddGrpcClient<AuthJobService.AuthJobServiceClient>(o =>
 {
-    o.Address = new Uri(authGrpcAddress!);
+    o.Address = new Uri($"http://{authGrpcAddress}");
 })
 .AddCallCredentials((context, metadata) =>
 {
-    if (!string.IsNullOrWhiteSpace(apiKey))
-    {
-        metadata.Add("x-api-key", apiKey);
-    }
+    metadata.Add("x-api-key", apiKey!);
     return Task.CompletedTask;
 });
 ```
 
-### Job Client Configuration Keys
+### Client Environment Variables
 
-| Client                                  | Aspire Config Key                | API Key Env Var              |
-| --------------------------------------- | -------------------------------- | ---------------------------- |
-| `AuthJobService.AuthJobServiceClient`   | `services:d2-auth:auth-grpc:0`   | `GATEWAY_AUTH_GRPC_API_KEY`  |
-| `GeoJobService.GeoJobServiceClient`     | `services:d2-geo:http:0`         | `GATEWAY_GEO_GRPC_API_KEY`   |
-| `CommsJobService.CommsJobServiceClient` | `services:d2-comms:comms-grpc:0` | `GATEWAY_COMMS_GRPC_API_KEY` |
+| Client                                  | Address Env Var      | API Key Env Var              |
+| --------------------------------------- | -------------------- | ---------------------------- |
+| `GeoService.GeoServiceClient`          | `GEO_GRPC_ADDRESS`   | —                            |
+| `GeoJobService.GeoJobServiceClient`     | `GEO_GRPC_ADDRESS`   | `GATEWAY_GEO_GRPC_API_KEY`   |
+| `AuthJobService.AuthJobServiceClient`   | `AUTH_GRPC_ADDRESS`  | `GATEWAY_AUTH_GRPC_API_KEY`  |
+| `CommsJobService.CommsJobServiceClient` | `COMMS_GRPC_ADDRESS` | `GATEWAY_COMMS_GRPC_API_KEY` |
 
 ## Error Handling
 

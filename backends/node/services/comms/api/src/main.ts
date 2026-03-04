@@ -32,21 +32,10 @@ const logger = createLogger({ serviceName: "comms-service" });
 // Aspire injects connection strings in .NET formats (ADO.NET for PG).
 // Parser converts to URI format for Node.js clients, passing through URIs unchanged.
 const config = defineConfig("comms-service", {
-  databaseUrl: requiredParsed(
-    parsePostgresUrl,
-    "ConnectionStrings__d2-services-comms",
-    "ConnectionStrings__d2_services_comms",
-  ),
-  rabbitMqUrl: requiredString(
-    "ConnectionStrings__d2-rabbitmq",
-    "ConnectionStrings__d2_rabbitmq",
-  ),
-  redisUrl: optionalParsed(
-    parseRedisUrl,
-    "ConnectionStrings__d2-redis",
-    "ConnectionStrings__d2_redis",
-  ),
-  grpcPort: defaultInt(5200, "GRPC_PORT"),
+  databaseUrl: requiredParsed(parsePostgresUrl, "COMMS_DATABASE_URL"),
+  rabbitMqUrl: requiredString("RABBITMQ_URL"),
+  redisUrl: optionalParsed(parseRedisUrl, "REDIS_URL"),
+  grpcPort: defaultInt(5200, "COMMS_GRPC_PORT"),
   resendApiKey: optionalString("RESEND_API_KEY"),
   resendFromAddress: optionalString("RESEND_FROM_ADDRESS"),
   twilioAccountSid: optionalString("TWILIO_ACCOUNT_SID"),

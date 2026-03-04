@@ -21,6 +21,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 4    | Route Groups + Layout System        | Complete    | Route groups, layouts, sidebar, branding, auth guard stubs |
 | 5    | @d2/auth-bff-client + Auth Proxy    | Complete    | 32 unit tests, session resolver, JWT manager, auth proxy, route guards, SvelteKit hooks integration |
 | 6    | API Client Layer (Gateway)          | Complete    | 66 tests. camelCase normalizer for mixed-casing gateway. `$env/dynamic/public` for runtime URL. |
+| 6.5  | Chart Showcase (LayerChart 2.0)     | Complete    | layerchart@next + shadcn-svelte chart. 5 chart types: area, bar, line, donut, sparkline. Uses `--chart-1`..`--chart-5` tokens. |
 | 7    | Forms Architecture (Superforms)     | Pending     |       |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Pending     |       |
 | 9    | Client Telemetry (Grafana Faro)     | Pending     |       |

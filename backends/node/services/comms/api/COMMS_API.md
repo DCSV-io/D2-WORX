@@ -62,10 +62,10 @@ Returns `{ server, shutdown }` where `shutdown()` closes RabbitMQ, disconnects R
 
 | Field               | Env Var                                   | Required | Default |
 | ------------------- | ----------------------------------------- | -------- | ------- |
-| `databaseUrl`       | `ConnectionStrings__d2_services_comms`    | Yes      | --      |
-| `rabbitMqUrl`       | `ConnectionStrings__d2_rabbitmq`          | No       | --      |
-| `redisUrl`          | `ConnectionStrings__d2_redis`             | No       | --      |
-| `grpcPort`          | `GRPC_PORT`                               | No       | 5200    |
+| `databaseUrl`       | `COMMS_DATABASE_URL`                      | Yes      | --      |
+| `rabbitMqUrl`       | `RABBITMQ_URL`                            | No       | --      |
+| `redisUrl`          | `REDIS_URL`                               | No       | --      |
+| `grpcPort`          | `COMMS_GRPC_PORT`                         | No       | 5200    |
 | `resendApiKey`      | `RESEND_API_KEY`                          | No       | --      |
 | `resendFromAddress` | `RESEND_FROM_ADDRESS`                     | No       | --      |
 | `twilioAccountSid`  | `TWILIO_ACCOUNT_SID`                      | No       | --      |

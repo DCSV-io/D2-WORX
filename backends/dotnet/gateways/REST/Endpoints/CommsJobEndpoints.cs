@@ -28,36 +28,31 @@ public static class CommsJobEndpoints
     {
         /// <summary>
         /// Adds a gRPC client for the Comms job service to the service collection.
-        /// Uses the comms-grpc Aspire endpoint with API key call credentials.
+        /// Reads <c>COMMS_GRPC_ADDRESS</c> (bare <c>host:port</c>) and <c>GATEWAY_COMMS_GRPC_API_KEY</c>.
         /// </summary>
-        ///
-        /// <param name="configuration">
-        /// The application configuration.
-        /// </param>
         ///
         /// <returns>
         /// The updated service collection.
         /// </returns>
-        public IServiceCollection AddCommsJobsGrpcClient(IConfiguration configuration)
+        public IServiceCollection AddCommsJobsGrpcClient()
         {
-            const string config_key = "services:d2-comms:comms-grpc:0";
-            var commsGrpcAddress = configuration[config_key];
+            var commsGrpcAddress = Environment.GetEnvironmentVariable("COMMS_GRPC_ADDRESS");
             if (commsGrpcAddress.Falsey())
             {
                 throw new ArgumentException(
-                    $"Comms gRPC service address not configured. Missing '{config_key}' configuration.");
+                    "Comms gRPC service address not configured. Missing 'COMMS_GRPC_ADDRESS' environment variable.");
             }
 
-            var apiKey = configuration["GATEWAY_COMMS_GRPC_API_KEY"];
+            var apiKey = Environment.GetEnvironmentVariable("GATEWAY_COMMS_GRPC_API_KEY");
             if (apiKey.Falsey())
             {
                 throw new ArgumentException(
-                    "Comms gRPC API key not configured. Missing 'GATEWAY_COMMS_GRPC_API_KEY' configuration.");
+                    "Comms gRPC API key not configured. Missing 'GATEWAY_COMMS_GRPC_API_KEY' environment variable.");
             }
 
             services.AddGrpcClient<CommsJobService.CommsJobServiceClient>(o =>
             {
-                o.Address = new Uri(commsGrpcAddress!);
+                o.Address = new Uri($"http://{commsGrpcAddress}");
             })
             .AddCallCredentials((context, metadata) =>
             {
