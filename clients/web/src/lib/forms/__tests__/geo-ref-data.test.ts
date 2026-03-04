@@ -35,7 +35,7 @@ function makeSubdivision(overrides: Partial<SubdivisionDTO> = {}): SubdivisionDT
 }
 
 describe("countriesToOptions", () => {
-  it("converts country map to sorted options", () => {
+  it("puts popular countries first, then alphabetical", () => {
     const countries: Record<string, CountryDTO> = {
       US: makeCountry(),
       CA: makeCountry({
@@ -44,14 +44,22 @@ describe("countriesToOptions", () => {
         phoneNumberPrefix: "1",
         subdivisionIso31662Codes: ["CA-ON"],
       }),
+      AF: makeCountry({
+        iso31661Alpha2Code: "AF",
+        displayName: "Afghanistan",
+        phoneNumberPrefix: "93",
+        subdivisionIso31662Codes: [],
+      }),
     };
 
     const options = countriesToOptions(countries);
 
-    expect(options).toHaveLength(2);
-    // Sorted alphabetically by label
-    expect(options[0].label).toBe("Canada");
-    expect(options[1].label).toBe("United States");
+    expect(options).toHaveLength(3);
+    // Popular countries first (US before CA per POPULAR_COUNTRIES order)
+    expect(options[0].label).toBe("United States");
+    expect(options[1].label).toBe("Canada");
+    // Non-popular countries alphabetically after
+    expect(options[2].label).toBe("Afghanistan");
   });
 
   it("includes flag path", () => {

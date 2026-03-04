@@ -20,7 +20,7 @@ test.describe("contact form (/design/contact-form)", () => {
     await expect(page.getByLabel("Last Name")).toBeVisible();
     await expect(page.getByLabel("Email")).toBeVisible();
     await expect(page.getByLabel("Phone")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Country" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Country" })).toBeVisible();
     await expect(page.getByLabel("Street Address", { exact: true })).toBeVisible();
     await expect(page.getByLabel("City")).toBeVisible();
     await expect(page.getByLabel("Postal Code")).toBeVisible();
@@ -31,7 +31,7 @@ test.describe("contact form (/design/contact-form)", () => {
   });
 
   test("country combobox opens and shows searchable options", async ({ page }) => {
-    await page.getByRole("button", { name: "Country" }).click();
+    await page.getByRole("combobox", { name: "Country" }).click();
 
     await expect(page.getByRole("listbox")).toBeVisible();
     await expect(page.getByRole("option", { name: "Afghanistan" })).toBeVisible();
@@ -40,44 +40,44 @@ test.describe("contact form (/design/contact-form)", () => {
 
   test("selecting a country with subdivisions shows state field", async ({ page }) => {
     // State field should not be visible initially
-    await expect(page.getByRole("button", { name: "State / Province" })).not.toBeVisible();
+    await expect(page.getByRole("combobox", { name: "State / Province" })).not.toBeVisible();
 
     // Open country combobox and select United States
-    await page.getByRole("button", { name: "Country" }).click();
+    await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "United States", exact: true }).click();
 
     // State field should now appear
-    await expect(page.getByRole("button", { name: "State / Province" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
   });
 
   test("changing country clears and repopulates state options", async ({ page }) => {
     // Select US first
-    await page.getByRole("button", { name: "Country" }).click();
+    await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "United States", exact: true }).click();
 
     // State should be visible
-    await expect(page.getByRole("button", { name: "State / Province" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
 
     // Now change country to Canada
-    await page.getByRole("button", { name: "Country" }).click();
+    await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "Canada" }).click();
 
     // State should still be visible (Canada has provinces)
-    await expect(page.getByRole("button", { name: "State / Province" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
   });
 
   test("selecting a country without subdivisions hides state field", async ({ page }) => {
     // Select US to show state
-    await page.getByRole("button", { name: "Country" }).click();
+    await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "United States", exact: true }).click();
-    await expect(page.getByRole("button", { name: "State / Province" })).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
 
     // Now select Singapore (no subdivisions)
-    await page.getByRole("button", { name: "Country" }).click();
+    await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "Singapore" }).click();
 
     // State should be hidden
-    await expect(page.getByRole("button", { name: "State / Province" })).not.toBeVisible();
+    await expect(page.getByRole("combobox", { name: "State / Province" })).not.toBeVisible();
   });
 
   test("submitting empty form shows validation errors", async ({ page }) => {
@@ -109,11 +109,11 @@ test.describe("contact form (/design/contact-form)", () => {
     await page.getByLabel("Phone").fill("2025551234");
 
     // Select country
-    await page.getByRole("button", { name: "Country" }).click();
+    await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "United States", exact: true }).click();
 
     // Select state
-    await page.getByRole("button", { name: "State / Province" }).click();
+    await page.getByRole("combobox", { name: "State / Province" }).click();
     await page.getByRole("option", { name: "California" }).click();
 
     // Fill address

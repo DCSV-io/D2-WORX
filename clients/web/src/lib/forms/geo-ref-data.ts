@@ -7,6 +7,37 @@
 import type { CountryDTO, SubdivisionDTO } from "@d2/protos";
 import { getCountryCallingCode } from "./phone-format.js";
 
+/**
+ * Popular countries shown first in dropdowns (order preserved).
+ * Mirrors DeCAF's top-countries list, converted to ISO alpha-2.
+ */
+const POPULAR_COUNTRIES: readonly string[] = [
+  "US", // United States
+  "CA", // Canada
+  "MX", // Mexico
+  "GB", // United Kingdom
+  "DE", // Germany
+  "FR", // France
+  "IT", // Italy
+  "ES", // Spain
+  "UA", // Ukraine
+  "PL", // Poland
+  "NL", // Netherlands
+  "AU", // Australia
+  "NZ", // New Zealand
+  "JP", // Japan
+  "KR", // South Korea
+  "CN", // China
+  "HK", // Hong Kong
+  "TW", // Taiwan
+  "BR", // Brazil
+  "CO", // Colombia
+  "AR", // Argentina
+  "IL", // Israel
+  "SA", // Saudi Arabia
+  "AE", // United Arab Emirates
+] as const;
+
 export interface CountryOption {
   /** ISO 3166-1 alpha-2 code (e.g. "US"). */
   value: string;
@@ -31,23 +62,37 @@ export interface SubdivisionOption {
 
 /**
  * Convert a countries map to a sorted option array.
- * Sorted alphabetically by display name.
+ * Popular countries appear first (in POPULAR_COUNTRIES order),
+ * then remaining countries sorted alphabetically by display name.
  */
 export function countriesToOptions(
   countries: Record<string, CountryDTO>,
 ): CountryOption[] {
-  return Object.values(countries)
-    .map((c) => ({
-      value: c.iso31661Alpha2Code,
-      label: c.displayName,
-      flag: `/flags/4x3/${c.iso31661Alpha2Code.toLowerCase()}.svg`,
-      phonePrefix: c.phoneNumberPrefix
-        ? `+${c.phoneNumberPrefix}`
-        : getCountryCallingCode(c.iso31661Alpha2Code),
-      phoneFormat: c.phoneNumberFormat,
-      subdivisionCodes: c.subdivisionIso31662Codes ?? [],
-    }))
+  const all = Object.values(countries).map((c) => ({
+    value: c.iso31661Alpha2Code,
+    label: c.displayName,
+    flag: `/flags/4x3/${c.iso31661Alpha2Code.toLowerCase()}.svg`,
+    phonePrefix: c.phoneNumberPrefix
+      ? `+${c.phoneNumberPrefix}`
+      : getCountryCallingCode(c.iso31661Alpha2Code),
+    phoneFormat: c.phoneNumberFormat,
+    subdivisionCodes: c.subdivisionIso31662Codes ?? [],
+  }));
+
+  const popularSet = new Set(POPULAR_COUNTRIES);
+  const byCode = new Map(all.map((o) => [o.value, o]));
+
+  const popular: CountryOption[] = [];
+  for (const code of POPULAR_COUNTRIES) {
+    const opt = byCode.get(code);
+    if (opt) popular.push(opt);
+  }
+
+  const rest = all
+    .filter((o) => !popularSet.has(o.value))
     .sort((a, b) => a.label.localeCompare(b.label));
+
+  return [...popular, ...rest];
 }
 
 /**

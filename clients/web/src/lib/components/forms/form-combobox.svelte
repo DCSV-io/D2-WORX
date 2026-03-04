@@ -3,11 +3,11 @@
   import { Control } from "formsnap";
   import { cn } from "$lib/utils.js";
   import * as Form from "$lib/components/ui/form/index.js";
-  import * as Popover from "$lib/components/ui/popover/index.js";
-  import * as Command from "$lib/components/ui/command/index.js";
-  import { buttonVariants } from "$lib/components/ui/button/index.js";
+  import { Combobox } from "bits-ui";
   import CheckIcon from "@lucide/svelte/icons/check";
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
+  import ChevronUpIcon from "@lucide/svelte/icons/chevron-up";
+  import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
 
   type Option = { value: string; label: string; flag?: string };
 
@@ -29,83 +29,129 @@
     field,
     label,
     options,
-    placeholder = "Select...",
-    searchPlaceholder = "Search...",
+    placeholder = "Search...",
+    searchPlaceholder: _searchPlaceholder,
     emptyMessage = "No results found.",
     description,
     disabled = false,
     onValueChange,
   }: Props = $props();
 
+  let searchValue = $state("");
   let open = $state(false);
 
   const formData = form.form;
   let value = $derived(($formData as Record<string, string>)[field as string] ?? "");
   const selectedOption = $derived(options.find((o) => o.value === value));
 
-  function handleSelect(optionValue: string) {
-    const newValue = value === optionValue ? "" : optionValue;
+  const filteredOptions = $derived(
+    searchValue
+      ? options.filter((o) => o.label.toLowerCase().includes(searchValue.toLowerCase()))
+      : options,
+  );
+
+  function handleValueChange(newValue: string) {
     ($formData as Record<string, string>)[field as string] = newValue;
-    open = false;
+    searchValue = "";
     onValueChange?.(newValue);
+  }
+
+  function handleInput(e: Event & { currentTarget: HTMLInputElement }) {
+    searchValue = e.currentTarget.value;
+  }
+
+  function handleOpenChangeComplete(isOpen: boolean) {
+    if (!isOpen) {
+      searchValue = "";
+    }
   }
 </script>
 
 <Form.Field {form} name={field}>
   <Control>
     {#snippet children({ props })}
+      {@const { name: fieldName, ...inputProps } = props}
       <Form.Label>{label}</Form.Label>
-      <input type="hidden" name={props.name} {value} />
-      <Popover.Root bind:open>
-        <Popover.Trigger
-          {disabled}
-          {...props}
-          class={cn(buttonVariants({ variant: "outline" }), "w-full justify-between font-normal")}
-        >
+      <Combobox.Root
+        type="single"
+        name={fieldName}
+        {disabled}
+        bind:open
+        value={value}
+        onValueChange={handleValueChange}
+        items={options.map((o) => ({ value: o.value, label: o.label }))}
+        onOpenChangeComplete={handleOpenChangeComplete}
+      >
+        <div class="relative">
           {#if selectedOption?.flag}
-            <span class="flex items-center gap-2 truncate">
-              <img
-                src={selectedOption.flag}
-                alt=""
-                class="h-3 w-4 shrink-0 object-cover"
-              />
-              {selectedOption.label}
-            </span>
-          {:else}
-            <span class="truncate">{selectedOption?.label ?? placeholder}</span>
+            <img
+              src={selectedOption.flag}
+              alt=""
+              class="absolute left-2.5 top-1/2 z-10 h-3 w-4 -translate-y-1/2 object-cover"
+            />
           {/if}
-          <ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
-        </Popover.Trigger>
-        <Popover.Content class="w-[--radix-popover-trigger-width] p-0" align="start">
-          <Command.Root>
-            <Command.Input placeholder={searchPlaceholder} />
-            <Command.List>
-              <Command.Empty>{emptyMessage}</Command.Empty>
-              <Command.Group>
-                {#each options as option (option.value)}
-                  <Command.Item
-                    value={option.value}
-                    keywords={[option.label]}
-                    onSelect={() => handleSelect(option.value)}
-                  >
-                    <CheckIcon
-                      class="mr-2 size-4 shrink-0 {value === option.value ? 'opacity-100' : 'opacity-0'}"
-                    />
+          <Combobox.Input
+            {...inputProps}
+            oninput={handleInput}
+            onfocusin={() => { open = true; }}
+            onclick={() => { open = true; }}
+            placeholder={placeholder}
+            class={cn(
+              "border-input bg-background dark:bg-input/30 placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border px-3 py-1 pr-8 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm",
+              "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+              "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+              selectedOption?.flag && "pl-8",
+            )}
+          />
+          <Combobox.Trigger class="absolute right-2 top-1/2 -translate-y-1/2">
+            <ChevronsUpDownIcon class="size-4 opacity-50" />
+          </Combobox.Trigger>
+        </div>
+        <Combobox.Portal>
+          <Combobox.Content
+            sideOffset={4}
+            preventScroll={true}
+            class="bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-end-2 data-[side=right]:slide-in-from-start-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--bits-combobox-content-available-height) min-w-[8rem] origin-(--bits-combobox-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
+          >
+            <Combobox.ScrollUpButton class="flex cursor-default items-center justify-center py-1">
+              <ChevronUpIcon class="size-4" />
+            </Combobox.ScrollUpButton>
+            <Combobox.Viewport class="w-full min-w-(--bits-combobox-anchor-width) scroll-my-1 p-1">
+              {#each filteredOptions as option (option.value)}
+                <Combobox.Item
+                  value={option.value}
+                  label={option.label}
+                  class="data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground data-[highlighted]:[&_svg:not([class*='text-'])]:text-accent-foreground relative flex w-full cursor-pointer items-center gap-2 rounded-sm py-1.5 ps-2 pe-8 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                >
+                  {#snippet children({ selected })}
                     {#if option.flag}
                       <img
                         src={option.flag}
                         alt=""
-                        class="mr-2 h-3 w-4 shrink-0 object-cover"
+                        class="h-3 w-4 shrink-0 object-cover"
                       />
                     {/if}
                     {option.label}
-                  </Command.Item>
-                {/each}
-              </Command.Group>
-            </Command.List>
-          </Command.Root>
-        </Popover.Content>
-      </Popover.Root>
+                    <span class="absolute end-2 flex size-3.5 items-center justify-center">
+                      {#if selected}
+                        <CheckIcon class="size-4" />
+                      {/if}
+                    </span>
+                  {/snippet}
+                </Combobox.Item>
+              {:else}
+                <div class="py-6 text-center text-sm text-muted-foreground">
+                  {emptyMessage}
+                </div>
+              {/each}
+            </Combobox.Viewport>
+            <Combobox.ScrollDownButton class="flex cursor-default items-center justify-center py-1">
+              <ChevronDownIcon class="size-4" />
+            </Combobox.ScrollDownButton>
+          </Combobox.Content>
+        </Combobox.Portal>
+      </Combobox.Root>
     {/snippet}
   </Control>
   {#if description}
