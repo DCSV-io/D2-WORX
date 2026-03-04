@@ -9,6 +9,7 @@
   import * as Card from "$lib/components/ui/card/index.js";
   import { toast } from "svelte-sonner";
   import type { SubdivisionOption } from "$lib/forms/geo-ref-data.js";
+  import type { FieldStatus } from "$lib/forms/field-status.js";
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
 
   let { data } = $props();
@@ -23,28 +24,64 @@
     },
   });
 
-  const { enhance, form: formData } = form;
+  const { enhance, form: formData, errors } = form;
 
-  // Cascading state logic: when country changes, clear state and compute available subdivisions
+  // --- Cascading state logic ---
   let stateOptions = $state<SubdivisionOption[]>([]);
   let showState = $derived(stateOptions.length > 0);
 
   function handleCountryChange(countryCode: string) {
-    // Clear state field
     ($formData as Record<string, string>).state = "";
-    // Update available subdivisions
-    stateOptions = countryCode
-      ? (data.subdivisionsByCountry[countryCode] ?? [])
-      : [];
+    stateOptions = countryCode ? (data.subdivisionsByCountry[countryCode] ?? []) : [];
   }
 
-  // Initialize state options from current form value (e.g. after validation error)
   $effect(() => {
     const country = ($formData as Record<string, string>).country;
     if (country) {
       stateOptions = data.subdivisionsByCountry[country] ?? [];
     }
   });
+
+  // --- Expandable address lines ---
+  let showExtraLines = $state(false);
+
+  function toggleExtraLines() {
+    showExtraLines = !showExtraLines;
+    if (!showExtraLines) {
+      ($formData as Record<string, string>).street2 = "";
+      ($formData as Record<string, string>).street3 = "";
+    }
+  }
+
+  // --- Async email availability check ---
+  let emailStatus = $state<FieldStatus>("idle");
+
+  async function checkEmailAvailability() {
+    const email = ($formData as Record<string, string>).email;
+    if (!email || !email.includes("@")) return;
+
+    // Skip if client validation already failed (errors populated by validate-on-blur)
+    const clientErrors = ($errors as Record<string, string[]>)?.email;
+    if (clientErrors?.length) return;
+
+    emailStatus = "validating";
+    try {
+      const res = await fetch(`/design/api/check-email?email=${encodeURIComponent(email)}`);
+      const { available } = await res.json();
+      if (!available) {
+        emailStatus = "invalid";
+        errors.update((e) => ({ ...e, email: ["This email is already taken"] }));
+      } else {
+        emailStatus = "valid";
+      }
+    } catch {
+      emailStatus = "idle";
+    }
+  }
+
+  function resetEmailStatus() {
+    emailStatus = "idle";
+  }
 </script>
 
 <svelte:head>
@@ -73,19 +110,29 @@
       <Card.Title>New Contact</Card.Title>
       <Card.Description>
         All fields use live geo reference data from the 4-tier cache
-        (Memory → Redis → Disk → gRPC).
+        (Memory &rarr; Redis &rarr; Disk &rarr; gRPC).
       </Card.Description>
     </Card.Header>
     <Card.Content>
       <form method="POST" use:enhance class="flex flex-col gap-5">
         <!-- Name row -->
         <div class="grid gap-4 sm:grid-cols-2">
-          <FormInput {form} field="firstName" label="First Name" placeholder="Jane" />
-          <FormInput {form} field="lastName" label="Last Name" placeholder="Doe" />
+          <FormInput {form} field="firstName" label="First Name" placeholder="First" />
+          <FormInput {form} field="lastName" label="Last Name" placeholder="Last" />
         </div>
 
-        <!-- Email -->
-        <FormInput {form} field="email" label="Email" type="email" placeholder="jane@example.com" />
+        <!-- Email with async availability check -->
+        <FormInput
+          {form}
+          field="email"
+          label="Email"
+          type="email"
+          placeholder="your@email.com"
+          description="We'll never share your email."
+          status={emailStatus === "idle" ? undefined : emailStatus}
+          onblur={checkEmailAvailability}
+          oninput={resetEmailStatus}
+        />
 
         <!-- Phone with country selector -->
         <FormPhoneInput
@@ -94,6 +141,7 @@
           label="Phone"
           countries={data.countries}
           defaultCountry="US"
+          description="Include country code for international numbers."
         />
 
         <!-- Country combobox -->
@@ -121,19 +169,45 @@
           />
         {/if}
 
-        <!-- Street address -->
-        <FormInput {form} field="street1" label="Street Address" placeholder="123 Main St" />
-        <FormInput
-          {form}
-          field="street2"
-          label="Street Address Line 2"
-          placeholder="Apt, suite, etc. (optional)"
-        />
+        <!-- Street address with expandable extra lines -->
+        <FormInput {form} field="street1" label="Street Address" placeholder="123 Street Rd">
+          {#snippet labelRight()}
+            <button
+              type="button"
+              onclick={toggleExtraLines}
+              class="text-xs text-muted-foreground hover:text-foreground"
+            >
+              {showExtraLines ? "- Fewer address lines" : "+ More address lines"}
+            </button>
+          {/snippet}
+        </FormInput>
+        {#if showExtraLines}
+          <div class="grid gap-4 sm:grid-cols-2">
+            <FormInput
+              {form}
+              field="street2"
+              label="Address Line 2"
+              placeholder="Apt, suite, unit"
+            />
+            <FormInput
+              {form}
+              field="street3"
+              label="Address Line 3"
+              placeholder="Building, floor"
+            />
+          </div>
+        {/if}
 
         <!-- City + Postal Code row -->
         <div class="grid gap-4 sm:grid-cols-2">
-          <FormInput {form} field="city" label="City" placeholder="San Francisco" />
-          <FormInput {form} field="postalCode" label="Postal Code" placeholder="94102" />
+          <FormInput {form} field="city" label="City" placeholder="City" />
+          <FormInput
+            {form}
+            field="postalCode"
+            label="Postal Code"
+            placeholder="#####"
+            description="Must match the selected country format."
+          />
         </div>
 
         <!-- Actions -->

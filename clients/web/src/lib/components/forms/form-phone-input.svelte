@@ -11,6 +11,8 @@
   import ChevronsUpDownIcon from "@lucide/svelte/icons/chevrons-up-down";
   import type { CountryOption } from "$lib/forms/geo-ref-data.js";
   import { formatPhoneAsYouType, getCountryCallingCode } from "$lib/forms/phone-format.js";
+  import FieldStatusIcon from "./field-status-icon.svelte";
+  import { getFieldStatus } from "$lib/forms/field-status.js";
 
   type Props = {
     form: SuperForm<T>;
@@ -36,11 +38,22 @@
   let selectedCountryCode = $state(defaultCountry);
   /** The formatted display value the user sees. */
   let displayValue = $state("");
+  let showStatus = $state(false);
 
   const formData = form.form;
-  const selectedCountry = $derived(
-    countries.find((c) => c.value === selectedCountryCode),
+  const errors = form.errors;
+  const constraints = form.constraints;
+
+  const fieldErrors = $derived(($errors as Record<string, string[]>)[field as string]);
+  const isRequired = $derived(
+    !!($constraints as Record<string, { required?: boolean }> | undefined)?.[field as string]
+      ?.required,
   );
+  const phoneValue = $derived(($formData as Record<string, string>)[field as string] ?? "");
+  const fieldStatus = $derived(
+    showStatus ? getFieldStatus({ errors: fieldErrors, value: phoneValue }) : "idle",
+  );
+  const selectedCountry = $derived(countries.find((c) => c.value === selectedCountryCode));
   const prefix = $derived(
     selectedCountry?.phonePrefix || getCountryCallingCode(selectedCountryCode),
   );
@@ -54,7 +67,22 @@
 
   function handlePhoneInput(e: Event & { currentTarget: HTMLInputElement }) {
     const raw = e.currentTarget.value;
+    // Clear status while typing
+    if (showStatus) {
+      showStatus = false;
+      errors.update((errs) => {
+        const copy = { ...errs } as Record<string, unknown>;
+        delete copy[field as string];
+        return copy as typeof errs;
+      });
+    }
     updateFormValue(raw);
+  }
+
+  function handleBlur() {
+    (form.validate as (path: string) => Promise<unknown>)(field as string).then(() => {
+      showStatus = true;
+    });
   }
 
   function updateFormValue(raw: string) {
@@ -66,8 +94,9 @@
     const result = formatPhoneAsYouType(raw, selectedCountryCode);
     displayValue = result.formatted;
     // Store full E.164 in form data
-    ($formData as Record<string, string>)[field as string] =
-      result.national ? `${prefix}${result.national}` : "";
+    ($formData as Record<string, string>)[field as string] = result.national
+      ? `${prefix}${result.national}`
+      : "";
   }
 </script>
 
@@ -75,14 +104,25 @@
   <Control>
     {#snippet children({ props })}
       {@const { name: fieldName, ...triggerProps } = props}
-      <Form.Label>{label}</Form.Label>
-      <input type="hidden" name={fieldName} value={($formData as Record<string, string>)[field as string] ?? ""} />
+      <Form.Label>
+        {label}
+        {#if isRequired}<span class="text-destructive">*</span>{/if}
+        <FieldStatusIcon status={fieldStatus} />
+      </Form.Label>
+      <input
+        type="hidden"
+        name={fieldName}
+        value={($formData as Record<string, string>)[field as string] ?? ""}
+      />
       <div class="flex gap-1">
         <!-- Country prefix selector -->
         <Popover.Root bind:open={countryOpen}>
           <Popover.Trigger
             {disabled}
-            class={cn(buttonVariants({ variant: "outline" }), "flex w-[100px] shrink-0 items-center gap-1 px-2")}
+            class={cn(
+              buttonVariants({ variant: "outline" }),
+              "flex w-[100px] shrink-0 items-center gap-1 px-2",
+            )}
           >
             {#if selectedCountry}
               <img
@@ -107,7 +147,9 @@
                       onSelect={() => handleCountrySelect(country.value)}
                     >
                       <CheckIcon
-                        class="mr-2 size-4 shrink-0 {selectedCountryCode === country.value ? 'opacity-100' : 'opacity-0'}"
+                        class="mr-2 size-4 shrink-0 {selectedCountryCode === country.value
+                          ? 'opacity-100'
+                          : 'opacity-0'}"
                       />
                       <img
                         src={country.flag}
@@ -134,7 +176,11 @@
           placeholder="Phone number"
           {disabled}
           oninput={handlePhoneInput}
-          class="flex-1"
+          onblur={handleBlur}
+          class={cn(
+            "flex-1",
+            fieldStatus === "valid" && "border-success/70 dark:border-success/50",
+          )}
         />
       </div>
     {/snippet}

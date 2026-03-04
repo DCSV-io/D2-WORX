@@ -11,12 +11,12 @@ import { postcodeValidator } from "postcode-validator";
 
 /** General name field (first/last name, city, etc.). */
 export function nameField(max = 100) {
-  return z.string().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
+  return z.string().trim().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
 }
 
 /** Email field with format validation. */
 export function emailField() {
-  return z.string().min(1, "Required").max(254, "Email too long").email("Invalid email address");
+  return z.string().trim().min(1, "Required").max(254, "Email too long").email("Invalid email address");
 }
 
 /**
@@ -26,6 +26,7 @@ export function emailField() {
 export function phoneField() {
   return z
     .string()
+    .trim()
     .min(1, "Required")
     .max(30, "Phone number too long")
     .refine((val) => isValidPhoneNumber(val), "Invalid phone number");
@@ -46,7 +47,7 @@ export function phoneFieldOptional() {
  * When `countryCode` is provided, validates against that country's format.
  */
 export function postcodeField(countryCode?: string) {
-  const base = z.string().min(1, "Required").max(20, "Postal code too long");
+  const base = z.string().trim().min(1, "Required").max(20, "Postal code too long");
   if (!countryCode) return base;
   return base.refine(
     (val) => postcodeValidator(val, countryCode),
@@ -56,7 +57,7 @@ export function postcodeField(countryCode?: string) {
 
 /** Street address line. */
 export function streetField(max = 200) {
-  return z.string().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
+  return z.string().trim().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
 }
 
 /** URL field with optional protocol prefix. */

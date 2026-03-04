@@ -35,55 +35,60 @@ test.describe("contact form (/design/contact-form)", () => {
 
     await expect(page.getByRole("listbox")).toBeVisible();
     await expect(page.getByRole("option", { name: "Afghanistan" })).toBeVisible();
-    await expect(page.getByRole("option", { name: "United States", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("option", { name: "United States", exact: true }),
+    ).toBeVisible();
   });
 
   test("selecting a country with subdivisions shows state field", async ({ page }) => {
-    // State field should not be visible initially
-    await expect(page.getByRole("combobox", { name: "State / Province" })).not.toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "State / Province" }),
+    ).not.toBeVisible();
 
-    // Open country combobox and select United States
     await page.getByRole("combobox", { name: "Country" }).click();
-    await page.getByRole("option", { name: "United States", exact: true }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
 
-    // State field should now appear
-    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "State / Province" }),
+    ).toBeVisible();
   });
 
   test("changing country clears and repopulates state options", async ({ page }) => {
-    // Select US first
     await page.getByRole("combobox", { name: "Country" }).click();
-    await page.getByRole("option", { name: "United States", exact: true }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+    await expect(
+      page.getByRole("combobox", { name: "State / Province" }),
+    ).toBeVisible();
 
-    // State should be visible
-    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
-
-    // Now change country to Canada
     await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "Canada" }).click();
-
-    // State should still be visible (Canada has provinces)
-    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "State / Province" }),
+    ).toBeVisible();
   });
 
   test("selecting a country without subdivisions hides state field", async ({ page }) => {
-    // Select US to show state
     await page.getByRole("combobox", { name: "Country" }).click();
-    await page.getByRole("option", { name: "United States", exact: true }).click();
-    await expect(page.getByRole("combobox", { name: "State / Province" })).toBeVisible();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+    await expect(
+      page.getByRole("combobox", { name: "State / Province" }),
+    ).toBeVisible();
 
-    // Now select Singapore (no subdivisions)
     await page.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "Singapore" }).click();
-
-    // State should be hidden
-    await expect(page.getByRole("combobox", { name: "State / Province" })).not.toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "State / Province" }),
+    ).not.toBeVisible();
   });
 
   test("submitting empty form shows validation errors", async ({ page }) => {
     await page.getByRole("button", { name: "Submit" }).click();
-
-    // Should show validation errors for required fields
     await expect(page.getByText("Required").first()).toBeVisible({ timeout: 5000 });
   });
 
@@ -102,29 +107,236 @@ test.describe("contact form (/design/contact-form)", () => {
   });
 
   test("filling and submitting valid form shows success toast", async ({ page }) => {
-    // Fill all required fields
     await page.getByLabel("First Name").fill("Jane");
     await page.getByLabel("Last Name").fill("Doe");
     await page.getByLabel("Email").fill("jane@example.com");
     await page.getByLabel("Phone").fill("2025551234");
 
-    // Select country
     await page.getByRole("combobox", { name: "Country" }).click();
-    await page.getByRole("option", { name: "United States", exact: true }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
 
-    // Select state
     await page.getByRole("combobox", { name: "State / Province" }).click();
     await page.getByRole("option", { name: "California" }).click();
 
-    // Fill address
     await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
     await page.getByLabel("City").fill("San Francisco");
     await page.getByLabel("Postal Code").fill("94102");
 
-    // Submit
     await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/validated successfully/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
 
-    // Should show success toast
-    await expect(page.getByText(/validated successfully/i)).toBeVisible({ timeout: 5000 });
+  // --- Form UX Improvements ---
+
+  test("required fields show asterisk indicators", async ({ page }) => {
+    const firstNameLabel = page.locator("label", { hasText: "First Name" });
+    await expect(firstNameLabel.locator("span.text-destructive")).toHaveText("*");
+
+    const emailLabel = page.locator("label", { hasText: "Email" });
+    await expect(emailLabel.locator("span.text-destructive")).toHaveText("*");
+
+    const countryLabel = page.locator("label", { hasText: "Country" });
+    await expect(countryLabel.locator("span.text-destructive")).toHaveText("*");
+  });
+
+  test("valid field shows green check icon inline in input after blur", async ({ page }) => {
+    const firstNameInput = page.getByLabel("First Name");
+    await firstNameInput.fill("Jane");
+    await firstNameInput.blur();
+
+    // The icon is inside a relative wrapper around the input (not on the label)
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: firstNameInput,
+    });
+    await expect(fieldContainer.locator("svg.text-success")).toBeVisible({
+      timeout: 2000,
+    });
+  });
+
+  test("empty required field shows red X icon after blur", async ({ page }) => {
+    const firstNameInput = page.getByLabel("First Name");
+
+    // Focus then blur an empty required field
+    await firstNameInput.focus();
+    await firstNameInput.blur();
+
+    // The validate-on-blur should produce errors → red X
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: firstNameInput,
+    });
+    await expect(fieldContainer.locator("svg.text-destructive")).toBeVisible({
+      timeout: 2000,
+    });
+    // Error text should also appear
+    await expect(page.getByText("Required").first()).toBeVisible();
+  });
+
+  test("invalid email shows red X after blur (format error)", async ({ page }) => {
+    const emailInput = page.getByLabel("Email");
+    await emailInput.fill("noemail");
+    await emailInput.blur();
+
+    // Client Zod validation should catch invalid email format
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: emailInput,
+    });
+    await expect(fieldContainer.locator("svg.text-destructive")).toBeVisible({
+      timeout: 2000,
+    });
+    await expect(page.getByText("Invalid email address")).toBeVisible();
+  });
+
+  test("email async check shows spinner then error for taken email", async ({ page }) => {
+    const emailInput = page.getByLabel("Email");
+    await emailInput.fill("used@email.com");
+    await emailInput.blur();
+
+    // Should show spinner during async check
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: emailInput,
+    });
+    await expect(fieldContainer.locator("svg.animate-spin")).toBeVisible({
+      timeout: 2000,
+    });
+
+    // After check completes, should show "already taken" error
+    await expect(page.getByText("This email is already taken")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("email async check shows valid for available email", async ({ page }) => {
+    const emailInput = page.getByLabel("Email");
+    await emailInput.fill("available@email.com");
+    await emailInput.blur();
+
+    // Should show spinner during check
+    const fieldContainer = page.locator("[data-slot='form-field']", {
+      has: emailInput,
+    });
+    await expect(fieldContainer.locator("svg.animate-spin")).toBeVisible({
+      timeout: 2000,
+    });
+
+    // After check completes, should show green check (valid)
+    await expect(fieldContainer.locator("svg.text-success")).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("typing clears errors and hides icon until next blur", async ({ page }) => {
+    const firstNameInput = page.getByLabel("First Name");
+
+    // Blur empty → error
+    await firstNameInput.focus();
+    await firstNameInput.blur();
+    await expect(page.getByText("Required").first()).toBeVisible({ timeout: 2000 });
+
+    // Start typing → error and icon should clear
+    await firstNameInput.fill("J");
+    await expect(page.getByText("Required")).not.toBeVisible({ timeout: 2000 });
+  });
+
+  test("address toggle shows and hides extra address lines", async ({ page }) => {
+    await expect(page.getByLabel("Address Line 2")).not.toBeVisible();
+    await expect(page.getByLabel("Address Line 3")).not.toBeVisible();
+
+    await page.getByRole("button", { name: "+ More address lines" }).click();
+    await expect(page.getByLabel("Address Line 2")).toBeVisible();
+    await expect(page.getByLabel("Address Line 3")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "- Fewer address lines" }),
+    ).toBeVisible();
+
+    await page.getByLabel("Address Line 2").fill("Apt 4B");
+    await page.getByLabel("Address Line 3").fill("Floor 2");
+
+    await page.getByRole("button", { name: "- Fewer address lines" }).click();
+    await expect(page.getByLabel("Address Line 2")).not.toBeVisible();
+    await expect(page.getByLabel("Address Line 3")).not.toBeVisible();
+  });
+
+  test("address toggle clears extra lines when hiding", async ({ page }) => {
+    await page.getByRole("button", { name: "+ More address lines" }).click();
+    await page.getByLabel("Address Line 2").fill("Apt 4B");
+    await page.getByLabel("Address Line 3").fill("Floor 2");
+
+    await page.getByRole("button", { name: "- Fewer address lines" }).click();
+    await page.getByRole("button", { name: "+ More address lines" }).click();
+    await expect(page.getByLabel("Address Line 2")).toHaveValue("");
+    await expect(page.getByLabel("Address Line 3")).toHaveValue("");
+  });
+
+  test("street address label is not duplicated", async ({ page }) => {
+    // There should be exactly one "Street Address" label (not a second span above it)
+    const streetLabels = page.locator("label", {
+      hasText: /^Street Address/,
+    });
+    await expect(streetLabels).toHaveCount(1);
+  });
+
+  test("cross-field validation: street3 without street2 shows error", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("Postal Code").fill("94102");
+
+    await page.getByRole("button", { name: "+ More address lines" }).click();
+    await page.getByLabel("Address Line 3").fill("Floor 2");
+
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(
+      page.getByText("Address Line 2 is required when Line 3 is provided"),
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("descriptions are shown for email, phone, and postal code", async ({ page }) => {
+    await expect(page.getByText("We'll never share your email.")).toBeVisible();
+    await expect(
+      page.getByText("Include country code for international numbers."),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Must match the selected country format."),
+    ).toBeVisible();
+  });
+
+  test("postal code shows country-specific error on submit", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("Postal Code").fill("K1A 0B1"); // Canadian postal code
+
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/invalid postal code/i)).toBeVisible({
+      timeout: 5000,
+    });
   });
 });

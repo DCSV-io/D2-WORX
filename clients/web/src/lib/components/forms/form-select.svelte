@@ -3,6 +3,8 @@
   import { Control } from "formsnap";
   import * as Form from "$lib/components/ui/form/index.js";
   import * as Select from "$lib/components/ui/select/index.js";
+  import FieldStatusIcon from "./field-status-icon.svelte";
+  import { getFieldStatus } from "$lib/forms/field-status.js";
 
   type Option = { value: string; label: string };
 
@@ -29,12 +31,27 @@
   }: Props = $props();
 
   const formData = form.form;
+  const errors = form.errors;
+  const constraints = form.constraints;
+  let showStatus = $state(false);
+
   let value = $derived(($formData as Record<string, string>)[field as string] ?? "");
   const selectedLabel = $derived(options.find((o) => o.value === value)?.label ?? placeholder);
+  const fieldErrors = $derived(($errors as Record<string, string[]>)[field as string]);
+  const isRequired = $derived(
+    !!($constraints as Record<string, { required?: boolean }> | undefined)?.[field as string]
+      ?.required,
+  );
+  const fieldStatus = $derived(
+    showStatus ? getFieldStatus({ errors: fieldErrors, value }) : "idle",
+  );
 
   function handleChange(newValue: string | undefined) {
     if (newValue !== undefined) {
       ($formData as Record<string, string>)[field as string] = newValue;
+      (form.validate as (path: string) => Promise<unknown>)(field as string).then(() => {
+        showStatus = true;
+      });
       onValueChange?.(newValue);
     }
   }
@@ -43,7 +60,11 @@
 <Form.Field {form} name={field}>
   <Control>
     {#snippet children({ props })}
-      <Form.Label>{label}</Form.Label>
+      <Form.Label>
+        {label}
+        {#if isRequired}<span class="text-destructive">*</span>{/if}
+        <FieldStatusIcon status={fieldStatus} />
+      </Form.Label>
       <Select.Root type="single" value={value} onValueChange={handleChange} {disabled}>
         <Select.Trigger {...props} class="w-full">
           <span class="truncate">{selectedLabel}</span>
