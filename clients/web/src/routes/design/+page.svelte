@@ -34,6 +34,7 @@
 
   const demos = [
     { href: "/design/contact-form", label: "Contact Form", description: "Superforms + geo data, phone formatting, cascading selects" },
+    { href: "/design/signup-form", label: "Signup Form", description: "Password rules, email/password confirmation, show/hide toggle" },
   ] as const;
 </script>
 

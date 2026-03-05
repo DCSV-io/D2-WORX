@@ -20,6 +20,8 @@
     status?: FieldStatus;
     /** Optional content rendered right-aligned on the label row. */
     labelRight?: Snippet;
+    /** Optional clickable action inside the input (e.g. show/hide toggle). Renders at the trailing edge. */
+    inputAction?: Snippet;
     oninput?: (e: Event & { currentTarget: HTMLInputElement }) => void;
     onblur?: () => void;
   };
@@ -34,6 +36,7 @@
     disabled = false,
     status: statusOverride,
     labelRight,
+    inputAction,
     oninput,
     onblur,
   }: Props = $props();
@@ -107,13 +110,26 @@
           oninput={handleInput}
           onblur={handleBlur}
           class={cn(
-            effectiveStatus !== "idle" && "pr-8",
+            // Reserve right padding for trailing icons
+            inputAction && effectiveStatus !== "idle" && "pr-14",
+            inputAction && effectiveStatus === "idle" && "pr-8",
+            !inputAction && effectiveStatus !== "idle" && "pr-8",
             effectiveStatus === "valid" && "border-success/70 dark:border-success/50",
           )}
         />
         {#if effectiveStatus !== "idle"}
-          <div class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2">
+          <div
+            class={cn(
+              "pointer-events-none absolute top-1/2 -translate-y-1/2",
+              inputAction ? "right-8" : "right-2.5",
+            )}
+          >
             <FieldStatusIcon status={effectiveStatus} />
+          </div>
+        {/if}
+        {#if inputAction}
+          <div class="absolute right-2.5 top-0 flex h-full items-center">
+            {@render inputAction()}
           </div>
         {/if}
       </div>

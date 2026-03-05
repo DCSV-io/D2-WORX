@@ -9,6 +9,9 @@ import {
   STREET3,
   CITY,
   POSTAL_CODE,
+  PASSWORD,
+  CONFIRM_EMAIL,
+  CONFIRM_PASSWORD,
   COUNTRY,
   STATE,
   type FieldPreset,
@@ -25,6 +28,9 @@ const inputPresets: [string, FieldPreset][] = [
   ["STREET3", STREET3],
   ["CITY", CITY],
   ["POSTAL_CODE", POSTAL_CODE],
+  ["PASSWORD", PASSWORD],
+  ["CONFIRM_EMAIL", CONFIRM_EMAIL],
+  ["CONFIRM_PASSWORD", CONFIRM_PASSWORD],
 ];
 
 const comboboxPresets: [string, ComboboxPreset][] = [
@@ -99,5 +105,24 @@ describe("field presets — specific defaults", () => {
 
   it("STREET3 label is Address Line 3", () => {
     expect(STREET3.label).toBe("Address Line 3");
+  });
+
+  it("PASSWORD has type=password and description about 12 characters", () => {
+    expect(PASSWORD.type).toBe("password");
+    expect(PASSWORD.label).toBe("Password");
+    expect(PASSWORD.placeholder).toBe("Enter password");
+    expect(PASSWORD.description).toContain("12 characters");
+  });
+
+  it("CONFIRM_EMAIL has type=email", () => {
+    expect(CONFIRM_EMAIL.type).toBe("email");
+    expect(CONFIRM_EMAIL.label).toBe("Confirm Email");
+    expect(CONFIRM_EMAIL.placeholder).toBe("Re-enter your email");
+  });
+
+  it("CONFIRM_PASSWORD has type=password", () => {
+    expect(CONFIRM_PASSWORD.type).toBe("password");
+    expect(CONFIRM_PASSWORD.label).toBe("Confirm Password");
+    expect(CONFIRM_PASSWORD.placeholder).toBe("Re-enter your password");
   });
 });

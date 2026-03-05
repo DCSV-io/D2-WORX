@@ -4,7 +4,7 @@ import { flushSync } from "svelte";
 import { useAddressLines } from "../address-lines.svelte.js";
 
 function createMockForm(initial: Record<string, string> = {}) {
-  const data = {
+  const data: Record<string, string> = {
     street1: "",
     street2: "",
     street3: "",

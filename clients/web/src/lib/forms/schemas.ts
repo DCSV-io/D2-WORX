@@ -70,6 +70,20 @@ export function urlField() {
     .default("");
 }
 
+/**
+ * Password field — mirrors auth-domain password rules (client-side subset).
+ * Enforces min/max length, rejects numeric-only and date-like strings.
+ * Common blocklist and HIBP stay server-side.
+ */
+export function passwordField(min = 12, max = 128) {
+  return z
+    .string()
+    .min(min, `Password must be at least ${min} characters`)
+    .max(max, `Password must be ${max} characters or fewer`)
+    .refine((v) => !/^\d+$/.test(v), "Password cannot be only numbers")
+    .refine((v) => !/^[\d\-/.\s]+$/.test(v), "Password cannot be only numbers and date separators");
+}
+
 /** Currency code field (ISO 4217 alpha-3). */
 export function currencyField() {
   return z

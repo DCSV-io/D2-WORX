@@ -73,6 +73,25 @@ export const POSTAL_CODE: FieldPreset = {
   description: "Must match the selected country format.",
 };
 
+export const PASSWORD: FieldPreset = {
+  label: "Password",
+  placeholder: "Enter password",
+  type: "password",
+  description: "Must be at least 12 characters.",
+};
+
+export const CONFIRM_EMAIL: FieldPreset = {
+  label: "Confirm Email",
+  placeholder: "Re-enter your email",
+  type: "email",
+};
+
+export const CONFIRM_PASSWORD: FieldPreset = {
+  label: "Confirm Password",
+  placeholder: "Re-enter your password",
+  type: "password",
+};
+
 // --- Combobox presets ---
 
 export const COUNTRY: ComboboxPreset = {

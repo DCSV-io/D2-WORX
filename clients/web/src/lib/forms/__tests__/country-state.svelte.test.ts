@@ -21,7 +21,7 @@ const SUBDIVISIONS: Record<string, SubdivisionOption[]> = {
 };
 
 function createMockForm(initial: Record<string, string> = {}) {
-  const data = {
+  const data: Record<string, string> = {
     country: "",
     state: "",
     postalCode: "",

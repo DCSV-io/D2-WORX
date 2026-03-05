@@ -8,6 +8,7 @@ import {
   streetField,
   urlField,
   currencyField,
+  passwordField,
 } from "../schemas.js";
 
 describe("nameField", () => {
@@ -185,6 +186,69 @@ describe("urlField", () => {
 
   it("rejects invalid URLs", () => {
     expect(schema.safeParse("not a url").success).toBe(false);
+  });
+});
+
+describe("passwordField", () => {
+  const schema = passwordField();
+
+  it("accepts valid password with mixed characters", () => {
+    expect(schema.safeParse("MySecretPass1").success).toBe(true);
+  });
+
+  it("accepts exactly 12 characters", () => {
+    expect(schema.safeParse("abcdef123456").success).toBe(true);
+  });
+
+  it("accepts exactly 128 characters (max)", () => {
+    expect(schema.safeParse("a".repeat(128)).success).toBe(true);
+  });
+
+  it("rejects empty string", () => {
+    expect(schema.safeParse("").success).toBe(false);
+  });
+
+  it("rejects fewer than 12 characters", () => {
+    expect(schema.safeParse("short").success).toBe(false);
+    expect(schema.safeParse("a".repeat(11)).success).toBe(false);
+  });
+
+  it("rejects more than 128 characters", () => {
+    expect(schema.safeParse("a".repeat(129)).success).toBe(false);
+  });
+
+  it("rejects numeric-only strings", () => {
+    expect(schema.safeParse("123456789012").success).toBe(false);
+    expect(schema.safeParse("000000000000").success).toBe(false);
+  });
+
+  it("rejects date-like strings (digits + date separators only)", () => {
+    expect(schema.safeParse("2025-01-01-01").success).toBe(false);
+    expect(schema.safeParse("25/01/1997/01").success).toBe(false);
+    expect(schema.safeParse("01.02.2025.03").success).toBe(false);
+    expect(schema.safeParse("2025 01 01 01").success).toBe(false);
+  });
+
+  it("accepts digits mixed with letters (not numeric-only)", () => {
+    expect(schema.safeParse("abc123def456").success).toBe(true);
+  });
+
+  it("rejects whitespace-only strings of 12+ chars", () => {
+    // Whitespace-only matches the date-like pattern (digits + separators including spaces)
+    // but also fails min-length after trim in practice. The refine catches spaces-only.
+    expect(schema.safeParse("            ").success).toBe(false);
+  });
+
+  it("respects custom min/max", () => {
+    const short = passwordField(8, 20);
+    expect(short.safeParse("abcdefgh").success).toBe(true);
+    expect(short.safeParse("abcdefg").success).toBe(false);
+    expect(short.safeParse("a".repeat(21)).success).toBe(false);
+  });
+
+  it("accepts passwords with special characters", () => {
+    expect(schema.safeParse("P@ssw0rd!2025").success).toBe(true);
+    expect(schema.safeParse("!@#$%^&*()ab").success).toBe(true);
   });
 });
 
