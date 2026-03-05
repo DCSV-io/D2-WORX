@@ -23,7 +23,7 @@ test.describe("contact form (/design/contact-form)", () => {
     await expect(page.getByRole("combobox", { name: "Country" })).toBeVisible();
     await expect(page.getByLabel("Street Address", { exact: true })).toBeVisible();
     await expect(page.getByLabel("City")).toBeVisible();
-    await expect(page.getByLabel("Postal Code")).toBeVisible();
+    await expect(page.getByLabel("ZIP / Postal Code")).toBeVisible();
   });
 
   test("shows country count from live geo data", async ({ page }) => {
@@ -122,7 +122,7 @@ test.describe("contact form (/design/contact-form)", () => {
 
     await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
     await page.getByLabel("City").fill("San Francisco");
-    await page.getByLabel("Postal Code").fill("94102");
+    await page.getByLabel("ZIP / Postal Code").fill("94102");
 
     await page.getByRole("button", { name: "Submit" }).click();
     await expect(page.getByText(/validated successfully/i)).toBeVisible({
@@ -295,7 +295,7 @@ test.describe("contact form (/design/contact-form)", () => {
 
     await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
     await page.getByLabel("City").fill("San Francisco");
-    await page.getByLabel("Postal Code").fill("94102");
+    await page.getByLabel("ZIP / Postal Code").fill("94102");
 
     await page.getByRole("button", { name: "+ More address lines" }).click();
     await page.getByLabel("Address Line 3").fill("Floor 2");
@@ -387,7 +387,7 @@ test.describe("contact form (/design/contact-form)", () => {
 
     await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
     await page.getByLabel("City").fill("San Francisco");
-    await page.getByLabel("Postal Code").fill("94102");
+    await page.getByLabel("ZIP / Postal Code").fill("94102");
 
     // Resubmit → should succeed
     await page.getByRole("button", { name: "Submit" }).click();
@@ -426,7 +426,7 @@ test.describe("contact form (/design/contact-form)", () => {
 
     await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
     await page.getByLabel("City").fill("San Francisco");
-    await page.getByLabel("Postal Code").fill("94102");
+    await page.getByLabel("ZIP / Postal Code").fill("94102");
 
     // Open address lines, fill them, then submit
     await page.getByRole("button", { name: "+ More address lines" }).click();
@@ -498,10 +498,147 @@ test.describe("contact form (/design/contact-form)", () => {
 
     await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
     await page.getByLabel("City").fill("San Francisco");
-    await page.getByLabel("Postal Code").fill("K1A 0B1"); // Canadian postal code
+    await page.getByLabel("ZIP / Postal Code").fill("K1A 0B1"); // Canadian postal code
 
     await page.getByRole("button", { name: "Submit" }).click();
     await expect(page.getByText(/invalid postal code/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  // --- Cross-field validation: State required ---
+
+  test("state required: select US then submit without state shows error", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    // Deliberately do NOT select a state
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("ZIP / Postal Code").fill("94102");
+
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(
+      page.getByText("State / Province is required for this country"),
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test("state error clears after selecting a state", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("ZIP / Postal Code").fill("94102");
+
+    // Submit without state → error
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(
+      page.getByText("State / Province is required for this country"),
+    ).toBeVisible({ timeout: 5000 });
+
+    // Now select a state and resubmit
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/validated successfully/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  // --- Cross-field validation: Postal code format ---
+
+  test("postal code format error: US country with Canadian postal code", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("ZIP / Postal Code").fill("K1A 0B1");
+
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/invalid postal code for US/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("garbage postal code '!@#$%' rejected for US", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("ZIP / Postal Code").fill("!@#$%");
+
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/invalid postal code/i)).toBeVisible({
+      timeout: 5000,
+    });
+  });
+
+  test("submit with all fields valid after fixing postal code error", async ({ page }) => {
+    await page.getByLabel("First Name").fill("Jane");
+    await page.getByLabel("Last Name").fill("Doe");
+    await page.getByLabel("Email").fill("jane@example.com");
+    await page.getByLabel("Phone").fill("2025551234");
+
+    await page.getByRole("combobox", { name: "Country" }).click();
+    await page
+      .getByRole("option", { name: "United States", exact: true })
+      .click();
+
+    await page.getByRole("combobox", { name: "State / Province" }).click();
+    await page.getByRole("option", { name: "California" }).click();
+
+    await page.getByLabel("Street Address", { exact: true }).fill("123 Main St");
+    await page.getByLabel("City").fill("San Francisco");
+    await page.getByLabel("ZIP / Postal Code").fill("XXXXX");
+
+    // Submit → should fail
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/invalid postal code/i)).toBeVisible({
+      timeout: 5000,
+    });
+
+    // Fix postal code and resubmit
+    await page.getByLabel("ZIP / Postal Code").fill("94102");
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect(page.getByText(/validated successfully/i)).toBeVisible({
       timeout: 5000,
     });
   });

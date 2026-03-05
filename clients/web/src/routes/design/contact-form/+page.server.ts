@@ -7,8 +7,15 @@ import {
   type SubdivisionOption,
 } from "$lib/forms/geo-ref-data.js";
 import { getGeoRefData } from "$lib/server/geo-ref-data.server.js";
-import { contactSchema } from "./schema.js";
+import { createContactSchema } from "./schema.js";
 import type { Actions, PageServerLoad } from "./$types.js";
+
+/** Build the set of country codes that have subdivisions from geo ref data. */
+function buildCountriesWithSubdivisions(
+  subdivisionsByCountry: Record<string, SubdivisionOption[]>,
+): Set<string> {
+  return new Set(Object.keys(subdivisionsByCountry));
+}
 
 export const load: PageServerLoad = async () => {
   const refData = await getGeoRefData();
@@ -30,32 +37,39 @@ export const load: PageServerLoad = async () => {
     }
   }
 
-  const form = await superValidate(zod(contactSchema));
+  const countriesWithSubdivisions = buildCountriesWithSubdivisions(subdivisionsByCountry);
+  const schema = createContactSchema(countriesWithSubdivisions);
+  const form = await superValidate(zod(schema));
 
-  return { form, countries, subdivisionsByCountry };
+  return {
+    form,
+    countries,
+    subdivisionsByCountry,
+    countriesWithSubdivisions: [...countriesWithSubdivisions],
+  };
 };
 
 export const actions: Actions = {
   default: async ({ request }) => {
-    const form = await superValidate(request, zod(contactSchema));
+    const refData = await getGeoRefData();
+    const countries = refData ? countriesToOptions(refData.countries) : [];
+
+    const subdivisionsByCountry: Record<string, SubdivisionOption[]> = {};
+    for (const country of countries) {
+      if (country.subdivisionCodes.length > 0 && refData) {
+        subdivisionsByCountry[country.value] = subdivisionsForCountry(
+          refData.subdivisions,
+          country.value,
+        );
+      }
+    }
+
+    const countriesWithSubdivisions = buildCountriesWithSubdivisions(subdivisionsByCountry);
+    const schema = createContactSchema(countriesWithSubdivisions);
+    const form = await superValidate(request, zod(schema));
 
     if (!form.valid) {
       return fail(400, { form });
-    }
-
-    // Cross-field validation: postal code vs country
-    const { country, postalCode } = form.data;
-    if (country && postalCode) {
-      try {
-        const { postcodeValidator } = await import("postcode-validator");
-        if (!postcodeValidator(postalCode, country)) {
-          form.errors.postalCode = [`Invalid postal code for ${country}`];
-          form.valid = false;
-          return fail(400, { form });
-        }
-      } catch {
-        // postcode-validator doesn't support all countries — skip validation
-      }
     }
 
     // Demo: no actual submission — return success message

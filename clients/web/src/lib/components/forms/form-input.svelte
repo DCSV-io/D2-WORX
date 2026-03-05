@@ -103,6 +103,7 @@
           {placeholder}
           {disabled}
           {value}
+          autocomplete="off"
           oninput={handleInput}
           onblur={handleBlur}
           class={cn(

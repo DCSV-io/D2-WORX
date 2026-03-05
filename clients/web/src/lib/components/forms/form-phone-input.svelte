@@ -172,6 +172,7 @@
         <Input
           {...triggerProps}
           type="tel"
+          autocomplete="off"
           value={displayValue}
           placeholder="Phone number"
           {disabled}

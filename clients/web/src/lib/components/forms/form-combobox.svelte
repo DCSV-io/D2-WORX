@@ -94,9 +94,9 @@
         {#if isRequired}<span class="text-destructive">*</span>{/if}
         <FieldStatusIcon status={fieldStatus} />
       </Form.Label>
+      <input type="hidden" name={fieldName} {value} autocomplete="off" />
       <Combobox.Root
         type="single"
-        name={fieldName}
         {disabled}
         bind:open
         value={value}
@@ -114,6 +114,7 @@
           {/if}
           <Combobox.Input
             {...inputProps}
+            autocomplete="off"
             oninput={handleInput}
             onfocusin={() => {
               open = true;

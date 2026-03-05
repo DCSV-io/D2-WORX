@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { contactSchema, type ContactFormData } from "../../../routes/design/contact-form/schema.js";
+import { createContactSchema, type ContactFormData } from "../../../routes/design/contact-form/schema.js";
+
+/** Countries with subdivisions in our test fixture. */
+const COUNTRIES_WITH_SUBDIVISIONS = new Set(["US", "CA", "AU"]);
+
+const contactSchema = createContactSchema(COUNTRIES_WITH_SUBDIVISIONS);
 
 /** Minimal valid form data — all required fields filled. */
 function validData(overrides: Partial<ContactFormData> = {}): Record<string, unknown> {
@@ -9,7 +14,7 @@ function validData(overrides: Partial<ContactFormData> = {}): Record<string, unk
     email: "jane@example.com",
     phone: "+12025551234",
     country: "US",
-    state: "",
+    state: "US-CA",
     street1: "123 Main St",
     street2: "",
     street3: "",
@@ -73,11 +78,6 @@ describe("contactSchema — basic validation", () => {
   it("rejects missing postalCode", () => {
     const result = contactSchema.safeParse(validData({ postalCode: "" }));
     expect(result.success).toBe(false);
-  });
-
-  it("accepts optional state as empty string", () => {
-    const result = contactSchema.safeParse(validData({ state: "" }));
-    expect(result.success).toBe(true);
   });
 
   it("accepts optional street2 as empty string", () => {
@@ -215,5 +215,168 @@ describe("contactSchema — max length enforcement", () => {
   it("rejects postalCode exceeding 20 chars", () => {
     const result = contactSchema.safeParse(validData({ postalCode: "1".repeat(21) }));
     expect(result.success).toBe(false);
+  });
+});
+
+describe("contactSchema — cross-field: postal code vs country (adversarial)", () => {
+  it("accepts valid US postal code '94102' for US", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", postalCode: "94102" }));
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects Canadian postal code 'K1A 0B1' for US", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", postalCode: "K1A 0B1" }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const postalErrors = result.error.issues.filter((i) => i.path.includes("postalCode"));
+      expect(postalErrors.length).toBeGreaterThan(0);
+      expect(postalErrors[0].message).toContain("Invalid postal code for US");
+    }
+  });
+
+  it("rejects US postal code '94102' for CA", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "CA", state: "CA-ON", postalCode: "94102" }),
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const postalErrors = result.error.issues.filter((i) => i.path.includes("postalCode"));
+      expect(postalErrors.length).toBeGreaterThan(0);
+      expect(postalErrors[0].message).toContain("Invalid postal code for CA");
+    }
+  });
+
+  it("accepts Canadian postal code 'K1A 0B1' for CA", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "CA", state: "CA-ON", postalCode: "K1A 0B1" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("passes gracefully for country without postcode-validator support", () => {
+    // SG (Singapore) is supported, so use a truly unsupported country
+    const result = contactSchema.safeParse(
+      validData({ country: "SG", state: "", postalCode: "123456" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty postal code via base required check (not cross-field)", () => {
+    const result = contactSchema.safeParse(validData({ postalCode: "" }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const postalErrors = result.error.issues.filter((i) => i.path.includes("postalCode"));
+      expect(postalErrors.length).toBeGreaterThan(0);
+      expect(postalErrors[0].message).toBe("Required");
+    }
+  });
+
+  it("rejects garbage string 'ZZZZZ' for US", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", postalCode: "ZZZZZ" }));
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects special characters '!@#$%' for US", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", postalCode: "!@#$%" }));
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts '00000' for US (format-valid — library checks format, not existence)", () => {
+    // postcode-validator checks format only, not whether zip actually exists
+    const result = contactSchema.safeParse(validData({ country: "US", postalCode: "00000" }));
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects whitespace-only postal code", () => {
+    const result = contactSchema.safeParse(validData({ postalCode: "   " }));
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts valid US zip+4 format '94102-1234'", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", postalCode: "94102-1234" }));
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts valid AU postal code '2000' for AU", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "AU", state: "AU-NSW", postalCode: "2000" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects US zip for AU", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "AU", state: "AU-NSW", postalCode: "94102" }),
+    );
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("contactSchema — cross-field: state required when country has subdivisions (adversarial)", () => {
+  it("rejects empty state when US selected (US has subdivisions)", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", state: "" }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const stateErrors = result.error.issues.filter((i) => i.path.includes("state"));
+      expect(stateErrors.length).toBeGreaterThan(0);
+      expect(stateErrors[0].message).toContain("State / Province is required");
+    }
+  });
+
+  it("rejects whitespace-only state when US selected", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", state: "   " }));
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const stateErrors = result.error.issues.filter((i) => i.path.includes("state"));
+      expect(stateErrors.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("accepts empty state when Singapore selected (no subdivisions)", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "SG", state: "", postalCode: "123456" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts filled state for US (has subdivisions)", () => {
+    const result = contactSchema.safeParse(validData({ country: "US", state: "US-CA" }));
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts filled state for Singapore (no subdivisions — extra data harmless)", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "SG", state: "SomeState", postalCode: "123456" }),
+    );
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty state when CA selected (CA has subdivisions)", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "CA", state: "", postalCode: "K1A 0B1" }),
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const stateErrors = result.error.issues.filter((i) => i.path.includes("state"));
+      expect(stateErrors.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("rejects empty state when AU selected (AU has subdivisions)", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "AU", state: "", postalCode: "2000" }),
+    );
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const stateErrors = result.error.issues.filter((i) => i.path.includes("state"));
+      expect(stateErrors.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("accepts undefined state when country has no subdivisions", () => {
+    const result = contactSchema.safeParse(
+      validData({ country: "SG", state: undefined, postalCode: "123456" }),
+    );
+    expect(result.success).toBe(true);
   });
 });

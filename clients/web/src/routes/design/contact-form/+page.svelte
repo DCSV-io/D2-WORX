@@ -1,7 +1,7 @@
 <script lang="ts">
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
-  import { contactSchema } from "./schema.js";
+  import { createContactSchema } from "./schema.js";
   import { FormInput } from "$lib/components/forms/index.js";
   import FormCombobox from "$lib/components/forms/form-combobox.svelte";
   import FormPhoneInput from "$lib/components/forms/form-phone-input.svelte";
@@ -10,13 +10,28 @@
   import { toast } from "svelte-sonner";
   import type { SubdivisionOption } from "$lib/forms/geo-ref-data.js";
   import type { FieldStatus } from "$lib/forms/field-status.js";
+  import {
+    FIRST_NAME,
+    LAST_NAME,
+    EMAIL,
+    PHONE,
+    COUNTRY,
+    STATE,
+    STREET1,
+    STREET2,
+    STREET3,
+    CITY,
+    POSTAL_CODE,
+  } from "$lib/forms/field-presets.js";
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
 
   let { data } = $props();
 
+  const schema = createContactSchema(new Set(data.countriesWithSubdivisions));
+
   const form = superForm(data.form, {
     id: "contact-form",
-    validators: zodClient(contactSchema),
+    validators: zodClient(schema),
     onUpdated({ form: f }) {
       if (f.valid && f.message) {
         toast.success(f.message as string);
@@ -33,6 +48,12 @@
   function handleCountryChange(countryCode: string) {
     ($formData as Record<string, string>).state = "";
     stateOptions = countryCode ? (data.subdivisionsByCountry[countryCode] ?? []) : [];
+
+    // Revalidate postal code when country changes (format may differ)
+    const postalCode = ($formData as Record<string, string>).postalCode;
+    if (postalCode) {
+      form.validate("postalCode");
+    }
   }
 
   $effect(() => {
@@ -114,21 +135,18 @@
       </Card.Description>
     </Card.Header>
     <Card.Content>
-      <form method="POST" use:enhance class="flex flex-col gap-5">
+      <form method="POST" use:enhance autocomplete="off" class="flex flex-col gap-5">
         <!-- Name row -->
         <div class="grid gap-4 sm:grid-cols-2">
-          <FormInput {form} field="firstName" label="First Name" placeholder="First" />
-          <FormInput {form} field="lastName" label="Last Name" placeholder="Last" />
+          <FormInput {form} field="firstName" {...FIRST_NAME} />
+          <FormInput {form} field="lastName" {...LAST_NAME} />
         </div>
 
         <!-- Email with async availability check -->
         <FormInput
           {form}
           field="email"
-          label="Email"
-          type="email"
-          placeholder="your@email.com"
-          description="We'll never share your email."
+          {...EMAIL}
           status={emailStatus === "idle" ? undefined : emailStatus}
           onblur={checkEmailAvailability}
           oninput={resetEmailStatus}
@@ -138,21 +156,18 @@
         <FormPhoneInput
           {form}
           field="phone"
-          label="Phone"
+          label={PHONE.label}
           countries={data.countries}
           defaultCountry="US"
-          description="Include country code for international numbers."
+          description={PHONE.description}
         />
 
         <!-- Country combobox -->
         <FormCombobox
           {form}
           field="country"
-          label="Country"
+          {...COUNTRY}
           options={data.countries}
-          placeholder="Select a country..."
-          searchPlaceholder="Search countries..."
-          emptyMessage="No country found."
           onValueChange={handleCountryChange}
         />
 
@@ -161,21 +176,18 @@
           <FormCombobox
             {form}
             field="state"
-            label="State / Province"
+            {...STATE}
             options={stateOptions}
-            placeholder="Select a state..."
-            searchPlaceholder="Search states..."
-            emptyMessage="No state found."
           />
         {/if}
 
         <!-- Street address with expandable extra lines -->
-        <FormInput {form} field="street1" label="Street Address" placeholder="123 Street Rd">
+        <FormInput {form} field="street1" {...STREET1}>
           {#snippet labelRight()}
             <button
               type="button"
               onclick={toggleExtraLines}
-              class="text-xs text-muted-foreground hover:text-foreground"
+              class="text-sm text-muted-foreground hover:text-foreground"
             >
               {showExtraLines ? "- Fewer address lines" : "+ More address lines"}
             </button>
@@ -183,31 +195,15 @@
         </FormInput>
         {#if showExtraLines}
           <div class="grid gap-4 sm:grid-cols-2">
-            <FormInput
-              {form}
-              field="street2"
-              label="Address Line 2"
-              placeholder="Apt, suite, unit"
-            />
-            <FormInput
-              {form}
-              field="street3"
-              label="Address Line 3"
-              placeholder="Building, floor"
-            />
+            <FormInput {form} field="street2" {...STREET2} />
+            <FormInput {form} field="street3" {...STREET3} />
           </div>
         {/if}
 
         <!-- City + Postal Code row -->
         <div class="grid gap-4 sm:grid-cols-2">
-          <FormInput {form} field="city" label="City" placeholder="City" />
-          <FormInput
-            {form}
-            field="postalCode"
-            label="Postal Code"
-            placeholder="#####"
-            description="Must match the selected country format."
-          />
+          <FormInput {form} field="city" {...CITY} />
+          <FormInput {form} field="postalCode" {...POSTAL_CODE} />
         </div>
 
         <!-- Actions -->
