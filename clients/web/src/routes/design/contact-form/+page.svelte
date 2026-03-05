@@ -9,8 +9,6 @@
   import { Button } from "$lib/components/ui/button/index.js";
   import * as Card from "$lib/components/ui/card/index.js";
   import { toast } from "svelte-sonner";
-  import type { SubdivisionOption } from "$lib/forms/geo-ref-data.js";
-  import type { FieldStatus } from "$lib/forms/field-status.js";
   import {
     FIRST_NAME,
     LAST_NAME,
@@ -24,6 +22,9 @@
     CITY,
     POSTAL_CODE,
   } from "$lib/forms/field-presets.js";
+  import { useCountryState } from "$lib/forms/country-state.svelte.js";
+  import { useAddressLines } from "$lib/forms/address-lines.svelte.js";
+  import { useAsyncFieldCheck } from "$lib/forms/async-field-check.svelte.js";
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
 
   let { data } = $props();
@@ -45,70 +46,23 @@
     },
   });
 
-  const { enhance, form: formData, errors } = form;
+  const { enhance } = form;
 
-  // --- Cascading state logic ---
-  let stateOptions = $state<SubdivisionOption[]>([]);
-  let showState = $derived(stateOptions.length > 0);
+  // Composable returns use getter-based reactivity — do NOT destructure
+  // (destructuring evaluates getters once and loses $state tracking).
+  const countryState = useCountryState({ form, subdivisionsByCountry });
+  const addressLines = useAddressLines({ form });
 
-  function handleCountryChange(countryCode: string) {
-    ($formData as Record<string, string>).state = "";
-    stateOptions = countryCode ? (subdivisionsByCountry[countryCode] ?? []) : [];
-
-    // Revalidate postal code when country changes (format may differ)
-    const postalCode = ($formData as Record<string, string>).postalCode;
-    if (postalCode) {
-      form.validate("postalCode");
-    }
-  }
-
-  $effect(() => {
-    const country = ($formData as Record<string, string>).country;
-    if (country) {
-      stateOptions = subdivisionsByCountry[country] ?? [];
-    }
-  });
-
-  // --- Expandable address lines ---
-  let showExtraLines = $state(false);
-
-  function toggleExtraLines() {
-    showExtraLines = !showExtraLines;
-    if (!showExtraLines) {
-      ($formData as Record<string, string>).street2 = "";
-      ($formData as Record<string, string>).street3 = "";
-    }
-  }
-
-  // --- Async email availability check ---
-  let emailStatus = $state<FieldStatus>("idle");
-
-  async function checkEmailAvailability() {
-    const email = ($formData as Record<string, string>).email;
-    if (!email || !email.includes("@")) return;
-
-    // Skip if client validation already failed (errors populated by validate-on-blur)
-    const clientErrors = ($errors as Record<string, string[]>)?.email;
-    if (clientErrors?.length) return;
-
-    emailStatus = "validating";
-    try {
+  const emailCheck = useAsyncFieldCheck({
+    form,
+    field: "email",
+    preCheck: (v) => !!v && v.includes("@"),
+    async checker(email) {
       const res = await fetch(`/design/api/check-email?email=${encodeURIComponent(email)}`);
       const { available } = await res.json();
-      if (!available) {
-        emailStatus = "invalid";
-        errors.update((e) => ({ ...e, email: ["This email is already taken"] }));
-      } else {
-        emailStatus = "valid";
-      }
-    } catch {
-      emailStatus = "idle";
-    }
-  }
-
-  function resetEmailStatus() {
-    emailStatus = "idle";
-  }
+      return { valid: available, errorMessage: "This email is already taken" };
+    },
+  });
 </script>
 
 <svelte:head>
@@ -153,9 +107,9 @@
           {form}
           field="email"
           {...EMAIL}
-          status={emailStatus === "idle" ? undefined : emailStatus}
-          onblur={checkEmailAvailability}
-          oninput={resetEmailStatus}
+          status={emailCheck.status === "idle" ? undefined : emailCheck.status}
+          onblur={emailCheck.check}
+          oninput={emailCheck.reset}
         />
 
         <!-- Phone with country selector -->
@@ -174,16 +128,16 @@
           field="country"
           {...COUNTRY}
           options={countries}
-          onValueChange={handleCountryChange}
+          onValueChange={countryState.handleCountryChange}
         />
 
         <!-- State/Province — conditionally shown -->
-        {#if showState}
+        {#if countryState.showState}
           <FormCombobox
             {form}
             field="state"
             {...STATE}
-            options={stateOptions}
+            options={countryState.stateOptions}
           />
         {/if}
 
@@ -192,14 +146,14 @@
           {#snippet labelRight()}
             <button
               type="button"
-              onclick={toggleExtraLines}
+              onclick={addressLines.toggleExtraLines}
               class="text-sm text-muted-foreground hover:text-foreground"
             >
-              {showExtraLines ? "- Fewer address lines" : "+ More address lines"}
+              {addressLines.showExtraLines ? "- Fewer address lines" : "+ More address lines"}
             </button>
           {/snippet}
         </FormInput>
-        {#if showExtraLines}
+        {#if addressLines.showExtraLines}
           <div class="grid gap-4 sm:grid-cols-2">
             <FormInput {form} field="street2" {...STREET2} />
             <FormInput {form} field="street3" {...STREET3} />

@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { countriesToOptions, subdivisionsForCountry } from "../geo-ref-data.js";
+import {
+  countriesToOptions,
+  subdivisionsForCountry,
+  buildCountriesWithSubdivisions,
+} from "../geo-ref-data.js";
 import type { CountryDTO, SubdivisionDTO } from "@d2/protos";
 
 function makeCountry(overrides: Partial<CountryDTO> = {}): CountryDTO {
@@ -131,5 +135,31 @@ describe("subdivisionsForCountry", () => {
 
   it("handles empty map", () => {
     expect(subdivisionsForCountry({}, "US")).toEqual([]);
+  });
+});
+
+describe("buildCountriesWithSubdivisions", () => {
+  it("returns a set of country codes that have subdivisions", () => {
+    const result = buildCountriesWithSubdivisions({
+      US: [{ value: "US-CA", label: "California" }],
+      CA: [{ value: "CA-ON", label: "Ontario" }],
+    });
+
+    expect(result).toBeInstanceOf(Set);
+    expect(result.size).toBe(2);
+    expect(result.has("US")).toBe(true);
+    expect(result.has("CA")).toBe(true);
+  });
+
+  it("returns empty set for empty input", () => {
+    const result = buildCountriesWithSubdivisions({});
+    expect(result.size).toBe(0);
+  });
+
+  it("excludes countries not in the map", () => {
+    const result = buildCountriesWithSubdivisions({
+      US: [{ value: "US-CA", label: "California" }],
+    });
+    expect(result.has("JP")).toBe(false);
   });
 });

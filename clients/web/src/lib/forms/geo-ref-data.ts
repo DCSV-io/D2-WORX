@@ -111,3 +111,13 @@ export function subdivisionsForCountry(
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
+
+/**
+ * Build the set of country codes that have subdivisions.
+ * Used to gate state/province validation in contact schemas.
+ */
+export function buildCountriesWithSubdivisions(
+  subdivisionsByCountry: Record<string, SubdivisionOption[]>,
+): Set<string> {
+  return new Set(Object.keys(subdivisionsByCountry));
+}

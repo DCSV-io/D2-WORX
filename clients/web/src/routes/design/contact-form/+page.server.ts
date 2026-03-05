@@ -4,18 +4,12 @@ import { error, fail } from "@sveltejs/kit";
 import {
   countriesToOptions,
   subdivisionsForCountry,
+  buildCountriesWithSubdivisions,
   type SubdivisionOption,
 } from "$lib/forms/geo-ref-data.js";
 import { getGeoRefData } from "$lib/server/geo-ref-data.server.js";
 import { createContactSchema } from "./schema.js";
 import type { Actions, PageServerLoad } from "./$types.js";
-
-/** Build the set of country codes that have subdivisions from geo ref data. */
-function buildCountriesWithSubdivisions(
-  subdivisionsByCountry: Record<string, SubdivisionOption[]>,
-): Set<string> {
-  return new Set(Object.keys(subdivisionsByCountry));
-}
 
 export const load: PageServerLoad = async () => {
   const refData = await getGeoRefData();

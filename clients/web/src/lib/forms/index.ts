@@ -31,6 +31,7 @@ export {
 export {
   countriesToOptions,
   subdivisionsForCountry,
+  buildCountriesWithSubdivisions,
   type CountryOption,
   type SubdivisionOption,
 } from "./geo-ref-data.js";
