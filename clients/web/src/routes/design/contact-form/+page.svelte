@@ -1,6 +1,7 @@
 <script lang="ts">
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
+  import { untrack } from "svelte";
   import { createContactSchema } from "./schema.js";
   import { FormInput } from "$lib/components/forms/index.js";
   import FormCombobox from "$lib/components/forms/form-combobox.svelte";
@@ -27,9 +28,14 @@
 
   let { data } = $props();
 
-  const schema = createContactSchema(new Set(data.countriesWithSubdivisions));
+  // Page data is stable for the component lifetime (navigation remounts).
+  // Use untrack to read the initial values without subscribing to changes.
+  const { form: formDefaults, countries, subdivisionsByCountry, countriesWithSubdivisions } =
+    untrack(() => data);
 
-  const form = superForm(data.form, {
+  const schema = createContactSchema(new Set(countriesWithSubdivisions));
+
+  const form = superForm(formDefaults, {
     id: "contact-form",
     validators: zodClient(schema),
     onUpdated({ form: f }) {
@@ -47,7 +53,7 @@
 
   function handleCountryChange(countryCode: string) {
     ($formData as Record<string, string>).state = "";
-    stateOptions = countryCode ? (data.subdivisionsByCountry[countryCode] ?? []) : [];
+    stateOptions = countryCode ? (subdivisionsByCountry[countryCode] ?? []) : [];
 
     // Revalidate postal code when country changes (format may differ)
     const postalCode = ($formData as Record<string, string>).postalCode;
@@ -59,7 +65,7 @@
   $effect(() => {
     const country = ($formData as Record<string, string>).country;
     if (country) {
-      stateOptions = data.subdivisionsByCountry[country] ?? [];
+      stateOptions = subdivisionsByCountry[country] ?? [];
     }
   });
 
@@ -157,7 +163,7 @@
           {form}
           field="phone"
           label={PHONE.label}
-          countries={data.countries}
+          countries={countries}
           defaultCountry="US"
           description={PHONE.description}
         />
@@ -167,7 +173,7 @@
           {form}
           field="country"
           {...COUNTRY}
-          options={data.countries}
+          options={countries}
           onValueChange={handleCountryChange}
         />
 
@@ -217,6 +223,6 @@
 
   <!-- Data source indicator -->
   <p class="mt-4 text-center text-xs text-muted-foreground">
-    {data.countries.length} countries loaded (live geo reference data)
+    {countries.length} countries loaded (live geo reference data)
   </p>
 </div>
