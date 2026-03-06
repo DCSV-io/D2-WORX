@@ -38,7 +38,6 @@ export const EMAIL: FieldPreset = {
   label: "Email",
   placeholder: "your@email.com",
   type: "email",
-  description: "We'll never share your email.",
 };
 
 export const PHONE: FieldPreset = {
@@ -77,7 +76,6 @@ export const PASSWORD: FieldPreset = {
   label: "Password",
   placeholder: "Enter password",
   type: "password",
-  description: "Must be at least 12 characters.",
 };
 
 export const CONFIRM_EMAIL: FieldPreset = {
