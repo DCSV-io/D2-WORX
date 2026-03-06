@@ -25,7 +25,7 @@ const config = defineConfig("auth-service", {
   redisUrl: requiredParsed(parseRedisUrl, "REDIS_URL"),
   rabbitMqUrl: optionalString("RABBITMQ_URL"),
   baseUrl: defaultString("http://localhost:5100", "AUTH_BASE_URL"),
-  corsOrigin: defaultString("http://localhost:5173", "AUTH_CORS_ORIGIN"),
+  corsOrigins: envArray("AUTH_CORS_ORIGINS"),
   jwtIssuer: defaultString("d2-worx", "AUTH_JWT_ISSUER"),
   jwtAudience: defaultString("d2-services", "AUTH_JWT_AUDIENCE"),
   geoAddress: optionalString("GEO_GRPC_ADDRESS"),

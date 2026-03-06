@@ -50,7 +50,7 @@ export async function startAuthService(opts: {
     databaseUrl: opts.databaseUrl,
     redisUrl: opts.redisUrl,
     baseUrl: "http://localhost:3333",
-    corsOrigin: "http://localhost:5173",
+    corsOrigins: ["http://localhost:5173"],
     jwtIssuer: "e2e-test-issuer",
     jwtAudience: "e2e-test-audience",
     jwtExpirationSeconds: 900,

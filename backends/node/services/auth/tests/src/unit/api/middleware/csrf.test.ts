@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
 import { createCsrfMiddleware } from "@d2/auth-api";
 
-function createApp(allowedOrigin: string) {
+function createApp(...allowedOrigins: string[]) {
   const app = new Hono();
-  app.use("*", createCsrfMiddleware(allowedOrigin));
+  app.use("*", createCsrfMiddleware(allowedOrigins));
   app.get("/test", (c) => c.json({ ok: true }));
   app.post("/test", (c) => c.json({ ok: true }));
   app.put("/test", (c) => c.json({ ok: true }));

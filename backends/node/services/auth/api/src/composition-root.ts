@@ -435,7 +435,7 @@ export async function createApp(
   const app = new Hono();
 
   // Global middleware
-  app.use("*", createCorsMiddleware(config.corsOrigin));
+  app.use("*", createCorsMiddleware(config.corsOrigins));
   app.use("*", async (c, next) => {
     await next();
     c.res.headers.set("X-Content-Type-Options", "nosniff");
@@ -486,7 +486,7 @@ export async function createApp(
   protectedRoutes.use("*", createSessionMiddleware(auth));
   protectedRoutes.use("*", sessionFingerprintMiddleware);
   protectedRoutes.use("*", createScopeMiddleware(provider));
-  protectedRoutes.use("*", createCsrfMiddleware(config.corsOrigin));
+  protectedRoutes.use("*", createCsrfMiddleware(config.corsOrigins));
   protectedRoutes.route("/", createEmulationRoutes());
   protectedRoutes.route("/", createOrgContactRoutes());
   protectedRoutes.route("/", createInvitationRoutes(auth, db, config.baseUrl));

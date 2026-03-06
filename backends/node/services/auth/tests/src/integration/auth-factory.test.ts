@@ -29,7 +29,7 @@ describe("createAuth() full integration", () => {
     databaseUrl: "", // populated by testcontainer
     redisUrl: "",
     baseUrl: "http://localhost:3333",
-    corsOrigin: "http://localhost:5173",
+    corsOrigins: ["http://localhost:5173"],
     jwtIssuer: "test-issuer",
     jwtAudience: "test-audience",
     jwtExpirationSeconds: 900,

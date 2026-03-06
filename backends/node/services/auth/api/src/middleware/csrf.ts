@@ -22,11 +22,11 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  *
  * BetterAuth handles its own CSRF protection — this is for custom routes only.
  *
- * @param allowedOrigin - The trusted origin (e.g., SvelteKit URL)
+ * @param allowedOrigins - The trusted origins (e.g., SvelteKit URLs)
  */
-export function createCsrfMiddleware(allowedOrigin: string) {
-  // Normalize: strip trailing slash for consistent comparison
-  const normalizedOrigin = allowedOrigin.replace(/\/+$/, "");
+export function createCsrfMiddleware(allowedOrigins: string[]) {
+  // Normalize: strip trailing slashes for consistent comparison
+  const normalizedOrigins = new Set(allowedOrigins.map((o) => o.replace(/\/+$/, "")));
 
   return createMiddleware(async (c, next) => {
     if (!UNSAFE_METHODS.has(c.req.method)) {
@@ -49,7 +49,7 @@ export function createCsrfMiddleware(allowedOrigin: string) {
 
     // Check 2: Validate Origin header when present
     const origin = c.req.header("origin");
-    if (origin && origin.replace(/\/+$/, "") !== normalizedOrigin) {
+    if (origin && !normalizedOrigins.has(origin.replace(/\/+$/, ""))) {
       return c.json(
         D2Result.fail({
           messages: ["Invalid request origin."],

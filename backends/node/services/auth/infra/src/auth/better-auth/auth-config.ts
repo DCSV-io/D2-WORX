@@ -17,8 +17,8 @@ export interface AuthServiceConfig {
   /** Base URL of the auth service (e.g., http://localhost:3000) */
   readonly baseUrl: string;
 
-  /** Allowed CORS origin for SvelteKit (e.g., http://localhost:5173) */
-  readonly corsOrigin: string;
+  /** Allowed CORS origins (e.g., http://localhost:5173, https://t.dcsv.io) */
+  readonly corsOrigins: string[];
 
   /** JWT issuer claim */
   readonly jwtIssuer: string;

@@ -298,7 +298,7 @@ export function createAuth(
       },
     },
 
-    trustedOrigins: [config.corsOrigin],
+    trustedOrigins: config.corsOrigins,
 
     plugins: [
       bearer(),
