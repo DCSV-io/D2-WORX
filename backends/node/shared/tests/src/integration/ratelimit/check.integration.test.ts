@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { Check, RateLimitDimension } from "@d2/ratelimit";
+import { CheckRateLimit, RateLimitDimension } from "@d2/ratelimit";
 import { GetTtl, Increment, Set } from "@d2/cache-redis";
 import type { IRequestInfo } from "@d2/request-enrichment";
 import {
@@ -38,7 +38,7 @@ describe("RateLimit Check handler (integration with Redis)", () => {
   function createCheckHandler(options?: Record<string, unknown>): Check {
     const redis = getRedis();
     const context = createTestContext();
-    return new Check(
+    return new CheckRateLimit(
       new GetTtl(redis, context),
       new Increment(redis, context),
       new Set<string>(redis, context),

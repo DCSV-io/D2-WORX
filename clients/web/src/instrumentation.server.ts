@@ -16,7 +16,7 @@ import { register } from "node:module";
 // (Vite manages the process), so we call loadEnv() here instead.
 loadEnv();
 
-const serviceName = "d2-sveltekit-server";
+const serviceName = "d2-sveltekit";
 
 const traceExporter = new OTLPTraceExporter({
   url: "http://localhost:4318/v1/traces",
@@ -33,7 +33,7 @@ const metricExporter = new OTLPMetricExporter({
 // Set up logging
 const loggerProvider = new LoggerProvider({
   resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: "d2-sveltekit",
+    [ATTR_SERVICE_NAME]: serviceName,
     service_name: serviceName,
     service: serviceName,
   }),

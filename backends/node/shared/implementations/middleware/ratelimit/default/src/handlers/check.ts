@@ -19,7 +19,7 @@ type CheckOutput = RateLimit.CheckOutput;
  *
  * Fail-open on all cache errors.
  */
-export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateLimit.ICheckHandler {
+export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> implements RateLimit.ICheckHandler {
   override get redaction() {
     return RateLimit.CHECK_REDACTION;
   }
@@ -62,7 +62,7 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
     }
 
     // Validate input.
-    const validation = this.validateInput(Check.checkSchema, input);
+    const validation = this.validateInput(CheckRateLimit.checkSchema, input);
     if (validation.failed) {
       return D2Result.bubbleFail(validation);
     }
@@ -156,9 +156,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
       // Compute window keys upfront so all Redis operations can fire concurrently.
       const now = new Date();
       const windowSeconds = this.options.windowMs / 1000;
-      const currentWindowId = Check.getWindowId(now);
+      const currentWindowId = CheckRateLimit.getWindowId(now);
       const previousTime = new Date(now.getTime() - this.options.windowMs);
-      const previousWindowId = Check.getWindowId(previousTime);
+      const previousWindowId = CheckRateLimit.getWindowId(previousTime);
 
       const currentKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, currentWindowId);
       const previousKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, previousWindowId);

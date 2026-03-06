@@ -6,10 +6,10 @@ Multi-dimensional sliding-window rate limiting. Mirrors `RateLimit.Default` in .
 
 | File Name                                          | Description                                                               |
 | -------------------------------------------------- | ------------------------------------------------------------------------- |
-| [handlers/check.ts](src/handlers/check.ts)         | `Check` handler — sliding window approximation across 4 dimensions.       |
+| [handlers/check.ts](src/handlers/check.ts)         | `CheckRateLimit` handler — sliding window approximation across 4 dimensions.       |
 | [rate-limit-options.ts](src/rate-limit-options.ts) | `RateLimitOptions` + `DEFAULT_RATE_LIMIT_OPTIONS`.                        |
 | [cache-keys.ts](src/cache-keys.ts)                 | Rate limit cache key generation.                                          |
-| [index.ts](src/index.ts)                           | Barrel re-export of `Check` handler + options (with deprecation notices). |
+| [index.ts](src/index.ts)                           | Barrel re-export of `CheckRateLimit` handler + options (with deprecation notices). |
 
 ## Dimensions
 
@@ -45,7 +45,7 @@ Contract types (`ICheckHandler`, `CheckInput/Output`, `RateLimitDimension`) are 
 
 ## Data Redaction
 
-The `Check` handler declares `CHECK_REDACTION` (from `@d2/interfaces`) which suppresses input logging because `IRequestInfo` contains PII (client IP, fingerprint, user ID, city).
+The `CheckRateLimit` handler declares `CHECK_REDACTION` (from `@d2/interfaces`) which suppresses input logging because `IRequestInfo` contains PII (client IP, fingerprint, user ID, city).
 
 ## Fail-Open Behavior
 

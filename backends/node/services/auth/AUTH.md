@@ -173,7 +173,7 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 | All CQRS handlers, repo handlers     | Transient | New instance per resolve — receive scoped `IHandlerContext` via factory |
 | Sign-in throttle store               | Singleton | Redis-backed state — shared across all requests                         |
 
-**Pre-auth singletons** (FindWhoIs, RateLimit.Check, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and therefore have no per-request user context. They use a service-level `HandlerContext` with a static anonymous `IRequestContext` and are NOT registered in the DI container. This is intentional — they need to function independently of the per-request scope.
+**Pre-auth singletons** (FindWhoIs, CheckRateLimit, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and therefore have no per-request user context. They use a service-level `HandlerContext` with a static anonymous `IRequestContext` and are NOT registered in the DI container. This is intentional — they need to function independently of the per-request scope.
 
 **Scoping patterns:**
 

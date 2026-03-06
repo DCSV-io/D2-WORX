@@ -1,7 +1,7 @@
 import { logs } from "@opentelemetry/api-logs";
 import { trace, context } from "@opentelemetry/api";
 
-const otelLogger = logs.getLogger("d2-sveltekit-server");
+const otelLogger = logs.getLogger("d2-sveltekit");
 
 function getTraceContext() {
   const span = trace.getSpan(context.active());

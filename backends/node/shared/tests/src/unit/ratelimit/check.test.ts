@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Check, RateLimitDimension, type CheckInput } from "@d2/ratelimit";
+import { CheckRateLimit, RateLimitDimension, type CheckInput } from "@d2/ratelimit";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
@@ -73,7 +73,7 @@ function createMockHandlers(): MockHandlers {
 }
 
 function createCheck(mocks: MockHandlers, options?: Record<string, unknown>): Check {
-  return new Check(mocks.getTtl, mocks.increment, mocks.set, options ?? {}, createTestContext());
+  return new CheckRateLimit(mocks.getTtl, mocks.increment, mocks.set, options ?? {}, createTestContext());
 }
 
 describe("RateLimit Check handler", () => {

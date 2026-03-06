@@ -6,7 +6,7 @@ import { ErrorCodes } from "@d2/result";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { createSecondaryStorage } from "@d2/auth-infra";
-import { Check as RateLimitCheck } from "@d2/ratelimit";
+import { CheckRateLimit } from "@d2/ratelimit";
 
 function createTestContext(): IHandlerContext {
   const request: IRequestContext = {
@@ -87,7 +87,7 @@ describe("Redis failover — auth service consumers", () => {
       const getTtl = new CacheRedis.GetTtl(freshRedis, ctx);
       const increment = new CacheRedis.Increment(freshRedis, ctx);
       const set = new CacheRedis.Set<string>(freshRedis, ctx);
-      const rateLimitCheck = new RateLimitCheck(getTtl, increment, set, {}, ctx);
+      const rateLimitCheck = new CheckRateLimit(getTtl, increment, set, {}, ctx);
 
       // 1. Normal check — should pass
       const normalResult = await rateLimitCheck.handleAsync({

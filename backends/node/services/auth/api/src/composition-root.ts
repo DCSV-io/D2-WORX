@@ -36,7 +36,7 @@ import {
 } from "@d2/geo-client";
 import { addCommsClient, INotifyKey } from "@d2/comms-client";
 import type { IMessagePublisher } from "@d2/messaging";
-import { Check as RateLimitCheck } from "@d2/ratelimit";
+import { CheckRateLimit } from "@d2/ratelimit";
 import {
   createAuth,
   createSecondaryStorage,
@@ -246,7 +246,7 @@ export async function createApp(
 
   // 5. Pre-auth singletons (not in DI — use service-level context)
   // Rate limiting (Redis-backed distributed sliding window via @d2/ratelimit)
-  const rateLimitCheck = new RateLimitCheck(
+  const rateLimitCheck = new CheckRateLimit(
     redisGetTtl,
     redisIncrement,
     redisSet,

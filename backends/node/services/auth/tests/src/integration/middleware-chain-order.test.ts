@@ -9,7 +9,7 @@ import { createLogger } from "@d2/logging";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { enrichRequest } from "@d2/request-enrichment";
 import { FindWhoIs, type GeoClientOptions } from "@d2/geo-client";
-import { Check as RateLimitCheck } from "@d2/ratelimit";
+import { CheckRateLimit } from "@d2/ratelimit";
 import type { RateLimit } from "@d2/interfaces";
 import * as CacheRedis from "@d2/cache-redis";
 import { RedisContainer, type StartedRedisContainer } from "@testcontainers/redis";
@@ -58,7 +58,7 @@ describe("Middleware chain order", () => {
     const getTtl = new CacheRedis.GetTtl(redis, ctx);
     const increment = new CacheRedis.Increment(redis, ctx);
     const set = new CacheRedis.Set<string>(redis, ctx);
-    const rateLimitCheck = new RateLimitCheck(
+    const rateLimitCheck = new CheckRateLimit(
       getTtl,
       increment,
       set,

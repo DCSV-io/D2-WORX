@@ -2,7 +2,7 @@
  * Server-side middleware composition module.
  *
  * Lazy singleton initialization for Redis, Geo gRPC, cache handlers,
- * FindWhoIs, RateLimitCheck, and idempotency handlers. Pattern mirrors
+ * FindWhoIs, CheckRateLimit, and idempotency handlers. Pattern mirrors
  * auth/api/src/composition-root.ts but simplified — no DI container,
  * just module-level singletons.
  *
@@ -34,8 +34,8 @@ import {
   type GeoClientOptions,
 } from "@d2/geo-client";
 import type { GeoRefData } from "@d2/protos";
-import { Check as RateLimitCheck } from "@d2/ratelimit";
-import { Check as IdempotencyCheck, checkIdempotency } from "@d2/idempotency";
+import { CheckRateLimit } from "@d2/ratelimit";
+import { CheckIdempotency, checkIdempotency } from "@d2/idempotency";
 import { enrichRequest } from "@d2/request-enrichment";
 import type { RateLimit, Idempotency, DistributedCache } from "@d2/interfaces";
 
@@ -140,7 +140,7 @@ export function getMiddlewareContext(): MiddlewareContext | null {
   );
 
   // Rate limit check handler (Redis-backed sliding window)
-  const rateLimitCheck = new RateLimitCheck(
+  const rateLimitCheck = new CheckRateLimit(
     redisGetTtl,
     redisIncrement,
     redisSet,
@@ -149,7 +149,7 @@ export function getMiddlewareContext(): MiddlewareContext | null {
   );
 
   // Idempotency check handler (Redis-backed SET NX)
-  const idempotencyCheck = new IdempotencyCheck(redisSetNx, redisGet, {}, serviceContext);
+  const idempotencyCheck = new CheckIdempotency(redisSetNx, redisGet, {}, serviceContext);
 
   cached = {
     logger,
