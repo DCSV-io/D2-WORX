@@ -7,7 +7,9 @@
   import { FormInput } from "$lib/client/components/forms/index.js";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import { authClient } from "$lib/client/stores/auth-client.js";
-  import { EMAIL } from "$lib/shared/forms/field-presets.js";
+  import { EMAIL, PASSWORD } from "$lib/shared/forms/field-presets.js";
+  import EyeIcon from "@lucide/svelte/icons/eye";
+  import EyeOffIcon from "@lucide/svelte/icons/eye-off";
 
   type Props = {
     data: SuperValidated<SignInFormData>;
@@ -67,12 +69,29 @@
   const form = initForm();
 
   const { enhance } = form;
+
+  let showPassword = $state(false);
 </script>
 
 <form method="POST" use:enhance autocomplete="off" class="flex flex-col gap-5">
   <FormInput {form} field="email" {...EMAIL} />
 
-  <FormInput {form} field="password" type="password" label="Password" placeholder="Enter password" />
+  <FormInput {form} field="password" {...PASSWORD} type={showPassword ? "text" : "password"}>
+    {#snippet inputAction()}
+      <button
+        type="button"
+        onclick={() => (showPassword = !showPassword)}
+        class="text-muted-foreground hover:text-foreground"
+        aria-label={showPassword ? "Hide password" : "Show password"}
+      >
+        {#if showPassword}
+          <EyeOffIcon class="size-4" />
+        {:else}
+          <EyeIcon class="size-4" />
+        {/if}
+      </button>
+    {/snippet}
+  </FormInput>
 
   {#if serverError}
     <p class="text-destructive text-sm">{serverError}</p>
