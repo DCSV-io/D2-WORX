@@ -8,7 +8,7 @@
     Decisive Works. A microservices-based platform for SMB SaaS applications.
   </p>
   <div class="mt-8 flex gap-4">
-    <Button href="/sign-in" size="lg">Get Started</Button>
+    <Button href="/sign-up" size="lg">Get Started</Button>
     <Button href="/design" variant="outline" size="lg">Design System</Button>
   </div>
 </div>

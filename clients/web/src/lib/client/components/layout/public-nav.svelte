@@ -19,7 +19,8 @@
     <div class="flex items-center gap-2">
       <ThemeToggle />
       <ThemeSelector />
-      <Button variant="default" size="sm" href="/sign-in">Sign In</Button>
+      <Button variant="outline" size="sm" href="/sign-in">Sign In</Button>
+      <Button variant="default" size="sm" href="/sign-up">Sign Up</Button>
     </div>
   </div>
 </nav>

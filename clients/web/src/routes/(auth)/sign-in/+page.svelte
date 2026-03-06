@@ -1,8 +1,11 @@
 <script lang="ts">
+  import { page } from "$app/state";
   import { SignInForm } from "$lib/client/components/auth/index.js";
   import * as Card from "$lib/client/components/ui/card/index.js";
 
   let { data } = $props();
+
+  const returnTo = $derived(page.url.searchParams.get("returnTo"));
 </script>
 
 <svelte:head>
@@ -15,6 +18,6 @@
     <Card.Description>Enter your credentials to access your account.</Card.Description>
   </Card.Header>
   <Card.Content>
-    <SignInForm data={data.form} />
+    <SignInForm data={data.form} {returnTo} />
   </Card.Content>
 </Card.Root>

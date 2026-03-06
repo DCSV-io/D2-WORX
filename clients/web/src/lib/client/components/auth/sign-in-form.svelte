@@ -13,9 +13,10 @@
 
   type Props = {
     data: SuperValidated<SignInFormData>;
+    returnTo?: string | null;
   };
 
-  let { data }: Props = $props();
+  let { data, returnTo }: Props = $props();
 
   const schema = createSignInSchema();
 
@@ -56,7 +57,10 @@
             return;
           }
 
-          await goto("/");
+          const dest = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+            ? returnTo
+            : "/";
+          await goto(dest);
         } catch {
           serverError = "Something went wrong. Please try again.";
         } finally {
