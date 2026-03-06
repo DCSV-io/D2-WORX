@@ -1,5 +1,6 @@
 import {
   trace,
+  context as otelContext,
   metrics,
   SpanStatusCode,
   type Tracer,
@@ -37,7 +38,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
   protected readonly context: IHandlerContext;
 
   protected get traceId(): string | undefined {
-    return this.context.request.traceId;
+    return this.context.request.traceId ?? trace.getSpan(otelContext.active())?.spanContext().traceId;
   }
 
   /** Override to declare this handler's redaction posture. */
@@ -88,7 +89,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
       // observability backends. Production deployments should configure
       // OTel exporters to redact or filter these attributes as needed.
       span.setAttribute("handler.type", handlerName);
-      span.setAttribute("trace.id", this.context.request.traceId ?? "");
+      span.setAttribute("trace.id", this.traceId ?? "");
       if (this.context.request.userId) span.setAttribute("user.id", this.context.request.userId);
       if (this.context.request.agentOrgId)
         span.setAttribute("agent.org.id", this.context.request.agentOrgId);
@@ -100,7 +101,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
       try {
         // Log execution start
         this.context.logger.info(
-          `Executing handler ${handlerName}. TraceId: ${this.context.request.traceId}.`,
+          `Executing handler ${handlerName}. TraceId: ${this.traceId}.`,
         );
 
         // Log input as debug if enabled (respecting redaction)
@@ -109,7 +110,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
             ? this.redactForLogging(input, this.redaction.inputFields)
             : input;
           this.context.logger.debug(
-            `Handler ${handlerName} received input: ${BaseHandler.safeStringify(inputToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} received input: ${BaseHandler.safeStringify(inputToLog)}. TraceId: ${this.traceId}.`,
           );
         }
 
@@ -130,7 +131,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
               ? { ...result, data: this.redactForLogging(result.data, this.redaction.outputFields) }
               : result;
           this.context.logger.debug(
-            `Handler ${handlerName} produced result: ${BaseHandler.safeStringify(resultToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} produced result: ${BaseHandler.safeStringify(resultToLog)}. TraceId: ${this.traceId}.`,
           );
         }
 
@@ -153,7 +154,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
 
         // Determine log level based on success and elapsed time
         const status = result.success ? "successfully" : "unsuccessfully";
-        const completionMsg = `Executed handler ${handlerName} ${status} in ${elapsedMs.toFixed(0)}ms. TraceId: ${this.context.request.traceId}.`;
+        const completionMsg = `Executed handler ${handlerName} ${status} in ${elapsedMs.toFixed(0)}ms. TraceId: ${this.traceId}.`;
 
         if (opts.suppressTimeWarnings) {
           if (result.success) {
@@ -177,7 +178,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
 
         // Create unhandled exception result
         const errorResult = D2Result.unhandledException<TOutput | undefined>({
-          traceId: this.context.request.traceId,
+          traceId: this.traceId,
         });
 
         // Set exception metadata on span
@@ -196,7 +197,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
 
         // Log the unhandled exception
         this.context.logger.error(
-          `Handler ${handlerName} encountered an unhandled exception after ${elapsedMs.toFixed(0)}ms. TraceId: ${this.context.request.traceId}.`,
+          `Handler ${handlerName} encountered an unhandled exception after ${elapsedMs.toFixed(0)}ms. TraceId: ${this.traceId}.`,
         );
 
         span.end();
