@@ -4,6 +4,7 @@
   import { ModeWatcher } from "mode-watcher";
   import { Toaster } from "$lib/client/components/ui/sonner/index.js";
   import ThemeProvider from "$lib/client/components/theme-provider.svelte";
+  import NavigationProgress from "$lib/client/components/layout/navigation-progress.svelte";
   import { setClientFingerprint } from "$lib/client/rest/gateway-client.js";
 
   let { data, children } = $props();
@@ -27,5 +28,6 @@
 <ModeWatcher />
 <ThemeProvider />
 <Toaster />
+<NavigationProgress />
 
 {@render children?.()}
