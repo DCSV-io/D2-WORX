@@ -6,7 +6,7 @@ import {
   subdivisionsForCountry,
   buildCountriesWithSubdivisions,
   type SubdivisionOption,
-} from "$lib/forms/geo-ref-data.js";
+} from "$lib/shared/forms/geo-ref-data.js";
 import { getGeoRefData } from "$lib/server/geo-ref-data.server.js";
 import { createContactSchema } from "./schema.js";
 import type { Actions, PageServerLoad } from "./$types.js";

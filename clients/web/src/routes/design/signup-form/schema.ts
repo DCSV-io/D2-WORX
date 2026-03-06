@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { nameField, emailField, passwordField } from "$lib/forms/schemas.js";
+import { nameField, emailField, passwordField } from "$lib/shared/forms/schemas.js";
 
 /**
  * Signup form schema — exercises email confirmation and password rules.

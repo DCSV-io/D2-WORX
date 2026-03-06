@@ -11,7 +11,7 @@ import { fail, superValidate, message } from "sveltekit-superforms";
 import { zod4 as zod } from "sveltekit-superforms/adapters";
 import type { z } from "zod";
 import type { D2Result } from "@d2/result";
-import { applyD2Errors } from "$lib/forms/form-helpers.js";
+import { applyD2Errors } from "$lib/shared/forms/form-helpers.js";
 
 type AnyZodObject = z.ZodObject<Record<string, z.ZodType>>;
 

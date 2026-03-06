@@ -78,6 +78,9 @@ export {
 // --- Migrations ---
 export { runMigrations } from "./repository/migrate.js";
 
+// --- Email Check (pre-auth repo — constructed manually in composition root) ---
+export { CheckEmailAvailability as CheckEmailAvailabilityRepo } from "./repository/handlers/r/check-email-availability.js";
+
 // --- Purge Handlers (used by integration tests) ---
 export { PurgeExpiredSessions } from "./repository/handlers/d/purge-expired-sessions.js";
 export { PurgeSignInEvents } from "./repository/handlers/d/purge-sign-in-events.js";

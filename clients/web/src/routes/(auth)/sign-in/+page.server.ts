@@ -1,6 +1,6 @@
 import { superValidate } from "sveltekit-superforms";
 import { zod4 as zod } from "sveltekit-superforms/adapters";
-import { createSignInSchema } from "$lib/components/auth/sign-in-schema.js";
+import { createSignInSchema } from "$lib/shared/forms/sign-in-schema.js";
 import type { PageServerLoad } from "./$types.js";
 
 const schema = createSignInSchema();

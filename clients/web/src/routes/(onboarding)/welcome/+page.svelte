@@ -1,6 +1,6 @@
 <script lang="ts">
-  import * as Card from "$lib/components/ui/card/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
+  import * as Card from "$lib/client/components/ui/card/index.js";
+  import { Button } from "$lib/client/components/ui/button/index.js";
 </script>
 
 <Card.Card>

@@ -45,6 +45,7 @@ import {
   addAuthInfra,
   SignInThrottleStore,
   createWhoIsResolutionConsumer,
+  CheckEmailAvailabilityRepo,
   type AuthServiceConfig,
   type PasswordFunctions,
 } from "@d2/auth-infra";
@@ -59,7 +60,6 @@ import {
   CheckSignInThrottle,
   RecordSignInOutcome,
   CheckEmailAvailability,
-  ICheckEmailAvailabilityRepoKey,
   DEFAULT_AUTH_JOB_OPTIONS,
   type AuthJobOptions,
 } from "@d2/auth-app";
@@ -275,7 +275,7 @@ export async function createApp(
   const emailCheckCacheStore = new CacheMemory.MemoryCacheStore();
   const emailCheckCacheGet = new CacheMemory.Get<boolean>(emailCheckCacheStore, serviceContext);
   const emailCheckCacheSet = new CacheMemory.Set<boolean>(emailCheckCacheStore, serviceContext);
-  const checkEmailRepo = provider.resolve(ICheckEmailAvailabilityRepoKey);
+  const checkEmailRepo = new CheckEmailAvailabilityRepo(db, serviceContext);
   const checkEmailHandler = new CheckEmailAvailability(checkEmailRepo, serviceContext, {
     get: emailCheckCacheGet,
     set: emailCheckCacheSet,

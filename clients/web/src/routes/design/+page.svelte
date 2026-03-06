@@ -1,19 +1,19 @@
 <script lang="ts">
-  import ThemeToggle from "$lib/components/theme-toggle.svelte";
-  import ThemeSelector from "$lib/components/theme-selector.svelte";
-  import ThemeEditor from "$lib/components/design/theme-editor.svelte";
-  import ColorPalette from "$lib/components/design/color-palette.svelte";
-  import TypographyShowcase from "$lib/components/design/typography-showcase.svelte";
-  import ButtonShowcase from "$lib/components/design/button-showcase.svelte";
-  import CardShowcase from "$lib/components/design/card-showcase.svelte";
-  import FormShowcase from "$lib/components/design/form-showcase.svelte";
-  import OverlayShowcase from "$lib/components/design/overlay-showcase.svelte";
-  import NavigationShowcase from "$lib/components/design/navigation-showcase.svelte";
-  import FeedbackShowcase from "$lib/components/design/feedback-showcase.svelte";
-  import DataDisplayShowcase from "$lib/components/design/data-display-showcase.svelte";
-  import ChartShowcase from "$lib/components/design/chart-showcase.svelte";
-  import LayoutShowcase from "$lib/components/design/layout-showcase.svelte";
-  import { Button } from "$lib/components/ui/button/index.js";
+  import ThemeToggle from "$lib/client/components/theme-toggle.svelte";
+  import ThemeSelector from "$lib/client/components/theme-selector.svelte";
+  import ThemeEditor from "$lib/client/components/design/theme-editor.svelte";
+  import ColorPalette from "$lib/client/components/design/color-palette.svelte";
+  import TypographyShowcase from "$lib/client/components/design/typography-showcase.svelte";
+  import ButtonShowcase from "$lib/client/components/design/button-showcase.svelte";
+  import CardShowcase from "$lib/client/components/design/card-showcase.svelte";
+  import FormShowcase from "$lib/client/components/design/form-showcase.svelte";
+  import OverlayShowcase from "$lib/client/components/design/overlay-showcase.svelte";
+  import NavigationShowcase from "$lib/client/components/design/navigation-showcase.svelte";
+  import FeedbackShowcase from "$lib/client/components/design/feedback-showcase.svelte";
+  import DataDisplayShowcase from "$lib/client/components/design/data-display-showcase.svelte";
+  import ChartShowcase from "$lib/client/components/design/chart-showcase.svelte";
+  import LayoutShowcase from "$lib/client/components/design/layout-showcase.svelte";
+  import { Button } from "$lib/client/components/ui/button/index.js";
   import PaletteIcon from "@lucide/svelte/icons/palette";
 
   let editorOpen = $state(false);

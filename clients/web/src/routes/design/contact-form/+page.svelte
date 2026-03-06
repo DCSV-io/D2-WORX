@@ -3,11 +3,11 @@
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { untrack } from "svelte";
   import { createContactSchema } from "./schema.js";
-  import { FormInput } from "$lib/components/forms/index.js";
-  import FormCombobox from "$lib/components/forms/form-combobox.svelte";
-  import FormPhoneInput from "$lib/components/forms/form-phone-input.svelte";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import * as Card from "$lib/components/ui/card/index.js";
+  import { FormInput } from "$lib/client/components/forms/index.js";
+  import FormCombobox from "$lib/client/components/forms/form-combobox.svelte";
+  import FormPhoneInput from "$lib/client/components/forms/form-phone-input.svelte";
+  import { Button } from "$lib/client/components/ui/button/index.js";
+  import * as Card from "$lib/client/components/ui/card/index.js";
   import { toast } from "svelte-sonner";
   import {
     FIRST_NAME,
@@ -21,10 +21,10 @@
     STREET3,
     CITY,
     POSTAL_CODE,
-  } from "$lib/forms/field-presets.js";
-  import { useCountryState } from "$lib/forms/country-state.svelte.js";
-  import { useAddressLines } from "$lib/forms/address-lines.svelte.js";
-  import { useAsyncFieldCheck } from "$lib/forms/async-field-check.svelte.js";
+  } from "$lib/shared/forms/field-presets.js";
+  import { useCountryState } from "$lib/client/forms/country-state.svelte.js";
+  import { useAddressLines } from "$lib/client/forms/address-lines.svelte.js";
+  import { useAsyncFieldCheck } from "$lib/client/forms/async-field-check.svelte.js";
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
 
   let { data } = $props();

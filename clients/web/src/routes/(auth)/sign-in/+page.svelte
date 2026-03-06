@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { SignInForm } from "$lib/components/auth/index.js";
-  import * as Card from "$lib/components/ui/card/index.js";
+  import { SignInForm } from "$lib/client/components/auth/index.js";
+  import * as Card from "$lib/client/components/ui/card/index.js";
 
   let { data } = $props();
 </script>

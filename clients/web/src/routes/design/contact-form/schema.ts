@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { postcodeValidator } from "postcode-validator";
-import { nameField, emailField, phoneField, streetField } from "$lib/forms/schemas.js";
+import { nameField, emailField, phoneField, streetField } from "$lib/shared/forms/schemas.js";
 
 /**
  * Contact form schema factory — matches Geo proto StreetAddressDTO shape.

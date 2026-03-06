@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button/index.js";
+  import { Button } from "$lib/client/components/ui/button/index.js";
 </script>
 
 <div class="flex flex-col items-center justify-center py-20 text-center">

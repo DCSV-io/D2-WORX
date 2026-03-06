@@ -1,7 +1,7 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
-  import ThemeToggle from "$lib/components/theme-toggle.svelte";
-  import ThemeSelector from "$lib/components/theme-selector.svelte";
+  import ThemeToggle from "$lib/client/components/theme-toggle.svelte";
+  import ThemeSelector from "$lib/client/components/theme-selector.svelte";
 
   let { children } = $props();
 </script>

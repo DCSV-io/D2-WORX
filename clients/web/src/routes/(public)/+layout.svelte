@@ -1,6 +1,6 @@
 <script lang="ts">
-  import PublicNav from "$lib/components/layout/public-nav.svelte";
-  import PublicFooter from "$lib/components/layout/public-footer.svelte";
+  import PublicNav from "$lib/client/components/layout/public-nav.svelte";
+  import PublicFooter from "$lib/client/components/layout/public-footer.svelte";
 
   let { children } = $props();
 </script>

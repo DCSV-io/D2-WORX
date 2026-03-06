@@ -3,9 +3,9 @@
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { untrack } from "svelte";
   import { createSignupSchema } from "./schema.js";
-  import { FormInput } from "$lib/components/forms/index.js";
-  import { Button } from "$lib/components/ui/button/index.js";
-  import * as Card from "$lib/components/ui/card/index.js";
+  import { FormInput } from "$lib/client/components/forms/index.js";
+  import { Button } from "$lib/client/components/ui/button/index.js";
+  import * as Card from "$lib/client/components/ui/card/index.js";
   import { toast } from "svelte-sonner";
   import {
     FIRST_NAME,
@@ -14,8 +14,8 @@
     CONFIRM_EMAIL,
     PASSWORD,
     CONFIRM_PASSWORD,
-  } from "$lib/forms/field-presets.js";
-  import { useAsyncFieldCheck } from "$lib/forms/async-field-check.svelte.js";
+  } from "$lib/shared/forms/field-presets.js";
+  import { useAsyncFieldCheck } from "$lib/client/forms/async-field-check.svelte.js";
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import EyeIcon from "@lucide/svelte/icons/eye";
   import EyeOffIcon from "@lucide/svelte/icons/eye-off";
