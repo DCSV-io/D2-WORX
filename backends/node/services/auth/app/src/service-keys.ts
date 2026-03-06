@@ -37,6 +37,8 @@ import type { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign
 import type { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
 import type { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 import type { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
+import type { CheckEmailAvailability } from "./implementations/cqrs/handlers/q/check-email-availability.js";
+import type { ICheckEmailAvailabilityHandler } from "./interfaces/repository/handlers/r/check-email-availability.js";
 import type { RunSessionPurge } from "./implementations/cqrs/handlers/c/run-session-purge.js";
 import type { RunSignInEventPurge } from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
 import type { RunInvitationCleanup } from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
@@ -114,6 +116,11 @@ export const IPurgeExpiredEmulationConsentsKey =
     "Auth.Repo.PurgeExpiredEmulationConsents",
   );
 
+// --- Email Availability Repository Handler ---
+
+export const ICheckEmailAvailabilityRepoKey =
+  createServiceKey<ICheckEmailAvailabilityHandler>("Auth.Repo.CheckEmailAvailability");
+
 // --- Health Check Repository Handler ---
 
 export const IPingDbKey = createServiceKey<IPingDbHandler>("Auth.Repo.PingDb");
@@ -162,6 +169,9 @@ export const ICheckSignInThrottleKey = createServiceKey<CheckSignInThrottle>(
   "Auth.App.CheckSignInThrottle",
 );
 export const ICheckHealthKey = createServiceKey<CheckHealth>("Auth.App.CheckHealth");
+export const ICheckEmailAvailabilityKey = createServiceKey<CheckEmailAvailability>(
+  "Auth.App.CheckEmailAvailability",
+);
 
 // --- Job Handlers (Command) ---
 

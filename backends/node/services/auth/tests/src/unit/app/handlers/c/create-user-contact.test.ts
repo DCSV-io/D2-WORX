@@ -79,10 +79,11 @@ describe("CreateUserContact", () => {
     expect(createContacts.handleAsync).not.toHaveBeenCalled();
   });
 
-  it("should return validationFailed when email exceeds 320 chars", async () => {
+  it("should return validationFailed when email exceeds 254 chars", async () => {
+    const longEmail = "a".repeat(246) + "@test.com"; // 255 chars — valid format but over max(254)
     const result = await handler.handleAsync({
       userId: VALID_USER_ID,
-      email: "a".repeat(321),
+      email: longEmail,
       name: "Test User",
     });
 
@@ -92,11 +93,11 @@ describe("CreateUserContact", () => {
     expect(createContacts.handleAsync).not.toHaveBeenCalled();
   });
 
-  it("should return validationFailed when name exceeds 200 chars", async () => {
+  it("should return validationFailed when name exceeds 511 chars", async () => {
     const result = await handler.handleAsync({
       userId: VALID_USER_ID,
       email: "test@example.com",
-      name: "x".repeat(201),
+      name: "x".repeat(512),
     });
 
     expect(result.success).toBe(false);
@@ -125,7 +126,50 @@ describe("CreateUserContact", () => {
     expect(call.contacts[0].relatedEntityId).toBe(VALID_USER_ID);
     expect(call.contacts[0].contactMethods?.emails).toHaveLength(1);
     expect(call.contacts[0].contactMethods?.emails[0].value).toBe("test@example.com");
-    expect(call.contacts[0].personalDetails?.firstName).toBe("Test User");
+    expect(call.contacts[0].personalDetails?.firstName).toBe("Test");
+    expect(call.contacts[0].personalDetails?.lastName).toBe("User");
+  });
+
+  it("should handle single-word name (no space) — all goes to firstName", async () => {
+    const result = await handler.handleAsync({
+      userId: VALID_USER_ID,
+      email: "test@example.com",
+      name: "Madonna",
+    });
+
+    expect(result.success).toBe(true);
+    const call = vi.mocked(createContacts.handleAsync).mock.calls[0][0];
+    expect(call.contacts[0].personalDetails?.firstName).toBe("Madonna");
+    expect(call.contacts[0].personalDetails?.lastName).toBe("");
+  });
+
+  it("should split multi-word name on first space only", async () => {
+    const result = await handler.handleAsync({
+      userId: VALID_USER_ID,
+      email: "test@example.com",
+      name: "Mary Jane Watson",
+    });
+
+    expect(result.success).toBe(true);
+    const call = vi.mocked(createContacts.handleAsync).mock.calls[0][0];
+    expect(call.contacts[0].personalDetails?.firstName).toBe("Mary");
+    expect(call.contacts[0].personalDetails?.lastName).toBe("Jane Watson");
+  });
+
+  it("should cap each name part at 255 chars (Geo DB limit)", async () => {
+    // 255 + " " + 255 = 511 chars — exactly at schema max
+    const longFirst = "A".repeat(255);
+    const longLast = "B".repeat(255);
+    const result = await handler.handleAsync({
+      userId: VALID_USER_ID,
+      email: "test@example.com",
+      name: `${longFirst} ${longLast}`,
+    });
+
+    expect(result.success).toBe(true);
+    const call = vi.mocked(createContacts.handleAsync).mock.calls[0][0];
+    expect(call.contacts[0].personalDetails?.firstName).toHaveLength(255);
+    expect(call.contacts[0].personalDetails?.lastName).toHaveLength(255);
   });
 
   it("should return the created Geo contact in output", async () => {

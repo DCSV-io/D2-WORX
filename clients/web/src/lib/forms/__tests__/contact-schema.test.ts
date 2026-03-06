@@ -198,22 +198,22 @@ describe("contactSchema — cross-field: street2/street3 dependency", () => {
 });
 
 describe("contactSchema — max length enforcement", () => {
-  it("rejects street2 exceeding 200 chars", () => {
+  it("rejects street2 exceeding 255 chars", () => {
     const result = contactSchema.safeParse(
-      validData({ street1: "123 Main", street2: "a".repeat(201) }),
+      validData({ street1: "123 Main", street2: "a".repeat(256) }),
     );
     expect(result.success).toBe(false);
   });
 
-  it("rejects street3 exceeding 200 chars", () => {
+  it("rejects street3 exceeding 255 chars", () => {
     const result = contactSchema.safeParse(
-      validData({ street1: "123 Main", street2: "Apt", street3: "a".repeat(201) }),
+      validData({ street1: "123 Main", street2: "Apt", street3: "a".repeat(256) }),
     );
     expect(result.success).toBe(false);
   });
 
-  it("rejects postalCode exceeding 20 chars", () => {
-    const result = contactSchema.safeParse(validData({ postalCode: "1".repeat(21) }));
+  it("rejects postalCode exceeding 16 chars", () => {
+    const result = contactSchema.safeParse(validData({ postalCode: "1".repeat(17) }));
     expect(result.success).toBe(false);
   });
 });

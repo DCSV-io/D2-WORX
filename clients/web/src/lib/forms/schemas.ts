@@ -1,34 +1,49 @@
 /**
  * Composable Zod 4 schema builders for common form fields.
  *
- * Each builder returns a standalone Zod schema fragment that can be composed
- * into full form schemas via `z.object({ ... })`. Keeps field validation
- * consistent across all forms.
+ * Constraints are derived from the Geo service DB schema (ContactConfig.cs,
+ * LocationConfig.cs) and geo-client contact-schemas.ts. When Auth imposes a
+ * different limit, the MORE restrictive value wins.
+ *
+ * Key constraints from Geo infra:
+ *   - firstName/lastName/city: varchar(255)
+ *   - email (in contactMethods JSONB): max 254 (geo-client)
+ *   - phone (in contactMethods JSONB): max 20 (geo-client)
+ *   - postalCode: varchar(16)
+ *   - address lines: varchar(255)
+ *   - companyWebsite: varchar(2048)
  */
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { postcodeValidator } from "postcode-validator";
 
-/** General name field (first/last name, city, etc.). */
-export function nameField(max = 100) {
+/** General name field (first/last name, city, etc.). Geo DB: varchar(255). */
+export function nameField(max = 255) {
   return z.string().trim().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
 }
 
-/** Email field with format validation. */
+/** Email field with format validation. Geo contact-schemas: max 254. Lowercased to match backend normalization. */
 export function emailField() {
-  return z.string().trim().min(1, "Required").max(254, "Email too long").email("Invalid email address");
+  return z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, "Required")
+    .max(254, "Email too long")
+    .email("Invalid email address");
 }
 
 /**
  * Phone field — validates full international format via libphonenumber-js.
  * The stored value should be in E.164 format (e.g. `+15551234567`).
+ * Geo contact-schemas: max 20 for the raw value.
  */
 export function phoneField() {
   return z
     .string()
     .trim()
     .min(1, "Required")
-    .max(30, "Phone number too long")
+    .max(20, "Phone number too long")
     .refine((val) => isValidPhoneNumber(val), "Invalid phone number");
 }
 
@@ -36,7 +51,8 @@ export function phoneField() {
 export function phoneFieldOptional() {
   return z
     .string()
-    .max(30, "Phone number too long")
+    .trim()
+    .max(20, "Phone number too long")
     .refine((val) => !val || isValidPhoneNumber(val), "Invalid phone number")
     .optional()
     .default("");
@@ -45,9 +61,10 @@ export function phoneFieldOptional() {
 /**
  * Postal/zip code field with optional country-specific validation.
  * When `countryCode` is provided, validates against that country's format.
+ * Geo DB: varchar(16).
  */
 export function postcodeField(countryCode?: string) {
-  const base = z.string().trim().min(1, "Required").max(20, "Postal code too long");
+  const base = z.string().trim().min(1, "Required").max(16, "Postal code too long");
   if (!countryCode) return base;
   return base.refine(
     (val) => postcodeValidator(val, countryCode),
@@ -55,8 +72,8 @@ export function postcodeField(countryCode?: string) {
   );
 }
 
-/** Street address line. */
-export function streetField(max = 200) {
+/** Street address line. Geo DB: varchar(255). */
+export function streetField(max = 255) {
   return z.string().trim().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
 }
 

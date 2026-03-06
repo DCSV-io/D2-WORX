@@ -24,8 +24,8 @@ describe("nameField", () => {
     expect(schema.safeParse("").success).toBe(false);
   });
 
-  it("rejects string exceeding default max (100)", () => {
-    expect(schema.safeParse("a".repeat(101)).success).toBe(false);
+  it("rejects string exceeding default max (255)", () => {
+    expect(schema.safeParse("a".repeat(256)).success).toBe(false);
   });
 
   it("respects custom max length", () => {
@@ -63,7 +63,7 @@ describe("emailField", () => {
     expect(schema.safeParse("").success).toBe(false);
   });
 
-  it("rejects overly long emails", () => {
+  it("rejects overly long emails (>254 chars)", () => {
     expect(schema.safeParse("a".repeat(250) + "@x.com").success).toBe(false);
   });
 
@@ -71,8 +71,8 @@ describe("emailField", () => {
     expect(schema.safeParse("   ").success).toBe(false);
   });
 
-  it("trims whitespace before validation", () => {
-    const result = schema.safeParse("  user@example.com  ");
+  it("trims whitespace and lowercases before validation", () => {
+    const result = schema.safeParse("  User@Example.COM  ");
     expect(result.success).toBe(true);
     if (result.success) expect(result.data).toBe("user@example.com");
   });
@@ -98,6 +98,10 @@ describe("phoneField", () => {
   it("rejects whitespace-only strings", () => {
     expect(schema.safeParse("   ").success).toBe(false);
   });
+
+  it("rejects phone exceeding 20 chars", () => {
+    expect(schema.safeParse("+1" + "5".repeat(19)).success).toBe(false);
+  });
 });
 
 describe("phoneFieldOptional", () => {
@@ -113,6 +117,15 @@ describe("phoneFieldOptional", () => {
 
   it("rejects invalid non-empty string", () => {
     expect(schema.safeParse("abc").success).toBe(false);
+  });
+
+  it("trims whitespace-only to empty (treated as blank)", () => {
+    const result = schema.safeParse("   ");
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects phone exceeding 20 chars", () => {
+    expect(schema.safeParse("+1" + "5".repeat(19)).success).toBe(false);
   });
 });
 
@@ -168,8 +181,8 @@ describe("streetField", () => {
     if (result.success) expect(result.data).toBe("123 Main St");
   });
 
-  it("respects max length", () => {
-    expect(schema.safeParse("a".repeat(201)).success).toBe(false);
+  it("respects max length (255)", () => {
+    expect(schema.safeParse("a".repeat(256)).success).toBe(false);
   });
 });
 

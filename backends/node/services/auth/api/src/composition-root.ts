@@ -58,6 +58,8 @@ import {
   IAuthReleaseLockKey,
   CheckSignInThrottle,
   RecordSignInOutcome,
+  CheckEmailAvailability,
+  ICheckEmailAvailabilityRepoKey,
   DEFAULT_AUTH_JOB_OPTIONS,
   type AuthJobOptions,
 } from "@d2/auth-app";
@@ -81,6 +83,7 @@ import { createAuthRoutes } from "./routes/auth-routes.js";
 import { createEmulationRoutes } from "./routes/emulation-routes.js";
 import { createOrgContactRoutes } from "./routes/org-contact-routes.js";
 import { createInvitationRoutes } from "./routes/invitation-routes.js";
+import { createCheckEmailRoutes } from "./routes/check-email-routes.js";
 
 
 /**
@@ -268,6 +271,16 @@ export async function createApp(
     set: throttleCacheSet,
   });
 
+  // Email availability check (pre-auth singleton — same pattern as throttle)
+  const emailCheckCacheStore = new CacheMemory.MemoryCacheStore();
+  const emailCheckCacheGet = new CacheMemory.Get<boolean>(emailCheckCacheStore, serviceContext);
+  const emailCheckCacheSet = new CacheMemory.Set<boolean>(emailCheckCacheStore, serviceContext);
+  const checkEmailRepo = provider.resolve(ICheckEmailAvailabilityRepoKey);
+  const checkEmailHandler = new CheckEmailAvailability(checkEmailRepo, serviceContext, {
+    get: emailCheckCacheGet,
+    set: emailCheckCacheSet,
+  });
+
   // 6. Password policy — HIBP k-anonymity cache + domain validation
   const passwordFns =
     overrides?.passwordFunctions ??
@@ -450,6 +463,9 @@ export async function createApp(
   }
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);
+
+  // Email availability check (public, pre-auth — rate limited but no session/CSRF)
+  app.route("/", createCheckEmailRoutes(checkEmailHandler));
 
   // BetterAuth routes (handles its own auth)
   // Fingerprint + AsyncLocalStorage for JWT `fp` claim

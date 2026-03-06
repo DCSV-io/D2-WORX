@@ -36,6 +36,12 @@ export type {
 
 // --- Read (R) ---
 export type {
+  CheckEmailAvailabilityInput,
+  CheckEmailAvailabilityOutput,
+  ICheckEmailAvailabilityHandler,
+} from "./r/check-email-availability.js";
+
+export type {
   FindSignInEventsByUserIdInput,
   FindSignInEventsByUserIdOutput,
   IFindSignInEventsByUserIdHandler,

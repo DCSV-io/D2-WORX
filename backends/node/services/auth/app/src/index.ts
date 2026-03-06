@@ -60,6 +60,10 @@ export type {
   UpdateSignInEventWhoIsIdOutput,
   DeleteOrgContactRecordInput,
   DeleteOrgContactRecordOutput,
+  // Read (R) — Email Availability
+  CheckEmailAvailabilityInput as CheckEmailAvailabilityRepoInput,
+  CheckEmailAvailabilityOutput as CheckEmailAvailabilityRepoOutput,
+  ICheckEmailAvailabilityHandler,
   // Read (R) — PingDb
   PingDbInput,
   PingDbOutput,
@@ -156,6 +160,12 @@ export type {
   CheckSignInThrottleInput,
   CheckSignInThrottleOutput,
 } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
+
+export { CheckEmailAvailability } from "./implementations/cqrs/handlers/q/check-email-availability.js";
+export type {
+  CheckEmailAvailabilityInput,
+  CheckEmailAvailabilityOutput,
+} from "./implementations/cqrs/handlers/q/check-email-availability.js";
 
 // --- Factory Functions ---
 
@@ -350,6 +360,8 @@ export {
   IGetActiveConsentsKey,
   IGetOrgContactsKey,
   ICheckSignInThrottleKey,
+  ICheckEmailAvailabilityKey,
+  ICheckEmailAvailabilityRepoKey,
   IPingDbKey,
   ICheckHealthKey,
   // Job keys

@@ -9,4 +9,7 @@ export const AUTH_CACHE_KEYS = {
   /** Sign-in throttle state. Format: `auth:sign-in-throttle:{identifierHash}:{identityHash}` */
   signInThrottle: (identifierHash: string, identityHash: string) =>
     `auth:sign-in-throttle:${identifierHash}:${identityHash}`,
+
+  /** Email availability check. Format: `auth:email-availability:{email}` */
+  emailAvailability: (email: string) => `auth:email-availability:${email}`,
 } as const;

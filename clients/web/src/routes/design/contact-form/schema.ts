@@ -23,10 +23,10 @@ export function createContactSchema(countriesWithSubdivisions: Set<string>) {
       country: z.string().trim().min(1, "Please select a country"),
       state: z.string().trim().optional().default(""),
       street1: streetField(),
-      street2: z.string().trim().max(200).optional().default(""),
-      street3: z.string().trim().max(200).optional().default(""),
+      street2: z.string().trim().max(255).optional().default(""),
+      street3: z.string().trim().max(255).optional().default(""),
       city: nameField(),
-      postalCode: z.string().trim().min(1, "Required").max(20, "Postal code too long"),
+      postalCode: z.string().trim().min(1, "Required").max(16, "Postal code too long"),
     })
     .refine((d) => !d.street3 || d.street2, {
       message: "Address Line 2 is required when Line 3 is provided",

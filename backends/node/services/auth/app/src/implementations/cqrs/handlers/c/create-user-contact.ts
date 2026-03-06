@@ -17,8 +17,8 @@ export interface CreateUserContactOutput {
 
 const schema = z.object({
   userId: zodGuid,
-  email: zodNonEmptyString(320), // RFC 5321 max
-  name: zodNonEmptyString(200),
+  email: zodNonEmptyString(254), // Geo contact-schemas max
+  name: zodNonEmptyString(511), // firstName(255) + " " + lastName(255)
 });
 
 /**
@@ -49,6 +49,13 @@ export class CreateUserContact extends BaseHandler<
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
+    // Split combined name into firstName/lastName, capping each at Geo's varchar(255).
+    const spaceIndex = input.name.indexOf(" ");
+    const firstName =
+      spaceIndex >= 0 ? input.name.slice(0, spaceIndex).slice(0, 255) : input.name.slice(0, 255);
+    const lastName =
+      spaceIndex >= 0 ? input.name.slice(spaceIndex + 1).slice(0, 255) : "";
+
     const contactToCreate: ContactToCreateDTO = {
       createdAt: new Date(),
       contextKey: GEO_CONTEXT_KEYS.USER,
@@ -58,8 +65,8 @@ export class CreateUserContact extends BaseHandler<
         phoneNumbers: [],
       },
       personalDetails: {
-        firstName: input.name,
-        lastName: "",
+        firstName,
+        lastName,
         title: "",
         preferredName: "",
         middleName: "",
