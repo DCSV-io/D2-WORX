@@ -103,6 +103,6 @@
 
   <p class="text-muted-foreground text-center text-sm">
     Don't have an account?
-    <a href="/sign-up" class="text-primary underline-offset-4 hover:underline">Sign up</a>
+    <a href="/sign-up" class="text-primary underline-offset-4 hover:underline">Sign up.</a>
   </p>
 </form>

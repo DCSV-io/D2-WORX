@@ -160,6 +160,6 @@
 
   <p class="text-muted-foreground text-center text-sm">
     Already have an account?
-    <a href="/sign-in" class="text-primary underline-offset-4 hover:underline">Sign in</a>
+    <a href="/sign-in" class="text-primary underline-offset-4 hover:underline">Sign in.</a>
   </p>
 </form>
