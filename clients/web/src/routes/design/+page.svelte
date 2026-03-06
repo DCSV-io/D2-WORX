@@ -13,6 +13,7 @@
   import DataDisplayShowcase from "$lib/client/components/design/data-display-showcase.svelte";
   import ChartShowcase from "$lib/client/components/design/chart-showcase.svelte";
   import LayoutShowcase from "$lib/client/components/design/layout-showcase.svelte";
+  import { resolve } from "$app/paths";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import PaletteIcon from "@lucide/svelte/icons/palette";
 
@@ -80,7 +81,7 @@
     <div class="mb-8 flex flex-wrap gap-3">
       {#each demos as demo (demo.href)}
         <a
-          href={demo.href}
+          href={resolve(demo.href)}
           class="group rounded-lg border p-4 transition-colors hover:border-primary hover:bg-accent"
         >
           <span class="font-medium group-hover:text-primary">{demo.label}</span>

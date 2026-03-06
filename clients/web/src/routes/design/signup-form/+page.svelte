@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { untrack } from "svelte";
@@ -62,7 +63,7 @@
   <!-- Header -->
   <div class="mb-6">
     <a
-      href="/design"
+      href={resolve("/design")}
       class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
     >
       <ArrowLeftIcon class="size-4" />

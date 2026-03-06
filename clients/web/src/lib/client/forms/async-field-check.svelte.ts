@@ -12,9 +12,10 @@ import type { FieldStatus } from "$lib/shared/forms/field-status.js";
  * Minimal form shape — uses `any` for store properties to avoid
  * SuperForm generic invariance issues. Internally cast via fromStore().
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FormLike {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errors: any;
 }
 

@@ -8,8 +8,8 @@
  * Minimal form shape — uses `any` for the store property to avoid
  * SuperForm generic invariance issues.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FormLike {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: any;
 }
 

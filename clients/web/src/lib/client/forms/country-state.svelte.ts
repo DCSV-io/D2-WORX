@@ -12,9 +12,10 @@ import type { SubdivisionOption } from "$lib/shared/forms/geo-ref-data.js";
  * Minimal form shape — uses `any` for store properties to avoid
  * SuperForm generic invariance issues. Internally cast via fromStore().
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FormLike {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   form: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   validate: (...args: any[]) => any;
 }
 

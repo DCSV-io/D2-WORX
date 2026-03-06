@@ -56,6 +56,7 @@
 	}: ButtonProps = $props();
 </script>
 
+<!-- eslint-disable svelte/no-navigation-without-resolve -- generic component; callers resolve href -->
 {#if href}
 	<a
 		bind:this={ref}

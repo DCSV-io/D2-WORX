@@ -3,6 +3,7 @@
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { goto } from "$app/navigation";
+  import { resolve } from "$app/paths";
   import { createSignInSchema, type SignInFormData } from "$lib/shared/forms/sign-in-schema.js";
   import { FormInput } from "$lib/client/components/forms/index.js";
   import { Button } from "$lib/client/components/ui/button/index.js";
@@ -43,6 +44,7 @@
 
             // 403 = email not verified → redirect to verify-email page
             if (status === 403) {
+              // eslint-disable-next-line svelte/no-navigation-without-resolve -- verify-email route not yet created
               await goto(`/verify-email?email=${encodeURIComponent(email)}&resent=true`);
               return;
             }
@@ -60,6 +62,7 @@
           const dest = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
             ? returnTo
             : "/";
+          // eslint-disable-next-line svelte/no-navigation-without-resolve -- dynamic returnTo from query params
           await goto(dest);
         } catch {
           serverError = "Something went wrong. Please try again.";
@@ -107,6 +110,6 @@
 
   <p class="text-muted-foreground text-center text-sm">
     Don't have an account?
-    <a href="/sign-up" class="text-primary underline-offset-4 hover:underline">Sign up.</a>
+    <a href={resolve("/sign-up")} class="text-primary underline-offset-4 hover:underline">Sign up.</a>
   </p>
 </form>

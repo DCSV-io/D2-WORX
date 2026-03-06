@@ -1,6 +1,5 @@
 import { serve } from "@hono/node-server";
 import type { Hono } from "hono";
-import type { AddressInfo } from "node:net";
 
 export interface AuthHttpServer {
   /** Base URL including port, e.g. "http://127.0.0.1:54321". */
