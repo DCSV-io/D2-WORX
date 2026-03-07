@@ -101,10 +101,14 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
   // Email availability check (public, pre-auth — rate limited but no session/CSRF)
   app.route("/", createCheckEmailRoutes(checkEmailHandler));
 
-  // BetterAuth routes (handles its own auth)
-  // Fingerprint + AsyncLocalStorage for JWT `fp` claim
+  // BetterAuth routes (handles its own auth + CSRF via origin check)
+  // AsyncLocalStorage for JWT `fp` claim — no session fingerprint binding here
+  // because BetterAuth routes are called both by the SvelteKit proxy (browser
+  // headers) and by SessionResolver (Node.js server headers). The fingerprint
+  // middleware would store a hash from the server-side get-session call (no UA,
+  // no Accept) and then reject browser-proxied requests (different hash) → 401.
+  // BetterAuth has its own session security (signed cookies, origin checks).
   const authApp = new Hono();
-  authApp.use("*", sessionFingerprintMiddleware);
   authApp.use("*", async (c, next) => {
     const fp = computeFingerprint(c.req.raw.headers);
     await fingerprintStorage.run(fp, () => next());

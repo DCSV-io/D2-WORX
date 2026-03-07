@@ -62,7 +62,7 @@
 
           const dest = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
             ? returnTo
-            : "/";
+            : "/dashboard";
           // eslint-disable-next-line svelte/no-navigation-without-resolve -- dynamic returnTo from query params
           await goto(dest);
         } catch {

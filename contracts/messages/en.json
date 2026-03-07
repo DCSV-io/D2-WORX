@@ -5,6 +5,8 @@
   "common_ui_loading": "Loading...",
   "common_ui_sign_in": "Sign In",
   "common_ui_sign_up": "Sign Up",
+  "common_ui_sign_out": "Sign Out",
+  "common_ui_dashboard": "Dashboard",
   "common_ui_get_started": "Get Started",
   "common_ui_design_system": "Design System",
   "common_errors_unknown": "Something went wrong. Please try again.",

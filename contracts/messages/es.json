@@ -5,6 +5,8 @@
   "common_ui_loading": "Cargando...",
   "common_ui_sign_in": "Iniciar sesión",
   "common_ui_sign_up": "Registrarse",
+  "common_ui_sign_out": "Cerrar sesión",
+  "common_ui_dashboard": "Panel",
   "common_ui_get_started": "Comenzar",
   "common_ui_design_system": "Sistema de diseño",
   "common_errors_unknown": "Algo salió mal. Por favor, inténtalo de nuevo.",

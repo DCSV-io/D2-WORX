@@ -5,6 +5,8 @@
   "common_ui_loading": "Chargement...",
   "common_ui_sign_in": "Se connecter",
   "common_ui_sign_up": "S'inscrire",
+  "common_ui_sign_out": "Se déconnecter",
+  "common_ui_dashboard": "Tableau de bord",
   "common_ui_get_started": "Commencer",
   "common_ui_design_system": "Système de design",
   "common_errors_unknown": "Une erreur est survenue. Veuillez réessayer.",

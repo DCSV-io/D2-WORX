@@ -5,6 +5,8 @@
   "common_ui_loading": "読み込み中...",
   "common_ui_sign_in": "ログイン",
   "common_ui_sign_up": "新規登録",
+  "common_ui_sign_out": "ログアウト",
+  "common_ui_dashboard": "ダッシュボード",
   "common_ui_get_started": "はじめる",
   "common_ui_design_system": "デザインシステム",
   "common_errors_unknown": "エラーが発生しました。もう一度お試しください。",

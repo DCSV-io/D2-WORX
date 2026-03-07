@@ -1,9 +1,24 @@
 <script lang="ts">
+  import { page } from "$app/stores";
+  import { invalidateAll } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import ThemeToggle from "$lib/client/components/theme-toggle.svelte";
   import ThemeSelector from "$lib/client/components/theme-selector.svelte";
+  import { authClient } from "$lib/client/stores/auth-client.js";
   import * as m from "$lib/paraglide/messages.js";
+
+  let signingOut = $state(false);
+
+  async function handleSignOut() {
+    signingOut = true;
+    try {
+      await authClient.signOut();
+      await invalidateAll();
+    } finally {
+      signingOut = false;
+    }
+  }
 </script>
 
 <nav class="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur-sm">
@@ -20,8 +35,15 @@
     <div class="flex items-center gap-2">
       <ThemeToggle />
       <ThemeSelector />
-      <Button variant="outline" size="sm" href="/sign-in">{m.common_ui_sign_in()}</Button>
-      <Button variant="default" size="sm" href="/sign-up">{m.common_ui_sign_up()}</Button>
+      {#if $page.data.session}
+        <Button variant="outline" size="sm" href="/dashboard">{m.common_ui_dashboard()}</Button>
+        <Button variant="default" size="sm" onclick={handleSignOut} disabled={signingOut}>
+          {m.common_ui_sign_out()}
+        </Button>
+      {:else}
+        <Button variant="outline" size="sm" href="/sign-in">{m.common_ui_sign_in()}</Button>
+        <Button variant="default" size="sm" href="/sign-up">{m.common_ui_sign_up()}</Button>
+      {/if}
     </div>
   </div>
 </nav>

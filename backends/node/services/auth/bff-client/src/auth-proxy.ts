@@ -12,6 +12,7 @@ import type { AuthBffConfig } from "./types.js";
 
 /** Headers to forward from the incoming request to the Auth service. */
 const FORWARDED_HEADERS = [
+  "authorization",
   "cookie",
   "content-type",
   "x-client-fingerprint",
