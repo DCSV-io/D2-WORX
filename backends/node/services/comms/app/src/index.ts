@@ -85,6 +85,7 @@ export {
   EmailDispatcher,
   SmsDispatcher,
   createEmailWrapper,
+  loadEmailWrapper,
 } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 export type {
   IChannelDispatcher,

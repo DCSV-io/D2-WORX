@@ -76,6 +76,7 @@ export class AuthProxy {
         method: request.method,
         headers,
         body: hasBody(request.method) ? request.body : undefined,
+        redirect: "manual",
         signal: AbortSignal.timeout(timeout),
         // @ts-expect-error -- Node.js fetch supports duplex for streaming bodies
         duplex: hasBody(request.method) ? "half" : undefined,

@@ -46,6 +46,7 @@ const config = defineConfig("comms-service", {
   commsApiKeys: envArray("COMMS_API_KEYS"),
   jobOptions: optionalSection("COMMS_APP", DEFAULT_COMMS_JOB_OPTIONS),
   emailFooterText: optionalString("COMMS_APP__EMAILFOOTERTEXT"),
+  emailTemplatePath: optionalString("COMMS_APP__EMAILTEMPLATEPATH"),
 });
 
 const { server, shutdown } = await createCommsService(config);

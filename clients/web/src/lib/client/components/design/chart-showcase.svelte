@@ -232,7 +232,7 @@
               c="browser"
               innerRadius={0.6}
               padAngle={0.02}
-              cornerRadius={4}
+              cornerRadius={0}
               legend={true}
             >
               {#snippet tooltip()}

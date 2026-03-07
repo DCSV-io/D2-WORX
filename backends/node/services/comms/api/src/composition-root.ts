@@ -36,6 +36,8 @@ export interface CommsServiceConfig {
   jobOptions?: CommsJobOptions;
   /** Brand text for automated email footers (e.g., "DCSV WORX"). */
   emailFooterText?: string;
+  /** Path to a custom HTML email template file (overrides built-in template). */
+  emailTemplatePath?: string;
 }
 
 /**
@@ -85,7 +87,7 @@ export async function createCommsService(config: CommsServiceConfig) {
 
   // Layer registrations
   addCommsInfra(services, db);
-  addCommsApp(services, config.jobOptions ?? DEFAULT_COMMS_JOB_OPTIONS, config.emailFooterText);
+  addCommsApp(services, config.jobOptions ?? DEFAULT_COMMS_JOB_OPTIONS, config.emailFooterText, config.emailTemplatePath);
 
   // Delivery providers (email + SMS)
   addDeliveryProviders(services, config, serviceContext, logger);

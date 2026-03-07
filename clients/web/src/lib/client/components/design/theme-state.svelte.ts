@@ -46,7 +46,7 @@ export const theme = $state({
   warningHue: 65,
   warningChroma: 0.17,
   warningLightness: 0.75,
-  radius: 0,
+  radius: 0.5,
 });
 
 // --- Derived (module-private, exposed via getter functions) ---

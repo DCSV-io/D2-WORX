@@ -55,7 +55,7 @@ export const builtInPresets: ThemePreset[] = [
     warningHue: 65,
     warningChroma: 0.17,
     warningLightness: 0.75,
-    radius: 0,
+    radius: 0.5,
     builtIn: true,
   },
   {
@@ -82,7 +82,7 @@ export const builtInPresets: ThemePreset[] = [
     warningHue: 70.08,
     warningChroma: 0.189,
     warningLightness: 0.769,
-    radius: 0,
+    radius: 0.5,
     builtIn: true,
   },
   {
@@ -109,7 +109,7 @@ export const builtInPresets: ThemePreset[] = [
     warningHue: 75,
     warningChroma: 0.17,
     warningLightness: 0.78,
-    radius: 0,
+    radius: 0.5,
     builtIn: true,
   },
 ];
@@ -145,7 +145,7 @@ function migratePreset(p: Partial<ThemePreset> & { name: string }): ThemePreset 
     warningHue: p.warningHue ?? 70.08,
     warningChroma: p.warningChroma ?? 0.189,
     warningLightness: p.warningLightness ?? 0.769,
-    radius: p.radius ?? 0,
+    radius: p.radius ?? 0.5,
     builtIn: false,
   } as ThemePreset;
 }

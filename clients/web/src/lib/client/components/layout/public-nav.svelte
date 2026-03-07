@@ -5,6 +5,7 @@
   import { Button } from "$lib/client/components/ui/button/index.js";
   import ThemeToggle from "$lib/client/components/theme-toggle.svelte";
   import ThemeSelector from "$lib/client/components/theme-selector.svelte";
+  import LanguageSelector from "$lib/client/components/layout/language-selector.svelte";
   import { authClient } from "$lib/client/stores/auth-client.js";
   import * as m from "$lib/paraglide/messages.js";
 
@@ -33,11 +34,12 @@
     </a>
 
     <div class="flex items-center gap-2">
+      <LanguageSelector />
       <ThemeToggle />
       <ThemeSelector />
       {#if $page.data.session}
-        <Button variant="outline" size="sm" href="/dashboard">{m.common_ui_dashboard()}</Button>
-        <Button variant="default" size="sm" onclick={handleSignOut} disabled={signingOut}>
+        <Button variant="default" size="sm" href="/dashboard">{m.common_ui_dashboard()}</Button>
+        <Button variant="outline" size="sm" onclick={handleSignOut} disabled={signingOut}>
           {m.common_ui_sign_out()}
         </Button>
       {:else}

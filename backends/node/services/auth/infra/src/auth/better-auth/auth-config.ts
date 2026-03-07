@@ -14,8 +14,11 @@ export interface AuthServiceConfig {
   /** RabbitMQ connection URL (optional — events are logged but not published when absent) */
   readonly rabbitMqUrl?: string;
 
-  /** Base URL for auth links in emails (frontend URL, since SvelteKit proxies /api/auth/*) */
+  /** Base URL for BetterAuth API routing (frontend URL, since SvelteKit proxies /api/auth/*) */
   readonly baseUrl: string;
+
+  /** Public URL for email links (e.g., https://t.dcsv.io). Falls back to baseUrl if not set. */
+  readonly emailBaseUrl?: string;
 
   /** Allowed CORS origins (e.g., http://localhost:5173, https://t.dcsv.io) */
   readonly corsOrigins: string[];

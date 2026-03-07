@@ -102,6 +102,18 @@ export function createAuth(
   const cookieCacheMaxAge = config.cookieCacheMaxAge ?? AUTH_CONFIG_DEFAULTS.cookieCacheMaxAge;
   const jwtExpirationSeconds =
     config.jwtExpirationSeconds ?? AUTH_CONFIG_DEFAULTS.jwtExpirationSeconds;
+
+  /** Rewrites a BetterAuth-generated URL to use emailBaseUrl (if configured). */
+  function rewriteEmailUrl(url: string): URL {
+    const parsed = new URL(url);
+    if (config.emailBaseUrl) {
+      const publicBase = new URL(config.emailBaseUrl);
+      parsed.protocol = publicBase.protocol;
+      parsed.hostname = publicBase.hostname;
+      parsed.port = publicBase.port;
+    }
+    return parsed;
+  }
   const jwksRotationDays = config.jwksRotationDays ?? AUTH_CONFIG_DEFAULTS.jwksRotationDays;
 
   const auth = betterAuth({
@@ -124,11 +136,12 @@ export function createAuth(
       password: hooks?.passwordFunctions,
       sendResetPassword: hooks?.publishPasswordReset
         ? async ({ user, url, token }) => {
+            const rewritten = rewriteEmailUrl(url);
             await hooks.publishPasswordReset!({
               userId: user.id,
               email: user.email,
               name: user.name ?? "User",
-              resetUrl: url,
+              resetUrl: rewritten.toString(),
               token,
             });
           }
@@ -142,11 +155,13 @@ export function createAuth(
       sendVerificationEmail: hooks?.publishVerificationEmail
         ? async ({ user, url, token }) => {
             try {
+              const rewritten = rewriteEmailUrl(url);
+              rewritten.searchParams.set("callbackURL", "/auth/email-verified");
               await hooks.publishVerificationEmail!({
                 userId: user.id,
                 email: user.email,
                 name: user.name ?? "User",
-                verificationUrl: url,
+                verificationUrl: rewritten.toString(),
                 token,
               });
             } catch {
