@@ -64,4 +64,38 @@ describe("toDomainUser", () => {
     const user = toDomainUser(raw);
     expect(user.image).toBeNull();
   });
+
+  it("should map locale field when present", () => {
+    const raw = {
+      id: "user-loc",
+      email: "loc@example.com",
+      name: "Locale User",
+      username: "localeuser",
+      displayUsername: "LocaleUser",
+      emailVerified: true,
+      image: null,
+      locale: "de",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const user = toDomainUser(raw);
+    expect(user.locale).toBe("de");
+  });
+
+  it("should default locale to 'en' when missing", () => {
+    const raw = {
+      id: "user-noloc",
+      email: "noloc@example.com",
+      name: "No Locale",
+      username: "nolocale",
+      displayUsername: "NoLocale",
+      emailVerified: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const user = toDomainUser(raw);
+    expect(user.locale).toBe("en");
+  });
 });

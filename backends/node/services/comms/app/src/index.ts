@@ -84,6 +84,7 @@ export type { DeliverInput, DeliverOutput } from "./implementations/cqrs/handler
 export {
   EmailDispatcher,
   SmsDispatcher,
+  createEmailWrapper,
 } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 export type {
   IChannelDispatcher,

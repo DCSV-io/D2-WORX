@@ -45,6 +45,7 @@ const config = defineConfig("comms-service", {
   geoApiKey: optionalString("COMMS_GEO_CLIENT__APIKEY"),
   commsApiKeys: envArray("COMMS_API_KEYS"),
   jobOptions: optionalSection("COMMS_APP", DEFAULT_COMMS_JOB_OPTIONS),
+  emailFooterText: optionalString("COMMS_APP__EMAILFOOTERTEXT"),
 });
 
 const { server, shutdown } = await createCommsService(config);

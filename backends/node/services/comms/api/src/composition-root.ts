@@ -34,6 +34,8 @@ export interface CommsServiceConfig {
   allowUnauthenticated?: boolean;
   /** Job options (retention periods, lock TTL). */
   jobOptions?: CommsJobOptions;
+  /** Brand text for automated email footers (e.g., "DCSV WORX"). */
+  emailFooterText?: string;
 }
 
 /**
@@ -83,7 +85,7 @@ export async function createCommsService(config: CommsServiceConfig) {
 
   // Layer registrations
   addCommsInfra(services, db);
-  addCommsApp(services, config.jobOptions ?? DEFAULT_COMMS_JOB_OPTIONS);
+  addCommsApp(services, config.jobOptions ?? DEFAULT_COMMS_JOB_OPTIONS, config.emailFooterText);
 
   // Delivery providers (email + SMS)
   addDeliveryProviders(services, config, serviceContext, logger);

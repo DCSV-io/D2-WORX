@@ -14,7 +14,7 @@ export interface AuthServiceConfig {
   /** RabbitMQ connection URL (optional — events are logged but not published when absent) */
   readonly rabbitMqUrl?: string;
 
-  /** Base URL of the auth service (e.g., http://localhost:3000) */
+  /** Base URL for auth links in emails (frontend URL, since SvelteKit proxies /api/auth/*) */
   readonly baseUrl: string;
 
   /** Allowed CORS origins (e.g., http://localhost:5173, https://t.dcsv.io) */

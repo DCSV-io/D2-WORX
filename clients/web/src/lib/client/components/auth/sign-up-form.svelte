@@ -53,15 +53,10 @@
           });
 
           if (result.error) {
-            const msg = result.error.message ?? m.auth_sign_in_sign_up_failed();
-            // Map known BetterAuth errors to field-level errors
-            if (msg.toLowerCase().includes("email")) {
-              form.errors.update((e) => ({ ...e, email: [msg] }));
-            } else if (msg.toLowerCase().includes("password")) {
-              form.errors.update((e) => ({ ...e, password: [msg] }));
-            } else {
-              serverError = msg;
-            }
+            // Always show server errors at the form level — field-level errors
+            // get cleared by client-side revalidation on the next interaction.
+            serverError = result.error.message ?? m.auth_sign_in_sign_up_failed();
+            f.valid = false;
             return;
           }
 

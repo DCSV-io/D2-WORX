@@ -29,15 +29,22 @@ export interface IChannelDispatcher {
   dispatch(input: DispatchInput): Promise<DispatchResult>;
 }
 
-/** Default email HTML wrapper. */
-const DEFAULT_EMAIL_WRAPPER = `<!DOCTYPE html>
+const DEFAULT_FOOTER_TEXT = "D2-WORX";
+
+/** Creates an email HTML wrapper with the given footer brand text. */
+export function createEmailWrapper(footerText: string): string {
+  return `<!DOCTYPE html>
 <html><body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <h2>{{title}}</h2>
   <div>{{body}}</div>
   <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
-  <p style="color: #999; font-size: 12px;">This is an automated message from D2-WORX.
+  <p style="color: #999; font-size: 12px;">This is an automated message from ${footerText}.
   {{unsubscribeUrl}}</p>
 </body></html>`;
+}
+
+/** Default email HTML wrapper. */
+const DEFAULT_EMAIL_WRAPPER = createEmailWrapper(DEFAULT_FOOTER_TEXT);
 
 /**
  * Email channel dispatcher.
