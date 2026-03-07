@@ -300,6 +300,17 @@ export function createAuth(
 
     trustedOrigins: config.corsOrigins,
 
+    user: {
+      additionalFields: {
+        locale: {
+          type: "string",
+          required: false,
+          defaultValue: "en",
+          input: false,
+        },
+      },
+    },
+
     plugins: [
       bearer(),
       username(),

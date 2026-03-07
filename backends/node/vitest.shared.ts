@@ -28,6 +28,7 @@ export default defineConfig({
       "@d2/cache-memory": resolve(impl, "caching/in-memory/default/src/index.ts"),
       "@d2/cache-redis": resolve(impl, "caching/distributed/redis/src/index.ts"),
       "@d2/messaging": resolve(shared, "messaging/src/index.ts"),
+      "@d2/i18n": resolve(shared, "i18n/src/index.ts"),
       "@d2/geo-client": resolve(import.meta.dirname, "services/geo/geo-client/src/index.ts"),
       "@d2/request-enrichment": resolve(impl, "middleware/request-enrichment/default/src/index.ts"),
       "@d2/ratelimit": resolve(impl, "middleware/ratelimit/default/src/index.ts"),

@@ -1,21 +1,17 @@
 <script lang="ts">
   import { setLocale } from "$lib/paraglide/runtime";
-  import { page } from "$app/state";
-  import { goto } from "$app/navigation";
   import { m } from "$lib/paraglide/messages.js";
 </script>
 
-<h1>{m.hello_world({ name: "SvelteKit User" })}</h1>
-<div>
+<h1>{m.webclient_hero_title()}</h1>
+<p>{m.webclient_hero_tagline()}</p>
+<div class="mt-4 flex gap-2">
   <button onclick={() => setLocale("en")}>en</button>
   <button onclick={() => setLocale("es")}>es</button>
   <button onclick={() => setLocale("de")}>de</button>
   <button onclick={() => setLocale("fr")}>fr</button>
-  <button onclick={() => setLocale("jp")}>jp</button>
+  <button onclick={() => setLocale("ja")}>ja</button>
 </div>
-<p>
-  If you use VSCode, install the <a
-    href="https://marketplace.visualstudio.com/items?itemName=inlang.vs-code-extension"
-    target="_blank">Sherlock i18n extension</a
-  > for a better i18n experience.
+<p class="mt-4 text-sm text-muted-foreground">
+  Switch locale above. Non-English locales will show English fallback until translations are added.
 </p>

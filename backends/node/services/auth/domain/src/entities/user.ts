@@ -9,6 +9,7 @@ export interface User {
   readonly displayUsername: string;
   readonly emailVerified: boolean;
   readonly image: string | null;
+  readonly locale: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -21,6 +22,7 @@ export interface CreateUserInput {
   readonly id?: string;
   readonly image?: string | null;
   readonly emailVerified?: boolean;
+  readonly locale?: string;
 }
 
 export interface UpdateUserInput {
@@ -30,6 +32,7 @@ export interface UpdateUserInput {
   readonly displayUsername?: string;
   readonly emailVerified?: boolean;
   readonly image?: string | null;
+  readonly locale?: string;
 }
 
 export function createUser(input: CreateUserInput): User {
@@ -55,6 +58,7 @@ export function createUser(input: CreateUserInput): User {
     displayUsername: input.displayUsername,
     emailVerified: input.emailVerified ?? false,
     image: input.image ?? null,
+    locale: input.locale ?? "en",
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -83,6 +87,7 @@ export function updateUser(user: User, updates: UpdateUserInput): User {
     displayUsername: updates.displayUsername ?? user.displayUsername,
     emailVerified: updates.emailVerified ?? user.emailVerified,
     image: updates.image !== undefined ? updates.image : user.image,
+    locale: updates.locale ?? user.locale,
     updatedAt: new Date(),
   };
 }

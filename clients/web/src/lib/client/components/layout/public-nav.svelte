@@ -3,6 +3,7 @@
   import { Button } from "$lib/client/components/ui/button/index.js";
   import ThemeToggle from "$lib/client/components/theme-toggle.svelte";
   import ThemeSelector from "$lib/client/components/theme-selector.svelte";
+  import * as m from "$lib/paraglide/messages.js";
 </script>
 
 <nav class="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur-sm">
@@ -13,14 +14,14 @@
       >
         DW
       </div>
-      <span class="text-lg font-semibold">DCSV WORX</span>
+      <span class="text-lg font-semibold">{m.webclient_nav_brand()}</span>
     </a>
 
     <div class="flex items-center gap-2">
       <ThemeToggle />
       <ThemeSelector />
-      <Button variant="outline" size="sm" href="/sign-in">Sign In</Button>
-      <Button variant="default" size="sm" href="/sign-up">Sign Up</Button>
+      <Button variant="outline" size="sm" href="/sign-in">{m.common_ui_sign_in()}</Button>
+      <Button variant="default" size="sm" href="/sign-up">{m.common_ui_sign_up()}</Button>
     </div>
   </div>
 </nav>

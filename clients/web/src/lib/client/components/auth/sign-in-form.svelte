@@ -9,6 +9,7 @@
   import { Button } from "$lib/client/components/ui/button/index.js";
   import { authClient } from "$lib/client/stores/auth-client.js";
   import { EMAIL, PASSWORD } from "$lib/shared/forms/field-presets.js";
+  import * as m from "$lib/paraglide/messages.js";
   import EyeIcon from "@lucide/svelte/icons/eye";
   import EyeOffIcon from "@lucide/svelte/icons/eye-off";
 
@@ -51,11 +52,11 @@
 
             // 429 = throttled
             if (status === 429) {
-              serverError = "Too many sign-in attempts. Please try again later.";
+              serverError = m.auth_errors_SIGN_IN_THROTTLED();
               return;
             }
 
-            serverError = result.error.message ?? "Invalid email or password.";
+            serverError = result.error.message ?? m.auth_sign_in_invalid_credentials();
             return;
           }
 
@@ -65,7 +66,7 @@
           // eslint-disable-next-line svelte/no-navigation-without-resolve -- dynamic returnTo from query params
           await goto(dest);
         } catch {
-          serverError = "Something went wrong. Please try again.";
+          serverError = m.common_errors_unknown();
         } finally {
           submitting = false;
         }
@@ -105,11 +106,11 @@
   {/if}
 
   <Button type="submit" disabled={submitting} class="w-full">
-    {submitting ? "Signing in..." : "Sign In"}
+    {submitting ? m.auth_sign_in_submitting() : m.auth_sign_in_submit()}
   </Button>
 
   <p class="text-muted-foreground text-center text-sm">
-    Don't have an account?
-    <a href={resolve("/sign-up")} class="text-primary underline-offset-4 hover:underline">Sign up.</a>
+    {m.auth_sign_in_no_account()}
+    <a href={resolve("/sign-up")} class="text-primary underline-offset-4 hover:underline">{m.auth_sign_in_link()}</a>
   </p>
 </form>

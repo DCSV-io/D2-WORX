@@ -18,6 +18,7 @@
     PASSWORD,
     CONFIRM_PASSWORD,
   } from "$lib/shared/forms/field-presets.js";
+  import * as m from "$lib/paraglide/messages.js";
   import EyeIcon from "@lucide/svelte/icons/eye";
   import EyeOffIcon from "@lucide/svelte/icons/eye-off";
 
@@ -52,7 +53,7 @@
           });
 
           if (result.error) {
-            const msg = result.error.message ?? "Sign-up failed.";
+            const msg = result.error.message ?? m.auth_sign_in_sign_up_failed();
             // Map known BetterAuth errors to field-level errors
             if (msg.toLowerCase().includes("email")) {
               form.errors.update((e) => ({ ...e, email: [msg] }));
@@ -67,7 +68,7 @@
           // eslint-disable-next-line svelte/no-navigation-without-resolve -- verify-email route not yet created
           await goto(`/verify-email?email=${encodeURIComponent(email)}`);
         } catch {
-          serverError = "Something went wrong. Please try again.";
+          serverError = m.common_errors_unknown();
         } finally {
           submitting = false;
         }
@@ -88,7 +89,7 @@
         `/api/auth/check-email?email=${encodeURIComponent(email)}`,
       );
       if (!result.success) return { valid: true }; // Fail-open on server error
-      return { valid: result.data?.available !== false, errorMessage: "This email is already taken" };
+      return { valid: result.data?.available !== false, errorMessage: m.auth_errors_EMAIL_ALREADY_TAKEN() };
     },
   });
 
@@ -157,11 +158,11 @@
   {/if}
 
   <Button type="submit" disabled={submitting} class="w-full">
-    {submitting ? "Creating account..." : "Sign Up"}
+    {submitting ? m.auth_sign_up_submitting() : m.auth_sign_up_submit()}
   </Button>
 
   <p class="text-muted-foreground text-center text-sm">
-    Already have an account?
-    <a href={resolve("/sign-in")} class="text-primary underline-offset-4 hover:underline">Sign in.</a>
+    {m.auth_sign_up_has_account()}
+    <a href={resolve("/sign-in")} class="text-primary underline-offset-4 hover:underline">{m.auth_sign_up_link()}</a>
   </p>
 </form>

@@ -9,6 +9,8 @@ export {
   COMMS_MESSAGING,
   COMMS_RETRY,
 } from "./constants/comms-constants.js";
+export { COMMS_ERROR_CODES } from "./constants/error-codes.js";
+export type { CommsErrorCode } from "./constants/error-codes.js";
 
 // --- Enums ---
 export { CHANNELS, isValidChannel } from "./enums/channel.js";

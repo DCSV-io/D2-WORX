@@ -31,6 +31,8 @@ export const user = pgTable(
     // Username plugin
     username: text("username").notNull().unique(),
     displayUsername: text("display_username").notNull().unique(),
+    // i18n
+    locale: text("locale").default("en"),
     // Admin plugin
     role: text("role"),
     banned: boolean("banned").default(false),
