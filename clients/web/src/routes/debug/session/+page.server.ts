@@ -20,6 +20,7 @@ export const load: PageServerLoad = async ({ locals, request }) => {
         clientIp: locals.requestInfo.clientIp,
         serverFingerprint: locals.requestInfo.serverFingerprint,
         clientFingerprint: locals.requestInfo.clientFingerprint ?? null,
+        deviceFingerprint: locals.requestInfo.deviceFingerprint,
         whoIsHashId: locals.requestInfo.whoIsHashId ?? null,
         city: locals.requestInfo.city ?? null,
         countryCode: locals.requestInfo.countryCode ?? null,

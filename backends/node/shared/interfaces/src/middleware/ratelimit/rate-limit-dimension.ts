@@ -3,7 +3,7 @@
  * Mirrors D2.Shared.RateLimit.Default.RateLimitDimension in .NET.
  */
 export const RateLimitDimension = {
-  ClientFingerprint: "ClientFingerprint",
+  DeviceFingerprint: "DeviceFingerprint",
   Ip: "Ip",
   City: "City",
   Country: "Country",

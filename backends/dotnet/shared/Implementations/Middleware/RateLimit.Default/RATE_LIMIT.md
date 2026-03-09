@@ -20,7 +20,7 @@ Rate limiting operates on four dimensions in hierarchy order:
 
 | Dimension          | Default Threshold | Skip Condition                   | Rationale                 |
 | ------------------ | ----------------- | -------------------------------- | ------------------------- |
-| Client Fingerprint | 100/min           | Header not present               | Single device — strictest |
+| Device Fingerprint | 100/min           | Never (always evaluated)         | Single device — strictest |
 | IP                 | 5,000/min         | Localhost/loopback               | ~50 devices × 100         |
 | City               | 25,000/min        | WhoIs data unavailable           | ~250 devices × 100        |
 | Country            | 100,000/min       | Whitelisted or WhoIs unavailable | ~1000 devices × 100       |
@@ -58,7 +58,7 @@ public class RateLimitOptions
     public TimeSpan Window { get; set; } = TimeSpan.FromMinutes(1);
     public TimeSpan BlockDuration { get; set; } = TimeSpan.FromMinutes(5);
 
-    public int ClientFingerprintThreshold { get; set; } = 100;
+    public int DeviceFingerprintThreshold { get; set; } = 100;
     public int IpThreshold { get; set; } = 5_000;
     public int CityThreshold { get; set; } = 25_000;
     public int CountryThreshold { get; set; } = 100_000;
@@ -91,7 +91,7 @@ When rate limited, the middleware returns:
 
 - **Redis down**: Log warning, allow request through.
 - **WhoIs unavailable**: City + Country dimensions skipped.
-- **No client fingerprint header**: Fingerprint dimension skipped.
+- **No client fingerprint**: Device fingerprint still evaluated (degrades to `SHA-256("" + serverFP + clientIp)`).
 - **Localhost**: IP dimension skipped.
 
 ## Dependencies

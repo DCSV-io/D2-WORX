@@ -174,6 +174,7 @@ public class ServiceKeyMiddlewareTests
         {
             ClientIp = "192.0.2.1",
             ServerFingerprint = "abc123",
+            DeviceFingerprint = "device-fp-test",
         };
         context.Features.Set<IRequestInfo>(requestInfo);
         return requestInfo;

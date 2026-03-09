@@ -9,6 +9,7 @@ function createStubRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo 
     clientIp: "127.0.0.1",
     serverFingerprint: "abc123",
     clientFingerprint: undefined,
+    deviceFingerprint: "a".repeat(64),
     whoIsHashId: undefined,
     city: undefined,
     countryCode: undefined,

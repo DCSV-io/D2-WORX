@@ -65,11 +65,11 @@ vi.mock("@d2/geo-client", () => ({
 }));
 
 vi.mock("@d2/ratelimit", () => ({
-  Check: mockClass(),
+  CheckRateLimit: mockClass(),
 }));
 
 vi.mock("@d2/idempotency", () => ({
-  Check: mockClass(),
+  CheckIdempotency: mockClass(),
   checkIdempotency: vi.fn(),
 }));
 

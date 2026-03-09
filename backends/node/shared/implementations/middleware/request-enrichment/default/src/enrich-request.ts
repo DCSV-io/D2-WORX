@@ -1,7 +1,7 @@
 import type { ILogger } from "@d2/logging";
 import type { FindWhoIs } from "@d2/geo-client";
 import { resolveIp, isLocalhost } from "./ip-resolver.js";
-import { buildServerFingerprint } from "./fingerprint-builder.js";
+import { buildServerFingerprint, buildDeviceFingerprint } from "./fingerprint-builder.js";
 import { RequestInfo } from "./request-info.js";
 import {
   DEFAULT_REQUEST_ENRICHMENT_OPTIONS,
@@ -35,22 +35,33 @@ export async function enrichRequest(
   // 2. Compute server fingerprint.
   const serverFingerprint = buildServerFingerprint(headers);
 
-  // 3. Read client fingerprint from configured header (truncate oversized values).
-  const clientFingerprintRaw = headers[opts.clientFingerprintHeader];
-  let clientFingerprint = clientFingerprintRaw
-    ? Array.isArray(clientFingerprintRaw)
-      ? clientFingerprintRaw[0]
-      : clientFingerprintRaw
-    : undefined;
+  // 3. Read client fingerprint: cookie (primary) → header (fallback).
+  let clientFingerprint = parseCookieValue(headers, opts.clientFingerprintCookie);
+  if (!clientFingerprint) {
+    const clientFingerprintRaw = headers[opts.clientFingerprintHeader];
+    clientFingerprint = clientFingerprintRaw
+      ? Array.isArray(clientFingerprintRaw)
+        ? clientFingerprintRaw[0]
+        : clientFingerprintRaw
+      : undefined;
+  }
   if (clientFingerprint && clientFingerprint.length > opts.maxFingerprintLength) {
     clientFingerprint = clientFingerprint.slice(0, opts.maxFingerprintLength);
   }
 
-  // 4. Build initial request info (without WhoIs data).
+  if (!clientFingerprint) {
+    logger?.warn("Client fingerprint missing (no d2-cfp cookie or X-Client-Fingerprint header). Device rate-limit bucket will be shared.");
+  }
+
+  // 4. Compute combined device fingerprint (always present).
+  const deviceFingerprint = buildDeviceFingerprint(clientFingerprint, serverFingerprint, clientIp);
+
+  // 5. Build initial request info (without WhoIs data).
   let requestInfo: RequestEnrichment.IRequestInfo = new RequestInfo({
     clientIp,
     serverFingerprint,
     clientFingerprint,
+    deviceFingerprint,
   });
 
   // 5. Perform WhoIs lookup if enabled and not localhost.
@@ -71,6 +82,7 @@ export async function enrichRequest(
           clientIp,
           serverFingerprint,
           clientFingerprint,
+          deviceFingerprint,
           whoIsHashId: whoIs.hashId || undefined,
           city: whoIs.location?.city || undefined,
           countryCode: whoIs.location?.countryIso31661Alpha2Code || undefined,
@@ -94,4 +106,28 @@ export async function enrichRequest(
   }
 
   return requestInfo;
+}
+
+/**
+ * Parses a cookie value from the raw `cookie` header.
+ * Returns undefined if the cookie is not found.
+ */
+function parseCookieValue(
+  headers: Record<string, string | string[] | undefined>,
+  cookieName: string,
+): string | undefined {
+  const cookieHeader = headers["cookie"];
+  if (!cookieHeader) return undefined;
+  const raw = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
+  if (!raw) return undefined;
+
+  for (const pair of raw.split(";")) {
+    const eqIndex = pair.indexOf("=");
+    if (eqIndex === -1) continue;
+    const name = pair.slice(0, eqIndex).trim();
+    if (name === cookieName) {
+      return pair.slice(eqIndex + 1).trim() || undefined;
+    }
+  }
+  return undefined;
 }

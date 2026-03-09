@@ -8,6 +8,7 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
   readonly clientIp: string;
   readonly serverFingerprint: string;
   readonly clientFingerprint: string | undefined;
+  readonly deviceFingerprint: string;
   readonly whoIsHashId: string | undefined;
   readonly city: string | undefined;
   readonly countryCode: string | undefined;
@@ -24,6 +25,7 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
     clientIp: string;
     serverFingerprint: string;
     clientFingerprint?: string;
+    deviceFingerprint: string;
     whoIsHashId?: string;
     city?: string;
     countryCode?: string;
@@ -39,6 +41,7 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
     this.clientIp = params.clientIp;
     this.serverFingerprint = params.serverFingerprint;
     this.clientFingerprint = params.clientFingerprint;
+    this.deviceFingerprint = params.deviceFingerprint;
     this.whoIsHashId = params.whoIsHashId;
     this.city = params.city;
     this.countryCode = params.countryCode;

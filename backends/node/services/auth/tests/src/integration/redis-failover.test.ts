@@ -93,7 +93,7 @@ describe("Redis failover — auth service consumers", () => {
       const normalResult = await rateLimitCheck.handleAsync({
         requestInfo: {
           clientIp: "203.0.113.1",
-          clientFingerprint: "fp-test",
+          deviceFingerprint: "a".repeat(64),
         },
       });
       expect(normalResult).toBeSuccess();
@@ -106,7 +106,7 @@ describe("Redis failover — auth service consumers", () => {
       const failoverResult = await rateLimitCheck.handleAsync({
         requestInfo: {
           clientIp: "203.0.113.1",
-          clientFingerprint: "fp-test",
+          deviceFingerprint: "a".repeat(64),
         },
       });
       expect(failoverResult).toBeSuccess();

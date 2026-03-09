@@ -37,12 +37,20 @@ public class RequestEnrichmentOptions
     public bool EnableWhoIsLookup { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the header name for client-provided fingerprint.
+    /// Gets or sets the header name for client-provided fingerprint (fallback).
     /// </summary>
     /// <remarks>
-    /// Default is "X-Client-Fingerprint".
+    /// Default is "X-Client-Fingerprint". Cookie is preferred (see <see cref="ClientFingerprintCookie"/>).
     /// </remarks>
     public string ClientFingerprintHeader { get; set; } = "X-Client-Fingerprint";
+
+    /// <summary>
+    /// Gets or sets the cookie name for client-provided fingerprint (primary).
+    /// </summary>
+    /// <remarks>
+    /// Default is "d2-cfp". Takes priority over the header.
+    /// </remarks>
+    public string ClientFingerprintCookie { get; set; } = "d2-cfp";
 
     /// <summary>
     /// Gets or sets the proxy headers trusted for IP resolution.

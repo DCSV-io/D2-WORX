@@ -455,6 +455,7 @@ public class JwtFingerprintMiddlewareTests
         {
             ClientIp = "10.0.0.1",
             ServerFingerprint = "abc123",
+            DeviceFingerprint = "device-fp-trusted",
             IsTrustedService = true,
         };
         context.Features.Set<IRequestInfo>(requestInfo);
@@ -479,6 +480,7 @@ public class JwtFingerprintMiddlewareTests
         {
             ClientIp = "10.0.0.1",
             ServerFingerprint = "test-fingerprint",
+            DeviceFingerprint = "device-fp-test",
         };
         context.Features.Set<IRequestInfo>(requestInfo);
         return requestInfo;

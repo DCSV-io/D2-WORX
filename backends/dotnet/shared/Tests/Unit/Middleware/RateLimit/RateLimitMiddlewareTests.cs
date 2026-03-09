@@ -107,7 +107,7 @@ public class RateLimitMiddlewareTests
     {
         // Arrange
         var context = CreateHttpContextWithRequestInfo();
-        SetupCheckReturnsBlocked(RateLimitDimension.ClientFingerprint, TimeSpan.FromMinutes(5));
+        SetupCheckReturnsBlocked(RateLimitDimension.DeviceFingerprint, TimeSpan.FromMinutes(5));
 
         var middleware = CreateMiddleware();
 
@@ -318,7 +318,7 @@ public class RateLimitMiddlewareTests
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Theory]
-    [InlineData(RateLimitDimension.ClientFingerprint, "ClientFingerprint")]
+    [InlineData(RateLimitDimension.DeviceFingerprint, "DeviceFingerprint")]
     [InlineData(RateLimitDimension.Ip, "Ip")]
     [InlineData(RateLimitDimension.City, "City")]
     [InlineData(RateLimitDimension.Country, "Country")]
@@ -362,9 +362,11 @@ public class RateLimitMiddlewareTests
 
     private static IRequestInfo CreateRequestInfo(string clientIp, string? clientFingerprint)
     {
+        var deviceFingerprint = clientFingerprint ?? $"device-fp-{clientIp}";
         var mock = new Mock<IRequestInfo>();
         mock.Setup(x => x.ClientIp).Returns(clientIp);
         mock.Setup(x => x.ClientFingerprint).Returns(clientFingerprint);
+        mock.Setup(x => x.DeviceFingerprint).Returns(deviceFingerprint);
         mock.Setup(x => x.ServerFingerprint).Returns("server-fp-hash");
         return mock.Object;
     }

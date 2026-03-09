@@ -99,14 +99,12 @@ public class Check : BaseHandler<Check, I, O>, H
         // to a single round-trip time (~5-8ms regardless of dimension count).
         var checks = new List<Task<O>>(4);
 
-        if (!string.IsNullOrWhiteSpace(requestInfo.ClientFingerprint))
-        {
-            checks.Add(CheckDimensionAsync(
-                RateLimitDimension.ClientFingerprint,
-                requestInfo.ClientFingerprint,
-                r_options.ClientFingerprintThreshold,
-                ct));
-        }
+        // Device fingerprint is always present (combined from client FP + server FP + IP).
+        checks.Add(CheckDimensionAsync(
+            RateLimitDimension.DeviceFingerprint,
+            requestInfo.DeviceFingerprint,
+            r_options.DeviceFingerprintThreshold,
+            ct));
 
         if (!IpResolver.IsLocalhost(requestInfo.ClientIp))
         {

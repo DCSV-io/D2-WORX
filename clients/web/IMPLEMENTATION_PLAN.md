@@ -25,7 +25,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 7    | Forms Architecture (Superforms)     | Complete    | 73 unit tests. Superforms + Formsnap + Zod 4. Geo ref data via geo-client. Mock contact form at `/design/contact-form` with cascading selects, phone formatting, flag icons |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Complete    | Sign-in, sign-up, forgot-password, reset-password, verify-email pages. i18n (5 locales). Reusable TextLink component. Auth-aware public nav |
 | 8.5  | Debug Session Page + Role Audit     | Complete    | Dev-only `/debug/session` page, role audit docs in AUTH.md |
-| 8.7  | Device Fingerprinting               | Pending     | Cross-cutting: SvelteKit + Node.js + .NET. See ADR-004 (revised) |
+| 8.7  | Device Fingerprinting               | Complete    | Cross-cutting: SvelteKit + Node.js + .NET. Client FP generator, `d2-cfp` cookie, `DeviceFingerprint` dimension (always evaluated). See ADR-004 (revised) |
 | 9    | Client Telemetry (Grafana Faro)     | Pending     |       |
 | 10   | Onboarding Flow                     | Pending     |       |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending     |       |
@@ -542,37 +542,36 @@ Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
 
 ---
 
-### Step 8.7: Device Fingerprinting
+### Step 8.7: Device Fingerprinting (Complete)
 
 **Goal:** Always-on device-level fingerprint for rate limiting. Replaces the optional `ClientFingerprint` dimension with a combined `DeviceFingerprint` that is always evaluated. See [ADR-004 (revised)](../../PLANNING.md#adr-004-fingerprinting-approach) for full design.
 
 **Formula:** `SHA-256(clientFingerprint + serverFingerprint + clientIp)`
 
-**8.7A: SvelteKit Client — Fingerprint Generator + Cookie**
+**8.7A: SvelteKit Client — Fingerprint Generator + Cookie** (Done)
 
-- Custom JS utility that generates a client fingerprint from browser signals (canvas, WebGL, screen resolution, timezone, installed fonts, etc.)
-- On first page load, compute fingerprint and write to `d2-cfp` cookie (HttpOnly=false, SameSite=Lax, long-lived)
-- Cookie is sent on all subsequent requests (navigations + fetch)
+- `src/lib/client/utils/fingerprint.ts` — generates client fingerprint from browser signals (canvas, WebGL, screen geometry, timezone, languages, hardware)
+- Writes `d2-cfp` cookie (SameSite=Lax, 1-year TTL, Secure on HTTPS). Reads existing cookie to avoid recomputation
+- Root layout calls `generateClientFingerprint()` on mount and sets `X-Client-Fingerprint` header on gateway client for cross-origin API calls
+- Fixed misnomer: root layout no longer passes server fingerprint as "client fingerprint"
 
-**8.7B: Node.js Request Enrichment + Rate Limiting**
+**8.7B: Node.js Request Enrichment + Rate Limiting** (Done)
 
-- `@d2/request-enrichment`: Read `d2-cfp` cookie value, compute `deviceFingerprint = SHA-256(clientFP + serverFP + clientIp)`, add to `IRequestInfo`
-- Log warning when client fingerprint is missing (monitoring signal for bot traffic / JS-disabled clients)
-- `@d2/ratelimit`: Replace `ClientFingerprint` dimension (100/min, skipped if absent) with `DeviceFingerprint` dimension (always evaluated, no skip)
+- `@d2/request-enrichment`: Reads `d2-cfp` cookie (primary) → `X-Client-Fingerprint` header (fallback). Computes `deviceFingerprint = SHA-256(clientFP + serverFP + clientIp)`, adds to `IRequestInfo`. Logs warning when client fingerprint is missing
+- `@d2/ratelimit`: Replaced `ClientFingerprint` dimension with `DeviceFingerprint` (always evaluated, no skip)
+- `@d2/interfaces`: Added `deviceFingerprint: string` to `IRequestInfo`, renamed `RateLimitDimension.ClientFingerprint` → `DeviceFingerprint`
 
-**8.7C: .NET Request Enrichment + Rate Limiting**
+**8.7C: .NET Request Enrichment + Rate Limiting** (Done)
 
-- `RequestEnrichment.Default`: Same — read `d2-cfp` cookie, compute combined fingerprint
-- `RateLimit.Default`: Same — replace dimension, always evaluated
-- Update `IRequestInfo` interface with `DeviceFingerprint` property
+- `RequestEnrichment.Default`: Same cookie/header reading + `BuildDeviceFingerprint()` static helper
+- `RateLimit.Default`: Renamed dimension, always evaluated
+- `IRequestInfo` + `RequestInfo`: Added `DeviceFingerprint` property (always present)
 
-**8.7D: Tests**
+**8.7D: Tests** (Done)
 
-- SvelteKit: Unit tests for fingerprint generator utility
-- Node.js: Tests for cookie reading, combined fingerprint computation, warning logging, rate limit dimension change
-- .NET: Tests for same
-
-**Requires:** No backend services needed for client-side generator. Backend changes need Redis for rate limiting tests.
+- SvelteKit: Auth hook tests updated with `deviceFingerprint` mock, layout tests updated, debug page shows `deviceFingerprint`
+- Node.js: 6 new enrichment tests (cookie reading, warning logging, device FP computation), rate limit tests updated for `DeviceFingerprint` dimension. All 1,056 shared tests pass
+- .NET: All test files updated for `DeviceFingerprint`. All 754 shared tests + 798 Geo tests pass
 
 ---
 

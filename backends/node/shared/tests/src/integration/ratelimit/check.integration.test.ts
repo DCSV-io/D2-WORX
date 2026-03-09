@@ -15,6 +15,7 @@ function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
     clientIp: "10.20.30.40",
     serverFingerprint: "a".repeat(64),
     clientFingerprint: "integration-fp",
+    deviceFingerprint: "b".repeat(64),
     whoIsHashId: undefined,
     city: undefined,
     countryCode: undefined,
@@ -48,7 +49,7 @@ describe("RateLimit Check handler (integration with Redis)", () => {
   }
 
   it("should allow requests below threshold", async () => {
-    const handler = createCheckHandler({ clientFingerprintThreshold: 10 });
+    const handler = createCheckHandler({ deviceFingerprintThreshold: 10 });
     const info = createRequestInfo();
 
     const result = await handler.handleAsync({ requestInfo: info });
@@ -58,7 +59,7 @@ describe("RateLimit Check handler (integration with Redis)", () => {
   });
 
   it("should block after threshold is exceeded and create block key in Redis", async () => {
-    const handler = createCheckHandler({ clientFingerprintThreshold: 3 });
+    const handler = createCheckHandler({ deviceFingerprintThreshold: 3 });
     const info = createRequestInfo();
 
     // Send requests until blocked
@@ -67,7 +68,7 @@ describe("RateLimit Check handler (integration with Redis)", () => {
       const result = await handler.handleAsync({ requestInfo: info });
       if (result.data?.isBlocked) {
         blocked = true;
-        expect(result.data.blockedDimension).toBe(RateLimitDimension.ClientFingerprint);
+        expect(result.data.blockedDimension).toBe(RateLimitDimension.DeviceFingerprint);
         expect(result.data.retryAfterMs).toBeDefined();
         break;
       }
@@ -76,14 +77,14 @@ describe("RateLimit Check handler (integration with Redis)", () => {
 
     // Verify the block key exists in Redis
     const redis = getRedis();
-    const blockKey = `blocked:clientfingerprint:integration-fp`;
+    const blockKey = `blocked:devicefingerprint:${"b".repeat(64)}`;
     const pttl = await redis.pttl(blockKey);
     expect(pttl).toBeGreaterThan(0);
   });
 
   it("should set counter keys with correct TTL", async () => {
     const handler = createCheckHandler({
-      clientFingerprintThreshold: 1000,
+      deviceFingerprintThreshold: 1000,
       windowMs: 60_000,
     });
     const info = createRequestInfo();
@@ -92,7 +93,7 @@ describe("RateLimit Check handler (integration with Redis)", () => {
 
     // Find the counter key
     const redis = getRedis();
-    const keys = await redis.keys("ratelimit:clientfingerprint:integration-fp:*");
+    const keys = await redis.keys(`ratelimit:devicefingerprint:${"b".repeat(64)}:*`);
     expect(keys.length).toBeGreaterThanOrEqual(1);
 
     // Check TTL is approximately 2 * 60_000 = 120_000ms
@@ -108,7 +109,7 @@ describe("RateLimit Check handler (integration with Redis)", () => {
   it("should return already-blocked state with correct remaining TTL", async () => {
     const redis = getRedis();
     // Pre-set a block key
-    await redis.set("blocked:clientfingerprint:integration-fp", "1", "PX", 60_000);
+    await redis.set(`blocked:devicefingerprint:${"b".repeat(64)}`, "1", "PX", 60_000);
 
     const handler = createCheckHandler();
     const info = createRequestInfo();
@@ -117,14 +118,14 @@ describe("RateLimit Check handler (integration with Redis)", () => {
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
-    expect(result.data?.blockedDimension).toBe(RateLimitDimension.ClientFingerprint);
+    expect(result.data?.blockedDimension).toBe(RateLimitDimension.DeviceFingerprint);
     expect(result.data?.retryAfterMs).toBeGreaterThan(0);
     expect(result.data!.retryAfterMs!).toBeLessThanOrEqual(60_000);
   });
 
   it("should correctly count across requests using real Redis counters", async () => {
     const handler = createCheckHandler({
-      clientFingerprintThreshold: 5,
+      deviceFingerprintThreshold: 5,
       windowMs: 60_000,
     });
     const info = createRequestInfo();
@@ -137,7 +138,7 @@ describe("RateLimit Check handler (integration with Redis)", () => {
 
     // Verify counter value in Redis
     const redis = getRedis();
-    const keys = await redis.keys("ratelimit:clientfingerprint:integration-fp:*");
+    const keys = await redis.keys(`ratelimit:devicefingerprint:${"b".repeat(64)}:*`);
     const currentKeys = keys.filter((k) => !k.includes("blocked"));
     expect(currentKeys.length).toBeGreaterThanOrEqual(1);
 

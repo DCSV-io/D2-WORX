@@ -63,7 +63,7 @@ describe("Middleware chain order", () => {
       increment,
       set,
       {
-        clientFingerprintThreshold: 3,
+        deviceFingerprintThreshold: 3,
         ipThreshold: 3,
       },
       ctx,

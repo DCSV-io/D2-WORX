@@ -67,7 +67,7 @@ public class RateLimitConfigTests
         var options = new RateLimitOptions();
         config.GetSection(_SECTION).Bind(options);
 
-        options.ClientFingerprintThreshold.Should().Be(100);
+        options.DeviceFingerprintThreshold.Should().Be(100);
         options.IpThreshold.Should().Be(5_000);
         options.CityThreshold.Should().Be(25_000);
         options.CountryThreshold.Should().Be(100_000);
@@ -124,7 +124,7 @@ public class RateLimitConfigTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [$"{_SECTION}:ClientFingerprintThreshold"] = "200",
+                [$"{_SECTION}:DeviceFingerprintThreshold"] = "200",
                 [$"{_SECTION}:IpThreshold"] = "10000",
                 [$"{_SECTION}:CityThreshold"] = "50000",
                 [$"{_SECTION}:CountryThreshold"] = "200000",
@@ -134,7 +134,7 @@ public class RateLimitConfigTests
         var options = new RateLimitOptions();
         config.GetSection(_SECTION).Bind(options);
 
-        options.ClientFingerprintThreshold.Should().Be(200);
+        options.DeviceFingerprintThreshold.Should().Be(200);
         options.IpThreshold.Should().Be(10_000);
         options.CityThreshold.Should().Be(50_000);
         options.CountryThreshold.Should().Be(200_000);
@@ -184,7 +184,7 @@ public class RateLimitConfigTests
             Environment.SetEnvironmentVariable(
                 $"{_ENV_PREFIX}{_SECTION}__BlockDuration", "00:10:00");
             Environment.SetEnvironmentVariable(
-                $"{_ENV_PREFIX}{_SECTION}__ClientFingerprintThreshold", "50");
+                $"{_ENV_PREFIX}{_SECTION}__DeviceFingerprintThreshold", "50");
             Environment.SetEnvironmentVariable(
                 $"{_ENV_PREFIX}{_SECTION}__IpThreshold", "2500");
             Environment.SetEnvironmentVariable(
@@ -205,7 +205,7 @@ public class RateLimitConfigTests
 
             options.Window.Should().Be(TimeSpan.FromMinutes(3));
             options.BlockDuration.Should().Be(TimeSpan.FromMinutes(10));
-            options.ClientFingerprintThreshold.Should().Be(50);
+            options.DeviceFingerprintThreshold.Should().Be(50);
             options.IpThreshold.Should().Be(2_500);
             options.CityThreshold.Should().Be(12_500);
             options.CountryThreshold.Should().Be(50_000);
@@ -222,7 +222,7 @@ public class RateLimitConfigTests
             Environment.SetEnvironmentVariable(
                 $"{_ENV_PREFIX}{_SECTION}__BlockDuration", null);
             Environment.SetEnvironmentVariable(
-                $"{_ENV_PREFIX}{_SECTION}__ClientFingerprintThreshold", null);
+                $"{_ENV_PREFIX}{_SECTION}__DeviceFingerprintThreshold", null);
             Environment.SetEnvironmentVariable(
                 $"{_ENV_PREFIX}{_SECTION}__IpThreshold", null);
             Environment.SetEnvironmentVariable(
@@ -245,7 +245,7 @@ public class RateLimitConfigTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [$"{_SECTION}:ClientFingerprintThreshold"] = "250",
+                [$"{_SECTION}:DeviceFingerprintThreshold"] = "250",
                 [$"{_SECTION}:BlockDuration"] = "00:20:00",
             })
             .Build();
@@ -254,7 +254,7 @@ public class RateLimitConfigTests
         config.GetSection(_SECTION).Bind(options);
 
         // Overridden.
-        options.ClientFingerprintThreshold.Should().Be(250);
+        options.DeviceFingerprintThreshold.Should().Be(250);
         options.BlockDuration.Should().Be(TimeSpan.FromMinutes(20));
 
         // Defaults preserved.

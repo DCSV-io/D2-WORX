@@ -200,6 +200,15 @@
                   {data.requestInfo.clientFingerprint ?? "null"}
                 </dd>
               </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">deviceFingerprint</dt>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestInfo.deviceFingerprint}
+                >
+                  {data.requestInfo.deviceFingerprint}
+                </dd>
+              </div>
               <Separator />
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">city</dt>
@@ -257,7 +266,7 @@
         <Card.Content>
           {#if data.cookieNames.length > 0}
             <ul class="space-y-1 text-sm">
-              {#each data.cookieNames as name}
+              {#each data.cookieNames as name (name)}
                 <li class="font-mono text-xs">{name}</li>
               {/each}
             </ul>

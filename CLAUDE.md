@@ -698,7 +698,7 @@ No sticky sessions required. Any instance can handle any request:
 
 - **Packages**: `@d2/ratelimit` (Node.js - done), `RateLimit.Default` (C# - done)
 - **Storage**: Redis via abstracted distributed cache handlers (GetTtl, Increment, Set)
-- **Dimensions**: ClientFingerprint (100/min), IP (5,000/min), City (25,000/min), Country (100,000/min)
+- **Dimensions**: DeviceFingerprint (100/min, always evaluated), IP (5,000/min), City (25,000/min), Country (100,000/min)
 - **Algorithm**: Sliding window approximation (two fixed-window counters + weighted average)
 - **Logic**: If ANY dimension exceeds threshold → block for 5 minutes
 - **Country whitelist**: US, CA, GB exempt from country-level blocking
@@ -710,7 +710,8 @@ No sticky sessions required. Any instance can handle any request:
 - **Package**: `RequestEnrichment.Default` (C# - done)
 - Resolves client IP from CF-Connecting-IP → X-Real-IP → X-Forwarded-For → RemoteIp
 - Computes server fingerprint (SHA-256 of UA + Accept headers) for logging
-- Reads client fingerprint from `X-Client-Fingerprint` header for rate limiting
+- Reads client fingerprint from `d2-cfp` cookie (primary) or `X-Client-Fingerprint` header (fallback)
+- Computes device fingerprint: `SHA-256(clientFP + serverFP + clientIp)` — always present, used for rate limiting
 - Calls Geo.Client WhoIs cache for city/country/VPN flags
 - Sets `IRequestInfo` on `HttpContext.Features` for downstream middleware
 

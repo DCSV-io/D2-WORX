@@ -7,8 +7,8 @@ export interface RateLimitOptions {
   windowMs: number;
   /** Block duration in milliseconds after exceeding threshold. Default: 300_000 (5 minutes). */
   blockDurationMs: number;
-  /** Max requests per window for client fingerprint dimension. Default: 100. */
-  clientFingerprintThreshold: number;
+  /** Max requests per window for device fingerprint dimension. Default: 100. */
+  deviceFingerprintThreshold: number;
   /** Max requests per window for IP dimension. Default: 5_000. */
   ipThreshold: number;
   /** Max requests per window for city dimension. Default: 25_000. */
@@ -23,7 +23,7 @@ export interface RateLimitOptions {
 export const DEFAULT_RATE_LIMIT_OPTIONS: RateLimitOptions = {
   windowMs: 60_000,
   blockDurationMs: 300_000,
-  clientFingerprintThreshold: 100,
+  deviceFingerprintThreshold: 100,
   ipThreshold: 5_000,
   cityThreshold: 25_000,
   countryThreshold: 100_000,

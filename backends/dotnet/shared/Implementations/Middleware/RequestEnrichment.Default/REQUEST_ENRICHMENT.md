@@ -9,7 +9,7 @@ HTTP middleware that enriches requests with client information including IP reso
 | [IRequestInfo.cs](IRequestInfo.cs)                               | Interface defining enriched request context properties.                   |
 | [RequestInfo.cs](RequestInfo.cs)                                 | Concrete implementation of IRequestInfo.                                  |
 | [IpResolver.cs](IpResolver.cs)                                   | Static helper for resolving client IP from various headers.               |
-| [FingerprintBuilder.cs](FingerprintBuilder.cs)                   | Static helper for computing server-side fingerprint from request headers. |
+| [FingerprintBuilder.cs](FingerprintBuilder.cs)                   | Static helpers for server + device fingerprint computation.               |
 | [RequestEnrichmentOptions.cs](RequestEnrichmentOptions.cs)       | Configuration options for the middleware.                                 |
 | [RequestEnrichmentMiddleware.cs](RequestEnrichmentMiddleware.cs) | The middleware implementation that performs enrichment.                   |
 | [Extensions.cs](Extensions.cs)                                   | DI registration and app builder extension methods.                        |
@@ -27,9 +27,11 @@ The middleware performs the following enrichment steps:
 2. **Server Fingerprint** — Computes SHA-256 hash of request headers for logging/analytics:
    - `User-Agent + "|" + Accept-Language + "|" + Accept-Encoding + "|" + Accept`
 
-3. **Client Fingerprint** — Reads `X-Client-Fingerprint` header (if present) for rate limiting.
+3. **Client Fingerprint** — Reads from `d2-cfp` cookie (primary) or `X-Client-Fingerprint` header (fallback). May be absent.
 
-4. **WhoIs Lookup** — Calls Geo.Client's WhoIs cache handler to enrich with geolocation data:
+4. **Device Fingerprint** — Computes `SHA-256(clientFingerprint + serverFingerprint + clientIp)`. Always present — if client fingerprint is missing, degrades to `SHA-256("" + serverFP + clientIp)`.
+
+5. **WhoIs Lookup** — Calls Geo.Client's WhoIs cache handler to enrich with geolocation data:
    - City, country code, subdivision code
    - VPN/proxy/Tor/hosting flags
    - Content-addressable hash ID for downstream lookups
@@ -40,7 +42,8 @@ The middleware performs the following enrichment steps:
 | ------------------- | --------- | --------------------------------------------------------- |
 | `ClientIp`          | `string`  | Resolved client IP address (always present).              |
 | `ServerFingerprint` | `string`  | Server-computed fingerprint for logging (always present). |
-| `ClientFingerprint` | `string?` | Client-provided fingerprint header (nullable).            |
+| `ClientFingerprint` | `string?` | Client-provided fingerprint from cookie/header (nullable). |
+| `DeviceFingerprint` | `string`  | Combined fingerprint: SHA-256(clientFP + serverFP + IP). Always present. |
 | `UserId`            | `string?` | User ID set by auth middleware (nullable, mutable).       |
 | `IsAuthenticated`   | `bool`    | Authentication status set by auth middleware (mutable).   |
 | `WhoIsHashId`       | `string?` | Content-addressable hash for WhoIs lookups.               |
@@ -60,8 +63,11 @@ public class RequestEnrichmentOptions
     // Enable/disable WhoIs lookup (default: true).
     public bool EnableWhoIsLookup { get; set; } = true;
 
-    // Header name for client fingerprint (default: "X-Client-Fingerprint").
+    // Header name for client fingerprint fallback (default: "X-Client-Fingerprint").
     public string ClientFingerprintHeader { get; set; } = "X-Client-Fingerprint";
+
+    // Cookie name for client fingerprint (default: "d2-cfp").
+    public string ClientFingerprintCookie { get; set; } = "d2-cfp";
 }
 ```
 

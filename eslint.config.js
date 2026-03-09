@@ -16,6 +16,7 @@ export default defineConfig(
     "old/",
     "**/bin/",
     "**/obj/",
+    "clients/web/src/paraglide/",
     "clients/web/src/lib/paraglide/",
   ]),
 

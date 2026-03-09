@@ -17,7 +17,7 @@ Rate limiting operates on four dimensions in hierarchy order:
 
 | Dimension          | Default Threshold | Skip Condition                   | Rationale                 |
 | ------------------ | ----------------- | -------------------------------- | ------------------------- |
-| Client Fingerprint | 100/min           | Header not present               | Single device — strictest |
+| Device Fingerprint | 100/min           | Never (always evaluated)         | Single device — strictest |
 | IP                 | 5,000/min         | Localhost/loopback               | ~50 devices x 100         |
 | City               | 25,000/min        | WhoIs data unavailable           | ~250 devices x 100        |
 | Country            | 100,000/min       | Whitelisted or WhoIs unavailable | ~1000 devices x 100       |
@@ -51,9 +51,9 @@ The `CheckRateLimit` handler declares `CHECK_REDACTION` (from `@d2/interfaces`) 
 
 - **Redis down**: Log warning, allow request through
 - **WhoIs unavailable**: City + Country dimensions skipped
-- **No client fingerprint**: Fingerprint dimension skipped
+- **No client fingerprint**: Device fingerprint still evaluated (degrades to `SHA-256("" + serverFP + clientIp)`)
 - **Localhost**: IP dimension skipped
 
 ## .NET Equivalent
 
-`RateLimit.Default` — same sliding window algorithm, same 4 dimensions, same fail-open behavior. Uses `DefaultOptions` for input logging suppression instead of `RedactionSpec`.
+`RateLimit.Default` — same sliding window algorithm, same 4 dimensions (DeviceFingerprint, IP, City, Country), same fail-open behavior. Uses `DefaultOptions` for input logging suppression instead of `RedactionSpec`.

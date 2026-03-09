@@ -121,14 +121,14 @@ public class RequestEnrichmentMiddlewareTests
     }
 
     /// <summary>
-    /// Tests that middleware reads client fingerprint header.
+    /// Tests that middleware reads client fingerprint from header (fallback when no cookie).
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task InvokeAsync_ReadsClientFingerprintHeader()
+    public async Task InvokeAsync_ReadsClientFingerprintFromHeader()
     {
         // Arrange
         var context = CreateHttpContext("127.0.0.1");
@@ -142,17 +142,20 @@ public class RequestEnrichmentMiddlewareTests
         // Assert
         var requestInfo = context.Features.Get<IRequestInfo>();
         requestInfo!.ClientFingerprint.Should().Be("client-device-fingerprint-abc123");
+        requestInfo.DeviceFingerprint.Should().NotBeNullOrEmpty();
+        requestInfo.DeviceFingerprint.Should().HaveLength(64); // SHA-256 hex
     }
 
     /// <summary>
-    /// Tests that middleware handles missing client fingerprint header gracefully.
+    /// Tests that middleware sets ClientFingerprint to null when neither cookie nor header is present,
+    /// but DeviceFingerprint is still computed.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task InvokeAsync_WhenNoClientFingerprintHeader_SetsNull()
+    public async Task InvokeAsync_WhenNoClientFingerprint_SetsNullButDeviceFingerprintPresent()
     {
         // Arrange
         var context = CreateHttpContext("127.0.0.1");
@@ -165,6 +168,8 @@ public class RequestEnrichmentMiddlewareTests
         // Assert
         var requestInfo = context.Features.Get<IRequestInfo>();
         requestInfo!.ClientFingerprint.Should().BeNull();
+        requestInfo.DeviceFingerprint.Should().NotBeNullOrEmpty();
+        requestInfo.DeviceFingerprint.Should().HaveLength(64); // SHA-256 hex (degraded: "" + serverFP + clientIp)
     }
 
     #endregion

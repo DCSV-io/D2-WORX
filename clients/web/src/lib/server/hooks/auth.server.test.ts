@@ -27,9 +27,10 @@ describe("createAuthHandle", () => {
           ? ({
               clientIp: "127.0.0.1",
               serverFingerprint: "abc",
+              deviceFingerprint: "abc123def456",
               isAuthenticated: false,
               isTrustedService: false,
-              userId: null,
+              userId: undefined,
               ...requestInfo,
             } as RequestEnrichment.IRequestInfo)
           : undefined,
@@ -70,7 +71,7 @@ describe("createAuthHandle", () => {
     const user = { id: "user-abc-123" };
     mockResolve.mockResolvedValue({ session, user });
 
-    const event = makeEvent({ isAuthenticated: false, userId: null });
+    const event = makeEvent({ isAuthenticated: false, userId: undefined });
     await handle({ event, resolve: mockSvelteResolve });
 
     expect(event.locals.requestInfo!.isAuthenticated).toBe(true);
@@ -80,11 +81,11 @@ describe("createAuthHandle", () => {
   it("does NOT update requestInfo when session is null", async () => {
     mockResolve.mockResolvedValue({ session: null, user: null });
 
-    const event = makeEvent({ isAuthenticated: false, userId: null });
+    const event = makeEvent({ isAuthenticated: false, userId: undefined });
     await handle({ event, resolve: mockSvelteResolve });
 
     expect(event.locals.requestInfo!.isAuthenticated).toBe(false);
-    expect(event.locals.requestInfo!.userId).toBeNull();
+    expect(event.locals.requestInfo!.userId).toBeUndefined();
   });
 
   it("does NOT crash when requestInfo is undefined", async () => {

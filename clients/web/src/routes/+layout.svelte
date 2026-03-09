@@ -6,13 +6,12 @@
   import ThemeProvider from "$lib/client/components/theme-provider.svelte";
   import NavigationProgress from "$lib/client/components/layout/navigation-progress.svelte";
   import { setClientFingerprint } from "$lib/client/rest/gateway-client.js";
+  import { generateClientFingerprint } from "$lib/client/utils/fingerprint.js";
 
   let { data, children } = $props();
 
   $effect(() => {
-    if (data.clientFingerprint) {
-      setClientFingerprint(data.clientFingerprint);
-    }
+    generateClientFingerprint().then((fp) => setClientFingerprint(fp));
   });
 </script>
 

@@ -112,7 +112,7 @@ public class RateLimitRedisTests : IAsyncLifetime
         var blockedResult = await handler.HandleAsync(new IRateLimit.CheckInput(requestInfo), Ct);
         blockedResult.Success.Should().BeTrue();
         blockedResult.Data!.IsBlocked.Should().BeTrue();
-        blockedResult.Data.BlockedDimension.Should().Be(RateLimitDimension.ClientFingerprint);
+        blockedResult.Data.BlockedDimension.Should().Be(RateLimitDimension.DeviceFingerprint);
         blockedResult.Data.RetryAfter.Should().NotBeNull();
     }
 
@@ -274,7 +274,7 @@ public class RateLimitRedisTests : IAsyncLifetime
 
         var db = _redis.GetDatabase();
         var keys = _redis.GetServer(_container.GetConnectionString().Split(',')[0])
-            .Keys(pattern: "ratelimit:clientfingerprint:test-fp-ttl:*");
+            .Keys(pattern: "ratelimit:devicefingerprint:test-fp-ttl:*");
 
         foreach (var key in keys)
         {
@@ -307,7 +307,7 @@ public class RateLimitRedisTests : IAsyncLifetime
         }
 
         var db = _redis.GetDatabase();
-        var blockedKey = "blocked:clientfingerprint:test-fp-block-ttl";
+        var blockedKey = "blocked:devicefingerprint:test-fp-block-ttl";
         var ttl = await db.KeyTimeToLiveAsync(blockedKey);
 
         ttl.Should().NotBeNull();
@@ -345,7 +345,7 @@ public class RateLimitRedisTests : IAsyncLifetime
 
         // Should no longer be blocked (though may still hit counter threshold)
         var db = _redis.GetDatabase();
-        var blockedKey = "blocked:clientfingerprint:test-fp-expire";
+        var blockedKey = "blocked:devicefingerprint:test-fp-expire";
         var exists = await db.KeyExistsAsync(blockedKey);
         exists.Should().BeFalse();
     }
@@ -362,7 +362,7 @@ public class RateLimitRedisTests : IAsyncLifetime
     {
         return new RateLimitOptions
         {
-            ClientFingerprintThreshold = fingerprintThreshold,
+            DeviceFingerprintThreshold = fingerprintThreshold,
             IpThreshold = ipThreshold,
             CityThreshold = cityThreshold,
             CountryThreshold = countryThreshold,
@@ -378,8 +378,10 @@ public class RateLimitRedisTests : IAsyncLifetime
         string? city = null,
         string? countryCode = null)
     {
+        var deviceFingerprint = clientFingerprint ?? $"device-fp-{clientIp}";
         var mock = new Mock<IRequestInfo>();
         mock.Setup(x => x.ClientFingerprint).Returns(clientFingerprint);
+        mock.Setup(x => x.DeviceFingerprint).Returns(deviceFingerprint);
         mock.Setup(x => x.ClientIp).Returns(clientIp);
         mock.Setup(x => x.City).Returns(city);
         mock.Setup(x => x.CountryCode).Returns(countryCode);

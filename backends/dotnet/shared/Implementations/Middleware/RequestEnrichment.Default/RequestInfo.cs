@@ -21,6 +21,9 @@ public class RequestInfo : IRequestInfo
     public string? ClientFingerprint { get; init; }
 
     /// <inheritdoc/>
+    public required string DeviceFingerprint { get; init; }
+
+    /// <inheritdoc/>
     public string? UserId { get; set; }
 
     /// <inheritdoc/>

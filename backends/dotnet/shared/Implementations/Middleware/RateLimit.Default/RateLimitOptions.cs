@@ -28,13 +28,13 @@ public class RateLimitOptions
     public TimeSpan BlockDuration { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
-    /// Gets or sets the maximum requests per window for client fingerprint dimension.
+    /// Gets or sets the maximum requests per window for device fingerprint dimension.
     /// </summary>
     /// <remarks>
     /// Strictest limit — single device. Default is 100 requests per minute.
-    /// Skipped if X-Client-Fingerprint header is not present.
+    /// Always evaluated (device fingerprint is always present).
     /// </remarks>
-    public int ClientFingerprintThreshold { get; set; } = 100;
+    public int DeviceFingerprintThreshold { get; set; } = 100;
 
     /// <summary>
     /// Gets or sets the maximum requests per window for IP dimension.

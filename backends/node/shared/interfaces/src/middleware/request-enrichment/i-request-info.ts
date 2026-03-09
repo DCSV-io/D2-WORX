@@ -7,8 +7,10 @@ export interface IRequestInfo {
   readonly clientIp: string;
   /** Server-computed fingerprint (64-char lowercase hex SHA-256). */
   readonly serverFingerprint: string;
-  /** Client-provided fingerprint from X-Client-Fingerprint header. */
+  /** Client-provided fingerprint from d2-cfp cookie or X-Client-Fingerprint header. */
   readonly clientFingerprint: string | undefined;
+  /** Combined device fingerprint: SHA-256(clientFP + serverFP + clientIp). Always present. */
+  readonly deviceFingerprint: string;
   /** WhoIs content-addressable hash ID. */
   readonly whoIsHashId: string | undefined;
   /** City name from WhoIs data. */

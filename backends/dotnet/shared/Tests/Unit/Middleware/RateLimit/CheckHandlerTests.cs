@@ -39,7 +39,7 @@ public class CheckHandlerTests
 
         r_options = new RateLimitOptions
         {
-            ClientFingerprintThreshold = 100,
+            DeviceFingerprintThreshold = 100,
             IpThreshold = 5000,
             CityThreshold = 25000,
             CountryThreshold = 100000,
@@ -67,6 +67,7 @@ public class CheckHandlerTests
         var mock = new Mock<IRequestInfo>();
         mock.Setup(x => x.IsTrustedService).Returns(true);
         mock.Setup(x => x.ClientFingerprint).Returns("test-fingerprint");
+        mock.Setup(x => x.DeviceFingerprint).Returns("device-fp-test");
         mock.Setup(x => x.ClientIp).Returns("192.0.2.1");
         mock.Setup(x => x.City).Returns("TestCity");
         mock.Setup(x => x.CountryCode).Returns("DE");
@@ -98,14 +99,14 @@ public class CheckHandlerTests
     #region Dimension Skip Tests
 
     /// <summary>
-    /// Tests that fingerprint dimension is skipped when ClientFingerprint is null.
+    /// Tests that device fingerprint dimension is always checked even when ClientFingerprint is null.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task Check_WhenClientFingerprintNull_SkipsFingerprintDimension()
+    public async Task Check_WhenClientFingerprintNull_StillChecksDeviceFingerprintDimension()
     {
         var handler = CreateHandler();
         var requestInfo = CreateRequestInfo(clientFingerprint: null, clientIp: "127.0.0.1");
@@ -117,24 +118,24 @@ public class CheckHandlerTests
         result.Success.Should().BeTrue();
         result.Data!.IsBlocked.Should().BeFalse();
 
-        // Should not have checked fingerprint dimension (no GetTtl call for fingerprint).
+        // Device fingerprint dimension is always checked (DeviceFingerprint is always present).
         r_getTtlMock.Verify(
             x => x.HandleAsync(
-                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("clientfingerprint")),
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("devicefingerprint")),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()),
-            Times.Never);
+            Times.Once);
     }
 
     /// <summary>
-    /// Tests that fingerprint dimension is skipped when ClientFingerprint is empty.
+    /// Tests that device fingerprint dimension is always checked even when ClientFingerprint is empty.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task Check_WhenClientFingerprintEmpty_SkipsFingerprintDimension()
+    public async Task Check_WhenClientFingerprintEmpty_StillChecksDeviceFingerprintDimension()
     {
         var handler = CreateHandler();
         var requestInfo = CreateRequestInfo(clientFingerprint: "   ", clientIp: "127.0.0.1");
@@ -145,12 +146,13 @@ public class CheckHandlerTests
 
         result.Success.Should().BeTrue();
 
+        // Device fingerprint dimension is always checked (DeviceFingerprint is always present).
         r_getTtlMock.Verify(
             x => x.HandleAsync(
-                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("clientfingerprint")),
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("devicefingerprint")),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()),
-            Times.Never);
+            Times.Once);
     }
 
     /// <summary>
@@ -318,10 +320,10 @@ public class CheckHandlerTests
             clientFingerprint: "test-fingerprint",
             clientIp: "192.0.2.1");
 
-        // Setup fingerprint dimension as already blocked.
+        // Setup device fingerprint dimension as already blocked.
         r_getTtlMock
             .Setup(x => x.HandleAsync(
-                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:clientfingerprint:")),
+                It.Is<IRead.GetTtlInput>(i => i.Key.Contains("blocked:devicefingerprint:")),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()))
             .ReturnsAsync(D2Result<IRead.GetTtlOutput?>.Ok(
@@ -331,7 +333,7 @@ public class CheckHandlerTests
 
         result.Success.Should().BeTrue();
         result.Data!.IsBlocked.Should().BeTrue();
-        result.Data.BlockedDimension.Should().Be(RateLimitDimension.ClientFingerprint);
+        result.Data.BlockedDimension.Should().Be(RateLimitDimension.DeviceFingerprint);
         result.Data.RetryAfter.Should().Be(TimeSpan.FromMinutes(3));
     }
 
@@ -411,8 +413,10 @@ public class CheckHandlerTests
         string? city = null,
         string? countryCode = null)
     {
+        var deviceFingerprint = clientFingerprint ?? $"device-fp-{clientIp}";
         var mock = new Mock<IRequestInfo>();
         mock.Setup(x => x.ClientFingerprint).Returns(clientFingerprint);
+        mock.Setup(x => x.DeviceFingerprint).Returns(deviceFingerprint);
         mock.Setup(x => x.ClientIp).Returns(clientIp);
         mock.Setup(x => x.City).Returns(city);
         mock.Setup(x => x.CountryCode).Returns(countryCode);

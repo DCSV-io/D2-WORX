@@ -47,7 +47,7 @@ export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> impleme
     requestInfo: z
       .object({
         clientIp: validators.zodIpAddress,
-        clientFingerprint: z.string().min(1).optional(),
+        deviceFingerprint: z.string().length(64),
         countryCode: z.string().length(2).optional(),
       })
       .passthrough(),
@@ -75,15 +75,14 @@ export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> impleme
     // to a single round-trip time (~5-8ms regardless of dimension count).
     const checks: Promise<CheckOutput>[] = [];
 
-    if (requestInfo.clientFingerprint) {
-      checks.push(
-        this.checkDimension(
-          RateLimit.RateLimitDimension.ClientFingerprint,
-          requestInfo.clientFingerprint,
-          this.options.clientFingerprintThreshold,
-        ),
-      );
-    }
+    // Device fingerprint is always present (combined from client FP + server FP + IP).
+    checks.push(
+      this.checkDimension(
+        RateLimit.RateLimitDimension.DeviceFingerprint,
+        requestInfo.deviceFingerprint,
+        this.options.deviceFingerprintThreshold,
+      ),
+    );
 
     if (!isLocalhost(requestInfo.clientIp)) {
       checks.push(

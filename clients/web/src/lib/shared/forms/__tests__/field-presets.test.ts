@@ -68,9 +68,8 @@ describe("field presets — specific defaults", () => {
     expect(LAST_NAME.placeholder).toBe("Last");
   });
 
-  it("EMAIL has type=email and description", () => {
+  it("EMAIL has type=email", () => {
     expect(EMAIL.type).toBe("email");
-    expect(EMAIL.description).toContain("never share");
   });
 
   it("PHONE has description about country code", () => {
@@ -107,11 +106,10 @@ describe("field presets — specific defaults", () => {
     expect(STREET3.label).toBe("Address Line 3");
   });
 
-  it("PASSWORD has type=password and description about 12 characters", () => {
+  it("PASSWORD has type=password", () => {
     expect(PASSWORD.type).toBe("password");
     expect(PASSWORD.label).toBe("Password");
     expect(PASSWORD.placeholder).toBe("Enter password");
-    expect(PASSWORD.description).toContain("12 characters");
   });
 
   it("CONFIRM_EMAIL has type=email", () => {

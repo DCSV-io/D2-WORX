@@ -23,6 +23,7 @@ function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
     clientIp: "1.2.3.4",
     serverFingerprint: "a".repeat(64),
     clientFingerprint: "client-fp-123",
+    deviceFingerprint: "b".repeat(64),
     whoIsHashId: "whois-hash",
     city: "Los Angeles",
     countryCode: "FR",
@@ -95,7 +96,7 @@ describe("RateLimit Check handler", () => {
       }),
     );
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 1 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 1 });
     const info = createRequestInfo({ isTrustedService: true });
     const result = await handler.handleAsync({ requestInfo: info });
 
@@ -141,12 +142,12 @@ describe("RateLimit Check handler", () => {
       }),
     );
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 50 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 50 });
     const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
-    expect(result.data?.blockedDimension).toBe(RateLimitDimension.ClientFingerprint);
+    expect(result.data?.blockedDimension).toBe(RateLimitDimension.DeviceFingerprint);
   });
 
   it("should return blocked when IP count exceeds threshold", async () => {
@@ -157,10 +158,10 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, {
-      clientFingerprintThreshold: 1000,
+      deviceFingerprintThreshold: 1000,
       ipThreshold: 50,
     });
-    const info = createRequestInfo({ clientFingerprint: undefined });
+    const info = createRequestInfo();
     const result = await handler.handleAsync({ requestInfo: info });
 
     expect(result).toBeSuccess();
@@ -176,11 +177,11 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, {
-      clientFingerprintThreshold: 1000,
+      deviceFingerprintThreshold: 1000,
       ipThreshold: 1000,
       cityThreshold: 50,
     });
-    const info = createRequestInfo({ clientFingerprint: undefined });
+    const info = createRequestInfo();
     const result = await handler.handleAsync({ requestInfo: info });
 
     expect(result).toBeSuccess();
@@ -196,12 +197,12 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, {
-      clientFingerprintThreshold: 1000,
+      deviceFingerprintThreshold: 1000,
       ipThreshold: 1000,
       cityThreshold: 1000,
       countryThreshold: 50,
     });
-    const info = createRequestInfo({ clientFingerprint: undefined, city: undefined });
+    const info = createRequestInfo({ city: undefined });
     const result = await handler.handleAsync({ requestInfo: info });
 
     expect(result).toBeSuccess();
@@ -230,8 +231,8 @@ describe("RateLimit Check handler", () => {
       });
     });
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 100 });
-    const info = createRequestInfo({ clientFingerprint: "fp" });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
+    const info = createRequestInfo();
     const result = await handler.handleAsync({ requestInfo: info });
 
     // With low counts, should not be blocked
@@ -258,7 +259,7 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, {
-      clientFingerprintThreshold: 50,
+      deviceFingerprintThreshold: 50,
       blockDurationMs: 120_000,
     });
     await handler.handleAsync({ requestInfo: createRequestInfo() });
@@ -275,7 +276,7 @@ describe("RateLimit Check handler", () => {
   // Dimension skipping
   // -----------------------------------------------------------------------
 
-  it("should skip fingerprint check when clientFingerprint is undefined", async () => {
+  it("should always check deviceFingerprint dimension even when clientFingerprint is undefined", async () => {
     mocks.incrementFn.mockResolvedValue(
       D2Result.ok<DistributedCache.IncrementOutput | undefined>({
         data: { newValue: 200 },
@@ -283,7 +284,7 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, {
-      clientFingerprintThreshold: 1,
+      deviceFingerprintThreshold: 1,
       ipThreshold: 1000,
       cityThreshold: 1000,
       countryThreshold: 1000,
@@ -291,43 +292,40 @@ describe("RateLimit Check handler", () => {
     const info = createRequestInfo({ clientFingerprint: undefined });
     const result = await handler.handleAsync({ requestInfo: info });
 
-    // Should be blocked on IP (threshold 1000 < 200 doesn't block),
-    // but not on fingerprint (skipped)
+    // deviceFingerprint is always present (combined hash), so it should be checked
+    // and blocked (threshold 1, count 200).
     expect(result).toBeSuccess();
-    // Verify no blocked key contains "clientfingerprint"
-    const getTtlCalls = mocks.getTtlFn.mock.calls;
-    const fpCalls = getTtlCalls.filter((c: unknown[]) =>
-      (c[0] as { key: string }).key.includes("clientfingerprint"),
-    );
-    expect(fpCalls).toHaveLength(0);
+    expect(result.data?.isBlocked).toBe(true);
+    expect(result.data?.blockedDimension).toBe(RateLimitDimension.DeviceFingerprint);
   });
 
   it("should skip IP check when IP is localhost", async () => {
     const handler = createCheck(mocks);
     const info = createRequestInfo({
       clientIp: "127.0.0.1",
-      clientFingerprint: undefined,
       city: undefined,
       countryCode: undefined,
     });
     const result = await handler.handleAsync({ requestInfo: info });
 
     expect(result).toBeSuccess();
-    // No getTtl calls should contain "ip" dimension
+    // No getTtl calls should contain "ip" dimension (devicefingerprint is still checked)
     const getTtlCalls = mocks.getTtlFn.mock.calls;
-    expect(getTtlCalls).toHaveLength(0);
+    const ipCalls = getTtlCalls.filter((c: unknown[]) =>
+      (c[0] as { key: string }).key.includes("ip:"),
+    );
+    expect(ipCalls).toHaveLength(0);
   });
 
   it("should skip city check when city is undefined", async () => {
     const handler = createCheck(mocks);
     const info = createRequestInfo({
-      clientFingerprint: undefined,
       city: undefined,
       countryCode: undefined,
     });
     await handler.handleAsync({ requestInfo: info });
 
-    // Should only check IP dimension (fingerprint and city skipped)
+    // Should check deviceFingerprint + IP dimensions, but not city (skipped)
     const getTtlCalls = mocks.getTtlFn.mock.calls;
     const cityCalls = getTtlCalls.filter((c: unknown[]) =>
       (c[0] as { key: string }).key.includes("city"),
@@ -338,7 +336,6 @@ describe("RateLimit Check handler", () => {
   it("should skip country check when countryCode is undefined", async () => {
     const handler = createCheck(mocks);
     const info = createRequestInfo({
-      clientFingerprint: undefined,
       city: undefined,
       countryCode: undefined,
     });
@@ -354,7 +351,6 @@ describe("RateLimit Check handler", () => {
   it("should skip country check when countryCode is in whitelist", async () => {
     const handler = createCheck(mocks);
     const info = createRequestInfo({
-      clientFingerprint: undefined,
       city: undefined,
       countryCode: "US",
     });
@@ -378,7 +374,7 @@ describe("RateLimit Check handler", () => {
       }),
     );
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 50 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 50 });
     const info = createRequestInfo();
     const result = await handler.handleAsync({ requestInfo: info });
 
@@ -455,9 +451,8 @@ describe("RateLimit Check handler", () => {
       });
     });
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 100 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
     const info = createRequestInfo({
-      clientFingerprint: "fp",
       clientIp: "127.0.0.1",
       city: undefined,
       countryCode: undefined,
@@ -485,9 +480,8 @@ describe("RateLimit Check handler", () => {
       });
     });
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 100 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
     const info = createRequestInfo({
-      clientFingerprint: "fp",
       clientIp: "127.0.0.1",
       city: undefined,
       countryCode: undefined,
@@ -515,9 +509,8 @@ describe("RateLimit Check handler", () => {
       });
     });
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 100 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
     const info = createRequestInfo({
-      clientFingerprint: "fp",
       clientIp: "127.0.0.1",
       city: undefined,
       countryCode: undefined,
@@ -537,7 +530,7 @@ describe("RateLimit Check handler", () => {
     );
     mocks.setFn.mockRejectedValue(new Error("Redis down"));
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 50 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 50 });
     const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
 
     // The set failure is caught by the outer try/catch, so fail-open
@@ -556,7 +549,7 @@ describe("RateLimit Check handler", () => {
       }),
     );
 
-    const handler = createCheck(mocks, { clientFingerprintThreshold: 5 });
+    const handler = createCheck(mocks, { deviceFingerprintThreshold: 5 });
     const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
 
     expect(result.data?.isBlocked).toBe(true);
@@ -581,7 +574,7 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, {
-      clientFingerprintThreshold: 50,
+      deviceFingerprintThreshold: 50,
       blockDurationMs: 600_000,
     });
     const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
@@ -598,14 +591,13 @@ describe("RateLimit Check handler", () => {
 
     // FR is normally not whitelisted, but we add it
     const handler = createCheck(mocks, {
-      clientFingerprintThreshold: 1000,
+      deviceFingerprintThreshold: 1000,
       ipThreshold: 1000,
       cityThreshold: 1000,
       countryThreshold: 50,
       whitelistedCountryCodes: ["US", "CA", "GB", "FR"],
     });
     const info = createRequestInfo({
-      clientFingerprint: undefined,
       city: undefined,
       countryCode: "FR",
     });

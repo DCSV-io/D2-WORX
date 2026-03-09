@@ -30,12 +30,21 @@ public interface IRequestInfo
     string ServerFingerprint { get; }
 
     /// <summary>
-    /// Gets the client-provided fingerprint from the X-Client-Fingerprint header.
+    /// Gets the client-provided fingerprint from the d2-cfp cookie or X-Client-Fingerprint header.
     /// </summary>
     /// <remarks>
-    /// Null if the client did not send the header. Used for rate limiting.
+    /// Null if neither the cookie nor header was sent.
     /// </remarks>
     string? ClientFingerprint { get; }
+
+    /// <summary>
+    /// Gets the combined device fingerprint: SHA-256(clientFP + serverFP + clientIp).
+    /// </summary>
+    /// <remarks>
+    /// Always present. Used for rate limiting. If client fingerprint is missing,
+    /// the device fingerprint degrades to SHA-256("" + serverFP + clientIp).
+    /// </remarks>
+    string DeviceFingerprint { get; }
 
     /// <summary>
     /// Gets or sets the authenticated user ID.

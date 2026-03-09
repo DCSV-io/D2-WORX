@@ -100,10 +100,77 @@ describe("enrichRequest", () => {
     expect(info.clientFingerprint).toBe("my-fp-123");
   });
 
+  it("should read clientFingerprint from d2-cfp cookie (primary source)", async () => {
+    const handler = createMockFindWhoIs();
+    const info = await enrichRequest(
+      { cookie: "d2-cfp=cookie-fp-456; other=val" },
+      handler,
+      { enableWhoIsLookup: false },
+    );
+    expect(info.clientFingerprint).toBe("cookie-fp-456");
+  });
+
+  it("should prefer cookie over header for clientFingerprint", async () => {
+    const handler = createMockFindWhoIs();
+    const info = await enrichRequest(
+      {
+        cookie: "d2-cfp=from-cookie",
+        "x-client-fingerprint": "from-header",
+      },
+      handler,
+      { enableWhoIsLookup: false },
+    );
+    expect(info.clientFingerprint).toBe("from-cookie");
+  });
+
+  it("should fall back to header when d2-cfp cookie is missing", async () => {
+    const handler = createMockFindWhoIs();
+    const info = await enrichRequest(
+      {
+        cookie: "other=val",
+        "x-client-fingerprint": "from-header",
+      },
+      handler,
+      { enableWhoIsLookup: false },
+    );
+    expect(info.clientFingerprint).toBe("from-header");
+  });
+
   it("should set clientFingerprint to undefined when header missing", async () => {
     const handler = createMockFindWhoIs();
     const info = await enrichRequest({}, handler, { enableWhoIsLookup: false });
     expect(info.clientFingerprint).toBeUndefined();
+  });
+
+  it("should always set deviceFingerprint as 64-char hex", async () => {
+    const handler = createMockFindWhoIs();
+    const info = await enrichRequest({}, handler, { enableWhoIsLookup: false });
+    expect(info.deviceFingerprint).toHaveLength(64);
+    expect(info.deviceFingerprint).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("should set deviceFingerprint even when clientFingerprint is missing", async () => {
+    const handler = createMockFindWhoIs();
+    const info = await enrichRequest({}, handler, { enableWhoIsLookup: false });
+    expect(info.clientFingerprint).toBeUndefined();
+    // deviceFingerprint is always present (SHA-256 of "" + serverFP + clientIp)
+    expect(info.deviceFingerprint).toHaveLength(64);
+    expect(info.deviceFingerprint).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("should produce different deviceFingerprints for different clientFingerprints", async () => {
+    const handler = createMockFindWhoIs();
+    const info1 = await enrichRequest(
+      { "x-client-fingerprint": "fp-aaa" },
+      handler,
+      { enableWhoIsLookup: false },
+    );
+    const info2 = await enrichRequest(
+      { "x-client-fingerprint": "fp-bbb" },
+      handler,
+      { enableWhoIsLookup: false },
+    );
+    expect(info1.deviceFingerprint).not.toBe(info2.deviceFingerprint);
   });
 
   it("should populate geo fields from WhoIs data", async () => {
@@ -226,6 +293,9 @@ describe("enrichRequest", () => {
       { enableWhoIsLookup: false },
     );
     expect(info.clientFingerprint).toBe("fp-from-array");
+    // deviceFingerprint should also be computed using the first array value
+    expect(info.deviceFingerprint).toHaveLength(64);
+    expect(info.deviceFingerprint).toMatch(/^[0-9a-f]{64}$/);
   });
 
   it("should use empty string fingerprint when user-agent header is missing", async () => {
