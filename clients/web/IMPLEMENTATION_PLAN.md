@@ -26,7 +26,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Complete    | Sign-in, sign-up, forgot-password, reset-password, verify-email pages. i18n (5 locales). Reusable TextLink component. Auth-aware public nav |
 | 8.5  | Debug Session Page + Role Audit     | Complete    | Dev-only `/debug/session` page, role audit docs in AUTH.md |
 | 8.7  | Device Fingerprinting               | Complete    | Cross-cutting: SvelteKit + Node.js + .NET. Client FP generator, `d2-cfp` cookie, `DeviceFingerprint` dimension (always evaluated). See ADR-004 (revised) |
-| 9    | Client Telemetry (Grafana Faro)     | Pending     |       |
+| 9    | Client Telemetry (Grafana Faro)     | Complete    | Faro SDK for errors→Loki, traces→Tempo, Web Vitals→Mimir. Alloy faro.receiver on port 12347. User enrichment via layout. Replaces custom /api/client-error endpoint |
 | 10   | Onboarding Flow                     | Pending     |       |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending     |       |
 | 12   | SignalR Abstraction Layer           | Pending     |       |
@@ -575,13 +575,29 @@ Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
 
 ---
 
-### Step 9: Client Telemetry (Grafana Faro)
+### Step 9: Client Telemetry (Grafana Faro) ✅
 
 **Goal:** Faro for client-side error capture, browser traces, Web Vitals.
 
-**Packages:** `@grafana/faro-web-sdk`, `@grafana/faro-web-tracing`
+**Packages:** `@grafana/faro-web-sdk` 1.19.0, `@grafana/faro-web-tracing` 1.19.0
 
-**Requires:** Alloy running.
+**Removed:** `@opentelemetry/instrumentation-document-load`, `@opentelemetry/instrumentation-fetch`, `@opentelemetry/sdk-trace-web`, `@opentelemetry/exporter-trace-otlp-proto` (unused browser OTel — replaced by Faro)
+
+**Requires:** Alloy running with `faro.receiver` on port 12347.
+
+**What was built:**
+- `faro.receiver` block in Alloy config (port 12347, CORS, rate limiting 100/s burst 200)
+- Port 12347 exposed in AppHost, `FARO_CORS_ORIGINS` env var passed to Alloy container
+- `$lib/client/telemetry/faro.ts` — browser-only init, SSR-safe, graceful degradation
+- `hooks.client.ts` rewritten — Faro `pushError` replaces custom POST endpoint
+- User enrichment in root `+layout.svelte` — `setFaroUser`/`resetFaroUser` reactive to auth state
+- `/api/client-error` endpoint + test deleted (superseded by Faro)
+- Cross-origin trace propagation to `PUBLIC_GATEWAY_URL` via W3C `traceparent` header
+- `ignoreUrls: [/__data\.json/]` to filter SvelteKit internal data fetches
+- Console capture (warn + error only, debug/trace excluded)
+- `PUBLIC_FARO_COLLECTOR_URL` env var with fallback to `http://localhost:12347/collect`
+
+**CF Tunnel:** `t-d2-gf.dcsv.io` → `localhost:12347` for non-localhost access.
 
 ---
 

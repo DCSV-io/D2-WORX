@@ -7,11 +7,25 @@
   import NavigationProgress from "$lib/client/components/layout/navigation-progress.svelte";
   import { setClientFingerprint } from "$lib/client/rest/gateway-client.js";
   import { generateClientFingerprint } from "$lib/client/utils/fingerprint.js";
+  import { setFaroUser, resetFaroUser } from "$lib/client/telemetry/faro.js";
 
   let { data, children } = $props();
 
   $effect(() => {
     generateClientFingerprint().then((fp) => setClientFingerprint(fp));
+  });
+
+  // Enrich Faro telemetry with user identity when signed in.
+  $effect(() => {
+    if (data.user) {
+      setFaroUser({
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.name ?? undefined,
+      });
+    } else {
+      resetFaroUser();
+    }
   });
 </script>
 

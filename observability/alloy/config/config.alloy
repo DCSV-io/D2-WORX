@@ -217,3 +217,28 @@ otelcol.exporter.otlp "tempo" {
     }
   }
 }
+
+/******************************************************************************
+ * CLIENT TELEMETRY (Grafana Faro)
+ ******************************************************************************/
+
+faro.receiver "frontend" {
+  server {
+    listen_address = "0.0.0.0"
+    listen_port    = 12347
+
+    cors_allowed_origins = split(env("FARO_CORS_ORIGINS"), ",")
+
+    rate_limiting {
+      rate       = 100
+      burst_size = 200
+    }
+
+    max_allowed_payload_size = "10KiB"
+  }
+
+  output {
+    logs   = [loki.write.local.receiver]
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}

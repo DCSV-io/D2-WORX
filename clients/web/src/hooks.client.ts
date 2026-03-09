@@ -1,29 +1,22 @@
 import type { HandleClientError } from "@sveltejs/kit";
+import { initFaro, getFaro } from "$lib/client/telemetry/faro.js";
+
+// Initialize Faro on app startup (client-side only).
+initFaro();
 
 export const handleError: HandleClientError = async ({ error, status, message }) => {
   const traceId = crypto.randomUUID();
 
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorStack = error instanceof Error ? error.stack : undefined;
-
-  console.error(`[Client Error] ${status}: ${errorMessage}`, { traceId });
-
-  try {
-    await fetch("/api/client-error", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: errorMessage,
-        stack: errorStack,
-        status,
-        traceId,
-        url: window.location.href,
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString(),
-      }),
+  const faro = getFaro();
+  if (faro) {
+    const err =
+      error instanceof Error ? error : new Error(String(error));
+    faro.api.pushError(err, {
+      context: { status: String(status), traceId },
     });
-  } catch {
-    // Silently fail — don't create error loops
+  } else {
+    // Fallback when Faro is unavailable
+    console.error(`[Client Error] ${status}: ${error instanceof Error ? error.message : String(error)}`, { traceId });
   }
 
   return {

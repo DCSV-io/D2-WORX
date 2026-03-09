@@ -153,6 +153,7 @@ var grafanaAlloy = builder.AddContainer(alloyName, Env("ALLOY_IMAGE"), Env("ALLO
     .WithHttpEndpoint(port: EnvInt("ALLOY_HTTP_PORT"), targetPort: 12345, name: "alloy-http", isProxied: false)
     .WithHttpEndpoint(port: EnvInt("OTLP_GRPC_PORT"), targetPort: 4317, name: "otlp-grpc", isProxied: false)
     .WithHttpEndpoint(port: EnvInt("OTLP_HTTP_PORT"), targetPort: 4318, name: "otlp-http", isProxied: false)
+    .WithHttpEndpoint(port: EnvInt("FARO_RECEIVER_PORT"), targetPort: 12347, name: "faro-receiver", isProxied: false)
     .WithEnvironment("ALLOY_DEPLOY_MODE", "docker")
     .WithEnvironment("MINIO_ROOT_USER", s3Username)
     .WithEnvironment("MINIO_ROOT_PASSWORD", s3Password)
@@ -170,6 +171,7 @@ var grafanaAlloy = builder.AddContainer(alloyName, Env("ALLOY_IMAGE"), Env("ALLO
     .WithEnvironment("MINIO_NAME", minioName)
     .WithEnvironment("OTEL_CLUSTER_NAME", Env("OTEL_CLUSTER_NAME"))
     .WithEnvironment("OTEL_ENVIRONMENT", Env("OTEL_ENVIRONMENT"))
+    .WithEnvironment("FARO_CORS_ORIGINS", Env("FARO_CORS_ORIGINS"))
     .WithBindMount("/proc", "/rootproc", isReadOnly: true)
     .WithBindMount("/sys", "/sys", isReadOnly: true)
     .WithBindMount("/", "/rootfs", isReadOnly: true)
@@ -413,6 +415,7 @@ var svelte = builder.AddViteApp(
     .WithReference(cache)
     .WithReference(geoService)
     .WithEnvironment("SVELTEKIT_GATEWAY__URL", restGateway.GetEndpoint("http"))
-    .WithEnvironment("PUBLIC_GATEWAY_URL", restGateway.GetEndpoint("http"));
+    .WithEnvironment("PUBLIC_GATEWAY_URL", restGateway.GetEndpoint("http"))
+    .WithEnvironment("PUBLIC_FARO_COLLECTOR_URL", Env("PUBLIC_FARO_COLLECTOR_URL"));
 
 builder.Build().Run();
