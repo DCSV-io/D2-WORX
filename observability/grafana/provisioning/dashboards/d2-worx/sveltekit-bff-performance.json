@@ -854,7 +854,7 @@
   ],
   "refresh": "10s",
   "schemaVersion": 39,
-  "tags": ["d2-worx", "sveltekit", "frontend"],
+  "tags": ["d2-worx", "sveltekit", "bff"],
   "templating": {
     "list": []
   },
@@ -864,7 +864,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "SvelteKit Frontend Performance",
+  "title": "SvelteKit BFF Performance",
   "uid": null,
   "version": 0,
   "weekStart": ""
