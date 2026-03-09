@@ -137,6 +137,9 @@ export function createAuth(
       sendResetPassword: hooks?.publishPasswordReset
         ? async ({ user, url, token }) => {
             const rewritten = rewriteEmailUrl(url);
+            rewritten.pathname = "/reset-password";
+            rewritten.search = "";
+            rewritten.searchParams.set("token", token);
             await hooks.publishPasswordReset!({
               userId: user.id,
               email: user.email,

@@ -7,6 +7,7 @@
   import { createSignUpSchema, type SignUpFormData } from "$lib/shared/forms/sign-up-schema.js";
   import { FormInput } from "$lib/client/components/forms/index.js";
   import { Button } from "$lib/client/components/ui/button/index.js";
+  import TextLink from "$lib/client/components/ui/text-link.svelte";
   import { useAsyncFieldCheck } from "$lib/client/forms/async-field-check.svelte.js";
   import { authClient } from "$lib/client/stores/auth-client.js";
   import { authApiCall } from "$lib/client/rest/auth-gateway-client.js";
@@ -84,7 +85,10 @@
         `/api/auth/check-email?email=${encodeURIComponent(email)}`,
       );
       if (!result.success) return { valid: true }; // Fail-open on server error
-      return { valid: result.data?.available !== false, errorMessage: m.auth_errors_EMAIL_ALREADY_TAKEN() };
+      return {
+        valid: result.data?.available !== false,
+        errorMessage: m.auth_errors_EMAIL_ALREADY_TAKEN(),
+      };
     },
   });
 
@@ -92,10 +96,23 @@
   let showConfirmPassword = $state(false);
 </script>
 
-<form method="POST" use:enhance autocomplete="off" class="flex flex-col gap-5">
+<form
+  method="POST"
+  use:enhance
+  autocomplete="off"
+  class="flex flex-col gap-5"
+>
   <div class="grid gap-4 sm:grid-cols-2">
-    <FormInput {form} field="firstName" {...FIRST_NAME} />
-    <FormInput {form} field="lastName" {...LAST_NAME} />
+    <FormInput
+      {form}
+      field="firstName"
+      {...FIRST_NAME}
+    />
+    <FormInput
+      {form}
+      field="lastName"
+      {...LAST_NAME}
+    />
   </div>
 
   <FormInput
@@ -107,9 +124,18 @@
     oninput={emailCheck.reset}
   />
 
-  <FormInput {form} field="confirmEmail" {...CONFIRM_EMAIL} />
+  <FormInput
+    {form}
+    field="confirmEmail"
+    {...CONFIRM_EMAIL}
+  />
 
-  <FormInput {form} field="password" {...PASSWORD} type={showPassword ? "text" : "password"}>
+  <FormInput
+    {form}
+    field="password"
+    {...PASSWORD}
+    type={showPassword ? "text" : "password"}
+  >
     {#snippet inputAction()}
       <button
         type="button"
@@ -152,12 +178,16 @@
     <p class="text-destructive text-sm">{serverError}</p>
   {/if}
 
-  <Button type="submit" disabled={submitting} class="w-full">
+  <Button
+    type="submit"
+    disabled={submitting}
+    class="w-full"
+  >
     {submitting ? m.auth_sign_up_submitting() : m.auth_sign_up_submit()}
   </Button>
 
   <p class="text-muted-foreground text-center text-sm">
     {m.auth_sign_up_has_account()}
-    <a href={resolve("/sign-in")} class="text-primary underline-offset-4 hover:underline">{m.auth_sign_up_link()}</a>
+    <TextLink href={resolve("/sign-in")}>{m.auth_sign_up_link()}</TextLink>
   </p>
 </form>

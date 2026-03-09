@@ -23,7 +23,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 6    | API Client Layer (Gateway)          | Complete    | 66 tests. camelCase normalizer for mixed-casing gateway. `$env/dynamic/public` for runtime URL. |
 | 6.5  | Chart Showcase (LayerChart 2.0)     | Complete    | layerchart@next + shadcn-svelte chart. 5 chart types: area, bar, line, donut, sparkline. Uses `--chart-1`..`--chart-5` tokens. |
 | 7    | Forms Architecture (Superforms)     | Complete    | 73 unit tests. Superforms + Formsnap + Zod 4. Geo ref data via geo-client. Mock contact form at `/design/contact-form` with cascading selects, phone formatting, flag icons |
-| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Pending     |       |
+| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Complete    | Sign-in, sign-up, forgot-password, reset-password, verify-email pages. i18n (5 locales). Reusable TextLink component. Auth-aware public nav |
 | 9    | Client Telemetry (Grafana Faro)     | Pending     |       |
 | 10   | Onboarding Flow                     | Pending     |       |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending     |       |
@@ -451,7 +451,58 @@ interface Locals {
 
 **Goal:** Real auth form pages — sign-in, sign-up, forgot-password, reset-password, verify-email.
 
+**Status:** Complete
+
 **Requires:** Auth service running.
+
+**Pages implemented:**
+
+| Route                 | Form Component             | Description                                                     |
+| --------------------- | -------------------------- | --------------------------------------------------------------- |
+| `/sign-in`            | `SignInForm`               | Email + password, show/hide toggle, "Forgot password?" link     |
+| `/sign-up`            | `SignUpForm`               | Name, email (async uniqueness check), password with confirmation |
+| `/forgot-password`    | `ForgotPasswordForm`       | Email-only, swaps to "check your email" confirmation on success |
+| `/reset-password`     | `ResetPasswordForm`        | Token from URL, new password + confirm, 3-state (error/form/success) with countdown redirect |
+| `/verify-email`       | (inline page)              | Token auto-verification, resend link, success/error states      |
+
+**Schemas:**
+
+| File                          | Fields                                         |
+| ----------------------------- | ---------------------------------------------- |
+| `sign-in-schema.ts`           | email, password                                |
+| `sign-up-schema.ts`           | firstName, lastName, email, confirmEmail, password, confirmPassword |
+| `forgot-password-schema.ts`   | email                                          |
+| `reset-password-schema.ts`    | newPassword, confirmNewPassword (cross-field match refinement) |
+
+**Field presets added:** `NEW_PASSWORD`, `CONFIRM_NEW_PASSWORD` in `field-presets.ts`.
+
+**Shared components:**
+
+| Component              | Purpose                                                          |
+| ---------------------- | ---------------------------------------------------------------- |
+| `TextLink`             | Reusable inline text link (`text-primary underline-offset-2 hover:underline`) |
+| `Button` link variant  | Updated `underline-offset-4` → `underline-offset-2` for consistency |
+
+**Auth-aware public nav:** When signed in, shows "Dashboard" + "Sign Out" buttons instead of "Sign In" + "Sign Up".
+
+**Backend changes:**
+- Auth factory URL rewriting for password reset emails (rewrites BetterAuth API URL → `/reset-password?token=...`)
+- Raw URL fallback text added to verification + password reset emails
+- 18+ i18n keys added across all 5 locales (en, es, de, fr, ja)
+
+**Files created:**
+
+| File | Purpose |
+| ---- | ------- |
+| `src/lib/shared/forms/forgot-password-schema.ts` | Zod schema for forgot password |
+| `src/lib/shared/forms/reset-password-schema.ts` | Zod schema for reset password |
+| `src/lib/client/components/auth/forgot-password-form.svelte` | Forgot password form component |
+| `src/lib/client/components/auth/reset-password-form.svelte` | Reset password form component |
+| `src/lib/client/components/ui/text-link.svelte` | Reusable inline text link |
+| `src/routes/(auth)/forgot-password/+page.svelte` | Forgot password page |
+| `src/routes/(auth)/forgot-password/+page.server.ts` | Server load for forgot password |
+| `src/routes/(auth)/reset-password/+page.svelte` | Reset password page |
+| `src/routes/(auth)/reset-password/+page.server.ts` | Server load for reset password |
 
 ---
 

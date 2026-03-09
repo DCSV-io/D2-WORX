@@ -163,8 +163,8 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | 5    | @d2/auth-bff-client + Auth Proxy    | ✅ Done  | 32 unit + 10 E2E tests. Session resolver, JWT manager, route guards      |
 | 6    | API Client Layer (Gateway)          | ✅ Done  | 66 tests. camelCase normalizer, dynamic public URL, service key bypass   |
 | 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done  | 5 chart types: area, bar, line, donut, sparkline                         |
-| 7    | Forms Architecture (Superforms)     | Pending  | Superforms + Formsnap, Zod schemas, D2Result error mapping               |
-| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Pending  | Real auth forms — requires Auth service running                          |
+| 7    | Forms Architecture (Superforms)     | ✅ Done  | 73 tests. Superforms + Formsnap + Zod 4, field presets, D2Result mapping |
+| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done  | Sign-in, sign-up, forgot/reset password, verify-email. i18n (5 locales) |
 | 9    | Client Telemetry (Grafana Faro)     | Pending  | Errors → Loki, traces → Tempo, Web Vitals → Mimir                       |
 | 10   | Onboarding Flow                     | Pending  | Post-auth org selection/creation + Radar address autocomplete backend    |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending  | Org-type nav, org switcher, emulation banner, breadcrumbs                |
@@ -180,10 +180,11 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Recently Completed
 
+- Auth pages: sign-in, sign-up, forgot-password, reset-password, verify-email (Step 8)
+- Forms architecture: Superforms + Formsnap + Zod 4, 73 tests (Step 7)
+- Auth-aware public nav, language selector, email branding
 - @d2/auth-bff-client package (ADR-017) — 32 unit + 10 E2E tests
 - API client layer with camelCase normalizer (ADR-005)
-- Env var extraction + AppHost parameterization (ADR-016)
-- SvelteKit 500 fix (`loadEnv` in `instrumentation.server.ts`)
 - Design system page + chart showcase (LayerChart 2.0)
 
 ---
@@ -278,7 +279,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 | Component            | Status         | Notes                                                                   |
 | -------------------- | -------------- | ----------------------------------------------------------------------- |
-| SvelteKit App        | 🚧 In Progress | Steps 0–6.5 done (design, routing, auth BFF, gateway). Step 7+ pending |
+| SvelteKit App        | 🚧 In Progress | Steps 0–8 done (design, routing, auth BFF, gateway, forms, auth pages) |
 | Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)            |
 | API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)               |
 | Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit             |

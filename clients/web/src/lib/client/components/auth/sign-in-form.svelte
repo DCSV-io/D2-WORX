@@ -7,6 +7,7 @@
   import { createSignInSchema, type SignInFormData } from "$lib/shared/forms/sign-in-schema.js";
   import { FormInput } from "$lib/client/components/forms/index.js";
   import { Button } from "$lib/client/components/ui/button/index.js";
+  import TextLink from "$lib/client/components/ui/text-link.svelte";
   import { authClient } from "$lib/client/stores/auth-client.js";
   import { EMAIL, PASSWORD } from "$lib/shared/forms/field-presets.js";
   import * as m from "$lib/paraglide/messages.js";
@@ -60,9 +61,10 @@
             return;
           }
 
-          const dest = returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
-            ? returnTo
-            : "/dashboard";
+          const dest =
+            returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+              ? returnTo
+              : "/dashboard";
           // eslint-disable-next-line svelte/no-navigation-without-resolve -- dynamic returnTo from query params
           await goto(dest);
         } catch {
@@ -81,10 +83,24 @@
   let showPassword = $state(false);
 </script>
 
-<form method="POST" use:enhance autocomplete="off" class="flex flex-col gap-5">
-  <FormInput {form} field="email" {...EMAIL} />
+<form
+  method="POST"
+  use:enhance
+  autocomplete="off"
+  class="flex flex-col gap-5"
+>
+  <FormInput
+    {form}
+    field="email"
+    {...EMAIL}
+  />
 
-  <FormInput {form} field="password" {...PASSWORD} type={showPassword ? "text" : "password"}>
+  <FormInput
+    {form}
+    field="password"
+    {...PASSWORD}
+    type={showPassword ? "text" : "password"}
+  >
     {#snippet inputAction()}
       <button
         type="button"
@@ -105,12 +121,20 @@
     <p class="text-destructive text-sm">{serverError}</p>
   {/if}
 
-  <Button type="submit" disabled={submitting} class="w-full">
+  <Button
+    type="submit"
+    disabled={submitting}
+    class="w-full"
+  >
     {submitting ? m.auth_sign_in_submitting() : m.auth_sign_in_submit()}
   </Button>
 
   <p class="text-muted-foreground text-center text-sm">
     {m.auth_sign_in_no_account()}
-    <a href={resolve("/sign-up")} class="text-primary underline-offset-4 hover:underline">{m.auth_sign_in_link()}</a>
+    <TextLink href={resolve("/sign-up")}>{m.auth_sign_in_link()}</TextLink>
+  </p>
+
+  <p class="text-muted-foreground text-center text-sm">
+    <TextLink href={resolve("/forgot-password")}>{m.auth_sign_in_forgot_password()}</TextLink>
   </p>
 </form>
