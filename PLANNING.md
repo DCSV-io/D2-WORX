@@ -442,28 +442,52 @@ blocked:{dimension}:{value}
 
 ### ADR-004: Fingerprinting Approach
 
-**Status**: Decided (2025-02)
+**Status**: Revised (2026-03-08, originally Decided 2025-02)
 
-**Context**: Need fingerprinting for rate limiting, but must consider security/privacy tradeoffs.
+**Context**: Need fingerprinting for rate limiting, but must consider security/privacy tradeoffs. Original design used server-side fingerprint for logging only and optional client fingerprint for rate limiting. Revised to always produce a device-level fingerprint that combines all available signals.
 
-**Decision**:
+**Decision — Device Fingerprint**:
 
-- **Primary**: Server-side fingerprint (User-Agent, Accept-Language, Accept-Encoding, Accept headers)
-- **Optional**: Client-side FingerprintJS (sent as `X-Fingerprint` header)
-- **Usage**: One of several rate limit dimensions, not sole identifier
+Combined formula, always evaluated:
 
-**IP Resolution Order**:
+```
+deviceFingerprint = SHA-256(clientFingerprint + serverFingerprint + clientIp)
+```
+
+| Signal             | Source                                                            | Required |
+| ------------------ | ----------------------------------------------------------------- | -------- |
+| clientFingerprint  | Custom JS (canvas, WebGL, screen, timezone, etc.) → `d2-cfp` cookie | No       |
+| serverFingerprint  | `SHA-256(User-Agent + Accept-Language + Accept-Encoding + Accept)` | Yes      |
+| clientIp           | CF-Connecting-IP / X-Real-IP / X-Forwarded-For / socket           | Yes      |
+
+**Client Fingerprint Delivery**: Cookie (`d2-cfp`), set on first page load by client-side JS. Sent on all requests (navigations + fetch). If missing, the device fingerprint degrades to `SHA-256("" + serverFingerprint + clientIp)` — sharing a rate-limit bucket with anyone on the same network using the same browser profile. This is intentional: not sending the fingerprint is a natural penalty, not a bypass.
+
+**Rate Limiting Change**: The existing `ClientFingerprint` dimension (100/min, skipped if absent) is replaced by `DeviceFingerprint` dimension (always evaluated, no skip). This closes the gap where page-navigation requests were exempt from device-level rate limiting.
+
+**IP Resolution Order** (unchanged):
 
 1. `CF-Connecting-IP` (Cloudflare)
 2. `X-Real-IP` (standard proxy)
 3. `X-Forwarded-For` (first IP)
 4. Socket remote address
 
+**Implementation Scope** (cross-cutting):
+
+| Layer                        | Change                                                        |
+| ---------------------------- | ------------------------------------------------------------- |
+| SvelteKit client             | Fingerprint generator utility + `d2-cfp` cookie on first load |
+| Node.js `@d2/request-enrichment` | Read `d2-cfp` cookie, compute `deviceFingerprint`, log warning if client FP missing |
+| Node.js `@d2/ratelimit`     | Replace `ClientFingerprint` dimension with `DeviceFingerprint`, always evaluated |
+| .NET `RequestEnrichment.Default` | Same — read cookie, compute combined fingerprint              |
+| .NET `RateLimit.Default`     | Same — replace dimension, always evaluated                    |
+
 **Rationale**:
 
-- Server-side fingerprint adds friction for attackers
-- Not perfect, but combined with other signals is valuable
-- Client-side optional for higher-security scenarios
+- Combined fingerprint is always present (server FP + IP are always available)
+- No branching in rate limiter — one code path, always evaluated
+- Missing client FP degrades gracefully (shared bucket = stricter, not weaker)
+- Cookie delivery is simpler and more universal than Service Worker or header injection
+- Log warning when client FP missing for monitoring (may indicate bot traffic or JS-disabled clients)
 
 ---
 

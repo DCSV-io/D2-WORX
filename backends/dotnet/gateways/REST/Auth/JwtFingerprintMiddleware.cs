@@ -62,10 +62,14 @@ public class JwtFingerprintMiddleware
             return;
         }
 
+        // Extract the user ID from JWT sub claim (needed for requestInfo below).
+        var userId = context.User.FindFirst(JwtClaimTypes.SUB)?.Value;
+
         // Trusted services skip fingerprint validation entirely.
         var requestInfo = context.Features.Get<IRequestInfo>();
         if (requestInfo?.IsTrustedService == true)
         {
+            SetAuthState(requestInfo, userId);
             await r_next(context);
             return;
         }
@@ -100,6 +104,7 @@ public class JwtFingerprintMiddleware
         // Compare (case-insensitive hex comparison).
         if (string.Equals(fpClaim, computed, StringComparison.OrdinalIgnoreCase))
         {
+            SetAuthState(requestInfo, userId);
             await r_next(context);
             return;
         }
@@ -121,6 +126,21 @@ public class JwtFingerprintMiddleware
         context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
         context.Response.ContentType = "application/json";
         await context.Response.WriteAsJsonAsync(response, SerializerOptions.SR_Web, context.RequestAborted);
+    }
+
+    /// <summary>
+    /// Updates <see cref="IRequestInfo"/> with authentication state so downstream
+    /// middleware (idempotency, rate limiting user dimension) can see it.
+    /// </summary>
+    private static void SetAuthState(IRequestInfo? requestInfo, string? userId)
+    {
+        if (requestInfo is null)
+        {
+            return;
+        }
+
+        requestInfo.IsAuthenticated = true;
+        requestInfo.UserId = userId;
     }
 
     /// <summary>

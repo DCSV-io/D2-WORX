@@ -25,6 +25,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 7    | Forms Architecture (Superforms)     | Complete    | 73 unit tests. Superforms + Formsnap + Zod 4. Geo ref data via geo-client. Mock contact form at `/design/contact-form` with cascading selects, phone formatting, flag icons |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Complete    | Sign-in, sign-up, forgot-password, reset-password, verify-email pages. i18n (5 locales). Reusable TextLink component. Auth-aware public nav |
 | 8.5  | Debug Session Page + Role Audit     | Complete    | Dev-only `/debug/session` page, role audit docs in AUTH.md |
+| 8.7  | Device Fingerprinting               | Pending     | Cross-cutting: SvelteKit + Node.js + .NET. See ADR-004 (revised) |
 | 9    | Client Telemetry (Grafana Faro)     | Pending     |       |
 | 10   | Onboarding Flow                     | Pending     |       |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending     |       |
@@ -541,6 +542,40 @@ Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
 
 ---
 
+### Step 8.7: Device Fingerprinting
+
+**Goal:** Always-on device-level fingerprint for rate limiting. Replaces the optional `ClientFingerprint` dimension with a combined `DeviceFingerprint` that is always evaluated. See [ADR-004 (revised)](../../PLANNING.md#adr-004-fingerprinting-approach) for full design.
+
+**Formula:** `SHA-256(clientFingerprint + serverFingerprint + clientIp)`
+
+**8.7A: SvelteKit Client — Fingerprint Generator + Cookie**
+
+- Custom JS utility that generates a client fingerprint from browser signals (canvas, WebGL, screen resolution, timezone, installed fonts, etc.)
+- On first page load, compute fingerprint and write to `d2-cfp` cookie (HttpOnly=false, SameSite=Lax, long-lived)
+- Cookie is sent on all subsequent requests (navigations + fetch)
+
+**8.7B: Node.js Request Enrichment + Rate Limiting**
+
+- `@d2/request-enrichment`: Read `d2-cfp` cookie value, compute `deviceFingerprint = SHA-256(clientFP + serverFP + clientIp)`, add to `IRequestInfo`
+- Log warning when client fingerprint is missing (monitoring signal for bot traffic / JS-disabled clients)
+- `@d2/ratelimit`: Replace `ClientFingerprint` dimension (100/min, skipped if absent) with `DeviceFingerprint` dimension (always evaluated, no skip)
+
+**8.7C: .NET Request Enrichment + Rate Limiting**
+
+- `RequestEnrichment.Default`: Same — read `d2-cfp` cookie, compute combined fingerprint
+- `RateLimit.Default`: Same — replace dimension, always evaluated
+- Update `IRequestInfo` interface with `DeviceFingerprint` property
+
+**8.7D: Tests**
+
+- SvelteKit: Unit tests for fingerprint generator utility
+- Node.js: Tests for cookie reading, combined fingerprint computation, warning logging, rate limit dimension change
+- .NET: Tests for same
+
+**Requires:** No backend services needed for client-side generator. Backend changes need Redis for rate limiting tests.
+
+---
+
 ### Step 9: Client Telemetry (Grafana Faro)
 
 **Goal:** Faro for client-side error capture, browser traces, Web Vitals.
@@ -586,7 +621,8 @@ Step 0 → Step 1 → Step 2 → Step 2.5 → Step 3 → Step 3.5 (VISUAL PAUSE 
                                      → Step 4 → Step 5 → Step 6 → Step 8
                                                        → Step 9
                             Step 2 → Step 7 ──────────────────→ Step 8
-Step 8 → Step 8.5 → Step 10 → Step 11 → Step 12
+Step 8 → Step 8.5 → Step 8.7 (device fingerprinting)
+                  → Step 10 → Step 11 → Step 12
 ```
 
 Steps 0-3 require no backend services (Step 2.5 middleware degrades gracefully).
