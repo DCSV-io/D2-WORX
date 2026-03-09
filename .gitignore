@@ -23,6 +23,7 @@ node_modules/
 # Build results
 
 [Dd]ebug/
+!clients/web/src/routes/debug/
 [Rr]elease/
 x64/
 [Bb]in/

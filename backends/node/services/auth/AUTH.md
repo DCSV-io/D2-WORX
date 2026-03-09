@@ -247,6 +247,15 @@ BetterAuth sessions carry 4 custom fields (configured via `session.additionalFie
 
 ### Role Hierarchy
 
+> **Two separate "role" concepts exist — don't confuse them:**
+>
+> | Concept             | Where                            | Purpose                                                     | Default     |
+> | ------------------- | -------------------------------- | ----------------------------------------------------------- | ----------- |
+> | **User-level role** | `user.role` column               | BetterAuth admin plugin internal field. **Not exposed to frontend** — `AuthUser` type excludes it, `SessionResolver` doesn't map it. | `"agent"` (via `admin({ defaultRole: "agent" })`) |
+> | **Org-level role**  | `member.role` / `session.activeOrganizationRole` | Actual authorization role used by the app for access control. Set when user joins an org. | Set per membership |
+>
+> The user-level `role` appears in raw BetterAuth API responses (e.g., `authClient.getSession()`) but is **never** consumed by D2-WORX application code. It exists solely because the `admin()` plugin requires a `defaultRole` for impersonation features.
+
 Roles are hierarchical — higher index = more privileges:
 
 ```

@@ -24,6 +24,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | 6.5  | Chart Showcase (LayerChart 2.0)     | Complete    | layerchart@next + shadcn-svelte chart. 5 chart types: area, bar, line, donut, sparkline. Uses `--chart-1`..`--chart-5` tokens. |
 | 7    | Forms Architecture (Superforms)     | Complete    | 73 unit tests. Superforms + Formsnap + Zod 4. Geo ref data via geo-client. Mock contact form at `/design/contact-form` with cascading selects, phone formatting, flag icons |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Complete    | Sign-in, sign-up, forgot-password, reset-password, verify-email pages. i18n (5 locales). Reusable TextLink component. Auth-aware public nav |
+| 8.5  | Debug Session Page + Role Audit     | Complete    | Dev-only `/debug/session` page, role audit docs in AUTH.md |
 | 9    | Client Telemetry (Grafana Faro)     | Pending     |       |
 | 10   | Onboarding Flow                     | Pending     |       |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending     |       |
@@ -506,6 +507,40 @@ interface Locals {
 
 ---
 
+### Step 8.5: Debug Session Page + Role Audit
+
+**Goal:** Dev-only debug page showing full session details for visual inspection during development. Investigate and document the BetterAuth admin plugin's `defaultRole: "agent"` behavior.
+
+**Status:** Complete
+
+**Background:** On sign-in, BetterAuth returns `role: "agent"` even when the user has no org. This comes from the `admin()` plugin's `defaultRole` config in `auth-factory.ts` (line ~425). This is a **user-level role** (stored in `user.role` column), distinct from the org-level `member.role`. The user-level role is NOT exposed to the frontend (`AuthUser` type doesn't include it, `SessionResolver` doesn't map it). It's purely BetterAuth admin infrastructure — but seeing it in raw responses is confusing during development.
+
+**8.5A: Debug Session Page**
+
+Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
+- Full `$page.data.session` object (what SvelteKit server load returns)
+- Full `$page.data.user` object
+- Raw BetterAuth session via `authClient.getSession()` (client-side)
+- Cookie list (names only, not values — security)
+- JWT claims (decoded, if available via `authClient.token()`)
+- Request info from locals (if available)
+- Active org context (orgId, orgType, role) or "No active org"
+
+**8.5B: Role Audit**
+
+- Document the two-role distinction (user-level vs org-level) in AUTH.md
+- Consider renaming admin plugin's `defaultRole` to something less confusing (e.g., `"user"` instead of `"agent"`) to avoid dev confusion
+- Ensure `AuthUser` type explicitly does NOT leak user-level role to frontend
+
+**Files to create:**
+
+| File | Purpose |
+| ---- | ------- |
+| `src/routes/debug/session/+page.svelte` | Debug session display page |
+| `src/routes/debug/session/+page.server.ts` | Server load — pass full session/user/locals data, guard with dev check |
+
+---
+
 ### Step 9: Client Telemetry (Grafana Faro)
 
 **Goal:** Faro for client-side error capture, browser traces, Web Vitals.
@@ -551,7 +586,7 @@ Step 0 → Step 1 → Step 2 → Step 2.5 → Step 3 → Step 3.5 (VISUAL PAUSE 
                                      → Step 4 → Step 5 → Step 6 → Step 8
                                                        → Step 9
                             Step 2 → Step 7 ──────────────────→ Step 8
-Step 8 → Step 10 → Step 11 → Step 12
+Step 8 → Step 8.5 → Step 10 → Step 11 → Step 12
 ```
 
 Steps 0-3 require no backend services (Step 2.5 middleware degrades gracefully).
