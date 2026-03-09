@@ -534,6 +534,26 @@ strings, config values) where LSP doesn't help.
 After writing or editing code, check LSP diagnostics before
 moving on. Fix any type errors or missing imports immediately.
 
+#### Windows LSP Fix
+
+Claude Code's LSP plugins use `spawn()` without `shell: true`, which can't find `.cmd` wrappers
+created by npm/dotnet global installs on Windows ([claude-code#17136](https://github.com/anthropics/claude-code/issues/17136)).
+
+**Fix:** Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`
+and change each LSP entry's `"command"` from the binary name to `"cmd"` with
+`"args": ["/c", "<binary>", ...originalArgs]`. Example:
+
+```json
+// Before:
+"command": "typescript-language-server", "args": ["--stdio"]
+// After:
+"command": "cmd", "args": ["/c", "typescript-language-server", "--stdio"]
+```
+
+Applied to: `typescript-language-server`, `csharp-ls`, `gopls`.
+
+**Must reapply after `claude plugin marketplace update`** — the update overwrites marketplace.json.
+
 ### Behavioral Guidelines
 
 - **ALWAYS ask questions when uncertain** - This is the #1 rule. If you are not sure about something — requirements, approach, tradeoffs, conventions — **ask**. Do not guess. Do not assume. Do not "pick the most likely option." Ask. Every time.
