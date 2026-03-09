@@ -238,7 +238,56 @@ faro.receiver "frontend" {
   }
 
   output {
-    logs   = [loki.write.local.receiver]
+    logs   = [loki.process.faro.receiver]
+    traces = [otelcol.processor.transform.faro.input]
+  }
+}
+
+// Process Faro logs — set service name and map unknown levels to debug.
+loki.process "faro" {
+  // Set service name for all Faro logs.
+  stage.static_labels {
+    values = {
+      service_name = "d2-sveltekit-frontend",
+    }
+  }
+
+  // Faro measurements/events/session keepalives arrive with level="unknown".
+  // Map to debug so they don't pollute info/warn/error streams.
+  stage.match {
+    selector = "{level=\"unknown\"}"
+    stage.static_labels {
+      values = {
+        level = "debug",
+      }
+    }
+  }
+
+  // Empty level (no level label set) also maps to debug.
+  stage.match {
+    selector = "{level=\"\"}"
+    stage.static_labels {
+      values = {
+        level = "debug",
+      }
+    }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+// Set service.name on Faro browser traces so they appear as d2-sveltekit-frontend in Tempo.
+otelcol.processor.transform "faro" {
+  error_mode = "ignore"
+
+  trace_statements {
+    context = "resource"
+    statements = [
+      `set(attributes["service.name"], "d2-sveltekit-frontend")`,
+    ]
+  }
+
+  output {
     traces = [otelcol.exporter.otlp.tempo.input]
   }
 }

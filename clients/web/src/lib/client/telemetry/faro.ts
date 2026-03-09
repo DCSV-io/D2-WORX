@@ -27,7 +27,7 @@ export function initFaro(): Faro | undefined {
     faro = initializeFaro({
       url: collectorUrl,
       app: {
-        name: "d2-sveltekit",
+        name: "d2-sveltekit-frontend",
         version: "0.0.1",
         environment: dev ? "development" : "production",
       },

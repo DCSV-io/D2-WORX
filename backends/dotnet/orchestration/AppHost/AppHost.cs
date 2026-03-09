@@ -184,7 +184,7 @@ var grafanaAlloy = builder.AddContainer(alloyName, Env("ALLOY_IMAGE"), Env("ALLO
         "run",
         "/etc/alloy/config.alloy",
         "--server.http.listen-addr=0.0.0.0:12345",
-        "--stability.level=generally-available")
+        "--stability.level=public-preview")
     .WaitFor(cAdvisor)
     .WaitFor(mimir)
     .WaitFor(loki)
