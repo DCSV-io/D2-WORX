@@ -444,40 +444,23 @@ refactor: simplify caching logic
 
 ### Code Intelligence
 
-Prefer LSP over Grep/Glob/Read for code navigation:
-- `goToDefinition` / `goToImplementation` to jump to source
-- `findReferences` to see all usages across the codebase
-- `workspaceSymbol` to find where something is defined
-- `documentSymbol` to list all symbols in a file
-- `hover` for type info without reading the file
-- `incomingCalls` / `outgoingCalls` for call hierarchy
+**TypeScript:** Use `mcp__cclsp__*` tools (`get_hover`, `find_definition`, `find_references`, `find_workspace_symbols`, `get_diagnostics`). The built-in `LSP` tool's `workspaceSymbol` works but `hover`/`documentSymbol` return empty results.
 
-Before renaming or changing a function signature, use
-`findReferences` to find all call sites first.
+**C#:** `csharp-ls` via built-in `LSP` tool — `workspaceSymbol` works, diagnostics flow automatically, but `hover`/`documentSymbol` time out (30s limit on 26-project solution). Fall back to Grep/Glob/Read for type info and definitions.
 
-Use Grep/Glob only for text/pattern searches (comments,
-strings, config values) where LSP doesn't help.
+Before renaming or changing a function signature, use `findReferences` to find all call sites first.
 
-After writing or editing code, check LSP diagnostics before
-moving on. Fix any type errors or missing imports immediately.
+Use Grep/Glob for text/pattern searches (comments, strings, config values) where LSP doesn't help.
 
-#### Windows LSP Fix
+After writing or editing TS code, check `mcp__cclsp__get_diagnostics` before moving on. Fix type errors and missing imports immediately.
 
-Claude Code's LSP plugins use `spawn()` without `shell: true`, which can't find `.cmd` wrappers
-created by npm/dotnet global installs on Windows ([claude-code#17136](https://github.com/anthropics/claude-code/issues/17136)).
+#### Windows LSP Workarounds
 
-**Fix:** Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`
-and change each LSP entry's `"command"` from the binary name to `"cmd"` with
-`"args": ["/c", "<binary>", ...originalArgs]`. Example:
+Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json`:
 
-```json
-// Before:
-"command": "typescript-language-server", "args": ["--stdio"]
-// After:
-"command": "cmd", "args": ["/c", "typescript-language-server", "--stdio"]
-```
+1. **`.cmd` wrapper fix** ([claude-code#17136](https://github.com/anthropics/claude-code/issues/17136)): Change `"command"` to `"cmd"` with `"args": ["/c", "<binary>", ...originalArgs]`. Applied to: `typescript-language-server`, `csharp-ls`, `gopls`.
 
-Applied to: `typescript-language-server`, `csharp-ls`, `gopls`.
+2. **C# LSP**: `csharp-ls` works but is slow on this solution. OmniSharp was attempted but the MCP plugin hard-caches config and ignores marketplace.json edits at runtime.
 
 **Must reapply after `claude plugin marketplace update`** — the update overwrites marketplace.json.
 
