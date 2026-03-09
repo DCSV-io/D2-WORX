@@ -16,6 +16,13 @@ export function createAuthHandle(): Handle {
     event.locals.session = session;
     event.locals.user = user;
 
+    // Update requestInfo with auth state so downstream middleware
+    // (idempotency, rate limiting user dimension) can see it
+    if (session && event.locals.requestInfo) {
+      event.locals.requestInfo.isAuthenticated = true;
+      event.locals.requestInfo.userId = session.userId;
+    }
+
     return resolve(event);
   };
 }
