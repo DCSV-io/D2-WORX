@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type {
   CheckEmailAvailabilityInput as I,
@@ -18,6 +18,10 @@ export class CheckEmailAvailability
   constructor(db: NodePgDatabase, context: IHandlerContext) {
     super(context);
     this.db = db;
+  }
+
+  get redaction(): RedactionSpec {
+    return { inputFields: ["email"] };
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {

@@ -57,6 +57,11 @@ internal static class ServiceExtensions
 
             // Serilog Loki sink (direct push, not OTLP) — .NET services only.
             builder.WithEnvironment("LOGS_URI", $"{lokiBase}/loki/api/v1/push");
+
+            // Enable debug-level logging for handler I/O telemetry.
+            // .NET services ignore this (they use appsettings.json + Serilog overrides).
+            // Node.js services read it via createLogger() fallback in @d2/logging.
+            builder.WithEnvironment("LOG_LEVEL", "debug");
             return builder;
         }
     }

@@ -200,89 +200,7 @@ public static class Extensions
 
 ## Project Structure
 
-```
-D2-WORX/
-├── pnpm-workspace.yaml              # TS workspace root (like D2.sln for .NET)
-├── package.json                      # Root scripts, shared devDeps
-├── contracts/
-│   └── protos/                       # Tech-agnostic Protocol Buffers
-│       ├── common/v1/                # Common types (D2Result, etc.)
-│       ├── auth/v1/                  # Auth service protos
-│       ├── comms/v1/                 # Comms service protos (gRPC)
-│       ├── events/v1/                # Cross-service async events
-│       └── geo/v1/                   # Geo service protos
-├── backends/
-│   ├── dotnet/                       # .NET backends
-│   │   ├── orchestration/
-│   │   │   └── AppHost/              # Aspire orchestration
-│   │   ├── shared/                   # Shared libraries
-│   │   │   ├── Handler/              # BaseHandler pattern
-│   │   │   ├── Interfaces/           # Contract interfaces (TLC hierarchy)
-│   │   │   ├── Implementations/      # Reusable implementations (Caching, Repository)
-│   │   │   ├── Result/               # D2Result pattern
-│   │   │   ├── Result.Extensions/    # D2Result ↔ Proto conversions
-│   │   │   ├── ServiceDefaults/      # OpenTelemetry config
-│   │   │   ├── Handler.Extensions/    # JWT/auth extensions for BaseHandler
-│   │   │   ├── Tests/                # Shared test infrastructure
-│   │   │   ├── Utilities/            # Extensions & helpers
-│   │   │   └── protos/               # Generated C# protos
-│   │   ├── gateways/
-│   │   │   └── REST/                 # HTTP/REST → gRPC gateway
-│   │   └── services/
-│   │       └── Geo/                  # Geographic service
-│   │           ├── Geo.Client/       # Service-owned client library
-│   │           ├── Geo.Domain/       # DDD entities & value objects
-│   │           ├── Geo.App/          # CQRS handlers, mappers
-│   │           ├── Geo.Infra/        # Repository, messaging, EF Core
-│   │           ├── Geo.API/          # gRPC service
-│   │           └── Geo.Tests/        # Tests
-│   ├── node/                         # Node.js backends
-│   │   ├── tsconfig.base.json        # Shared TypeScript config
-│   │   ├── shared/                   # Shared TS packages (mirrors dotnet/shared/)
-│   │   │   ├── result/               # @d2/result
-│   │   │   ├── utilities/            # @d2/utilities
-│   │   │   ├── di/                   # @d2/di (DI container)
-│   │   │   ├── logging/              # @d2/logging (ILogger + Pino)
-│   │   │   ├── handler/              # @d2/handler (BaseHandler + OTel)
-│   │   │   ├── interfaces/           # @d2/interfaces (cache contracts)
-│   │   │   ├── result-extensions/    # @d2/result-extensions
-│   │   │   ├── messaging/            # @d2/messaging (RabbitMQ wrapper)
-│   │   │   ├── service-defaults/     # @d2/service-defaults (OTel bootstrap)
-│   │   │   ├── protos/               # @d2/protos (generated TS)
-│   │   │   └── implementations/      # Mirrors dotnet Implementations/
-│   │   │       ├── caching/
-│   │   │       │   ├── in-memory/default/   # @d2/cache-memory
-│   │   │       │   └── distributed/redis/   # @d2/cache-redis
-│   │   │       └── middleware/
-│   │   │           ├── request-enrichment/default/  # @d2/request-enrichment
-│   │   │           ├── ratelimit/default/           # @d2/ratelimit
-│   │   │           └── idempotency/default/         # @d2/idempotency
-│   │   ├── testing/                  # @d2/testing (shared test infra)
-│   │   ├── tests/                    # @d2/shared-tests (tests all shared pkgs)
-│   │   └── services/
-│   │       ├── auth/                 # Auth service (BetterAuth)
-│   │       │   ├── domain/app/infra/api/  # DDD layers
-│   │       │   └── tests/            # Auth service tests
-│   │       ├── comms/                # Comms service (delivery engine)
-│   │       │   ├── client/           # @d2/comms-client (thin RabbitMQ publisher)
-│   │       │   ├── domain/app/infra/api/  # DDD layers
-│   │       │   └── tests/            # Comms service tests
-│   │       ├── dkron-mgr/            # @d2/dkron-mgr (Dkron job reconciler)
-│   │       ├── e2e/                  # Cross-service E2E tests
-│   │       └── geo/
-│   │           └── geo-client/       # @d2/geo-client (mirrors .NET Geo.Client)
-│   └── go/                           # Go backends
-│       ├── shared/                   # Shared Go packages
-│       └── services/
-│           └── media/                # Media/file processing
-├── clients/
-│   ├── web/                          # SvelteKit 5 app (consumes @d2/* packages)
-│   └── mobile/                       # React Native / Expo
-├── tools/
-│   └── proto-gen/                    # Proto generation scripts
-├── observability/                    # LGTM stack configs
-└── D2.sln                            # .NET Solution file
-```
+Key roots: `contracts/protos/` (proto source of truth), `backends/dotnet/` (.NET services + shared), `backends/node/` (Node.js services + shared `@d2/*` packages), `clients/web/` (SvelteKit), `observability/` (LGTM configs), `D2.sln` (.NET solution). See `README.md` for the full tree.
 
 ---
 
@@ -393,6 +311,26 @@ All logs and spans MUST include these fields for cross-service correlation:
 | orgId         | string | JWT `activeOrganizationId` / session                              | Org context for multi-tenant logs |
 | service       | string | `OTEL_SERVICE_NAME`                                               | Service origin                    |
 
+### Handler I/O Redaction
+
+BaseHandler logs inputs/outputs at `debug` level. **Every new handler MUST declare a `RedactionSpec`** if its input or output contains PII or sensitive data (emails, phones, IPs, user agents, fingerprints, names, addresses, message content, credentials).
+
+```typescript
+// Field-level masking — redact specific fields, log the rest
+get redaction(): RedactionSpec {
+  return { inputFields: ["email", "ipAddress"], suppressOutput: true };
+}
+
+// Full suppression — when payload is entirely PII (e.g., ContactDTO)
+get redaction(): RedactionSpec {
+  return { suppressInput: true, suppressOutput: true };
+}
+```
+
+**Options:** `inputFields` / `outputFields` (shallow key masking with `[REDACTED]`), `suppressInput` / `suppressOutput` (omit entirely). Redaction applies to both debug logs AND OTel span attributes.
+
+**Layered handlers:** If an app handler redacts a field but calls a repo handler with the same data, the repo handler needs its OWN redaction — each BaseHandler independently logs its I/O.
+
 ### Automatic Instrumentation
 
 - **Node.js:** BaseHandler auto-includes traceId in D2Result. `@d2/logging` enriches via OTel context. `@d2/service-defaults` bootstraps OTel SDK.
@@ -441,17 +379,6 @@ Service.Tests/
 | `@d2/auth-tests`   | Tests for Auth service                   | `Geo.Tests` (pattern)     |
 | `@d2/comms-tests`  | Tests for Comms service                  | `Geo.Tests` (pattern)     |
 | `@d2/e2e-tests`    | Cross-service E2E tests                  | —                         |
-
-**Test stack mapping:**
-
-| Concern            | .NET                        | TypeScript                                 |
-| ------------------ | --------------------------- | ------------------------------------------ |
-| Test runner        | xUnit                       | Vitest 3.x                                 |
-| Assertions         | FluentAssertions            | Vitest `expect` + custom D2Result matchers |
-| Mocking            | Moq                         | `vi.mock`, `vi.fn`, `vi.spyOn`             |
-| Coverage           | —                           | `@vitest/coverage-v8`                      |
-| Containers (PG)    | `Testcontainers.PostgreSql` | `@testcontainers/postgresql`               |
-| Containers (Redis) | `Testcontainers.Redis`      | `@testcontainers/redis`                    |
 
 **Vitest monorepo setup:**
 
@@ -588,6 +515,7 @@ Applied to: `typescript-language-server`, `csharp-ls`, `gopls`.
 - Don't forget to implement the interface when creating generic handlers for DI
 - Don't hardcode batch sizes or cache expirations (use Options pattern)
 - Don't forget to update/create `.md` documentation when adding features (see Documentation section)
+- Don't forget `RedactionSpec` on handlers that touch PII — includes repo handlers, not just app handlers
 
 ### Security Checklist for New Endpoints
 
@@ -601,6 +529,7 @@ When adding routes or handlers, follow the full checklist in `backends/node/serv
 - **Auth middleware visible at route/endpoint declaration** — Node.js: `requireOrg()`, `requireRole()`, `requireStaff()`. .NET: `RequireAuthorization(AuthPolicies.HAS_ACTIVE_ORG)`, `RequireServiceKey()`
 - **New JWT claims** — add to BOTH Node.js (`JWT_CLAIM_TYPES`) and .NET (`JwtClaimTypes`), update AUTH.md cross-reference
 - **No sensitive IDs in JWT** — admin user IDs, internal audit data stays server-side (session only)
+- **Handler I/O redaction** — every handler touching PII must declare a `RedactionSpec` (see Observability § Handler I/O Redaction). This includes repo handlers that receive the same data as their parent app handler
 
 ### Current Development Focus
 
@@ -674,15 +603,6 @@ Auth (always proxied, cookie-based):
 - Client stores JWT **in memory only** (never localStorage — XSS risk), auto-refreshes before 15min expiry
 - .NET gateway must be publicly accessible with CORS configured for SvelteKit origin
 
-#### Horizontal Scaling
-
-No sticky sessions required. Any instance can handle any request:
-
-- Cookie cache: session data travels with the request
-- Redis: shared session store any instance can query
-- JWTs: self-contained, any instance validates with cached JWKS public key
-- Spinning up new instances/locations: just point at shared Redis + PG
-
 ### Service-to-Service Trust (S2S)
 
 - **Mechanism**: `X-Api-Key` header validated by `ServiceKeyMiddleware` (runs early in pipeline)
@@ -723,17 +643,9 @@ No sticky sessions required. Any instance can handle any request:
 
 ### Scheduled Jobs (Dkron)
 
-- **Dkron 4.0.9**: Persistent Aspire container, dashboard at `:8888`, single-node Raft (`--node-name=dkron`)
-- **`@d2/dkron-mgr`**: Node.js reconciler at `backends/node/services/dkron-mgr/`. Declarative job definitions → Dkron REST API. Drift detection, orphan cleanup, idempotent reconciliation loop
-- **Job execution flow**: Dkron (cron) → HTTP POST to REST Gateway (service key auth via `X-Api-Key`) → Gateway forwards via gRPC (API key via `AddCallCredentials`) → Service handler acquires Redis distributed lock (`SET NX PX`) → Batch delete loop → Returns result
-- **8 daily jobs** (staggered 15 min apart, 2:00-3:45 AM UTC):
-  - Geo: `purge-stale-whois` (180d retention), `cleanup-orphaned-locations` (zero references)
-  - Auth: `purge-sessions` (expired), `purge-sign-in-events` (90d), `cleanup-invitations` (7d post-expiry), `cleanup-emulation-consents` (expired/revoked)
-  - Comms: `purge-deleted-messages` (90d), `purge-delivery-history` (365d)
-- **Job endpoint pattern**: `.NET Gateway` registers gRPC clients with `AddCallCredentials` + `UnsafeUseInsecureChannelCallCredentials = true` (plaintext dev). Node.js services use `handleJobRpc()` from `@d2/service-defaults`
-- **Lock pattern**: Each job handler acquires a Redis lock (configurable TTL via Options), returns early if lock held by another instance. Lock released on completion
-- **Env vars**: `DKRON_MGR__DKRON_URL`, `DKRON_MGR__GATEWAY_URL`, `DKRON_MGR__SERVICE_KEY` — all in `.env.local`
-- **Documentation**: See [`DKRON_MGR.md`](backends/node/services/dkron-mgr/DKRON_MGR.md) for full details
+- **Dkron 4.0.9** + **`@d2/dkron-mgr`** reconciler. 8 daily maintenance jobs across Auth/Geo/Comms
+- **Flow**: Dkron → HTTP POST to Gateway (service key) → gRPC → handler acquires Redis lock → batch work
+- **Details**: See [`DKRON_MGR.md`](backends/node/services/dkron-mgr/DKRON_MGR.md)
 
 ---
 

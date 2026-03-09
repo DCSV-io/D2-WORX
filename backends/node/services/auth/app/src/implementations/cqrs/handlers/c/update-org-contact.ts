@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
 import {
   updateOrgContact,
@@ -70,6 +70,10 @@ export class UpdateOrgContactHandler extends BaseHandler<
     this.findById = findById;
     this.updateRecord = updateRecord;
     this.updateContactsByExtKeys = updateContactsByExtKeys;
+  }
+
+  get redaction(): RedactionSpec {
+    return { suppressInput: true, suppressOutput: true };
   }
 
   protected async executeAsync(

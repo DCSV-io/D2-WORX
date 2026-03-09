@@ -22,7 +22,7 @@ export class TwilioSmsProvider
   }
 
   get redaction() {
-    return { inputFields: ["body"] as const };
+    return { inputFields: ["body", "to"] as const };
   }
 
   protected async executeAsync(input: SendSmsInput): Promise<D2Result<SendSmsOutput | undefined>> {

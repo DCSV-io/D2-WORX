@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import {
   createMessage,
@@ -87,6 +87,10 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     this.channelPrefRepo = repos.channelPref;
     this.dispatchers = new Map(dispatchers.map((d) => [d.channel, d]));
     this.recipientResolver = recipientResolver;
+  }
+
+  get redaction(): RedactionSpec {
+    return { inputFields: ["content", "plainTextContent"], suppressOutput: true };
   }
 
   protected async executeAsync(input: DeliverInput): Promise<D2Result<DeliverOutput | undefined>> {

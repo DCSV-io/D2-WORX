@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ContactDTO } from "@d2/protos";
 import { GEO_CONTEXT_KEYS, type OrgContact } from "@d2/auth-domain";
@@ -55,6 +55,10 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
     super(context);
     this.findByOrgId = findByOrgId;
     this.getContactsByExtKeys = getContactsByExtKeys;
+  }
+
+  get redaction(): RedactionSpec {
+    return { suppressOutput: true };
   }
 
   protected async executeAsync(

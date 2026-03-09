@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid, zodNonEmptyString } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
@@ -41,6 +41,10 @@ export class CreateUserContact extends BaseHandler<
   constructor(createContacts: Commands.ICreateContactsHandler, context: IHandlerContext) {
     super(context);
     this.createContacts = createContacts;
+  }
+
+  get redaction(): RedactionSpec {
+    return { suppressInput: true, suppressOutput: true };
   }
 
   protected async executeAsync(

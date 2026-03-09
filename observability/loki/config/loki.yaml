@@ -45,6 +45,10 @@ compactor:
 
 limits_config:
   retention_period: 8640h # 360 days
+  retention_stream:
+    - selector: '{level="debug"}'
+      priority: 1
+      period: 720h # 30 days
   max_query_length: 8760h # 365 days
   max_query_lookback: 8640h # 360 days
   max_entries_limit_per_query: 10000 # Increased from default 5000

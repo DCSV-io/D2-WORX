@@ -21,7 +21,7 @@ export class ResendEmailProvider
   }
 
   get redaction() {
-    return { inputFields: ["html", "plainText"] as const };
+    return { inputFields: ["html", "plainText", "to", "replyTo"] as const };
   }
 
   protected async executeAsync(
