@@ -59,6 +59,13 @@ prometheus.scrape "infrastructure" {
       service     = "rabbitmq",
     },
 
+    // Alloy self-scrape (exposes Faro Web Vitals histograms + internal health).
+    {
+      __address__ = "localhost:12345",
+      job         = "alloy",
+      service     = "alloy",
+    },
+
     // LGTM stack (containers)
     {
       __address__ = env("MIMIR_NAME") + ":9009",
@@ -269,6 +276,63 @@ loki.process "faro" {
     stage.static_labels {
       values = {
         level = "debug",
+      }
+    }
+  }
+
+  // Extract Web Vitals as Prometheus histograms for Mimir.
+  // The faro.receiver produces entries with only 2 real labels
+  // (service_name, level — set by our static_labels above).
+  // ALL other fields (kind, type, value_*) are in the logfmt log line.
+  // Parse with stage.logfmt, then filter on kind+type via extracted data.
+  stage.logfmt {
+    mapping = {
+      kind       = "",
+      type       = "",
+      value_ttfb = "",
+      value_fcp  = "",
+      value_lcp  = "",
+      value_inp  = "",
+      value_cls  = "",
+    }
+  }
+
+  // Only create metrics for web-vitals measurements.
+  // stage.match can use LogQL filter expressions on extracted data.
+  stage.match {
+    selector     = "{service_name=\"d2-sveltekit-frontend\"}"
+    pipeline_name = "web-vitals-metrics"
+
+    stage.metrics {
+      metric.histogram {
+        name        = "faro_web_vital_ttfb_milliseconds"
+        description = "Time to First Byte (ms)"
+        source      = "value_ttfb"
+        buckets     = [100, 200, 500, 800, 1000, 1500, 2000, 3000, 5000, 10000]
+      }
+      metric.histogram {
+        name        = "faro_web_vital_fcp_milliseconds"
+        description = "First Contentful Paint (ms)"
+        source      = "value_fcp"
+        buckets     = [100, 500, 1000, 1500, 1800, 2500, 3000, 5000, 10000]
+      }
+      metric.histogram {
+        name        = "faro_web_vital_lcp_milliseconds"
+        description = "Largest Contentful Paint (ms)"
+        source      = "value_lcp"
+        buckets     = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 10000]
+      }
+      metric.histogram {
+        name        = "faro_web_vital_inp_milliseconds"
+        description = "Interaction to Next Paint (ms)"
+        source      = "value_inp"
+        buckets     = [50, 100, 150, 200, 300, 500, 1000]
+      }
+      metric.histogram {
+        name        = "faro_web_vital_cls"
+        description = "Cumulative Layout Shift (unitless)"
+        source      = "value_cls"
+        buckets     = [0.01, 0.05, 0.1, 0.15, 0.25, 0.5, 1.0]
       }
     }
   }
