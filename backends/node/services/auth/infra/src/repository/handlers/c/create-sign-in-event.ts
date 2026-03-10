@@ -28,6 +28,7 @@ export class CreateSignInEvent extends BaseHandler<I, O> implements ICreateSignI
       ipAddress: input.event.ipAddress,
       userAgent: input.event.userAgent,
       whoIsId: input.event.whoIsId,
+      deviceFingerprint: input.event.deviceFingerprint,
       failureReason: input.event.failureReason,
       createdAt: input.event.createdAt,
     });

@@ -49,6 +49,7 @@ public class RequestContext : IRequestContext
         AgentOrgId = GetGuidClaim(ctx, JwtClaimTypes.ORG_ID);
         AgentOrgName = GetStringClaim(ctx, JwtClaimTypes.ORG_NAME);
         AgentOrgType = GetOrgTypeClaim(ctx, JwtClaimTypes.ORG_TYPE);
+        AgentOrgRole = GetStringClaim(ctx, JwtClaimTypes.ROLE);
 
         // Org Emulation — staff viewing another org as read-only.
         IsOrgEmulating = string.Equals(
@@ -63,12 +64,14 @@ public class RequestContext : IRequestContext
             TargetOrgId = GetGuidClaim(ctx, JwtClaimTypes.EMULATED_ORG_ID) ?? AgentOrgId;
             TargetOrgName = GetStringClaim(ctx, JwtClaimTypes.EMULATED_ORG_NAME) ?? AgentOrgName;
             TargetOrgType = GetOrgTypeClaim(ctx, JwtClaimTypes.EMULATED_ORG_TYPE) ?? AgentOrgType;
+            TargetOrgRole = "auditor";
         }
         else
         {
             TargetOrgId = AgentOrgId;
             TargetOrgName = AgentOrgName;
             TargetOrgType = AgentOrgType;
+            TargetOrgRole = AgentOrgRole;
         }
 
         // User Impersonation — admin acting as another user.
@@ -121,6 +124,9 @@ public class RequestContext : IRequestContext
     /// <inheritdoc/>
     public OrgType? AgentOrgType { get; }
 
+    /// <inheritdoc/>
+    public string? AgentOrgRole { get; }
+
     #endregion
 
     #region Target Organization
@@ -133,6 +139,9 @@ public class RequestContext : IRequestContext
 
     /// <inheritdoc/>
     public OrgType? TargetOrgType { get; }
+
+    /// <inheritdoc/>
+    public string? TargetOrgRole { get; }
 
     #endregion
 
@@ -176,6 +185,59 @@ public class RequestContext : IRequestContext
     /// <inheritdoc/>
     public bool IsTargetingAdmin =>
         TargetOrgType is OrgType.Admin;
+
+    #endregion
+
+    #region Network / Enrichment
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Not available in non-gateway services (gRPC). Always null.
+    /// </remarks>
+    public string? ClientIp => null;
+
+    /// <inheritdoc/>
+    public string? ServerFingerprint => null;
+
+    /// <inheritdoc/>
+    public string? ClientFingerprint => null;
+
+    /// <inheritdoc/>
+    public string? DeviceFingerprint => null;
+
+    /// <inheritdoc/>
+    public string? WhoIsHashId => null;
+
+    /// <inheritdoc/>
+    public string? City => null;
+
+    /// <inheritdoc/>
+    public string? CountryCode => null;
+
+    /// <inheritdoc/>
+    public string? SubdivisionCode => null;
+
+    /// <inheritdoc/>
+    public bool? IsVpn => null;
+
+    /// <inheritdoc/>
+    public bool? IsProxy => null;
+
+    /// <inheritdoc/>
+    public bool? IsTor => null;
+
+    /// <inheritdoc/>
+    public bool? IsHosting => null;
+
+    #endregion
+
+    #region Trust
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Not available in non-gateway services. Always false.
+    /// </remarks>
+    public bool IsTrustedService => false;
 
     #endregion
 

@@ -136,6 +136,7 @@ The composition root provides these callbacks to avoid circular dependencies bet
 | --------------------------------- | ---------------------------------------------------------- |
 | `onSignIn`                        | Records audit event after successful sign-in               |
 | `getFingerprintForCurrentRequest` | Returns client fingerprint for JWT `fp` claim              |
+| `getDeviceFingerprintForCurrentRequest` | Returns device fingerprint for sign-in event audit   |
 | `passwordFunctions`               | Custom hash/verify with domain validation + HIBP check     |
 | `publishVerificationEmail`        | Publishes verification email event to RabbitMQ             |
 | `publishPasswordReset`            | Publishes password reset email event to RabbitMQ           |
@@ -189,7 +190,7 @@ Hierarchical role permissions (each level inherits from below):
 
 | Table               | Columns                                                                | Indexes                                                                                    |
 | ------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `sign_in_event`     | id, user_id, successful, ip_address, user_agent, who_is_id, created_at | idx_sign_in_event_user_id                                                                  |
+| `sign_in_event`     | id, user_id, successful, ip_address, user_agent, who_is_id, device_fingerprint, created_at | idx_sign_in_event_user_id                                                                  |
 | `emulation_consent` | id, user_id, granted_to_org_id, expires_at, revoked_at, created_at     | idx_emulation_consent_user_id, unique(user_id, granted_to_org_id) WHERE revoked_at IS NULL |
 | `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at         | idx_org_contact_organization_id                                                            |
 

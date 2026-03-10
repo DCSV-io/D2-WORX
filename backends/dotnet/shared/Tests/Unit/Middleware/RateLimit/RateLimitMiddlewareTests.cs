@@ -39,7 +39,7 @@ public class RateLimitMiddlewareTests
 
     /// <summary>
     /// Tests that middleware skips rate limiting entirely for infrastructure endpoints
-    /// (health checks, metrics) — these paths have no <see cref="IRequestInfo"/> because
+    /// (health checks, metrics) — these paths have no <see cref="IRequestContext"/> because
     /// <see cref="RequestEnrichmentMiddleware"/> also skips them.
     /// </summary>
     ///
@@ -55,7 +55,7 @@ public class RateLimitMiddlewareTests
     [InlineData("/api/health")]
     public async Task InvokeAsync_WhenInfrastructureEndpoint_SkipsRateLimitAndCallsNext(string path)
     {
-        // Arrange — no IRequestInfo set (enrichment skips these too).
+        // Arrange — no IRequestContext set (enrichment skips these too).
         var context = CreateHttpContext();
         context.Request.Path = path;
 
@@ -106,7 +106,7 @@ public class RateLimitMiddlewareTests
     }
 
     /// <summary>
-    /// Tests that middleware uses IRequestInfo from Features.
+    /// Tests that middleware uses IRequestContext from Features.
     /// </summary>
     ///
     /// <returns>
@@ -116,9 +116,9 @@ public class RateLimitMiddlewareTests
     public async Task InvokeAsync_ReadsRequestInfoFromFeatures()
     {
         // Arrange
-        var requestInfo = CreateRequestInfo("10.0.0.1", "test-fingerprint");
+        var requestContext = CreateRequestContext("10.0.0.1", "test-fingerprint");
         var context = CreateHttpContext();
-        context.Features.Set<IRequestInfo>(requestInfo);
+        context.Features.Set<IRequestContext>(requestContext);
         SetupCheckReturnsAllowed();
 
         var middleware = CreateMiddleware();
@@ -129,7 +129,7 @@ public class RateLimitMiddlewareTests
         // Assert
         r_checkHandlerMock.Verify(
             x => x.HandleAsync(
-                It.Is<IRateLimit.CheckInput>(i => i.RequestInfo.ClientIp == "10.0.0.1"),
+                It.Is<IRateLimit.CheckInput>(i => i.RequestContext.ClientIp == "10.0.0.1"),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()),
             Times.Once);
@@ -244,7 +244,7 @@ public class RateLimitMiddlewareTests
     #region Fail-Open Tests - CRITICAL
 
     /// <summary>
-    /// CRITICAL: Tests that middleware allows request when IRequestInfo is missing.
+    /// CRITICAL: Tests that middleware allows request when IRequestContext is missing.
     /// This ensures the gateway continues working if RequestEnrichmentMiddleware didn't run.
     /// </summary>
     ///
@@ -263,7 +263,7 @@ public class RateLimitMiddlewareTests
         await middleware.InvokeAsync(context, r_checkHandlerMock.Object);
 
         // Assert
-        _nextWasCalled.Should().BeTrue("missing IRequestInfo should fail-open");
+        _nextWasCalled.Should().BeTrue("missing IRequestContext should fail-open");
         context.Response.StatusCode.Should().NotBe(429);
 
         r_checkHandlerMock.Verify(
@@ -400,19 +400,20 @@ public class RateLimitMiddlewareTests
     private static DefaultHttpContext CreateHttpContextWithRequestInfo()
     {
         var context = CreateHttpContext();
-        context.Features.Set<IRequestInfo>(CreateRequestInfo("192.0.2.1", "test-fingerprint"));
+        context.Features.Set<IRequestContext>(CreateRequestContext("192.0.2.1", "test-fingerprint"));
         return context;
     }
 
-    private static IRequestInfo CreateRequestInfo(string clientIp, string? clientFingerprint)
+    private static MutableRequestContext CreateRequestContext(string clientIp, string? clientFingerprint)
     {
         var deviceFingerprint = clientFingerprint ?? $"device-fp-{clientIp}";
-        var mock = new Mock<IRequestInfo>();
-        mock.Setup(x => x.ClientIp).Returns(clientIp);
-        mock.Setup(x => x.ClientFingerprint).Returns(clientFingerprint);
-        mock.Setup(x => x.DeviceFingerprint).Returns(deviceFingerprint);
-        mock.Setup(x => x.ServerFingerprint).Returns("server-fp-hash");
-        return mock.Object;
+        return new MutableRequestContext
+        {
+            ClientIp = clientIp,
+            ClientFingerprint = clientFingerprint,
+            DeviceFingerprint = deviceFingerprint,
+            ServerFingerprint = "server-fp-hash",
+        };
     }
 
     private RateLimitMiddleware CreateMiddleware()

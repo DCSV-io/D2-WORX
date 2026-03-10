@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { RequestEvent } from "@sveltejs/kit";
-import type { RequestEnrichment } from "@d2/interfaces";
+import type { IRequestContext } from "@d2/handler";
 
 const mockEnrichRequest = vi.fn();
 const mockGetMiddlewareContext = vi.fn();
@@ -38,11 +38,11 @@ describe("createRequestEnrichmentHandle", () => {
 
     expect(mockResolve).toHaveBeenCalledWith(event);
     expect(mockEnrichRequest).not.toHaveBeenCalled();
-    expect(event.locals.requestInfo).toBeUndefined();
+    expect(event.locals.requestContext).toBeUndefined();
   });
 
   it("calls enrichRequest and stores result on event.locals", async () => {
-    const fakeRequestInfo: Partial<RequestEnrichment.IRequestInfo> = {
+    const fakeRequestInfo: Partial<IRequestContext> = {
       clientIp: "1.2.3.4",
       serverFingerprint: "abc123",
       isAuthenticated: false,
@@ -65,7 +65,7 @@ describe("createRequestEnrichmentHandle", () => {
       undefined,
       mockCtx.logger,
     );
-    expect(event.locals.requestInfo).toBe(fakeRequestInfo);
+    expect(event.locals.requestContext).toBe(fakeRequestInfo);
     expect(mockResolve).toHaveBeenCalledWith(event);
   });
 
@@ -80,7 +80,7 @@ describe("createRequestEnrichmentHandle", () => {
     const event = makeEvent({
       "x-client-fingerprint": "fp-abc",
       "cf-connecting-ip": "5.6.7.8",
-      "accept": "text/html",
+      accept: "text/html",
     });
 
     await handle({ event, resolve: mockResolve });

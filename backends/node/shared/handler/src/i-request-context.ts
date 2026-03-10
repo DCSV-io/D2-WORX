@@ -31,11 +31,13 @@ export interface IRequestContext {
   agentOrgId?: string;
   agentOrgName?: string;
   agentOrgType?: OrgType;
+  agentOrgRole?: string;
 
   // Target Organization
   targetOrgId?: string;
   targetOrgName?: string;
   targetOrgType?: OrgType;
+  targetOrgRole?: string;
 
   // Org Emulation
   isOrgEmulating: boolean;
@@ -46,9 +48,26 @@ export interface IRequestContext {
   impersonatingUsername?: string;
   isUserImpersonating: boolean;
 
+  // Network / Enrichment
+  clientIp?: string;
+  serverFingerprint?: string;
+  clientFingerprint?: string;
+  deviceFingerprint?: string;
+  whoIsHashId?: string;
+  city?: string;
+  countryCode?: string;
+  subdivisionCode?: string;
+  isVpn?: boolean;
+  isProxy?: boolean;
+  isTor?: boolean;
+  isHosting?: boolean;
+
+  // Trust
+  isTrustedService?: boolean;
+
   // Helpers (computed)
-  isAgentStaff: boolean;
-  isAgentAdmin: boolean;
-  isTargetingStaff: boolean;
-  isTargetingAdmin: boolean;
+  isAgentStaff?: boolean;
+  isAgentAdmin?: boolean;
+  isTargetingStaff?: boolean;
+  isTargetingAdmin?: boolean;
 }

@@ -89,6 +89,11 @@ public interface IRequestContext
     /// </summary>
     OrgType? AgentOrgType { get; }
 
+    /// <summary>
+    /// Gets the role of the user in the agent organization (e.g., "owner", "admin", "member").
+    /// </summary>
+    string? AgentOrgRole { get; }
+
     #endregion
 
     #region Target Organization
@@ -109,6 +114,12 @@ public interface IRequestContext
     /// Gets the type of the target organization.
     /// </summary>
     OrgType? TargetOrgType { get; }
+
+    /// <summary>
+    /// Gets the role of the user in the target organization.
+    /// During org emulation, this is always "auditor".
+    /// </summary>
+    string? TargetOrgRole { get; }
 
     #endregion
 
@@ -148,6 +159,79 @@ public interface IRequestContext
     /// Sensitive operations (payments, etc.) should be blocked during user impersonation.
     /// </summary>
     bool IsUserImpersonating { get; }
+
+    #endregion
+
+    #region Network / Enrichment
+
+    /// <summary>
+    /// Gets the resolved client IP address.
+    /// </summary>
+    string? ClientIp { get; }
+
+    /// <summary>
+    /// Gets the server-computed fingerprint based on request headers.
+    /// </summary>
+    string? ServerFingerprint { get; }
+
+    /// <summary>
+    /// Gets the client-provided fingerprint from the d2-cfp cookie or X-Client-Fingerprint header.
+    /// </summary>
+    string? ClientFingerprint { get; }
+
+    /// <summary>
+    /// Gets the combined device fingerprint: SHA-256(clientFP + serverFP + clientIp).
+    /// </summary>
+    string? DeviceFingerprint { get; }
+
+    /// <summary>
+    /// Gets the WhoIs hash ID for downstream lookups.
+    /// </summary>
+    string? WhoIsHashId { get; }
+
+    /// <summary>
+    /// Gets the city name from WhoIs data.
+    /// </summary>
+    string? City { get; }
+
+    /// <summary>
+    /// Gets the ISO 3166-1 alpha-2 country code from WhoIs data.
+    /// </summary>
+    string? CountryCode { get; }
+
+    /// <summary>
+    /// Gets the ISO 3166-2 subdivision code from WhoIs data.
+    /// </summary>
+    string? SubdivisionCode { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a VPN.
+    /// </summary>
+    bool? IsVpn { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a proxy.
+    /// </summary>
+    bool? IsProxy { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a Tor exit node.
+    /// </summary>
+    bool? IsTor { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a hosting provider.
+    /// </summary>
+    bool? IsHosting { get; }
+
+    #endregion
+
+    #region Trust
+
+    /// <summary>
+    /// Gets a value indicating whether the request is from a trusted service.
+    /// </summary>
+    bool IsTrustedService { get; }
 
     #endregion
 

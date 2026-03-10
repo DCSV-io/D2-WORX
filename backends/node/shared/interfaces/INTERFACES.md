@@ -20,7 +20,7 @@ src/
 │           ├── d/         # Remove, ReleaseLock
 │           └── q/         # Ping
 └── middleware/
-    ├── request-enrichment/  # IRequestInfo contract
+    ├── request-enrichment/  # (empty — IRequestInfo removed, use IRequestContext from @d2/handler)
     ├── ratelimit/           # ICheckHandler + RateLimitDimension + CHECK_REDACTION
     │   └── handlers/
     └── idempotency/         # ICheckHandler + IdempotencyState + CachedResponse
@@ -56,9 +56,7 @@ src/
 
 ## Middleware — Request Enrichment
 
-| File                | Export         | Description                                                        |
-| ------------------- | -------------- | ------------------------------------------------------------------ |
-| `i-request-info.ts` | `IRequestInfo` | Interface for enriched request data (clientIp, fingerprints, geo). |
+`IRequestInfo` has been removed. Request enrichment data (clientIp, fingerprints, geo) is now part of `IRequestContext` from `@d2/handler`. The `request-enrichment/` directory is kept for structural parity with .NET but its `index.ts` is empty.
 
 ## Middleware — Rate Limit
 
@@ -83,7 +81,6 @@ Consumers import by namespace:
 
 ```typescript
 import { InMemoryCache, DistributedCache, RateLimit, Idempotency } from "@d2/interfaces";
-import type { RequestEnrichment } from "@d2/interfaces";
 
 // Use as:
 const handler: InMemoryCache.IGetHandler = ...;
@@ -91,6 +88,8 @@ const input: DistributedCache.SetInput<string> = ...;
 const check: RateLimit.ICheckHandler = ...;
 const idemCheck: Idempotency.ICheckHandler = ...;
 ```
+
+> **Note:** `RequestEnrichment` is no longer exported. Use `IRequestContext` from `@d2/handler` instead.
 
 ## .NET Equivalent
 

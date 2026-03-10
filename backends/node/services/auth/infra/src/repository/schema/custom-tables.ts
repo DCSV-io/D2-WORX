@@ -26,6 +26,7 @@ export const signInEvent = pgTable(
     ipAddress: varchar("ip_address", { length: 45 }).notNull(),
     userAgent: text("user_agent").notNull(),
     whoIsId: varchar("who_is_id", { length: 64 }),
+    deviceFingerprint: varchar("device_fingerprint", { length: 64 }),
     failureReason: varchar("failure_reason", { length: 100 }),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

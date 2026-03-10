@@ -74,5 +74,23 @@ public static class Extensions
 
             return app;
         }
+
+        /// <summary>
+        /// Adds request context logging middleware to the application pipeline.
+        /// Pushes non-PII request context fields into Serilog LogContext and OTel span tags.
+        /// </summary>
+        ///
+        /// <returns>
+        /// The application builder for chaining.
+        /// </returns>
+        /// <remarks>
+        /// Must be placed AFTER authentication middleware so all identity/org fields are populated.
+        /// </remarks>
+        public IApplicationBuilder UseRequestContextLogging()
+        {
+            app.UseMiddleware<RequestContextLoggingMiddleware>();
+
+            return app;
+        }
     }
 }

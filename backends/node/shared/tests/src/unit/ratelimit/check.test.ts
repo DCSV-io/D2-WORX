@@ -4,12 +4,13 @@ import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/
 import { createLogger } from "@d2/logging";
 import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
-import type { IRequestInfo } from "@d2/request-enrichment";
-
 function createTestContext(traceId?: string): IHandlerContext {
   const request: IRequestContext = {
     traceId: traceId ?? "test-trace-id",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,
@@ -18,7 +19,7 @@ function createTestContext(traceId?: string): IHandlerContext {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
+function createRequestContext(overrides?: Partial<IRequestContext>): IRequestContext {
   return {
     clientIp: "1.2.3.4",
     serverFingerprint: "a".repeat(64),
@@ -32,9 +33,14 @@ function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
     isProxy: false,
     isTor: false,
     isHosting: false,
-    userId: undefined,
     isAuthenticated: false,
     isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
+    isAgentStaff: false,
+    isAgentAdmin: false,
+    isTargetingStaff: false,
+    isTargetingAdmin: false,
     ...overrides,
   };
 }
@@ -97,8 +103,8 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 1 });
-    const info = createRequestInfo({ isTrustedService: true });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext({ isTrustedService: true });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(false);
@@ -112,8 +118,8 @@ describe("RateLimit Check handler", () => {
 
   it("should not bypass rate limiting for non-trusted services", async () => {
     const handler = createCheck(mocks);
-    const info = createRequestInfo({ isTrustedService: false });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext({ isTrustedService: false });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     // Cache operations should have been called (normal flow).
@@ -126,7 +132,7 @@ describe("RateLimit Check handler", () => {
 
   it("should return not blocked when all counts are below thresholds", async () => {
     const handler = createCheck(mocks);
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(false);
@@ -143,7 +149,7 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 50 });
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
@@ -161,8 +167,8 @@ describe("RateLimit Check handler", () => {
       deviceFingerprintThreshold: 1000,
       ipThreshold: 50,
     });
-    const info = createRequestInfo();
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext();
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
@@ -181,8 +187,8 @@ describe("RateLimit Check handler", () => {
       ipThreshold: 1000,
       cityThreshold: 50,
     });
-    const info = createRequestInfo();
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext();
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
@@ -202,8 +208,8 @@ describe("RateLimit Check handler", () => {
       cityThreshold: 1000,
       countryThreshold: 50,
     });
-    const info = createRequestInfo({ city: undefined });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext({ city: undefined });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
@@ -232,8 +238,8 @@ describe("RateLimit Check handler", () => {
     });
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
-    const info = createRequestInfo();
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext();
+    const result = await handler.handleAsync({ requestContext: info });
 
     // With low counts, should not be blocked
     expect(result).toBeSuccess();
@@ -242,7 +248,7 @@ describe("RateLimit Check handler", () => {
 
   it("should set counter TTL to 2x window size", async () => {
     const handler = createCheck(mocks, { windowMs: 30_000 });
-    await handler.handleAsync({ requestInfo: createRequestInfo() });
+    await handler.handleAsync({ requestContext: createRequestContext() });
 
     // Increment calls should use expirationMs = 2 * 30_000 = 60_000
     const incrementCalls = mocks.incrementFn.mock.calls;
@@ -262,7 +268,7 @@ describe("RateLimit Check handler", () => {
       deviceFingerprintThreshold: 50,
       blockDurationMs: 120_000,
     });
-    await handler.handleAsync({ requestInfo: createRequestInfo() });
+    await handler.handleAsync({ requestContext: createRequestContext() });
 
     // Set should have been called with blockDuration TTL
     expect(mocks.setFn).toHaveBeenCalled();
@@ -289,8 +295,8 @@ describe("RateLimit Check handler", () => {
       cityThreshold: 1000,
       countryThreshold: 1000,
     });
-    const info = createRequestInfo({ clientFingerprint: undefined });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext({ clientFingerprint: undefined });
+    const result = await handler.handleAsync({ requestContext: info });
 
     // deviceFingerprint is always present (combined hash), so it should be checked
     // and blocked (threshold 1, count 200).
@@ -301,12 +307,12 @@ describe("RateLimit Check handler", () => {
 
   it("should skip IP check when IP is localhost", async () => {
     const handler = createCheck(mocks);
-    const info = createRequestInfo({
+    const info = createRequestContext({
       clientIp: "127.0.0.1",
       city: undefined,
       countryCode: undefined,
     });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     // No getTtl calls should contain "ip" dimension (devicefingerprint is still checked)
@@ -319,11 +325,11 @@ describe("RateLimit Check handler", () => {
 
   it("should skip city check when city is undefined", async () => {
     const handler = createCheck(mocks);
-    const info = createRequestInfo({
+    const info = createRequestContext({
       city: undefined,
       countryCode: undefined,
     });
-    await handler.handleAsync({ requestInfo: info });
+    await handler.handleAsync({ requestContext: info });
 
     // Should check deviceFingerprint + IP dimensions, but not city (skipped)
     const getTtlCalls = mocks.getTtlFn.mock.calls;
@@ -335,11 +341,11 @@ describe("RateLimit Check handler", () => {
 
   it("should skip country check when countryCode is undefined", async () => {
     const handler = createCheck(mocks);
-    const info = createRequestInfo({
+    const info = createRequestContext({
       city: undefined,
       countryCode: undefined,
     });
-    await handler.handleAsync({ requestInfo: info });
+    await handler.handleAsync({ requestContext: info });
 
     const getTtlCalls = mocks.getTtlFn.mock.calls;
     const countryCalls = getTtlCalls.filter((c: unknown[]) =>
@@ -350,11 +356,11 @@ describe("RateLimit Check handler", () => {
 
   it("should skip country check when countryCode is in whitelist", async () => {
     const handler = createCheck(mocks);
-    const info = createRequestInfo({
+    const info = createRequestContext({
       city: undefined,
       countryCode: "US",
     });
-    await handler.handleAsync({ requestInfo: info });
+    await handler.handleAsync({ requestContext: info });
 
     const getTtlCalls = mocks.getTtlFn.mock.calls;
     const countryCalls = getTtlCalls.filter((c: unknown[]) =>
@@ -375,8 +381,8 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 50 });
-    const info = createRequestInfo();
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext();
+    const result = await handler.handleAsync({ requestContext: info });
 
     // All dimensions fire concurrently; first blocked result is returned.
     expect(result.data?.isBlocked).toBe(true);
@@ -396,7 +402,7 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks);
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
@@ -413,7 +419,7 @@ describe("RateLimit Check handler", () => {
     mocks.getTtlFn.mockRejectedValue(new Error("Redis down"));
 
     const handler = createCheck(mocks);
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(false);
@@ -428,7 +434,7 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks);
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(false);
@@ -452,12 +458,12 @@ describe("RateLimit Check handler", () => {
     });
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
-    const info = createRequestInfo({
+    const info = createRequestContext({
       clientIp: "127.0.0.1",
       city: undefined,
       countryCode: undefined,
     });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const result = await handler.handleAsync({ requestContext: info });
 
     // prevCount defaults to 0, currCount=1, estimated < 100 → not blocked
     expect(result).toBeSuccess();
@@ -481,12 +487,12 @@ describe("RateLimit Check handler", () => {
     });
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
-    const info = createRequestInfo({
+    const info = createRequestContext({
       clientIp: "127.0.0.1",
       city: undefined,
       countryCode: undefined,
     });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const result = await handler.handleAsync({ requestContext: info });
 
     // prevCount defaults to 0 via ??, currCount=1, estimated < 100 → not blocked
     expect(result).toBeSuccess();
@@ -510,12 +516,12 @@ describe("RateLimit Check handler", () => {
     });
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 100 });
-    const info = createRequestInfo({
+    const info = createRequestContext({
       clientIp: "127.0.0.1",
       city: undefined,
       countryCode: undefined,
     });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const result = await handler.handleAsync({ requestContext: info });
 
     // prevCount=0, currCount defaults to 0, estimated=0 < 100 → not blocked
     expect(result).toBeSuccess();
@@ -531,7 +537,7 @@ describe("RateLimit Check handler", () => {
     mocks.setFn.mockRejectedValue(new Error("Redis down"));
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 50 });
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     // The set failure is caught by the outer try/catch, so fail-open
     expect(result).toBeSuccess();
@@ -550,14 +556,14 @@ describe("RateLimit Check handler", () => {
     );
 
     const handler = createCheck(mocks, { deviceFingerprintThreshold: 5 });
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     expect(result.data?.isBlocked).toBe(true);
   });
 
   it("should respect custom windowMs", async () => {
     const handler = createCheck(mocks, { windowMs: 120_000 });
-    await handler.handleAsync({ requestInfo: createRequestInfo() });
+    await handler.handleAsync({ requestContext: createRequestContext() });
 
     // Counter TTL should be 2 * 120_000 = 240_000
     const incrementCalls = mocks.incrementFn.mock.calls;
@@ -577,7 +583,7 @@ describe("RateLimit Check handler", () => {
       deviceFingerprintThreshold: 50,
       blockDurationMs: 600_000,
     });
-    const result = await handler.handleAsync({ requestInfo: createRequestInfo() });
+    const result = await handler.handleAsync({ requestContext: createRequestContext() });
 
     expect(result.data?.retryAfterMs).toBe(600_000);
   });
@@ -597,11 +603,11 @@ describe("RateLimit Check handler", () => {
       countryThreshold: 50,
       whitelistedCountryCodes: ["US", "CA", "GB", "FR"],
     });
-    const info = createRequestInfo({
+    const info = createRequestContext({
       city: undefined,
       countryCode: "FR",
     });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const result = await handler.handleAsync({ requestContext: info });
 
     // FR is whitelisted, so country check is skipped → not blocked
     expect(result.data?.isBlocked).toBe(false);
@@ -613,8 +619,8 @@ describe("RateLimit Check handler", () => {
 
   it("should return validationFailed for invalid IP address", async () => {
     const handler = createCheck(mocks);
-    const info = createRequestInfo({ clientIp: "not-an-ip" });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext({ clientIp: "not-an-ip" });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeFailure();
     expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
@@ -624,8 +630,8 @@ describe("RateLimit Check handler", () => {
 
   it("should return validationFailed for empty IP address", async () => {
     const handler = createCheck(mocks);
-    const info = createRequestInfo({ clientIp: "" });
-    const result = await handler.handleAsync({ requestInfo: info });
+    const info = createRequestContext({ clientIp: "" });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeFailure();
     expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);

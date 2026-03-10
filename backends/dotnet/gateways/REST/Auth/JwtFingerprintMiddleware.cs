@@ -7,6 +7,7 @@
 namespace D2.Gateways.REST.Auth;
 
 using System.Net;
+using D2.Shared.Handler;
 using D2.Shared.Handler.Auth;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
@@ -22,7 +23,7 @@ using D2.Shared.Utilities.Serialization;
 /// Behavior:
 /// <list type="bullet">
 ///   <item>No authenticated user → pass through (auth middleware handles this).</item>
-///   <item>Trusted service (<see cref="IRequestInfo.IsTrustedService"/>) → skip fingerprint validation entirely.</item>
+///   <item>Trusted service (<see cref="IRequestContext.IsTrustedService"/>) → skip fingerprint validation entirely.</item>
 ///   <item>No <c>fp</c> claim (non-trusted) → 401 Unauthorized (fingerprint is required).</item>
 ///   <item><c>fp</c> claim matches computed fingerprint → pass through.</item>
 ///   <item><c>fp</c> claim does NOT match → 401 Unauthorized with D2Result error.</item>
@@ -62,14 +63,14 @@ public class JwtFingerprintMiddleware
             return;
         }
 
-        // Extract the user ID from JWT sub claim (needed for requestInfo below).
+        // Extract the user ID from JWT sub claim (needed for auth state below).
         var userId = context.User.FindFirst(JwtClaimTypes.SUB)?.Value;
 
         // Trusted services skip fingerprint validation entirely.
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        if (requestInfo?.IsTrustedService == true)
+        var mutableCtx = context.Features.Get<IRequestContext>() as MutableRequestContext;
+        if (mutableCtx?.IsTrustedService == true)
         {
-            SetAuthState(requestInfo, userId);
+            SetAuthState(mutableCtx, context);
             await r_next(context);
             return;
         }
@@ -104,7 +105,7 @@ public class JwtFingerprintMiddleware
         // Compare (case-insensitive hex comparison).
         if (string.Equals(fpClaim, computed, StringComparison.OrdinalIgnoreCase))
         {
-            SetAuthState(requestInfo, userId);
+            SetAuthState(mutableCtx, context);
             await r_next(context);
             return;
         }
@@ -129,18 +130,103 @@ public class JwtFingerprintMiddleware
     }
 
     /// <summary>
-    /// Updates <see cref="IRequestInfo"/> with authentication state so downstream
-    /// middleware (idempotency, rate limiting user dimension) can see it.
+    /// Populates authentication, identity, and organization fields on the
+    /// <see cref="MutableRequestContext"/> from JWT claims. Called after successful
+    /// fingerprint validation or for trusted services.
     /// </summary>
-    private static void SetAuthState(IRequestInfo? requestInfo, string? userId)
+    private static void SetAuthState(MutableRequestContext? mutableCtx, HttpContext context)
     {
-        if (requestInfo is null)
+        if (mutableCtx is null)
         {
             return;
         }
 
-        requestInfo.IsAuthenticated = true;
-        requestInfo.UserId = userId;
+        mutableCtx.IsAuthenticated = true;
+        mutableCtx.UserIdRaw = context.User.FindFirst(JwtClaimTypes.SUB)?.Value;
+        mutableCtx.Email = GetStringClaim(context, JwtClaimTypes.EMAIL);
+        mutableCtx.Username = GetStringClaim(context, JwtClaimTypes.USERNAME);
+
+        // Agent Organization.
+        mutableCtx.AgentOrgId = GetGuidClaim(context, JwtClaimTypes.ORG_ID);
+        mutableCtx.AgentOrgName = GetStringClaim(context, JwtClaimTypes.ORG_NAME);
+        mutableCtx.AgentOrgType = GetOrgTypeClaim(context, JwtClaimTypes.ORG_TYPE);
+        mutableCtx.AgentOrgRole = GetStringClaim(context, JwtClaimTypes.ROLE);
+
+        // Org Emulation.
+        mutableCtx.IsOrgEmulating = string.Equals(
+            GetStringClaim(context, JwtClaimTypes.IS_EMULATING),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+
+        // Target Organization — emulated org if emulating, otherwise agent org.
+        if (mutableCtx.IsOrgEmulating)
+        {
+            mutableCtx.TargetOrgId = GetGuidClaim(context, JwtClaimTypes.EMULATED_ORG_ID) ?? mutableCtx.AgentOrgId;
+            mutableCtx.TargetOrgName = GetStringClaim(context, JwtClaimTypes.EMULATED_ORG_NAME) ?? mutableCtx.AgentOrgName;
+            mutableCtx.TargetOrgType = GetOrgTypeClaim(context, JwtClaimTypes.EMULATED_ORG_TYPE) ?? mutableCtx.AgentOrgType;
+            mutableCtx.TargetOrgRole = "auditor";
+        }
+        else
+        {
+            mutableCtx.TargetOrgId = mutableCtx.AgentOrgId;
+            mutableCtx.TargetOrgName = mutableCtx.AgentOrgName;
+            mutableCtx.TargetOrgType = mutableCtx.AgentOrgType;
+            mutableCtx.TargetOrgRole = mutableCtx.AgentOrgRole;
+        }
+
+        // User Impersonation.
+        mutableCtx.ImpersonatedBy = GetGuidClaim(context, JwtClaimTypes.IMPERSONATED_BY);
+        mutableCtx.ImpersonatingEmail = GetStringClaim(context, JwtClaimTypes.IMPERSONATING_EMAIL);
+        mutableCtx.ImpersonatingUsername = GetStringClaim(context, JwtClaimTypes.IMPERSONATING_USERNAME);
+        mutableCtx.IsUserImpersonating = string.Equals(
+            GetStringClaim(context, JwtClaimTypes.IS_IMPERSONATING),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Extracts a string claim value from the authenticated user principal.
+    /// </summary>
+    private static string? GetStringClaim(HttpContext ctx, string claimType)
+    {
+        var value = ctx.User.FindFirst(claimType)?.Value;
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    /// <summary>
+    /// Extracts a Guid claim value from the authenticated user principal.
+    /// </summary>
+    private static Guid? GetGuidClaim(HttpContext ctx, string claimType)
+    {
+        var value = ctx.User.FindFirst(claimType)?.Value;
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        return Guid.TryParse(value, out var guid) ? guid : null;
+    }
+
+    /// <summary>
+    /// Extracts an OrgType claim value from the authenticated user principal.
+    /// </summary>
+    private static OrgType? GetOrgTypeClaim(HttpContext ctx, string claimType)
+    {
+        var value = ctx.User.FindFirst(claimType)?.Value;
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        return value.ToLowerInvariant() switch
+        {
+            OrgTypeValues.ADMIN => OrgType.Admin,
+            OrgTypeValues.SUPPORT => OrgType.Support,
+            OrgTypeValues.AFFILIATE => OrgType.Affiliate,
+            OrgTypeValues.CUSTOMER => OrgType.Customer,
+            OrgTypeValues.THIRD_PARTY => OrgType.ThirdParty,
+            _ => Enum.TryParse<OrgType>(value, ignoreCase: true, out var parsed) ? parsed : null,
+        };
     }
 
     /// <summary>

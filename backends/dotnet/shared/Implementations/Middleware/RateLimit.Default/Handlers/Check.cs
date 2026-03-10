@@ -85,10 +85,10 @@ public class Check : BaseHandler<Check, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        var requestInfo = input.RequestInfo;
+        var requestContext = input.RequestContext;
 
         // Trusted services bypass all rate limiting.
-        if (requestInfo.IsTrustedService)
+        if (requestContext.IsTrustedService)
         {
             return D2Result<O?>.Ok(new O(false, null, null));
         }
@@ -102,34 +102,34 @@ public class Check : BaseHandler<Check, I, O>, H
         // Device fingerprint is always present (combined from client FP + server FP + IP).
         checks.Add(CheckDimensionAsync(
             RateLimitDimension.DeviceFingerprint,
-            requestInfo.DeviceFingerprint,
+            requestContext.DeviceFingerprint,
             r_options.DeviceFingerprintThreshold,
             ct));
 
-        if (!IpResolver.IsLocalhost(requestInfo.ClientIp))
+        if (!IpResolver.IsLocalhost(requestContext.ClientIp))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Ip,
-                requestInfo.ClientIp,
+                requestContext.ClientIp,
                 r_options.IpThreshold,
                 ct));
         }
 
-        if (!string.IsNullOrWhiteSpace(requestInfo.City))
+        if (!string.IsNullOrWhiteSpace(requestContext.City))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.City,
-                requestInfo.City,
+                requestContext.City,
                 r_options.CityThreshold,
                 ct));
         }
 
-        if (!string.IsNullOrWhiteSpace(requestInfo.CountryCode) &&
-            !r_options.WhitelistedCountryCodes.Contains(requestInfo.CountryCode))
+        if (!string.IsNullOrWhiteSpace(requestContext.CountryCode) &&
+            !r_options.WhitelistedCountryCodes.Contains(requestContext.CountryCode))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Country,
-                requestInfo.CountryCode,
+                requestContext.CountryCode,
                 r_options.CountryThreshold,
                 ct));
         }

@@ -10,6 +10,7 @@ export interface RecordSignInEventInput {
   readonly ipAddress: string;
   readonly userAgent: string;
   readonly whoIsId?: string | null;
+  readonly deviceFingerprint?: string | null;
   readonly failureReason?: string | null;
 }
 
@@ -21,6 +22,7 @@ const schema = z.object({
   ipAddress: z.string().max(45),
   userAgent: z.string().max(512),
   whoIsId: z.string().max(64).nullish(),
+  deviceFingerprint: z.string().max(64).nullish(),
   failureReason: z.string().max(100).nullish(),
 });
 
@@ -60,6 +62,7 @@ export class RecordSignInEvent extends BaseHandler<
       ipAddress: input.ipAddress,
       userAgent: input.userAgent,
       whoIsId: input.whoIsId,
+      deviceFingerprint: input.deviceFingerprint,
       failureReason: input.failureReason,
     };
 

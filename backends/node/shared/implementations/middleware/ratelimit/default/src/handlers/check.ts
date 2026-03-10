@@ -44,10 +44,10 @@ export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> impleme
   }
 
   private static readonly checkSchema = z.object({
-    requestInfo: z
+    requestContext: z
       .object({
-        clientIp: validators.zodIpAddress,
-        deviceFingerprint: z.string().length(64),
+        clientIp: validators.zodIpAddress.optional(),
+        deviceFingerprint: z.string().length(64).optional(),
         countryCode: z.string().length(2).optional(),
       })
       .passthrough(),
@@ -55,7 +55,7 @@ export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> impleme
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
     // Trusted services bypass all rate limiting (mirrors .NET Check handler).
-    if (input.requestInfo.isTrustedService) {
+    if (input.requestContext.isTrustedService) {
       return D2Result.ok({
         data: { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined },
       });
@@ -67,7 +67,7 @@ export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> impleme
       return D2Result.bubbleFail(validation);
     }
 
-    const { requestInfo } = input;
+    const { requestContext } = input;
 
     // Build the list of applicable dimension checks, then fire them all concurrently.
     // Each dimension's internal Redis operations (GetTtl + 2x Increment) also run
@@ -75,43 +75,45 @@ export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> impleme
     // to a single round-trip time (~5-8ms regardless of dimension count).
     const checks: Promise<CheckOutput>[] = [];
 
-    // Device fingerprint is always present (combined from client FP + server FP + IP).
-    checks.push(
-      this.checkDimension(
-        RateLimit.RateLimitDimension.DeviceFingerprint,
-        requestInfo.deviceFingerprint,
-        this.options.deviceFingerprintThreshold,
-      ),
-    );
+    // Device fingerprint is always present when request enrichment runs.
+    if (requestContext.deviceFingerprint) {
+      checks.push(
+        this.checkDimension(
+          RateLimit.RateLimitDimension.DeviceFingerprint,
+          requestContext.deviceFingerprint,
+          this.options.deviceFingerprintThreshold,
+        ),
+      );
+    }
 
-    if (!isLocalhost(requestInfo.clientIp)) {
+    if (requestContext.clientIp && !isLocalhost(requestContext.clientIp)) {
       checks.push(
         this.checkDimension(
           RateLimit.RateLimitDimension.Ip,
-          requestInfo.clientIp,
+          requestContext.clientIp,
           this.options.ipThreshold,
         ),
       );
     }
 
-    if (requestInfo.city) {
+    if (requestContext.city) {
       checks.push(
         this.checkDimension(
           RateLimit.RateLimitDimension.City,
-          requestInfo.city,
+          requestContext.city,
           this.options.cityThreshold,
         ),
       );
     }
 
     if (
-      requestInfo.countryCode &&
-      !this.options.whitelistedCountryCodes.includes(requestInfo.countryCode)
+      requestContext.countryCode &&
+      !this.options.whitelistedCountryCodes.includes(requestContext.countryCode)
     ) {
       checks.push(
         this.checkDimension(
           RateLimit.RateLimitDimension.Country,
-          requestInfo.countryCode,
+          requestContext.countryCode,
           this.options.countryThreshold,
         ),
       );

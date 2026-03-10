@@ -163,6 +163,7 @@ export async function createApp(
 
   // 8. Session fingerprint binding (stolen token detection)
   const fingerprintStorage = new AsyncLocalStorage<string>();
+  const deviceFingerprintStorage = new AsyncLocalStorage<string>();
   const SESSION_FP_PREFIX = "session:fp:";
   const SESSION_FP_TTL_SECONDS = 7 * 24 * 60 * 60;
 
@@ -177,6 +178,7 @@ export async function createApp(
   const auth = createAuth(config, db, redisSetup.secondaryStorage, {
     ...callbacks,
     getFingerprintForCurrentRequest: () => fingerprintStorage.getStore(),
+    getDeviceFingerprintForCurrentRequest: () => deviceFingerprintStorage.getStore(),
     passwordFunctions: preAuth.passwordFns,
   });
 
@@ -211,6 +213,7 @@ export async function createApp(
     throttleRecord: preAuth.throttleRecord,
     checkEmailHandler: preAuth.checkEmailHandler,
     fingerprintStorage,
+    deviceFingerprintStorage,
     sessionFingerprintMiddleware,
     logger,
     db,

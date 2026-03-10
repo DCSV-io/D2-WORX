@@ -7,6 +7,7 @@ import {
   type Meter,
   type Counter,
   type Histogram,
+  type Span,
 } from "@opentelemetry/api";
 import { D2Result, type InputError } from "@d2/result";
 import type { ZodType, ZodError } from "zod";
@@ -38,7 +39,9 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
   protected readonly context: IHandlerContext;
 
   protected get traceId(): string | undefined {
-    return this.context.request.traceId ?? trace.getSpan(otelContext.active())?.spanContext().traceId;
+    return (
+      this.context.request.traceId ?? trace.getSpan(otelContext.active())?.spanContext().traceId
+    );
   }
 
   /** Override to declare this handler's redaction posture. */
@@ -82,27 +85,27 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     // Record invocation
     BaseHandler.instruments!.invocations.add(1, attrs);
 
+    // Enrich the parent span (e.g., gRPC server span, HTTP span) with context
+    // attributes so they appear on the top-level span in Tempo — not just on
+    // this handler's child span. Harmless if middleware already set them.
+    // For Hono services, trace.getActiveSpan() may return null due to the
+    // async context issue — the Hono middleware handles enrichment instead.
+    BaseHandler.enrichRequestSpan(trace.getActiveSpan(), this.context.request);
+
     return BaseHandler.tracer.startActiveSpan(handlerName, async (span) => {
-      // Set span tags (mirrors .NET activity tags exactly).
-      // Note: user.id, agent.org.id, target.org.id are PII — only set when
-      // present to avoid leaking empty-string placeholders to external
-      // observability backends. Production deployments should configure
-      // OTel exporters to redact or filter these attributes as needed.
+      // Set handler metadata + request context on child span.
+      const req = this.context.request;
       span.setAttribute("handler.type", handlerName);
       span.setAttribute("trace.id", this.traceId ?? "");
-      if (this.context.request.userId) span.setAttribute("user.id", this.context.request.userId);
-      if (this.context.request.agentOrgId)
-        span.setAttribute("agent.org.id", this.context.request.agentOrgId);
-      if (this.context.request.targetOrgId)
-        span.setAttribute("target.org.id", this.context.request.targetOrgId);
+      BaseHandler.setIfPresent(span, "user.id", req.userId);
+      BaseHandler.setIfPresent(span, "agent.org.id", req.agentOrgId);
+      BaseHandler.setIfPresent(span, "target.org.id", req.targetOrgId);
 
       const startTime = performance.now();
 
       try {
         // Log execution start
-        this.context.logger.info(
-          `Executing handler ${handlerName}. TraceId: ${this.traceId}.`,
-        );
+        this.context.logger.info(`Executing handler ${handlerName}. TraceId: ${this.traceId}.`);
 
         // Log input as debug if enabled (respecting redaction)
         if (opts.logInput && !this.redaction?.suppressInput) {
@@ -271,5 +274,37 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
       }
     }
     return clone;
+  }
+
+  /** Sets a span attribute only if the value is non-null/undefined. */
+  private static setIfPresent(span: Span, key: string, value: string | undefined): void {
+    if (value != null) span.setAttribute(key, value);
+  }
+
+  /**
+   * Enriches a span with standard request context attributes.
+   * Used on both parent spans (top-level HTTP/gRPC) and child handler spans.
+   */
+  private static enrichRequestSpan(
+    span: Span | undefined,
+    req: import("./i-request-context.js").IRequestContext,
+  ): void {
+    if (!span) return;
+    // String attributes — only set if present.
+    for (const [key, value] of Object.entries({
+      userId: req.userId,
+      username: req.username,
+      agentOrgId: req.agentOrgId,
+      agentOrgType: req.agentOrgType != null ? String(req.agentOrgType) : undefined,
+      agentOrgRole: req.agentOrgRole,
+      targetOrgId: req.targetOrgId,
+      targetOrgType: req.targetOrgType != null ? String(req.targetOrgType) : undefined,
+    })) {
+      if (value != null) span.setAttribute(key, value);
+    }
+    // Boolean flags — always set (default false).
+    span.setAttribute("isAuthenticated", req.isAuthenticated ?? false);
+    span.setAttribute("isTrustedService", req.isTrustedService ?? false);
+    span.setAttribute("isOrgEmulating", req.isOrgEmulating ?? false);
   }
 }

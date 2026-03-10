@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { trace, SpanStatusCode } from "@opentelemetry/api";
+import { SpanStatusCode } from "@opentelemetry/api";
+import { getServerSpan } from "@d2/service-defaults";
 import { D2Result, HttpStatusCode } from "@d2/result";
 import { AuthValidationError } from "@d2/auth-domain";
 
@@ -14,7 +15,7 @@ import { AuthValidationError } from "@d2/auth-domain";
  */
 export function handleError(err: Error, c: Context): Response {
   // Record error on the active OTel span (no-op if no provider registered).
-  const span = trace.getActiveSpan();
+  const span = getServerSpan(c);
   if (span) {
     span.recordException(err);
     span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });

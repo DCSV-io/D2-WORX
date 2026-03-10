@@ -64,6 +64,45 @@ describe("RecordSignInEvent", () => {
     expect(result.data?.event.whoIsId).toBeNull();
   });
 
+  it("should record deviceFingerprint when provided", async () => {
+    const result = await handler.handleAsync({
+      userId: "01234567-89ab-cdef-0123-456789abcdef",
+      successful: true,
+      ipAddress: "192.168.1.1",
+      userAgent: "Mozilla/5.0",
+      deviceFingerprint: "a".repeat(64),
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.event.deviceFingerprint).toBe("a".repeat(64));
+  });
+
+  it("should set deviceFingerprint to null when not provided", async () => {
+    const result = await handler.handleAsync({
+      userId: "01234567-89ab-cdef-0123-456789abcdef",
+      successful: true,
+      ipAddress: "10.0.0.1",
+      userAgent: "TestAgent",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.event.deviceFingerprint).toBeNull();
+  });
+
+  it("should reject deviceFingerprint exceeding 64 characters", async () => {
+    const result = await handler.handleAsync({
+      userId: "01234567-89ab-cdef-0123-456789abcdef",
+      successful: true,
+      ipAddress: "10.0.0.1",
+      userAgent: "TestAgent",
+      deviceFingerprint: "x".repeat(65),
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(HttpStatusCode.BadRequest);
+    expect(createRecord.handleAsync).not.toHaveBeenCalled();
+  });
+
   it("should generate a UUIDv7 id for the event", async () => {
     const result = await handler.handleAsync({
       userId: "01234567-89ab-cdef-0123-456789abcdef",

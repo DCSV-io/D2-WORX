@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { CheckRateLimit, RateLimitDimension } from "@d2/ratelimit";
 import { GetTtl, Increment, Set } from "@d2/cache-redis";
-import type { IRequestInfo } from "@d2/request-enrichment";
+import type { IRequestContext } from "@d2/handler";
 import {
   startRedis,
   stopRedis,
@@ -10,7 +10,7 @@ import {
   createTestContext,
 } from "../cache-redis/redis-test-helpers.js";
 
-function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
+function createRequestContext(overrides?: Partial<IRequestContext>): IRequestContext {
   return {
     clientIp: "10.20.30.40",
     serverFingerprint: "a".repeat(64),
@@ -24,9 +24,14 @@ function createRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
     isProxy: false,
     isTor: false,
     isHosting: false,
-    userId: undefined,
     isAuthenticated: false,
     isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
+    isAgentStaff: false,
+    isAgentAdmin: false,
+    isTargetingStaff: false,
+    isTargetingAdmin: false,
     ...overrides,
   };
 }
@@ -50,9 +55,9 @@ describe("RateLimit Check handler (integration with Redis)", () => {
 
   it("should allow requests below threshold", async () => {
     const handler = createCheckHandler({ deviceFingerprintThreshold: 10 });
-    const info = createRequestInfo();
+    const info = createRequestContext();
 
-    const result = await handler.handleAsync({ requestInfo: info });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(false);
@@ -60,12 +65,12 @@ describe("RateLimit Check handler (integration with Redis)", () => {
 
   it("should block after threshold is exceeded and create block key in Redis", async () => {
     const handler = createCheckHandler({ deviceFingerprintThreshold: 3 });
-    const info = createRequestInfo();
+    const info = createRequestContext();
 
     // Send requests until blocked
     let blocked = false;
     for (let i = 0; i < 10; i++) {
-      const result = await handler.handleAsync({ requestInfo: info });
+      const result = await handler.handleAsync({ requestContext: info });
       if (result.data?.isBlocked) {
         blocked = true;
         expect(result.data.blockedDimension).toBe(RateLimitDimension.DeviceFingerprint);
@@ -87,9 +92,9 @@ describe("RateLimit Check handler (integration with Redis)", () => {
       deviceFingerprintThreshold: 1000,
       windowMs: 60_000,
     });
-    const info = createRequestInfo();
+    const info = createRequestContext();
 
-    await handler.handleAsync({ requestInfo: info });
+    await handler.handleAsync({ requestContext: info });
 
     // Find the counter key
     const redis = getRedis();
@@ -112,9 +117,9 @@ describe("RateLimit Check handler (integration with Redis)", () => {
     await redis.set(`blocked:devicefingerprint:${"b".repeat(64)}`, "1", "PX", 60_000);
 
     const handler = createCheckHandler();
-    const info = createRequestInfo();
+    const info = createRequestContext();
 
-    const result = await handler.handleAsync({ requestInfo: info });
+    const result = await handler.handleAsync({ requestContext: info });
 
     expect(result).toBeSuccess();
     expect(result.data?.isBlocked).toBe(true);
@@ -128,11 +133,11 @@ describe("RateLimit Check handler (integration with Redis)", () => {
       deviceFingerprintThreshold: 5,
       windowMs: 60_000,
     });
-    const info = createRequestInfo();
+    const info = createRequestContext();
 
     // Send 4 requests (below threshold)
     for (let i = 0; i < 4; i++) {
-      const result = await handler.handleAsync({ requestInfo: info });
+      const result = await handler.handleAsync({ requestContext: info });
       expect(result.data?.isBlocked).toBe(false);
     }
 

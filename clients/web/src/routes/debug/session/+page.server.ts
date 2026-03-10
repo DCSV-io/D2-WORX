@@ -14,31 +14,31 @@ export const load: PageServerLoad = async ({ locals, request }) => {
     .map((c) => c.trim().split("=")[0])
     .filter(Boolean);
 
-  // Serialize requestInfo (it's a frozen object with readonly props)
-  const requestInfo = locals.requestInfo
+  // Serialize requestContext (it's a frozen object with readonly props)
+  const requestContext = locals.requestContext
     ? {
-        clientIp: locals.requestInfo.clientIp,
-        serverFingerprint: locals.requestInfo.serverFingerprint,
-        clientFingerprint: locals.requestInfo.clientFingerprint ?? null,
-        deviceFingerprint: locals.requestInfo.deviceFingerprint,
-        whoIsHashId: locals.requestInfo.whoIsHashId ?? null,
-        city: locals.requestInfo.city ?? null,
-        countryCode: locals.requestInfo.countryCode ?? null,
-        subdivisionCode: locals.requestInfo.subdivisionCode ?? null,
-        isVpn: locals.requestInfo.isVpn ?? null,
-        isProxy: locals.requestInfo.isProxy ?? null,
-        isTor: locals.requestInfo.isTor ?? null,
-        isHosting: locals.requestInfo.isHosting ?? null,
-        userId: locals.requestInfo.userId ?? null,
-        isAuthenticated: locals.requestInfo.isAuthenticated,
-        isTrustedService: locals.requestInfo.isTrustedService,
+        clientIp: locals.requestContext.clientIp ?? null,
+        serverFingerprint: locals.requestContext.serverFingerprint ?? null,
+        clientFingerprint: locals.requestContext.clientFingerprint ?? null,
+        deviceFingerprint: locals.requestContext.deviceFingerprint ?? null,
+        whoIsHashId: locals.requestContext.whoIsHashId ?? null,
+        city: locals.requestContext.city ?? null,
+        countryCode: locals.requestContext.countryCode ?? null,
+        subdivisionCode: locals.requestContext.subdivisionCode ?? null,
+        isVpn: locals.requestContext.isVpn ?? null,
+        isProxy: locals.requestContext.isProxy ?? null,
+        isTor: locals.requestContext.isTor ?? null,
+        isHosting: locals.requestContext.isHosting ?? null,
+        userId: locals.requestContext.userId ?? null,
+        isAuthenticated: locals.requestContext.isAuthenticated,
+        isTrustedService: locals.requestContext.isTrustedService ?? false,
       }
     : null;
 
   return {
     debugSession: locals.session ?? null,
     debugUser: locals.user ?? null,
-    requestInfo,
+    requestContext,
     cookieNames,
   };
 };

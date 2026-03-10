@@ -86,10 +86,7 @@ export function optionalString(...envKeys: string[]): FieldDescriptor<string | u
  * String field with a default value. Returns the default if missing.
  * When multiple env keys are provided, the first non-empty match wins.
  */
-export function defaultString(
-  defaultValue: string,
-  ...envKeys: string[]
-): FieldDescriptor<string> {
+export function defaultString(defaultValue: string, ...envKeys: string[]): FieldDescriptor<string> {
   return {
     __type: undefined as unknown as string,
     _resolve() {

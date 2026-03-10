@@ -589,7 +589,7 @@ Auth (always proxied, cookie-based):
 ### Service-to-Service Trust (S2S)
 
 - **Mechanism**: `X-Api-Key` header validated by `ServiceKeyMiddleware` (runs early in pipeline)
-- **Trust flag**: `IRequestInfo.IsTrustedService` — set by middleware, consumed by downstream components
+- **Trust flag**: `IRequestContext.IsTrustedService` — set by middleware, consumed by downstream components
 - **Design principle**: Service key = TRUST (bypasses security layers). JWT = IDENTITY (carries user context). Independent — a request can have both, either, or neither
 - **Trusted service bypasses**: Rate limiting (all dimensions skipped), JWT fingerprint validation (skipped entirely)
 - **Invalid key**: 401 immediately (fail fast, before rate limiting)
@@ -616,7 +616,7 @@ Auth (always proxied, cookie-based):
 - Reads client fingerprint from `d2-cfp` cookie (primary) or `X-Client-Fingerprint` header (fallback)
 - Computes device fingerprint: `SHA-256(clientFP + serverFP + clientIp)` — always present, used for rate limiting
 - Calls Geo.Client WhoIs cache for city/country/VPN flags
-- Sets `IRequestInfo` on `HttpContext.Features` for downstream middleware
+- Sets `IRequestContext` on `HttpContext.Features` for downstream middleware
 
 ### Geo Caching
 

@@ -36,6 +36,7 @@ export function createAuthCallbacks(
           successful: true,
           ipAddress: data.ipAddress,
           userAgent: data.userAgent,
+          deviceFingerprint: data.deviceFingerprint,
         });
 
         // Fire-and-forget: publish to WhoIs resolution queue for async enrichment

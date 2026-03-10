@@ -35,19 +35,19 @@ function createMockThrottleHandlers(
 type MockThrottle = ReturnType<typeof createMockThrottleHandlers>;
 
 /**
- * Creates a Hono app with optional enrichment middleware that sets requestInfo,
+ * Creates a Hono app with optional enrichment middleware that sets requestContext,
  * mirroring the production composition root's middleware stack.
  */
 function createApp(
   mockAuth: any,
   throttle?: MockThrottle,
-  requestInfo?: { clientIp?: string; serverFingerprint?: string },
+  requestContext?: { clientIp?: string; serverFingerprint?: string },
 ) {
   const app = new Hono();
   // Simulate request enrichment middleware (runs on parent app in production)
-  if (requestInfo) {
+  if (requestContext) {
     app.use("*", async (c, next) => {
-      c.set("requestInfo" as never, requestInfo as never);
+      c.set("requestContext" as never, requestContext as never);
       await next();
     });
   }
@@ -379,9 +379,9 @@ describe("Auth routes", () => {
         expect(throttle.check.handleAsync).not.toHaveBeenCalled();
       });
 
-      it("should use 'unknown' for IP/fingerprint when requestInfo is not set", async () => {
+      it("should use 'unknown' for IP/fingerprint when requestContext is not set", async () => {
         const throttle = createMockThrottleHandlers({ blocked: false });
-        const app = createApp(mockAuth, throttle); // no requestInfo middleware
+        const app = createApp(mockAuth, throttle); // no requestContext middleware
 
         await app.request(
           postJson("/api/auth/sign-in/email", { email: "user@test.com", password: "x" }),
@@ -446,7 +446,7 @@ describe("Auth routes", () => {
       });
     });
 
-    describe("requestInfo propagation from parent middleware", () => {
+    describe("requestContext propagation from parent middleware", () => {
       it("should use clientIp and serverFingerprint from enrichment middleware", async () => {
         const throttle = createMockThrottleHandlers({ blocked: false });
         const app = createApp(mockAuth, throttle, {

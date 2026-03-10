@@ -176,82 +176,82 @@
       <!-- Request Info -->
       <Card.Root>
         <Card.Header>
-          <Card.Title class="text-base">Request Info</Card.Title>
+          <Card.Title class="text-base">Request Context</Card.Title>
           <Card.Description>
-            From <code>event.locals.requestInfo</code> (enrichment middleware)
+            From <code>event.locals.requestContext</code> (enrichment + auth middleware)
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          {#if data.requestInfo}
+          {#if data.requestContext}
             <dl class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">clientIp</dt>
-                <dd class="font-mono text-xs">{data.requestInfo.clientIp}</dd>
+                <dd class="font-mono text-xs">{data.requestContext.clientIp}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">serverFingerprint</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestInfo.serverFingerprint}>
-                  {data.requestInfo.serverFingerprint}
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.serverFingerprint}>
+                  {data.requestContext.serverFingerprint}
                 </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">clientFingerprint</dt>
                 <dd class="max-w-48 truncate font-mono text-xs">
-                  {data.requestInfo.clientFingerprint ?? "null"}
+                  {data.requestContext.clientFingerprint ?? "null"}
                 </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">deviceFingerprint</dt>
                 <dd
                   class="max-w-48 truncate font-mono text-xs"
-                  title={data.requestInfo.deviceFingerprint}
+                  title={data.requestContext.deviceFingerprint}
                 >
-                  {data.requestInfo.deviceFingerprint}
+                  {data.requestContext.deviceFingerprint}
                 </dd>
               </div>
               <Separator />
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">city</dt>
-                <dd>{data.requestInfo.city ?? "null"}</dd>
+                <dd>{data.requestContext.city ?? "null"}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">countryCode</dt>
-                <dd>{data.requestInfo.countryCode ?? "null"}</dd>
+                <dd>{data.requestContext.countryCode ?? "null"}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">subdivisionCode</dt>
-                <dd>{data.requestInfo.subdivisionCode ?? "null"}</dd>
+                <dd>{data.requestContext.subdivisionCode ?? "null"}</dd>
               </div>
               <Separator />
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">isVpn</dt>
-                <dd>{data.requestInfo.isVpn ?? "null"}</dd>
+                <dd>{data.requestContext.isVpn ?? "null"}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">isProxy</dt>
-                <dd>{data.requestInfo.isProxy ?? "null"}</dd>
+                <dd>{data.requestContext.isProxy ?? "null"}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">isTor</dt>
-                <dd>{data.requestInfo.isTor ?? "null"}</dd>
+                <dd>{data.requestContext.isTor ?? "null"}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">isHosting</dt>
-                <dd>{data.requestInfo.isHosting ?? "null"}</dd>
+                <dd>{data.requestContext.isHosting ?? "null"}</dd>
               </div>
               <Separator />
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">isAuthenticated</dt>
-                <dd>{data.requestInfo.isAuthenticated}</dd>
+                <dd>{data.requestContext.isAuthenticated}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">isTrustedService</dt>
-                <dd>{data.requestInfo.isTrustedService}</dd>
+                <dd>{data.requestContext.isTrustedService}</dd>
               </div>
             </dl>
           {:else}
             <p class="text-muted-foreground text-sm italic">
-              No request info (middleware not running — Redis/Geo not available)
+              No request context (middleware not running — Redis/Geo not available)
             </p>
           {/if}
         </Card.Content>

@@ -44,9 +44,6 @@ export function initFaro(): Faro | undefined {
                 gatewayUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
               ),
             ],
-            fetchInstrumentationOptions: {
-              ignoreUrls: [/__data\.json/],
-            },
           },
         }),
       ],

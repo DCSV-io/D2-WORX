@@ -1,6 +1,6 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import type { RequestEnrichment } from "@d2/interfaces";
+import type { IRequestContext } from "@d2/handler";
 import type { AuthSession, AuthUser } from "@d2/auth-bff-client";
 
 declare global {
@@ -12,7 +12,7 @@ declare global {
 
     interface Locals {
       /** Populated by request enrichment middleware (Step 2.5) */
-      requestInfo?: RequestEnrichment.IRequestInfo;
+      requestContext?: IRequestContext;
       /** Populated by auth hook (Step 5) — session from Auth service */
       session?: AuthSession | null;
       /** Populated by auth hook (Step 5) — user from Auth service */

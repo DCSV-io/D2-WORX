@@ -8,7 +8,7 @@ import { USER_KEY, SESSION_KEY } from "../context-keys.js";
  * Hono Variables set by the session middleware.
  */
 export interface SessionVariables {
-  user: { id: string; email: string; name: string } | null;
+  user: { id: string; email: string; name: string; username?: string } | null;
   session: Record<string, unknown> | null;
 }
 

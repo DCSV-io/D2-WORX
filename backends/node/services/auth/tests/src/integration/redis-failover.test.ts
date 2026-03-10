@@ -91,7 +91,7 @@ describe("Redis failover — auth service consumers", () => {
 
       // 1. Normal check — should pass
       const normalResult = await rateLimitCheck.handleAsync({
-        requestInfo: {
+        requestContext: {
           clientIp: "203.0.113.1",
           deviceFingerprint: "a".repeat(64),
         },
@@ -104,7 +104,7 @@ describe("Redis failover — auth service consumers", () => {
 
       // 3. Rate limiter should fail-open (not blocked, not throwing)
       const failoverResult = await rateLimitCheck.handleAsync({
-        requestInfo: {
+        requestContext: {
           clientIp: "203.0.113.1",
           deviceFingerprint: "a".repeat(64),
         },

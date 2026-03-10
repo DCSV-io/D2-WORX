@@ -9,6 +9,7 @@ namespace D2.Gateways.REST.Auth;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using D2.Shared.Handler;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using Microsoft.Extensions.Options;
@@ -19,13 +20,13 @@ using Microsoft.Extensions.Options;
 /// bypass rate limits and fingerprint checks.
 /// </summary>
 /// <remarks>
-/// <para>Must run AFTER <see cref="RequestEnrichmentMiddleware"/> (needs <see cref="IRequestInfo"/> on features).</para>
+/// <para>Must run AFTER <see cref="RequestEnrichmentMiddleware"/> (needs <see cref="IRequestContext"/> on features).</para>
 /// <para>Must run BEFORE rate limiting middleware.</para>
 /// <para>
 /// Behavior:
 /// <list type="bullet">
 ///   <item>No <c>X-Api-Key</c> header → pass through (browser request).</item>
-///   <item>Valid key → set <see cref="IRequestInfo.IsTrustedService"/> to true, continue.</item>
+///   <item>Valid key → set <see cref="MutableRequestContext.IsTrustedService"/> to true, continue.</item>
 ///   <item>Invalid key → 401 immediately (fail fast, before rate limiting).</item>
 /// </list>
 /// </para>
@@ -56,7 +57,7 @@ public class ServiceKeyMiddleware
     }
 
     /// <summary>
-    /// Validates the <c>X-Api-Key</c> header and sets the trust flag on <see cref="IRequestInfo"/>.
+    /// Validates the <c>X-Api-Key</c> header and sets the trust flag on <see cref="MutableRequestContext"/>.
     /// </summary>
     ///
     /// <param name="context">The HTTP context.</param>
@@ -106,10 +107,9 @@ public class ServiceKeyMiddleware
         }
 
         // Valid key → mark as trusted.
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        if (requestInfo is not null)
+        if (context.Features.Get<IRequestContext>() is MutableRequestContext mutableCtx)
         {
-            requestInfo.IsTrustedService = true;
+            mutableCtx.IsTrustedService = true;
         }
 
         r_logger.LogDebug("Request authenticated via service key");

@@ -7,7 +7,6 @@
 namespace D2.Shared.RateLimit.Default.Interfaces;
 
 using D2.Shared.Handler;
-using D2.Shared.RequestEnrichment.Default;
 
 public partial interface IRateLimit
 {
@@ -20,10 +19,10 @@ public partial interface IRateLimit
     /// Input for rate limit check.
     /// </summary>
     ///
-    /// <param name="RequestInfo">
-    /// The enriched request information containing IP, fingerprint, city, and country.
+    /// <param name="RequestContext">
+    /// The request context containing IP, fingerprint, city, country, and trust flag.
     /// </param>
-    public record CheckInput(IRequestInfo RequestInfo);
+    public record CheckInput(IRequestContext RequestContext);
 
     /// <summary>
     /// Output from rate limit check.

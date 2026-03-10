@@ -55,7 +55,9 @@ export const zodNonEmptyArray = <T extends z.ZodTypeAny>(schema: T) =>
 
 /** Creates a Zod refinement that checks the string is in the allowed list. Empty list disables validation. */
 export const zodAllowedContextKey = (allowed: string[]) =>
-  z.string().refine(
-    (k) => allowed.length === 0 || allowed.includes(k),
-    "Context key is not in the allowed list",
-  );
+  z
+    .string()
+    .refine(
+      (k) => allowed.length === 0 || allowed.includes(k),
+      "Context key is not in the allowed list",
+    );

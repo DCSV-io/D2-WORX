@@ -101,6 +101,7 @@ app.UseServiceKeyDetection();
 app.UseRateLimiting();
 
 app.UseJwtAuth();
+app.UseRequestContextLogging();
 app.UseIdempotency();
 
 if (app.Environment.IsDevelopment())

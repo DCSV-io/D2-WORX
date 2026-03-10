@@ -46,11 +46,18 @@ function createMockProvider(hasActiveConsent = true) {
     getInstance: (key: unknown) => instances.get(key),
   };
 
-  const logger = {
+  const logger: Record<string, unknown> = {
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
     debug: vi.fn(),
+    child: vi.fn(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      child: vi.fn(),
+    })),
   };
 
   const provider = {

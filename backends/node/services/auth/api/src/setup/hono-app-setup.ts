@@ -21,7 +21,9 @@ import {
   computeFingerprint,
 } from "../middleware/session-fingerprint.js";
 import { createScopeMiddleware } from "../middleware/scope.js";
+import { createRequestContextLoggingMiddleware } from "../middleware/request-context-logging.js";
 import { handleError } from "../middleware/error-handler.js";
+import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
 import { createAuthRoutes } from "../routes/auth-routes.js";
 import { createEmulationRoutes } from "../routes/emulation-routes.js";
 import { createOrgContactRoutes } from "../routes/org-contact-routes.js";
@@ -42,6 +44,7 @@ export interface HonoAppOptions {
   throttleRecord: RecordSignInOutcome;
   checkEmailHandler: CheckEmailAvailability;
   fingerprintStorage: AsyncLocalStorage<string>;
+  deviceFingerprintStorage: AsyncLocalStorage<string>;
   sessionFingerprintMiddleware: ReturnType<typeof createSessionFingerprintMiddleware>;
   logger: ILogger;
   db: NodePgDatabase;
@@ -61,6 +64,7 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
     throttleRecord,
     checkEmailHandler,
     fingerprintStorage,
+    deviceFingerprintStorage,
     sessionFingerprintMiddleware,
     logger,
     db,
@@ -95,6 +99,7 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
       `Auth API service key authentication enabled (${config.authApiKeys.length} key(s))`,
     );
   }
+  app.use("*", createRequestContextLoggingMiddleware(logger));
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);
 
@@ -111,7 +116,14 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
   const authApp = new Hono();
   authApp.use("*", async (c, next) => {
     const fp = computeFingerprint(c.req.raw.headers);
-    await fingerprintStorage.run(fp, () => next());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rc = (c as any).get(REQUEST_CONTEXT_KEY) as { deviceFingerprint?: string } | undefined;
+    const dfp = rc?.deviceFingerprint;
+    await fingerprintStorage.run(fp, () =>
+      dfp
+        ? deviceFingerprintStorage.run(dfp, () => next())
+        : next(),
+    );
   });
   authApp.route(
     "/",

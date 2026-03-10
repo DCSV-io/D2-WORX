@@ -10,6 +10,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using D2.Gateways.REST.Auth;
+using D2.Shared.Handler;
 using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -281,7 +282,7 @@ public class JwtFingerprintMiddlewareTests
     #region Auth State Tests
 
     /// <summary>
-    /// Tests that matching fingerprint sets IsAuthenticated and UserId on requestInfo.
+    /// Tests that matching fingerprint sets IsAuthenticated and UserId on requestContext.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
@@ -294,19 +295,19 @@ public class JwtFingerprintMiddlewareTests
         var fingerprint = ComputeExpectedFingerprint(user_agent, accept);
 
         var context = CreateAuthenticatedContext(user_agent, accept, fingerprint, user_id);
-        var requestInfo = SetRequestInfo(context);
+        var requestContext = SetRequestInfo(context);
         var middleware = CreateMiddleware(_ => Task.CompletedTask);
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        requestInfo.IsAuthenticated.Should().BeTrue();
-        requestInfo.UserId.Should().Be(user_id);
+        requestContext.IsAuthenticated.Should().BeTrue();
+        requestContext.UserIdRaw.Should().Be(user_id);
     }
 
     /// <summary>
-    /// Tests that trusted service sets IsAuthenticated and UserId on requestInfo.
+    /// Tests that trusted service sets IsAuthenticated and UserId on requestContext.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
@@ -316,19 +317,19 @@ public class JwtFingerprintMiddlewareTests
         const string user_id = "user-trusted-456";
         var context = CreateAuthenticatedContext("Chrome/120", "text/html", fpClaim: null, user_id);
         SetTrustedService(context);
-        var requestInfo = context.Features.Get<IRequestInfo>()!;
+        var requestContext = (MutableRequestContext)context.Features.Get<IRequestContext>()!;
         var middleware = CreateMiddleware(_ => Task.CompletedTask);
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        requestInfo.IsAuthenticated.Should().BeTrue();
-        requestInfo.UserId.Should().Be(user_id);
+        requestContext.IsAuthenticated.Should().BeTrue();
+        requestContext.UserIdRaw.Should().Be(user_id);
     }
 
     /// <summary>
-    /// Tests that unauthenticated requests do not modify requestInfo auth state.
+    /// Tests that unauthenticated requests do not modify requestContext auth state.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
@@ -336,15 +337,15 @@ public class JwtFingerprintMiddlewareTests
     {
         // Arrange
         var context = new DefaultHttpContext();
-        var requestInfo = SetRequestInfo(context);
+        var requestContext = SetRequestInfo(context);
         var middleware = CreateMiddleware(_ => Task.CompletedTask);
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        requestInfo.IsAuthenticated.Should().BeFalse();
-        requestInfo.UserId.Should().BeNull();
+        requestContext.IsAuthenticated.Should().BeFalse();
+        requestContext.UserIdRaw.Should().BeNull();
     }
 
     /// <summary>
@@ -357,15 +358,15 @@ public class JwtFingerprintMiddlewareTests
         // Arrange
         var context = CreateAuthenticatedContext("Chrome/120", "text/html", "wrong-hash", "user-789");
         context.Response.Body = new MemoryStream();
-        var requestInfo = SetRequestInfo(context);
+        var requestContext = SetRequestInfo(context);
         var middleware = CreateMiddleware(_ => Task.CompletedTask);
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        requestInfo.IsAuthenticated.Should().BeFalse();
-        requestInfo.UserId.Should().BeNull();
+        requestContext.IsAuthenticated.Should().BeFalse();
+        requestContext.UserIdRaw.Should().BeNull();
     }
 
     /// <summary>
@@ -378,25 +379,25 @@ public class JwtFingerprintMiddlewareTests
         // Arrange
         var context = CreateAuthenticatedContext("Chrome/120", "text/html", fpClaim: null, "user-no-fp");
         context.Response.Body = new MemoryStream();
-        var requestInfo = SetRequestInfo(context);
+        var requestContext = SetRequestInfo(context);
         var middleware = CreateMiddleware(_ => Task.CompletedTask);
 
         // Act
         await middleware.InvokeAsync(context);
 
         // Assert
-        requestInfo.IsAuthenticated.Should().BeFalse();
-        requestInfo.UserId.Should().BeNull();
+        requestContext.IsAuthenticated.Should().BeFalse();
+        requestContext.UserIdRaw.Should().BeNull();
     }
 
     /// <summary>
-    /// Tests that auth state is set even when requestInfo feature is not present (no crash).
+    /// Tests that auth state is set even when requestContext feature is not present (no crash).
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
     public async Task InvokeAsync_WithNoRequestInfoFeature_DoesNotCrash()
     {
-        // Arrange — authenticated + matching fingerprint, but no IRequestInfo on features.
+        // Arrange — authenticated + matching fingerprint, but no IRequestContext on features.
         const string user_agent = "Mozilla/5.0";
         const string accept = "text/html";
         var fingerprint = ComputeExpectedFingerprint(user_agent, accept);
@@ -451,14 +452,14 @@ public class JwtFingerprintMiddlewareTests
     /// </summary>
     private static void SetTrustedService(DefaultHttpContext context)
     {
-        var requestInfo = new RequestInfo
+        var requestContext = new MutableRequestContext
         {
             ClientIp = "10.0.0.1",
             ServerFingerprint = "abc123",
             DeviceFingerprint = "device-fp-trusted",
             IsTrustedService = true,
         };
-        context.Features.Set<IRequestInfo>(requestInfo);
+        context.Features.Set<IRequestContext>(requestContext);
     }
 
     /// <summary>
@@ -472,18 +473,18 @@ public class JwtFingerprintMiddlewareTests
     }
 
     /// <summary>
-    /// Adds a non-trusted <see cref="IRequestInfo"/> to the context features and returns it.
+    /// Adds a non-trusted <see cref="IRequestContext"/> to the context features and returns it.
     /// </summary>
-    private static RequestInfo SetRequestInfo(DefaultHttpContext context)
+    private static MutableRequestContext SetRequestInfo(DefaultHttpContext context)
     {
-        var requestInfo = new RequestInfo
+        var requestContext = new MutableRequestContext
         {
             ClientIp = "10.0.0.1",
             ServerFingerprint = "test-fingerprint",
             DeviceFingerprint = "device-fp-test",
         };
-        context.Features.Set<IRequestInfo>(requestInfo);
-        return requestInfo;
+        context.Features.Set<IRequestContext>(requestContext);
+        return requestContext;
     }
 
     /// <summary>

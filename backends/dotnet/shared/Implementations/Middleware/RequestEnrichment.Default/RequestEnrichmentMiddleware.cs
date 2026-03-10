@@ -6,7 +6,9 @@
 
 namespace D2.Shared.RequestEnrichment.Default;
 
+using System.Diagnostics;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
+using D2.Shared.Handler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,7 +19,7 @@ using Microsoft.Extensions.Options;
 /// <remarks>
 /// Resolves client IP, computes fingerprints, and optionally performs WhoIs lookups.
 /// The enriched information is stored in <see cref="HttpContext.Features"/> as
-/// <see cref="IRequestInfo"/>.
+/// <see cref="IRequestContext"/>.
 /// </remarks>
 public class RequestEnrichmentMiddleware
 {
@@ -109,9 +111,12 @@ public class RequestEnrichmentMiddleware
         var deviceFingerprint = FingerprintBuilder.BuildDeviceFingerprint(
             clientFingerprint, serverFingerprint, clientIp);
 
-        // 5. Build initial request info (without WhoIs data).
-        var requestInfo = new RequestInfo
+        // 5. Build initial request context (without WhoIs data).
+        var requestContext = new MutableRequestContext
         {
+            TraceId = Activity.Current?.TraceId.ToString(),
+            RequestId = context.TraceIdentifier,
+            RequestPath = context.Request.Path.Value,
             ClientIp = clientIp,
             ServerFingerprint = serverFingerprint,
             ClientFingerprint = clientFingerprint,
@@ -131,8 +136,11 @@ public class RequestEnrichmentMiddleware
 
                 if (whoIsResult.CheckSuccess(out var output) && output?.WhoIs is { } whoIs)
                 {
-                    requestInfo = new RequestInfo
+                    requestContext = new MutableRequestContext
                     {
+                        TraceId = requestContext.TraceId,
+                        RequestId = requestContext.RequestId,
+                        RequestPath = requestContext.RequestPath,
                         ClientIp = clientIp,
                         ServerFingerprint = serverFingerprint,
                         ClientFingerprint = clientFingerprint,
@@ -170,7 +178,7 @@ public class RequestEnrichmentMiddleware
         }
 
         // 7. Store in HttpContext.Features for downstream middleware and handlers.
-        context.Features.Set<IRequestInfo>(requestInfo);
+        context.Features.Set<IRequestContext>(requestContext);
 
         // 8. Continue pipeline.
         await r_next(context);

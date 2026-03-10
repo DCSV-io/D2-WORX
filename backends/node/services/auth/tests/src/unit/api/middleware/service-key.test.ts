@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
-import { createServiceKeyMiddleware, REQUEST_INFO_KEY } from "@d2/auth-api";
-import type { IRequestInfo } from "@d2/request-enrichment";
+import { createServiceKeyMiddleware, REQUEST_CONTEXT_KEY } from "@d2/auth-api";
+import type { IRequestContext } from "@d2/handler";
 
-/** Stub requestInfo for testing — pre-seeds context before service-key runs. */
-function createStubRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo {
+/** Stub requestContext for testing — pre-seeds context before service-key runs. */
+function createStubRequestContext(overrides?: Partial<IRequestContext>): IRequestContext {
   return {
     clientIp: "127.0.0.1",
     serverFingerprint: "abc123",
@@ -18,9 +18,14 @@ function createStubRequestInfo(overrides?: Partial<IRequestInfo>): IRequestInfo 
     isProxy: undefined,
     isTor: undefined,
     isHosting: undefined,
-    userId: undefined,
     isAuthenticated: false,
     isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
+    isAgentStaff: false,
+    isAgentAdmin: false,
+    isTargetingStaff: false,
+    isTargetingAdmin: false,
     ...overrides,
   };
 }
@@ -31,17 +36,17 @@ const VALID_KEYS = new Set([VALID_KEY, "test-api-key-2"]);
 function createApp() {
   const app = new Hono();
 
-  // Simulate request-enrichment setting requestInfo before service-key runs
+  // Simulate request-enrichment setting requestContext before service-key runs
   app.use("*", async (c, next) => {
-    c.set(REQUEST_INFO_KEY, createStubRequestInfo());
+    c.set(REQUEST_CONTEXT_KEY, createStubRequestContext());
     await next();
   });
 
   app.use("*", createServiceKeyMiddleware(VALID_KEYS));
 
   app.get("/test", (c) => {
-    const info = c.get(REQUEST_INFO_KEY) as IRequestInfo;
-    return c.json({ isTrustedService: info.isTrustedService });
+    const ctx = c.get(REQUEST_CONTEXT_KEY) as IRequestContext;
+    return c.json({ isTrustedService: ctx.isTrustedService });
   });
 
   return app;
@@ -80,7 +85,7 @@ describe("Service key middleware", () => {
     expect(body.messages).toContain("Invalid API key.");
   });
 
-  it("does not modify requestInfo when key is invalid (short-circuits)", async () => {
+  it("does not modify requestContext when key is invalid (short-circuits)", async () => {
     const app = createApp();
     const res = await app.request("/test", {
       headers: { "X-Api-Key": "bad-key" },

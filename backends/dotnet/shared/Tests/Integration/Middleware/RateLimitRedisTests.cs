@@ -13,7 +13,6 @@ using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.RateLimit.Default;
 using D2.Shared.RateLimit.Default.Handlers;
 using D2.Shared.RateLimit.Default.Interfaces;
-using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -372,14 +371,14 @@ public class RateLimitRedisTests : IAsyncLifetime
         };
     }
 
-    private static IRequestInfo CreateRequestInfo(
+    private static IRequestContext CreateRequestInfo(
         string? clientFingerprint = null,
         string clientIp = "127.0.0.1",
         string? city = null,
         string? countryCode = null)
     {
         var deviceFingerprint = clientFingerprint ?? $"device-fp-{clientIp}";
-        var mock = new Mock<IRequestInfo>();
+        var mock = new Mock<IRequestContext>();
         mock.Setup(x => x.ClientFingerprint).Returns(clientFingerprint);
         mock.Setup(x => x.DeviceFingerprint).Returns(deviceFingerprint);
         mock.Setup(x => x.ClientIp).Returns(clientIp);

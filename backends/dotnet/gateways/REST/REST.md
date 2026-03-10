@@ -14,7 +14,7 @@ HTTP/REST gateway providing public API access to D² microservices via gRPC back
 | [JwtAuthOptions.cs](Auth/JwtAuthOptions.cs)                     | Configuration: BaseUrl, Issuer, Audience, ClockSkew for JWT validation.                                        |
 | [JwtFingerprintMiddleware.cs](Auth/JwtFingerprintMiddleware.cs) | Middleware validating JWT `fp` claim against computed SHA-256(UA\|Accept). Fail-open, backwards-compatible.    |
 | [JwtFingerprintValidator.cs](Auth/JwtFingerprintValidator.cs)   | `ComputeFingerprint()` — SHA-256(User-Agent + "\|" + Accept) for stolen token detection.                       |
-| [ServiceKeyMiddleware.cs](Auth/ServiceKeyMiddleware.cs)         | Middleware validating `X-Api-Key` header. Sets `IRequestInfo.IsTrustedService` flag. Invalid key → 401.        |
+| [ServiceKeyMiddleware.cs](Auth/ServiceKeyMiddleware.cs)         | Middleware validating `X-Api-Key` header. Sets `IRequestContext.IsTrustedService` flag. Invalid key → 401.     |
 | [ServiceKeyEndpointFilter.cs](Auth/ServiceKeyEndpointFilter.cs) | Endpoint filter checking `IsTrustedService` flag (used by `RequireServiceKey()` extension).                    |
 | [ServiceKeyExtensions.cs](Auth/ServiceKeyExtensions.cs)         | `AddServiceKeyAuth()`, `UseServiceKeyDetection()`, `RequireServiceKey()` extension methods.                    |
 | [ServiceKeyOptions.cs](Auth/ServiceKeyOptions.cs)               | Configuration: `ValidKeys` list of trusted service API keys.                                                   |
@@ -188,11 +188,11 @@ Both are registered via `AddServiceDefaults()`.
 Trusted backend callers (e.g., SvelteKit server) authenticate via `X-Api-Key` header:
 
 1. `ServiceKeyMiddleware` validates the key early in the pipeline (after request enrichment, before rate limiting)
-2. Valid key → sets `IRequestInfo.IsTrustedService = true` (trusted services bypass rate limiting and fingerprint validation)
+2. Valid key → sets `IRequestContext.IsTrustedService = true` (trusted services bypass rate limiting and fingerprint validation)
 3. Invalid key → 401 immediately (fail fast)
 4. No key → browser request, continues normally
 5. `RequireServiceKey()` endpoint filter checks the trust flag on service-only endpoints
 
-**Pipeline order:** RequestEnrichment → ServiceKeyDetection → RateLimiting → JwtAuth → JwtFingerprint → Endpoints
+**Pipeline order:** RequestEnrichment → ServiceKeyDetection → RateLimiting → JwtAuth → **RequestContextLogging** → Idempotency → Endpoints
 
 **Registration:** `AddServiceKeyAuth(configuration)` + `UseServiceKeyDetection()` in `Program.cs`.

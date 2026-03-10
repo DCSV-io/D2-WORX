@@ -1,7 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import { D2Result } from "@d2/result";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { REQUEST_INFO_KEY } from "../context-keys.js";
+import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
 
 /**
  * Creates Hono middleware that validates the `X-Api-Key` header for S2S calls.
@@ -9,9 +9,9 @@ import { REQUEST_INFO_KEY } from "../context-keys.js";
  * Mirrors .NET `ServiceKeyMiddleware` behavior:
  * - No header → pass through (browser request)
  * - Invalid key → 401 immediately with D2Result JSON
- * - Valid key → set `isTrustedService = true` on requestInfo, continue
+ * - Valid key → set `isTrustedService = true` on requestContext, continue
  *
- * Must run AFTER request enrichment middleware (needs requestInfo on context).
+ * Must run AFTER request enrichment middleware (needs requestContext on context).
  */
 export function createServiceKeyMiddleware(validKeys: Set<string>) {
   return createMiddleware(async (c, next) => {
@@ -34,10 +34,10 @@ export function createServiceKeyMiddleware(validKeys: Set<string>) {
       );
     }
 
-    // Valid key → set trust flag on requestInfo
-    const requestInfo = c.get(REQUEST_INFO_KEY);
-    if (requestInfo) {
-      requestInfo.isTrustedService = true;
+    // Valid key → set trust flag on requestContext
+    const requestContext = c.get(REQUEST_CONTEXT_KEY);
+    if (requestContext) {
+      requestContext.isTrustedService = true;
     }
 
     await next();

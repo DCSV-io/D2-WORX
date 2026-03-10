@@ -7,6 +7,7 @@
 namespace D2.Shared.RateLimit.Default;
 
 using System.Net;
+using D2.Shared.Handler;
 using D2.Shared.RateLimit.Default.Interfaces;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
@@ -18,7 +19,7 @@ using Microsoft.Extensions.Logging;
 /// Middleware that enforces multi-dimensional rate limiting.
 /// </summary>
 /// <remarks>
-/// Reads <see cref="IRequestInfo"/> from HttpContext.Features and calls the rate
+/// Reads <see cref="IRequestContext"/> from HttpContext.Features and calls the rate
 /// limit check handler. Returns 429 Too Many Requests if blocked.
 /// </remarks>
 public class RateLimitMiddleware
@@ -69,12 +70,12 @@ public class RateLimitMiddleware
             return;
         }
 
-        // Get request info from previous middleware.
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        if (requestInfo is null)
+        // Get request context from previous middleware.
+        var requestContext = context.Features.Get<IRequestContext>();
+        if (requestContext is null)
         {
             r_logger.LogWarning(
-                "IRequestInfo not found in HttpContext.Features. Ensure RequestEnrichmentMiddleware runs first. Allowing request.");
+                "IRequestContext not found in HttpContext.Features. Ensure RequestEnrichmentMiddleware runs first. Allowing request.");
 
             await r_next(context);
             return;
@@ -85,7 +86,7 @@ public class RateLimitMiddleware
         try
         {
             var checkResult = await checkHandler.HandleAsync(
-                new IRateLimit.CheckInput(requestInfo),
+                new IRateLimit.CheckInput(requestContext),
                 context.RequestAborted);
 
             if (checkResult.CheckSuccess(out var checkOutput))

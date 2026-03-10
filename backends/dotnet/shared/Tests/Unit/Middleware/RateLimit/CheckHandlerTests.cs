@@ -12,7 +12,6 @@ using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.RateLimit.Default;
 using D2.Shared.RateLimit.Default.Handlers;
 using D2.Shared.RateLimit.Default.Interfaces;
-using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
@@ -64,7 +63,7 @@ public class CheckHandlerTests
     public async Task Check_WhenTrustedService_ReturnsNotBlocked()
     {
         var handler = CreateHandler();
-        var mock = new Mock<IRequestInfo>();
+        var mock = new Mock<IRequestContext>();
         mock.Setup(x => x.IsTrustedService).Returns(true);
         mock.Setup(x => x.ClientFingerprint).Returns("test-fingerprint");
         mock.Setup(x => x.DeviceFingerprint).Returns("device-fp-test");
@@ -407,14 +406,14 @@ public class CheckHandlerTests
 
     #region Helper Methods
 
-    private static IRequestInfo CreateRequestInfo(
+    private static IRequestContext CreateRequestInfo(
         string? clientFingerprint = null,
         string clientIp = "192.0.2.1",
         string? city = null,
         string? countryCode = null)
     {
         var deviceFingerprint = clientFingerprint ?? $"device-fp-{clientIp}";
-        var mock = new Mock<IRequestInfo>();
+        var mock = new Mock<IRequestContext>();
         mock.Setup(x => x.ClientFingerprint).Returns(clientFingerprint);
         mock.Setup(x => x.DeviceFingerprint).Returns(deviceFingerprint);
         mock.Setup(x => x.ClientIp).Returns(clientIp);

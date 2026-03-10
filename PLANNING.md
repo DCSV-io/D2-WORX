@@ -825,7 +825,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 | -------------------- | ------------------------------------------------------------------------------------------------- |
 | Header               | `X-Api-Key` (single shared key for all services)                                                  |
 | Middleware            | `ServiceKeyMiddleware` — runs early in pipeline, validates header against configured key           |
-| Trust flag            | `IRequestInfo.IsTrustedService` — set by middleware, consumed by downstream components            |
+| Trust flag            | `IRequestContext.IsTrustedService` — set by middleware, consumed by downstream components         |
 | Invalid key           | 401 immediately (fail fast, before rate limiting)                                                 |
 | No key                | Treated as browser request, continues normally through full pipeline                              |
 | Pipeline order        | RequestEnrichment → ServiceKeyDetection → RateLimiting → Auth → Fingerprint → Authz             |

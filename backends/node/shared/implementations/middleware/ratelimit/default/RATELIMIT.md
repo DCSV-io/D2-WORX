@@ -45,7 +45,7 @@ Contract types (`ICheckHandler`, `CheckInput/Output`, `RateLimitDimension`) are 
 
 ## Data Redaction
 
-The `CheckRateLimit` handler declares `CHECK_REDACTION` (from `@d2/interfaces`) which suppresses input logging because `IRequestInfo` contains PII (client IP, fingerprint, user ID, city).
+The `CheckRateLimit` handler declares `CHECK_REDACTION` (from `@d2/interfaces`) which suppresses input logging because `IRequestContext` contains PII (client IP, fingerprint, user ID, city).
 
 ## Fail-Open Behavior
 

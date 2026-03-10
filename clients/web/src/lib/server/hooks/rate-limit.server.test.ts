@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { RequestEvent } from "@sveltejs/kit";
-import type { RequestEnrichment } from "@d2/interfaces";
+import type { IRequestContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 
 const mockGetMiddlewareContext = vi.fn();
@@ -15,16 +15,16 @@ describe("createRateLimitHandle", () => {
   const handle = createRateLimitHandle();
   const mockResolve = vi.fn().mockResolvedValue(new Response("OK"));
 
-  const fakeRequestInfo: Partial<RequestEnrichment.IRequestInfo> = {
+  const fakeRequestContext: Partial<IRequestContext> = {
     clientIp: "1.2.3.4",
     serverFingerprint: "abc",
     isAuthenticated: false,
     isTrustedService: false,
   };
 
-  function makeEvent(withRequestInfo = true): RequestEvent {
+  function makeEvent(withRequestContext = true): RequestEvent {
     const locals: Record<string, unknown> = {};
-    if (withRequestInfo) locals.requestInfo = fakeRequestInfo;
+    if (withRequestContext) locals.requestContext = fakeRequestContext;
     return {
       request: { method: "GET", headers: new Headers() } as unknown as Request,
       locals,
@@ -45,7 +45,7 @@ describe("createRateLimitHandle", () => {
     expect(mockResolve).toHaveBeenCalledWith(event);
   });
 
-  it("skips when requestInfo is not on locals", async () => {
+  it("skips when requestContext is not on locals", async () => {
     mockGetMiddlewareContext.mockReturnValue({ rateLimitCheck: { handleAsync: vi.fn() } });
     const event = makeEvent(false);
 
@@ -55,9 +55,7 @@ describe("createRateLimitHandle", () => {
   });
 
   it("allows request when rate limit check passes", async () => {
-    const mockCheck = vi.fn().mockResolvedValue(
-      D2Result.ok({ data: { isBlocked: false } }),
-    );
+    const mockCheck = vi.fn().mockResolvedValue(D2Result.ok({ data: { isBlocked: false } }));
     mockGetMiddlewareContext.mockReturnValue({
       rateLimitCheck: { handleAsync: mockCheck },
     });
@@ -65,14 +63,14 @@ describe("createRateLimitHandle", () => {
     const event = makeEvent();
     await handle({ event, resolve: mockResolve });
 
-    expect(mockCheck).toHaveBeenCalledWith({ requestInfo: fakeRequestInfo });
+    expect(mockCheck).toHaveBeenCalledWith({ requestContext: fakeRequestContext });
     expect(mockResolve).toHaveBeenCalledWith(event);
   });
 
   it("returns 429 when rate limit is exceeded", async () => {
-    const mockCheck = vi.fn().mockResolvedValue(
-      D2Result.ok({ data: { isBlocked: true, retryAfterMs: 60_000 } }),
-    );
+    const mockCheck = vi
+      .fn()
+      .mockResolvedValue(D2Result.ok({ data: { isBlocked: true, retryAfterMs: 60_000 } }));
     mockGetMiddlewareContext.mockReturnValue({
       rateLimitCheck: { handleAsync: mockCheck },
     });
@@ -90,9 +88,7 @@ describe("createRateLimitHandle", () => {
   });
 
   it("defaults Retry-After to 300 when retryAfterMs is absent", async () => {
-    const mockCheck = vi.fn().mockResolvedValue(
-      D2Result.ok({ data: { isBlocked: true } }),
-    );
+    const mockCheck = vi.fn().mockResolvedValue(D2Result.ok({ data: { isBlocked: true } }));
     mockGetMiddlewareContext.mockReturnValue({
       rateLimitCheck: { handleAsync: mockCheck },
     });
@@ -105,9 +101,11 @@ describe("createRateLimitHandle", () => {
   });
 
   it("proceeds when rate limit check fails (fail-open)", async () => {
-    const mockCheck = vi.fn().mockResolvedValue(
-      D2Result.fail({ messages: ["Redis error"] }) as D2Result<{ isBlocked: boolean }>,
-    );
+    const mockCheck = vi
+      .fn()
+      .mockResolvedValue(
+        D2Result.fail({ messages: ["Redis error"] }) as D2Result<{ isBlocked: boolean }>,
+      );
     mockGetMiddlewareContext.mockReturnValue({
       rateLimitCheck: { handleAsync: mockCheck },
     });

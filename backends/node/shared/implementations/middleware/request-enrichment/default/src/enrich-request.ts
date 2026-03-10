@@ -1,13 +1,13 @@
 import type { ILogger } from "@d2/logging";
+import type { IRequestContext } from "@d2/handler";
 import type { FindWhoIs } from "@d2/geo-client";
 import { resolveIp, isLocalhost } from "./ip-resolver.js";
 import { buildServerFingerprint, buildDeviceFingerprint } from "./fingerprint-builder.js";
-import { RequestInfo } from "./request-info.js";
+import { MutableRequestContext } from "./request-info.js";
 import {
   DEFAULT_REQUEST_ENRICHMENT_OPTIONS,
   type RequestEnrichmentOptions,
 } from "./request-enrichment-options.js";
-import type { RequestEnrichment } from "@d2/interfaces";
 
 /**
  * Enriches an HTTP request with client information.
@@ -26,7 +26,7 @@ export async function enrichRequest(
   findWhoIs: FindWhoIs,
   options?: Partial<RequestEnrichmentOptions>,
   logger?: ILogger,
-): Promise<RequestEnrichment.IRequestInfo> {
+): Promise<IRequestContext> {
   const opts = { ...DEFAULT_REQUEST_ENRICHMENT_OPTIONS, ...options };
 
   // 1. Resolve client IP (only trusting configured proxy headers).
@@ -56,8 +56,8 @@ export async function enrichRequest(
   // 4. Compute combined device fingerprint (always present).
   const deviceFingerprint = buildDeviceFingerprint(clientFingerprint, serverFingerprint, clientIp);
 
-  // 5. Build initial request info (without WhoIs data).
-  let requestInfo: RequestEnrichment.IRequestInfo = new RequestInfo({
+  // 5. Build initial request context (without WhoIs data).
+  let requestContext: IRequestContext = new MutableRequestContext({
     clientIp,
     serverFingerprint,
     clientFingerprint,
@@ -78,7 +78,7 @@ export async function enrichRequest(
       const output = whoIsResult.checkSuccess();
       if (output?.whoIs) {
         const whoIs = output.whoIs;
-        requestInfo = new RequestInfo({
+        requestContext = new MutableRequestContext({
           clientIp,
           serverFingerprint,
           clientFingerprint,
@@ -105,7 +105,7 @@ export async function enrichRequest(
     }
   }
 
-  return requestInfo;
+  return requestContext;
 }
 
 /**

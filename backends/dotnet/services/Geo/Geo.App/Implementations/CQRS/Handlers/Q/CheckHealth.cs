@@ -13,6 +13,7 @@ using ComponentHealth = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.Component
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.ICheckHealthHandler;
 using I = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.CheckHealthInput;
 using O = D2.Geo.App.Interfaces.CQRS.Handlers.Q.IQueries.CheckHealthOutput;
+using ReadCache = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead;
 using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 
 /// <summary>
@@ -22,6 +23,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 public class CheckHealth : BaseHandler<H, I, O>, H
 {
     private readonly ReadRepo.IPingDbHandler r_pingDb;
+    private readonly ReadCache.IPingHandler r_pingCache;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CheckHealth"/> class.
@@ -30,15 +32,20 @@ public class CheckHealth : BaseHandler<H, I, O>, H
     /// <param name="pingDb">
     /// The database ping handler.
     /// </param>
+    /// <param name="pingCache">
+    /// The distributed cache ping handler.
+    /// </param>
     /// <param name="context">
     /// The handler context.
     /// </param>
     public CheckHealth(
         ReadRepo.IPingDbHandler pingDb,
+        ReadCache.IPingHandler pingCache,
         IHandlerContext context)
         : base(context)
     {
         r_pingDb = pingDb;
+        r_pingCache = pingCache;
     }
 
     /// <inheritdoc/>
@@ -48,7 +55,13 @@ public class CheckHealth : BaseHandler<H, I, O>, H
     {
         var components = new Dictionary<string, ComponentHealth>();
 
-        var dbResult = await r_pingDb.HandleAsync(new ReadRepo.PingDbInput(), ct);
+        // Run DB and cache pings in parallel.
+        var dbTask = r_pingDb.HandleAsync(new ReadRepo.PingDbInput(), ct);
+        var cacheTask = r_pingCache.HandleAsync(new ReadCache.PingInput(), ct);
+
+        await Task.WhenAll(dbTask.AsTask(), cacheTask.AsTask());
+
+        var dbResult = await dbTask;
         if (dbResult.Data is not null)
         {
             components["db"] = new ComponentHealth(
@@ -59,6 +72,19 @@ public class CheckHealth : BaseHandler<H, I, O>, H
         else
         {
             components["db"] = new ComponentHealth("unhealthy", null, "Ping handler returned no data");
+        }
+
+        var cacheResult = await cacheTask;
+        if (cacheResult.Data is not null)
+        {
+            components["cache"] = new ComponentHealth(
+                cacheResult.Data.Healthy ? "healthy" : "unhealthy",
+                cacheResult.Data.LatencyMs,
+                cacheResult.Data.Error);
+        }
+        else
+        {
+            components["cache"] = new ComponentHealth("unhealthy", null, "Ping handler returned no data");
         }
 
         var allHealthy = components.Values.All(c => c.Status == "healthy");

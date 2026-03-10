@@ -43,7 +43,7 @@ const handleParaglide: Handle = async ({ event, resolve }) => {
 
 // Middleware ordering (mirrors .NET Gateway pipeline):
 // 1. Request enrichment (IP, fingerprint, WhoIs)
-// 2. Rate limiting (uses requestInfo from step 1 — cheap rejection before auth)
+// 2. Rate limiting (uses requestContext from step 1 — cheap rejection before auth)
 // 3. Auth session resolution (resolves session for downstream middleware)
 // 4. Idempotency (mutation dedup — auth available for future user-scoped keys)
 // 5. Paraglide + request logging

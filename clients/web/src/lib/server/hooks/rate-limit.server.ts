@@ -3,7 +3,7 @@
  * Mirrors auth/api/src/middleware/distributed-rate-limit.ts (~20 lines).
  *
  * Checks multi-dimensional sliding-window rate limits using enriched
- * request info from the request-enrichment handle. Returns 429 with
+ * request context from the request-enrichment handle. Returns 429 with
  * Retry-After header if any dimension exceeds its threshold.
  */
 import type { Handle } from "@sveltejs/kit";
@@ -14,10 +14,10 @@ export function createRateLimitHandle(): Handle {
     const ctx = getMiddlewareContext();
     if (!ctx) return resolve(event);
 
-    if (!event.locals.requestInfo) return resolve(event);
+    if (!event.locals.requestContext) return resolve(event);
 
     const result = await ctx.rateLimitCheck.handleAsync({
-      requestInfo: event.locals.requestInfo,
+      requestContext: event.locals.requestContext,
     });
 
     if (result.success && result.data?.isBlocked) {

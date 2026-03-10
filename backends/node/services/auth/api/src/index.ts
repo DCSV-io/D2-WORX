@@ -5,7 +5,7 @@ export type { AppOverrides } from "./composition-root.js";
 export type { SessionVariables } from "./middleware/session.js";
 
 // Context key constants
-export { USER_KEY, SESSION_KEY, SCOPE_KEY, REQUEST_INFO_KEY } from "./context-keys.js";
+export { USER_KEY, SESSION_KEY, SCOPE_KEY, REQUEST_CONTEXT_KEY } from "./context-keys.js";
 
 // Middleware factories (exported for testing)
 export { createCsrfMiddleware } from "./middleware/csrf.js";

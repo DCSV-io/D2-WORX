@@ -33,7 +33,7 @@ import * as betterAuthSchema from "../../repository/schema/better-auth-tables.js
  */
 export interface AuthHooks {
   /** Called after a successful sign-in to record audit events. */
-  onSignIn?: (data: { userId: string; ipAddress: string; userAgent: string }) => Promise<void>;
+  onSignIn?: (data: { userId: string; ipAddress: string; userAgent: string; deviceFingerprint?: string }) => Promise<void>;
   /**
    * Returns the client fingerprint for the current request.
    * Used by `definePayload` to embed an `fp` claim in JWTs, enabling
@@ -41,6 +41,11 @@ export interface AuthHooks {
    * Typically backed by `AsyncLocalStorage` in the composition root.
    */
   getFingerprintForCurrentRequest?: () => string | undefined;
+  /**
+   * Returns the device fingerprint for the current request (from enrichment middleware).
+   * Typically backed by `AsyncLocalStorage` in the composition root.
+   */
+  getDeviceFingerprintForCurrentRequest?: () => string | undefined;
   /**
    * Custom password hash/verify functions with domain validation + HIBP checks.
    * Created by `createPasswordFunctions()` in the composition root.
@@ -306,7 +311,7 @@ export function createAuth(
 
               if (userId) {
                 // Fire-and-forget — don't block session creation
-                hooks.onSignIn({ userId, ipAddress, userAgent }).catch(() => {
+                hooks.onSignIn({ userId, ipAddress, userAgent, deviceFingerprint: hooks.getDeviceFingerprintForCurrentRequest?.() }).catch(() => {
                   // Swallow errors — sign-in audit is non-critical
                 });
               }

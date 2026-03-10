@@ -3,7 +3,7 @@
  * Mirrors auth/api/src/middleware/request-enrichment.ts (~15 lines).
  *
  * Resolves client IP, computes fingerprints, performs WhoIs lookup (fail-open),
- * and stores enriched request info on event.locals for downstream middleware.
+ * and stores enriched request context on event.locals for downstream middleware.
  */
 import type { Handle } from "@sveltejs/kit";
 import { getMiddlewareContext, enrichRequest } from "../middleware.server";
@@ -18,8 +18,8 @@ export function createRequestEnrichmentHandle(): Handle {
       headers[key] = value;
     });
 
-    const requestInfo = await enrichRequest(headers, ctx.findWhoIs, undefined, ctx.logger);
-    event.locals.requestInfo = requestInfo;
+    const requestContext = await enrichRequest(headers, ctx.findWhoIs, undefined, ctx.logger);
+    event.locals.requestContext = requestContext;
 
     return resolve(event);
   };
