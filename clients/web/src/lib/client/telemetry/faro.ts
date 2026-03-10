@@ -81,18 +81,11 @@ export function getFaro(): Faro | undefined {
 }
 
 /**
- * Set user identity on the Faro instance for enriched telemetry.
+ * Set user identity on the Faro instance for session correlation.
+ * Only sends user ID + username — no PII (email, real name) in telemetry logs.
  */
-export function setFaroUser(user: {
-  id: string;
-  email?: string;
-  username?: string;
-}): void {
-  faro?.api.setUser({
-    id: user.id,
-    email: user.email ?? undefined,
-    username: user.username ?? undefined,
-  });
+export function setFaroUser(userId: string, username?: string): void {
+  faro?.api.setUser({ id: userId, username: username ?? undefined });
 }
 
 /**

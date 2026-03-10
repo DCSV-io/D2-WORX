@@ -406,6 +406,44 @@ public class RequestEnrichmentMiddlewareTests
 
     #endregion
 
+    #region Infrastructure Endpoint Skip Tests
+
+    /// <summary>
+    /// Tests that middleware skips enrichment entirely for /health endpoint.
+    /// </summary>
+    [Theory]
+    [InlineData("/health")]
+    [InlineData("/alive")]
+    [InlineData("/metrics")]
+    [InlineData("/api/health")]
+    public async Task InvokeAsync_WhenInfrastructureEndpoint_SkipsEnrichmentAndCallsNext(string path)
+    {
+        // Arrange
+        var context = CreateHttpContext("203.0.113.1");
+        context.Request.Path = path;
+
+        var middleware = CreateMiddleware();
+
+        // Act
+        await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
+
+        // Assert — next was called but no enrichment was performed
+        _nextWasCalled.Should().BeTrue("middleware must still call next for infrastructure endpoints");
+
+        var requestInfo = context.Features.Get<IRequestInfo>();
+        requestInfo.Should().BeNull("enrichment should be skipped for infrastructure endpoints");
+
+        r_whoIsHandlerMock.Verify(
+            x => x.HandleAsync(
+                It.IsAny<IComplex.FindWhoIsInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
+            Times.Never,
+            "WhoIs lookup should not run for infrastructure endpoints");
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static DefaultHttpContext CreateHttpContext(string? clientIp = null)

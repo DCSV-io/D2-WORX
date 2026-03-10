@@ -46,9 +46,9 @@ WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and
 | Comms service (Node.js)       | ✅ Phase 1     | 592 passing    |
 | Scheduled jobs (Dkron)        | ✅ Done        | 64 passing     |
 | E2E cross-service tests       | ✅ Done        | 15 passing     |
-| SvelteKit web client          | 🚧 In Progress | Steps 0–8/12   |
+| SvelteKit web client          | 🚧 In Progress | Steps 0–9/12   |
 
-**Current focus:** SvelteKit web client — design system, routing, auth BFF proxy, API gateway client, forms, and auth pages done. Client telemetry and onboarding next. See [PLANNING.md](PLANNING.md) for architecture decisions, detailed status, and roadmap.
+**Current focus:** SvelteKit web client — design system, routing, auth BFF proxy, API gateway client, forms, auth pages, device fingerprinting, and client telemetry (Grafana Faro) done. Onboarding flow next. See [PLANNING.md](PLANNING.md) for architecture decisions, detailed status, and roadmap.
 
 **NOTE:** this is a **public reference implementation** documenting D²'s evolution from DeCAF's modular monolith architecture into a distributed microservices system. Expect frequent changes and incremental progress.
 

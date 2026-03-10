@@ -6,9 +6,9 @@ The **Web Client** is a SvelteKit 5 application that serves as the primary user 
 
 **Runtime:** Node.js (SvelteKit + adapter-node)
 **Framework:** Svelte 5 (runes) + SvelteKit 2
-**Styling:** Tailwind CSS v4 (Vite plugin, CSS-based theming)
+**Styling:** Tailwind CSS v4 (Vite plugin, OKLCH theming with 3 presets)
 **i18n:** Paraglide (5 locales: en, es, de, fr, jp)
-**Observability:** OpenTelemetry (server-side wired, client-side pending)
+**Observability:** OpenTelemetry (server-side), Grafana Faro (client-side errors → Loki, traces → Tempo, Web Vitals → Mimir)
 
 > **Not a standalone app.** The web client depends on the .NET REST Gateway for all data operations and on the Auth Service (proxied through SvelteKit) for authentication. It is orchestrated via Aspire alongside all backend services.
 
@@ -38,88 +38,160 @@ Auth (always proxied, cookie-based):
 - **JWTs:** RS256, 15-minute expiry, obtained via `authClient.token()`, stored in memory only (never localStorage)
 - **Route protection:** Server-side in `hooks.server.ts` (no client-side flash of unauthenticated content)
 
-### Route Groups (Planned)
+### Route Groups
 
-| Group | Purpose | Auth Required | Org Required |
-| --- | --- | --- | --- |
-| `(public)/` | Marketing, legal, pricing | No | No |
-| `(auth)/` | Sign-in, sign-up, password reset | No | No |
-| `(onboarding)/` | Welcome, create/select org | Yes | No |
-| `(app)/` | Main authenticated application | Yes | Yes |
+| Group           | Purpose                              | Auth Required | Org Required |
+| --------------- | ------------------------------------ | ------------- | ------------ |
+| `(public)/`     | Marketing, legal, pricing            | No            | No           |
+| `(auth)/`       | Sign-in, sign-up, password reset     | No            | No           |
+| `(onboarding)/` | Welcome, create/select org           | Yes           | No           |
+| `(app)/`        | Main authenticated application       | Yes           | Yes          |
 
 The `(app)/` group is further subdivided by org type: `(customer)/`, `(support)/`, `(admin)/`, `(shared)/`.
+
+### Server Middleware Pipeline
+
+Runs on every request via `hooks.server.ts`:
+
+1. **Request Enrichment** — IP resolution, client/device fingerprint, WhoIs geolocation via Geo gRPC
+2. **Rate Limiting** — Multi-dimensional sliding window (device, IP, city, country) via Redis
+3. **Auth Session Resolution** — Cookie → Auth Service via `@d2/auth-bff-client`
+4. **Idempotency** — `Idempotency-Key` header deduplication via Redis
+5. **Paraglide i18n** — Locale detection + URL rerouting
+6. **Request Logging** — Structured logs with OTel trace correlation
+
+### Client-Side Features
+
+- **Gateway Client** — `apiCall()` (authenticated, JWT auto-refresh) and `apiCallAnon()` (public)
+- **Device Fingerprint** — Client FP generator, `d2-cfp` cookie, `X-Client-Fingerprint` header
+- **Faro Telemetry** — Browser errors, console capture, traces, Web Vitals (TTFB, FCP, LCP, INP, CLS)
+- **User Enrichment** — Faro user identity set/cleared reactively from session state
 
 ---
 
 ## Documentation Index
 
-| Document | Description |
-| --- | --- |
-| [`SVELTEKIT_STRATEGY.md`](SVELTEKIT_STRATEGY.md) | Comprehensive strategy report: old system analysis, library recommendations, form architecture, testing, client-side telemetry |
-
----
-
-## Tech Stack
-
-### Current Dependencies
-
-| Category | Package | Version | Status |
-| --- | --- | --- | --- |
-| Framework | `svelte` | 5.53.5 | Installed |
-| Framework | `@sveltejs/kit` | 2.53.3 | Installed |
-| Build | `vite` | 7.3.1 | Installed |
-| Styling | `tailwindcss` | 4.2.1 | Installed |
-| Styling | `clsx` + `tailwind-merge` | 2.1.1 / 3.5.0 | Installed |
-| Styling | `tailwind-variants` | 3.2.2 | Installed |
-| Styling | `tailwindcss-motion` | 1.1.1 | Installed |
-| Validation | `zod` | 4.3.6 | Installed |
-| i18n | `@inlang/paraglide-js` | 2.13.0 | Installed |
-| Phone | `libphonenumber-js` | 1.12.38 | Installed |
-| Postal codes | `postcode-validator` | 3.10.9 | Installed |
-| Payments | `@stripe/stripe-js` | 8.8.0 | Installed |
-| OTel (server) | `@opentelemetry/sdk-node` + exporters | Various | Installed + wired |
-| OTel (client) | `@opentelemetry/sdk-trace-web` | 2.5.0 | Installed, not wired |
-| Testing | `vitest` + `@vitest/browser` + `playwright` | 4.0.18 / 1.58.0 | Installed |
-
-### Planned Additions
-
-| Category | Package | Purpose |
-| --- | --- | --- |
-| UI | `shadcn-svelte` (Bits UI) | Component library |
-| Forms | `sveltekit-superforms` + `formsnap` | Form management + accessible markup |
-| Toast | `svelte-sonner` | Notifications |
-| Phone | `intl-tel-input` | Phone input with country picker |
-| Tables | `@tanstack/table-core` | Data tables (via shadcn-svelte) |
-| Dates | `@internationalized/date` + `date-fns` | Date components + utilities |
-| Auth | `better-auth` | BetterAuth client + SvelteKit handler |
-| Telemetry | `@grafana/faro-web-sdk` | Client-side error/trace/metric collection |
-| Testing | `@axe-core/playwright` | Accessibility testing in E2E |
-| Testing | `@lhci/cli` | Lighthouse CI performance budgets |
+| Document                                                 | Description                                                                                               |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [`SVELTEKIT_STRATEGY.md`](SVELTEKIT_STRATEGY.md)        | Comprehensive strategy report: old system analysis, library recommendations, testing, client-side telemetry |
+| [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)       | Step-by-step implementation plan with progress tracker                                                    |
 
 ---
 
 ## What's In Place
 
-- SvelteKit 2.53.3 with Svelte 5.53.5, adapter-node, Vite 7.3.1
-- Tailwind CSS v4 via Vite plugin (no theme customization yet)
-- Paraglide i18n with 5 locales, 1 demo message, server middleware, URL reroute
+### Core Infrastructure
+
+- SvelteKit 2.53.3 with Svelte 5.53.5 (runes), adapter-node, Vite 7.3.1
+- Tailwind CSS v4.2.1 via Vite plugin with OKLCH theming (3 presets: WORX, Zinc, Ocean)
+- Paraglide i18n with 5 locales, server middleware URL rerouting
 - mdsvex preprocessor for `.svx` markdown-in-Svelte files
-- Full server-side OTel (traces, logs, metrics via OTLP/HTTP to Alloy)
-- Structured server logger with OTel trace correlation
-- Vitest dual-project setup (browser + server) with Playwright provider
-- Playwright E2E config
 - Aspire orchestration wired (`AddViteApp` with `.WithPnpm()`)
+
+### Auth & Session
+
+- BetterAuth proxy (`/api/auth/*` catch-all) with cookie session management
+- `@d2/auth-bff-client` integration: SessionResolver, JwtManager, AuthProxy, route guards
+- Route guards: `requireAuth()`, `requireOrg()`, `redirectIfAuthenticated()`
+- Session + user data in `event.locals` (typed in `app.d.ts`)
+- JWT auto-refresh with 2-minute buffer, in-memory only (XSS safe)
+
+### UI Components & Design System
+
+- shadcn-svelte (42 component categories) built on Bits UI v2.16.2
+- Live theme editor at `/design` with 3 OKLCH presets
+- Dark + Light + System three-way toggle (mode-watcher)
+- Gabarito font, Lucide icons (tree-shakeable)
+- LayerChart 2.0 showcase (area, bar, line, donut, sparkline)
+
+### Forms
+
+- Superforms v2.30.0 + Formsnap + Zod 4 (73 unit tests)
+- 7 form field components: `FormInput`, `FormTextarea`, `FormCheckbox`, `FormSelect`, `FormCombobox`, `FormPhoneInput`, `FormSwitch`
+- Field presets with validation: NAME, EMAIL, PASSWORD (min 12, max 128)
+- Cross-field validation (email confirmation, password confirmation)
+- Geo reference data integration (countries, locales) via geo-client gRPC
+
+### Auth Pages
+
+- Sign-in, sign-up, forgot-password, reset-password, verify-email
+- i18n support (5 locales), auth-aware public nav, TextLink component
+
+### Observability
+
+- **Server:** Full OTel (traces, logs, metrics) via OTLP/HTTP to Alloy
+- **Client:** Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir)
+- Structured server logger with OTel trace correlation
+- Web Vitals RUM dashboard in Grafana
+
+### Testing
+
+- Vitest 4.0.18 with dual-project setup (browser + server)
+- vitest-browser-svelte for component tests (real Chromium)
+- Playwright E2E config
+- Error page with traceId display
+
+---
 
 ## What's Not Yet In Place
 
-- Auth integration (no BetterAuth, no proxy routes, no session handling)
-- `App.Locals` / `App.Error` type definitions (commented-out stubs)
-- Client-side OTel / Faro (packages installed, not wired)
-- Custom Tailwind theme / design tokens
-- `hooks.client.ts` (no client-side error handling)
-- `+error.svelte` / `error.html` (no error pages)
-- No components, stores, API client, or route groups
-- No `+layout.server.ts` or `+page.server.ts` files
+- **Onboarding flow** — Org selection/creation pages (layouts ready, pages not built)
+- **App shell finalization** — Org-type nav sharding, org switcher, emulation banner
+- **SignalR integration** — Browser → .NET gateway direct (`@microsoft/signalr`)
+- **Phone input wrapper** — `intl-tel-input` Svelte 5 component (libphonenumber-js installed for validation)
+- **Address autocomplete** — Radar as Geo service backend concern (frontend calls gateway)
+- **Data tables** — shadcn table available but not used in real routes yet
+- **A11y testing** — axe-core packages installed, not integrated into suite
+- **Performance testing** — Lighthouse CI installed, not configured
+
+---
+
+## Tech Stack
+
+### Installed Dependencies
+
+| Category         | Package                                   | Version   |
+| ---------------- | ----------------------------------------- | --------- |
+| Framework        | `svelte`                                  | 5.53.5    |
+| Framework        | `@sveltejs/kit`                           | 2.53.3    |
+| Build            | `vite`                                    | 7.3.1     |
+| Styling          | `tailwindcss`                             | 4.2.1     |
+| Styling          | `clsx` + `tailwind-merge`                 | 2.1.1 / 3.5.0 |
+| Styling          | `tailwind-variants`                       | 3.2.2     |
+| UI               | `bits-ui` (shadcn-svelte)                 | 2.16.2    |
+| Icons            | `@lucide/svelte`                          | 0.561.0   |
+| Forms            | `sveltekit-superforms` + `formsnap`       | 2.30.0 / 2.0.1 |
+| Validation       | `zod`                                     | 4.3.6     |
+| i18n             | `@inlang/paraglide-js`                    | 2.13.0    |
+| Phone            | `libphonenumber-js`                       | 1.12.38   |
+| Postal codes     | `postcode-validator`                      | 3.10.9    |
+| Dates            | `@internationalized/date`                 | 3.11.0    |
+| Auth             | `better-auth` + `@d2/auth-bff-client`    | 1.5.0     |
+| Payments         | `@stripe/stripe-js`                       | 8.8.0     |
+| OTel (server)    | `@opentelemetry/sdk-node` + exporters     | 0.212.0   |
+| Faro (client)    | `@grafana/faro-web-sdk` + tracing         | 1.19.0    |
+| Charts           | `layerchart`                              | 2.0.0-next.43 |
+| Testing          | `vitest` + `@vitest/browser` + `playwright` | 4.0.18 / 1.58.0 |
+| Toast            | `svelte-sonner`                           | 1.0.7     |
+| Theme            | `mode-watcher`                            | 1.1.0     |
+
+### Workspace Dependencies (`@d2/*`)
+
+| Package                    | Purpose                                            |
+| -------------------------- | -------------------------------------------------- |
+| `@d2/auth-bff-client`     | BFF auth proxy, session resolution, JWT management |
+| `@d2/geo-client`          | Geo service gRPC client (FindWhoIs, ref data)      |
+| `@d2/request-enrichment`  | IP, fingerprint, WhoIs middleware                  |
+| `@d2/ratelimit`           | Multi-dimensional rate limiting                    |
+| `@d2/idempotency`         | Idempotency-Key header middleware                  |
+| `@d2/cache-memory`        | In-memory cache (LRU)                              |
+| `@d2/cache-redis`         | Redis distributed cache                            |
+| `@d2/handler`             | BaseHandler pattern                                |
+| `@d2/interfaces`          | Cache + middleware contracts                       |
+| `@d2/logging`             | Structured Pino logger (OTel-instrumented)         |
+| `@d2/service-defaults`    | OTel SDK bootstrap                                 |
+| `@d2/protos`              | Generated gRPC types                               |
+| `@d2/result`              | D2Result pattern                                   |
 
 ---
 
@@ -127,7 +199,7 @@ The `(app)/` group is further subdivided by org type: `(customer)/`, `(support)/
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 24+
 - pnpm 10+
 - All backend services running via Aspire (or manually)
 
@@ -145,24 +217,28 @@ pnpm test             # All tests
 
 ### Environment Variables
 
-| Variable | Purpose | Required |
-| --- | --- | --- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint | For observability |
-| `OTEL_SERVICE_NAME` | Service name for traces/logs | For observability |
+| Variable                       | Purpose                             | Required        |
+| ------------------------------ | ----------------------------------- | --------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint             | For observability |
+| `OTEL_SERVICE_NAME`            | Service name for traces/logs        | For observability |
+| `PUBLIC_FARO_COLLECTOR_URL`    | Faro collector URL (client-side)    | For client telemetry |
+| `PUBLIC_GATEWAY_URL`           | .NET Gateway URL (client-side)      | For client API calls |
+| `SVELTEKIT_AUTH__URL`          | Auth service URL (server-side)      | For auth proxy  |
+| `GATEWAY_URL`                  | .NET Gateway URL (server-side)      | For SSR API calls |
 
-Additional environment variables will be documented as auth and gateway integration are implemented.
+See `.env.local.example` in the project root for all environment variables.
 
 ---
 
 ## Testing Strategy
 
-| Level | Tool | File Pattern | Environment |
-| --- | --- | --- | --- |
-| Unit | Vitest (Node) | `*.test.ts` | Node |
-| Component | vitest-browser-svelte | `*.svelte.test.ts` | Browser (Chromium) |
-| E2E | Playwright | `e2e/*.spec.ts` | Browser (full app) |
-| Accessibility | axe-core/playwright | In E2E suite | Browser |
-| Visual | Playwright screenshots | In E2E suite | Browser |
-| Performance | Lighthouse CI | CI pipeline | Browser |
+| Level       | Tool                   | File Pattern        | Environment         |
+| ----------- | ---------------------- | ------------------- | ------------------- |
+| Unit        | Vitest (Node)          | `*.test.ts`         | Node                |
+| Component   | vitest-browser-svelte  | `*.svelte.test.ts`  | Browser (Chromium)  |
+| E2E         | Playwright             | `e2e/*.spec.ts`     | Browser (full app)  |
+| Accessibility | axe-core/playwright  | In E2E suite        | Browser             |
+| Visual      | Playwright screenshots | In E2E suite        | Browser             |
+| Performance | Lighthouse CI          | CI pipeline         | Browser             |
 
 See [`SVELTEKIT_STRATEGY.md` §7](SVELTEKIT_STRATEGY.md#7-frontend-testing-strategy) for full testing architecture.

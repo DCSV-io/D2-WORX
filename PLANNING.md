@@ -53,7 +53,7 @@
 - **Phase 2 Stage A: Cross-cutting foundations** ✅ — Retry utility, idempotency middleware, UUIDv7
 - **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (922 tests, 71 test files)
 - **Comms Service Phase 1** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (592 tests, 46 test files)
-- **E2E Cross-Service Tests** ✅ — 12 tests (Auth → Geo → Comms delivery pipeline + Dkron job chain)
+- **E2E Cross-Service Tests** ✅ — 15 tests (Auth → Geo → Comms delivery pipeline + Dkron job chain + BFF client integration)
 - **Cross-platform Parity** ✅ — `@d2/batch-pg`, `@d2/errors-pg`, .NET `Errors.Pg`, documented in `backends/PARITY.md`
 - **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware
 - **Geo Service** ✅ — Complete (.NET), 759 tests
@@ -77,11 +77,12 @@
 
 **Stage D — Auth Integration + Comms Con't**
 
-- **Forms architecture** — Superforms + Formsnap, Zod schemas, D2Result error mapping
-- **Auth pages** — Sign-in, sign-up, forgot/reset password, email verification
+- ~~**Forms architecture**~~ ✅ — Superforms + Formsnap, Zod 4, field presets, D2Result error mapping (73 tests)
+- ~~**Auth pages**~~ ✅ — Sign-in, sign-up, forgot/reset password, email verification. i18n (5 locales)
+- ~~**Device fingerprinting**~~ ✅ — Cross-cutting: SvelteKit + Node.js + .NET. `d2-cfp` cookie, DeviceFingerprint dimension
+- ~~**Client telemetry**~~ ✅ — Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir). Alloy `faro.receiver`, Web Vitals RUM dashboard
 - **Onboarding** — Post-verification: accept pending invitation(s) or create `customer` org
 - **Session management** — Org switching, active session list, sign-out
-- **Client telemetry** — Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir)
 - **App shell finalization** — Org-type nav, org switcher, emulation banner, breadcrumbs
 - **SignalR integration** — Browser → .NET gateway direct (`@microsoft/signalr`)
 - **Comms Phase 2** — In-app notifications, push via SignalR
@@ -135,8 +136,8 @@ From Q1 2026 audit:
 | 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
 | 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
 | 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
-| 6   | Validate PII redaction in OTel output       | Running observability stack (Grafana/Loki)    | High     | Manually verify no PII in production log/trace output                                                                                                          |
-| 7   | OTel alerting rules                         | Running AlertManager/Grafana                  | Medium   | Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                                           |
+| 6   | Validate PII redaction in OTel output       | ~~Running observability stack~~ **UNBLOCKED** | High     | Observability stack is running + Faro flowing data. Manually verify no PII in Loki log/trace output                                                            |
+| 7   | OTel alerting rules                         | ~~Running AlertManager/Grafana~~ **UNBLOCKED** | Medium  | Grafana is running. Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                       |
 | 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
 | 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
 | 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
@@ -165,7 +166,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done  | 5 chart types: area, bar, line, donut, sparkline                         |
 | 7    | Forms Architecture (Superforms)     | ✅ Done  | 73 tests. Superforms + Formsnap + Zod 4, field presets, D2Result mapping |
 | 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done  | Sign-in, sign-up, forgot/reset password, verify-email. i18n (5 locales) |
-| 9    | Client Telemetry (Grafana Faro)     | Pending  | Errors → Loki, traces → Tempo, Web Vitals → Mimir                       |
+| 9    | Client Telemetry (Grafana Faro)     | ✅ Done  | Faro SDK, Alloy faro.receiver pipeline, Web Vitals → Mimir histograms, RUM dashboard |
 | 10   | Onboarding Flow                     | Pending  | Post-auth org selection/creation + Radar address autocomplete backend    |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending  | Org-type nav, org switcher, emulation banner, breadcrumbs                |
 | 12   | SignalR Abstraction Layer           | Pending  | Browser → .NET SignalR gateway direct (`@microsoft/signalr`)             |
@@ -180,12 +181,16 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Recently Completed
 
+- Client telemetry: Grafana Faro SDK, Alloy faro.receiver pipeline, Web Vitals RUM dashboard, BFF dashboard rename (Step 9)
+- Device fingerprinting: cross-cutting SvelteKit + Node.js + .NET, `d2-cfp` cookie, DeviceFingerprint rate limit dimension (Step 8.7)
+- Debug session page + role audit docs (Step 8.5)
 - Auth pages: sign-in, sign-up, forgot-password, reset-password, verify-email (Step 8)
 - Forms architecture: Superforms + Formsnap + Zod 4, 73 tests (Step 7)
 - Auth-aware public nav, language selector, email branding
 - @d2/auth-bff-client package (ADR-017) — 32 unit + 10 E2E tests
 - API client layer with camelCase normalizer (ADR-005)
 - Design system page + chart showcase (LayerChart 2.0)
+- Scoped debug logging with handler I/O redaction (Loki 30-day retention for debug level)
 
 ---
 
@@ -279,11 +284,11 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 | Component            | Status         | Notes                                                                   |
 | -------------------- | -------------- | ----------------------------------------------------------------------- |
-| SvelteKit App        | 🚧 In Progress | Steps 0–8 done (design, routing, auth BFF, gateway, forms, auth pages) |
+| SvelteKit App        | 🚧 In Progress | Steps 0–9 done (design, routing, auth BFF, gateway, forms, auth pages, fingerprinting, Faro telemetry) |
 | Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)            |
 | API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)               |
 | Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit             |
-| OpenTelemetry        | ✅ Done        | Server instrumentation. Client telemetry (Faro) pending Step 9          |
+| OpenTelemetry        | ✅ Done        | Server instrumentation via OTLP/HTTP. Client telemetry via Grafana Faro (Step 9) |
 
 ---
 

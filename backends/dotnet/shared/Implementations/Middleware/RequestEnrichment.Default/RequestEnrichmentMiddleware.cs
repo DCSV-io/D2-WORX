@@ -66,6 +66,16 @@ public class RequestEnrichmentMiddleware
         HttpContext context,
         IComplex.IFindWhoIsHandler whoIsHandler)
     {
+        // Skip enrichment entirely for infrastructure endpoints (health checks, metrics).
+        if (context.Request.Path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.StartsWithSegments("/alive", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.StartsWithSegments("/metrics", StringComparison.OrdinalIgnoreCase) ||
+            context.Request.Path.StartsWithSegments("/api/health", StringComparison.OrdinalIgnoreCase))
+        {
+            await r_next(context);
+            return;
+        }
+
         // 1. Resolve client IP (only trusting configured proxy headers).
         var clientIp = IpResolver.Resolve(context, r_options.TrustedProxyHeaders, r_options.MaxForwardedForLength);
 

@@ -15,14 +15,10 @@
     generateClientFingerprint().then((fp) => setClientFingerprint(fp));
   });
 
-  // Enrich Faro telemetry with user identity when signed in.
+  // Enrich Faro telemetry with user ID + username for session correlation (no PII).
   $effect(() => {
     if (data.user) {
-      setFaroUser({
-        id: data.user.id,
-        email: data.user.email,
-        username: data.user.name ?? undefined,
-      });
+      setFaroUser(data.user.id, data.user.username);
     } else {
       resetFaroUser();
     }
