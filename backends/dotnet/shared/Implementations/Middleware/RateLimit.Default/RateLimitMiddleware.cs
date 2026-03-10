@@ -62,8 +62,8 @@ public class RateLimitMiddleware
         HttpContext context,
         IRateLimit.ICheckHandler checkHandler)
     {
-        // Skip rate limiting for health endpoints.
-        if (context.Request.Path.StartsWithSegments("/api/health", StringComparison.OrdinalIgnoreCase))
+        // Skip rate limiting for infrastructure endpoints (health checks, metrics).
+        if (InfrastructurePaths.IsInfrastructure(context))
         {
             await r_next(context);
             return;

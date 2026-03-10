@@ -35,6 +35,50 @@ public class RateLimitMiddlewareTests
         r_loggerMock = new Mock<ILogger<RateLimitMiddleware>>();
     }
 
+    #region Infrastructure Endpoint Skip Tests
+
+    /// <summary>
+    /// Tests that middleware skips rate limiting entirely for infrastructure endpoints
+    /// (health checks, metrics) — these paths have no <see cref="IRequestInfo"/> because
+    /// <see cref="RequestEnrichmentMiddleware"/> also skips them.
+    /// </summary>
+    ///
+    /// <param name="path">The infrastructure endpoint path.</param>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
+    [Theory]
+    [InlineData("/health")]
+    [InlineData("/alive")]
+    [InlineData("/metrics")]
+    [InlineData("/api/health")]
+    public async Task InvokeAsync_WhenInfrastructureEndpoint_SkipsRateLimitAndCallsNext(string path)
+    {
+        // Arrange — no IRequestInfo set (enrichment skips these too).
+        var context = CreateHttpContext();
+        context.Request.Path = path;
+
+        var middleware = CreateMiddleware();
+
+        // Act
+        await middleware.InvokeAsync(context, r_checkHandlerMock.Object);
+
+        // Assert
+        _nextWasCalled.Should().BeTrue("middleware must still call next for infrastructure endpoints");
+        context.Response.StatusCode.Should().NotBe(429);
+
+        r_checkHandlerMock.Verify(
+            x => x.HandleAsync(
+                It.IsAny<IRateLimit.CheckInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
+            Times.Never,
+            "rate limit check should not run for infrastructure endpoints");
+    }
+
+    #endregion
+
     #region Pass-Through Tests
 
     /// <summary>

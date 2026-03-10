@@ -67,10 +67,7 @@ public class RequestEnrichmentMiddleware
         IComplex.IFindWhoIsHandler whoIsHandler)
     {
         // Skip enrichment entirely for infrastructure endpoints (health checks, metrics).
-        if (context.Request.Path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase) ||
-            context.Request.Path.StartsWithSegments("/alive", StringComparison.OrdinalIgnoreCase) ||
-            context.Request.Path.StartsWithSegments("/metrics", StringComparison.OrdinalIgnoreCase) ||
-            context.Request.Path.StartsWithSegments("/api/health", StringComparison.OrdinalIgnoreCase))
+        if (InfrastructurePaths.IsInfrastructure(context))
         {
             await r_next(context);
             return;
