@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createContactSchema, type ContactFormData } from "../../../../routes/design/contact-form/schema.js";
+import { createContactSchema, type ContactFormData } from "../contact-schema.js";
 
 /** Countries with subdivisions in our test fixture. */
 const COUNTRIES_WITH_SUBDIVISIONS = new Set(["US", "CA", "AU"]);

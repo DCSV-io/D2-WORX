@@ -50,8 +50,13 @@ vi.mock("@d2/cache-memory", () => ({
   MemoryCacheStore: class MemoryCacheStore {},
 }));
 
+vi.mock("@d2/utilities", () => ({
+  Singleflight: class Singleflight {},
+}));
+
 vi.mock("@d2/geo-client", () => ({
   createGeoServiceClient: vi.fn().mockReturnValue({}),
+  createGeoCircuitBreaker: vi.fn().mockReturnValue({}),
   FindWhoIs: mockClass(),
   Get: mockClass(),
   GetFromMem: mockClass(),

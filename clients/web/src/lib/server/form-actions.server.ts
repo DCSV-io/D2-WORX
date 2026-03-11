@@ -54,7 +54,7 @@ export async function validateAndSubmit<TSchema extends AnyZodObject, TData = vo
       return fail((result.statusCode ?? 400) as NumericRange<400, 599>, { form });
     }
 
-    const errorMessage = result.messages?.join(". ") ?? "An unexpected error occurred.";
+    const errorMessage = result.messages?.join(". ") || "An unexpected error occurred.";
     return message(form, errorMessage, {
       status: (result.statusCode ?? 500) as NumericRange<400, 599>,
     });

@@ -1,7 +1,7 @@
 import { superValidate, message } from "sveltekit-superforms";
 import { zod4 as zod } from "sveltekit-superforms/adapters";
 import { fail } from "@sveltejs/kit";
-import { createSignupSchema } from "./schema.js";
+import { createSignUpSchema as createSignupSchema } from "$lib/shared/forms/sign-up-schema.js";
 import type { Actions, PageServerLoad } from "./$types.js";
 
 const schema = createSignupSchema();

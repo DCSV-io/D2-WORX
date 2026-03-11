@@ -573,9 +573,9 @@ When adding routes or handlers, follow the full checklist in `backends/node/serv
 
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) complete on both platforms. Phase 2 Stage B (Auth DDD layers) complete — 922 tests. .NET Gateway JWT auth done. Ext-key contact API with API key auth done. Comms delivery engine done — 592 tests. E2E cross-service tests — 15 tests. Scheduled jobs (Dkron) — 8 daily jobs, `@d2/dkron-mgr` reconciler (64 tests).
+Phase 1 (shared infrastructure) complete on both platforms. Phase 2 Stage B (Auth DDD layers) complete — 972 tests. .NET Gateway JWT auth done. Ext-key contact API with API key auth done. Comms delivery engine done — 597 tests. E2E cross-service tests — 22 tests. Scheduled jobs (Dkron) — 8 daily jobs, `@d2/dkron-mgr` reconciler (64 tests).
 
-Phase 2 Stage C complete — `@d2/auth-bff-client` (SessionResolver, JwtManager, AuthProxy, route guards — 34 unit tests), SvelteKit auth integration (hooks, middleware, gateway client, auth proxy catch-all), client-side gateway client with in-memory JWT.
+Phase 2 Stage C complete — `@d2/auth-bff-client` (SessionResolver, JwtManager, AuthProxy, route guards — 42 unit tests), SvelteKit auth integration (hooks, middleware, gateway client, auth proxy catch-all), client-side gateway client with in-memory JWT.
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
@@ -659,7 +659,7 @@ Server-side modules use lazy singletons (module-level `let cached`) initialized 
 
 **Gateway client** (`gateway.server.ts`): Two entry points — `gatewayFetch` (authenticated, JWT + service key) and `gatewayFetchAnon` (no auth). SSR `+page.server.ts` loaders call these to fetch data from the .NET gateway.
 
-**Client-side gateway** (`$lib/shared/rest/gateway-client.ts`): In-memory JWT (never localStorage), auto-refresh before 15min expiry, auto-invalidate on 401. Used by interactive client-side calls direct to the gateway.
+**Client-side gateway** (`$lib/client/rest/gateway-client.ts`): In-memory JWT (never localStorage), auto-refresh before 15min expiry, auto-invalidate on 401. Used by interactive client-side calls direct to the gateway.
 
 ### Service-to-Service Trust (S2S)
 

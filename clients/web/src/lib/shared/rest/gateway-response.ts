@@ -126,3 +126,61 @@ export function networkErrorResult<TData = void>(error: unknown): D2Result<TData
 
   return D2Result.unhandledException<TData>({ messages: [message] });
 }
+
+/**
+ * Options for `executeFetch` — the shared fetch+timeout+error wrapper.
+ */
+export interface ExecuteFetchOptions {
+  method?: string;
+  headers: Headers;
+  body?: string;
+  signal?: AbortSignal;
+  timeout?: number;
+  credentials?: RequestCredentials;
+}
+
+/**
+ * Execute a fetch with timeout handling, abort support, and D2Result error mapping.
+ *
+ * Shared by all three gateway clients (server gateway, client gateway, auth gateway)
+ * to eliminate the triplicated timeout/abort/error catch blocks.
+ */
+export async function executeFetch<TData>(
+  url: string,
+  options: ExecuteFetchOptions,
+): Promise<D2Result<TData>> {
+  const timeoutMs = options.timeout ?? 10_000;
+
+  try {
+    const timeoutSignal = AbortSignal.timeout(timeoutMs);
+    const signal = options.signal
+      ? AbortSignal.any([options.signal, timeoutSignal])
+      : timeoutSignal;
+
+    const response = await fetch(url, {
+      method: options.method ?? "GET",
+      headers: options.headers,
+      body: options.body,
+      signal,
+      credentials: options.credentials,
+    });
+
+    return parseGatewayResponse<TData>(response);
+  } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      return D2Result.fail<TData>({
+        messages: ["Request was aborted."],
+        statusCode: 408 as HttpStatusCode,
+      });
+    }
+
+    if (error instanceof DOMException && error.name === "TimeoutError") {
+      return D2Result.fail<TData>({
+        messages: [`Request timed out after ${timeoutMs}ms.`],
+        statusCode: 408 as HttpStatusCode,
+      });
+    }
+
+    return networkErrorResult<TData>(error);
+  }
+}

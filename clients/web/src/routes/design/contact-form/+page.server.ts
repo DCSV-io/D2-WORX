@@ -8,7 +8,7 @@ import {
   type SubdivisionOption,
 } from "$lib/shared/forms/geo-ref-data.js";
 import { getGeoRefData } from "$lib/server/geo-ref-data.server.js";
-import { createContactSchema } from "./schema.js";
+import { createContactSchema } from "$lib/shared/forms/contact-schema.js";
 import type { Actions, PageServerLoad } from "./$types.js";
 
 export const load: PageServerLoad = async () => {

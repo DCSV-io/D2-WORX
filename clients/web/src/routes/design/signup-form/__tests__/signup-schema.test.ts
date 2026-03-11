@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createSignupSchema } from "../schema.js";
+import { createSignUpSchema as createSignupSchema } from "$lib/shared/forms/sign-up-schema.js";
 
 describe("createSignupSchema", () => {
   const schema = createSignupSchema();

@@ -10,8 +10,8 @@
  *
  * For BetterAuth operations (signUp, signIn, etc.), use authClient instead.
  */
-import { D2Result, type HttpStatusCode } from "@d2/result";
-import { parseGatewayResponse, networkErrorResult } from "$lib/shared/rest/gateway-response.js";
+import { D2Result } from "@d2/result";
+import { executeFetch } from "$lib/shared/rest/gateway-response.js";
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -36,43 +36,17 @@ export async function authApiCall<TData = void>(
   path: string,
   options?: AuthApiCallOptions,
 ): Promise<D2Result<TData>> {
-  const timeoutMs = options?.timeout ?? DEFAULT_TIMEOUT_MS;
-
-  try {
-    const timeoutSignal = AbortSignal.timeout(timeoutMs);
-    const signal = options?.signal
-      ? AbortSignal.any([options.signal, timeoutSignal])
-      : timeoutSignal;
-
-    const headers = new Headers();
-    if (options?.body !== undefined) {
-      headers.set("Content-Type", "application/json");
-    }
-
-    const response = await fetch(path, {
-      method: options?.method ?? "GET",
-      headers,
-      body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
-      credentials: "include",
-      signal,
-    });
-
-    return parseGatewayResponse<TData>(response);
-  } catch (error: unknown) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      return D2Result.fail<TData>({
-        messages: ["Request was aborted."],
-        statusCode: 408 as HttpStatusCode,
-      });
-    }
-
-    if (error instanceof DOMException && error.name === "TimeoutError") {
-      return D2Result.fail<TData>({
-        messages: [`Request timed out after ${timeoutMs}ms.`],
-        statusCode: 408 as HttpStatusCode,
-      });
-    }
-
-    return networkErrorResult<TData>(error);
+  const headers = new Headers();
+  if (options?.body !== undefined) {
+    headers.set("Content-Type", "application/json");
   }
+
+  return executeFetch<TData>(path, {
+    method: options?.method,
+    headers,
+    body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
+    signal: options?.signal,
+    timeout: options?.timeout ?? DEFAULT_TIMEOUT_MS,
+    credentials: "include",
+  });
 }

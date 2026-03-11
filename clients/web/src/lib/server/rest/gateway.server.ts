@@ -14,9 +14,9 @@
  * The `.server.ts` suffix ensures this module is never included in
  * client-side bundles (SvelteKit convention).
  */
-import { D2Result, type HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
 import { getAuthContext } from "../auth.server.js";
-import { parseGatewayResponse, networkErrorResult } from "$lib/shared/rest/gateway-response.js";
+import { executeFetch } from "$lib/shared/rest/gateway-response.js";
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
@@ -82,39 +82,13 @@ async function executeGatewayFetch<TData>(
   headers: Headers,
   options?: GatewayRequestOptions,
 ): Promise<D2Result<TData>> {
-  const timeoutMs = options?.timeout ?? DEFAULT_TIMEOUT_MS;
-
-  try {
-    const timeoutSignal = AbortSignal.timeout(timeoutMs);
-    const signal = options?.signal
-      ? AbortSignal.any([options.signal, timeoutSignal])
-      : timeoutSignal;
-
-    const response = await fetch(url, {
-      method: options?.method ?? "GET",
-      headers,
-      body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
-      signal,
-    });
-
-    return parseGatewayResponse<TData>(response);
-  } catch (error: unknown) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      return D2Result.fail<TData>({
-        messages: ["Gateway request was aborted."],
-        statusCode: 408 as HttpStatusCode,
-      });
-    }
-
-    if (error instanceof DOMException && error.name === "TimeoutError") {
-      return D2Result.fail<TData>({
-        messages: [`Gateway request timed out after ${timeoutMs}ms.`],
-        statusCode: 408 as HttpStatusCode,
-      });
-    }
-
-    return networkErrorResult<TData>(error);
-  }
+  return executeFetch<TData>(url, {
+    method: options?.method,
+    headers,
+    body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
+    signal: options?.signal,
+    timeout: options?.timeout ?? DEFAULT_TIMEOUT_MS,
+  });
 }
 
 /**

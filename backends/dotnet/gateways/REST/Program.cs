@@ -67,9 +67,11 @@ builder.Services.AddJwtAuth(builder.Configuration);
 // Register service-to-service API key authentication.
 builder.Services.AddServiceKeyAuth(builder.Configuration);
 
-// Register CORS.
+// Register CORS — supports comma-separated origins (e.g. "http://localhost:5173,https://app.example.com").
+var corsOrigins = (builder.Configuration["CorsOrigin"] ?? "http://localhost:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
-    p.WithOrigins(builder.Configuration["CorsOrigin"] ?? "http://localhost:5173")
+    p.WithOrigins(corsOrigins)
      .AllowCredentials()
      .WithHeaders("Content-Type", "Authorization", "Idempotency-Key", "X-Client-Fingerprint")
      .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")));

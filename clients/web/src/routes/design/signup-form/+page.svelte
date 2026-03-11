@@ -3,7 +3,7 @@
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
   import { untrack } from "svelte";
-  import { createSignupSchema } from "./schema.js";
+  import { createSignUpSchema as createSignupSchema } from "$lib/shared/forms/sign-up-schema.js";
   import { FormInput } from "$lib/client/components/forms/index.js";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import * as Card from "$lib/client/components/ui/card/index.js";
