@@ -4,6 +4,8 @@ import {
   HandlerContext,
   OrgType,
   DEFAULT_HANDLER_OPTIONS,
+  requestContextStorage,
+  requestLoggerStorage,
   type IHandlerContext,
   type IRequestContext,
   type HandlerOptions,
@@ -289,6 +291,172 @@ describe("HandlerContext", () => {
 
     expect(context.request).toBe(request);
     expect(context.logger).toBe(logger);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ambient context (AsyncLocalStorage)
+// ---------------------------------------------------------------------------
+
+describe("Ambient context via AsyncLocalStorage", () => {
+  it("HandlerContext.request returns ambient value when storage is active", async () => {
+    const constructorRequest = createTestRequestContext({ userId: "constructor-user" });
+    const ambientRequest = createTestRequestContext({ userId: "ambient-user" });
+    const logger = createLogger({ level: "silent" as never });
+    const context = new HandlerContext(constructorRequest, logger);
+
+    // Outside storage — falls back to constructor arg
+    expect(context.request.userId).toBe("constructor-user");
+
+    // Inside storage — returns ambient value
+    await requestContextStorage.run(ambientRequest, async () => {
+      expect(context.request.userId).toBe("ambient-user");
+    });
+
+    // After run() exits — back to constructor arg
+    expect(context.request.userId).toBe("constructor-user");
+  });
+
+  it("HandlerContext.logger returns ambient value when storage is active", async () => {
+    const constructorLogger = createLogger({ level: "silent" as never });
+    const ambientLogger = createLogger({ level: "silent" as never });
+    const request = createTestRequestContext();
+    const context = new HandlerContext(request, constructorLogger);
+
+    // Outside storage — falls back to constructor arg
+    expect(context.logger).toBe(constructorLogger);
+
+    // Inside storage — returns ambient value
+    await requestLoggerStorage.run(ambientLogger, async () => {
+      expect(context.logger).toBe(ambientLogger);
+    });
+
+    // After run() exits — back to constructor arg
+    expect(context.logger).toBe(constructorLogger);
+  });
+
+  it("singleton handler sees per-request context inside storage.run()", async () => {
+    // Simulate a singleton handler constructed once with service-level defaults
+    const serviceRequest = createTestRequestContext({
+      isTrustedService: false,
+      isAuthenticated: false,
+      userId: undefined,
+    });
+    const serviceLogger = createLogger({ level: "silent" as never });
+    const singletonContext = new HandlerContext(serviceRequest, serviceLogger);
+    const handler = new SuccessHandler(singletonContext);
+
+    // Request 1: trusted service, user "alice"
+    const perRequestCtx1 = createTestRequestContext({
+      isTrustedService: true,
+      userId: "alice",
+    });
+    const result1 = await requestContextStorage.run(perRequestCtx1, () =>
+      handler.handleAsync({ value: "hello" }),
+    );
+    expect(result1).toBeSuccess();
+
+    // Request 2: untrusted, user "bob"
+    const perRequestCtx2 = createTestRequestContext({
+      isTrustedService: false,
+      userId: "bob",
+    });
+    const result2 = await requestContextStorage.run(perRequestCtx2, () =>
+      handler.handleAsync({ value: "world" }),
+    );
+    expect(result2).toBeSuccess();
+
+    // Outside storage — handler falls back to service-level defaults
+    expect(singletonContext.request.userId).toBeUndefined();
+    expect(singletonContext.request.isTrustedService).toBe(false);
+  });
+
+  it("enterWith() upgrades ambient context for downstream code", async () => {
+    const initialRequest = createTestRequestContext({
+      isAuthenticated: false,
+      userId: undefined,
+    });
+    const upgradedRequest = createTestRequestContext({
+      isAuthenticated: true,
+      userId: "upgraded-user",
+      agentOrgId: "org-upgraded",
+    });
+    const logger = createLogger({ level: "silent" as never });
+    const context = new HandlerContext(initialRequest, logger);
+
+    await requestContextStorage.run(initialRequest, async () => {
+      // Before enterWith — sees initial context
+      expect(context.request.isAuthenticated).toBe(false);
+      expect(context.request.userId).toBeUndefined();
+
+      // Simulate scope middleware upgrading context (like auth scope does)
+      requestContextStorage.enterWith(upgradedRequest);
+
+      // After enterWith — sees upgraded context
+      expect(context.request.isAuthenticated).toBe(true);
+      expect(context.request.userId).toBe("upgraded-user");
+      expect(context.request.agentOrgId).toBe("org-upgraded");
+    });
+  });
+
+  it("handler logs use ambient logger when active", async () => {
+    const silentLogger = createLogger({ level: "silent" as never });
+    const ambientLogger = createLogger({ level: "debug" as never });
+    const debugSpy = vi.spyOn(ambientLogger, "info");
+
+    const context = new HandlerContext(createTestRequestContext(), silentLogger);
+    const handler = new SuccessHandler(context);
+
+    // Inside ambient logger storage — handler should use the ambient logger
+    await requestLoggerStorage.run(ambientLogger, () => handler.handleAsync({ value: "test" }));
+
+    // The ambient logger should have received log calls from handleAsync
+    const executingCalls = debugSpy.mock.calls.filter((c) =>
+      (c[0] as string).includes("Executing handler"),
+    );
+    expect(executingCalls.length).toBeGreaterThanOrEqual(1);
+
+    debugSpy.mockRestore();
+  });
+
+  it("concurrent requests see isolated contexts", async () => {
+    const serviceLogger = createLogger({ level: "silent" as never });
+    const serviceRequest = createTestRequestContext({
+      isAuthenticated: false,
+      userId: undefined,
+    });
+    const singletonContext = new HandlerContext(serviceRequest, serviceLogger);
+
+    // Capture what userId each handler invocation sees
+    class ContextCapture extends BaseHandler<void, { userId: string | undefined }> {
+      constructor(ctx: IHandlerContext) {
+        super(ctx);
+      }
+      protected async executeAsync(): Promise<
+        D2Result<{ userId: string | undefined } | undefined>
+      > {
+        // Small delay to increase chance of interleaving
+        await new Promise((r) => setTimeout(r, 10));
+        return D2Result.ok({ data: { userId: this.context.request.userId } });
+      }
+    }
+
+    const handler = new ContextCapture(singletonContext);
+
+    // Run two "requests" concurrently with different contexts
+    const [r1, r2] = await Promise.all([
+      requestContextStorage.run(createTestRequestContext({ userId: "user-A" }), () =>
+        handler.handleAsync(undefined as never),
+      ),
+      requestContextStorage.run(createTestRequestContext({ userId: "user-B" }), () =>
+        handler.handleAsync(undefined as never),
+      ),
+    ]);
+
+    expect(r1).toBeSuccess();
+    expect(r2).toBeSuccess();
+    expect(r1.data?.userId).toBe("user-A");
+    expect(r2.data?.userId).toBe("user-B");
   });
 });
 

@@ -1,7 +1,14 @@
 import { createMiddleware } from "hono/factory";
 import { getServerSpan, enrichSpan } from "@d2/service-defaults";
 import type { ServiceProvider, ServiceScope } from "@d2/di";
-import { IRequestContextKey, IHandlerContextKey, HandlerContext, OrgType } from "@d2/handler";
+import {
+  IRequestContextKey,
+  IHandlerContextKey,
+  HandlerContext,
+  OrgType,
+  requestContextStorage,
+  requestLoggerStorage,
+} from "@d2/handler";
 import { ILoggerKey } from "@d2/logging";
 import type { IRequestContext } from "@d2/handler";
 import { SESSION_FIELDS } from "@d2/auth-domain";
@@ -167,6 +174,13 @@ export function createScopeMiddleware(provider: ServiceProvider) {
         isAuthenticated: requestContext.isAuthenticated ?? false,
         isOrgEmulating: requestContext.isOrgEmulating ?? false,
       });
+
+      // Upgrade ambient storage so all handlers (including singletons) see
+      // the auth-enriched context and logger for the rest of this request.
+      const finalCtx = scope.resolve(IRequestContextKey);
+      const finalLogger = scope.resolve(IHandlerContextKey).logger;
+      requestContextStorage.enterWith(finalCtx);
+      requestLoggerStorage.enterWith(finalLogger);
 
       c.set(SCOPE_KEY, scope);
       await next();

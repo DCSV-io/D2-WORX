@@ -7,7 +7,11 @@ import type { ServiceProvider } from "@d2/di";
 import type { ILogger } from "@d2/logging";
 import type { FindWhoIs } from "@d2/geo-client";
 import type { CheckRateLimit } from "@d2/ratelimit";
-import type { CheckSignInThrottle, RecordSignInOutcome, CheckEmailAvailability } from "@d2/auth-app";
+import type {
+  CheckSignInThrottle,
+  RecordSignInOutcome,
+  CheckEmailAvailability,
+} from "@d2/auth-app";
 import type { Auth } from "@d2/auth-infra";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { createCorsMiddleware } from "../middleware/cors.js";
@@ -22,6 +26,7 @@ import {
 } from "../middleware/session-fingerprint.js";
 import { createScopeMiddleware } from "../middleware/scope.js";
 import { createRequestContextLoggingMiddleware } from "../middleware/request-context-logging.js";
+import { createAmbientScopeMiddleware } from "../middleware/ambient-scope.js";
 import { handleError } from "../middleware/error-handler.js";
 import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
 import { createAuthRoutes } from "../routes/auth-routes.js";
@@ -102,6 +107,7 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
     logger.warn("Auth API started WITHOUT service key requirement — all requests accepted");
   }
   app.use("*", createRequestContextLoggingMiddleware(logger));
+  app.use("*", createAmbientScopeMiddleware());
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));
   app.onError(handleError);
 
@@ -122,9 +128,7 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
     const rc = (c as any).get(REQUEST_CONTEXT_KEY) as { deviceFingerprint?: string } | undefined;
     const dfp = rc?.deviceFingerprint;
     await fingerprintStorage.run(fp, () =>
-      dfp
-        ? deviceFingerprintStorage.run(dfp, () => next())
-        : next(),
+      dfp ? deviceFingerprintStorage.run(dfp, () => next()) : next(),
     );
   });
   authApp.route(

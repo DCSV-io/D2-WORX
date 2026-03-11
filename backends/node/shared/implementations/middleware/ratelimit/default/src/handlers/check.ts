@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext, type IRequestContext, validators } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { type DistributedCache, RateLimit } from "@d2/interfaces";
 import { isLocalhost } from "@d2/request-enrichment";
@@ -19,15 +19,12 @@ type CheckOutput = RateLimit.CheckOutput;
  *
  * Fail-open on all cache errors.
  */
-export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> implements RateLimit.ICheckHandler {
+export class CheckRateLimit
+  extends BaseHandler<CheckInput, CheckOutput>
+  implements RateLimit.ICheckHandler
+{
   override get redaction() {
     return RateLimit.CHECK_REDACTION;
-  }
-
-  // Pre-auth singleton — DI context has static defaults.
-  // The real per-request context arrives via input.requestContext.
-  protected override getEffectiveRequest(input: CheckInput): IRequestContext {
-    return input.requestContext;
   }
 
   private readonly getTtl: DistributedCache.IGetTtlHandler;

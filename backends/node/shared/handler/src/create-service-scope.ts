@@ -4,6 +4,7 @@ import { ILoggerKey } from "@d2/logging";
 import { HandlerContext } from "./handler-context.js";
 import { IHandlerContextKey, IRequestContextKey } from "./service-keys.js";
 import type { IRequestContext } from "./i-request-context.js";
+import { requestContextStorage, requestLoggerStorage } from "./ambient-context.js";
 
 /**
  * Creates a disposable DI scope with a fresh traceId and no auth context.
@@ -29,5 +30,12 @@ export function createServiceScope(provider: ServiceProvider, logger?: ILogger):
   scope.setInstance(IRequestContextKey, requestContext);
   const resolvedLogger = logger ?? provider.resolve(ILoggerKey);
   scope.setInstance(IHandlerContextKey, new HandlerContext(requestContext, resolvedLogger));
+
+  // Set ambient storage so handlers see per-request context regardless of
+  // how they were constructed (singleton vs scoped). Uses enterWith() to
+  // bind to the current async execution context.
+  requestContextStorage.enterWith(requestContext);
+  requestLoggerStorage.enterWith(resolvedLogger);
+
   return scope;
 }
