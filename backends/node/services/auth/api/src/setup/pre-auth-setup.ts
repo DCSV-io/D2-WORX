@@ -3,6 +3,7 @@ import type { HandlerContext } from "@d2/handler";
 import type { ILogger } from "@d2/logging";
 import * as CacheMemory from "@d2/cache-memory";
 import { FindWhoIs, createGeoCircuitBreaker, type GeoClientOptions } from "@d2/geo-client";
+import { Singleflight } from "@d2/utilities";
 import { CheckRateLimit } from "@d2/ratelimit";
 import { PASSWORD_POLICY } from "@d2/auth-domain";
 import {
@@ -57,11 +58,13 @@ export function createPreAuthHandlers(
   // FindWhoIs for request enrichment (WhoIs lookup for IP → city/country)
   const whoIsCacheStore = new CacheMemory.MemoryCacheStore();
   const geoCircuitBreaker = createGeoCircuitBreaker(geoOptions, logger);
+  const geoSingleflight = new Singleflight();
   const findWhoIs = new FindWhoIs(
     whoIsCacheStore,
     geoClient,
     geoOptions,
     geoCircuitBreaker,
+    geoSingleflight,
     serviceContext,
   );
 

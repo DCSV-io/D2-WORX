@@ -16,6 +16,7 @@ using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
 using D2.Shared.Utilities.CircuitBreaker;
+using D2.Shared.Utilities.Singleflight;
 using FluentAssertions;
 using Grpc.Core;
 using Microsoft.Extensions.Options;
@@ -485,6 +486,7 @@ public class FindWhoIsHandlerTests
             r_cacheSetMock.Object,
             r_geoClientMock.Object,
             cb,
+            new Singleflight(),
             options,
             context);
     }

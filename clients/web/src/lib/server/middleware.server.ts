@@ -19,6 +19,7 @@ import { HandlerContext } from "@d2/handler";
 import { parseRedisUrl } from "@d2/service-defaults/config";
 import * as CacheRedis from "@d2/cache-redis";
 import { MemoryCacheStore } from "@d2/cache-memory";
+import { Singleflight } from "@d2/utilities";
 import {
   createGeoServiceClient,
   createGeoCircuitBreaker,
@@ -122,11 +123,13 @@ export function getMiddlewareContext(): MiddlewareContext | null {
   const geoClient = createGeoServiceClient(geoAddress, geoApiKey);
   const whoIsCacheStore = new MemoryCacheStore();
   const geoCircuitBreaker = createGeoCircuitBreaker(geoOptions, logger);
+  const geoSingleflight = new Singleflight();
   const findWhoIs = new FindWhoIs(
     whoIsCacheStore,
     geoClient,
     geoOptions,
     geoCircuitBreaker,
+    geoSingleflight,
     serviceContext,
   );
 

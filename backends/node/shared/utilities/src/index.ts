@@ -15,3 +15,4 @@ export {
   CircuitState,
   type CircuitBreakerOptions,
 } from "./circuit-breaker.js";
+export { Singleflight } from "./singleflight.js";

@@ -14,24 +14,61 @@ export const load: PageServerLoad = async ({ locals, request }) => {
     .map((c) => c.trim().split("=")[0])
     .filter(Boolean);
 
-  // Serialize requestContext (it's a frozen object with readonly props)
-  const requestContext = locals.requestContext
+  // Serialize requestContext (it's a frozen object with readonly props).
+  // Every IRequestContext field is included so the debug page shows the full picture.
+  const rc = locals.requestContext;
+  const requestContext = rc
     ? {
-        clientIp: locals.requestContext.clientIp ?? null,
-        serverFingerprint: locals.requestContext.serverFingerprint ?? null,
-        clientFingerprint: locals.requestContext.clientFingerprint ?? null,
-        deviceFingerprint: locals.requestContext.deviceFingerprint ?? null,
-        whoIsHashId: locals.requestContext.whoIsHashId ?? null,
-        city: locals.requestContext.city ?? null,
-        countryCode: locals.requestContext.countryCode ?? null,
-        subdivisionCode: locals.requestContext.subdivisionCode ?? null,
-        isVpn: locals.requestContext.isVpn ?? null,
-        isProxy: locals.requestContext.isProxy ?? null,
-        isTor: locals.requestContext.isTor ?? null,
-        isHosting: locals.requestContext.isHosting ?? null,
-        userId: locals.requestContext.userId ?? null,
-        isAuthenticated: locals.requestContext.isAuthenticated,
-        isTrustedService: locals.requestContext.isTrustedService ?? false,
+        // Tracing
+        traceId: rc.traceId ?? null,
+        requestId: rc.requestId ?? null,
+        requestPath: rc.requestPath ?? null,
+
+        // User / Identity
+        isAuthenticated: rc.isAuthenticated,
+        userId: rc.userId ?? null,
+        email: rc.email ?? null,
+        username: rc.username ?? null,
+
+        // Agent Organization
+        agentOrgId: rc.agentOrgId ?? null,
+        agentOrgName: rc.agentOrgName ?? null,
+        agentOrgType: rc.agentOrgType ?? null,
+        agentOrgRole: rc.agentOrgRole ?? null,
+
+        // Target Organization
+        targetOrgId: rc.targetOrgId ?? null,
+        targetOrgName: rc.targetOrgName ?? null,
+        targetOrgType: rc.targetOrgType ?? null,
+        targetOrgRole: rc.targetOrgRole ?? null,
+
+        // Emulation & Impersonation
+        isOrgEmulating: rc.isOrgEmulating ?? false,
+        isUserImpersonating: rc.isUserImpersonating ?? false,
+        impersonatedBy: rc.impersonatedBy ?? null,
+        impersonatingEmail: rc.impersonatingEmail ?? null,
+        impersonatingUsername: rc.impersonatingUsername ?? null,
+
+        // Network / Enrichment
+        clientIp: rc.clientIp ?? null,
+        serverFingerprint: rc.serverFingerprint ?? null,
+        clientFingerprint: rc.clientFingerprint ?? null,
+        deviceFingerprint: rc.deviceFingerprint ?? null,
+        whoIsHashId: rc.whoIsHashId ?? null,
+        city: rc.city ?? null,
+        countryCode: rc.countryCode ?? null,
+        subdivisionCode: rc.subdivisionCode ?? null,
+        isVpn: rc.isVpn ?? null,
+        isProxy: rc.isProxy ?? null,
+        isTor: rc.isTor ?? null,
+        isHosting: rc.isHosting ?? null,
+
+        // Trust & Helpers
+        isTrustedService: rc.isTrustedService ?? false,
+        isAgentStaff: rc.isAgentStaff ?? false,
+        isAgentAdmin: rc.isAgentAdmin ?? false,
+        isTargetingStaff: rc.isTargetingStaff ?? false,
+        isTargetingAdmin: rc.isTargetingAdmin ?? false,
       }
     : null;
 

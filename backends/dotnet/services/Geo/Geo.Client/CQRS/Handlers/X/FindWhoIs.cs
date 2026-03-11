@@ -12,6 +12,7 @@ using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
 using D2.Shared.Utilities.CircuitBreaker;
+using D2.Shared.Utilities.Singleflight;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -33,6 +34,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
     private readonly GeoService.GeoServiceClient r_geoClient;
     private readonly GeoClientOptions r_options;
     private readonly CircuitBreaker<FindWhoIsResponse> r_circuitBreaker;
+    private readonly Singleflight r_singleflight;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FindWhoIs"/> class.
@@ -50,6 +52,9 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
     /// <param name="circuitBreaker">
     /// The circuit breaker protecting gRPC calls to the Geo service.
     /// </param>
+    /// <param name="singleflight">
+    /// Deduplicates concurrent gRPC calls for the same cache key.
+    /// </param>
     /// <param name="options">
     /// The Geo client options.
     /// </param>
@@ -61,6 +66,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         IUpdate.ISetHandler<WhoIsDTO> cacheSet,
         GeoService.GeoServiceClient geoClient,
         CircuitBreaker<FindWhoIsResponse> circuitBreaker,
+        Singleflight singleflight,
         IOptions<GeoClientOptions> options,
         IHandlerContext context)
         : base(context)
@@ -69,6 +75,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         r_cacheSet = cacheSet;
         r_geoClient = geoClient;
         r_circuitBreaker = circuitBreaker;
+        r_singleflight = singleflight;
         r_options = options.Value;
     }
 
@@ -103,25 +110,30 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
             return D2Result<O?>.Ok(new O(cached.Value));
         }
 
-        // Cache miss — call Geo service (circuit breaker protects against sustained failures).
+        // Cache miss — call Geo service.
+        // Singleflight deduplicates concurrent requests for the same cache key.
+        // Circuit breaker protects against sustained downstream failures.
         FindWhoIsResponse response;
         try
         {
-            response = await r_circuitBreaker.ExecuteAsync(
-                async ct2 => await r_geoClient.FindWhoIsAsync(
-                    new FindWhoIsRequest
-                    {
-                        Requests =
+            response = await r_singleflight.ExecuteAsync(
+                cacheKey,
+                async ct2 => await r_circuitBreaker.ExecuteAsync(
+                    async ct3 => await r_geoClient.FindWhoIsAsync(
+                        new FindWhoIsRequest
                         {
-                            new FindWhoIsKeys
+                            Requests =
                             {
-                                IpAddress = input.IpAddress,
-                                Fingerprint = input.UserAgent,
+                                new FindWhoIsKeys
+                                {
+                                    IpAddress = input.IpAddress,
+                                    Fingerprint = input.UserAgent,
+                                },
                             },
                         },
-                    },
-                    cancellationToken: ct2),
-                ct: ct);
+                        cancellationToken: ct3),
+                    ct: ct2),
+                ct);
         }
         catch (Exception ex) when (ex is RpcException or CircuitOpenException)
         {

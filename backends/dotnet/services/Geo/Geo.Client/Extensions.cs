@@ -18,6 +18,7 @@ using D2.Services.Protos.Geo.V1;
 using D2.Shared.InMemoryCache.Default;
 using D2.Shared.Utilities.CircuitBreaker;
 using D2.Shared.Utilities.Extensions;
+using D2.Shared.Utilities.Singleflight;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -119,6 +120,7 @@ public static class Extensions
             services.ConfigureGeoClientOptions(configuration, servicePrefix);
             services.AddDefaultMemoryCaching();
             services.AddGeoCircuitBreaker();
+            services.AddSingleton<Singleflight>();
             services.AddTransient<IComplex.IFindWhoIsHandler, FindWhoIs>();
 
             return services;

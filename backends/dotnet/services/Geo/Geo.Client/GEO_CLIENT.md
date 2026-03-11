@@ -130,7 +130,7 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 > | File Name                                                                | Description                                                                                                                     |
 > | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 > | [Get.cs](CQRS/Handlers/X/Get.cs)                                         | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.     |
-> | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs)                             | Handler for WhoIs lookups with local IMemoryCache caching, circuit breaker, and Geo gRPC service fallback. Used by request enrichment middleware. |
+> | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs)                             | Handler for WhoIs lookups with local IMemoryCache caching, singleflight deduplication, circuit breaker, and Geo gRPC service fallback. Used by request enrichment middleware. |
 > | [UpdateContactsByExtKeys.cs](CQRS/Handlers/X/UpdateContactsByExtKeys.cs) | Handler replacing contacts at ext keys via gRPC (atomic delete + create) + ext-key cache eviction. PII redacted.                |
 
 ---

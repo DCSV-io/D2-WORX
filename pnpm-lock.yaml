@@ -1195,6 +1195,9 @@ importers:
       '@d2/service-defaults':
         specifier: workspace:*
         version: link:../../backends/node/shared/service-defaults
+      '@d2/utilities':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/utilities
       '@grafana/faro-web-sdk':
         specifier: 1.19.0
         version: 1.19.0

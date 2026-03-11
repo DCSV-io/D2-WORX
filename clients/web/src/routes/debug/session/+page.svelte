@@ -173,10 +173,10 @@
         </Card.Content>
       </Card.Root>
 
-      <!-- Request Info -->
+      <!-- Request Context: Tracing -->
       <Card.Root>
         <Card.Header>
-          <Card.Title class="text-base">Request Context</Card.Title>
+          <Card.Title class="text-base">Request Context — Tracing</Card.Title>
           <Card.Description>
             From <code>event.locals.requestContext</code> (enrichment + auth middleware)
           </Card.Description>
@@ -185,31 +185,203 @@
           {#if data.requestContext}
             <dl class="space-y-2 text-sm">
               <div class="flex justify-between">
+                <dt class="text-muted-foreground">traceId</dt>
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.traceId}>
+                  {data.requestContext.traceId ?? "null"}
+                </dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">requestId</dt>
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.requestId}>
+                  {data.requestContext.requestId ?? "null"}
+                </dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">requestPath</dt>
+                <dd class="font-mono text-xs">{data.requestContext.requestPath ?? "null"}</dd>
+              </div>
+            </dl>
+          {:else}
+            <p class="text-muted-foreground text-sm italic">
+              No request context (middleware not running — Redis/Geo not available)
+            </p>
+          {/if}
+        </Card.Content>
+      </Card.Root>
+
+      <!-- Request Context: Identity & Auth -->
+      <Card.Root>
+        <Card.Header>
+          <Card.Title class="text-base">Request Context — Identity</Card.Title>
+          <Card.Description>User identity and auth flags from scope middleware</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          {#if data.requestContext}
+            <dl class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isAuthenticated</dt>
+                <dd>{data.requestContext.isAuthenticated}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">userId</dt>
+                <dd class="font-mono text-xs">{data.requestContext.userId ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">email</dt>
+                <dd class="text-xs">{data.requestContext.email ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">username</dt>
+                <dd class="text-xs">{data.requestContext.username ?? "null"}</dd>
+              </div>
+              <Separator />
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isTrustedService</dt>
+                <dd>{data.requestContext.isTrustedService}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isAgentStaff</dt>
+                <dd>{data.requestContext.isAgentStaff}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isAgentAdmin</dt>
+                <dd>{data.requestContext.isAgentAdmin}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isTargetingStaff</dt>
+                <dd>{data.requestContext.isTargetingStaff}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isTargetingAdmin</dt>
+                <dd>{data.requestContext.isTargetingAdmin}</dd>
+              </div>
+            </dl>
+          {:else}
+            <p class="text-muted-foreground text-sm italic">No request context</p>
+          {/if}
+        </Card.Content>
+      </Card.Root>
+
+      <!-- Request Context: Organization -->
+      <Card.Root>
+        <Card.Header>
+          <Card.Title class="text-base">Request Context — Organizations</Card.Title>
+          <Card.Description>Agent (actual) vs Target (effective) org context</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          {#if data.requestContext}
+            <dl class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground font-medium">Agent Org</dt>
+                <dd></dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">agentOrgId</dt>
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.agentOrgId}>
+                  {data.requestContext.agentOrgId ?? "null"}
+                </dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">agentOrgName</dt>
+                <dd class="text-xs">{data.requestContext.agentOrgName ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">agentOrgType</dt>
+                <dd>{data.requestContext.agentOrgType ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">agentOrgRole</dt>
+                <dd>{data.requestContext.agentOrgRole ?? "null"}</dd>
+              </div>
+              <Separator />
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground font-medium">Target Org</dt>
+                <dd></dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">targetOrgId</dt>
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.targetOrgId}>
+                  {data.requestContext.targetOrgId ?? "null"}
+                </dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">targetOrgName</dt>
+                <dd class="text-xs">{data.requestContext.targetOrgName ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">targetOrgType</dt>
+                <dd>{data.requestContext.targetOrgType ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground pl-2">targetOrgRole</dt>
+                <dd>{data.requestContext.targetOrgRole ?? "null"}</dd>
+              </div>
+              <Separator />
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isOrgEmulating</dt>
+                <dd>{data.requestContext.isOrgEmulating}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">isUserImpersonating</dt>
+                <dd>{data.requestContext.isUserImpersonating}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">impersonatedBy</dt>
+                <dd class="font-mono text-xs">{data.requestContext.impersonatedBy ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">impersonatingEmail</dt>
+                <dd class="text-xs">{data.requestContext.impersonatingEmail ?? "null"}</dd>
+              </div>
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">impersonatingUsername</dt>
+                <dd class="text-xs">{data.requestContext.impersonatingUsername ?? "null"}</dd>
+              </div>
+            </dl>
+          {:else}
+            <p class="text-muted-foreground text-sm italic">No request context</p>
+          {/if}
+        </Card.Content>
+      </Card.Root>
+
+      <!-- Request Context: Network & Geo -->
+      <Card.Root>
+        <Card.Header>
+          <Card.Title class="text-base">Request Context — Network & Geo</Card.Title>
+          <Card.Description>IP resolution, fingerprints, WhoIs enrichment</Card.Description>
+        </Card.Header>
+        <Card.Content>
+          {#if data.requestContext}
+            <dl class="space-y-2 text-sm">
+              <div class="flex justify-between">
                 <dt class="text-muted-foreground">clientIp</dt>
-                <dd class="font-mono text-xs">{data.requestContext.clientIp}</dd>
+                <dd class="font-mono text-xs">{data.requestContext.clientIp ?? "null"}</dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">serverFingerprint</dt>
                 <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.serverFingerprint}>
-                  {data.requestContext.serverFingerprint}
+                  {data.requestContext.serverFingerprint ?? "null"}
                 </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">clientFingerprint</dt>
-                <dd class="max-w-48 truncate font-mono text-xs">
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.clientFingerprint}>
                   {data.requestContext.clientFingerprint ?? "null"}
                 </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">deviceFingerprint</dt>
-                <dd
-                  class="max-w-48 truncate font-mono text-xs"
-                  title={data.requestContext.deviceFingerprint}
-                >
-                  {data.requestContext.deviceFingerprint}
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.deviceFingerprint}>
+                  {data.requestContext.deviceFingerprint ?? "null"}
                 </dd>
               </div>
               <Separator />
+              <div class="flex justify-between">
+                <dt class="text-muted-foreground">whoIsHashId</dt>
+                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.whoIsHashId}>
+                  {data.requestContext.whoIsHashId ?? "null"}
+                </dd>
+              </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">city</dt>
                 <dd>{data.requestContext.city ?? "null"}</dd>
@@ -238,15 +410,6 @@
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">isHosting</dt>
                 <dd>{data.requestContext.isHosting ?? "null"}</dd>
-              </div>
-              <Separator />
-              <div class="flex justify-between">
-                <dt class="text-muted-foreground">isAuthenticated</dt>
-                <dd>{data.requestContext.isAuthenticated}</dd>
-              </div>
-              <div class="flex justify-between">
-                <dt class="text-muted-foreground">isTrustedService</dt>
-                <dd>{data.requestContext.isTrustedService}</dd>
               </div>
             </dl>
           {:else}

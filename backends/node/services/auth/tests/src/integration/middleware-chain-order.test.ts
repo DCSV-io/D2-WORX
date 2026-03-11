@@ -9,6 +9,7 @@ import { createLogger } from "@d2/logging";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { enrichRequest } from "@d2/request-enrichment";
 import { FindWhoIs, createGeoCircuitBreaker, type GeoClientOptions } from "@d2/geo-client";
+import { Singleflight } from "@d2/utilities";
 import { CheckRateLimit } from "@d2/ratelimit";
 import type { RateLimit } from "@d2/interfaces";
 import * as CacheRedis from "@d2/cache-redis";
@@ -97,11 +98,13 @@ describe("Middleware chain order", () => {
       },
     } as unknown as Parameters<typeof FindWhoIs>[1];
     const geoCircuitBreaker = createGeoCircuitBreaker(geoOptions, logger);
+    const geoSingleflight = new Singleflight();
     const findWhoIs = new FindWhoIs(
       whoIsCacheStore,
       stubGeoClient,
       geoOptions,
       geoCircuitBreaker,
+      geoSingleflight,
       ctx,
     );
 
