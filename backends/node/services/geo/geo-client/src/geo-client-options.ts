@@ -16,6 +16,10 @@ export interface GeoClientOptions {
   grpcTimeoutMs: number;
   /** Duration in ms for negative cache entries (WhoIs not found). Default: 3,600,000 (1 hour). */
   whoIsNegativeCacheExpirationMs: number;
+  /** Consecutive gRPC failures before the circuit breaker opens. Default: 5. */
+  circuitBreakerFailureThreshold: number;
+  /** Duration in ms the circuit stays open before probing. Default: 30,000 (30s). */
+  circuitBreakerCooldownMs: number;
 }
 
 export const DEFAULT_GEO_CLIENT_OPTIONS: GeoClientOptions = {
@@ -27,4 +31,6 @@ export const DEFAULT_GEO_CLIENT_OPTIONS: GeoClientOptions = {
   apiKey: "",
   grpcTimeoutMs: 30_000,
   whoIsNegativeCacheExpirationMs: 3_600_000,
+  circuitBreakerFailureThreshold: 5,
+  circuitBreakerCooldownMs: 30_000,
 };

@@ -1,5 +1,6 @@
 import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import { CircuitBreaker, CircuitState } from "@d2/utilities";
 import type { WhoIsDTO, FindWhoIsRequest, FindWhoIsResponse, GeoServiceClient } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
 import { Metadata } from "@grpc/grpc-js";
@@ -26,6 +27,7 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
   private readonly options: GeoClientOptions;
+  private readonly circuitBreaker: CircuitBreaker;
 
   constructor(
     store: MemoryCacheStore,
@@ -37,6 +39,20 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
     this.store = store;
     this.geoClient = geoClient;
     this.options = options;
+    this.circuitBreaker = new CircuitBreaker({
+      failureThreshold: options.circuitBreakerFailureThreshold,
+      cooldownMs: options.circuitBreakerCooldownMs,
+      onStateChange: (from, to) => {
+        if (to === CircuitState.OPEN) {
+          context.logger.warn(
+            `Geo gRPC circuit breaker opened after ${options.circuitBreakerFailureThreshold} consecutive failures. ` +
+            `Will probe in ${options.circuitBreakerCooldownMs}ms.`,
+          );
+        } else if (to === CircuitState.CLOSED && from === CircuitState.HALF_OPEN) {
+          context.logger.info("Geo gRPC circuit breaker closed — service recovered.");
+        }
+      },
+    });
   }
 
   private static readonly findWhoIsSchema = z.object({
@@ -59,27 +75,32 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
       return D2Result.ok({ data: { whoIs: cached ?? undefined } });
     }
 
-    // Cache miss — call Geo service
+    // Cache miss — call Geo service (circuit breaker protects against sustained failures)
     let response: FindWhoIsResponse;
     try {
       const request: FindWhoIsRequest = {
         requests: [{ ipAddress: input.ipAddress, fingerprint: input.fingerprint }],
       };
-      response = await new Promise<FindWhoIsResponse>((resolve, reject) => {
-        this.geoClient.findWhoIs(
-          request,
-          new Metadata(),
-          { deadline: Date.now() + this.options.grpcTimeoutMs },
-          (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          },
-        );
-      });
+      response = await this.circuitBreaker.execute(() =>
+        new Promise<FindWhoIsResponse>((resolve, reject) => {
+          this.geoClient.findWhoIs(
+            request,
+            new Metadata(),
+            { deadline: Date.now() + this.options.grpcTimeoutMs },
+            (err, res) => {
+              if (err) reject(err);
+              else resolve(res);
+            },
+          );
+        }),
+      );
     } catch {
-      // Fail-open: log warning and return undefined.
+      // Fail-open: handles gRPC errors AND circuit-open rejections identically.
+      // When the circuit is open this returns instantly (no timeout wait).
       // Do not log input.ipAddress directly — it bypasses BaseHandler's redaction.
-      this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`);
+      if (this.circuitBreaker.state !== CircuitState.OPEN) {
+        this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`);
+      }
       return D2Result.ok({ data: { whoIs: undefined } });
     }
 

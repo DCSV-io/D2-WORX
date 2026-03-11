@@ -15,6 +15,7 @@ using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
+using D2.Shared.Utilities.CircuitBreaker;
 using FluentAssertions;
 using Grpc.Core;
 using Microsoft.Extensions.Options;
@@ -374,6 +375,89 @@ public class FindWhoIsHandlerTests
 
     #endregion
 
+    #region Circuit Breaker Tests
+
+    /// <summary>
+    /// Tests that the circuit breaker opens after consecutive gRPC failures and
+    /// subsequent calls fail-open instantly without calling gRPC.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
+    [Fact]
+    public async Task HandleAsync_WhenCircuitOpens_FailsOpenWithoutCallingGrpc()
+    {
+        // Arrange — threshold of 2 so circuit opens quickly
+        var cb = new CircuitBreaker<FindWhoIsResponse>(
+            _ => false,
+            new CircuitBreakerOptions { FailureThreshold = 2, CooldownDuration = TimeSpan.FromMinutes(5) });
+
+        SetupCacheMiss();
+        SetupGrpcThrows(new RpcException(new Status(StatusCode.Unavailable, "down")));
+
+        var handler = CreateHandler(cb);
+
+        // Act — trigger 2 failures to open the circuit
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.1", "UA"), Ct);
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.2", "UA"), Ct);
+
+        // Reset gRPC mock invocations to verify no further calls
+        r_geoClientMock.Invocations.Clear();
+
+        // Act — third call should hit circuit breaker, not gRPC
+        var result = await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.3", "UA"), Ct);
+
+        // Assert
+        result.Success.Should().BeTrue("circuit-open should fail-open");
+        result.Data!.WhoIs.Should().BeNull();
+        cb.State.Should().Be(CircuitState.Open);
+
+        r_geoClientMock.Verify(
+            x => x.FindWhoIsAsync(
+                It.IsAny<FindWhoIsRequest>(),
+                It.IsAny<Metadata>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never,
+            "gRPC should NOT be called when circuit is open");
+    }
+
+    /// <summary>
+    /// Tests that a successful gRPC call resets the failure count and keeps the circuit closed.
+    /// </summary>
+    ///
+    /// <returns>
+    /// A <see cref="Task"/> representing the asynchronous unit test.
+    /// </returns>
+    [Fact]
+    public async Task HandleAsync_WhenSuccessAfterFailure_ResetsCircuit()
+    {
+        // Arrange — threshold of 3
+        var cb = new CircuitBreaker<FindWhoIsResponse>(
+            _ => false,
+            new CircuitBreakerOptions { FailureThreshold = 3 });
+
+        SetupCacheMiss();
+        SetupCacheSetSuccess();
+
+        // First call fails
+        SetupGrpcThrows(new RpcException(new Status(StatusCode.Unavailable, "down")));
+        var handler = CreateHandler(cb);
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.1", "UA"), Ct);
+        cb.FailureCount.Should().Be(1);
+
+        // Second call succeeds — resets failure count
+        SetupGrpcSuccess("2.2.2.2", "City", "US");
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("2.2.2.2", "UA"), Ct);
+
+        // Assert
+        cb.FailureCount.Should().Be(0);
+        cb.State.Should().Be(CircuitState.Closed);
+    }
+
+    #endregion
+
     #region Helper Methods
 
     private static WhoIsDTO CreateWhoIsDTO(string ip, string city, string countryCode)
@@ -391,14 +475,16 @@ public class FindWhoIsHandlerTests
         };
     }
 
-    private FindWhoIs CreateHandler()
+    private FindWhoIs CreateHandler(CircuitBreaker<FindWhoIsResponse>? circuitBreaker = null)
     {
         var options = Options.Create(r_options);
         var context = TestHelpers.CreateHandlerContext();
+        var cb = circuitBreaker ?? new CircuitBreaker<FindWhoIsResponse>(_ => false);
         return new FindWhoIs(
             r_cacheGetMock.Object,
             r_cacheSetMock.Object,
             r_geoClientMock.Object,
+            cb,
             options,
             context);
     }

@@ -104,11 +104,10 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 ### Open — Can Fix Now
 
-| #   | Item                                                | Owner  | Effort | Notes                                                                                                              |
-| --- | --------------------------------------------------- | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| 32  | Thundering herd protection on popular key expiry    | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                               |
-| 39  | Circuit breaker for non-critical cross-service gRPC | All    | Medium | Add circuit breaker pattern (e.g., `opossum`) around geo-client gRPC calls — fast-fail under sustained Geo failure |
-| 40  | OTel alerting for service outages                   | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                |
+| #   | Item                                             | Owner  | Effort | Notes                                                                                               |
+| --- | ------------------------------------------------ | ------ | ------ | --------------------------------------------------------------------------------------------------- |
+| 32  | Thundering herd protection on popular key expiry | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                |
+| 40  | OTel alerting for service outages                | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down) |
 
 ### Open Questions
 
@@ -136,7 +135,7 @@ From Q1 2026 audit:
 | 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
 | 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
 | 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
-| 6   | Validate PII redaction in OTel output       | ~~Running observability stack~~ **UNBLOCKED** | High     | Observability stack is running + Faro flowing data. Manually verify no PII in Loki log/trace output                                                            |
+| 6   | ~~Validate PII redaction in OTel output~~   | ✅ Done                                       | High     | Verified: no IPs in spans/logs, fingerprints + WhoIs IDs are hashed, UAs redacted by handler RedactionSpec                                                    |
 | 7   | OTel alerting rules                         | ~~Running AlertManager/Grafana~~ **UNBLOCKED** | Medium  | Grafana is running. Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                       |
 | 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
 | 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
@@ -181,6 +180,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Recently Completed
 
+- Circuit breaker: Custom `CircuitBreaker<T>` utility (.NET + Node.js) protecting Geo gRPC calls — fast-fail under sustained failure, auto-recovery via half-open probe (#39)
 - Client telemetry: Grafana Faro SDK, Alloy faro.receiver pipeline, Web Vitals RUM dashboard, BFF dashboard rename (Step 9)
 - Device fingerprinting: cross-cutting SvelteKit + Node.js + .NET, `d2-cfp` cookie, DeviceFingerprint rate limit dimension (Step 8.7)
 - Debug session page + role audit docs (Step 8.5)
@@ -563,7 +563,7 @@ Auth (always proxied):
 | Retry triggers  | Transient only: 5xx, timeout, connection refused, 429 (rate limited)  |
 | No retry        | 4xx (validation, auth, not found) — these are permanent failures      |
 | Jitter          | Add random jitter to avoid thundering herd                            |
-| Circuit breaker | Not initially — evaluate if needed after real traffic patterns emerge |
+| Circuit breaker | Custom `CircuitBreaker<T>` — see below                               |
 
 **Key design principles:**
 
@@ -572,6 +572,10 @@ Auth (always proxied):
 - **Fail loudly after exhaustion**: When retries are exhausted, propagate the last error. Do not swallow failures.
 
 **Packages**: Utility function in both `@d2/utilities` (Node.js) and `D2.Shared.Utilities` (.NET). Not a middleware — a composable function that wraps any async operation.
+
+**Circuit Breaker** (added 2026-03-10):
+
+Custom `CircuitBreaker<T>` utility in both `D2.Shared.Utilities.CircuitBreaker` (.NET) and `@d2/utilities` (Node.js). Three states: **Closed** → **Open** (after N consecutive failures) → **HalfOpen** (one probe after cooldown). Defaults: 5 failures, 30s cooldown. Thread-safe (.NET uses `Interlocked`, Node.js is single-threaded). Currently wired into Geo.Client `FindWhoIs` handlers on both platforms — when Geo gRPC is down, requests fail-open instantly instead of waiting for timeout.
 
 **Rationale**:
 

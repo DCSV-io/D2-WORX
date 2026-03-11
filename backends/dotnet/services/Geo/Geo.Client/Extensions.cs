@@ -16,8 +16,11 @@ using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
 using D2.Geo.Client.Messaging.Handlers.Sub;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.InMemoryCache.Default;
+using D2.Shared.Utilities.CircuitBreaker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Extension methods for adding GeoRefDataService handlers.
@@ -114,6 +117,35 @@ public static class Extensions
         {
             services.ConfigureGeoClientOptions(configuration, servicePrefix);
             services.AddDefaultMemoryCaching();
+
+            services.AddSingleton(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<GeoClientOptions>>().Value;
+                var logger = sp.GetRequiredService<ILogger<FindWhoIs>>();
+                return new CircuitBreaker<FindWhoIsResponse>(
+                    _ => false,
+                    new CircuitBreakerOptions
+                    {
+                        FailureThreshold = opts.CircuitBreakerFailureThreshold,
+                        CooldownDuration = opts.CircuitBreakerCooldownDuration,
+                    },
+                    (from, to) =>
+                    {
+                        if (to == CircuitState.Open)
+                        {
+                            logger.LogWarning(
+                                "Geo gRPC circuit breaker opened after {Threshold} consecutive failures. " +
+                                "Will probe in {Cooldown}.",
+                                opts.CircuitBreakerFailureThreshold,
+                                opts.CircuitBreakerCooldownDuration);
+                        }
+                        else if (to == CircuitState.Closed && from == CircuitState.HalfOpen)
+                        {
+                            logger.LogInformation("Geo gRPC circuit breaker closed — service recovered.");
+                        }
+                    });
+            });
+
             services.AddTransient<IComplex.IFindWhoIsHandler, FindWhoIs>();
 
             return services;

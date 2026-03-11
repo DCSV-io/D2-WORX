@@ -7,7 +7,7 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 | File Name                                  | Description                                                                                                                          |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | [Extensions.cs](Extensions.cs)             | DI extension methods: `AddGeoRefDataConsumer`, `AddGeoRefDataProvider`, `AddWhoIsCache`, `AddContactHandlers`.                       |
-| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, and `ApiKey` for gRPC authentication.                    |
+| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, `ApiKey`, and circuit breaker settings.                   |
 | [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and Messaging.RabbitMQ. |
 
 ---
@@ -130,7 +130,7 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 > | File Name                                                                | Description                                                                                                                     |
 > | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 > | [Get.cs](CQRS/Handlers/X/Get.cs)                                         | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.     |
-> | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs)                             | Handler for WhoIs lookups with local IMemoryCache caching and Geo gRPC service fallback. Used by request enrichment middleware. |
+> | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs)                             | Handler for WhoIs lookups with local IMemoryCache caching, circuit breaker, and Geo gRPC service fallback. Used by request enrichment middleware. |
 > | [UpdateContactsByExtKeys.cs](CQRS/Handlers/X/UpdateContactsByExtKeys.cs) | Handler replacing contacts at ext keys via gRPC (atomic delete + create) + ext-key cache eviction. PII redacted.                |
 
 ---
