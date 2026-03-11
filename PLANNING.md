@@ -104,11 +104,11 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 ### Open — Can Fix Now
 
-| #   | Item                                             | Owner  | Effort | Notes                                                                                               |
-| --- | ------------------------------------------------ | ------ | ------ | --------------------------------------------------------------------------------------------------- |
-| 32  | Thundering herd protection on popular key expiry | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                |
-| 40  | OTel alerting for service outages                | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down) |
-| 41  | Node.js pre-auth handlers: early DI scope        | Shared | Medium | Pre-auth singletons (rate limit, FindWhoIs, throttle) use static service-level HandlerContext — `this.context.request` has stale defaults. .NET resolves per-request via scoped DI. Introduce an early DI scope (created by enrichment/service-key middleware, before auth) so all Node.js handlers are scoped and `this.context.request` is always per-request. Eliminates `getEffectiveRequest` workaround and aligns .NET/Node.js behavior. |
+| #      | Item                                             | Owner  | Effort  | Notes                                                                                                                                                                                                                                                                                                                                                                   |
+| ------ | ------------------------------------------------ | ------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 32     | Thundering herd protection on popular key expiry | Shared | Medium  | Add singleflight/lock pattern for cache-memory on popular key expiry                                                                                                                                                                                                                                                                                                    |
+| 40     | OTel alerting for service outages                | All    | Medium  | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down)                                                                                                                                                                                                                                                                     |
+| ~~41~~ | ~~Node.js pre-auth handlers: early DI scope~~    | Shared | ✅ Done | Resolved via AsyncLocalStorage ambient context. `HandlerContext` checks `requestContextStorage`/`requestLoggerStorage` first — all handlers (including pre-auth singletons) automatically see per-request context. `ambient-scope` middleware wraps pipeline in `.run()`, scope middleware upgrades via `.enterWith()` after auth. Eliminates behavioral gap with .NET. |
 
 ### Open Questions
 
@@ -118,29 +118,29 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 From Q1 2026 audit:
 
-| Item                             | Priority | Notes                                                                                                                                                         |
-| -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MinIO replacement                | Medium   | Project archived Feb 2026. Pinned images still work. Evaluate Garage (AGPLv3), RustFS (Apache 2.0), or SeaweedFS (Apache 2.0) as a separate initiative.       |
-| EF Core → 10.0.3                 | Blocked  | `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins EF Core Relational to 10.0.0. Wait for Npgsql EF provider 10.0.x release.                                |
-| Serilog.Enrichers.Span removal   | Low      | Deprecated upstream — Serilog now natively supports span data. Low-priority cleanup.                                                                          |
-| dotenv.net 4.0                   | Low      | Major version with potential API changes. Only used in .NET Utilities.                                                                                        |
-| Mimir 3.0                        | Low      | Major architectural change (Kafka buffer, new MQE, Consul/etcd deprecated). Requires deploying second cluster. Dedicated sprint.                              |
-| RedisInsight 3.x                 | Low      | Dev tool only. Major version with new UI + storage changes. 2.70.1 still works.                                                                               |
+| Item                           | Priority | Notes                                                                                                                                                   |
+| ------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MinIO replacement              | Medium   | Project archived Feb 2026. Pinned images still work. Evaluate Garage (AGPLv3), RustFS (Apache 2.0), or SeaweedFS (Apache 2.0) as a separate initiative. |
+| EF Core → 10.0.3               | Blocked  | `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.0 pins EF Core Relational to 10.0.0. Wait for Npgsql EF provider 10.0.x release.                           |
+| Serilog.Enrichers.Span removal | Low      | Deprecated upstream — Serilog now natively supports span data. Low-priority cleanup.                                                                    |
+| dotenv.net 4.0                 | Low      | Major version with potential API changes. Only used in .NET Utilities.                                                                                  |
+| Mimir 3.0                      | Low      | Major architectural change (Kafka buffer, new MQE, Consul/etcd deprecated). Requires deploying second cluster. Dedicated sprint.                        |
+| RedisInsight 3.x               | Low      | Dev tool only. Major version with new UI + storage changes. 2.70.1 still works.                                                                         |
 
 ### Blocked — Can Only Fix Later
 
-| #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
-| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
-| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
-| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
-| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
-| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
-| 6   | ~~Validate PII redaction in OTel output~~   | ✅ Done                                       | High     | Verified: no IPs in spans/logs, fingerprints + WhoIs IDs are hashed, UAs redacted by handler RedactionSpec                                                    |
-| 7   | OTel alerting rules                         | ~~Running AlertManager/Grafana~~ **UNBLOCKED** | Medium  | Grafana is running. Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                       |
-| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
-| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
-| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
+| #   | Item                                        | Blocker                                        | Priority | Notes                                                                                                                                                          |
+| --- | ------------------------------------------- | ---------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API             | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
+| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                     | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
+| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)    | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
+| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built      | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
+| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)            | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
+| 6   | ~~Validate PII redaction in OTel output~~   | ✅ Done                                        | High     | Verified: no IPs in spans/logs, fingerprints + WhoIs IDs are hashed, UAs redacted by handler RedactionSpec                                                     |
+| 7   | OTel alerting rules                         | ~~Running AlertManager/Grafana~~ **UNBLOCKED** | Medium   | Grafana is running. Error rate spikes, latency P99, rate limit blocks, delivery failures                                                                       |
+| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                     | P3       | Automated dependency staleness checks                                                                                                                          |
+| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health)  | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
+| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)         | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
 
 ---
 
@@ -152,35 +152,37 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### SvelteKit Implementation Progress
 
-| Step | Name                                | Status   | Notes                                                                    |
-| ---- | ----------------------------------- | -------- | ------------------------------------------------------------------------ |
-| 0    | Document Implementation Plan        | ✅ Done  |                                                                          |
-| 1    | Error Handling Foundation + Types   | ✅ Done  | App.Error, hooks, error page, client-error endpoint                      |
-| 2    | shadcn-svelte + Theme + Tokens      | ✅ Done  | Zinc OKLCH theme, Gabarito font, mode-watcher, Sonner toasts             |
-| 2.5  | Server-Side Middleware              | ✅ Done  | Request enrichment, rate limiting, idempotency. SvelteKit→Geo gRPC       |
-| 3    | Design System Sprint (Kitchen Sink) | ✅ Done  | 27 components, 3 OKLCH presets, live theme editor at `/design`           |
-| 3.5  | Design Review & Polish              | ✅ Done  | Playwright visual QA, 11 fixes across 6 theme/mode combos               |
-| 4    | Route Groups + Layout System        | ✅ Done  | (auth), (onboarding), (app) groups, sidebar, auth guard stubs            |
-| 5    | @d2/auth-bff-client + Auth Proxy    | ✅ Done  | 32 unit + 10 E2E tests. Session resolver, JWT manager, route guards      |
-| 6    | API Client Layer (Gateway)          | ✅ Done  | 66 tests. camelCase normalizer, dynamic public URL, service key bypass   |
-| 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done  | 5 chart types: area, bar, line, donut, sparkline                         |
-| 7    | Forms Architecture (Superforms)     | ✅ Done  | 73 tests. Superforms + Formsnap + Zod 4, field presets, D2Result mapping |
-| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done  | Sign-in, sign-up, forgot/reset password, verify-email. i18n (5 locales) |
-| 9    | Client Telemetry (Grafana Faro)     | ✅ Done  | Faro SDK, Alloy faro.receiver pipeline, Web Vitals → Mimir histograms, RUM dashboard |
-| 10   | Onboarding Flow                     | Pending  | Post-auth org selection/creation + Radar address autocomplete backend    |
-| 11   | App Shell (Sidebar, Header, Org)    | Pending  | Org-type nav, org switcher, emulation banner, breadcrumbs                |
-| 12   | SignalR Abstraction Layer           | Pending  | Browser → .NET SignalR gateway direct (`@microsoft/signalr`)             |
+| Step | Name                                | Status  | Notes                                                                                |
+| ---- | ----------------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| 0    | Document Implementation Plan        | ✅ Done |                                                                                      |
+| 1    | Error Handling Foundation + Types   | ✅ Done | App.Error, hooks, error page, client-error endpoint                                  |
+| 2    | shadcn-svelte + Theme + Tokens      | ✅ Done | Zinc OKLCH theme, Gabarito font, mode-watcher, Sonner toasts                         |
+| 2.5  | Server-Side Middleware              | ✅ Done | Request enrichment, rate limiting, idempotency. SvelteKit→Geo gRPC                   |
+| 3    | Design System Sprint (Kitchen Sink) | ✅ Done | 27 components, 3 OKLCH presets, live theme editor at `/design`                       |
+| 3.5  | Design Review & Polish              | ✅ Done | Playwright visual QA, 11 fixes across 6 theme/mode combos                            |
+| 4    | Route Groups + Layout System        | ✅ Done | (auth), (onboarding), (app) groups, sidebar, auth guard stubs                        |
+| 5    | @d2/auth-bff-client + Auth Proxy    | ✅ Done | 32 unit + 10 E2E tests. Session resolver, JWT manager, route guards                  |
+| 6    | API Client Layer (Gateway)          | ✅ Done | 66 tests. camelCase normalizer, dynamic public URL, service key bypass               |
+| 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done | 5 chart types: area, bar, line, donut, sparkline                                     |
+| 7    | Forms Architecture (Superforms)     | ✅ Done | 73 tests. Superforms + Formsnap + Zod 4, field presets, D2Result mapping             |
+| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done | Sign-in, sign-up, forgot/reset password, verify-email. i18n (5 locales)              |
+| 9    | Client Telemetry (Grafana Faro)     | ✅ Done | Faro SDK, Alloy faro.receiver pipeline, Web Vitals → Mimir histograms, RUM dashboard |
+| 10   | Onboarding Flow                     | Pending | Post-auth org selection/creation + Radar address autocomplete backend                |
+| 11   | App Shell (Sidebar, Header, Org)    | Pending | Org-type nav, org switcher, emulation banner, breadcrumbs                            |
+| 12   | SignalR Abstraction Layer           | Pending | Browser → .NET SignalR gateway direct (`@microsoft/signalr`)                         |
 
 ### Other Active Work
 
-| Task                          | Status  | Related ADRs | Notes                                             |
-| ----------------------------- | ------- | ------------ | ------------------------------------------------- |
-| Dependency audit & update     | Pending | ADR-018      | Q1 2026 quarterly bump — pre-SvelteKit            |
-| @d2/auth-client (backend gRPC)| Planned | —            | Mirrors @d2/geo-client pattern, Stage C           |
-| .NET Auth.Client              | Planned | ADR-001      | JWT validation via JWKS + gRPC client             |
+| Task                           | Status  | Related ADRs | Notes                                   |
+| ------------------------------ | ------- | ------------ | --------------------------------------- |
+| Dependency audit & update      | Pending | ADR-018      | Q1 2026 quarterly bump — pre-SvelteKit  |
+| @d2/auth-client (backend gRPC) | Planned | —            | Mirrors @d2/geo-client pattern, Stage C |
+| .NET Auth.Client               | Planned | ADR-001      | JWT validation via JWKS + gRPC client   |
 
 ### Recently Completed
 
+- Ambient per-request context: AsyncLocalStorage in `@d2/handler` — all Node.js handlers (including pre-auth singletons) automatically see per-request `IRequestContext` and `ILogger`, matching .NET DI scoping behavior (#41)
+- API key enforcement: Auth service requires valid `X-Api-Key` on all endpoints (`require: true` on service-key middleware). `isOrgEmulating` span attribute guarded behind `isAuthenticated` on both .NET and Node.js BaseHandler
 - Circuit breaker: Custom `CircuitBreaker<T>` utility (.NET + Node.js) protecting Geo gRPC calls — fast-fail under sustained failure, auto-recovery via half-open probe (#39)
 - Client telemetry: Grafana Faro SDK, Alloy faro.receiver pipeline, Web Vitals RUM dashboard, BFF dashboard rename (Step 9)
 - Device fingerprinting: cross-cutting SvelteKit + Node.js + .NET, `d2-cfp` cookie, DeviceFingerprint rate limit dimension (Step 8.7)
@@ -283,13 +285,13 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Frontend
 
-| Component            | Status         | Notes                                                                   |
-| -------------------- | -------------- | ----------------------------------------------------------------------- |
+| Component            | Status         | Notes                                                                                                  |
+| -------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
 | SvelteKit App        | 🚧 In Progress | Steps 0–9 done (design, routing, auth BFF, gateway, forms, auth pages, fingerprinting, Faro telemetry) |
-| Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)            |
-| API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)               |
-| Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit             |
-| OpenTelemetry        | ✅ Done        | Server instrumentation via OTLP/HTTP. Client telemetry via Grafana Faro (Step 9) |
+| Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)                                           |
+| API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)                                              |
+| Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit                                            |
+| OpenTelemetry        | ✅ Done        | Server instrumentation via OTLP/HTTP. Client telemetry via Grafana Faro (Step 9)                       |
 
 ---
 
@@ -460,11 +462,11 @@ Combined formula, always evaluated:
 deviceFingerprint = SHA-256(clientFingerprint + serverFingerprint + clientIp)
 ```
 
-| Signal             | Source                                                            | Required |
-| ------------------ | ----------------------------------------------------------------- | -------- |
-| clientFingerprint  | Custom JS (canvas, WebGL, screen, timezone, etc.) → `d2-cfp` cookie | No       |
-| serverFingerprint  | `SHA-256(User-Agent + Accept-Language + Accept-Encoding + Accept)` | Yes      |
-| clientIp           | CF-Connecting-IP / X-Real-IP / X-Forwarded-For / socket           | Yes      |
+| Signal            | Source                                                              | Required |
+| ----------------- | ------------------------------------------------------------------- | -------- |
+| clientFingerprint | Custom JS (canvas, WebGL, screen, timezone, etc.) → `d2-cfp` cookie | No       |
+| serverFingerprint | `SHA-256(User-Agent + Accept-Language + Accept-Encoding + Accept)`  | Yes      |
+| clientIp          | CF-Connecting-IP / X-Real-IP / X-Forwarded-For / socket             | Yes      |
 
 **Client Fingerprint Delivery**: Cookie (`d2-cfp`), set on first page load by client-side JS. Sent on all requests (navigations + fetch). If missing, the device fingerprint degrades to `SHA-256("" + serverFingerprint + clientIp)` — sharing a rate-limit bucket with anyone on the same network using the same browser profile. This is intentional: not sending the fingerprint is a natural penalty, not a bypass.
 
@@ -479,13 +481,13 @@ deviceFingerprint = SHA-256(clientFingerprint + serverFingerprint + clientIp)
 
 **Implementation Scope** (cross-cutting):
 
-| Layer                        | Change                                                        |
-| ---------------------------- | ------------------------------------------------------------- |
-| SvelteKit client             | Fingerprint generator utility + `d2-cfp` cookie on first load |
+| Layer                            | Change                                                                              |
+| -------------------------------- | ----------------------------------------------------------------------------------- |
+| SvelteKit client                 | Fingerprint generator utility + `d2-cfp` cookie on first load                       |
 | Node.js `@d2/request-enrichment` | Read `d2-cfp` cookie, compute `deviceFingerprint`, log warning if client FP missing |
-| Node.js `@d2/ratelimit`     | Replace `ClientFingerprint` dimension with `DeviceFingerprint`, always evaluated |
-| .NET `RequestEnrichment.Default` | Same — read cookie, compute combined fingerprint              |
-| .NET `RateLimit.Default`     | Same — replace dimension, always evaluated                    |
+| Node.js `@d2/ratelimit`          | Replace `ClientFingerprint` dimension with `DeviceFingerprint`, always evaluated    |
+| .NET `RequestEnrichment.Default` | Same — read cookie, compute combined fingerprint                                    |
+| .NET `RateLimit.Default`         | Same — replace dimension, always evaluated                                          |
 
 **Rationale**:
 
@@ -555,15 +557,15 @@ Auth (always proxied):
 
 **Decision**: General-purpose retry utility, opt-in per call site, both platforms.
 
-| Aspect          | Decision                                                              |
-| --------------- | --------------------------------------------------------------------- |
-| Scope           | General-purpose utility, usable for gRPC + external HTTP APIs         |
-| Activation      | Opt-in — not all calls should retry (e.g., validation failures)       |
-| Strategy        | Exponential backoff: 1s → 2s → 4s → 8s (configurable)                 |
-| Max attempts    | 4 retries (5 total attempts, configurable)                            |
-| Retry triggers  | Transient only: 5xx, timeout, connection refused, 429 (rate limited)  |
-| No retry        | 4xx (validation, auth, not found) — these are permanent failures      |
-| Jitter          | Add random jitter to avoid thundering herd                            |
+| Aspect          | Decision                                                             |
+| --------------- | -------------------------------------------------------------------- |
+| Scope           | General-purpose utility, usable for gRPC + external HTTP APIs        |
+| Activation      | Opt-in — not all calls should retry (e.g., validation failures)      |
+| Strategy        | Exponential backoff: 1s → 2s → 4s → 8s (configurable)                |
+| Max attempts    | 4 retries (5 total attempts, configurable)                           |
+| Retry triggers  | Transient only: 5xx, timeout, connection refused, 429 (rate limited) |
+| No retry        | 4xx (validation, auth, not found) — these are permanent failures     |
+| Jitter          | Add random jitter to avoid thundering herd                           |
 | Circuit breaker | Custom `CircuitBreaker<T>` — see below                               |
 
 **Key design principles:**
@@ -826,15 +828,15 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 **Mechanism:**
 
-| Aspect               | Decision                                                                                          |
-| -------------------- | ------------------------------------------------------------------------------------------------- |
-| Header               | `X-Api-Key` (single shared key for all services)                                                  |
-| Middleware            | `ServiceKeyMiddleware` — runs early in pipeline, validates header against configured key           |
-| Trust flag            | `IRequestContext.IsTrustedService` — set by middleware, consumed by downstream components         |
-| Invalid key           | 401 immediately (fail fast, before rate limiting)                                                 |
-| No key                | Treated as browser request, continues normally through full pipeline                              |
-| Pipeline order        | RequestEnrichment → ServiceKeyDetection → RateLimiting → Auth → Fingerprint → Authz             |
-| Endpoint filter       | `RequireServiceKey()` on endpoints checks `IsTrustedService` flag (no re-validation)             |
+| Aspect          | Decision                                                                                  |
+| --------------- | ----------------------------------------------------------------------------------------- |
+| Header          | `X-Api-Key` (single shared key for all services)                                          |
+| Middleware      | `ServiceKeyMiddleware` — runs early in pipeline, validates header against configured key  |
+| Trust flag      | `IRequestContext.IsTrustedService` — set by middleware, consumed by downstream components |
+| Invalid key     | 401 immediately (fail fast, before rate limiting)                                         |
+| No key          | Treated as browser request, continues normally through full pipeline                      |
+| Pipeline order  | RequestEnrichment → ServiceKeyDetection → RateLimiting → Auth → Fingerprint → Authz       |
+| Endpoint filter | `RequireServiceKey()` on endpoints checks `IsTrustedService` flag (no re-validation)      |
 
 **Design principle**: Service key = TRUST (bypasses security layers). JWT = IDENTITY (carries user context). They are independent — a request can have both, either, or neither.
 
@@ -906,16 +908,16 @@ Dkron (cron) → HTTP POST to REST Gateway (X-Api-Key)
 
 **Job schedule (8 daily jobs, staggered 15 min apart, 2:00–3:45 AM UTC):**
 
-| Job                                 | Owner | Schedule    | Retention | Notes                                                                                        |
-| ----------------------------------- | ----- | ----------- | --------- | -------------------------------------------------------------------------------------------- |
-| **Purge stale WhoIs**               | Geo   | Daily 02:00 | 180 days  | `geo-purge-stale-whois` — BatchDelete by cutoff year/month. Runs BEFORE location cleanup     |
-| **Cleanup orphaned locations**      | Geo   | Daily 02:15 | N/A       | `geo-cleanup-orphaned-locations` — DELETE locations with zero contact + zero WhoIs references |
-| **Purge expired sessions (PG)**     | Auth  | Daily 02:30 | 0 days    | `auth-purge-sessions` — DELETE `session` WHERE `expires_at < NOW()`                          |
-| **Purge sign-in events**            | Auth  | Daily 02:45 | 90 days   | `auth-purge-sign-in-events` — batch delete via `batchDelete()`                               |
-| **Cleanup expired invitations**     | Auth  | Daily 03:00 | 7 days    | `auth-cleanup-invitations` — DELETE expired invitations past retention grace period           |
-| **Cleanup emulation consents**      | Auth  | Daily 03:15 | 0 days    | `auth-cleanup-emulation-consents` — DELETE WHERE expired OR revoked                          |
-| **Purge soft-deleted messages**     | Comms | Daily 03:30 | 90 days   | `comms-purge-deleted-messages` — batch delete messages past retention                        |
-| **Purge delivery history**          | Comms | Daily 03:45 | 365 days  | `comms-purge-delivery-history` — batch delete old delivery_request + delivery_attempt rows   |
+| Job                             | Owner | Schedule    | Retention | Notes                                                                                         |
+| ------------------------------- | ----- | ----------- | --------- | --------------------------------------------------------------------------------------------- |
+| **Purge stale WhoIs**           | Geo   | Daily 02:00 | 180 days  | `geo-purge-stale-whois` — BatchDelete by cutoff year/month. Runs BEFORE location cleanup      |
+| **Cleanup orphaned locations**  | Geo   | Daily 02:15 | N/A       | `geo-cleanup-orphaned-locations` — DELETE locations with zero contact + zero WhoIs references |
+| **Purge expired sessions (PG)** | Auth  | Daily 02:30 | 0 days    | `auth-purge-sessions` — DELETE `session` WHERE `expires_at < NOW()`                           |
+| **Purge sign-in events**        | Auth  | Daily 02:45 | 90 days   | `auth-purge-sign-in-events` — batch delete via `batchDelete()`                                |
+| **Cleanup expired invitations** | Auth  | Daily 03:00 | 7 days    | `auth-cleanup-invitations` — DELETE expired invitations past retention grace period           |
+| **Cleanup emulation consents**  | Auth  | Daily 03:15 | 0 days    | `auth-cleanup-emulation-consents` — DELETE WHERE expired OR revoked                           |
+| **Purge soft-deleted messages** | Comms | Daily 03:30 | 90 days   | `comms-purge-deleted-messages` — batch delete messages past retention                         |
+| **Purge delivery history**      | Comms | Daily 03:45 | 365 days  | `comms-purge-delivery-history` — batch delete old delivery_request + delivery_attempt rows    |
 
 **Items already handled by existing TTL/eviction (no Dkron job needed):**
 
@@ -949,16 +951,16 @@ Dkron (cron) → HTTP POST to REST Gateway (X-Api-Key)
 
 All notifications use a single `NotifyInput` shape — no per-event templates, no event-specific sub-handlers:
 
-| Field                | Type                     | Required | Description                                       |
-| -------------------- | ------------------------ | -------- | ------------------------------------------------- |
-| `recipientContactId` | `string` (UUID)          | Yes      | Geo contact ID — the ONLY recipient identifier    |
-| `title`              | `string` (max 255)       | Yes      | Email subject, SMS prefix, push title             |
-| `content`            | `string` (max 50,000)    | Yes      | Markdown body — rendered to HTML for email        |
-| `plaintext`          | `string` (max 50,000)    | Yes      | Plain text — SMS body, email fallback             |
-| `sensitive`          | `boolean`                | No       | Default `false`. `true` = email only              |
-| `urgency`            | `"normal"` \| `"urgent"` | No       | Default `"normal"`. `"urgent"` bypasses prefs     |
-| `correlationId`      | `string` (max 36)        | Yes      | Idempotency key for deduplication                 |
-| `senderService`      | `string` (max 50)        | Yes      | Source service identifier (e.g., `"auth"`)        |
+| Field                | Type                     | Required | Description                                    |
+| -------------------- | ------------------------ | -------- | ---------------------------------------------- |
+| `recipientContactId` | `string` (UUID)          | Yes      | Geo contact ID — the ONLY recipient identifier |
+| `title`              | `string` (max 255)       | Yes      | Email subject, SMS prefix, push title          |
+| `content`            | `string` (max 50,000)    | Yes      | Markdown body — rendered to HTML for email     |
+| `plaintext`          | `string` (max 50,000)    | Yes      | Plain text — SMS body, email fallback          |
+| `sensitive`          | `boolean`                | No       | Default `false`. `true` = email only           |
+| `urgency`            | `"normal"` \| `"urgent"` | No       | Default `"normal"`. `"urgent"` bypasses prefs  |
+| `correlationId`      | `string` (max 36)        | Yes      | Idempotency key for deduplication              |
+| `senderService`      | `string` (max 50)        | Yes      | Source service identifier (e.g., `"auth"`)     |
 
 **Channel resolution rules:**
 
@@ -968,11 +970,11 @@ All notifications use a single `NotifyInput` shape — no per-event templates, n
 
 **Providers:**
 
-| Channel | Provider   | Notes                                                     |
-| ------- | ---------- | --------------------------------------------------------- |
-| Email   | Resend     | Markdown → HTML via `marked` + `isomorphic-dompurify`     |
-| SMS     | Twilio     | Plain text content, trial mode until 10DLC registration   |
-| Push    | SignalR GW | gRPC client → SignalR gateway (future, Phase 2)           |
+| Channel | Provider   | Notes                                                   |
+| ------- | ---------- | ------------------------------------------------------- |
+| Email   | Resend     | Markdown → HTML via `marked` + `isomorphic-dompurify`   |
+| SMS     | Twilio     | Plain text content, trial mode until 10DLC registration |
+| Push    | SignalR GW | gRPC client → SignalR gateway (future, Phase 2)         |
 
 **RabbitMQ topology:**
 
@@ -1009,30 +1011,30 @@ See [`backends/node/services/comms/COMMS.md`](backends/node/services/comms/COMMS
 
 **Decision**: SvelteKit 5 + Svelte 5 with the following stack:
 
-| Concern              | Library / Approach                                                    |
-| -------------------- | --------------------------------------------------------------------- |
-| UI components        | shadcn-svelte (Bits UI underneath) — copy-paste, own the code         |
-| Forms                | Superforms + Formsnap (Zod integration, progressive enhancement)      |
-| Toasts               | svelte-sonner (integrated with shadcn-svelte)                         |
-| Phone input          | intl-tel-input (official Svelte 5 wrapper)                            |
-| Data tables          | shadcn-svelte data table (wraps @tanstack/table-core)                 |
-| Date/time            | Bits UI date components + date-fns                                    |
-| Icons                | Lucide (tree-shakeable, shadcn-svelte default)                        |
-| Font                 | Gabarito (Google Fonts, weight variations for hierarchy)              |
-| Theme                | Dark + Light + System (three-way toggle via mode-watcher)             |
-| Styling              | Tailwind CSS v4.1                                                     |
-| Address autocomplete | Radar — as a **Geo service backend** concern, not a frontend dep      |
-| Real-time            | Browser → .NET SignalR gateway directly (`@microsoft/signalr`)        |
-| Client telemetry     | Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir)     |
+| Concern              | Library / Approach                                               |
+| -------------------- | ---------------------------------------------------------------- |
+| UI components        | shadcn-svelte (Bits UI underneath) — copy-paste, own the code    |
+| Forms                | Superforms + Formsnap (Zod integration, progressive enhancement) |
+| Toasts               | svelte-sonner (integrated with shadcn-svelte)                    |
+| Phone input          | intl-tel-input (official Svelte 5 wrapper)                       |
+| Data tables          | shadcn-svelte data table (wraps @tanstack/table-core)            |
+| Date/time            | Bits UI date components + date-fns                               |
+| Icons                | Lucide (tree-shakeable, shadcn-svelte default)                   |
+| Font                 | Gabarito (Google Fonts, weight variations for hierarchy)         |
+| Theme                | Dark + Light + System (three-way toggle via mode-watcher)        |
+| Styling              | Tailwind CSS v4.1                                                |
+| Address autocomplete | Radar — as a **Geo service backend** concern, not a frontend dep |
+| Real-time            | Browser → .NET SignalR gateway directly (`@microsoft/signalr`)   |
+| Client telemetry     | Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir) |
 
 **Testing strategy:**
 
-| Layer       | Tool                   | Purpose                              |
-| ----------- | ---------------------- | ------------------------------------ |
-| Component   | vitest-browser-svelte  | Isolated component tests             |
-| E2E         | Playwright             | Full user flow tests                 |
-| A11y        | axe-core               | Accessibility validation             |
-| Performance | Lighthouse CI          | Web Vitals budgets                   |
+| Layer       | Tool                  | Purpose                  |
+| ----------- | --------------------- | ------------------------ |
+| Component   | vitest-browser-svelte | Isolated component tests |
+| E2E         | Playwright            | Full user flow tests     |
+| A11y        | axe-core              | Accessibility validation |
+| Performance | Lighthouse CI         | Web Vitals budgets       |
 
 **Key architectural decisions:**
 
@@ -1059,11 +1061,11 @@ See [`backends/node/services/comms/COMMS.md`](backends/node/services/comms/COMMS
 
 **Three layers:**
 
-| Layer              | Platform | Mechanism                                                             |
-| ------------------ | -------- | --------------------------------------------------------------------- |
-| Aspire AppHost     | .NET     | `Env()`/`EnvInt()` helpers read from `.env.local`, inject into child  |
-| Node.js services   | Node     | `defineConfig()` typed schema with `requiredString`/`defaultInt`/etc. |
-| SvelteKit          | Node     | `loadEnv()` in `instrumentation.server.ts` (earliest server hook)     |
+| Layer            | Platform | Mechanism                                                             |
+| ---------------- | -------- | --------------------------------------------------------------------- |
+| Aspire AppHost   | .NET     | `Env()`/`EnvInt()` helpers read from `.env.local`, inject into child  |
+| Node.js services | Node     | `defineConfig()` typed schema with `requiredString`/`defaultInt`/etc. |
+| SvelteKit        | Node     | `loadEnv()` in `instrumentation.server.ts` (earliest server hook)     |
 
 **Aspire AppHost (`ServiceExtensions.cs`):**
 
@@ -1121,12 +1123,12 @@ const config = defineConfig("auth-service", {
 
 **Components:**
 
-| Module             | Purpose                                                                   |
-| ------------------ | ------------------------------------------------------------------------- |
-| `SessionResolver`  | Forwards cookies to Auth service `GET /api/auth/get-session`              |
-| `JwtManager`       | Obtains, caches (in memory), and auto-refreshes RS256 JWTs for gateway   |
-| `AuthProxy`        | Catch-all proxy for `/api/auth/[...path]` → Auth service                 |
-| Route guards       | `requireAuth()`, `requireOrg()`, `redirectIfAuthenticated()` for layouts  |
+| Module            | Purpose                                                                  |
+| ----------------- | ------------------------------------------------------------------------ |
+| `SessionResolver` | Forwards cookies to Auth service `GET /api/auth/get-session`             |
+| `JwtManager`      | Obtains, caches (in memory), and auto-refreshes RS256 JWTs for gateway   |
+| `AuthProxy`       | Catch-all proxy for `/api/auth/[...path]` → Auth service                 |
+| Route guards      | `requireAuth()`, `requireOrg()`, `redirectIfAuthenticated()` for layouts |
 
 **Cookie signing behavior:**
 

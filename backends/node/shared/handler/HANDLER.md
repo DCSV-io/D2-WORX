@@ -16,8 +16,26 @@ BaseHandler pattern with automatic OTel tracing, metrics, and structured logging
 | [validators.ts](src/validators.ts)                     | Shared Zod refinements (`zodGuid`, `zodHashId`, `zodIpAddress`, `zodEmail`, `zodPhoneE164`, `zodNonEmptyString`, `zodNonEmptyArray`, `zodAllowedContextKey`) + standalone validators. |
 | [org-type.ts](src/org-type.ts)                         | `OrgType` enum (Admin, Support, Affiliate, Customer, ThirdParty).                                                                                                                     |
 | [service-keys.ts](src/service-keys.ts)                 | DI keys for `IRequestContext` (`IRequestContextKey`) and `IHandlerContext` (`IHandlerContextKey`).                                                                                    |
-| [create-service-scope.ts](src/create-service-scope.ts) | `createServiceScope()` — shared per-request DI scope factory (used by Auth, Comms, E2E).                                                                                              |
+| [ambient-context.ts](src/ambient-context.ts)           | `requestContextStorage` + `requestLoggerStorage` — AsyncLocalStorage for per-request ambient context.                                                                                 |
+| [create-service-scope.ts](src/create-service-scope.ts) | `createServiceScope()` — shared per-request DI scope factory (used by Auth, Comms, E2E). Sets ambient storage.                                                                        |
 | [index.ts](src/index.ts)                               | Barrel re-export of all types, interfaces, and classes.                                                                                                                               |
+
+---
+
+## Ambient Context (AsyncLocalStorage)
+
+`HandlerContext` checks two `AsyncLocalStorage` instances before falling back to constructor-provided values:
+
+- **`requestContextStorage`** — per-request `IRequestContext`
+- **`requestLoggerStorage`** — per-request `ILogger` (with auth/network bindings)
+
+This means ALL handlers — including pre-auth singletons (rate limit, FindWhoIs, throttle) — automatically see per-request context when ambient storage is active. Mirrors .NET's DI scoping where `HttpContext.Features` provides per-request `IRequestContext` to all handlers regardless of registration lifetime.
+
+**Middleware sets storage via `.run()`** to establish the async context boundary. Downstream middleware (e.g., auth scope) upgrades the stored value via **`.enterWith()`** within the same async context — for example, replacing an enrichment-only context with a fully auth-enriched one after session extraction.
+
+**Concurrent requests are isolated** — each `AsyncLocalStorage.run()` creates an independent async context, so two simultaneous requests with different users see their own `IRequestContext`.
+
+**Fallback**: When no ambient storage is active (e.g., unit tests, BetterAuth callbacks), `HandlerContext` returns the constructor-provided values.
 
 ---
 

@@ -104,6 +104,14 @@ Uses project-defined distributed cache abstractions (no direct Redis dependency)
 
 Requires `RequestEnrichment.Default` for `IRequestContext` on `HttpContext.Features`.
 
+## Infrastructure Path Skipping
+
+The middleware skips rate limiting entirely for infrastructure endpoints using `InfrastructurePaths.IsInfrastructure()` (shared helper in `RequestEnrichment.Default`). Skipped paths: `/health`, `/alive`, `/metrics`, `/api/health`. This prevents health probes and Prometheus scrapes from consuming rate limit budget.
+
+## Trusted Service Bypass
+
+When `IRequestContext.IsTrustedService` is `true` (set by `ServiceKeyMiddleware` via valid `X-Api-Key`), all rate limit dimensions are skipped entirely — the `Check` handler returns `Allowed` immediately. This is intentional: service-to-service calls are pre-authorized and should not be subject to per-device/IP/geo throttling.
+
 ## Data Redaction
 
 The `Check` handler overrides `DefaultOptions` to suppress input logging:

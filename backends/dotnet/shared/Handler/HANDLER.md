@@ -78,77 +78,81 @@ Two implementations exist:
 
 **Tracing:**
 
-| Property      | Type      | Description                       |
-| ------------- | --------- | --------------------------------- |
-| `TraceId`     | `string?` | OTel trace ID                     |
-| `RequestId`   | `string?` | ASP.NET `TraceIdentifier`         |
-| `RequestPath` | `string?` | HTTP request path                 |
+| Property      | Type      | Description               |
+| ------------- | --------- | ------------------------- |
+| `TraceId`     | `string?` | OTel trace ID             |
+| `RequestId`   | `string?` | ASP.NET `TraceIdentifier` |
+| `RequestPath` | `string?` | HTTP request path         |
 
 **User / Identity:**
 
-| Property          | Type      | Description                                         |
-| ----------------- | --------- | --------------------------------------------------- |
-| `IsAuthenticated` | `bool`    | Whether the user is authenticated                   |
-| `UserId`          | `Guid?`   | User ID (impersonated user during impersonation)    |
-| `Email`           | `string?` | User email                                          |
-| `Username`        | `string?` | User login handle                                   |
+| Property          | Type      | Description                                      |
+| ----------------- | --------- | ------------------------------------------------ |
+| `IsAuthenticated` | `bool`    | Whether the user is authenticated                |
+| `UserId`          | `Guid?`   | User ID (impersonated user during impersonation) |
+| `Email`           | `string?` | User email                                       |
+| `Username`        | `string?` | User login handle                                |
 
 **Agent Organization** (user's actual org membership):
 
-| Property       | Type       | Description                        |
-| -------------- | ---------- | ---------------------------------- |
-| `AgentOrgId`   | `Guid?`    | Agent org ID                       |
-| `AgentOrgName` | `string?`  | Agent org name                     |
-| `AgentOrgType` | `OrgType?` | Agent org type enum                |
-| `AgentOrgRole` | `string?`  | User's role in the agent org       |
+| Property       | Type       | Description                  |
+| -------------- | ---------- | ---------------------------- |
+| `AgentOrgId`   | `Guid?`    | Agent org ID                 |
+| `AgentOrgName` | `string?`  | Agent org name               |
+| `AgentOrgType` | `OrgType?` | Agent org type enum          |
+| `AgentOrgRole` | `string?`  | User's role in the agent org |
 
 **Target Organization** (org operations execute against — emulated org if emulating, else agent org):
 
-| Property        | Type       | Description                                          |
-| --------------- | ---------- | ---------------------------------------------------- |
-| `TargetOrgId`   | `Guid?`    | Target org ID                                        |
-| `TargetOrgName` | `string?`  | Target org name                                      |
-| `TargetOrgType` | `OrgType?` | Target org type enum                                 |
-| `TargetOrgRole` | `string?`  | Role in target org (`"auditor"` during emulation)    |
+| Property        | Type       | Description                                       |
+| --------------- | ---------- | ------------------------------------------------- |
+| `TargetOrgId`   | `Guid?`    | Target org ID                                     |
+| `TargetOrgName` | `string?`  | Target org name                                   |
+| `TargetOrgType` | `OrgType?` | Target org type enum                              |
+| `TargetOrgRole` | `string?`  | Role in target org (`"auditor"` during emulation) |
 
 **Org Emulation / User Impersonation:**
 
-| Property               | Type      | Description                                         |
-| ---------------------- | --------- | --------------------------------------------------- |
-| `IsOrgEmulating`       | `bool`    | Staff viewing another org as read-only               |
-| `ImpersonatedBy`       | `Guid?`   | Admin who initiated impersonation                    |
-| `ImpersonatingEmail`   | `string?` | Impersonator's email                                |
-| `ImpersonatingUsername` | `string?` | Impersonator's username                             |
-| `IsUserImpersonating`  | `bool`    | Whether user impersonation is active                |
+| Property                | Type      | Description                            |
+| ----------------------- | --------- | -------------------------------------- |
+| `IsOrgEmulating`        | `bool`    | Staff viewing another org as read-only |
+| `ImpersonatedBy`        | `Guid?`   | Admin who initiated impersonation      |
+| `ImpersonatingEmail`    | `string?` | Impersonator's email                   |
+| `ImpersonatingUsername` | `string?` | Impersonator's username                |
+| `IsUserImpersonating`   | `bool`    | Whether user impersonation is active   |
 
 **Network / Enrichment** (gateway only — `null` in non-gateway services):
 
-| Property            | Type      | Description                                                |
-| ------------------- | --------- | ---------------------------------------------------------- |
-| `ClientIp`          | `string?` | Resolved client IP address                                 |
-| `ServerFingerprint` | `string?` | SHA-256 of UA + Accept headers                             |
-| `ClientFingerprint` | `string?` | Client-provided fingerprint from cookie/header             |
-| `DeviceFingerprint` | `string?` | SHA-256(clientFP + serverFP + clientIp)                    |
-| `WhoIsHashId`       | `string?` | Content-addressable hash for WhoIs lookups                 |
-| `City`              | `string?` | City from WhoIs data                                       |
-| `CountryCode`       | `string?` | ISO 3166-1 alpha-2 country code                            |
-| `SubdivisionCode`   | `string?` | ISO 3166-2 subdivision code                                |
-| `IsVpn`             | `bool?`   | Whether IP is from a VPN                                   |
-| `IsProxy`           | `bool?`   | Whether IP is from a proxy                                 |
-| `IsTor`             | `bool?`   | Whether IP is from a Tor exit node                         |
-| `IsHosting`         | `bool?`   | Whether IP is from a hosting provider                      |
+| Property            | Type      | Description                                    |
+| ------------------- | --------- | ---------------------------------------------- |
+| `ClientIp`          | `string?` | Resolved client IP address                     |
+| `ServerFingerprint` | `string?` | SHA-256 of UA + Accept headers                 |
+| `ClientFingerprint` | `string?` | Client-provided fingerprint from cookie/header |
+| `DeviceFingerprint` | `string?` | SHA-256(clientFP + serverFP + clientIp)        |
+| `WhoIsHashId`       | `string?` | Content-addressable hash for WhoIs lookups     |
+| `City`              | `string?` | City from WhoIs data                           |
+| `CountryCode`       | `string?` | ISO 3166-1 alpha-2 country code                |
+| `SubdivisionCode`   | `string?` | ISO 3166-2 subdivision code                    |
+| `IsVpn`             | `bool?`   | Whether IP is from a VPN                       |
+| `IsProxy`           | `bool?`   | Whether IP is from a proxy                     |
+| `IsTor`             | `bool?`   | Whether IP is from a Tor exit node             |
+| `IsHosting`         | `bool?`   | Whether IP is from a hosting provider          |
 
 **Trust:**
 
-| Property           | Type   | Description                                      |
-| ------------------ | ------ | ------------------------------------------------ |
-| `IsTrustedService` | `bool` | Request from a trusted service (`X-Api-Key`)     |
+| Property           | Type   | Description                                  |
+| ------------------ | ------ | -------------------------------------------- |
+| `IsTrustedService` | `bool` | Request from a trusted service (`X-Api-Key`) |
 
 **Helpers** (computed from org fields):
 
-| Property           | Type   | Description                                  |
-| ------------------ | ------ | -------------------------------------------- |
-| `IsAgentStaff`     | `bool` | Agent org is Support or Admin                |
-| `IsAgentAdmin`     | `bool` | Agent org is Admin                           |
-| `IsTargetingStaff` | `bool` | Target org is Support or Admin               |
-| `IsTargetingAdmin` | `bool` | Target org is Admin                          |
+| Property           | Type   | Description                    |
+| ------------------ | ------ | ------------------------------ |
+| `IsAgentStaff`     | `bool` | Agent org is Support or Admin  |
+| `IsAgentAdmin`     | `bool` | Agent org is Admin             |
+| `IsTargetingStaff` | `bool` | Target org is Support or Admin |
+| `IsTargetingAdmin` | `bool` | Target org is Admin            |
+
+### Span Enrichment Guard
+
+`BaseHandler` enriches OTel spans with request context attributes. The `IsOrgEmulating` attribute is only set when `IsAuthenticated` is `true` — this prevents unauthenticated requests (pre-auth handlers, health checks) from reporting a misleading `isOrgEmulating: false` on spans. This guard is enforced on both .NET and Node.js `BaseHandler` implementations.

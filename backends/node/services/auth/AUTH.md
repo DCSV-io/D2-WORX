@@ -173,7 +173,9 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 | All CQRS handlers, repo handlers     | Transient | New instance per resolve — receive scoped `IHandlerContext` via factory |
 | Sign-in throttle store               | Singleton | Redis-backed state — shared across all requests                         |
 
-**Pre-auth singletons** (FindWhoIs, CheckRateLimit, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and therefore have no per-request user context. They use a service-level `HandlerContext` with a static anonymous `IRequestContext` and are NOT registered in the DI container. This is intentional — they need to function independently of the per-request scope.
+**Pre-auth singletons** (FindWhoIs, CheckRateLimit, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and are NOT registered in the DI container. They are constructed once at startup with a service-level `HandlerContext` containing static anonymous defaults. However, they **automatically see per-request context** via ambient `AsyncLocalStorage` — `HandlerContext` checks `requestContextStorage` / `requestLoggerStorage` first, falling back to constructor args only when no ambient storage is active. This mirrors .NET's DI scoping behavior where all handlers get per-request `IRequestContext` from `HttpContext.Features`.
+
+**Ambient context pipeline**: The `createAmbientScopeMiddleware()` wraps the request pipeline in `AsyncLocalStorage.run()`, seeded with the enrichment-populated `IRequestContext` and per-request logger. After auth, `createScopeMiddleware()` upgrades the ambient context via `.enterWith()` to include identity/org fields. Pre-auth singletons see enrichment data (IP, fingerprints, trust flag); post-auth handlers see the full auth-enriched context.
 
 **Scoping patterns:**
 
@@ -249,10 +251,10 @@ BetterAuth sessions carry 4 custom fields (configured via `session.additionalFie
 
 > **Two separate "role" concepts exist — don't confuse them:**
 >
-> | Concept             | Where                            | Purpose                                                     | Default     |
-> | ------------------- | -------------------------------- | ----------------------------------------------------------- | ----------- |
-> | **User-level role** | `user.role` column               | BetterAuth admin plugin internal field. **Not exposed to frontend** — `AuthUser` type excludes it, `SessionResolver` doesn't map it. | `"agent"` (via `admin({ defaultRole: "agent" })`) |
-> | **Org-level role**  | `member.role` / `session.activeOrganizationRole` | Actual authorization role used by the app for access control. Set when user joins an org. | Set per membership |
+> | Concept             | Where                                            | Purpose                                                                                                                              | Default                                           |
+> | ------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+> | **User-level role** | `user.role` column                               | BetterAuth admin plugin internal field. **Not exposed to frontend** — `AuthUser` type excludes it, `SessionResolver` doesn't map it. | `"agent"` (via `admin({ defaultRole: "agent" })`) |
+> | **Org-level role**  | `member.role` / `session.activeOrganizationRole` | Actual authorization role used by the app for access control. Set when user joins an org.                                            | Set per membership                                |
 >
 > The user-level `role` appears in raw BetterAuth API responses (e.g., `authClient.getSession()`) but is **never** consumed by D2-WORX application code. It exists solely because the `admin()` plugin requires a `defaultRole` for impersonation features.
 
@@ -412,18 +414,18 @@ BetterAuth distinguishes between **raw session tokens** and **signed cookie valu
 
 #### Two cookies are set on sign-in
 
-| Cookie                         | Format                          | TTL    | Purpose                                              |
-| ------------------------------ | ------------------------------- | ------ | ---------------------------------------------------- |
-| `better-auth.session_token`    | `TOKEN.SIGNATURE`               | 7 days | Signed session token — used for DB/Redis lookup      |
-| `better-auth.session_data`     | Base64(JSON session + sig)      | 5 min  | Cookie cache — skips DB/Redis when fresh             |
+| Cookie                      | Format                     | TTL    | Purpose                                         |
+| --------------------------- | -------------------------- | ------ | ----------------------------------------------- |
+| `better-auth.session_token` | `TOKEN.SIGNATURE`          | 7 days | Signed session token — used for DB/Redis lookup |
+| `better-auth.session_data`  | Base64(JSON session + sig) | 5 min  | Cookie cache — skips DB/Redis when fresh        |
 
 #### Raw token vs signed cookie value
 
-| Source                                     | Format              | Use with                      |
-| ------------------------------------------ | ------------------- | ----------------------------- |
-| `auth.api.signInEmail()` → `res.token`     | Raw token (`TOKEN`) | `Authorization: Bearer TOKEN` |
-| HTTP sign-in `set-cookie` header           | `TOKEN.SIGNATURE`   | `Cookie: better-auth.session_token=TOKEN.SIGNATURE` |
-| Database `session.token` column            | Raw token (`TOKEN`) | Internal lookups only         |
+| Source                                 | Format              | Use with                                            |
+| -------------------------------------- | ------------------- | --------------------------------------------------- |
+| `auth.api.signInEmail()` → `res.token` | Raw token (`TOKEN`) | `Authorization: Bearer TOKEN`                       |
+| HTTP sign-in `set-cookie` header       | `TOKEN.SIGNATURE`   | `Cookie: better-auth.session_token=TOKEN.SIGNATURE` |
+| Database `session.token` column        | Raw token (`TOKEN`) | Internal lookups only                               |
 
 The **raw token** from the in-process API is the same value stored in the `session` table. It works with the **Bearer plugin** (`Authorization: Bearer TOKEN`), which looks up the session by the raw token.
 
@@ -666,20 +668,28 @@ app.use("/api/emulation/*", requireOrg(), requireStaff(), requireRole("officer")
 The composition root builds the pipeline in this exact order:
 
 ```
-1. CORS (Hono built-in)
-2. Body limit (256KB)
-3. Error handler (catch-all → D2Result)
-4. CSRF protection (Content-Type + Origin)
-5. Rate limiting (per-IP, in-memory)
-  --- BetterAuth routes: /api/auth/* ---
-6. Session fingerprint middleware (for auth routes)
-7. BetterAuth handler
-  --- Protected routes: /api/emulation/*, /api/org-contacts/* ---
-8. Session middleware (extracts user + session, fail-closed)
-9. Authorization middleware (requireOrg, requireStaff, requireRole — visible at route declaration)
-10. Thin route handlers (extract input → call handler → return result)
-11. App-layer handlers (Zod validation → business logic → repository)
+1.  CORS (Hono built-in)
+2.  Body limit (256KB)
+3.  Service key detection (X-Api-Key → sets IsTrustedService; require: true → 401 if missing)
+4.  Request enrichment (IP resolution, fingerprinting, WhoIs lookup)
+5.  Request context logging (per-request child logger with network bindings)
+6.  Ambient scope (AsyncLocalStorage.run() — seeds per-request context for all handlers)
+7.  Rate limiting (multi-dimensional sliding window, Redis — skipped for trusted services)
+8.  Error handler (catch-all → D2Result)
+    --- BetterAuth routes: /api/auth/* ---
+9.  Session fingerprint middleware (for auth routes)
+10. BetterAuth handler (with throttle on sign-in)
+    --- Protected routes: /api/emulation/*, /api/org-contacts/*, /api/invitations/* ---
+11. Session middleware (extracts user + session, fail-closed)
+12. Session fingerprint validation (continuity check)
+13. DI scope (creates per-request scope, merges auth into IRequestContext, upgrades ambient via enterWith)
+14. CSRF protection (Origin header validation)
+15. Authorization middleware (requireOrg, requireStaff, requireRole — visible at route declaration)
+16. Thin route handlers (extract input → call handler → return result)
+17. App-layer handlers (Zod validation → business logic → repository)
 ```
+
+**API key requirement**: All auth endpoints require a valid `X-Api-Key` header (`require: true` on service-key middleware). Missing key → 401. Invalid key → 401. Valid key → `IRequestContext.isTrustedService = true`, continues to next middleware.
 
 ### .NET Gateway Middleware Order
 
@@ -708,6 +718,7 @@ The composition root builds the pipeline in this exact order:
 | **Session fingerprint** (Node.js) | FAIL-OPEN                    | N/A             | N/A                                                          | Fingerprint check skipped, logs warning                                     | 200 (pass-through)       |
 | **JWT fingerprint** (.NET)        | N/A                          | N/A             | N/A                                                          | No fp claim (non-trusted) → **FAIL-CLOSED** (401). Trusted services → skip. | 401 (non-trusted, no fp) |
 | **Service key detection** (.NET)  | N/A                          | N/A             | N/A                                                          | Invalid key → 401. No key → pass-through (browser request).                 | 401 (invalid key)        |
+| **Service key detection** (Node)  | N/A                          | N/A             | N/A                                                          | `require: true` on auth: no key → 401. Invalid key → 401.                   | 401 (missing/invalid)    |
 | **Sign-in throttle** (Node.js)    | FAIL-OPEN                    | N/A             | N/A                                                          | Throttle check skipped, sign-in proceeds normally                           | 200 (pass-through)       |
 | **Rate limiting** (Node.js)       | FAIL-OPEN                    | N/A             | N/A                                                          | Requests pass through                                                       | 200 (pass-through)       |
 | **Rate limiting** (.NET)          | FAIL-OPEN                    | N/A             | N/A                                                          | Requests pass through                                                       | 200 (pass-through)       |
