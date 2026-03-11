@@ -59,6 +59,11 @@ export class AuthProxy {
       }
     }
 
+    // Identify as trusted service for S2S bypass (rate limiting, fingerprint validation)
+    if (this.config.apiKey) {
+      headers.set("x-api-key", this.config.apiKey);
+    }
+
     // Forward client IP if available from request enrichment
     const locals = event.locals as Record<string, unknown>;
     const requestContext = locals.requestContext as { clientIp?: string } | undefined;

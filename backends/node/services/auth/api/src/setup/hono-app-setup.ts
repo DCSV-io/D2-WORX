@@ -94,10 +94,12 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
   );
   app.use("*", createRequestEnrichmentMiddleware(findWhoIs, undefined, logger));
   if (config.authApiKeys?.length) {
-    app.use("*", createServiceKeyMiddleware(new Set(config.authApiKeys)));
+    app.use("*", createServiceKeyMiddleware(new Set(config.authApiKeys), { require: true }));
     logger.info(
-      `Auth API service key authentication enabled (${config.authApiKeys.length} key(s))`,
+      `Auth API service key authentication enabled (${config.authApiKeys.length} key(s), required)`,
     );
+  } else {
+    logger.warn("Auth API started WITHOUT service key requirement — all requests accepted");
   }
   app.use("*", createRequestContextLoggingMiddleware(logger));
   app.use("*", createDistributedRateLimitMiddleware(rateLimitCheck));

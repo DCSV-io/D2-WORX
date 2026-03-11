@@ -49,6 +49,18 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     return undefined;
   }
 
+  /**
+   * Returns the effective request context for telemetry enrichment.
+   *
+   * By default, returns `this.context.request` (the DI-scoped context).
+   * Pre-auth singleton handlers (e.g., rate limit, throttle) should override
+   * this to return the per-request context from their input, since their
+   * DI context is the static service-level default.
+   */
+  protected getEffectiveRequest(_input: TInput): import("./i-request-context.js").IRequestContext {
+    return this.context.request;
+  }
+
   protected constructor(context: IHandlerContext) {
     this.context = context;
 
@@ -85,21 +97,25 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     // Record invocation
     BaseHandler.instruments!.invocations.add(1, attrs);
 
+    // Use the effective request context — for scoped handlers this is
+    // this.context.request (DI-populated); for pre-auth singletons the
+    // override returns input.requestContext (the per-request context).
+    const effectiveReq = this.getEffectiveRequest(input);
+
     // Enrich the parent span (e.g., gRPC server span, HTTP span) with context
     // attributes so they appear on the top-level span in Tempo — not just on
     // this handler's child span. Harmless if middleware already set them.
     // For Hono services, trace.getActiveSpan() may return null due to the
     // async context issue — the Hono middleware handles enrichment instead.
-    BaseHandler.enrichRequestSpan(trace.getActiveSpan(), this.context.request);
+    BaseHandler.enrichRequestSpan(trace.getActiveSpan(), effectiveReq);
 
     return BaseHandler.tracer.startActiveSpan(handlerName, async (span) => {
       // Set handler metadata + request context on child span.
-      const req = this.context.request;
       span.setAttribute("handler.type", handlerName);
       span.setAttribute("trace.id", this.traceId ?? "");
-      BaseHandler.setIfPresent(span, "user.id", req.userId);
-      BaseHandler.setIfPresent(span, "agent.org.id", req.agentOrgId);
-      BaseHandler.setIfPresent(span, "target.org.id", req.targetOrgId);
+      BaseHandler.setIfPresent(span, "user.id", effectiveReq.userId);
+      BaseHandler.setIfPresent(span, "agent.org.id", effectiveReq.agentOrgId);
+      BaseHandler.setIfPresent(span, "target.org.id", effectiveReq.targetOrgId);
 
       const startTime = performance.now();
 
@@ -305,6 +321,8 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     // Boolean flags — always set (default false).
     span.setAttribute("isAuthenticated", req.isAuthenticated ?? false);
     span.setAttribute("isTrustedService", req.isTrustedService ?? false);
-    span.setAttribute("isOrgEmulating", req.isOrgEmulating ?? false);
+    if (req.isAuthenticated) {
+      span.setAttribute("isOrgEmulating", req.isOrgEmulating ?? false);
+    }
   }
 }

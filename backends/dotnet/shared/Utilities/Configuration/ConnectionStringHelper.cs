@@ -6,6 +6,8 @@
 
 namespace D2.Shared.Utilities.Configuration;
 
+using D2.Shared.Utilities.Extensions;
+
 /// <summary>
 /// Resolves infrastructure connection strings from standard env vars
 /// (<c>REDIS_URL</c>, <c>*_DATABASE_URL</c>, <c>RABBITMQ_URL</c>).
@@ -43,7 +45,7 @@ public static class ConnectionStringHelper
                 ? uri.UserInfo[(uri.UserInfo.IndexOf(':') + 1)..]
                 : uri.UserInfo);
 
-        return string.IsNullOrEmpty(password)
+        return password.Falsey()
             ? hostPort
             : $"{hostPort},password={password}";
     }
@@ -90,8 +92,8 @@ public static class ConnectionStringHelper
     public static string GetRedis()
     {
         var value = Environment.GetEnvironmentVariable("REDIS_URL");
-        return !string.IsNullOrWhiteSpace(value)
-            ? ParseRedisUri(value)
+        return value.Truthy()
+            ? ParseRedisUri(value!)
             : throw new InvalidOperationException(
                 "REDIS_URL is not set. Check your .env.local file.");
     }
@@ -108,8 +110,8 @@ public static class ConnectionStringHelper
     public static string GetPostgres(string envVar)
     {
         var value = Environment.GetEnvironmentVariable(envVar);
-        return !string.IsNullOrWhiteSpace(value)
-            ? ParsePostgresUri(value)
+        return value.Truthy()
+            ? ParsePostgresUri(value!)
             : throw new InvalidOperationException(
                 $"{envVar} is not set. Check your .env.local file.");
     }
@@ -126,8 +128,8 @@ public static class ConnectionStringHelper
     public static string GetRabbitMq()
     {
         var value = Environment.GetEnvironmentVariable("RABBITMQ_URL");
-        return !string.IsNullOrWhiteSpace(value)
-            ? value
+        return value.Truthy()
+            ? value!
             : throw new InvalidOperationException(
                 "RABBITMQ_URL is not set. Check your .env.local file.");
     }

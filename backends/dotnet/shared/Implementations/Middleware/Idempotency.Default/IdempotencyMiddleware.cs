@@ -12,6 +12,7 @@ using D2.Shared.Idempotency.Default.Interfaces;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using D2.Shared.Utilities.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -91,7 +92,7 @@ public class IdempotencyMiddleware
 
         // 2. Skip if no Idempotency-Key header.
         if (!context.Request.Headers.TryGetValue(_IDEMPOTENCY_KEY_HEADER, out var headerValue) ||
-            string.IsNullOrWhiteSpace(headerValue))
+            ((string?)headerValue).Falsey())
         {
             await r_next(context);
             return;

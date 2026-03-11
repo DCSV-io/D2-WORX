@@ -9,6 +9,7 @@ namespace D2.Shared.Handler.Extensions;
 using System.Diagnostics;
 using System.Security.Claims;
 using D2.Shared.Handler.Auth;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.AspNetCore.Http;
 
 /// <summary>
@@ -249,7 +250,7 @@ public class RequestContext : IRequestContext
     private static string? GetStringClaim(HttpContext? ctx, string claimType)
     {
         var value = ctx?.User.FindFirst(claimType)?.Value;
-        return string.IsNullOrEmpty(value) ? null : value;
+        return value.Falsey() ? null : value;
     }
 
     /// <summary>
@@ -258,7 +259,7 @@ public class RequestContext : IRequestContext
     private static Guid? GetGuidClaim(HttpContext? ctx, string claimType)
     {
         var value = ctx?.User.FindFirst(claimType)?.Value;
-        if (string.IsNullOrEmpty(value))
+        if (value.Falsey())
         {
             return null;
         }
@@ -273,7 +274,7 @@ public class RequestContext : IRequestContext
     private static OrgType? GetOrgTypeClaim(HttpContext? ctx, string claimType)
     {
         var value = ctx?.User.FindFirst(claimType)?.Value;
-        if (string.IsNullOrEmpty(value))
+        if (value.Falsey())
         {
             return null;
         }

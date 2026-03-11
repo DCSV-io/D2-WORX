@@ -7,6 +7,7 @@
 namespace D2.Geo.App.Validators;
 
 using D2.Geo.Domain.Entities;
+using D2.Shared.Utilities.Extensions;
 using FluentValidation;
 
 /// <summary>
@@ -73,7 +74,7 @@ public class LocationValidator : AbstractValidator<Location>
             // Line3 requires Line2.
             RuleFor(l => l.Address!.Line2)
                 .NotEmpty()
-                .When(l => !string.IsNullOrWhiteSpace(l.Address!.Line3))
+                .When(l => l.Address!.Line3.Truthy())
                 .OverridePropertyName($"{indexPrefix}address.line2")
                 .WithMessage("Line2 is required when Line3 is provided.");
         });

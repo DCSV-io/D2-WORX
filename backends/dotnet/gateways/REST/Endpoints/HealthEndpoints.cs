@@ -332,7 +332,7 @@ public static class HealthEndpoints
             {
                 status = comp.Status,
                 latencyMs = comp.LatencyMs,
-                error = string.IsNullOrEmpty(comp.Error) ? null : comp.Error,
+                error = comp.Error.Falsey() ? null : comp.Error,
             };
         }
 

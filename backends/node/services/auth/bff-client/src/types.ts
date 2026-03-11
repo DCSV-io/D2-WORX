@@ -31,6 +31,8 @@ export interface AuthBffConfig {
   authServiceUrl: string;
   /** Request timeout in ms (default: 5000). */
   timeout?: number;
+  /** S2S API key for trusted service identification. When set, sent as X-Api-Key header. */
+  apiKey?: string;
 }
 
 /**

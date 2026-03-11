@@ -198,6 +198,33 @@ describe("JwtManager", () => {
     expect(logger.warn).toHaveBeenCalled();
   });
 
+  it("should send X-Api-Key header when apiKey is configured", async () => {
+    const token = fakeJwt(Math.floor(Date.now() / 1000) + 900);
+    const fetchMock = mockTokenResponse(token);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const trustedManager = new JwtManager(
+      { authServiceUrl: "http://localhost:5100", apiKey: "d2.sveltekit.auth.key" },
+      logger,
+    );
+
+    await trustedManager.getToken("session_token=abc");
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["x-api-key"]).toBe("d2.sveltekit.auth.key");
+  });
+
+  it("should not send X-Api-Key header when apiKey is not configured", async () => {
+    const token = fakeJwt(Math.floor(Date.now() / 1000) + 900);
+    const fetchMock = mockTokenResponse(token);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await manager.getToken("session_token=abc");
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["x-api-key"]).toBeUndefined();
+  });
+
   it("should handle network error gracefully", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("ECONNREFUSED")));
 

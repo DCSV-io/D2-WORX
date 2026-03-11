@@ -69,11 +69,16 @@ export class JwtManager {
     const timeout = this.config.timeout ?? DEFAULT_TIMEOUT;
 
     try {
+      const fetchHeaders: Record<string, string> = { cookie: sessionCookie };
+      if (this.config.apiKey) {
+        fetchHeaders["x-api-key"] = this.config.apiKey;
+      }
+
       const response = await fetch(
         `${this.config.authServiceUrl}/api/auth/token`,
         {
           method: "GET",
-          headers: { cookie: sessionCookie },
+          headers: fetchHeaders,
           signal: AbortSignal.timeout(timeout),
         },
       );

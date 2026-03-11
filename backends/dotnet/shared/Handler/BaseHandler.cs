@@ -300,7 +300,10 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         SetTagIfNotNull(activity, "targetOrgType", req.TargetOrgType);
         activity.SetTag("isAuthenticated", req.IsAuthenticated);
         activity.SetTag("isTrustedService", req.IsTrustedService);
-        activity.SetTag("isOrgEmulating", req.IsOrgEmulating);
+        if (req.IsAuthenticated)
+        {
+            activity.SetTag("isOrgEmulating", req.IsOrgEmulating);
+        }
     }
 
     /// <summary>
@@ -340,8 +343,11 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         AddIfNotNull(scope, "agentOrgRole", req.AgentOrgRole);
         AddIfNotNull(scope, "targetOrgId", req.TargetOrgId);
         AddIfNotNull(scope, "targetOrgType", req.TargetOrgType);
-        scope["isOrgEmulating"] = req.IsOrgEmulating;
         scope["isAuthenticated"] = req.IsAuthenticated;
+        if (req.IsAuthenticated)
+        {
+            scope["isOrgEmulating"] = req.IsOrgEmulating;
+        }
 
         return scope;
     }

@@ -10,6 +10,7 @@ using D2.Geo.App;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Microsoft.AspNetCore.Http;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 
 /// <summary>
@@ -76,7 +77,7 @@ public class ApiKeyInterceptor : Interceptor
 
         // Extract API key from metadata.
         var apiKey = context.RequestHeaders.GetValue("x-api-key");
-        if (string.IsNullOrEmpty(apiKey))
+        if (apiKey.Falsey())
         {
             r_logger.LogWarning(
                 "Missing x-api-key header on RPC {Method}", methodName);

@@ -12,6 +12,7 @@ using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 using H = D2.Shared.RateLimit.Default.Interfaces.IRateLimit.ICheckHandler;
 using I = D2.Shared.RateLimit.Default.Interfaces.IRateLimit.CheckInput;
@@ -90,6 +91,9 @@ public class Check : BaseHandler<Check, I, O>, H
         // Trusted services bypass all rate limiting.
         if (requestContext.IsTrustedService)
         {
+            Context.Logger.LogInformation(
+                "Rate limit bypassed for trusted service. TraceId: {TraceId}",
+                TraceId);
             return D2Result<O?>.Ok(new O(false, null, null));
         }
 
@@ -100,13 +104,17 @@ public class Check : BaseHandler<Check, I, O>, H
         var checks = new List<Task<O>>(4);
 
         // Device fingerprint is always present (combined from client FP + server FP + IP).
-        checks.Add(CheckDimensionAsync(
-            RateLimitDimension.DeviceFingerprint,
-            requestContext.DeviceFingerprint,
-            r_options.DeviceFingerprintThreshold,
-            ct));
+        if (requestContext.DeviceFingerprint.Truthy())
+        {
+            checks.Add(CheckDimensionAsync(
+                RateLimitDimension.DeviceFingerprint,
+                requestContext.DeviceFingerprint,
+                r_options.DeviceFingerprintThreshold,
+                ct));
+        }
 
-        if (!IpResolver.IsLocalhost(requestContext.ClientIp))
+        if (requestContext.ClientIp.Truthy() &&
+            !IpResolver.IsLocalhost(requestContext.ClientIp))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Ip,
@@ -115,7 +123,7 @@ public class Check : BaseHandler<Check, I, O>, H
                 ct));
         }
 
-        if (!string.IsNullOrWhiteSpace(requestContext.City))
+        if (requestContext.City.Truthy())
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.City,
@@ -124,7 +132,7 @@ public class Check : BaseHandler<Check, I, O>, H
                 ct));
         }
 
-        if (!string.IsNullOrWhiteSpace(requestContext.CountryCode) &&
+        if (requestContext.CountryCode.Truthy() &&
             !r_options.WhitelistedCountryCodes.Contains(requestContext.CountryCode))
         {
             checks.Add(CheckDimensionAsync(

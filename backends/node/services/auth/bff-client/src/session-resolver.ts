@@ -59,6 +59,10 @@ export class SessionResolver {
 
     const headers: Record<string, string> = { cookie };
 
+    if (this.config.apiKey) {
+      headers["x-api-key"] = this.config.apiKey;
+    }
+
     const fingerprint = request.headers.get("x-client-fingerprint");
     if (fingerprint) {
       headers["x-client-fingerprint"] = fingerprint;

@@ -11,6 +11,7 @@ using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Shared.Handler;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 
 /// <summary>
@@ -84,7 +85,7 @@ public class RequestEnrichmentMiddleware
         // 3. Read client fingerprint: cookie (primary) → header (fallback).
         string? clientFingerprint = null;
         if (context.Request.Cookies.TryGetValue(r_options.ClientFingerprintCookie, out var cookieFp)
-            && !string.IsNullOrWhiteSpace(cookieFp))
+            && cookieFp.Truthy())
         {
             clientFingerprint = cookieFp;
         }
@@ -100,7 +101,7 @@ public class RequestEnrichmentMiddleware
             clientFingerprint = clientFingerprint[..r_options.MaxFingerprintLength];
         }
 
-        if (string.IsNullOrWhiteSpace(clientFingerprint))
+        if (clientFingerprint.Falsey())
         {
             clientFingerprint = null;
             r_logger.LogWarning(

@@ -34,7 +34,7 @@ A local BetterAuth instance in SvelteKit would bypass the Auth service's securit
 | --------------------------- | -------------------------------------------------------- |
 | `AuthSession`               | Resolved session data (userId, org context, emulation)   |
 | `AuthUser`                  | Resolved user data (id, email, name, username, image)    |
-| `AuthBffConfig`             | Configuration (authServiceUrl, timeout)                  |
+| `AuthBffConfig`             | Configuration (authServiceUrl, timeout, apiKey)          |
 | `AuthenticatedLocals`       | Narrowed type after `requireAuth()`                      |
 | `AuthenticatedWithOrgLocals`| Narrowed type after `requireOrg()` — org fields non-null |
 
@@ -49,7 +49,7 @@ const resolver = new SessionResolver(config, logger);
 const { session, user } = await resolver.resolve(request);
 ```
 
-- Forwards `cookie` and `x-client-fingerprint` headers
+- Forwards `cookie`, `x-client-fingerprint`, and `x-api-key` (when configured) headers
 - **Fail-closed**: Any error → `{ session: null, user: null }` + warning log
 - No caching: Session resolution is per-request (Auth service handles cookie cache)
 
@@ -77,7 +77,7 @@ const proxy = new AuthProxy(config, logger);
 const response = await proxy.proxyRequest(event);
 ```
 
-- Forwards: cookie, content-type, x-client-fingerprint, user-agent, accept, origin, referer
+- Forwards: cookie, content-type, x-client-fingerprint, x-api-key (when configured), user-agent, accept, origin, referer
 - Preserves `set-cookie` headers in response (critical for session management)
 - Returns 503 on timeout/network error
 
@@ -99,9 +99,10 @@ const { session } = requireOrg(locals);
 
 ## Configuration
 
-| Env Var              | Required | Default | Description                                     |
-| -------------------- | -------- | ------- | ----------------------------------------------- |
-| `SVELTEKIT_AUTH__URL` | Yes      | —       | Auth service URL. Hard-fails on startup if missing |
+| Env Var                  | Required | Default | Description                                                        |
+| ------------------------ | -------- | ------- | ------------------------------------------------------------------ |
+| `SVELTEKIT_AUTH__URL`    | Yes      | —       | Auth service URL. Hard-fails on startup if missing                 |
+| `SVELTEKIT_AUTH__API_KEY`| No       | —       | S2S API key. When set, sent as `X-Api-Key` for trusted service ID  |
 
 ## Dependencies
 
@@ -114,11 +115,11 @@ No BetterAuth dependency — this package only speaks HTTP to the Auth service.
 
 ## Testing
 
-34 unit tests covering all four modules:
+40 unit tests covering all four modules:
 
-- **session-resolver** (11 tests): Success, 401, network error, header forwarding, optional fields, identity validation, unsigned cookie detection
-- **jwt-manager** (8 tests): Obtain, cache, refresh, dedup, invalidate, error handling
-- **auth-proxy** (5 tests): GET/POST proxy, set-cookie preservation, timeout, query params
+- **session-resolver** (13 tests): Success, 401, network error, header forwarding, optional fields, identity validation, unsigned cookie detection, S2S api key
+- **jwt-manager** (10 tests): Obtain, cache, refresh, dedup, invalidate, error handling, S2S api key
+- **auth-proxy** (7 tests): GET/POST proxy, set-cookie preservation, timeout, query params, S2S api key
 - **route-guard** (10 tests): requireAuth, requireOrg, redirectIfAuthenticated
 
 10 E2E integration tests in `backends/node/services/e2e/src/e2e/bff-client.test.ts` (real Auth service over HTTP).

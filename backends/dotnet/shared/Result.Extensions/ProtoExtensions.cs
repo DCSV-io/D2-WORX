@@ -9,6 +9,7 @@ namespace D2.Shared.Result.Extensions;
 using System.Net;
 using D2.Services.Protos.Common.V1;
 using Grpc.Core;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -98,8 +99,8 @@ public static class ProtoExtensions
                     .Select(ie => new List<string> { ie.Field }.Concat(ie.Errors).ToList())
                     .ToList(),
                 statusCode: (HttpStatusCode)proto.StatusCode,
-                errorCode: string.IsNullOrEmpty(proto.ErrorCode) ? null : proto.ErrorCode,
-                traceId: string.IsNullOrEmpty(proto.TraceId) ? null : proto.TraceId);
+                errorCode: proto.ErrorCode.Falsey() ? null : proto.ErrorCode,
+                traceId: proto.TraceId.Falsey() ? null : proto.TraceId);
 
             return result;
         }

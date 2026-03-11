@@ -11,6 +11,7 @@ using D2.Shared.Handler;
 using D2.Shared.Handler.Auth;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using D2.Shared.Utilities.Serialization;
 
 /// <summary>
@@ -79,7 +80,7 @@ public class JwtFingerprintMiddleware
         var fpClaim = context.User.FindFirst(JwtClaimTypes.FINGERPRINT)?.Value;
 
         // For non-trusted requests, fp claim is REQUIRED.
-        if (string.IsNullOrEmpty(fpClaim))
+        if (fpClaim.Falsey())
         {
             r_logger.LogWarning(
                 "JWT missing required fingerprint claim for {Path}",
@@ -190,7 +191,7 @@ public class JwtFingerprintMiddleware
     private static string? GetStringClaim(HttpContext ctx, string claimType)
     {
         var value = ctx.User.FindFirst(claimType)?.Value;
-        return string.IsNullOrEmpty(value) ? null : value;
+        return value.Falsey() ? null : value;
     }
 
     /// <summary>
@@ -199,7 +200,7 @@ public class JwtFingerprintMiddleware
     private static Guid? GetGuidClaim(HttpContext ctx, string claimType)
     {
         var value = ctx.User.FindFirst(claimType)?.Value;
-        if (string.IsNullOrEmpty(value))
+        if (value.Falsey())
         {
             return null;
         }
@@ -213,7 +214,7 @@ public class JwtFingerprintMiddleware
     private static OrgType? GetOrgTypeClaim(HttpContext ctx, string claimType)
     {
         var value = ctx.User.FindFirst(claimType)?.Value;
-        if (string.IsNullOrEmpty(value))
+        if (value.Falsey())
         {
             return null;
         }

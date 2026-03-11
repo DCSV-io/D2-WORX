@@ -33,7 +33,7 @@ function createStubRequestContext(overrides?: Partial<IRequestContext>): IReques
 const VALID_KEY = "test-api-key-1";
 const VALID_KEYS = new Set([VALID_KEY, "test-api-key-2"]);
 
-function createApp() {
+function createApp(options?: { require?: boolean }) {
   const app = new Hono();
 
   // Simulate request-enrichment setting requestContext before service-key runs
@@ -42,7 +42,7 @@ function createApp() {
     await next();
   });
 
-  app.use("*", createServiceKeyMiddleware(VALID_KEYS));
+  app.use("*", createServiceKeyMiddleware(VALID_KEYS, options));
 
   app.get("/test", (c) => {
     const ctx = c.get(REQUEST_CONTEXT_KEY) as IRequestContext;
@@ -104,5 +104,40 @@ describe("Service key middleware", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.isTrustedService).toBe(true);
+  });
+});
+
+describe("Service key middleware (require: true)", () => {
+  it("returns 401 when no X-Api-Key header is present", async () => {
+    const app = createApp({ require: true });
+    const res = await app.request("/test");
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.messages).toContain("API key required.");
+  });
+
+  it("sets isTrustedService=true for a valid API key", async () => {
+    const app = createApp({ require: true });
+    const res = await app.request("/test", {
+      headers: { "X-Api-Key": VALID_KEY },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.isTrustedService).toBe(true);
+  });
+
+  it("returns 401 for an invalid API key", async () => {
+    const app = createApp({ require: true });
+    const res = await app.request("/test", {
+      headers: { "X-Api-Key": "invalid-key" },
+    });
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.messages).toContain("Invalid API key.");
   });
 });

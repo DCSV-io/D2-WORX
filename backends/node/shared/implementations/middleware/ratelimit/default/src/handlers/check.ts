@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type IRequestContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { type DistributedCache, RateLimit } from "@d2/interfaces";
 import { isLocalhost } from "@d2/request-enrichment";
@@ -22,6 +22,12 @@ type CheckOutput = RateLimit.CheckOutput;
 export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> implements RateLimit.ICheckHandler {
   override get redaction() {
     return RateLimit.CHECK_REDACTION;
+  }
+
+  // Pre-auth singleton — DI context has static defaults.
+  // The real per-request context arrives via input.requestContext.
+  protected override getEffectiveRequest(input: CheckInput): IRequestContext {
+    return input.requestContext;
   }
 
   private readonly getTtl: DistributedCache.IGetTtlHandler;
@@ -56,6 +62,7 @@ export class CheckRateLimit extends BaseHandler<CheckInput, CheckOutput> impleme
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
     // Trusted services bypass all rate limiting (mirrors .NET Check handler).
     if (input.requestContext.isTrustedService) {
+      this.context.logger.info(`Rate limit bypassed for trusted service. TraceId: ${this.traceId}`);
       return D2Result.ok({
         data: { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined },
       });

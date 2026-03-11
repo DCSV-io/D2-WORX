@@ -13,6 +13,7 @@ using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
+using D2.Shared.Utilities.Extensions;
 using D2.Geo.Client.Messaging.Handlers.Sub;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.InMemoryCache.Default;
@@ -201,7 +202,7 @@ public static class Extensions
             services.Configure<GeoClientOptions>(configuration.GetSection(baseSectionName));
 
             // Overlay service-specific overrides if prefix provided.
-            if (!string.IsNullOrEmpty(servicePrefix))
+            if (servicePrefix.Truthy())
             {
                 services.Configure<GeoClientOptions>(
                     configuration.GetSection($"{servicePrefix}_{baseSectionName}"));

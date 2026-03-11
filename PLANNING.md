@@ -108,6 +108,7 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 | --- | ------------------------------------------------ | ------ | ------ | --------------------------------------------------------------------------------------------------- |
 | 32  | Thundering herd protection on popular key expiry | Shared | Medium | Add singleflight/lock pattern for cache-memory on popular key expiry                                |
 | 40  | OTel alerting for service outages                | All    | Medium | Add OTel-based alerting rules for service unavailability (gRPC failures, RabbitMQ down, Redis down) |
+| 41  | Node.js pre-auth handlers: early DI scope        | Shared | Medium | Pre-auth singletons (rate limit, FindWhoIs, throttle) use static service-level HandlerContext — `this.context.request` has stale defaults. .NET resolves per-request via scoped DI. Introduce an early DI scope (created by enrichment/service-key middleware, before auth) so all Node.js handlers are scoped and `this.context.request` is always per-request. Eliminates `getEffectiveRequest` workaround and aligns .NET/Node.js behavior. |
 
 ### Open Questions
 

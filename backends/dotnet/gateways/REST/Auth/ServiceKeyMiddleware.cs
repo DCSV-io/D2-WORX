@@ -12,6 +12,7 @@ using System.Text;
 using D2.Shared.Handler;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 
 /// <summary>
@@ -68,7 +69,7 @@ public class ServiceKeyMiddleware
         var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault();
 
         // No key → browser request, continue normally.
-        if (string.IsNullOrEmpty(apiKey))
+        if (apiKey.Falsey())
         {
             await r_next(context);
             return;

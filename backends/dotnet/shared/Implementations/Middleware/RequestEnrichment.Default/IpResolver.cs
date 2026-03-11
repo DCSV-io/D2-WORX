@@ -6,6 +6,7 @@
 
 namespace D2.Shared.RequestEnrichment.Default;
 
+using D2.Shared.Utilities.Extensions;
 using Microsoft.AspNetCore.Http;
 
 /// <summary>
@@ -62,7 +63,7 @@ public static class IpResolver
             context.Request.Headers.TryGetValue(_CF_CONNECTING_IP, out var cfIp))
         {
             var ip = cfIp.FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(ip))
+            if (ip.Truthy())
             {
                 return Truncate(ip.Trim(), maxHeaderLength);
             }
@@ -73,7 +74,7 @@ public static class IpResolver
             context.Request.Headers.TryGetValue(_X_REAL_IP, out var realIp))
         {
             var ip = realIp.FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(ip))
+            if (ip.Truthy())
             {
                 return Truncate(ip.Trim(), maxHeaderLength);
             }
@@ -84,7 +85,7 @@ public static class IpResolver
             context.Request.Headers.TryGetValue(_X_FORWARDED_FOR, out var forwardedFor))
         {
             var forwardedValue = forwardedFor.FirstOrDefault();
-            if (!string.IsNullOrWhiteSpace(forwardedValue))
+            if (forwardedValue.Truthy())
             {
                 // Truncate before parsing to prevent abuse from oversized headers.
                 var truncated = Truncate(forwardedValue, maxHeaderLength);
@@ -92,7 +93,7 @@ public static class IpResolver
                 // Format can be "client, proxy1, proxy2" — take the first one.
                 var firstIp = truncated.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .FirstOrDefault();
-                if (!string.IsNullOrWhiteSpace(firstIp))
+                if (firstIp.Truthy())
                 {
                     return firstIp.Trim();
                 }

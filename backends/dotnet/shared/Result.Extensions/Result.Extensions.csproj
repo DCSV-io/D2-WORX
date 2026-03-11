@@ -10,6 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />
       <ProjectReference Include="..\Result\Result.csproj" />
+      <ProjectReference Include="..\Utilities\Utilities.csproj" />
     </ItemGroup>
 
 </Project>

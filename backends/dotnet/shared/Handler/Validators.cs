@@ -7,6 +7,7 @@
 namespace D2.Shared.Handler;
 
 using System.Net;
+using D2.Shared.Utilities.Extensions;
 using FluentValidation;
 
 /// <summary>
@@ -20,7 +21,7 @@ public static class Validators
         /// Validates that the string is a valid IPv4 or IPv6 address.
         /// </summary>
         public IRuleBuilderOptions<T, string> IsValidIpAddress()
-            => rule.Must(ip => !string.IsNullOrWhiteSpace(ip) && IPAddress.TryParse(ip, out _))
+            => rule.Must(ip => ip.Truthy() && IPAddress.TryParse(ip, out _))
                 .WithMessage("'{PropertyName}' must be a valid IPv4 or IPv6 address.");
 
         /// <summary>

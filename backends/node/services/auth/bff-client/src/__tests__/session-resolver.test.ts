@@ -150,6 +150,31 @@ describe("SessionResolver", () => {
     expect(init.headers["x-client-fingerprint"]).toBe("fp-hash-abc");
   });
 
+  it("should send X-Api-Key header when apiKey is configured", async () => {
+    const fetchMock = mockFetchResponse(validSessionResponse);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const trustedResolver = new SessionResolver(
+      { authServiceUrl: "http://localhost:5100", apiKey: "d2.sveltekit.auth.key" },
+      logger,
+    );
+
+    await trustedResolver.resolve(makeRequest("session_token=abc"));
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["x-api-key"]).toBe("d2.sveltekit.auth.key");
+  });
+
+  it("should not send X-Api-Key header when apiKey is not configured", async () => {
+    const fetchMock = mockFetchResponse(validSessionResponse);
+    vi.stubGlobal("fetch", fetchMock);
+
+    await resolver.resolve(makeRequest("session_token=abc"));
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers["x-api-key"]).toBeUndefined();
+  });
+
   it("should handle missing optional fields gracefully", async () => {
     const minimalResponse = {
       session: {

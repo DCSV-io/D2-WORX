@@ -42,8 +42,10 @@ export function getAuthContext(): AuthContext {
     );
   }
 
+  const apiKey = process.env.SVELTEKIT_AUTH__API_KEY;
+
   const logger = createLogger({ serviceName: "d2-sveltekit-auth" });
-  const config: AuthBffConfig = { authServiceUrl };
+  const config: AuthBffConfig = { authServiceUrl, apiKey };
 
   const sessionResolver = new SessionResolver(config, logger);
   const jwtManager = new JwtManager(config, logger);

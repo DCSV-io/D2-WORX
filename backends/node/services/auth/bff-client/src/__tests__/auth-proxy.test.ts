@@ -140,6 +140,49 @@ describe("AuthProxy", () => {
     expect(logger.warn).toHaveBeenCalledOnce();
   });
 
+  it("should send X-Api-Key header when apiKey is configured", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const trustedProxy = new AuthProxy(
+      { authServiceUrl: "http://localhost:5100", apiKey: "d2.sveltekit.auth.key" },
+      logger,
+    );
+
+    const event = makeEvent("GET", "/api/auth/get-session", {
+      cookie: "session_token=abc",
+    });
+
+    await trustedProxy.proxyRequest(event);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers.get("x-api-key")).toBe("d2.sveltekit.auth.key");
+  });
+
+  it("should not send X-Api-Key header when apiKey is not configured", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const event = makeEvent("GET", "/api/auth/get-session", {
+      cookie: "session_token=abc",
+    });
+
+    await proxy.proxyRequest(event);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers.get("x-api-key")).toBeNull();
+  });
+
   it("should forward query parameters", async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({}), { status: 200 }),
