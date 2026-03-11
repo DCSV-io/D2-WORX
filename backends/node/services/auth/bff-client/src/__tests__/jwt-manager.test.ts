@@ -181,6 +181,90 @@ describe("JwtManager", () => {
     expect(callCount).toBe(2);
   });
 
+  it("should isolate cached tokens per session (no cross-user leakage)", async () => {
+    const tokenA = fakeJwt(Math.floor(Date.now() / 1000) + 900);
+    const tokenB = fakeJwt(Math.floor(Date.now() / 1000) + 900);
+
+    let callCount = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((_url: string, init: { headers: Record<string, string> }) => {
+        callCount++;
+        // Return different tokens based on which session cookie was sent
+        const token = init.headers.cookie === "session_token=user_a" ? tokenA : tokenB;
+        return Promise.resolve(
+          new Response(JSON.stringify({ token }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }),
+    );
+
+    // User A gets their token
+    const resultA = await manager.getToken("session_token=user_a");
+    expect(resultA).toBe(tokenA);
+
+    // User B gets a DIFFERENT token (not User A's cached token)
+    const resultB = await manager.getToken("session_token=user_b");
+    expect(resultB).toBe(tokenB);
+
+    // Both fetched independently
+    expect(callCount).toBe(2);
+
+    // Subsequent calls return the correct cached token for each user
+    const resultA2 = await manager.getToken("session_token=user_a");
+    const resultB2 = await manager.getToken("session_token=user_b");
+    expect(resultA2).toBe(tokenA);
+    expect(resultB2).toBe(tokenB);
+    expect(callCount).toBe(2); // No additional fetches — both cached
+  });
+
+  it("should invalidate only the specified session when cookie is provided", async () => {
+    const tokenA = fakeJwt(Math.floor(Date.now() / 1000) + 900);
+    const tokenB = fakeJwt(Math.floor(Date.now() / 1000) + 900);
+    const tokenA2 = fakeJwt(Math.floor(Date.now() / 1000) + 900);
+
+    let callCount = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((_url: string, init: { headers: Record<string, string> }) => {
+        callCount++;
+        if (init.headers.cookie === "session_token=user_a") {
+          return Promise.resolve(
+            new Response(JSON.stringify({ token: callCount <= 2 ? tokenA : tokenA2 }), {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }),
+          );
+        }
+        return Promise.resolve(
+          new Response(JSON.stringify({ token: tokenB }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          }),
+        );
+      }),
+    );
+
+    // Cache tokens for both users
+    await manager.getToken("session_token=user_a");
+    await manager.getToken("session_token=user_b");
+    expect(callCount).toBe(2);
+
+    // Invalidate only User A
+    manager.invalidate("session_token=user_a");
+
+    // User B still cached, User A must re-fetch
+    const resultB = await manager.getToken("session_token=user_b");
+    expect(resultB).toBe(tokenB);
+    expect(callCount).toBe(2); // No new fetch for B
+
+    const resultA = await manager.getToken("session_token=user_a");
+    expect(resultA).toBe(tokenA2);
+    expect(callCount).toBe(3); // New fetch for A
+  });
+
   it("should return null when response has no token", async () => {
     vi.stubGlobal(
       "fetch",
