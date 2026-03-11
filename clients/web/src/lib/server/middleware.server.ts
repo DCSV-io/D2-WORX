@@ -21,6 +21,7 @@ import * as CacheRedis from "@d2/cache-redis";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import {
   createGeoServiceClient,
+  createGeoCircuitBreaker,
   FindWhoIs,
   Get as GetGeoRefData,
   GetFromMem,
@@ -120,7 +121,14 @@ export function getMiddlewareContext(): MiddlewareContext | null {
   };
   const geoClient = createGeoServiceClient(geoAddress, geoApiKey);
   const whoIsCacheStore = new MemoryCacheStore();
-  const findWhoIs = new FindWhoIs(whoIsCacheStore, geoClient, geoOptions, serviceContext);
+  const geoCircuitBreaker = createGeoCircuitBreaker(geoOptions, logger);
+  const findWhoIs = new FindWhoIs(
+    whoIsCacheStore,
+    geoClient,
+    geoOptions,
+    geoCircuitBreaker,
+    serviceContext,
+  );
 
   // Geo reference data handler chain (Memory → Redis → Disk → gRPC)
   const refDataMemCache = new MemoryCacheStore();

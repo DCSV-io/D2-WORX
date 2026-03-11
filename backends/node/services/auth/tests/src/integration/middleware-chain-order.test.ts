@@ -8,7 +8,7 @@ import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { enrichRequest } from "@d2/request-enrichment";
-import { FindWhoIs, type GeoClientOptions } from "@d2/geo-client";
+import { FindWhoIs, createGeoCircuitBreaker, type GeoClientOptions } from "@d2/geo-client";
 import { CheckRateLimit } from "@d2/ratelimit";
 import type { RateLimit } from "@d2/interfaces";
 import * as CacheRedis from "@d2/cache-redis";
@@ -83,6 +83,8 @@ describe("Middleware chain order", () => {
       apiKey: "",
       grpcTimeoutMs: 30_000,
       whoIsNegativeCacheExpirationMs: 3_600_000,
+      circuitBreakerFailureThreshold: 5,
+      circuitBreakerCooldownMs: 30_000,
     };
     const stubGeoClient = {
       findWhoIs: (
@@ -94,7 +96,14 @@ describe("Middleware chain order", () => {
         cb(null, { result: { success: true }, data: [] });
       },
     } as unknown as Parameters<typeof FindWhoIs>[1];
-    const findWhoIs = new FindWhoIs(whoIsCacheStore, stubGeoClient, geoOptions, ctx);
+    const geoCircuitBreaker = createGeoCircuitBreaker(geoOptions, logger);
+    const findWhoIs = new FindWhoIs(
+      whoIsCacheStore,
+      stubGeoClient,
+      geoOptions,
+      geoCircuitBreaker,
+      ctx,
+    );
 
     // Build Hono app with same middleware order as composition-root.ts
     app = new Hono();

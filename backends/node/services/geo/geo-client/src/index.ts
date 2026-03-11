@@ -12,6 +12,7 @@ export {
 // gRPC helpers
 export { createApiKeyInterceptor } from "./grpc/api-key-interceptor.js";
 export { createGeoServiceClient } from "./grpc/create-geo-client.js";
+export { createGeoCircuitBreaker } from "./circuit-breaker-factory.js";
 
 // Interfaces (contract types + handler interfaces + redaction constants)
 export { Commands, Queries, Complex } from "./interfaces/index.js";

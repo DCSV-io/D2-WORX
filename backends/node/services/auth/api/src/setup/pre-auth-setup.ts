@@ -2,7 +2,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { HandlerContext } from "@d2/handler";
 import type { ILogger } from "@d2/logging";
 import * as CacheMemory from "@d2/cache-memory";
-import { FindWhoIs, type GeoClientOptions } from "@d2/geo-client";
+import { FindWhoIs, createGeoCircuitBreaker, type GeoClientOptions } from "@d2/geo-client";
 import { CheckRateLimit } from "@d2/ratelimit";
 import { PASSWORD_POLICY } from "@d2/auth-domain";
 import {
@@ -56,7 +56,14 @@ export function createPreAuthHandlers(
 
   // FindWhoIs for request enrichment (WhoIs lookup for IP → city/country)
   const whoIsCacheStore = new CacheMemory.MemoryCacheStore();
-  const findWhoIs = new FindWhoIs(whoIsCacheStore, geoClient, geoOptions, serviceContext);
+  const geoCircuitBreaker = createGeoCircuitBreaker(geoOptions, logger);
+  const findWhoIs = new FindWhoIs(
+    whoIsCacheStore,
+    geoClient,
+    geoOptions,
+    geoCircuitBreaker,
+    serviceContext,
+  );
 
   // Throttle handlers (pre-auth singletons — used in auth routes before BetterAuth)
   const throttleCacheStore = new CacheMemory.MemoryCacheStore();
