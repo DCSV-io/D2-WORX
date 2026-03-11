@@ -34,10 +34,14 @@ export function createAuthHandle(): Handle {
 
     // Update requestContext with auth state so downstream middleware
     // (idempotency, rate limiting user dimension) can see it.
-    if (session && event.locals.requestContext) {
-      event.locals.requestContext.isAuthenticated = true;
-      event.locals.requestContext.userId = session.userId;
-      if (user?.username) event.locals.requestContext.username = user.username;
+    // Always set isAuthenticated to a concrete boolean — session resolution
+    // is the auth boundary, so after this point the value is known.
+    if (event.locals.requestContext) {
+      event.locals.requestContext.isAuthenticated = !!session;
+      if (session) {
+        event.locals.requestContext.userId = session.userId;
+        if (user?.username) event.locals.requestContext.username = user.username;
+      }
     }
 
     // Set OTel span attributes for Tempo trace queries.
@@ -51,7 +55,7 @@ export function createAuthHandle(): Handle {
       whoIsHashId: rc?.whoIsHashId,
       city: rc?.city,
       countryCode: rc?.countryCode,
-      isAuthenticated: rc?.isAuthenticated ?? false,
+      isAuthenticated: rc?.isAuthenticated,
       isVpn: rc?.isVpn,
       isProxy: rc?.isProxy,
       isTor: rc?.isTor,

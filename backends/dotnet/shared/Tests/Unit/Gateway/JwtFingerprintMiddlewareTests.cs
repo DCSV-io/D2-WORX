@@ -343,8 +343,9 @@ public class JwtFingerprintMiddlewareTests
         // Act
         await middleware.InvokeAsync(context);
 
-        // Assert
-        requestContext.IsAuthenticated.Should().BeFalse();
+        // Assert — IsAuthenticated stays null (unknown) because the middleware
+        // doesn't set auth state for unauthenticated requests.
+        requestContext.IsAuthenticated.Should().BeNull();
         requestContext.UserIdRaw.Should().BeNull();
     }
 
@@ -364,8 +365,9 @@ public class JwtFingerprintMiddlewareTests
         // Act
         await middleware.InvokeAsync(context);
 
-        // Assert
-        requestContext.IsAuthenticated.Should().BeFalse();
+        // Assert — IsAuthenticated stays null (unknown) because the middleware
+        // rejects with 401 before reaching SetAuthState.
+        requestContext.IsAuthenticated.Should().BeNull();
         requestContext.UserIdRaw.Should().BeNull();
     }
 
@@ -385,8 +387,9 @@ public class JwtFingerprintMiddlewareTests
         // Act
         await middleware.InvokeAsync(context);
 
-        // Assert
-        requestContext.IsAuthenticated.Should().BeFalse();
+        // Assert — IsAuthenticated stays null (unknown) because the middleware
+        // rejects with 401 before reaching SetAuthState.
+        requestContext.IsAuthenticated.Should().BeNull();
         requestContext.UserIdRaw.Should().BeNull();
     }
 

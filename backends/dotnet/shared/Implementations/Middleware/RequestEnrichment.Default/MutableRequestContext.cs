@@ -38,7 +38,7 @@ public class MutableRequestContext : IRequestContext
     #region User / Identity
 
     /// <inheritdoc/>
-    public bool IsAuthenticated { get; set; }
+    public bool? IsAuthenticated { get; set; }
 
     /// <summary>
     /// Gets or sets the raw user ID string from the JWT <c>sub</c> claim.
@@ -93,7 +93,7 @@ public class MutableRequestContext : IRequestContext
     #region Org Emulation
 
     /// <inheritdoc/>
-    public bool IsOrgEmulating { get; set; }
+    public bool? IsOrgEmulating { get; set; }
 
     #endregion
 
@@ -109,7 +109,7 @@ public class MutableRequestContext : IRequestContext
     public string? ImpersonatingUsername { get; set; }
 
     /// <inheritdoc/>
-    public bool IsUserImpersonating { get; set; }
+    public bool? IsUserImpersonating { get; set; }
 
     #endregion
 
@@ -156,7 +156,7 @@ public class MutableRequestContext : IRequestContext
     #region Trust
 
     /// <inheritdoc/>
-    public bool IsTrustedService { get; set; }
+    public bool? IsTrustedService { get; set; }
 
     #endregion
 

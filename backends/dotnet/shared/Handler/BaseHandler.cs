@@ -298,11 +298,21 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         SetTagIfNotNull(activity, "agentOrgRole", req.AgentOrgRole);
         SetTagIfNotNull(activity, "targetOrgId", req.TargetOrgId);
         SetTagIfNotNull(activity, "targetOrgType", req.TargetOrgType);
-        activity.SetTag("isAuthenticated", req.IsAuthenticated);
-        activity.SetTag("isTrustedService", req.IsTrustedService);
-        if (req.IsAuthenticated)
+
+        // Auth/trust flags — skip when null (unknown in pre-auth handlers).
+        if (req.IsAuthenticated.HasValue)
         {
-            activity.SetTag("isOrgEmulating", req.IsOrgEmulating);
+            activity.SetTag("isAuthenticated", req.IsAuthenticated.Value);
+        }
+
+        if (req.IsTrustedService.HasValue)
+        {
+            activity.SetTag("isTrustedService", req.IsTrustedService.Value);
+        }
+
+        if (req.IsAuthenticated == true)
+        {
+            activity.SetTag("isOrgEmulating", req.IsOrgEmulating ?? false);
         }
     }
 
@@ -343,10 +353,14 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         AddIfNotNull(scope, "agentOrgRole", req.AgentOrgRole);
         AddIfNotNull(scope, "targetOrgId", req.TargetOrgId);
         AddIfNotNull(scope, "targetOrgType", req.TargetOrgType);
-        scope["isAuthenticated"] = req.IsAuthenticated;
-        if (req.IsAuthenticated)
+        if (req.IsAuthenticated.HasValue)
         {
-            scope["isOrgEmulating"] = req.IsOrgEmulating;
+            scope["isAuthenticated"] = req.IsAuthenticated.Value;
+        }
+
+        if (req.IsAuthenticated == true)
+        {
+            scope["isOrgEmulating"] = req.IsOrgEmulating ?? false;
         }
 
         return scope;

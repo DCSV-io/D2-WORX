@@ -89,7 +89,7 @@ public class Check : BaseHandler<Check, I, O>, H
         var requestContext = input.RequestContext;
 
         // Trusted services bypass all rate limiting.
-        if (requestContext.IsTrustedService)
+        if (requestContext.IsTrustedService == true)
         {
             Context.Logger.LogInformation(
                 "Rate limit bypassed for trusted service. TraceId: {TraceId}",

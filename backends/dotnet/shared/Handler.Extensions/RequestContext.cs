@@ -60,7 +60,7 @@ public class RequestContext : IRequestContext
 
         // Target Organization — the org all operations execute against.
         // Emulated org during org emulation, otherwise agent org.
-        if (IsOrgEmulating)
+        if (IsOrgEmulating == true)
         {
             TargetOrgId = GetGuidClaim(ctx, JwtClaimTypes.EMULATED_ORG_ID) ?? AgentOrgId;
             TargetOrgName = GetStringClaim(ctx, JwtClaimTypes.EMULATED_ORG_NAME) ?? AgentOrgName;
@@ -101,7 +101,7 @@ public class RequestContext : IRequestContext
     #region User / Identity
 
     /// <inheritdoc/>
-    public bool IsAuthenticated { get; }
+    public bool? IsAuthenticated { get; }
 
     /// <inheritdoc/>
     public Guid? UserId { get; }
@@ -149,7 +149,7 @@ public class RequestContext : IRequestContext
     #region Org Emulation
 
     /// <inheritdoc/>
-    public bool IsOrgEmulating { get; }
+    public bool? IsOrgEmulating { get; }
 
     #endregion
 
@@ -165,7 +165,7 @@ public class RequestContext : IRequestContext
     public string? ImpersonatingUsername { get; }
 
     /// <inheritdoc/>
-    public bool IsUserImpersonating { get; }
+    public bool? IsUserImpersonating { get; }
 
     #endregion
 
@@ -238,7 +238,7 @@ public class RequestContext : IRequestContext
     /// <remarks>
     /// Not available in non-gateway services. Always false.
     /// </remarks>
-    public bool IsTrustedService => false;
+    public bool? IsTrustedService => false;
 
     #endregion
 

@@ -16,7 +16,7 @@ export class MutableRequestContext implements IRequestContext {
   requestPath?: string;
 
   // User / Identity
-  isAuthenticated: boolean;
+  isAuthenticated: boolean | null;
   userId?: string;
   email?: string;
   username?: string;
@@ -34,13 +34,13 @@ export class MutableRequestContext implements IRequestContext {
   targetOrgRole?: string;
 
   // Org Emulation
-  isOrgEmulating: boolean;
+  isOrgEmulating: boolean | null;
 
   // User Impersonation
   impersonatedBy?: string;
   impersonatingEmail?: string;
   impersonatingUsername?: string;
-  isUserImpersonating: boolean;
+  isUserImpersonating: boolean | null;
 
   // Network / Enrichment
   readonly clientIp?: string;
@@ -57,7 +57,7 @@ export class MutableRequestContext implements IRequestContext {
   readonly isHosting?: boolean;
 
   // Trust
-  isTrustedService: boolean;
+  isTrustedService: boolean | null;
 
   // Computed helpers
   get isAgentStaff(): boolean {
@@ -104,10 +104,10 @@ export class MutableRequestContext implements IRequestContext {
     this.isProxy = params.isProxy;
     this.isTor = params.isTor;
     this.isHosting = params.isHosting;
-    this.isAuthenticated = false;
-    this.isTrustedService = false;
-    this.isOrgEmulating = false;
-    this.isUserImpersonating = false;
+    this.isAuthenticated = null;
+    this.isTrustedService = null;
+    this.isOrgEmulating = null;
+    this.isUserImpersonating = null;
     this.traceId = crypto.randomUUID();
   }
 }

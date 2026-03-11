@@ -22,7 +22,11 @@ export interface IRequestContext {
   requestPath?: string;
 
   // User / Identity
-  isAuthenticated: boolean;
+  /**
+   * Whether the user is authenticated. `null` means auth hasn't run yet
+   * (pre-auth handlers). Set to `true`/`false` by auth middleware.
+   */
+  isAuthenticated: boolean | null;
   userId?: string;
   email?: string;
   username?: string;
@@ -40,13 +44,15 @@ export interface IRequestContext {
   targetOrgRole?: string;
 
   // Org Emulation
-  isOrgEmulating: boolean;
+  /** `null` = auth hasn't run yet. */
+  isOrgEmulating: boolean | null;
 
   // User Impersonation
   impersonatedBy?: string;
   impersonatingEmail?: string;
   impersonatingUsername?: string;
-  isUserImpersonating: boolean;
+  /** `null` = auth hasn't run yet. */
+  isUserImpersonating: boolean | null;
 
   // Network / Enrichment
   clientIp?: string;
@@ -63,7 +69,11 @@ export interface IRequestContext {
   isHosting?: boolean;
 
   // Trust
-  isTrustedService?: boolean;
+  /**
+   * Whether the request is from a trusted service. `null` = service-key
+   * middleware hasn't run yet. Set to `true`/`false` after service-key check.
+   */
+  isTrustedService?: boolean | null;
 
   // Helpers (computed)
   isAgentStaff?: boolean;

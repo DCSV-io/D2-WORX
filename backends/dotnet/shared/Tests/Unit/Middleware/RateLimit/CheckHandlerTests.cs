@@ -412,7 +412,9 @@ public class CheckHandlerTests
         string? city = null,
         string? countryCode = null)
     {
-        var deviceFingerprint = clientFingerprint ?? $"device-fp-{clientIp}";
+        // DeviceFingerprint is always a SHA-256 hash (64 hex chars) in production,
+        // computed from clientFP + serverFP + IP. Always truthy regardless of clientFingerprint.
+        var deviceFingerprint = $"device-fp-{clientIp}";
         var mock = new Mock<IRequestContext>();
         mock.Setup(x => x.ClientFingerprint).Returns(clientFingerprint);
         mock.Setup(x => x.DeviceFingerprint).Returns(deviceFingerprint);

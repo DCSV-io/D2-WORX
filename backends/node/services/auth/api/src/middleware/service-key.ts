@@ -41,6 +41,12 @@ export function createServiceKeyMiddleware(
           401 as ContentfulStatusCode,
         );
       }
+
+      // Explicitly mark as not-trusted (transitions from null → false).
+      const requestContext = c.get(REQUEST_CONTEXT_KEY);
+      if (requestContext) {
+        requestContext.isTrustedService = false;
+      }
       await next();
       return;
     }

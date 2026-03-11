@@ -160,7 +160,7 @@ public class JwtFingerprintMiddleware
             StringComparison.OrdinalIgnoreCase);
 
         // Target Organization — emulated org if emulating, otherwise agent org.
-        if (mutableCtx.IsOrgEmulating)
+        if (mutableCtx.IsOrgEmulating == true)
         {
             mutableCtx.TargetOrgId = GetGuidClaim(context, JwtClaimTypes.EMULATED_ORG_ID) ?? mutableCtx.AgentOrgId;
             mutableCtx.TargetOrgName = GetStringClaim(context, JwtClaimTypes.EMULATED_ORG_NAME) ?? mutableCtx.AgentOrgName;

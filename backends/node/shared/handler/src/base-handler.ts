@@ -304,10 +304,10 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     })) {
       if (value != null) span.setAttribute(key, value);
     }
-    // Boolean flags — always set (default false).
-    span.setAttribute("isAuthenticated", req.isAuthenticated ?? false);
-    span.setAttribute("isTrustedService", req.isTrustedService ?? false);
-    if (req.isAuthenticated) {
+    // Boolean flags — skip when null (auth state unknown in pre-auth handlers).
+    if (req.isAuthenticated != null) span.setAttribute("isAuthenticated", req.isAuthenticated);
+    if (req.isTrustedService != null) span.setAttribute("isTrustedService", req.isTrustedService);
+    if (req.isAuthenticated === true) {
       span.setAttribute("isOrgEmulating", req.isOrgEmulating ?? false);
     }
   }

@@ -273,10 +273,13 @@ describe("enrichRequest", () => {
     expect(handler.handleAsync).not.toHaveBeenCalled();
   });
 
-  it("should default isAuthenticated to false", async () => {
+  it("should default auth flags to null (unknown pre-auth)", async () => {
     const handler = createMockFindWhoIs();
     const info = await enrichRequest({}, handler, { enableWhoIsLookup: false });
-    expect(info.isAuthenticated).toBe(false);
+    expect(info.isAuthenticated).toBeNull();
+    expect(info.isTrustedService).toBeNull();
+    expect(info.isOrgEmulating).toBeNull();
+    expect(info.isUserImpersonating).toBeNull();
   });
 
   it("should default userId to undefined", async () => {

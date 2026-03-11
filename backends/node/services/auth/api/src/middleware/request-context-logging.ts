@@ -26,9 +26,9 @@ function buildLogBindings(ctx: IRequestContext): Record<string, unknown> {
   if (ctx.agentOrgRole) bindings.agentOrgRole = ctx.agentOrgRole;
   if (ctx.targetOrgId) bindings.targetOrgId = ctx.targetOrgId;
   if (ctx.targetOrgType) bindings.targetOrgType = ctx.targetOrgType;
-  bindings.isAuthenticated = ctx.isAuthenticated;
-  bindings.isTrustedService = ctx.isTrustedService ?? false;
-  if (ctx.isAuthenticated) {
+  if (ctx.isAuthenticated != null) bindings.isAuthenticated = ctx.isAuthenticated;
+  if (ctx.isTrustedService != null) bindings.isTrustedService = ctx.isTrustedService;
+  if (ctx.isAuthenticated === true) {
     bindings.isOrgEmulating = ctx.isOrgEmulating;
   }
   if (ctx.deviceFingerprint) bindings.deviceFingerprint = ctx.deviceFingerprint;
@@ -69,9 +69,9 @@ export function createRequestContextLoggingMiddleware(logger: ILogger) {
         city: requestContext.city,
         countryCode: requestContext.countryCode,
         whoIsHashId: requestContext.whoIsHashId,
-        isAuthenticated: requestContext.isAuthenticated ?? false,
-        isTrustedService: requestContext.isTrustedService ?? false,
-        ...(requestContext.isAuthenticated
+        isAuthenticated: requestContext.isAuthenticated,
+        isTrustedService: requestContext.isTrustedService,
+        ...(requestContext.isAuthenticated === true
           ? { isOrgEmulating: requestContext.isOrgEmulating ?? false }
           : {}),
       });

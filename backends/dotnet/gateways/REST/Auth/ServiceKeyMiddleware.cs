@@ -71,6 +71,12 @@ public class ServiceKeyMiddleware
         // No key → browser request, continue normally.
         if (apiKey.Falsey())
         {
+            // Explicitly mark as not-trusted (transitions from null → false).
+            if (context.Features.Get<IRequestContext>() is MutableRequestContext noKeyCtx)
+            {
+                noKeyCtx.IsTrustedService = false;
+            }
+
             await r_next(context);
             return;
         }

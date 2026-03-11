@@ -77,15 +77,21 @@ public class RequestContextLoggingMiddleware
         SetSpanTag("countryCode", requestContext.CountryCode);
         SetSpanTag("whoIsHashId", requestContext.WhoIsHashId);
 
-        // Always present — the key "who did this?" and "how did it get here?" signals.
-        Activity.Current?.SetTag("isAuthenticated", requestContext.IsAuthenticated);
-        Activity.Current?.SetTag("isTrustedService", requestContext.IsTrustedService);
-
-        // Session-dependent flags — only set when authenticated to avoid
-        // cluttering downstream spans with meaningless defaults.
-        if (requestContext.IsAuthenticated)
+        // Auth/trust flags — skip when null (unknown in pre-auth context).
+        if (requestContext.IsAuthenticated.HasValue)
         {
-            Activity.Current?.SetTag("isOrgEmulating", requestContext.IsOrgEmulating);
+            Activity.Current?.SetTag("isAuthenticated", requestContext.IsAuthenticated.Value);
+        }
+
+        if (requestContext.IsTrustedService.HasValue)
+        {
+            Activity.Current?.SetTag("isTrustedService", requestContext.IsTrustedService.Value);
+        }
+
+        // Session-dependent flags — only set when confirmed authenticated.
+        if (requestContext.IsAuthenticated == true)
+        {
+            Activity.Current?.SetTag("isOrgEmulating", requestContext.IsOrgEmulating ?? false);
         }
 
         // Skip log enrichment for infrastructure endpoints to reduce noise.
@@ -106,11 +112,19 @@ public class RequestContextLoggingMiddleware
         AddIfNotNull(scopeState, "agentOrgRole", requestContext.AgentOrgRole);
         AddIfNotNull(scopeState, "targetOrgId", requestContext.TargetOrgId?.ToString());
         AddIfNotNull(scopeState, "targetOrgType", requestContext.TargetOrgType?.ToString());
-        scopeState["isAuthenticated"] = requestContext.IsAuthenticated;
-        scopeState["isTrustedService"] = requestContext.IsTrustedService;
-        if (requestContext.IsAuthenticated)
+        if (requestContext.IsAuthenticated.HasValue)
         {
-            scopeState["isOrgEmulating"] = requestContext.IsOrgEmulating;
+            scopeState["isAuthenticated"] = requestContext.IsAuthenticated.Value;
+        }
+
+        if (requestContext.IsTrustedService.HasValue)
+        {
+            scopeState["isTrustedService"] = requestContext.IsTrustedService.Value;
+        }
+
+        if (requestContext.IsAuthenticated == true)
+        {
+            scopeState["isOrgEmulating"] = requestContext.IsOrgEmulating ?? false;
         }
 
         AddIfNotNull(scopeState, "deviceFingerprint", requestContext.DeviceFingerprint);

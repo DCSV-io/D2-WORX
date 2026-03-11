@@ -50,8 +50,9 @@ public interface IRequestContext
 
     /// <summary>
     /// Gets a value indicating whether the user is authenticated.
+    /// <c>null</c> means auth hasn't run yet (pre-auth handlers).
     /// </summary>
-    bool IsAuthenticated { get; }
+    bool? IsAuthenticated { get; }
 
     /// <summary>
     /// Gets the unique identifier of the user.
@@ -129,8 +130,9 @@ public interface IRequestContext
     /// Gets a value indicating whether org emulation is active.
     /// When true, a staff user is viewing another org as read-only.
     /// All CUD operations should be blocked during org emulation.
+    /// <c>null</c> means auth hasn't run yet (pre-auth handlers).
     /// </summary>
-    bool IsOrgEmulating { get; }
+    bool? IsOrgEmulating { get; }
 
     #endregion
 
@@ -157,8 +159,9 @@ public interface IRequestContext
     /// When true, <see cref="UserId"/> is the impersonated user and
     /// <see cref="ImpersonatedBy"/> is the admin who initiated it.
     /// Sensitive operations (payments, etc.) should be blocked during user impersonation.
+    /// <c>null</c> means auth hasn't run yet (pre-auth handlers).
     /// </summary>
-    bool IsUserImpersonating { get; }
+    bool? IsUserImpersonating { get; }
 
     #endregion
 
@@ -230,8 +233,9 @@ public interface IRequestContext
 
     /// <summary>
     /// Gets a value indicating whether the request is from a trusted service.
+    /// <c>null</c> means service-key middleware hasn't run yet.
     /// </summary>
-    bool IsTrustedService { get; }
+    bool? IsTrustedService { get; }
 
     #endregion
 
