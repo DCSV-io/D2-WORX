@@ -14,7 +14,35 @@ This file provides guidance for Claude Code (and other AI assistants) when worki
 
 ### Commands
 
-> ⚠️ **DO NOT RUN** - Claude Code should not execute `dotnet run`, `pnpm dev`, or any commands that start services. Build and test commands are ONLY acceptable when explicitly requested by the user.
+> ⚠️ **DO NOT START SERVICES** — Never run `dotnet run`, `pnpm dev`, `pnpm preview`, or any command that starts a long-running server/service. Build and test commands are fine.
+
+**Build:**
+
+```bash
+dotnet build                                        # Full .NET solution
+pnpm --filter @d2/xxx exec tsc                      # Single Node.js package (emits dist/)
+pnpm --filter @d2/xxx exec tsc --noEmit             # Type-check only (no dist/ output)
+```
+
+**Test:**
+
+```bash
+# Node.js (Vitest 4.x — run from repo root)
+pnpm vitest run                                     # All test projects
+pnpm vitest run --project shared-tests              # Specific project
+pnpm vitest run --project auth-tests                # Auth service tests
+pnpm --filter @d2/auth-bff-client exec vitest run   # Package-local tests (bff-client)
+
+# .NET (xUnit)
+dotnet test                                         # Full solution
+dotnet test --filter FindWhoIs                      # Specific test filter
+
+# SvelteKit
+pnpm --filter d2-sveltekit exec vitest run          # Unit tests (browser mode)
+pnpm --filter d2-sveltekit exec playwright test     # E2E tests
+```
+
+**Important:** After modifying a `@d2/*` package's source, always `tsc` (full build, not `--noEmit`) so `dist/` is updated. Consumers import from `dist/` — stale output causes silent runtime failures.
 
 ### Key Reference Documents
 
@@ -368,17 +396,19 @@ Service.Tests/
 
 ### TypeScript Backend Tests
 
-**Frameworks:** Vitest 3.x, Testcontainers (PostgreSQL + Redis modules)
+**Frameworks:** Vitest 4.x, Testcontainers (PostgreSQL + Redis modules)
 
 **Key principle:** Test projects are **separate** from source packages (mirrors .NET). Source packages have zero test dependencies — all test deps live in dedicated test projects.
 
-| Package            | Purpose                                  | .NET Equivalent           |
-| ------------------ | ---------------------------------------- | ------------------------- |
-| `@d2/testing`      | Shared test infra (matchers, containers) | `D2.Shared.Tests` (infra) |
-| `@d2/shared-tests` | Tests for all shared packages            | `D2.Shared.Tests` (tests) |
-| `@d2/auth-tests`   | Tests for Auth service                   | `Geo.Tests` (pattern)     |
-| `@d2/comms-tests`  | Tests for Comms service                  | `Geo.Tests` (pattern)     |
-| `@d2/e2e-tests`    | Cross-service E2E tests                  | —                         |
+| Package               | Purpose                                     | .NET Equivalent           |
+| --------------------- | ------------------------------------------- | ------------------------- |
+| `@d2/testing`         | Shared test infra (matchers, containers)    | `D2.Shared.Tests` (infra) |
+| `@d2/shared-tests`    | Tests for all shared packages               | `D2.Shared.Tests` (tests) |
+| `@d2/auth-tests`      | Tests for Auth service                      | `Geo.Tests` (pattern)     |
+| `@d2/comms-tests`     | Tests for Comms service                     | `Geo.Tests` (pattern)     |
+| `@d2/e2e-tests`       | Cross-service E2E tests                     | —                         |
+| `@d2/auth-bff-client` | Co-located tests (`src/__tests__/`)         | —                         |
+| `d2-sveltekit`        | SvelteKit unit + Playwright E2E tests       | —                         |
 
 **Vitest monorepo setup:**
 
@@ -388,6 +418,31 @@ Service.Tests/
 - Coverage aggregated across all packages via `@vitest/coverage-v8`
 
 **Prefer dependency injection over module mocking** — design services to accept deps via constructor/factory (mirrors .NET handler pattern with `IHandlerContext`). Use `vi.mock` only for infrastructure boundaries.
+
+### Test Coverage Philosophy
+
+**Code coverage AND case coverage are both required.** High line coverage with only happy-path tests is insufficient — every feature must be tested adversarially.
+
+**Case coverage checklist (apply to ALL layers: xUnit, Vitest, Playwright):**
+
+- **Happy path** — valid inputs produce expected outputs
+- **Invalid/garbage inputs** — nulls, empty strings, whitespace-only, wrong types, negative numbers, zero-length arrays
+- **Boundary values** — max length strings, exactly-at-limit, one-over-limit, empty collections
+- **Format violations** — malformed emails, invalid UUIDs, bad date formats, non-UTF8
+- **Cross-field dependencies** — field A valid alone but invalid given field B's value
+- **Error propagation** — upstream failures (gRPC down, Redis timeout, DB constraint violation) handled gracefully, not swallowed or 500'd
+- **Idempotency** — same operation twice produces same result (especially for handlers with side effects)
+- **Concurrency** — concurrent identical requests don't corrupt state (singleflight, circuit breaker, cache races)
+
+**Form/endpoint-specific (Playwright + API tests):**
+
+- Submit with all fields empty → validation fires, no server round-trip
+- Submit with one invalid field → only that field shows error, others preserved
+- Fix error → re-blur/re-submit → error clears
+- Whitespace-only inputs rejected (not silently accepted)
+- Max-length enforcement (paste 10,000 chars → truncated or rejected)
+
+**Principle:** If code accepts user input or external data, try to **break it**. If it doesn't break, the tests prove it. If it does break, the test catches it before production does.
 
 ---
 
@@ -485,7 +540,7 @@ Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/mark
 
 1. **Check existing implementations** - look for similar handlers/patterns in the codebase
 2. **Read relevant documentation** - `*.md` files are authoritative references
-3. **Use existing utilities** - check `D2.Shared.Utilities` before creating helpers
+3. **Use existing utilities** - check `D2.Shared.Utilities` / `@d2/utilities` before creating helpers (includes Singleflight, array/UUID/string helpers, cache constants)
 4. **Follow naming conventions** - especially the field prefixes (`r_`, `s_`, `sr_`, `_`)
 
 ### Common Mistakes to Avoid
@@ -499,6 +554,8 @@ Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/mark
 - Don't hardcode batch sizes or cache expirations (use Options pattern)
 - Don't forget to update/create `.md` documentation when adding features (see Documentation section)
 - Don't forget `RedactionSpec` on handlers that touch PII — includes repo handlers, not just app handlers
+- Don't cache per-user data in unkeyed singletons — any cache storing user-specific data (JWTs, session state) MUST be keyed by session identity, not shared across all requests
+- Don't use `tsc --noEmit` when consumers need updated `dist/` — type-checking alone leaves stale compiled output, causing silent runtime failures
 
 ### Security Checklist for New Endpoints
 
@@ -516,11 +573,13 @@ When adding routes or handlers, follow the full checklist in `backends/node/serv
 
 ### Current Development Focus
 
-Phase 1 (shared infrastructure) is complete on both .NET and Node.js. Phase 2 Stage B (Auth DDD layers) is complete — domain, app, infra, api all built with 922 tests. .NET Gateway JWT auth is done. Ext-key contact API with API key authentication is done. Comms delivery engine simplified with `@d2/comms-client` — universal message shape, contactId-only resolution, no event-specific sub-handlers — 592 tests. E2E cross-service tests passing (12 tests). Scheduled jobs (Dkron) complete — 8 daily maintenance jobs across Auth/Geo/Comms, `@d2/dkron-mgr` reconciler service (64 tests).
+Phase 1 (shared infrastructure) complete on both platforms. Phase 2 Stage B (Auth DDD layers) complete — 922 tests. .NET Gateway JWT auth done. Ext-key contact API with API key auth done. Comms delivery engine done — 592 tests. E2E cross-service tests — 15 tests. Scheduled jobs (Dkron) — 8 daily jobs, `@d2/dkron-mgr` reconciler (64 tests).
+
+Phase 2 Stage C complete — `@d2/auth-bff-client` (SessionResolver, JwtManager, AuthProxy, route guards — 34 unit tests), SvelteKit auth integration (hooks, middleware, gateway client, auth proxy catch-all), client-side gateway client with in-memory JWT.
 
 See `PLANNING.md` for detailed status, completed packages, and ADR tracking.
 
-**Next:** Dependency update (Q1 2026), then Phase 2 Stage C — Auth client libraries (`@d2/auth-bff-client` for SvelteKit BFF, `@d2/auth-client` for backend gRPC), SvelteKit auth integration
+**Current:** SvelteKit web client feature development (`feat/client-web` branch). Middleware pipeline wired (request enrichment → rate limiting → idempotency). Gateway client for SSR + client-side calls. Debug session page for observability.
 
 ### When in Doubt
 
@@ -586,6 +645,22 @@ Auth (always proxied, cookie-based):
 - Client stores JWT **in memory only** (never localStorage — XSS risk), auto-refreshes before 15min expiry
 - .NET gateway must be publicly accessible with CORS configured for SvelteKit origin
 
+### SvelteKit Server-Side Patterns
+
+Server-side modules use lazy singletons (module-level `let cached`) initialized on first access. Three core modules in `clients/web/src/lib/server/`:
+
+| Module                   | Singleton Contents                                                     | Per-User? |
+| ------------------------ | ---------------------------------------------------------------------- | --------- |
+| `auth.server.ts`         | SessionResolver, JwtManager, AuthProxy                                 | No*       |
+| `middleware.server.ts`   | Redis, Geo gRPC, FindWhoIs, RateLimit, Idempotency                     | No        |
+| `rest/gateway.server.ts` | Gateway URL + service key                                              | No        |
+
+\* **SECURITY: Singleton caches that store per-user data MUST be keyed by session identity.** JwtManager caches JWTs per session cookie hash (Map keyed by truncated SHA-256). A single shared cache entry would leak User A's JWT to User B during SSR. This applies to any future singleton that caches user-specific data.
+
+**Gateway client** (`gateway.server.ts`): Two entry points — `gatewayFetch` (authenticated, JWT + service key) and `gatewayFetchAnon` (no auth). SSR `+page.server.ts` loaders call these to fetch data from the .NET gateway.
+
+**Client-side gateway** (`$lib/shared/rest/gateway-client.ts`): In-memory JWT (never localStorage), auto-refresh before 15min expiry, auto-invalidate on 401. Used by interactive client-side calls direct to the gateway.
+
 ### Service-to-Service Trust (S2S)
 
 - **Mechanism**: `X-Api-Key` header validated by `ServiceKeyMiddleware` (runs early in pipeline)
@@ -623,6 +698,8 @@ Auth (always proxied, cookie-based):
 - **Packages**: `@d2/geo-client` (Node.js - done), Geo.Client `FindWhoIs` handler (C# - done)
 - Local memory cache for WhoIs data to avoid Geo service bombardment
 - TTL: 8 hours (configurable via `GeoClientOptions`), LRU eviction (10,000 entries)
+- **Singleflight**: Concurrent cache misses for the same IP+fingerprint share a single gRPC call (both platforms)
+- **Circuit breaker**: Geo gRPC calls wrapped in circuit breaker (injected as constructor dependency, created via `createGeoCircuitBreaker` factory)
 
 ### Scheduled Jobs (Dkron)
 
@@ -661,6 +738,8 @@ Layer 5:  @d2/request-enrich → geo-client, handler, interfaces, logging, resul
           @d2/ratelimit      → request-enrich, handler, result, interfaces
           @d2/idempotency    → handler, interfaces, result, logging
           @d2/comms-client   → di, handler, messaging, result
+Layer 6:  @d2/auth-bff-client → logging (BFF auth for SvelteKit: SessionResolver, JwtManager, AuthProxy)
+          @d2/dkron-mgr      → logging, service-defaults (Dkron job reconciler service)
 ```
 
 ### Design Principles
