@@ -190,6 +190,82 @@ addAuthApp(services: ServiceCollection, options: AddAuthAppOptions, jobOptions?:
 
 Registers all 18 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
 
+## Handler Implementation Patterns
+
+Concrete examples from auth handlers showing the most commonly missed patterns. These are the **mandatory** patterns — every handler must follow them.
+
+### validateInput Pattern
+
+Every handler defines a Zod schema and calls `this.validateInput()` at the TOP of `executeAsync`, **before** any DB/cache/gRPC calls. From `RecordSignInEvent`:
+
+```typescript
+// 1. Define Zod schema (file-level constant, not inside the class)
+const schema = z.object({
+  userId: zodGuid,
+  successful: z.boolean(),
+  ipAddress: z.string().max(45),
+  userAgent: z.string().max(512),
+  whoIsId: z.string().max(64).nullish(),
+  deviceFingerprint: z.string().max(64).nullish(),
+  failureReason: z.string().max(100).nullish(),
+});
+
+// 2. First lines of executeAsync — validate BEFORE any infrastructure calls
+protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
+  const validation = this.validateInput(schema, input);
+  if (!validation.success) {
+    this.context.logger.warn("RecordSignInEvent validation failed", {
+      errors: validation.messages,
+    });
+    return D2Result.bubbleFail(validation);
+  }
+  // ... proceed with validated input
+}
+```
+
+### RedactionSpec Pattern
+
+Every handler touching PII declares a `RedactionSpec`. The constant lives in the **interface file** (shared with tests), and the handler overrides `get redaction()`:
+
+```typescript
+// Interface file (interfaces/cqrs/handlers/c/record-sign-in-event.ts)
+export const RECORD_SIGN_IN_EVENT_REDACTION: RedactionSpec = {
+  inputFields: ["ipAddress", "userAgent"],
+  suppressOutput: true,
+};
+
+// Implementation file — override the getter
+override get redaction() {
+  return Commands.RECORD_SIGN_IN_EVENT_REDACTION;
+}
+```
+
+**Important:** RedactionSpec only covers BaseHandler's automatic I/O logging. Any `this.context.logger.*` calls inside `executeAsync()` bypass it — manually review those for PII.
+
+### Error Propagation (bubbleFail)
+
+When calling downstream handlers (geo-client, repo handlers), **always** check the result. Never return `ok()` unconditionally. From `CreateOrgContact`:
+
+```typescript
+// Create junction record
+const createResult = await this.createRecord.handleAsync({ ... });
+if (!createResult.success) return D2Result.bubbleFail(createResult);
+
+// Create Geo contact via gRPC
+const geoResult = await this.createContacts.handleAsync({ contacts: [contactToCreate] });
+if (!geoResult.success || !geoResult.data) {
+  // Rollback: delete the junction since Geo contact creation failed
+  try {
+    await this.deleteRecord.handleAsync({ id: orgContactId });
+  } catch {
+    // Best-effort rollback
+  }
+  return D2Result.bubbleFail(geoResult);
+}
+```
+
+**Key pattern:** Check every result → `bubbleFail` on failure → rollback side effects if needed.
+
 ## Factory Functions
 
 Legacy factory functions (pre-DI) are still exported for backward compatibility and tests:

@@ -28,3 +28,70 @@ Domain model for geographic data including content-addressable locations, immuta
 | [PhoneNumber.cs](ValueObjects/PhoneNumber.cs)                     | Validated phone value object with digit-only cleaning and user-defined label tags.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | [Personal.cs](ValueObjects/Personal.cs)                           | Value object for personal contact details (name, gender, DOB).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | [Professional.cs](ValueObjects/Professional.cs)                   | Value object for professional contact details (title, company, department).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+
+## Core Entities
+
+### Location (Content-Addressable)
+
+A geographic location with a SHA-256 hash ID computed from its content. Two locations with identical data produce the same hash → automatic deduplication. The `Create()` factory normalizes inputs and computes the hash:
+
+```csharp
+public static Location Create(
+    Coordinates? coordinates = null,
+    StreetAddress? address = null,
+    string? city = null,
+    string? postalCode = null,
+    string? subdivisionISO31662Code = null,
+    string? countryISO31661Alpha2Code = null)
+{
+    // Clean inputs (trim, uppercase codes)
+    var cityClean = city.CleanStr();
+    var countryCodeClean = countryISO31661Alpha2Code.CleanStr()?.ToUpperInvariant();
+
+    // Build canonical string from ALL properties, then SHA-256 hash
+    var hashInputArr = new[] {
+        Coordinates.GetParts(coordinates).GetNormalizedStrForHashing(),
+        StreetAddress.GetParts(address).GetNormalizedStrForHashing(),
+        cityClean, postalCodeClean, subdivisionCodeClean, countryCodeClean,
+    };
+    var input = hashInputArr.GetNormalizedStrForHashing();
+    var hashId = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(input)));
+
+    return new Location { HashId = hashId, City = cityClean, /* ... */ };
+}
+```
+
+### WhoIs (Content-Addressable)
+
+IP geolocation data with a hash computed from `(IP, year, month, fingerprint)`. Temporal versioning: the same IP gets a new hash each month. The `ComputeHashAndNormalizeIp()` method validates inputs and produces the hash:
+
+```csharp
+public static (string Hash, string NormalizedIp) ComputeHashAndNormalizeIp(
+    string ipAddress, int year, int month, string? fingerprint = null)
+{
+    var normalizedIp = NormalizeAndValidateIPAddress(ipAddress);
+    // Validate month (1-12) and year (1-9999) — throws GeoValidationException
+
+    var inputBytes = Encoding.UTF8.GetBytes($"{normalizedIp}|{year}|{month}|{fingerprint.CleanStr()}");
+    var hashId = Convert.ToHexString(SHA256.HashData(inputBytes));
+    return (hashId, normalizedIp);
+}
+```
+
+### Contact (Immutable, UUIDv7)
+
+Contacts use regular UUIDv7 IDs (NOT content-addressable). They are **immutable** — created and deleted, never modified in place. If contact info changes: create new contact → repoint references → delete old contact. This simplifies cache invalidation across consumers (geo-client caches contacts heavily).
+
+Key fields: `ContextKey` + `RelatedEntityId` for loose coupling (e.g., `contextKey: "auth_user"`, `relatedEntityId: userId`).
+
+## Value Objects
+
+| Value Object      | Key Behavior                                                                |
+| ----------------- | --------------------------------------------------------------------------- |
+| `Coordinates`     | Immutable lat/long with 5-decimal precision validation (~1.1m accuracy)     |
+| `StreetAddress`   | Immutable 3-line address with line length validation                        |
+| `ContactMethods`  | Email + phone collections with primary item convenience properties          |
+| `EmailAddress`    | Validated, cleaned/lowercased email with user-defined label tags            |
+| `PhoneNumber`     | Digit-only cleaned phone with user-defined label tags                       |
+| `Personal`        | Name (title, first, middle, last, suffix), gender, DOB                     |
+| `Professional`    | Job title, company, department                                             |

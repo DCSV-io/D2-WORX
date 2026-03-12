@@ -193,6 +193,31 @@ Trusted backend callers (e.g., SvelteKit server) authenticate via `X-Api-Key` he
 4. No key → browser request, continues normally
 5. `RequireServiceKey()` endpoint filter checks the trust flag on service-only endpoints
 
+### Service Key Validation
+
+The `ServiceKeyMiddleware` uses **constant-time comparison** to prevent timing side-channel attacks:
+
+```csharp
+// Pre-compute byte arrays at startup (constructor)
+var apiKeyBytes = Encoding.UTF8.GetBytes(apiKey!);
+var matched = false;
+foreach (var validKeyBytes in r_validKeyBytes)
+{
+    if (CryptographicOperations.FixedTimeEquals(apiKeyBytes, validKeyBytes))
+    {
+        matched = true;
+    }
+    // Continue loop — always compare ALL keys to prevent timing leaks.
+}
+```
+
+**Why this matters:**
+- `===` in JS or `==` in C# exits early on first mismatch — an attacker can measure response time to brute-force keys character by character
+- `CryptographicOperations.FixedTimeEquals` (C#) / `timingSafeEqual` (Node.js `node:crypto`) always takes the same time regardless of where the mismatch occurs
+- The loop iterates ALL valid keys even after a match — prevents leaking which key index matched
+
+**Fail-closed on missing config:** If no valid keys are configured, the middleware returns 401 immediately. Empty key lists never silently bypass authentication.
+
 **Pipeline order:** RequestEnrichment → ServiceKeyDetection → RateLimiting → JwtAuth → **RequestContextLogging** → Idempotency → Endpoints
 
 **Registration:** `AddServiceKeyAuth(configuration)` + `UseServiceKeyDetection()` in `Program.cs`.

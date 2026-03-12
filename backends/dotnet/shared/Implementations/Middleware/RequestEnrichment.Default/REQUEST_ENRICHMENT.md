@@ -111,6 +111,29 @@ app.UseRequestContextLogging();
 - **WhoIs lookup fails**: Log warning, continue with IP/fingerprint only.
 - **Localhost detected**: Skip WhoIs lookup entirely.
 
+## Infrastructure Path Bypass
+
+`InfrastructurePaths.IsInfrastructure()` detects infrastructure endpoints that should skip business middleware:
+
+```csharp
+public static bool IsInfrastructure(HttpContext context)
+{
+    return context.Request.Path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase) ||
+           context.Request.Path.StartsWithSegments("/alive", StringComparison.OrdinalIgnoreCase) ||
+           context.Request.Path.StartsWithSegments("/metrics", StringComparison.OrdinalIgnoreCase) ||
+           context.Request.Path.StartsWithSegments("/api/health", StringComparison.OrdinalIgnoreCase);
+}
+```
+
+**Critical rule:** ALL business middleware must check `InfrastructurePaths.IsInfrastructure()` and skip processing for infrastructure paths. This includes:
+
+- Request enrichment (WhoIs lookups)
+- Rate limiting
+- Request context logging
+- Idempotency
+
+When adding a new infrastructure path, add it to `InfrastructurePaths` — never add path bypass logic to individual middleware. When adding new business middleware, check `IsInfrastructure()` at the top and call `next(context)` immediately if true.
+
 ## Dependencies
 
 - `D2.Geo.Client` — For WhoIs cache handler (`IComplex.IFindWhoIsHandler`).

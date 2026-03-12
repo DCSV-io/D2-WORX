@@ -131,6 +131,52 @@ Runs on every request via `hooks.server.ts`:
 - Playwright E2E config
 - Error page with traceId display
 
+### Sign-Out Flow
+
+Sign-out must clear ALL auth state in three steps. Missing any step leaves stale state:
+
+```svelte
+<script lang="ts">
+  import { invalidateAll } from "$app/navigation";
+  import { authClient } from "$lib/client/stores/auth-client.js";
+  import { invalidateToken } from "$lib/client/rest/gateway-client.js";
+
+  async function handleSignOut() {
+    await authClient.signOut();   // 1. Clear server session (cookie + Redis + PG)
+    invalidateToken();            // 2. Clear in-memory JWT (prevents stale token reuse)
+    await invalidateAll();        // 3. Invalidate SvelteKit data loaders (re-fetch sees no session)
+  }
+</script>
+```
+
+| Step               | What it clears                    | Without it                                           |
+| ------------------ | --------------------------------- | ---------------------------------------------------- |
+| `authClient.signOut()` | Server session (cookie, Redis, PG) | User appears logged in until cookie expires (5 min) |
+| `invalidateToken()`   | In-memory JWT in gateway client   | Stale JWT keeps authorizing API calls until expiry  |
+| `invalidateAll()`      | SvelteKit layout/page data        | UI shows stale session data until next navigation   |
+
+### Navigation & resolve()
+
+**Always** wrap paths with `resolve()` from `$app/paths` for i18n locale routing:
+
+```svelte
+<!-- CORRECT — works with all locales -->
+<a href={resolve("/dashboard")}>Dashboard</a>
+<button onclick={() => goto(resolve("/settings"))}>Settings</button>
+
+<!-- WRONG — breaks for non-default locales (e.g., /de/dashboard) -->
+<a href="/dashboard">Dashboard</a>
+<button onclick={() => goto("/settings")}>Settings</button>
+```
+
+For paths with query strings, append after `resolve()`:
+
+```svelte
+<a href={`${resolve("/search")}?q=${query}`}>Search</a>
+```
+
+This applies to ALL navigation: `<a href>`, `goto()`, `redirect()`, and `fetch()` calls to SvelteKit routes.
+
 ---
 
 ## What's Not Yet In Place

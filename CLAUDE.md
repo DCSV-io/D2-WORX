@@ -208,6 +208,7 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Content-addressable entities**: `Location` and `WhoIs` use SHA-256 hash IDs (64-char hex). Factory method computes hash. Enables dedup.
 - **Mappers**: C# 14 extension members: `extension(Entity e) { public DTO ToDTO() { ... } }`. Live in `ServiceName.App/Mappers/`.
 - **Batch operations**: `input.HashIds.Chunk(_BATCH_SIZE)` via Options pattern (default 500).
+- **Health checks must use the same code path as production** — DB health checks go through the ORM (Drizzle/EF Core), not raw `pool.query()`. A check that bypasses the ORM won't detect ORM-layer issues.
 
 ### Key Architecture Decisions
 
@@ -236,6 +237,12 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Lint/style warnings = bugs**: `pnpm lint` (ESLint) and `pnpm format:check` (Prettier) must be zero warnings.
 - **Branch ownership**: All errors in files modified on this branch = YOUR responsibility. Check `git diff main --name-only`. Don't dismiss as "pre-existing" without verifying via `git diff main` or `git log`.
 - **Tests are adversarial**: Happy path + garbage input + boundary values + cross-field deps + error propagation + idempotency + concurrency. Full checklist → [TESTS.md](backends/dotnet/shared/Tests/TESTS.md).
+- **Validate inputs BEFORE infrastructure calls** — never let Redis/DB be the first to reject invalid data. Call `this.validateInput(schema, input)` (Node.js) or validate with FluentValidation (.NET) at the TOP of `executeAsync`, before any downstream calls. → [AUTH_APP.md](backends/node/services/auth/app/AUTH_APP.md) § Handler Implementation Patterns
+- **RedactionSpec covers automatic I/O logging only** — any `this.context.logger.*` calls inside `executeAsync()` must be manually reviewed. Never log fields that appear in your `inputFields`/`outputFields` redaction list via manual log calls. → [AUTH_APP.md](backends/node/services/auth/app/AUTH_APP.md) § Handler Implementation Patterns, [Node.js HANDLER.md](backends/node/shared/handler/HANDLER.md)
+- **Verify DI registration when adding handlers** — missing registrations are silent at compile time and only crash at runtime. After creating a handler, immediately add its registration in the corresponding `registration.ts` / `Extensions.cs`.
+- **Never return `ok()` after a branching operation unconditionally** — if a nested handler or provider can fail, check its result. Returning `ok()` after a try/catch that swallows failures is almost always a bug. Either `bubbleFail` or explicitly handle the error.
+- **Cross-platform enum/constant changes in one commit** — when renaming `OrgType`, `Role`, or any enum stored as text in the database, update BOTH .NET and Node.js simultaneously. Mismatches are data integrity bugs.
+- **Auth flags initialize to `null`, not `false`** — `isAuthenticated`, `isTrustedService`, `isOrgEmulating`, `isUserImpersonating` on `IRequestContext` use `boolean | null` (.NET: `bool?`). `null` = "not yet determined" (pre-auth). `false` = "confirmed not." Never treat `null` as `false` in logic.
 - **Don't create patterns**: Follow existing ones (§4). If no pattern fits, ask before inventing.
 - **Don't leave broken things behind**: If you touch a file, fix ALL issues in it. Every change leaves the codebase cleaner.
 
@@ -249,6 +256,8 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Field prefixes**: `_camelCase` (mutable), `r_camelCase` (readonly), `s_camelCase` (static), `sr_camelCase` (static readonly). Full table → §6.
 - **XML docs**: Required for public APIs.
 - **Implement the interface**: Handlers MUST implement their interface for DI registration.
+- **`ValueTask` must not be awaited more than once** — call `.AsTask()` once, store the `Task` reference, reuse it for `Task.WhenAll()` and subsequent `await`.
+- **`Random.Shared`** — never `new Random()` in static/singleton contexts. `Random.Shared` is thread-safe.
 
 ### TypeScript / Node.js
 
@@ -258,6 +267,9 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **ESM only**: All packages `"type": "module"`.
 - **After editing**: Check `mcp__cclsp__get_diagnostics`. Fix type errors and missing imports immediately.
 - **After modifying @d2/* source**: Full `tsc` build (not `--noEmit`) so `dist/` is updated. Stale output = silent runtime failures.
+- **Drizzle UPDATE/DELETE must chain `.returning()`** — check the result array. Empty = row didn't exist → return `notFound()`, not `ok()`. → [AUTH_INFRA.md](backends/node/services/auth/infra/AUTH_INFRA.md) § Repository Handler Patterns
+- **`.d.ts` files in `src/` are NOT emitted to `dist/`** — module augmentations (`declare module`) and ambient declarations must be inside `.ts` source files, not standalone `.d.ts`.
+- **Non-TS assets (SQL migrations, JSON fixtures) not copied by `tsc`** — use path construction relative to `src/` at runtime, not `import.meta.dirname` which resolves to `dist/`.
 
 ### SvelteKit
 
@@ -266,6 +278,8 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Adding translation keys**: Add to ALL present locale files ([`contracts/messages/*.json`](contracts/messages/)). They MUST stay in sync. Run Paraglide compile from [`clients/web/`](clients/web/) for frontend keys.
 - **New pages MUST include** in `<svelte:head>`: translated `<title>`, `<meta name="description">`, OG tags (`og:title`, `og:description`, `og:type="website"`), `noindex` if not indexable.
 - **`resolve()` from `$app/paths`**: Only typed pathnames. Query strings appended separately: `` `${resolve("/path")}?key=value` ``.
+- **Never write bare `href="/path"` or `goto("/path")`** — always wrap with `resolve("/path")` from `$app/paths`. Without this, i18n locale routing breaks for non-default locales. → [clients/web/README.md](clients/web/README.md) § Navigation & resolve()
+- **Client-side telemetry must never include PII** — Faro user identity is limited to `userId` + `username`. Never email, real name, or contact details.
 - **Playwright screenshots**: Save to [`clients/web/screenshots/`](clients/web/screenshots/), never project root.
 
 ### Security (New Endpoints)
@@ -279,6 +293,12 @@ Full checklist → [AUTH.md](backends/node/services/auth/AUTH.md) § "Secure End
 - **New JWT claims** → add to BOTH Node.js (`JWT_CLAIM_TYPES`) and .NET (`JwtClaimTypes`), update [AUTH.md](backends/node/services/auth/AUTH.md)
 - **No sensitive IDs in JWT** — admin user IDs, internal audit data stays server-side (session only)
 - **Per-user caches keyed by identity** — any cache storing user-specific data (JWTs, session state) MUST be keyed by session identity, not shared
+- **API key comparisons must be constant-time** — .NET: `CryptographicOperations.FixedTimeEquals`. Node.js: `timingSafeEqual` from `node:crypto`. Plain `===` is vulnerable to timing attacks. → [REST.md](backends/dotnet/gateways/REST/REST.md) § Service Key Validation
+- **Auth middleware must fail-closed on missing config** — empty API key mappings or missing secrets = 401 immediately. Never silently bypass.
+- **Sign-out must clear ALL auth state**: (1) server session via BetterAuth `signOut()`, (2) `invalidateToken()` for client-side in-memory JWT, (3) `invalidateAll()` for SvelteKit data loaders. → [clients/web/README.md](clients/web/README.md) § Sign-Out Flow
+- **CORS `allowHeaders` must include every custom header** any middleware reads — when adding a new header to security middleware (CSRF, fingerprint), verify CORS allows it. Missing = preflight blocks the request.
+- **Multi-column key lookups must use paired predicates** — `(col1=A AND col2=1) OR (col1=B AND col2=2)`. Independent `OR`s produce cross-product false positives.
+- **Infrastructure paths must be exempt from ALL business middleware** — use shared `InfrastructurePaths.IsInfrastructure()` (.NET) or equivalent. Never add a new infra path bypass to only one middleware. → [REQUEST_ENRICHMENT.md](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) § Infrastructure Path Bypass
 
 ---
 
