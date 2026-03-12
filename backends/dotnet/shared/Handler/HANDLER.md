@@ -156,3 +156,73 @@ Two implementations exist:
 ### Span Enrichment Guard
 
 `BaseHandler` enriches OTel spans with request context attributes. The `IsOrgEmulating` attribute is only set when `IsAuthenticated` is `true` — this prevents unauthenticated requests (pre-auth handlers, health checks) from reporting a misleading `isOrgEmulating: false` on spans. This guard is enforced on both .NET and Node.js `BaseHandler` implementations.
+
+---
+
+## Implementation Example
+
+Complete handler showing the established pattern. Implementations live in `ServiceName.App/Implementations/CQRS/Handlers/{C,Q,U,X}/`. Interfaces live in `ServiceName.App/Interfaces/CQRS/Handlers/{C,Q,U,X}/`.
+
+```csharp
+// -----------------------------------------------------------------------
+// <copyright file="SetInMem.cs" company="DCSV">
+// Copyright (c) DCSV. All rights reserved.
+// </copyright>
+// -----------------------------------------------------------------------
+
+namespace D2.Geo.Client.CQRS.Handlers.C;
+
+using D2.Shared.Handler;
+using D2.Shared.Result;
+
+// Using aliases for clean implementations — one per handler
+using H = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.ISetInMemHandler;
+using I = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.SetInMemInput;
+using O = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.SetInMemOutput;
+
+/// <summary>
+/// Handler for setting georeference data in the in-memory cache.
+/// </summary>
+public class SetInMem : BaseHandler<SetInMem, I, O>, H
+{
+    private readonly IUpdate.ISetHandler<GeoRefData> r_memoryCacheSet;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SetInMem"/> class.
+    /// </summary>
+    public SetInMem(
+        IUpdate.ISetHandler<GeoRefData> memoryCacheSet,
+        IHandlerContext context)
+        : base(context)
+    {
+        r_memoryCacheSet = memoryCacheSet;
+    }
+
+    /// <inheritdoc />
+    protected override HandlerOptions DefaultOptions => new(LogInput: false, LogOutput: false);
+
+    /// <summary>
+    /// Executes the handler.
+    /// </summary>
+    protected override async ValueTask<D2Result<O?>> ExecuteAsync(
+        I input,
+        CancellationToken ct = default)
+    {
+        var setR = await r_memoryCacheSet.HandleAsync(
+            new(CacheKeys.REFDATA, input.Data), ct);
+
+        return setR.Success
+            ? D2Result<O?>.Ok()
+            : D2Result<O?>.BubbleFail(setR);
+    }
+}
+```
+
+### Key Points
+
+- **Using aliases** (`H`, `I`, `O`) — keeps handler files readable. One set per handler.
+- **`BaseHandler<TSelf, TInput, TOutput>`** — first type param is the handler itself (for OTel span naming).
+- **Implement the interface** (`H`) — required for DI registration: `services.AddTransient<H, SetInMem>()`.
+- **Constructor takes `IHandlerContext`** — bundles `IRequestContext` + `ILogger`. Always pass to `base(context)`.
+- **`DefaultOptions`** — optional override. Suppresses I/O logging for PII-heavy handlers.
+- **Return `D2Result<O?>`** — use semantic factories (`Ok`, `NotFound`, `BubbleFail`, etc.). See `RESULT.md`.

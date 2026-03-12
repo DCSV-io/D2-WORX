@@ -196,6 +196,203 @@ Reusable FluentValidation validators for proto-generated DTOs, exported as singl
 
 ---
 
+## Usage Examples
+
+### DI Registration (.NET)
+
+Consumer services wire up Geo.Client via extension methods in `Extensions.cs`. Each method registers a focused set of handlers.
+
+**Gateway or any service needing WhoIs + request enrichment:**
+
+```csharp
+// Program.cs — Register gRPC client first, then layer-specific handlers.
+
+// 1. Register the gRPC channel for GeoService.
+builder.Services.AddGrpcClient<GeoService.GeoServiceClient>(o =>
+{
+    o.Address = new Uri($"http://{geoAddress}");
+});
+
+// 2. Register WhoIs cache (FindWhoIs + circuit breaker + singleflight + memory cache).
+//    Reads GEO_CLIENT config section; "GATEWAY" overlays GATEWAY_GEO_CLIENT on top.
+builder.Services.AddWhoIsCache(builder.Configuration, servicePrefix: "GATEWAY");
+
+// 3. Register contact handlers (CreateContacts, DeleteContactsByExtKeys, etc.).
+//    Same layered config pattern.
+builder.Services.AddContactHandlers(builder.Configuration, servicePrefix: "AUTH");
+
+// 4. Register reference data consumer (multi-tier cache: mem → Redis → disk → gRPC).
+builder.Services.AddGeoRefDataConsumer(builder.Configuration);
+```
+
+**Configuration (appsettings / env vars):**
+
+```jsonc
+{
+  "GEO_CLIENT": {
+    "WhoIsCacheExpiration": "08:00:00",
+    "WhoIsCacheMaxEntries": 10000,
+    "CircuitBreakerFailureThreshold": 5,
+    "CircuitBreakerCooldownDuration": "00:00:30"
+  },
+  "AUTH_GEO_CLIENT": {
+    "ApiKey": "your-api-key-here",
+    "AllowedContextKeys": ["auth_user", "auth_org_contact", "auth_org_invitation"]
+  }
+}
+```
+
+### DI Registration (Node.js)
+
+Node.js uses `@d2/di` ServiceKeys and manual wiring. Contact handlers are registered in a setup function; FindWhoIs is constructed directly.
+
+```typescript
+import {
+  createGeoServiceClient,
+  createGeoCircuitBreaker,
+  FindWhoIs,
+  CreateContacts,
+  ICreateContactsKey,
+  DEFAULT_GEO_CLIENT_OPTIONS,
+  type GeoClientOptions,
+} from "@d2/geo-client";
+import { MemoryCacheStore } from "@d2/cache-memory";
+import { Singleflight } from "@d2/utilities";
+
+// 1. Create gRPC client (singleton).
+const geoClient = createGeoServiceClient(geoAddress, geoApiKey);
+
+// 2. FindWhoIs — requires MemoryCacheStore, circuit breaker, singleflight.
+const geoOptions: GeoClientOptions = {
+  ...DEFAULT_GEO_CLIENT_OPTIONS,
+  allowedContextKeys: [],
+  apiKey: geoApiKey,
+};
+const findWhoIs = new FindWhoIs(
+  new MemoryCacheStore(),
+  geoClient,
+  geoOptions,
+  createGeoCircuitBreaker(geoOptions, logger),
+  new Singleflight(),
+  serviceContext,
+);
+
+// 3. Contact handlers — register with DI container.
+const createContacts = new CreateContacts(geoClient, geoOptions, serviceContext);
+services.addInstance(ICreateContactsKey, createContacts);
+```
+
+### FindWhoIs — Consuming from Request Enrichment
+
+FindWhoIs is the most common consumer-facing handler. It is called by request enrichment middleware to resolve IP → geo location data.
+
+**.NET (injected per-request via ASP.NET Core DI):**
+
+```csharp
+public async Task InvokeAsync(
+    HttpContext context,
+    IComplex.IFindWhoIsHandler whoIsHandler)
+{
+    var clientIp = IpResolver.Resolve(context, ...);
+    var userAgent = context.Request.Headers.UserAgent.FirstOrDefault() ?? string.Empty;
+
+    var result = await whoIsHandler.HandleAsync(
+        new IComplex.FindWhoIsInput(clientIp, userAgent),
+        context.RequestAborted);
+
+    if (result.CheckSuccess(out var output) && output?.WhoIs is { } whoIs)
+    {
+        // Use whoIs.Location?.City, whoIs.Location?.CountryIso31661Alpha2Code,
+        // whoIs.IsVpn, whoIs.IsProxy, etc. to enrich IRequestContext.
+    }
+}
+```
+
+**Node.js (handler instance called directly):**
+
+```typescript
+import { enrichRequest } from "@d2/request-enrichment";
+
+// enrichRequest calls findWhoIs.handleAsync internally:
+const requestContext = await enrichRequest(headers, findWhoIs, options, logger);
+
+// Or call FindWhoIs directly:
+const result = await findWhoIs.handleAsync({
+  ipAddress: clientIp,
+  fingerprint: userAgent,
+});
+const output = result.checkSuccess();
+if (output?.whoIs) {
+  // output.whoIs.location?.city, output.whoIs.isVpn, etc.
+}
+```
+
+### Contact Operations — CreateContacts
+
+Contact creation goes through the Geo.Client `CreateContacts` handler, which calls Geo service via gRPC. The handler validates context keys against `AllowedContextKeys` before making the call.
+
+**.NET:**
+
+```csharp
+// Build the gRPC request with one or more contacts to create.
+var request = new CreateContactsRequest
+{
+    Contacts =
+    {
+        new ContactToCreateDTO
+        {
+            ContextKey = "auth_org_contact",
+            RelatedEntityId = orgId,
+            FirstName = "Jane",
+            LastName = "Doe",
+            Emails = { new EmailDTO { Email = "jane@example.com", Label = "Work", IsPrimary = true } },
+        },
+    },
+};
+
+var result = await createContactsHandler.HandleAsync(
+    new ICommands.CreateContactsInput(request), ct);
+
+if (result.CheckSuccess(out var output))
+{
+    // output.Data is List<ContactDTO> — the created contacts with IDs.
+}
+```
+
+**Node.js:**
+
+```typescript
+const result = await createContacts.handleAsync({
+  contacts: [
+    {
+      contextKey: "auth_org_contact",
+      relatedEntityId: orgId,
+      firstName: "Jane",
+      lastName: "Doe",
+      emails: [{ email: "jane@example.com", label: "Work", isPrimary: true }],
+    },
+  ],
+});
+
+const output = result.checkSuccess();
+if (output) {
+  // output.data — ContactDTO[] with assigned IDs
+}
+```
+
+### Cache Key Conventions
+
+Contact caches use the ext-key pattern. WhoIs uses content-addressable hash IDs.
+
+| Entity  | Cache Key Pattern                            | TTL       | Eviction                                         |
+| ------- | -------------------------------------------- | --------- | ------------------------------------------------ |
+| WhoIs   | `whois:{hashId}`                             | 8 hours   | LRU (10,000 entries)                             |
+| Contact | `contact-ext:{contextKey}:{relatedEntityId}` | No TTL    | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
+
+WhoIs cache keys are computed from the content-addressable SHA-256 hash of IP + fingerprint. Contact cache keys are computed from the ext-key pair (contextKey + relatedEntityId) — contacts are immutable, so no TTL is needed.
+
+---
+
 ## TS Equivalent
 
 `@d2/geo-client` — same interface + handler structure, `RedactionSpec` for logging suppression, field-level masking on `FindWhoIs` inputs. Zod schemas (`contactInputSchema` etc.) exported for the same reuse pattern.
