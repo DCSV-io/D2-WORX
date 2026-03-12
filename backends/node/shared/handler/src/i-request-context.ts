@@ -73,7 +73,7 @@ export interface IRequestContext {
    * Whether the request is from a trusted service. `null` = service-key
    * middleware hasn't run yet. Set to `true`/`false` after service-key check.
    */
-  isTrustedService?: boolean | null;
+  isTrustedService: boolean | null;
 
   // Helpers (computed)
   isAgentStaff?: boolean;

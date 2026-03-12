@@ -81,9 +81,8 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     const allowedRoles = INVITATION_HIERARCHY[inviterRole];
     if (!allowedRoles || !allowedRoles.includes(role as Role)) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: [`Role "${inviterRole}" cannot invite role "${role}".`],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );

@@ -47,6 +47,7 @@ export function createRpcScope(
     : {
         traceId,
         isAuthenticated: false,
+        isTrustedService: null,
         isAgentStaff: false,
         isAgentAdmin: false,
         isTargetingStaff: false,

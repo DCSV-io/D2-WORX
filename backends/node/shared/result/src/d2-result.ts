@@ -174,6 +174,20 @@ export class D2Result<TData = void> {
     });
   }
 
+  /** Create a 503 Service Unavailable result. */
+  static serviceUnavailable<T = void>(options?: {
+    messages?: string[];
+    traceId?: string;
+  }): D2Result<T> {
+    return new D2Result<T>({
+      success: false,
+      messages: options?.messages ?? ["The service is temporarily unavailable."],
+      statusCode: HttpStatusCode.ServiceUnavailable,
+      errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
+      traceId: options?.traceId,
+    });
+  }
+
   /** Create a 500 Unhandled Exception result. */
   static unhandledException<T = void>(options?: {
     messages?: string[];

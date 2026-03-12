@@ -158,6 +158,8 @@ if (result.CheckFailure(out var output)) { /* handle error, output may have part
 return D2Result<TNewData>.BubbleFail(result);  // Propagate errors with type change
 ```
 
+**Always use semantic factory methods** instead of raw `D2Result.Fail()`/`D2Result.fail()` with manual status codes. Available factories: `Ok`, `Created`, `NotFound`, `Unauthorized`, `Forbidden`, `ValidationFailed`, `Conflict`, `ServiceUnavailable`, `UnhandledException`, `PayloadTooLarge`, `Cancelled`, `SomeFound`. Raw `Fail` is only appropriate when no semantic factory matches (e.g., error handler re-mapping arbitrary status codes).
+
 **Partial Success Pattern:**
 
 - `NOT_FOUND` - None of the requested items were found
@@ -573,6 +575,7 @@ Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/mark
 
 - Don't use `this` parameter style for extension methods (use C# 14 `extension` syntax)
 - Don't throw exceptions for control flow (use `D2Result`)
+- Don't use raw `D2Result.fail()` / `D2Result.Fail()` with manual `statusCode` when a semantic factory exists — use `notFound()`, `unauthorized()`, `forbidden()`, `conflict()`, `serviceUnavailable()`, `unhandledException()`, `validationFailed()`, `payloadTooLarge()`, `cancelled()` instead
 - Don't forget license headers on new files
 - Don't create new patterns when existing ones apply
 - Don't use `_camelCase` for readonly fields (use `r_camelCase`)

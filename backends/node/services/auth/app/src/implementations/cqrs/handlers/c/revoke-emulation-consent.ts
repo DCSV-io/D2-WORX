@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
-import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { D2Result } from "@d2/result";
 import { revokeEmulationConsent, isConsentActive } from "@d2/auth-domain";
 import type {
   IFindEmulationConsentByIdHandler,
@@ -53,18 +53,14 @@ export class RevokeEmulationConsent
 
     // Ownership check: consent must belong to the authenticated user
     if (existing.userId !== input.userId) {
-      return D2Result.fail({
+      return D2Result.forbidden({
         messages: ["Not authorized to revoke this consent."],
-        statusCode: HttpStatusCode.Forbidden,
-        errorCode: ErrorCodes.FORBIDDEN,
       });
     }
 
     if (!isConsentActive(existing)) {
-      return D2Result.fail({
+      return D2Result.conflict({
         messages: ["Consent is already revoked or expired."],
-        statusCode: HttpStatusCode.Conflict,
-        errorCode: ErrorCodes.CONFLICT,
       });
     }
 

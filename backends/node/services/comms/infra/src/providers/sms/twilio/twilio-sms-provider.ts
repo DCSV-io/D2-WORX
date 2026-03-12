@@ -39,9 +39,8 @@ export class TwilioSmsProvider
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unknown Twilio error";
 
-      return D2Result.fail({
+      return D2Result.serviceUnavailable({
         messages: [errorMessage],
-        statusCode: 503,
       });
     }
   }

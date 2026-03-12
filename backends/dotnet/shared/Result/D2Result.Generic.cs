@@ -421,6 +421,62 @@ public class D2Result<TData> : D2Result
     }
 
     /// <summary>
+    /// Factory method to create a service unavailable <see cref="D2Result{TResult}"/> instance.
+    /// </summary>
+    ///
+    /// <param name="messages">
+    /// A list of messages related to the service unavailability. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A service unavailable <see cref="D2Result{TResult}"/> instance containing error details.
+    /// </returns>
+    public static new D2Result<TData> ServiceUnavailable(
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        messages ??= ["The service is temporarily unavailable."];
+        return new(
+            false,
+            default,
+            messages,
+            statusCode: HttpStatusCode.ServiceUnavailable,
+            errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
+            traceId: traceId);
+    }
+
+    /// <summary>
+    /// Factory method to create a payload too large <see cref="D2Result{TResult}"/> instance.
+    /// </summary>
+    ///
+    /// <param name="messages">
+    /// A list of messages related to the operation. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A payload too large <see cref="D2Result{TResult}"/> instance containing error details.
+    /// </returns>
+    public static new D2Result<TData> PayloadTooLarge(
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        messages ??= ["Request payload too large."];
+        return new(
+            false,
+            default,
+            messages,
+            statusCode: HttpStatusCode.RequestEntityTooLarge,
+            errorCode: ErrorCodes.PAYLOAD_TOO_LARGE,
+            traceId: traceId);
+    }
+
+    /// <summary>
     /// Factory method to create a cancelled <see cref="D2Result{TResult}"/> instance.
     /// </summary>
     ///

@@ -56,12 +56,13 @@ function createContext(traceId?: string): IHandlerContext {
     {
       traceId,
       isAuthenticated: false,
+      isTrustedService: false,
+      isOrgEmulating: false,
+      isUserImpersonating: false,
       isAgentStaff: false,
       isAgentAdmin: false,
       isTargetingStaff: false,
       isTargetingAdmin: false,
-      isOrgEmulating: false,
-      isUserImpersonating: false,
     },
     { info: () => {}, warn: () => {}, error: () => {}, debug: () => {} },
   );

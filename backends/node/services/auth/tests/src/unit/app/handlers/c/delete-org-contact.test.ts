@@ -15,6 +15,9 @@ function createTestContext() {
   const request: IRequestContext = {
     traceId: "trace-test",
     isAuthenticated: true,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,

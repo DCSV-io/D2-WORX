@@ -23,6 +23,7 @@ function createTestRequestContext(overrides?: Partial<IRequestContext>): IReques
     requestId: "test-request-id",
     requestPath: "/test",
     isAuthenticated: true,
+    isTrustedService: false,
     userId: "user-123",
     email: "testuser@example.com",
     username: "testuser",

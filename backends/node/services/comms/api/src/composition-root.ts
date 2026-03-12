@@ -59,6 +59,7 @@ export async function createCommsService(config: CommsServiceConfig) {
   const serviceContext = new HandlerContext(
     {
       isAuthenticated: false,
+      isTrustedService: null,
       isAgentStaff: false,
       isAgentAdmin: false,
       isTargetingStaff: false,

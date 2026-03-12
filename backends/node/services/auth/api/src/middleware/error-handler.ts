@@ -42,9 +42,8 @@ export function handleError(err: Error, c: Context): Response {
   }
 
   // For 5xx server errors, NEVER leak err.message — use generic message
-  const result = D2Result.fail({
+  const result = D2Result.unhandledException({
     messages: ["An unexpected error occurred. Please try again later."],
-    statusCode: HttpStatusCode.InternalServerError,
   });
   return c.json(result, 500 as ContentfulStatusCode);
 }

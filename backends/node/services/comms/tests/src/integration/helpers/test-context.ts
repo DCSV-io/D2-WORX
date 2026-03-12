@@ -5,6 +5,7 @@ export function createTestContext(): HandlerContext {
   const request: IRequestContext = {
     traceId: "trace-integration",
     isAuthenticated: false,
+    isTrustedService: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,

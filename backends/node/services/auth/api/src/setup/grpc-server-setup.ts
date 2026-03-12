@@ -15,7 +15,7 @@ export interface GrpcServerOptions {
 
 /**
  * Creates, configures, and binds the gRPC server for AuthService + AuthJobService.
- * Returns undefined if no grpcPort is configured.
+ * Caller is responsible for checking grpcPort availability before calling.
  */
 export async function buildGrpcServer(
   options: GrpcServerOptions,

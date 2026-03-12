@@ -22,7 +22,7 @@ export function createCheckEmailRoutes(
     const email = c.req.query("email");
     if (!email) {
       return c.json(
-        D2Result.fail({ messages: ["Email query parameter is required."], statusCode: 400 }),
+        D2Result.validationFailed({ messages: ["Email query parameter is required."] }),
         400 as ContentfulStatusCode,
       );
     }

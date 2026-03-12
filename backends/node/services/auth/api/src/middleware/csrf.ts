@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { D2Result, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
 
 /** HTTP methods that modify state and require CSRF protection. */
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -39,9 +39,8 @@ export function createCsrfMiddleware(allowedOrigins: string[]) {
 
     if (!contentType.includes("application/json") && !xRequestedWith) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: ["Invalid request. Content-Type: application/json is required."],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );
@@ -51,9 +50,8 @@ export function createCsrfMiddleware(allowedOrigins: string[]) {
     const origin = c.req.header("origin");
     if (origin && !normalizedOrigins.has(origin.replace(/\/+$/, ""))) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: ["Invalid request origin."],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );

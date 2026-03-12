@@ -6,11 +6,19 @@
  * through SvelteKit while all auth traffic flows through the Auth
  * service's full security middleware pipeline.
  */
+import { D2Result } from "@d2/result";
 import { getAuthContext } from "$lib/server/auth.server";
 import type { RequestHandler } from "./$types";
 
 const handler: RequestHandler = async (event) => {
   const ctx = getAuthContext();
+  if (!ctx) {
+    const result = D2Result.serviceUnavailable({ messages: ["Auth service not configured."] });
+    return new Response(JSON.stringify(result), {
+      status: result.statusCode,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
   return ctx.authProxy.proxyRequest(event);
 };
 

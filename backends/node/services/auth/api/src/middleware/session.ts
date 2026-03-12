@@ -32,9 +32,8 @@ export function createSessionMiddleware(auth: Auth) {
     } catch {
       // Infrastructure failure — do NOT silently degrade to unauthenticated
       return c.json(
-        D2Result.fail({
+        D2Result.serviceUnavailable({
           messages: ["Service temporarily unavailable. Please try again."],
-          statusCode: 503,
         }),
         503 as ContentfulStatusCode,
       );

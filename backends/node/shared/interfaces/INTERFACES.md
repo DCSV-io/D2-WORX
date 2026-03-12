@@ -20,7 +20,6 @@ src/
 │           ├── d/         # Remove, ReleaseLock
 │           └── q/         # Ping
 └── middleware/
-    ├── request-enrichment/  # (empty — IRequestInfo removed, use IRequestContext from @d2/handler)
     ├── ratelimit/           # ICheckHandler + RateLimitDimension + CHECK_REDACTION
     │   └── handlers/
     └── idempotency/         # ICheckHandler + IdempotencyState + CachedResponse
@@ -53,10 +52,6 @@ src/
 | `handlers/r/ping.ts`         | `IPingHandler`        | Verify distributed cache connectivity and latency.      |
 | `handlers/d/remove.ts`       | `IRemoveHandler`      | Delete key from distributed cache.                      |
 | `handlers/d/release-lock.ts` | `IReleaseLockHandler` | Release distributed lock (safe compare-and-delete).     |
-
-## Middleware — Request Enrichment
-
-`IRequestInfo` has been removed. Request enrichment data (clientIp, fingerprints, geo) is now part of `IRequestContext` from `@d2/handler`. The `request-enrichment/` directory is kept for structural parity with .NET but its `index.ts` is empty.
 
 ## Middleware — Rate Limit
 

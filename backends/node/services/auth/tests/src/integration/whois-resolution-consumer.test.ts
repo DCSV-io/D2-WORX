@@ -29,6 +29,7 @@ function createTestContext() {
     {
       traceId: "trace-whois-consumer",
       isAuthenticated: false,
+      isTrustedService: null,
       isAgentStaff: false,
       isAgentAdmin: false,
       isTargetingStaff: false,

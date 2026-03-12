@@ -37,9 +37,8 @@ export class ResendEmailProvider
     });
 
     if (error) {
-      return D2Result.fail({
+      return D2Result.serviceUnavailable({
         messages: [error.message],
-        statusCode: 503,
       });
     }
 

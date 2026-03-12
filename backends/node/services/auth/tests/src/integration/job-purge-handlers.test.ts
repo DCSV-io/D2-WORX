@@ -20,6 +20,9 @@ function createTestContext() {
   const request: IRequestContext = {
     traceId: "trace-purge-integration",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,

@@ -23,11 +23,27 @@ describe("getAuthContext", () => {
     vi.resetModules();
     delete process.env.SVELTEKIT_AUTH__URL;
     delete process.env.SVELTEKIT_AUTH__API_KEY;
+    delete process.env.CI;
+    delete process.env.D2_SKIP_INFRA_MIDDLEWARE;
   });
 
-  it("throws when SVELTEKIT_AUTH__URL is missing", async () => {
+  it("throws when SVELTEKIT_AUTH__URL is missing in production", async () => {
     const { getAuthContext } = await import("./auth.server.js");
     expect(() => getAuthContext()).toThrow("SVELTEKIT_AUTH__URL");
+  });
+
+  it("returns null when SVELTEKIT_AUTH__URL is missing in CI", async () => {
+    process.env.CI = "true";
+    const { getAuthContext } = await import("./auth.server.js");
+    const ctx = getAuthContext();
+    expect(ctx).toBeNull();
+  });
+
+  it("returns null when SVELTEKIT_AUTH__URL is missing with D2_SKIP_INFRA_MIDDLEWARE", async () => {
+    process.env.D2_SKIP_INFRA_MIDDLEWARE = "true";
+    const { getAuthContext } = await import("./auth.server.js");
+    const ctx = getAuthContext();
+    expect(ctx).toBeNull();
   });
 
   it("returns AuthContext when SVELTEKIT_AUTH__URL is set", async () => {
@@ -36,12 +52,12 @@ describe("getAuthContext", () => {
     const { getAuthContext } = await import("./auth.server.js");
     const ctx = getAuthContext();
 
-    expect(ctx).toBeDefined();
-    expect(ctx.config.authServiceUrl).toBe("http://localhost:5100");
-    expect(ctx.sessionResolver).toBeDefined();
-    expect(ctx.jwtManager).toBeDefined();
-    expect(ctx.authProxy).toBeDefined();
-    expect(ctx.logger).toBeDefined();
+    expect(ctx).not.toBeNull();
+    expect(ctx!.config.authServiceUrl).toBe("http://localhost:5100");
+    expect(ctx!.sessionResolver).toBeDefined();
+    expect(ctx!.jwtManager).toBeDefined();
+    expect(ctx!.authProxy).toBeDefined();
+    expect(ctx!.logger).toBeDefined();
   });
 
   it("passes apiKey from SVELTEKIT_AUTH__API_KEY to config", async () => {
@@ -51,7 +67,7 @@ describe("getAuthContext", () => {
     const { getAuthContext } = await import("./auth.server.js");
     const ctx = getAuthContext();
 
-    expect(ctx.config.apiKey).toBe("test-api-key");
+    expect(ctx!.config.apiKey).toBe("test-api-key");
   });
 
   it("returns same instance on subsequent calls (singleton)", async () => {

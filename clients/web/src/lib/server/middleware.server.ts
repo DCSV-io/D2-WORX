@@ -117,6 +117,7 @@ export function getMiddlewareContext(): MiddlewareContext | null {
   const serviceContext = new HandlerContext(
     {
       isAuthenticated: false,
+      isTrustedService: null,
       isAgentStaff: false,
       isAgentAdmin: false,
       isTargetingStaff: false,

@@ -106,7 +106,6 @@ public class ServiceKeyMiddleware
                 D2Result.Fail(
                     ["Invalid service API key."],
                     HttpStatusCode.Unauthorized,
-                    inputErrors: null,
                     errorCode: "INVALID_SERVICE_KEY",
                     traceId: context.TraceIdentifier),
                 context.RequestAborted);

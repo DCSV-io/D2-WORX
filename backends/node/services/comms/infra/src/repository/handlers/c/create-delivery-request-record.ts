@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
-import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { D2Result } from "@d2/result";
 import { isPgUniqueViolation } from "@d2/errors-pg";
 import type {
   CreateDeliveryRequestRecordInput as I,
@@ -36,10 +36,8 @@ export class CreateDeliveryRequestRecord
       return D2Result.ok({ data: {} });
     } catch (err) {
       if (isPgUniqueViolation(err)) {
-        return D2Result.fail({
+        return D2Result.conflict({
           messages: ["Delivery request already exists."],
-          statusCode: HttpStatusCode.Conflict,
-          errorCode: ErrorCodes.CONFLICT,
         });
       }
       throw err;

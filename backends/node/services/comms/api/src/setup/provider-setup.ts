@@ -1,5 +1,5 @@
 import type { ServiceCollection } from "@d2/di";
-import type { HandlerContext } from "@d2/handler";
+import type { IHandlerContext } from "@d2/handler";
 import type { ILogger } from "@d2/logging";
 import { IEmailProviderKey, ISmsProviderKey } from "@d2/comms-app";
 import { ResendEmailProvider, TwilioSmsProvider } from "@d2/comms-infra";
@@ -19,7 +19,7 @@ export interface ProviderConfig {
 export function addDeliveryProviders(
   services: ServiceCollection,
   config: ProviderConfig,
-  serviceContext: HandlerContext,
+  serviceContext: IHandlerContext,
   logger: ILogger,
 ): void {
   if (config.resendApiKey && config.resendFromAddress) {

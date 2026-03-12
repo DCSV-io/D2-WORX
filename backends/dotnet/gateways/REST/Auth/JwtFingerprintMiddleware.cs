@@ -92,9 +92,8 @@ public class JwtFingerprintMiddleware
             var missingFpResponse = D2Result.Fail(
                 ["JWT fingerprint claim is required."],
                 HttpStatusCode.Unauthorized,
-                inputErrors: null,
-                "MISSING_FINGERPRINT",
-                context.TraceIdentifier);
+                errorCode: "MISSING_FINGERPRINT",
+                traceId: context.TraceIdentifier);
 
             await context.Response.WriteAsJsonAsync(missingFpResponse, SerializerOptions.SR_Web, context.RequestAborted);
             return;
@@ -119,9 +118,8 @@ public class JwtFingerprintMiddleware
             Truncate(computed));
 
         var response = D2Result.Fail(
-            messages: ["JWT fingerprint mismatch. Token cannot be used from this client."],
-            statusCode: HttpStatusCode.Unauthorized,
-            inputErrors: null,
+            ["JWT fingerprint mismatch. Token cannot be used from this client."],
+            HttpStatusCode.Unauthorized,
             errorCode: "JWT_FINGERPRINT_MISMATCH",
             traceId: context.TraceIdentifier);
 

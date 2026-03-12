@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
-import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { D2Result } from "@d2/result";
 import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
 import type { Commands as GeoCommands } from "@d2/geo-client";
 import type {
@@ -58,10 +58,8 @@ export class DeleteOrgContact
 
     // IDOR check: contact must belong to the caller's active org
     if (existing.organizationId !== input.organizationId) {
-      return D2Result.fail({
+      return D2Result.forbidden({
         messages: ["Not authorized to delete this contact."],
-        statusCode: HttpStatusCode.Forbidden,
-        errorCode: ErrorCodes.FORBIDDEN,
       });
     }
 

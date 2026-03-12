@@ -20,6 +20,7 @@ export function createServiceScope(provider: ServiceProvider, logger?: ILogger):
   const requestContext: IRequestContext = {
     traceId: crypto.randomUUID(),
     isAuthenticated: false,
+    isTrustedService: null,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,

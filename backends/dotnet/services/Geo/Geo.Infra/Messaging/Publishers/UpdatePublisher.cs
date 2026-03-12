@@ -6,7 +6,6 @@
 
 namespace D2.Geo.Infra.Messaging.Publishers;
 
-using System.Net;
 using D2.Events.Protos.V1;
 using D2.Shared.Messaging.RabbitMQ;
 using D2.Shared.Messaging.RabbitMQ.Conventions;
@@ -77,9 +76,8 @@ public class UpdatePublisher
                 "Failed to publish GeoRefDataUpdated event for version {Version}",
                 message.Version);
 
-            return D2Result.Fail(
-                ["Failed to publish message to RabbitMQ."],
-                HttpStatusCode.ServiceUnavailable);
+            return D2Result.ServiceUnavailable(
+                ["Failed to publish message to RabbitMQ."]);
         }
     }
 }

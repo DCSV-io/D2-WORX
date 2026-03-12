@@ -28,6 +28,16 @@ export function createAuthHandle(): Handle {
   return async ({ event, resolve }) => {
     const ctx = getAuthContext();
 
+    // CI / skip mode: auth context unavailable — treat as unauthenticated.
+    if (!ctx) {
+      event.locals.session = null;
+      event.locals.user = null;
+      if (event.locals.requestContext) {
+        event.locals.requestContext.isAuthenticated = false;
+      }
+      return resolve(event);
+    }
+
     const { session, user } = await ctx.sessionResolver.resolve(event.request);
     event.locals.session = session;
     event.locals.user = user;
