@@ -1,27 +1,20 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
 import type { DistributedCache, Messaging } from "@d2/interfaces";
 import type { IPingDbHandler } from "../../../../interfaces/repository/handlers/index.js";
 
-export interface CheckHealthInput {}
-
-export interface ComponentHealth {
-  status: string;
-  latencyMs?: number;
-  error?: string;
-}
-
-export interface CheckHealthOutput {
-  status: string;
-  components: Record<string, ComponentHealth>;
-}
+type Input = Queries.CheckHealthInput;
+type Output = Queries.CheckHealthOutput;
 
 /**
  * Aggregates ping results from all comms service dependencies into a single
  * health check response. Each dependency check is a BaseHandler with its own
  * OTel span.
  */
-export class CheckHealth extends BaseHandler<CheckHealthInput, CheckHealthOutput> {
+export class CheckHealth extends BaseHandler<Input, Output>
+  implements Queries.ICheckHealthHandler
+{
   private readonly pingDb: IPingDbHandler;
   private readonly pingCache?: DistributedCache.IPingHandler;
   private readonly pingMessageBus?: Messaging.IPingHandler;
@@ -39,9 +32,9 @@ export class CheckHealth extends BaseHandler<CheckHealthInput, CheckHealthOutput
   }
 
   protected async executeAsync(
-    _input: CheckHealthInput,
-  ): Promise<D2Result<CheckHealthOutput | undefined>> {
-    const components: Record<string, ComponentHealth> = {};
+    _input: Input,
+  ): Promise<D2Result<Output | undefined>> {
+    const components: Record<string, Queries.ComponentHealth> = {};
 
     // Fan out all pings in parallel
     const [dbResult, cacheResult, messageBusResult] = await Promise.all([
@@ -95,3 +88,9 @@ export class CheckHealth extends BaseHandler<CheckHealthInput, CheckHealthOutput
     return D2Result.ok({ data: { status, components } });
   }
 }
+
+export type {
+  CheckHealthInput,
+  CheckHealthOutput,
+  ComponentHealth,
+} from "../../../../interfaces/cqrs/handlers/q/check-health.js";

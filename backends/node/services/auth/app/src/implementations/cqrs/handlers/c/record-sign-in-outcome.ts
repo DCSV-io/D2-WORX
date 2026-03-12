@@ -4,16 +4,10 @@ import { SIGN_IN_THROTTLE, computeSignInDelay } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
 import { AUTH_CACHE_KEYS } from "../../../../cache-keys.js";
 import type { ISignInThrottleStore } from "../../../../interfaces/repository/sign-in-throttle-store.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface RecordSignInOutcomeInput {
-  readonly identifierHash: string;
-  readonly identityHash: string;
-  readonly responseStatus: number;
-}
-
-export interface RecordSignInOutcomeOutput {
-  readonly recorded: boolean;
-}
+type Input = Commands.RecordSignInOutcomeInput;
+type Output = Commands.RecordSignInOutcomeOutput;
 
 /**
  * Records the outcome of a sign-in attempt for brute-force throttling.
@@ -26,10 +20,10 @@ export interface RecordSignInOutcomeOutput {
  *
  * **Fail-open:** All store errors are swallowed — returns `{ recorded: false }`.
  */
-export class RecordSignInOutcome extends BaseHandler<
-  RecordSignInOutcomeInput,
-  RecordSignInOutcomeOutput
-> {
+export class RecordSignInOutcome
+  extends BaseHandler<Input, Output>
+  implements Commands.IRecordSignInOutcomeHandler
+{
   private readonly store: ISignInThrottleStore;
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<boolean>;
@@ -50,8 +44,8 @@ export class RecordSignInOutcome extends BaseHandler<
   }
 
   protected async executeAsync(
-    input: RecordSignInOutcomeInput,
-  ): Promise<D2Result<RecordSignInOutcomeOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     try {
       if (input.responseStatus === 200) {
         return await this.handleSuccess(input);
@@ -70,8 +64,8 @@ export class RecordSignInOutcome extends BaseHandler<
   }
 
   private async handleSuccess(
-    input: RecordSignInOutcomeInput,
-  ): Promise<D2Result<RecordSignInOutcomeOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     await Promise.all([
       this.store.markKnownGood(input.identifierHash, input.identityHash),
       this.store.clearFailureState(input.identifierHash, input.identityHash),
@@ -93,8 +87,8 @@ export class RecordSignInOutcome extends BaseHandler<
   }
 
   private async handleFailure(
-    input: RecordSignInOutcomeInput,
-  ): Promise<D2Result<RecordSignInOutcomeOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const count = await this.store.incrementFailures(input.identifierHash, input.identityHash);
     const delayMs = computeSignInDelay(count);
 
@@ -106,3 +100,5 @@ export class RecordSignInOutcome extends BaseHandler<
     return D2Result.ok({ data: { recorded: true } });
   }
 }
+
+export type { RecordSignInOutcomeInput, RecordSignInOutcomeOutput } from "../../../../interfaces/cqrs/handlers/c/record-sign-in-outcome.js";

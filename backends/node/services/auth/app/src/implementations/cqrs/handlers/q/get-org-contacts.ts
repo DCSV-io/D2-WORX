@@ -1,32 +1,15 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ContactDTO } from "@d2/protos";
 import { GEO_CONTEXT_KEYS, type OrgContact } from "@d2/auth-domain";
-import type { Queries } from "@d2/geo-client";
+import type { Queries as GeoQueries } from "@d2/geo-client";
 import type { IFindOrgContactsByOrgIdHandler } from "../../../../interfaces/repository/handlers/index.js";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 
-/** A junction record hydrated with full Geo contact data. */
-export interface HydratedOrgContact {
-  readonly id: string;
-  readonly organizationId: string;
-  readonly label: string;
-  readonly isPrimary: boolean;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-  /** Full Geo contact data. Null if the Geo contact was not found (orphaned). */
-  readonly geoContact: ContactDTO | null;
-}
-
-export interface GetOrgContactsInput {
-  readonly organizationId: string;
-  readonly limit?: number;
-  readonly offset?: number;
-}
-
-export interface GetOrgContactsOutput {
-  contacts: HydratedOrgContact[];
-}
+type Input = Queries.GetOrgContactsInput;
+type Output = Queries.GetOrgContactsOutput;
+type HydratedOrgContact = Queries.HydratedOrgContact;
 
 const schema = z.object({
   organizationId: zodGuid,
@@ -43,27 +26,30 @@ const schema = z.object({
  * then joins the results. Orphaned junctions (where the Geo contact no longer
  * exists) are returned with geoContact: null.
  */
-export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgContactsOutput> {
+export class GetOrgContacts
+  extends BaseHandler<Input, Output>
+  implements Queries.IGetOrgContactsHandler
+{
   private readonly findByOrgId: IFindOrgContactsByOrgIdHandler;
-  private readonly getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler;
+  private readonly getContactsByExtKeys: GeoQueries.IGetContactsByExtKeysHandler;
 
   constructor(
     findByOrgId: IFindOrgContactsByOrgIdHandler,
     context: IHandlerContext,
-    getContactsByExtKeys: Queries.IGetContactsByExtKeysHandler,
+    getContactsByExtKeys: GeoQueries.IGetContactsByExtKeysHandler,
   ) {
     super(context);
     this.findByOrgId = findByOrgId;
     this.getContactsByExtKeys = getContactsByExtKeys;
   }
 
-  get redaction(): RedactionSpec {
-    return { suppressOutput: true };
+  override get redaction() {
+    return Queries.GET_ORG_CONTACTS_REDACTION;
   }
 
   protected async executeAsync(
-    input: GetOrgContactsInput,
-  ): Promise<D2Result<GetOrgContactsOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -106,3 +92,5 @@ export class GetOrgContacts extends BaseHandler<GetOrgContactsInput, GetOrgConta
     return D2Result.ok({ data: { contacts } });
   }
 }
+
+export type { HydratedOrgContact, GetOrgContactsInput, GetOrgContactsOutput } from "../../../../interfaces/cqrs/handlers/q/get-org-contacts.js";

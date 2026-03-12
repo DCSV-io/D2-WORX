@@ -4,21 +4,17 @@ import { D2Result } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 import type { IPurgeSignInEventsHandler } from "../../../../interfaces/repository/handlers/d/purge-sign-in-events.js";
 import type { AuthJobOptions } from "../../../../auth-job-options.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
+
+type Input = Commands.RunSignInEventPurgeInput;
+type Output = Commands.RunSignInEventPurgeOutput;
 
 const LOCK_KEY = "lock:job:purge-sign-in-events";
 
-export interface RunSignInEventPurgeInput {}
-
-export interface RunSignInEventPurgeOutput {
-  readonly rowsAffected: number;
-  readonly lockAcquired: boolean;
-  readonly durationMs: number;
-}
-
-export class RunSignInEventPurge extends BaseHandler<
-  RunSignInEventPurgeInput,
-  RunSignInEventPurgeOutput
-> {
+export class RunSignInEventPurge
+  extends BaseHandler<Input, Output>
+  implements Commands.IRunSignInEventPurgeHandler
+{
   private readonly acquireLock: DistributedCache.IAcquireLockHandler;
   private readonly releaseLock: DistributedCache.IReleaseLockHandler;
   private readonly purge: IPurgeSignInEventsHandler;
@@ -39,8 +35,8 @@ export class RunSignInEventPurge extends BaseHandler<
   }
 
   protected async executeAsync(
-    _input: RunSignInEventPurgeInput,
-  ): Promise<D2Result<RunSignInEventPurgeOutput | undefined>> {
+    _input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -82,3 +78,5 @@ export class RunSignInEventPurge extends BaseHandler<
     }
   }
 }
+
+export type { RunSignInEventPurgeInput, RunSignInEventPurgeOutput } from "../../../../interfaces/cqrs/handlers/c/run-sign-in-event-purge.js";

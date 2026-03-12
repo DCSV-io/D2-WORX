@@ -1,33 +1,17 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
-import {
-  updateOrgContact,
-  GEO_CONTEXT_KEYS,
-  type OrgContact,
-  type UpdateOrgContactInput,
-} from "@d2/auth-domain";
+import { updateOrgContact, GEO_CONTEXT_KEYS, type UpdateOrgContactInput } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Complex } from "@d2/geo-client";
 import type {
   IFindOrgContactByIdHandler,
   IUpdateOrgContactRecordHandler,
 } from "../../../../interfaces/repository/handlers/index.js";
-import type { ContactInput } from "./create-org-contact.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface UpdateOrgContactHandlerInput {
-  readonly id: string;
-  readonly organizationId: string;
-  readonly updates: UpdateOrgContactInput & {
-    /** If provided, triggers contact replacement via UpdateContactsByExtKeys. */
-    readonly contact?: ContactInput;
-  };
-}
-
-export type UpdateOrgContactOutput = {
-  contact: OrgContact;
-  geoContact?: ContactDTO;
-};
+type Input = Commands.UpdateOrgContactHandlerInput;
+type Output = Commands.UpdateOrgContactOutput;
 
 const schema = z.object({
   id: zodGuid,
@@ -52,10 +36,10 @@ const schema = z.object({
  * 2. **Contact replacement** (contact details provided) — calls UpdateContactsByExtKeys
  *    which atomically replaces the Geo contact at the ext key. Then updates junction metadata.
  */
-export class UpdateOrgContactHandler extends BaseHandler<
-  UpdateOrgContactHandlerInput,
-  UpdateOrgContactOutput
-> {
+export class UpdateOrgContactHandler
+  extends BaseHandler<Input, Output>
+  implements Commands.IUpdateOrgContactHandler
+{
   private readonly findById: IFindOrgContactByIdHandler;
   private readonly updateRecord: IUpdateOrgContactRecordHandler;
   private readonly updateContactsByExtKeys: Complex.IUpdateContactsByExtKeysHandler;
@@ -72,13 +56,13 @@ export class UpdateOrgContactHandler extends BaseHandler<
     this.updateContactsByExtKeys = updateContactsByExtKeys;
   }
 
-  get redaction(): RedactionSpec {
-    return { suppressInput: true, suppressOutput: true };
+  override get redaction() {
+    return Commands.UPDATE_ORG_CONTACT_REDACTION;
   }
 
   protected async executeAsync(
-    input: UpdateOrgContactHandlerInput,
-  ): Promise<D2Result<UpdateOrgContactOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -144,3 +128,5 @@ export class UpdateOrgContactHandler extends BaseHandler<
     });
   }
 }
+
+export type { UpdateOrgContactHandlerInput, UpdateOrgContactOutput } from "../../../../interfaces/cqrs/handlers/c/update-org-contact.js";

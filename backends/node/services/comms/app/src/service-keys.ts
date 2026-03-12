@@ -2,7 +2,6 @@ import { createServiceKey } from "@d2/di";
 
 // Import interface types for infra-level keys
 import type { IPingDbHandler } from "./interfaces/repository/handlers/index.js";
-import type { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
 import type {
   ICreateMessageRecordHandler,
   IFindMessageByIdHandler,
@@ -24,13 +23,8 @@ import type {
   IPurgeDeliveryHistoryHandler,
 } from "./interfaces/repository/handlers/index.js";
 
-// Import app-layer handler types
-import type { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
-import type { RecipientResolver } from "./implementations/cqrs/handlers/q/resolve-recipient.js";
-import type { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-channel-preference.js";
-import type { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
-import type { RunDeletedMessagePurge } from "./implementations/cqrs/handlers/c/run-deleted-message-purge.js";
-import type { RunDeliveryHistoryPurge } from "./implementations/cqrs/handlers/c/run-delivery-history-purge.js";
+// Import app-layer handler interfaces
+import type { Commands, Queries, Complex } from "./interfaces/cqrs/handlers/index.js";
 
 // =============================================================================
 // Infrastructure-layer keys (interfaces defined here, implemented in comms-infra)
@@ -101,26 +95,25 @@ export const ISmsProviderKey = createServiceKey<ISmsProvider>("Comms.Infra.SmsPr
 // =============================================================================
 
 // --- Complex Handlers ---
-export const IDeliverKey = createServiceKey<Deliver>("Comms.App.Deliver");
-export const IRecipientResolverKey = createServiceKey<RecipientResolver>(
+export const IDeliverKey = createServiceKey<Complex.IDeliverHandler>("Comms.App.Deliver");
+export const IRecipientResolverKey = createServiceKey<Queries.IRecipientResolverHandler>(
   "Comms.App.RecipientResolver",
 );
 
 // --- Command Handlers ---
-export const ISetChannelPreferenceKey = createServiceKey<SetChannelPreference>(
+export const ISetChannelPreferenceKey = createServiceKey<Commands.ISetChannelPreferenceHandler>(
   "Comms.App.SetChannelPreference",
 );
 
 // --- Query Handlers ---
-export const IGetChannelPreferenceKey = createServiceKey<GetChannelPreference>(
+export const IGetChannelPreferenceKey = createServiceKey<Queries.IGetChannelPreferenceHandler>(
   "Comms.App.GetChannelPreference",
 );
-export const ICheckHealthKey = createServiceKey<CheckHealth>("Comms.App.CheckHealth");
+export const ICheckHealthKey = createServiceKey<Queries.ICheckHealthHandler>("Comms.App.CheckHealth");
 
 // --- Job Handlers (Command) ---
-export const IRunDeletedMessagePurgeKey = createServiceKey<RunDeletedMessagePurge>(
+export const IRunDeletedMessagePurgeKey = createServiceKey<Commands.IRunDeletedMessagePurgeHandler>(
   "Comms.App.RunDeletedMessagePurge",
 );
-export const IRunDeliveryHistoryPurgeKey = createServiceKey<RunDeliveryHistoryPurge>(
-  "Comms.App.RunDeliveryHistoryPurge",
-);
+export const IRunDeliveryHistoryPurgeKey =
+  createServiceKey<Commands.IRunDeliveryHistoryPurgeHandler>("Comms.App.RunDeliveryHistoryPurge");

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
 import { createChannelPreference, updateChannelPreference } from "@d2/comms-domain";
 import type { ChannelPreference } from "@d2/comms-domain";
@@ -7,26 +8,18 @@ import type { ChannelPreferenceRepoHandlers } from "../../../../interfaces/repos
 import type { InMemoryCache } from "@d2/interfaces";
 import { COMMS_CACHE_KEYS } from "../../../../cache-keys.js";
 
+type Input = Commands.SetChannelPreferenceInput;
+type Output = Commands.SetChannelPreferenceOutput;
+
 const schema = z.object({
   contactId: zodGuid,
   emailEnabled: z.boolean().optional(),
   smsEnabled: z.boolean().optional(),
 });
 
-export interface SetChannelPreferenceInput {
-  readonly contactId: string;
-  readonly emailEnabled?: boolean;
-  readonly smsEnabled?: boolean;
-}
-
-export interface SetChannelPreferenceOutput {
-  readonly pref: ChannelPreference;
-}
-
-export class SetChannelPreference extends BaseHandler<
-  SetChannelPreferenceInput,
-  SetChannelPreferenceOutput
-> {
+export class SetChannelPreference extends BaseHandler<Input, Output>
+  implements Commands.ISetChannelPreferenceHandler
+{
   private readonly repo: ChannelPreferenceRepoHandlers;
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<ChannelPreference>;
@@ -47,8 +40,8 @@ export class SetChannelPreference extends BaseHandler<
   }
 
   protected async executeAsync(
-    input: SetChannelPreferenceInput,
-  ): Promise<D2Result<SetChannelPreferenceOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -82,3 +75,8 @@ export class SetChannelPreference extends BaseHandler<
     return D2Result.ok({ data: { pref } });
   }
 }
+
+export type {
+  SetChannelPreferenceInput,
+  SetChannelPreferenceOutput,
+} from "../../../../interfaces/cqrs/handlers/c/set-channel-preference.js";

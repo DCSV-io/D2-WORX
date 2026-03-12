@@ -1,17 +1,13 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
+import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { InMemoryCache } from "@d2/interfaces";
 import type { ICheckEmailAvailabilityHandler as ICheckEmailAvailabilityRepoHandler } from "../../../../interfaces/repository/handlers/r/check-email-availability.js";
 import { AUTH_CACHE_KEYS } from "../../../../cache-keys.js";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface CheckEmailAvailabilityInput {
-  readonly email: string;
-}
-
-export interface CheckEmailAvailabilityOutput {
-  readonly available: boolean;
-}
+type Input = Queries.CheckEmailAvailabilityInput;
+type Output = Queries.CheckEmailAvailabilityOutput;
 
 const schema = z.object({
   email: z.string().trim().email().max(254),
@@ -32,10 +28,10 @@ const AVAILABLE_CACHE_TTL_MS = 30_000; // 30 seconds
  *
  * Fail-open: cache errors are swallowed — falls through to repo query.
  */
-export class CheckEmailAvailability extends BaseHandler<
-  CheckEmailAvailabilityInput,
-  CheckEmailAvailabilityOutput
-> {
+export class CheckEmailAvailability
+  extends BaseHandler<Input, Output>
+  implements Queries.ICheckEmailAvailabilityHandler
+{
   private readonly repo: ICheckEmailAvailabilityRepoHandler;
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<boolean>;
@@ -55,13 +51,13 @@ export class CheckEmailAvailability extends BaseHandler<
     this.cache = cache;
   }
 
-  get redaction(): RedactionSpec {
-    return { inputFields: ["email"] };
+  override get redaction() {
+    return Queries.CHECK_EMAIL_AVAILABILITY_REDACTION;
   }
 
   protected async executeAsync(
-    input: CheckEmailAvailabilityInput,
-  ): Promise<D2Result<CheckEmailAvailabilityOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -91,3 +87,5 @@ export class CheckEmailAvailability extends BaseHandler<
     return result;
   }
 }
+
+export type { CheckEmailAvailabilityInput, CheckEmailAvailabilityOutput } from "../../../../interfaces/cqrs/handlers/q/check-email-availability.js";

@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { Complex, type Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
 import {
   createMessage,
@@ -19,26 +20,10 @@ import type {
   DeliveryAttemptRepoHandlers,
   ChannelPreferenceRepoHandlers,
 } from "../../../../interfaces/repository/handlers/index.js";
-import type { RecipientResolver } from "../q/resolve-recipient.js";
 import type { IChannelDispatcher } from "./channel-dispatchers.js";
 
-export interface DeliverInput {
-  readonly senderService: string;
-  readonly title: string;
-  readonly content: string;
-  readonly plainTextContent: string;
-  readonly sensitive?: boolean;
-  readonly urgency?: "normal" | "urgent";
-  readonly recipientContactId: string;
-  readonly correlationId: string;
-  readonly metadata?: Record<string, unknown>;
-}
-
-export interface DeliverOutput {
-  readonly messageId: string;
-  readonly requestId: string;
-  readonly attempts: DeliveryAttempt[];
-}
+type Input = Complex.DeliverInput;
+type Output = Complex.DeliverOutput;
 
 const deliverSchema = z.object({
   correlationId: zodGuid,
@@ -61,13 +46,13 @@ const deliverSchema = z.object({
  * delegated to IChannelDispatcher implementations. The handler owns
  * orchestration: attempt creation, domain rule application, persistence.
  */
-export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
+export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeliverHandler {
   private readonly messageRepo: MessageRepoHandlers;
   private readonly requestRepo: DeliveryRequestRepoHandlers;
   private readonly attemptRepo: DeliveryAttemptRepoHandlers;
   private readonly channelPrefRepo: ChannelPreferenceRepoHandlers;
   private readonly dispatchers: Map<Channel, IChannelDispatcher>;
-  private readonly recipientResolver: RecipientResolver;
+  private readonly recipientResolver: Queries.IRecipientResolverHandler;
 
   constructor(
     repos: {
@@ -77,7 +62,7 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
       channelPref: ChannelPreferenceRepoHandlers;
     },
     dispatchers: IChannelDispatcher[],
-    recipientResolver: RecipientResolver,
+    recipientResolver: Queries.IRecipientResolverHandler,
     context: IHandlerContext,
   ) {
     super(context);
@@ -89,11 +74,11 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     this.recipientResolver = recipientResolver;
   }
 
-  get redaction(): RedactionSpec {
-    return { inputFields: ["content", "plainTextContent"], suppressOutput: true };
+  override get redaction() {
+    return Complex.DELIVER_REDACTION;
   }
 
-  protected async executeAsync(input: DeliverInput): Promise<D2Result<DeliverOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     // Step 0a: Validate input
     const validation = this.validateInput(deliverSchema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
@@ -303,3 +288,5 @@ export class Deliver extends BaseHandler<DeliverInput, DeliverOutput> {
     });
   }
 }
+
+export type { DeliverInput, DeliverOutput } from "../../../../interfaces/cqrs/handlers/x/deliver.js";

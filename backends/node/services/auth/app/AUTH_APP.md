@@ -19,6 +19,7 @@ Defines the CQRS handler layer between the API (routes) and infrastructure (repo
 | ISignInThrottleStore interface     | Non-handler contract (stateful Redis store) — structurally implemented in infra  |
 | DI registration via `addAuthApp()` | Mirrors .NET `services.AddAuthApp()` — all handlers registered as transient      |
 | Service keys alongside interfaces  | Keys live in app (with interfaces), infra re-exports for composition root access |
+| Handler interface extraction       | App-layer I/O types, redaction constants, and IHandler interfaces live in separate interface files — mirrors geo-client pattern |
 
 ## Package Structure
 
@@ -27,8 +28,34 @@ src/
   index.ts                  Barrel exports + factory functions
   registration.ts           addAuthApp(services, options) DI registration
   auth-job-options.ts       AuthJobOptions interface + DEFAULT_AUTH_JOB_OPTIONS
-  service-keys.ts           ServiceKey<T> tokens (21 infra + 17 app)
+  service-keys.ts           ServiceKey<T> tokens (21 infra + 18 app)
+  cache-keys.ts             AUTH_CACHE_KEYS (email availability, sign-in events, throttle)
   interfaces/
+    cqrs/
+      handlers/
+        index.ts                     Barrel: import * as Commands / Queries
+        c/
+          index.ts                           Barrel re-exports all command interfaces
+          record-sign-in-event.ts            IRecordSignInEventHandler + REDACTION
+          record-sign-in-outcome.ts          IRecordSignInOutcomeHandler
+          create-emulation-consent.ts        ICreateEmulationConsentHandler
+          revoke-emulation-consent.ts        IRevokeEmulationConsentHandler
+          create-org-contact.ts              ICreateOrgContactHandler + ContactInput + REDACTION
+          update-org-contact.ts              IUpdateOrgContactHandler + REDACTION
+          delete-org-contact.ts              IDeleteOrgContactHandler
+          create-user-contact.ts             ICreateUserContactHandler + REDACTION
+          run-session-purge.ts               IRunSessionPurgeHandler
+          run-sign-in-event-purge.ts         IRunSignInEventPurgeHandler
+          run-invitation-cleanup.ts          IRunInvitationCleanupHandler
+          run-emulation-consent-cleanup.ts   IRunEmulationConsentCleanupHandler
+        q/
+          index.ts                           Barrel re-exports all query interfaces
+          check-email-availability.ts        ICheckEmailAvailabilityHandler + REDACTION
+          check-health.ts                    ICheckHealthHandler + ComponentHealth
+          check-sign-in-throttle.ts          ICheckSignInThrottleHandler
+          get-active-consents.ts             IGetActiveConsentsHandler
+          get-org-contacts.ts                IGetOrgContactsHandler + HydratedOrgContact + REDACTION
+          get-sign-in-events.ts              IGetSignInEventsHandler + REDACTION
     repository/
       sign-in-throttle-store.ts    ISignInThrottleStore (non-handler contract)
       handlers/
@@ -76,6 +103,8 @@ src/
           get-active-consents.ts         GetActiveConsents
           get-org-contacts.ts            GetOrgContacts
           check-sign-in-throttle.ts      CheckSignInThrottle
+          check-email-availability.ts    CheckEmailAvailability
+          check-health.ts                CheckHealth
 ```
 
 ## CQRS Handlers
@@ -104,15 +133,16 @@ Scheduled job orchestrators that acquire a distributed lock (Redis), delegate to
 | `RunInvitationCleanup`       | `lock:job:cleanup-expired-invitations`        | `IPurgeExpiredInvitationsHandler`       | Invitations past `expiresAt` + retention buffer |
 | `RunEmulationConsentCleanup` | `lock:job:cleanup-expired-emulation-consents` | `IPurgeExpiredEmulationConsentsHandler` | Expired OR already-revoked consents             |
 
-### Query Handlers (5)
+### Query Handlers (6)
 
-| Handler               | Input                 | Output               | Description                                                        |
-| --------------------- | --------------------- | -------------------- | ------------------------------------------------------------------ |
-| `GetSignInEvents`     | userId, limit, offset | `{ events, total }`  | Paginated with local cache + staleness check (append-only data)    |
-| `GetActiveConsents`   | userId, limit, offset | `{ consents }`       | Active (non-revoked, non-expired) emulation consents               |
-| `GetOrgContacts`      | orgId, limit, offset  | `{ contacts[] }`     | Junction records hydrated with Geo contact data via ext-key lookup |
-| `CheckSignInThrottle` | identifierHash, etc.  | `{ blocked, retry?}` | Optimized Redis round-trips: 0 on local cache hit, 1 otherwise     |
-| `CheckHealth`         | _(none)_              | `{ status, ... }`    | Aggregates DB, cache, and message bus pings into health report     |
+| Handler                  | Input                 | Output               | Description                                                        |
+| ------------------------ | --------------------- | -------------------- | ------------------------------------------------------------------ |
+| `CheckEmailAvailability` | email                 | `{ available }`      | In-memory cache with asymmetric TTLs (taken=1h, available=30s)     |
+| `GetSignInEvents`        | userId, limit, offset | `{ events, total }`  | Paginated with local cache + staleness check (append-only data)    |
+| `GetActiveConsents`      | userId, limit, offset | `{ consents }`       | Active (non-revoked, non-expired) emulation consents               |
+| `GetOrgContacts`         | orgId, limit, offset  | `{ contacts[] }`     | Junction records hydrated with Geo contact data via ext-key lookup |
+| `CheckSignInThrottle`    | identifierHash, etc.  | `{ blocked, retry?}` | Optimized Redis round-trips: 0 on local cache hit, 1 otherwise    |
+| `CheckHealth`            | _(none)_              | `{ status, ... }`    | Aggregates DB, cache, and message bus pings into health report     |
 
 ## Repository Handler Interfaces
 
@@ -137,10 +167,10 @@ Plus `ISignInThrottleStore` (non-handler interface with 6 methods for Redis key 
 
 ## Service Keys
 
-38 `ServiceKey<T>` tokens organized in two groups:
+39 `ServiceKey<T>` tokens organized in two groups:
 
 - **21 infra-layer keys** — for repository handlers, PingDb, throttle store, and 4 purge handlers (interfaces defined here, implemented in `@d2/auth-infra`)
-- **17 app-layer keys** — for CQRS handlers including CheckHealth and 4 job handlers (defined and implemented here)
+- **18 app-layer keys** — for CQRS handlers including CheckEmailAvailability, CheckHealth, and 4 job handlers (typed against handler interfaces, e.g., `Commands.IRecordSignInEventHandler`)
 
 ## AuthJobOptions
 
@@ -158,7 +188,7 @@ Configuration for scheduled job handlers, provided via `addAuthApp()` (defaults 
 addAuthApp(services: ServiceCollection, options: AddAuthAppOptions, jobOptions?: AuthJobOptions): void
 ```
 
-Registers all 17 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
+Registers all 18 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
 
 ## Factory Functions
 

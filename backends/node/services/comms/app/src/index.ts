@@ -3,6 +3,9 @@
 
 export { COMMS_CACHE_KEYS } from "./cache-keys.js";
 
+// --- CQRS Handler Interfaces (app-layer contracts) ---
+export { Commands as CommsCommands, Queries as CommsQueries, Complex as CommsComplex } from "./interfaces/cqrs/handlers/index.js";
+
 import type { IHandlerContext } from "@d2/handler";
 import type { ChannelPreference } from "@d2/comms-domain";
 import type { InMemoryCache } from "@d2/interfaces";
@@ -78,7 +81,7 @@ export type {
 
 // --- Complex Handlers ---
 export { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
-export type { DeliverInput, DeliverOutput } from "./implementations/cqrs/handlers/x/deliver.js";
+export type { DeliverInput, DeliverOutput } from "./interfaces/cqrs/handlers/x/deliver.js";
 
 // --- Channel Dispatchers ---
 export {
@@ -98,20 +101,20 @@ export { SetChannelPreference } from "./implementations/cqrs/handlers/c/set-chan
 export type {
   SetChannelPreferenceInput,
   SetChannelPreferenceOutput,
-} from "./implementations/cqrs/handlers/c/set-channel-preference.js";
+} from "./interfaces/cqrs/handlers/c/set-channel-preference.js";
 
 // --- Job Handlers (Command) ---
 export { RunDeletedMessagePurge } from "./implementations/cqrs/handlers/c/run-deleted-message-purge.js";
 export type {
   RunDeletedMessagePurgeInput,
   RunDeletedMessagePurgeOutput,
-} from "./implementations/cqrs/handlers/c/run-deleted-message-purge.js";
+} from "./interfaces/cqrs/handlers/c/run-deleted-message-purge.js";
 
 export { RunDeliveryHistoryPurge } from "./implementations/cqrs/handlers/c/run-delivery-history-purge.js";
 export type {
   RunDeliveryHistoryPurgeInput,
   RunDeliveryHistoryPurgeOutput,
-} from "./implementations/cqrs/handlers/c/run-delivery-history-purge.js";
+} from "./interfaces/cqrs/handlers/c/run-delivery-history-purge.js";
 
 // --- Job Options ---
 export type { CommsJobOptions } from "./comms-job-options.js";
@@ -122,13 +125,13 @@ export { RecipientResolver } from "./implementations/cqrs/handlers/q/resolve-rec
 export type {
   ResolveRecipientInput,
   ResolveRecipientOutput,
-} from "./implementations/cqrs/handlers/q/resolve-recipient.js";
+} from "./interfaces/cqrs/handlers/q/resolve-recipient.js";
 
 export { GetChannelPreference } from "./implementations/cqrs/handlers/q/get-channel-preference.js";
 export type {
   GetChannelPreferenceInput,
   GetChannelPreferenceOutput,
-} from "./implementations/cqrs/handlers/q/get-channel-preference.js";
+} from "./interfaces/cqrs/handlers/q/get-channel-preference.js";
 
 // ---------------------------------------------------------------------------
 // Factory Functions
@@ -204,7 +207,7 @@ export type {
   CheckHealthInput,
   CheckHealthOutput,
   ComponentHealth,
-} from "./implementations/cqrs/handlers/q/check-health.js";
+} from "./interfaces/cqrs/handlers/q/check-health.js";
 
 // --- DI Registration ---
 export { addCommsApp } from "./registration.js";

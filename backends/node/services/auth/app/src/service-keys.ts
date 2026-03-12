@@ -1,8 +1,6 @@
 import { createServiceKey } from "@d2/di";
 
 // Import interface types for keys
-import type { IPingDbHandler } from "./interfaces/repository/handlers/index.js";
-import type { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
 import type {
   ICreateSignInEventHandler,
   IFindSignInEventsByUserIdHandler,
@@ -23,26 +21,11 @@ import type {
   IPurgeSignInEventsHandler,
   IPurgeExpiredInvitationsHandler,
   IPurgeExpiredEmulationConsentsHandler,
+  IPingDbHandler,
 } from "./interfaces/repository/handlers/index.js";
 import type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
-import type { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
-import type { RecordSignInOutcome } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
-import type { CreateEmulationConsent } from "./implementations/cqrs/handlers/c/create-emulation-consent.js";
-import type { RevokeEmulationConsent } from "./implementations/cqrs/handlers/c/revoke-emulation-consent.js";
-import type { CreateOrgContact } from "./implementations/cqrs/handlers/c/create-org-contact.js";
-import type { UpdateOrgContactHandler } from "./implementations/cqrs/handlers/c/update-org-contact.js";
-import type { DeleteOrgContact } from "./implementations/cqrs/handlers/c/delete-org-contact.js";
-import type { CreateUserContact } from "./implementations/cqrs/handlers/c/create-user-contact.js";
-import type { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-events.js";
-import type { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
-import type { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
-import type { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
-import type { CheckEmailAvailability } from "./implementations/cqrs/handlers/q/check-email-availability.js";
 import type { ICheckEmailAvailabilityHandler } from "./interfaces/repository/handlers/r/check-email-availability.js";
-import type { RunSessionPurge } from "./implementations/cqrs/handlers/c/run-session-purge.js";
-import type { RunSignInEventPurge } from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
-import type { RunInvitationCleanup } from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
-import type { RunEmulationConsentCleanup } from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
+import type { Commands, Queries } from "./interfaces/cqrs/handlers/index.js";
 // =============================================================================
 // Infrastructure-layer keys (interfaces defined in auth-app, implemented in auth-infra)
 // =============================================================================
@@ -137,51 +120,64 @@ export const ISignInThrottleStoreKey = createServiceKey<ISignInThrottleStore>(
 
 // --- Command Handlers ---
 
-export const IRecordSignInEventKey = createServiceKey<RecordSignInEvent>(
+export const IRecordSignInEventKey = createServiceKey<Commands.IRecordSignInEventHandler>(
   "Auth.App.RecordSignInEvent",
 );
-export const IRecordSignInOutcomeKey = createServiceKey<RecordSignInOutcome>(
+export const IRecordSignInOutcomeKey = createServiceKey<Commands.IRecordSignInOutcomeHandler>(
   "Auth.App.RecordSignInOutcome",
 );
-export const ICreateEmulationConsentKey = createServiceKey<CreateEmulationConsent>(
+export const ICreateEmulationConsentKey = createServiceKey<Commands.ICreateEmulationConsentHandler>(
   "Auth.App.CreateEmulationConsent",
 );
-export const IRevokeEmulationConsentKey = createServiceKey<RevokeEmulationConsent>(
+export const IRevokeEmulationConsentKey = createServiceKey<Commands.IRevokeEmulationConsentHandler>(
   "Auth.App.RevokeEmulationConsent",
 );
-export const ICreateOrgContactKey = createServiceKey<CreateOrgContact>("Auth.App.CreateOrgContact");
-export const IUpdateOrgContactKey = createServiceKey<UpdateOrgContactHandler>(
+export const ICreateOrgContactKey = createServiceKey<Commands.ICreateOrgContactHandler>(
+  "Auth.App.CreateOrgContact",
+);
+export const IUpdateOrgContactKey = createServiceKey<Commands.IUpdateOrgContactHandler>(
   "Auth.App.UpdateOrgContact",
 );
-export const IDeleteOrgContactKey = createServiceKey<DeleteOrgContact>("Auth.App.DeleteOrgContact");
-export const ICreateUserContactKey = createServiceKey<CreateUserContact>(
+export const IDeleteOrgContactKey = createServiceKey<Commands.IDeleteOrgContactHandler>(
+  "Auth.App.DeleteOrgContact",
+);
+export const ICreateUserContactKey = createServiceKey<Commands.ICreateUserContactHandler>(
   "Auth.App.CreateUserContact",
 );
 
 // --- Query Handlers ---
 
-export const IGetSignInEventsKey = createServiceKey<GetSignInEvents>("Auth.App.GetSignInEvents");
-export const IGetActiveConsentsKey = createServiceKey<GetActiveConsents>(
+export const IGetSignInEventsKey = createServiceKey<Queries.IGetSignInEventsHandler>(
+  "Auth.App.GetSignInEvents",
+);
+export const IGetActiveConsentsKey = createServiceKey<Queries.IGetActiveConsentsHandler>(
   "Auth.App.GetActiveConsents",
 );
-export const IGetOrgContactsKey = createServiceKey<GetOrgContacts>("Auth.App.GetOrgContacts");
-export const ICheckSignInThrottleKey = createServiceKey<CheckSignInThrottle>(
+export const IGetOrgContactsKey = createServiceKey<Queries.IGetOrgContactsHandler>(
+  "Auth.App.GetOrgContacts",
+);
+export const ICheckSignInThrottleKey = createServiceKey<Queries.ICheckSignInThrottleHandler>(
   "Auth.App.CheckSignInThrottle",
 );
-export const ICheckHealthKey = createServiceKey<CheckHealth>("Auth.App.CheckHealth");
-export const ICheckEmailAvailabilityKey = createServiceKey<CheckEmailAvailability>(
+export const ICheckHealthKey = createServiceKey<Queries.ICheckHealthHandler>(
+  "Auth.App.CheckHealth",
+);
+export const ICheckEmailAvailabilityKey = createServiceKey<Queries.ICheckEmailAvailabilityHandler>(
   "Auth.App.CheckEmailAvailability",
 );
 
 // --- Job Handlers (Command) ---
 
-export const IRunSessionPurgeKey = createServiceKey<RunSessionPurge>("Auth.App.RunSessionPurge");
-export const IRunSignInEventPurgeKey = createServiceKey<RunSignInEventPurge>(
+export const IRunSessionPurgeKey = createServiceKey<Commands.IRunSessionPurgeHandler>(
+  "Auth.App.RunSessionPurge",
+);
+export const IRunSignInEventPurgeKey = createServiceKey<Commands.IRunSignInEventPurgeHandler>(
   "Auth.App.RunSignInEventPurge",
 );
-export const IRunInvitationCleanupKey = createServiceKey<RunInvitationCleanup>(
+export const IRunInvitationCleanupKey = createServiceKey<Commands.IRunInvitationCleanupHandler>(
   "Auth.App.RunInvitationCleanup",
 );
-export const IRunEmulationConsentCleanupKey = createServiceKey<RunEmulationConsentCleanup>(
-  "Auth.App.RunEmulationConsentCleanup",
-);
+export const IRunEmulationConsentCleanupKey =
+  createServiceKey<Commands.IRunEmulationConsentCleanupHandler>(
+    "Auth.App.RunEmulationConsentCleanup",
+  );

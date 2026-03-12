@@ -1,18 +1,11 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { EmulationConsent } from "@d2/auth-domain";
 import type { IFindActiveConsentsByUserIdHandler } from "../../../../interfaces/repository/handlers/index.js";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface GetActiveConsentsInput {
-  readonly userId: string;
-  readonly limit?: number;
-  readonly offset?: number;
-}
-
-export interface GetActiveConsentsOutput {
-  consents: EmulationConsent[];
-}
+type Input = Queries.GetActiveConsentsInput;
+type Output = Queries.GetActiveConsentsOutput;
 
 const schema = z.object({
   userId: zodGuid,
@@ -23,10 +16,10 @@ const schema = z.object({
 /**
  * Retrieves active (non-revoked, non-expired) emulation consents for a user.
  */
-export class GetActiveConsents extends BaseHandler<
-  GetActiveConsentsInput,
-  GetActiveConsentsOutput
-> {
+export class GetActiveConsents
+  extends BaseHandler<Input, Output>
+  implements Queries.IGetActiveConsentsHandler
+{
   private readonly findActiveByUserId: IFindActiveConsentsByUserIdHandler;
 
   constructor(findActiveByUserId: IFindActiveConsentsByUserIdHandler, context: IHandlerContext) {
@@ -35,8 +28,8 @@ export class GetActiveConsents extends BaseHandler<
   }
 
   protected async executeAsync(
-    input: GetActiveConsentsInput,
-  ): Promise<D2Result<GetActiveConsentsOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -51,3 +44,5 @@ export class GetActiveConsents extends BaseHandler<
     return D2Result.ok({ data: { consents } });
   }
 }
+
+export type { GetActiveConsentsInput, GetActiveConsentsOutput } from "../../../../interfaces/cqrs/handlers/q/get-active-consents.js";

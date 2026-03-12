@@ -1,24 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 import type { IPurgeDeletedMessagesHandler } from "../../../../interfaces/repository/handlers/d/purge-deleted-messages.js";
 import type { CommsJobOptions } from "../../../../comms-job-options.js";
 
+type Input = Commands.RunDeletedMessagePurgeInput;
+type Output = Commands.RunDeletedMessagePurgeOutput;
+
 const LOCK_KEY = "lock:job:purge-deleted-messages";
 
-export interface RunDeletedMessagePurgeInput {}
-
-export interface RunDeletedMessagePurgeOutput {
-  readonly rowsAffected: number;
-  readonly lockAcquired: boolean;
-  readonly durationMs: number;
-}
-
-export class RunDeletedMessagePurge extends BaseHandler<
-  RunDeletedMessagePurgeInput,
-  RunDeletedMessagePurgeOutput
-> {
+export class RunDeletedMessagePurge extends BaseHandler<Input, Output>
+  implements Commands.IRunDeletedMessagePurgeHandler
+{
   private readonly acquireLock: DistributedCache.IAcquireLockHandler;
   private readonly releaseLock: DistributedCache.IReleaseLockHandler;
   private readonly purge: IPurgeDeletedMessagesHandler;
@@ -39,8 +34,8 @@ export class RunDeletedMessagePurge extends BaseHandler<
   }
 
   protected async executeAsync(
-    _input: RunDeletedMessagePurgeInput,
-  ): Promise<D2Result<RunDeletedMessagePurgeOutput | undefined>> {
+    _input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -82,3 +77,8 @@ export class RunDeletedMessagePurge extends BaseHandler<
     }
   }
 }
+
+export type {
+  RunDeletedMessagePurgeInput,
+  RunDeletedMessagePurgeOutput,
+} from "../../../../interfaces/cqrs/handlers/c/run-deleted-message-purge.js";

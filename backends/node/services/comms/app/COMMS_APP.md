@@ -22,6 +22,7 @@ The app layer sits between the domain (`@d2/comms-domain`) and infrastructure (`
 | DI via addCommsApp(services)    | All CQRS handlers registered as transient -- new instance per resolve                |
 | CommsJobOptions via Options     | Job retention periods, lock TTL, batch size passed to addCommsApp; sensible defaults |
 | Distributed lock for jobs       | AcquireLock/ReleaseLock prevent concurrent job runs across instances                 |
+| Handler interface extraction    | App-layer I/O types, redaction constants, and IHandler interfaces in separate interface files — mirrors geo-client pattern |
 
 ## Package Structure
 
@@ -31,7 +32,24 @@ src/
   registration.ts                       addCommsApp(services, jobOptions?) DI registration
   service-keys.ts                       17 infra keys + 7 app keys (ServiceKey<T>)
   comms-job-options.ts                  CommsJobOptions interface + DEFAULT_COMMS_JOB_OPTIONS
+  cache-keys.ts                         COMMS_CACHE_KEYS (channel preferences)
   interfaces/
+    cqrs/
+      handlers/
+        index.ts                        Barrel: import * as Commands / Queries / Complex
+        x/
+          index.ts                      Barrel re-exports complex interfaces
+          deliver.ts                    IDeliverHandler + DELIVER_REDACTION
+        c/
+          index.ts                      Barrel re-exports command interfaces
+          set-channel-preference.ts     ISetChannelPreferenceHandler
+          run-deleted-message-purge.ts  IRunDeletedMessagePurgeHandler
+          run-delivery-history-purge.ts IRunDeliveryHistoryPurgeHandler
+        q/
+          index.ts                      Barrel re-exports query interfaces
+          resolve-recipient.ts          IRecipientResolverHandler + RESOLVE_RECIPIENT_REDACTION
+          get-channel-preference.ts     IGetChannelPreferenceHandler
+          check-health.ts              ICheckHealthHandler + ComponentHealth
     providers/
       index.ts                          Re-exports email + sms provider interfaces
       email/
@@ -73,6 +91,7 @@ src/
         q/
           resolve-recipient.ts          RecipientResolver (Query) -- contactId to email/phone
           get-channel-preference.ts     GetChannelPreference (Query) -- read channel prefs
+          check-health.ts               CheckHealth (Query) -- aggregated health check
 ```
 
 ## CQRS Handlers
@@ -166,7 +185,7 @@ Both extend `IHandler<TInput, TOutput>` -- they ARE handlers, with full OTel spa
 
 **Infra keys** (interfaces defined in app, implemented in infra): 12 repository handler keys + 2 purge handler keys + 1 PingDb key + 2 provider keys = 17
 
-**App keys** (defined and implemented in app): `IDeliverKey`, `IRecipientResolverKey`, `ISetChannelPreferenceKey`, `IGetChannelPreferenceKey`, `ICheckHealthKey`, `IRunDeletedMessagePurgeKey`, `IRunDeliveryHistoryPurgeKey`
+**App keys** (typed against handler interfaces, e.g., `Complex.IDeliverHandler`): `IDeliverKey`, `IRecipientResolverKey`, `ISetChannelPreferenceKey`, `IGetChannelPreferenceKey`, `ICheckHealthKey`, `IRunDeletedMessagePurgeKey`, `IRunDeliveryHistoryPurgeKey`
 
 **Lock keys** (created via `createRedisAcquireLockKey`/`createRedisReleaseLockKey` with `"comms"` prefix): `ICommsAcquireLockKey`, `ICommsReleaseLockKey`
 

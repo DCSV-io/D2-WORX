@@ -1,26 +1,15 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import {
-  createEmulationConsent,
-  canEmulate,
-  ORG_TYPES,
-  type EmulationConsent,
-  type OrgType,
-} from "@d2/auth-domain";
+import { createEmulationConsent, canEmulate, ORG_TYPES } from "@d2/auth-domain";
 import type {
   ICreateEmulationConsentRecordHandler,
   IFindActiveConsentByUserIdAndOrgHandler,
 } from "../../../../interfaces/repository/handlers/index.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface CreateEmulationConsentInput {
-  readonly userId: string;
-  readonly grantedToOrgId: string;
-  readonly activeOrgType: OrgType;
-  readonly expiresAt: Date;
-}
-
-export type CreateEmulationConsentOutput = { consent: EmulationConsent };
+type Input = Commands.CreateEmulationConsentInput;
+type Output = Commands.CreateEmulationConsentOutput;
 
 /** Maximum consent duration: 30 days in milliseconds. */
 const MAX_CONSENT_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -44,10 +33,10 @@ const schema = z.object({
  * Validates input, checks org type can emulate, verifies the target org
  * exists, and prevents duplicate active consents for the same user+org.
  */
-export class CreateEmulationConsent extends BaseHandler<
-  CreateEmulationConsentInput,
-  CreateEmulationConsentOutput
-> {
+export class CreateEmulationConsent
+  extends BaseHandler<Input, Output>
+  implements Commands.ICreateEmulationConsentHandler
+{
   private readonly createRecord: ICreateEmulationConsentRecordHandler;
   private readonly findActiveByUserIdAndOrg: IFindActiveConsentByUserIdAndOrgHandler;
   private readonly checkOrgExists: (orgId: string) => Promise<boolean>;
@@ -65,8 +54,8 @@ export class CreateEmulationConsent extends BaseHandler<
   }
 
   protected async executeAsync(
-    input: CreateEmulationConsentInput,
-  ): Promise<D2Result<CreateEmulationConsentOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -107,3 +96,5 @@ export class CreateEmulationConsent extends BaseHandler<
     return D2Result.ok({ data: { consent } });
   }
 }
+
+export type { CreateEmulationConsentInput, CreateEmulationConsentOutput } from "../../../../interfaces/cqrs/handlers/c/create-emulation-consent.js";

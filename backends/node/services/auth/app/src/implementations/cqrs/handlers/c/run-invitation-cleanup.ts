@@ -4,21 +4,17 @@ import { D2Result } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 import type { IPurgeExpiredInvitationsHandler } from "../../../../interfaces/repository/handlers/d/purge-expired-invitations.js";
 import type { AuthJobOptions } from "../../../../auth-job-options.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
+
+type Input = Commands.RunInvitationCleanupInput;
+type Output = Commands.RunInvitationCleanupOutput;
 
 const LOCK_KEY = "lock:job:cleanup-expired-invitations";
 
-export interface RunInvitationCleanupInput {}
-
-export interface RunInvitationCleanupOutput {
-  readonly rowsAffected: number;
-  readonly lockAcquired: boolean;
-  readonly durationMs: number;
-}
-
-export class RunInvitationCleanup extends BaseHandler<
-  RunInvitationCleanupInput,
-  RunInvitationCleanupOutput
-> {
+export class RunInvitationCleanup
+  extends BaseHandler<Input, Output>
+  implements Commands.IRunInvitationCleanupHandler
+{
   private readonly acquireLock: DistributedCache.IAcquireLockHandler;
   private readonly releaseLock: DistributedCache.IReleaseLockHandler;
   private readonly purge: IPurgeExpiredInvitationsHandler;
@@ -39,8 +35,8 @@ export class RunInvitationCleanup extends BaseHandler<
   }
 
   protected async executeAsync(
-    _input: RunInvitationCleanupInput,
-  ): Promise<D2Result<RunInvitationCleanupOutput | undefined>> {
+    _input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -82,3 +78,5 @@ export class RunInvitationCleanup extends BaseHandler<
     }
   }
 }
+
+export type { RunInvitationCleanupInput, RunInvitationCleanupOutput } from "../../../../interfaces/cqrs/handlers/c/run-invitation-cleanup.js";

@@ -1,19 +1,13 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid, zodNonEmptyString } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
+import type { ContactToCreateDTO } from "@d2/protos";
 import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
-import type { Commands } from "@d2/geo-client";
+import type { Commands as GeoCommands } from "@d2/geo-client";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface CreateUserContactInput {
-  readonly userId: string;
-  readonly email: string;
-  readonly name: string;
-}
-
-export interface CreateUserContactOutput {
-  readonly contact: ContactDTO;
-}
+type Input = Commands.CreateUserContactInput;
+type Output = Commands.CreateUserContactOutput;
 
 const schema = z.object({
   userId: zodGuid,
@@ -32,24 +26,24 @@ const schema = z.object({
  * Fail-fast: if Geo is unavailable, sign-up fails entirely
  * (no stale users without contacts).
  */
-export class CreateUserContact extends BaseHandler<
-  CreateUserContactInput,
-  CreateUserContactOutput
-> {
-  private readonly createContacts: Commands.ICreateContactsHandler;
+export class CreateUserContact
+  extends BaseHandler<Input, Output>
+  implements Commands.ICreateUserContactHandler
+{
+  private readonly createContacts: GeoCommands.ICreateContactsHandler;
 
-  constructor(createContacts: Commands.ICreateContactsHandler, context: IHandlerContext) {
+  constructor(createContacts: GeoCommands.ICreateContactsHandler, context: IHandlerContext) {
     super(context);
     this.createContacts = createContacts;
   }
 
-  get redaction(): RedactionSpec {
-    return { suppressInput: true, suppressOutput: true };
+  override get redaction() {
+    return Commands.CREATE_USER_CONTACT_REDACTION;
   }
 
   protected async executeAsync(
-    input: CreateUserContactInput,
-  ): Promise<D2Result<CreateUserContactOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -92,3 +86,5 @@ export class CreateUserContact extends BaseHandler<
     return D2Result.ok({ data: { contact } });
   }
 }
+
+export type { CreateUserContactInput, CreateUserContactOutput } from "../../../../interfaces/cqrs/handlers/c/create-user-contact.js";

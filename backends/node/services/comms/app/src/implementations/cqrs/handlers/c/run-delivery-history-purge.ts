@@ -1,24 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 import type { IPurgeDeliveryHistoryHandler } from "../../../../interfaces/repository/handlers/d/purge-delivery-history.js";
 import type { CommsJobOptions } from "../../../../comms-job-options.js";
 
+type Input = Commands.RunDeliveryHistoryPurgeInput;
+type Output = Commands.RunDeliveryHistoryPurgeOutput;
+
 const LOCK_KEY = "lock:job:purge-delivery-history";
 
-export interface RunDeliveryHistoryPurgeInput {}
-
-export interface RunDeliveryHistoryPurgeOutput {
-  readonly rowsAffected: number;
-  readonly lockAcquired: boolean;
-  readonly durationMs: number;
-}
-
-export class RunDeliveryHistoryPurge extends BaseHandler<
-  RunDeliveryHistoryPurgeInput,
-  RunDeliveryHistoryPurgeOutput
-> {
+export class RunDeliveryHistoryPurge extends BaseHandler<Input, Output>
+  implements Commands.IRunDeliveryHistoryPurgeHandler
+{
   private readonly acquireLock: DistributedCache.IAcquireLockHandler;
   private readonly releaseLock: DistributedCache.IReleaseLockHandler;
   private readonly purge: IPurgeDeliveryHistoryHandler;
@@ -39,8 +34,8 @@ export class RunDeliveryHistoryPurge extends BaseHandler<
   }
 
   protected async executeAsync(
-    _input: RunDeliveryHistoryPurgeInput,
-  ): Promise<D2Result<RunDeliveryHistoryPurgeOutput | undefined>> {
+    _input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -82,3 +77,8 @@ export class RunDeliveryHistoryPurge extends BaseHandler<
     }
   }
 }
+
+export type {
+  RunDeliveryHistoryPurgeInput,
+  RunDeliveryHistoryPurgeOutput,
+} from "../../../../interfaces/cqrs/handlers/c/run-delivery-history-purge.js";

@@ -3,6 +3,9 @@
 
 export { AUTH_CACHE_KEYS } from "./cache-keys.js";
 
+// --- CQRS Handler Interfaces (app-layer contracts) ---
+export { Commands as AuthCommands, Queries as AuthQueries } from "./interfaces/cqrs/handlers/index.js";
+
 import type { IHandlerContext } from "@d2/handler";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { Commands, Queries, Complex } from "@d2/geo-client";
@@ -90,82 +93,82 @@ export { RecordSignInEvent } from "./implementations/cqrs/handlers/c/record-sign
 export type {
   RecordSignInEventInput,
   RecordSignInEventOutput,
-} from "./implementations/cqrs/handlers/c/record-sign-in-event.js";
+} from "./interfaces/cqrs/handlers/c/record-sign-in-event.js";
 
 export { CreateEmulationConsent } from "./implementations/cqrs/handlers/c/create-emulation-consent.js";
 export type {
   CreateEmulationConsentInput,
   CreateEmulationConsentOutput,
-} from "./implementations/cqrs/handlers/c/create-emulation-consent.js";
+} from "./interfaces/cqrs/handlers/c/create-emulation-consent.js";
 
 export { RevokeEmulationConsent } from "./implementations/cqrs/handlers/c/revoke-emulation-consent.js";
 export type {
   RevokeEmulationConsentInput,
   RevokeEmulationConsentOutput,
-} from "./implementations/cqrs/handlers/c/revoke-emulation-consent.js";
+} from "./interfaces/cqrs/handlers/c/revoke-emulation-consent.js";
 
 export { CreateOrgContact } from "./implementations/cqrs/handlers/c/create-org-contact.js";
 export type {
   ContactInput,
   CreateOrgContactInput,
   CreateOrgContactOutput,
-} from "./implementations/cqrs/handlers/c/create-org-contact.js";
+} from "./interfaces/cqrs/handlers/c/create-org-contact.js";
 
 export { UpdateOrgContactHandler } from "./implementations/cqrs/handlers/c/update-org-contact.js";
 export type {
   UpdateOrgContactHandlerInput,
   UpdateOrgContactOutput,
-} from "./implementations/cqrs/handlers/c/update-org-contact.js";
+} from "./interfaces/cqrs/handlers/c/update-org-contact.js";
 
 export { DeleteOrgContact } from "./implementations/cqrs/handlers/c/delete-org-contact.js";
 export type {
   DeleteOrgContactInput,
   DeleteOrgContactOutput,
-} from "./implementations/cqrs/handlers/c/delete-org-contact.js";
+} from "./interfaces/cqrs/handlers/c/delete-org-contact.js";
 
 export { CreateUserContact } from "./implementations/cqrs/handlers/c/create-user-contact.js";
 export type {
   CreateUserContactInput,
   CreateUserContactOutput,
-} from "./implementations/cqrs/handlers/c/create-user-contact.js";
+} from "./interfaces/cqrs/handlers/c/create-user-contact.js";
 
 export { RecordSignInOutcome } from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
 export type {
   RecordSignInOutcomeInput,
   RecordSignInOutcomeOutput,
-} from "./implementations/cqrs/handlers/c/record-sign-in-outcome.js";
+} from "./interfaces/cqrs/handlers/c/record-sign-in-outcome.js";
 
 // --- Query Handlers ---
 export { GetSignInEvents } from "./implementations/cqrs/handlers/q/get-sign-in-events.js";
 export type {
   GetSignInEventsInput,
   GetSignInEventsOutput,
-} from "./implementations/cqrs/handlers/q/get-sign-in-events.js";
+} from "./interfaces/cqrs/handlers/q/get-sign-in-events.js";
 
 export { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-consents.js";
 export type {
   GetActiveConsentsInput,
   GetActiveConsentsOutput,
-} from "./implementations/cqrs/handlers/q/get-active-consents.js";
+} from "./interfaces/cqrs/handlers/q/get-active-consents.js";
 
 export { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 export type {
   GetOrgContactsInput,
   GetOrgContactsOutput,
   HydratedOrgContact,
-} from "./implementations/cqrs/handlers/q/get-org-contacts.js";
+} from "./interfaces/cqrs/handlers/q/get-org-contacts.js";
 
 export { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
 export type {
   CheckSignInThrottleInput,
   CheckSignInThrottleOutput,
-} from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
+} from "./interfaces/cqrs/handlers/q/check-sign-in-throttle.js";
 
 export { CheckEmailAvailability } from "./implementations/cqrs/handlers/q/check-email-availability.js";
 export type {
   CheckEmailAvailabilityInput,
   CheckEmailAvailabilityOutput,
-} from "./implementations/cqrs/handlers/q/check-email-availability.js";
+} from "./interfaces/cqrs/handlers/q/check-email-availability.js";
 
 // --- Factory Functions ---
 
@@ -295,32 +298,32 @@ export type {
   CheckHealthInput,
   CheckHealthOutput,
   ComponentHealth,
-} from "./implementations/cqrs/handlers/q/check-health.js";
+} from "./interfaces/cqrs/handlers/q/check-health.js";
 
 // --- Job Handlers ---
 export { RunSessionPurge } from "./implementations/cqrs/handlers/c/run-session-purge.js";
 export type {
   RunSessionPurgeInput,
   RunSessionPurgeOutput,
-} from "./implementations/cqrs/handlers/c/run-session-purge.js";
+} from "./interfaces/cqrs/handlers/c/run-session-purge.js";
 
 export { RunSignInEventPurge } from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
 export type {
   RunSignInEventPurgeInput,
   RunSignInEventPurgeOutput,
-} from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
+} from "./interfaces/cqrs/handlers/c/run-sign-in-event-purge.js";
 
 export { RunInvitationCleanup } from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
 export type {
   RunInvitationCleanupInput,
   RunInvitationCleanupOutput,
-} from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
+} from "./interfaces/cqrs/handlers/c/run-invitation-cleanup.js";
 
 export { RunEmulationConsentCleanup } from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
 export type {
   RunEmulationConsentCleanupInput,
   RunEmulationConsentCleanupOutput,
-} from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
+} from "./interfaces/cqrs/handlers/c/run-emulation-consent-cleanup.js";
 
 // --- Job Options ---
 export type { AuthJobOptions } from "./auth-job-options.js";

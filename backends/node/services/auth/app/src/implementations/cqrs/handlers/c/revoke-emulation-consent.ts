@@ -1,19 +1,15 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
-import { revokeEmulationConsent, isConsentActive, type EmulationConsent } from "@d2/auth-domain";
+import { revokeEmulationConsent, isConsentActive } from "@d2/auth-domain";
 import type {
   IFindEmulationConsentByIdHandler,
   IRevokeEmulationConsentRecordHandler,
 } from "../../../../interfaces/repository/handlers/index.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface RevokeEmulationConsentInput {
-  readonly consentId: string;
-  /** The authenticated user's ID — used to verify ownership. */
-  readonly userId: string;
-}
-
-export type RevokeEmulationConsentOutput = { consent: EmulationConsent };
+type Input = Commands.RevokeEmulationConsentInput;
+type Output = Commands.RevokeEmulationConsentOutput;
 
 const schema = z.object({
   consentId: zodGuid,
@@ -25,10 +21,10 @@ const schema = z.object({
  * Only active (non-revoked, non-expired) consents can be revoked.
  * Verifies the consent belongs to the authenticated user.
  */
-export class RevokeEmulationConsent extends BaseHandler<
-  RevokeEmulationConsentInput,
-  RevokeEmulationConsentOutput
-> {
+export class RevokeEmulationConsent
+  extends BaseHandler<Input, Output>
+  implements Commands.IRevokeEmulationConsentHandler
+{
   private readonly findById: IFindEmulationConsentByIdHandler;
   private readonly revokeRecord: IRevokeEmulationConsentRecordHandler;
 
@@ -43,8 +39,8 @@ export class RevokeEmulationConsent extends BaseHandler<
   }
 
   protected async executeAsync(
-    input: RevokeEmulationConsentInput,
-  ): Promise<D2Result<RevokeEmulationConsentOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -79,3 +75,5 @@ export class RevokeEmulationConsent extends BaseHandler<
     return D2Result.ok({ data: { consent: revoked } });
   }
 }
+
+export type { RevokeEmulationConsentInput, RevokeEmulationConsentOutput } from "../../../../interfaces/cqrs/handlers/c/revoke-emulation-consent.js";

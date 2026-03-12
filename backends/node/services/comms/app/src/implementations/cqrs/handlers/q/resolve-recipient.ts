@@ -1,20 +1,15 @@
 import { z } from "zod";
-import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
-import type { Queries } from "@d2/geo-client";
+import type { Queries as GeoQueries } from "@d2/geo-client";
+
+type Input = Queries.ResolveRecipientInput;
+type Output = Queries.ResolveRecipientOutput;
 
 const resolveRecipientSchema = z.object({
   contactId: zodGuid,
 });
-
-export interface ResolveRecipientInput {
-  readonly contactId: string;
-}
-
-export interface ResolveRecipientOutput {
-  readonly email?: string;
-  readonly phone?: string;
-}
 
 /**
  * Resolves a recipient's email/phone from their contactId.
@@ -23,21 +18,23 @@ export interface ResolveRecipientOutput {
  * Uses geo-client's built-in LRU caching — contacts are immutable,
  * so no additional cache layer is needed.
  */
-export class RecipientResolver extends BaseHandler<ResolveRecipientInput, ResolveRecipientOutput> {
-  private readonly getContactsByIds: Queries.IGetContactsByIdsHandler;
+export class RecipientResolver extends BaseHandler<Input, Output>
+  implements Queries.IRecipientResolverHandler
+{
+  private readonly getContactsByIds: GeoQueries.IGetContactsByIdsHandler;
 
-  get redaction(): RedactionSpec {
-    return { outputFields: ["email", "phone"] };
+  override get redaction() {
+    return Queries.RESOLVE_RECIPIENT_REDACTION;
   }
 
-  constructor(getContactsByIds: Queries.IGetContactsByIdsHandler, context: IHandlerContext) {
+  constructor(getContactsByIds: GeoQueries.IGetContactsByIdsHandler, context: IHandlerContext) {
     super(context);
     this.getContactsByIds = getContactsByIds;
   }
 
   protected async executeAsync(
-    input: ResolveRecipientInput,
-  ): Promise<D2Result<ResolveRecipientOutput | undefined>> {
+    input: Input,
+  ): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(resolveRecipientSchema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -78,3 +75,8 @@ export class RecipientResolver extends BaseHandler<ResolveRecipientInput, Resolv
     return D2Result.ok({ data: { email, phone } });
   }
 }
+
+export type {
+  ResolveRecipientInput,
+  ResolveRecipientOutput,
+} from "../../../../interfaces/cqrs/handlers/q/resolve-recipient.js";
