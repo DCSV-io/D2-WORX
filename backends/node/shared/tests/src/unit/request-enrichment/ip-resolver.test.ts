@@ -187,3 +187,101 @@ describe("isLocalhost", () => {
     expect(isLocalhost("2001:db8::1")).toBe(false);
   });
 });
+
+describe("adversarial inputs", () => {
+  // --- resolveIp edge cases ---
+
+  it("should return malformed IPv4 as-is (resolver does not validate)", () => {
+    const ip = resolveIp({ "cf-connecting-ip": "999.999.999.999" });
+    expect(ip).toBe("999.999.999.999");
+  });
+
+  it("should return non-IP garbage string as-is", () => {
+    const ip = resolveIp({ "cf-connecting-ip": "not-an-ip-at-all" });
+    expect(ip).toBe("not-an-ip-at-all");
+  });
+
+  it("should return SQL injection string as-is (no injection vector, just extraction)", () => {
+    const ip = resolveIp({ "cf-connecting-ip": "'; DROP TABLE users;--" });
+    expect(ip).toBe("'; DROP TABLE users;--");
+  });
+
+  it("should truncate extremely long header values to maxForwardedForLength", () => {
+    const longValue = "A".repeat(10_000);
+    const ip = resolveIp({ "cf-connecting-ip": longValue });
+    // Default maxForwardedForLength is 2048
+    expect(ip).toHaveLength(2048);
+    expect(ip).toBe("A".repeat(2048));
+  });
+
+  it("should truncate long header values to custom maxLength when provided", () => {
+    const longValue = "B".repeat(500);
+    const ip = resolveIp({ "cf-connecting-ip": longValue }, ["cf-connecting-ip"], 100);
+    expect(ip).toHaveLength(100);
+    expect(ip).toBe("B".repeat(100));
+  });
+
+  it("should recognize IPv6 loopback '::1' as localhost", () => {
+    expect(isLocalhost("::1")).toBe(true);
+  });
+
+  it("should NOT recognize IPv6-mapped IPv4 '::ffff:127.0.0.1' as localhost (exact match only)", () => {
+    // isLocalhost uses exact string comparison — mapped format is not matched
+    expect(isLocalhost("::ffff:127.0.0.1")).toBe(false);
+  });
+
+  it("should NOT recognize '0.0.0.0' as localhost", () => {
+    expect(isLocalhost("0.0.0.0")).toBe(false);
+  });
+
+  it("should NOT recognize '0:0:0:0:0:0:0:1' (expanded ::1) as localhost", () => {
+    expect(isLocalhost("0:0:0:0:0:0:0:1")).toBe(false);
+  });
+
+  it("should use CF-Connecting-IP when X-Forwarded-For is empty string", () => {
+    const ip = resolveIp(
+      { "cf-connecting-ip": "203.0.113.1", "x-forwarded-for": "" },
+      ALL_HEADERS,
+    );
+    expect(ip).toBe("203.0.113.1");
+  });
+
+  it("should return first IP from multi-entry X-Forwarded-For", () => {
+    const ip = resolveIp(
+      { "x-forwarded-for": "1.2.3.4, 5.6.7.8, 9.10.11.12" },
+      ALL_HEADERS,
+    );
+    expect(ip).toBe("1.2.3.4");
+  });
+
+  it("should trim spaces from X-Forwarded-For entries", () => {
+    const ip = resolveIp({ "x-forwarded-for": "  1.2.3.4  " }, ALL_HEADERS);
+    expect(ip).toBe("1.2.3.4");
+  });
+
+  it("should handle X-Forwarded-For with tab characters around entries", () => {
+    const ip = resolveIp({ "x-forwarded-for": "\t10.0.0.1\t, 10.0.0.2" }, ALL_HEADERS);
+    expect(ip).toBe("10.0.0.1");
+  });
+
+  it("should handle header values with newline characters (trimmed)", () => {
+    const ip = resolveIp({ "cf-connecting-ip": "\n10.0.0.1\n" });
+    expect(ip).toBe("10.0.0.1");
+  });
+
+  it("should handle header with only whitespace and commas in X-Forwarded-For", () => {
+    const ip = resolveIp({ "x-forwarded-for": "  ,  ,  " }, ALL_HEADERS);
+    expect(ip).toBe("unknown");
+  });
+
+  it("should handle X-Forwarded-For with unicode characters", () => {
+    const ip = resolveIp({ "x-forwarded-for": "日本語テスト" }, ALL_HEADERS);
+    expect(ip).toBe("日本語テスト");
+  });
+
+  it("should handle X-Forwarded-For with null byte in string", () => {
+    const ip = resolveIp({ "x-forwarded-for": "\x00\x00" }, ALL_HEADERS);
+    // null bytes are not whitespace, so the value is returned as-is after trim
+    expect(ip).toBe("\x00\x00");
+  });
+});
