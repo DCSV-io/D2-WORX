@@ -111,7 +111,7 @@ export function createScopeMiddleware(provider: ServiceProvider) {
       const session = c.get(SESSION_KEY) as SessionVariables["session"] | undefined;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const enrichedContext = (c as any).get(REQUEST_CONTEXT_KEY) as IRequestContext | undefined;
-      const requestContext = buildRequestContext(user ?? null, session ?? null, enrichedContext);
+      let requestContext = buildRequestContext(user ?? null, session ?? null, enrichedContext);
 
       scope.setInstance(IRequestContextKey, requestContext);
 
@@ -145,7 +145,7 @@ export function createScopeMiddleware(provider: ServiceProvider) {
 
         // If no active consent found, strip emulation from context
         if (!consentResult.success || !consentResult.data?.consent) {
-          const stripped: IRequestContext = {
+          requestContext = {
             ...requestContext,
             targetOrgId: requestContext.agentOrgId,
             targetOrgType: requestContext.agentOrgType,
@@ -153,8 +153,8 @@ export function createScopeMiddleware(provider: ServiceProvider) {
             isTargetingStaff: requestContext.isAgentStaff,
             isTargetingAdmin: requestContext.isAgentAdmin,
           };
-          scope.setInstance(IRequestContextKey, stripped);
-          scope.setInstance(IHandlerContextKey, new HandlerContext(stripped, logger));
+          scope.setInstance(IRequestContextKey, requestContext);
+          scope.setInstance(IHandlerContextKey, new HandlerContext(requestContext, logger));
         }
       }
 
@@ -177,10 +177,11 @@ export function createScopeMiddleware(provider: ServiceProvider) {
 
       // Upgrade ambient storage so all handlers (including singletons) see
       // the auth-enriched context and logger for the rest of this request.
-      const finalCtx = scope.resolve(IRequestContextKey);
-      const finalLogger = scope.resolve(IHandlerContextKey).logger;
-      requestContextStorage.enterWith(finalCtx);
-      requestLoggerStorage.enterWith(finalLogger);
+      // Use the locally-built requestContext directly — IRequestContextKey
+      // is set via setInstance (not registered in ServiceCollection), so
+      // scope.resolve() would fail. The logger comes from what we just built.
+      requestContextStorage.enterWith(requestContext);
+      requestLoggerStorage.enterWith(logger);
 
       c.set(SCOPE_KEY, scope);
       await next();
