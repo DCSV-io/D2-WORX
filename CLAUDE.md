@@ -586,6 +586,10 @@ Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/mark
 - Don't cache per-user data in unkeyed singletons — any cache storing user-specific data (JWTs, session state) MUST be keyed by session identity, not shared across all requests
 - Don't use `tsc --noEmit` when consumers need updated `dist/` — type-checking alone leaves stale compiled output, causing silent runtime failures
 - Don't hardcode user-visible strings in SvelteKit components — always use Paraglide translations (`m.key_name()`). This includes `<title>`, meta descriptions, OG tags, headings, labels, and error messages. New keys must be added to ALL 5 locale files simultaneously
+- Don't ignore build warnings — fix ALL warnings (StyleCop, CS0108, CS8602, null refs, lint) properly. Never use `#pragma warning disable`, `!` (null-forgiving) to silence warnings, or `@ts-ignore`. After editing .NET code, run `dotnet build` and fix any warnings to zero. Build warnings in CI are treated as bugs
+- Don't add redundant null checks alongside `.Falsey()`/`.Truthy()` — they already handle null. After a Falsey early return, use `!` (the value is guaranteed non-null). Never write `if (value is null || value.Falsey())` — just `if (value.Falsey())`
+- Don't use `""` in C# — always use `string.Empty` (StyleCop SA1122)
+- Don't dismiss errors/warnings as "pre-existing" without verifying — if they exist on the current branch, they're YOUR responsibility regardless of when they were introduced. Check `git diff main` or `git log` to confirm origin before dismissing anything. If you introduced them in a prior session or earlier in the same branch, FIX THEM
 
 ### Security Checklist for New Endpoints
 

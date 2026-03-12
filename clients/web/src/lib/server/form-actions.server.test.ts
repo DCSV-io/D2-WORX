@@ -4,7 +4,7 @@ import { D2Result, type HttpStatusCode } from "@d2/result";
 
 // Mock sveltekit-superforms — return a minimal SuperValidated shape
 vi.mock("sveltekit-superforms", () => {
-  const fail = (status: number, data: unknown) => ({ status, ...data });
+  const fail = (status: number, data: Record<string, unknown>) => ({ status, ...data });
   const message = (form: unknown, msg: string, opts?: { status?: number }) => ({
     form,
     message: msg,

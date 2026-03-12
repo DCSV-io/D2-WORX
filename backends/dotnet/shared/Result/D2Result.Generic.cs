@@ -280,7 +280,7 @@ public class D2Result<TData> : D2Result
     /// <returns>
     /// An unauthorized <see cref="D2Result{TResult}"/> instance containing error details.
     /// </returns>
-    public static D2Result<TData> Unauthorized(
+    public static new D2Result<TData> Unauthorized(
         List<string>? messages = null,
         string? traceId = null)
     {
@@ -370,7 +370,7 @@ public class D2Result<TData> : D2Result
     /// <returns>
     /// An unhandled exception <see cref="D2Result{TResult}"/> instance containing error details.
     /// </returns>
-    public static D2Result<TData> UnhandledException(
+    public static new D2Result<TData> UnhandledException(
         List<string>? messages = null,
         string? traceId = null)
     {

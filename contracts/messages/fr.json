@@ -138,5 +138,15 @@
   "webclient_debug_session_title": "Débogage de session",
   "webclient_debug_session_description": "Inspectez l'état d'authentification, les données de session et le contexte de requête.",
   "webclient_debug_health_title": "État du système",
-  "webclient_debug_health_description": "État de santé du système et diagnostics des services."
+  "webclient_debug_health_description": "État de santé du système et diagnostics des services.",
+  "webclient_legal_terms_title": "Conditions d'utilisation",
+  "webclient_legal_terms_description": "Consultez les conditions d'utilisation de DCSV WORX.",
+  "webclient_legal_terms_heading": "Conditions d'utilisation",
+  "webclient_legal_terms_placeholder": "Le contenu des conditions d'utilisation sera ajouté ici.",
+  "webclient_legal_privacy_title": "Politique de confidentialité",
+  "webclient_legal_privacy_description": "Découvrez comment DCSV WORX gère vos données.",
+  "webclient_legal_privacy_heading": "Politique de confidentialité",
+  "webclient_legal_privacy_placeholder": "Le contenu de la politique de confidentialité sera ajouté ici.",
+  "webclient_legal_terms_link": "Conditions",
+  "webclient_legal_privacy_link": "Confidentialité"
 }

@@ -37,7 +37,11 @@ public class Singleflight
     /// <typeparam name="T">The result type of the operation.</typeparam>
     /// <param name="key">The deduplication key.</param>
     /// <param name="operation">The async operation to execute.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="ct">
+    /// Per-caller cancellation token. Only cancels this caller's wait — the
+    /// shared operation runs with <see cref="CancellationToken.None"/> so
+    /// one caller's cancellation cannot affect others.
+    /// </param>
     /// <returns>The operation result.</returns>
     public async ValueTask<T> ExecuteAsync<T>(
         string key,
@@ -47,20 +51,28 @@ public class Singleflight
         var lazy = r_inflight.GetOrAdd(
             key,
             _ => new Lazy<Task<object?>>(
-                () => RunAsync(key, operation, ct),
+                () => RunAsync(key, operation),
                 LazyThreadSafetyMode.ExecutionAndPublication));
 
-        return (T)(await lazy.Value)!;
+        var sharedTask = lazy.Value;
+
+        // Apply per-caller cancellation only to the wait, not to the shared execution.
+        var awaitedTask = ct.CanBeCanceled
+            ? sharedTask.WaitAsync(ct)
+            : sharedTask;
+
+        return (T)(await awaitedTask)!;
     }
 
     private async Task<object?> RunAsync<T>(
         string key,
-        Func<CancellationToken, ValueTask<T>> operation,
-        CancellationToken ct)
+        Func<CancellationToken, ValueTask<T>> operation)
     {
         try
         {
-            return await operation(ct);
+            // Run with CancellationToken.None so no single caller's cancellation
+            // affects other concurrent callers sharing this operation.
+            return await operation(CancellationToken.None);
         }
         finally
         {

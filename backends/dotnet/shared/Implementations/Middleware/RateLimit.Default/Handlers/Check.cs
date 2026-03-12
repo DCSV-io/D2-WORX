@@ -11,8 +11,8 @@ using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
-using Microsoft.Extensions.Logging;
 using D2.Shared.Utilities.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using H = D2.Shared.RateLimit.Default.Interfaces.IRateLimit.ICheckHandler;
 using I = D2.Shared.RateLimit.Default.Interfaces.IRateLimit.CheckInput;
@@ -108,17 +108,17 @@ public class Check : BaseHandler<Check, I, O>, H
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.DeviceFingerprint,
-                requestContext.DeviceFingerprint,
+                requestContext.DeviceFingerprint!,
                 r_options.DeviceFingerprintThreshold,
                 ct));
         }
 
         if (requestContext.ClientIp.Truthy() &&
-            !IpResolver.IsLocalhost(requestContext.ClientIp))
+            !IpResolver.IsLocalhost(requestContext.ClientIp!))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Ip,
-                requestContext.ClientIp,
+                requestContext.ClientIp!,
                 r_options.IpThreshold,
                 ct));
         }
@@ -127,17 +127,17 @@ public class Check : BaseHandler<Check, I, O>, H
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.City,
-                requestContext.City,
+                requestContext.City!,
                 r_options.CityThreshold,
                 ct));
         }
 
         if (requestContext.CountryCode.Truthy() &&
-            !r_options.WhitelistedCountryCodes.Contains(requestContext.CountryCode))
+            !r_options.WhitelistedCountryCodes.Contains(requestContext.CountryCode!))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Country,
-                requestContext.CountryCode,
+                requestContext.CountryCode!,
                 r_options.CountryThreshold,
                 ct));
         }

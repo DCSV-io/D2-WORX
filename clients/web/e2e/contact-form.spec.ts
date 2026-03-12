@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("contact form (/design/contact-form)", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/design/contact-form");
+    await page.goto("/debug/design/contact-form");
     // Wait for geo data to load (SSR text)
     await expect(page.getByText(/countries loaded/)).toBeVisible();
     // Wait for Svelte hydration to complete (event handlers attached)
@@ -94,7 +94,7 @@ test.describe("contact form (/design/contact-form)", () => {
 
   test("back link navigates to design system page", async ({ page }) => {
     await page.getByRole("link", { name: /back to design system/i }).click();
-    await expect(page).toHaveURL("/design");
+    await expect(page).toHaveURL("/debug/design");
   });
 
   test("reset button clears form fields", async ({ page }) => {

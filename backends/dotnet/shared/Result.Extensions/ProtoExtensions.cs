@@ -8,8 +8,8 @@ namespace D2.Shared.Result.Extensions;
 
 using System.Net;
 using D2.Services.Protos.Common.V1;
-using Grpc.Core;
 using D2.Shared.Utilities.Extensions;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
 /// <summary>

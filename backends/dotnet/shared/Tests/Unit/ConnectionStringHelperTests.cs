@@ -25,14 +25,11 @@ public class ConnectionStringHelperTests : IDisposable
         }
     }
 
-    private void SetEnv(string key, string value)
-    {
-        Environment.SetEnvironmentVariable(key, value);
-        _envKeysSet.Add(key);
-    }
-
     #region ParseRedisUri
 
+    /// <summary>
+    /// Tests that a Redis URI with a password is parsed to StackExchange format.
+    /// </summary>
     [Fact]
     public void ParseRedisUri_WithPassword_ReturnsStackExchangeFormat()
     {
@@ -46,6 +43,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("localhost:6379,password=d2-cache-p455");
     }
 
+    /// <summary>
+    /// Tests that a Redis URI without a password returns just host:port.
+    /// </summary>
     [Fact]
     public void ParseRedisUri_WithoutPassword_ReturnsHostPort()
     {
@@ -59,6 +59,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("localhost:6379");
     }
 
+    /// <summary>
+    /// Tests that a Redis URI with user and password extracts only the password.
+    /// </summary>
     [Fact]
     public void ParseRedisUri_WithUserAndPassword_ExtractsPassword()
     {
@@ -72,6 +75,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("redis-host:6380,password=s3cr3t");
     }
 
+    /// <summary>
+    /// Tests that a Redis URI with URL-encoded password decodes properly.
+    /// </summary>
     [Fact]
     public void ParseRedisUri_WithUrlEncodedPassword_DecodesPassword()
     {
@@ -85,6 +91,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("localhost:6379,password=p@ss=w/rd");
     }
 
+    /// <summary>
+    /// Tests that a value already in StackExchange format passes through unchanged.
+    /// </summary>
     [Fact]
     public void ParseRedisUri_AlreadyStackExchangeFormat_PassesThrough()
     {
@@ -98,6 +107,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be(se);
     }
 
+    /// <summary>
+    /// Tests that a Redis URI without an explicit port defaults to 6379.
+    /// </summary>
     [Fact]
     public void ParseRedisUri_DefaultPort_Uses6379()
     {
@@ -115,6 +127,9 @@ public class ConnectionStringHelperTests : IDisposable
 
     #region ParsePostgresUri
 
+    /// <summary>
+    /// Tests that a full PostgreSQL URI is parsed to ADO.NET format.
+    /// </summary>
     [Fact]
     public void ParsePostgresUri_FullUri_ReturnsAdoNetFormat()
     {
@@ -129,6 +144,9 @@ public class ConnectionStringHelperTests : IDisposable
             "Host=localhost;Port=54320;Username=d2-db-user;Password=d2-db-p455;Database=d2-services-geo");
     }
 
+    /// <summary>
+    /// Tests that the postgres:// scheme (without 'ql') is also accepted.
+    /// </summary>
     [Fact]
     public void ParsePostgresUri_PostgresScheme_AlsoWorks()
     {
@@ -142,6 +160,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("Host=db;Port=5432;Username=admin;Password=pass;Database=mydb");
     }
 
+    /// <summary>
+    /// Tests that URL-encoded credentials in a PostgreSQL URI are decoded.
+    /// </summary>
     [Fact]
     public void ParsePostgresUri_UrlEncodedCredentials_Decodes()
     {
@@ -155,6 +176,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("Host=db;Port=5432;Username=admin@corp;Password=p@ss=word;Database=app");
     }
 
+    /// <summary>
+    /// Tests that a PostgreSQL URI without an explicit port defaults to 5432.
+    /// </summary>
     [Fact]
     public void ParsePostgresUri_DefaultPort_Uses5432()
     {
@@ -168,6 +192,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Contain("Port=5432");
     }
 
+    /// <summary>
+    /// Tests that a value already in ADO.NET format passes through unchanged.
+    /// </summary>
     [Fact]
     public void ParsePostgresUri_AlreadyAdoNetFormat_PassesThrough()
     {
@@ -181,6 +208,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be(ado);
     }
 
+    /// <summary>
+    /// Tests that the scheme comparison is case-insensitive.
+    /// </summary>
     [Fact]
     public void ParsePostgresUri_CaseInsensitiveScheme_Parses()
     {
@@ -198,6 +228,9 @@ public class ConnectionStringHelperTests : IDisposable
 
     #region GetRedis
 
+    /// <summary>
+    /// Tests that GetRedis returns the parsed Redis connection string from the environment variable.
+    /// </summary>
     [Fact]
     public void GetRedis_WhenEnvVarSet_ReturnsParsedValue()
     {
@@ -211,6 +244,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("redis-host:6380,password=my-password");
     }
 
+    /// <summary>
+    /// Tests that GetRedis throws when the environment variable is not set.
+    /// </summary>
     [Fact]
     public void GetRedis_WhenEnvVarMissing_ThrowsInvalidOperationException()
     {
@@ -229,6 +265,9 @@ public class ConnectionStringHelperTests : IDisposable
 
     #region GetPostgres
 
+    /// <summary>
+    /// Tests that GetPostgres returns the parsed PostgreSQL connection string from the environment variable.
+    /// </summary>
     [Fact]
     public void GetPostgres_WhenEnvVarSet_ReturnsParsedValue()
     {
@@ -242,6 +281,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("Host=localhost;Port=54320;Username=user;Password=pass;Database=geo-db");
     }
 
+    /// <summary>
+    /// Tests that GetPostgres throws when the environment variable is not set.
+    /// </summary>
     [Fact]
     public void GetPostgres_WhenEnvVarMissing_ThrowsWithVarName()
     {
@@ -260,6 +302,9 @@ public class ConnectionStringHelperTests : IDisposable
 
     #region GetRabbitMq
 
+    /// <summary>
+    /// Tests that GetRabbitMq returns the raw connection string from the environment variable.
+    /// </summary>
     [Fact]
     public void GetRabbitMq_WhenEnvVarSet_ReturnsRawValue()
     {
@@ -273,6 +318,9 @@ public class ConnectionStringHelperTests : IDisposable
         result.Should().Be("amqp://user:pass@localhost:5672");
     }
 
+    /// <summary>
+    /// Tests that GetRabbitMq throws when the environment variable is not set.
+    /// </summary>
     [Fact]
     public void GetRabbitMq_WhenEnvVarMissing_ThrowsInvalidOperationException()
     {
@@ -285,6 +333,16 @@ public class ConnectionStringHelperTests : IDisposable
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*RABBITMQ_URL*");
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private void SetEnv(string key, string value)
+    {
+        Environment.SetEnvironmentVariable(key, value);
+        _envKeysSet.Add(key);
     }
 
     #endregion

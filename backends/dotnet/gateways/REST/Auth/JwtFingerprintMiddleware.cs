@@ -64,9 +64,6 @@ public class JwtFingerprintMiddleware
             return;
         }
 
-        // Extract the user ID from JWT sub claim (needed for auth state below).
-        var userId = context.User.FindFirst(JwtClaimTypes.SUB)?.Value;
-
         // Trusted services skip fingerprint validation entirely.
         var mutableCtx = context.Features.Get<IRequestContext>() as MutableRequestContext;
         if (mutableCtx?.IsTrustedService == true)
@@ -114,8 +111,8 @@ public class JwtFingerprintMiddleware
         r_logger.LogWarning(
             "JWT fingerprint mismatch for {Path}. Expected: {Expected}, Got: {Got}",
             context.Request.Path,
-            Truncate(fpClaim),
-            Truncate(computed));
+            Truncate(fpClaim ?? string.Empty),
+            Truncate(computed ?? string.Empty));
 
         var response = D2Result.Fail(
             ["JWT fingerprint mismatch. Token cannot be used from this client."],
@@ -217,7 +214,7 @@ public class JwtFingerprintMiddleware
             return null;
         }
 
-        return value.ToLowerInvariant() switch
+        return value!.ToLowerInvariant() switch
         {
             OrgTypeValues.ADMIN => OrgType.Admin,
             OrgTypeValues.SUPPORT => OrgType.Support,

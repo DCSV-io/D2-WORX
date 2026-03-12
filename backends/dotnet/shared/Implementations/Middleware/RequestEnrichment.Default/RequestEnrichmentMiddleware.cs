@@ -9,9 +9,9 @@ namespace D2.Shared.RequestEnrichment.Default;
 using System.Diagnostics;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Shared.Handler;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 
 /// <summary>

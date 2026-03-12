@@ -66,6 +66,7 @@ public class TracingTests
         activity.Should().NotBeNull();
         activity!.GetTagItem("handler.type").Should().Be(typeof(Tracing_TagsHandler).FullName);
         activity.GetTagItem("trace.id").Should().Be("trace-abc");
+
         // SetTagIfNotNull converts values to string via .ToString() for OTel compatibility.
         activity.GetTagItem("user.id").Should().Be(userId.ToString());
         activity.GetTagItem("agent.org.id").Should().Be(agentOrgId.ToString());

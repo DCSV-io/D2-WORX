@@ -7,9 +7,9 @@
 namespace D2.Geo.Infra.WhoIs;
 
 using D2.Geo.App.Interfaces.WhoIs;
+using D2.Shared.Utilities.Extensions;
 using IPinfo;
 using Microsoft.Extensions.Logging;
-using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Options;
 
 /// <summary>

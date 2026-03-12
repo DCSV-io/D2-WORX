@@ -46,7 +46,7 @@
 
             // 403 = email not verified → redirect to verify-email page
             if (status === 403) {
-              await goto(resolve(`/verify-email?email=${encodeURIComponent(email)}&resent=true`));
+              await goto(`${resolve("/verify-email")}?email=${encodeURIComponent(email)}&resent=true`);
               return;
             }
 

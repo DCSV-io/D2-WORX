@@ -61,7 +61,7 @@
             return;
           }
 
-          await goto(resolve(`/verify-email?email=${encodeURIComponent(email)}`));
+          await goto(`${resolve("/verify-email")}?email=${encodeURIComponent(email)}`);
         } catch {
           serverError = m.common_errors_unknown();
         } finally {

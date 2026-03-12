@@ -138,5 +138,15 @@
   "webclient_debug_session_title": "デバッグセッション",
   "webclient_debug_session_description": "認証状態、セッションデータ、リクエストコンテキストを検査します。",
   "webclient_debug_health_title": "システムヘルス",
-  "webclient_debug_health_description": "システムの健全性ステータスとサービス診断。"
+  "webclient_debug_health_description": "システムの健全性ステータスとサービス診断。",
+  "webclient_legal_terms_title": "利用規約",
+  "webclient_legal_terms_description": "DCSV WORXの利用規約をご確認ください。",
+  "webclient_legal_terms_heading": "利用規約",
+  "webclient_legal_terms_placeholder": "利用規約の内容はここに追加されます。",
+  "webclient_legal_privacy_title": "プライバシーポリシー",
+  "webclient_legal_privacy_description": "DCSV WORXがお客様のデータをどのように取り扱うかをご確認ください。",
+  "webclient_legal_privacy_heading": "プライバシーポリシー",
+  "webclient_legal_privacy_placeholder": "プライバシーポリシーの内容はここに追加されます。",
+  "webclient_legal_terms_link": "利用規約",
+  "webclient_legal_privacy_link": "プライバシー"
 }

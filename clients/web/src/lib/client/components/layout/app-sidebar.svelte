@@ -14,9 +14,9 @@
   let { orgType = "customer", role = "owner" }: Props = $props();
 
   const navItems = [
-    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
-    { label: "Settings", href: "/settings", icon: SettingsIcon },
-    { label: "Profile", href: "/profile", icon: UserIcon },
+    { label: "Dashboard", href: "/dashboard" as const, icon: LayoutDashboardIcon },
+    { label: "Settings", href: "/settings" as const, icon: SettingsIcon },
+    { label: "Profile", href: "/profile" as const, icon: UserIcon },
   ];
 </script>
 

@@ -409,8 +409,10 @@ public class RequestEnrichmentMiddlewareTests
     #region Infrastructure Endpoint Skip Tests
 
     /// <summary>
-    /// Tests that middleware skips enrichment entirely for /health endpoint.
+    /// Tests that middleware skips enrichment entirely for infrastructure endpoints.
     /// </summary>
+    /// <param name="path">The infrastructure endpoint path to test.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
     [Theory]
     [InlineData("/health")]
     [InlineData("/alive")]

@@ -138,5 +138,15 @@
   "webclient_debug_session_title": "Depuración de sesión",
   "webclient_debug_session_description": "Inspecciona el estado de autenticación, datos de sesión y contexto de solicitud.",
   "webclient_debug_health_title": "Estado del sistema",
-  "webclient_debug_health_description": "Estado de salud del sistema y diagnósticos de servicios."
+  "webclient_debug_health_description": "Estado de salud del sistema y diagnósticos de servicios.",
+  "webclient_legal_terms_title": "Términos de Servicio",
+  "webclient_legal_terms_description": "Revise los términos y condiciones para usar DCSV WORX.",
+  "webclient_legal_terms_heading": "Términos de Servicio",
+  "webclient_legal_terms_placeholder": "El contenido de los Términos de Servicio se agregará aquí.",
+  "webclient_legal_privacy_title": "Política de Privacidad",
+  "webclient_legal_privacy_description": "Conozca cómo DCSV WORX maneja sus datos.",
+  "webclient_legal_privacy_heading": "Política de Privacidad",
+  "webclient_legal_privacy_placeholder": "El contenido de la Política de Privacidad se agregará aquí.",
+  "webclient_legal_terms_link": "Términos",
+  "webclient_legal_privacy_link": "Privacidad"
 }

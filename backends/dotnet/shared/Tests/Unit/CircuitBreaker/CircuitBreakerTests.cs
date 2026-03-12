@@ -86,11 +86,13 @@ public class CircuitBreakerTests
         cb.FailureCount.Should().Be(2);
 
         // One success
-        await cb.ExecuteAsync(_ =>
-        {
-            callCount++;
-            return ValueTask.FromResult("ok");
-        }, ct: Ct);
+        await cb.ExecuteAsync(
+            _ =>
+            {
+                callCount++;
+                return ValueTask.FromResult("ok");
+            },
+            ct: Ct);
 
         cb.FailureCount.Should().Be(0);
         cb.State.Should().Be(CircuitState.Closed);
@@ -226,11 +228,13 @@ public class CircuitBreakerTests
 
         try
         {
-            await cb.ExecuteAsync(_ =>
-            {
-                operationCalled = true;
-                return ValueTask.FromResult("nope");
-            }, ct: Ct);
+            await cb.ExecuteAsync(
+                _ =>
+                {
+                    operationCalled = true;
+                    return ValueTask.FromResult("nope");
+                },
+                ct: Ct);
         }
         catch (CircuitOpenException)
         {

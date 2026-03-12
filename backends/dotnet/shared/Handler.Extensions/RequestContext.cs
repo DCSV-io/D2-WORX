@@ -281,7 +281,7 @@ public class RequestContext : IRequestContext
 
         // Node.js auth service uses lowercase string values: admin, support, affiliate, customer, third_party.
         // Map to .NET OrgType enum.
-        return value.ToLowerInvariant() switch
+        return value!.ToLowerInvariant() switch
         {
             OrgTypeValues.ADMIN => OrgType.Admin,
             OrgTypeValues.SUPPORT => OrgType.Support,

@@ -138,5 +138,15 @@
   "webclient_debug_session_title": "Debug Session",
   "webclient_debug_session_description": "Inspect authentication state, session data, and request context.",
   "webclient_debug_health_title": "System Health",
-  "webclient_debug_health_description": "System health status and service diagnostics."
+  "webclient_debug_health_description": "System health status and service diagnostics.",
+  "webclient_legal_terms_title": "Terms of Service",
+  "webclient_legal_terms_description": "Review the terms and conditions for using DCSV WORX.",
+  "webclient_legal_terms_heading": "Terms of Service",
+  "webclient_legal_terms_placeholder": "Terms of Service content will be added here.",
+  "webclient_legal_privacy_title": "Privacy Policy",
+  "webclient_legal_privacy_description": "Learn how DCSV WORX handles your data.",
+  "webclient_legal_privacy_heading": "Privacy Policy",
+  "webclient_legal_privacy_placeholder": "Privacy Policy content will be added here.",
+  "webclient_legal_terms_link": "Terms",
+  "webclient_legal_privacy_link": "Privacy"
 }

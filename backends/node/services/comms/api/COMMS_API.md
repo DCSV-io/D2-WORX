@@ -63,7 +63,7 @@ Returns `{ server, shutdown }` where `shutdown()` closes RabbitMQ, disconnects R
 | Field               | Env Var                                   | Required | Default |
 | ------------------- | ----------------------------------------- | -------- | ------- |
 | `databaseUrl`       | `COMMS_DATABASE_URL`                      | Yes      | --      |
-| `rabbitMqUrl`       | `RABBITMQ_URL`                            | No       | --      |
+| `rabbitMqUrl`       | `RABBITMQ_URL`                            | Yes      | --      |
 | `redisUrl`          | `REDIS_URL`                               | No       | --      |
 | `grpcPort`          | `COMMS_GRPC_PORT`                         | No       | 5200    |
 | `resendApiKey`      | `RESEND_API_KEY`                          | No       | --      |

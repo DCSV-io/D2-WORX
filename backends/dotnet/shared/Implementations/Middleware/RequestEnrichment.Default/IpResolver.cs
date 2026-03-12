@@ -65,7 +65,7 @@ public static class IpResolver
             var ip = cfIp.FirstOrDefault();
             if (ip.Truthy())
             {
-                return Truncate(ip.Trim(), maxHeaderLength);
+                return Truncate(ip!.Trim(), maxHeaderLength);
             }
         }
 
@@ -76,7 +76,7 @@ public static class IpResolver
             var ip = realIp.FirstOrDefault();
             if (ip.Truthy())
             {
-                return Truncate(ip.Trim(), maxHeaderLength);
+                return Truncate(ip!.Trim(), maxHeaderLength);
             }
         }
 
@@ -88,14 +88,14 @@ public static class IpResolver
             if (forwardedValue.Truthy())
             {
                 // Truncate before parsing to prevent abuse from oversized headers.
-                var truncated = Truncate(forwardedValue, maxHeaderLength);
+                var truncated = Truncate(forwardedValue!, maxHeaderLength);
 
                 // Format can be "client, proxy1, proxy2" — take the first one.
                 var firstIp = truncated.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .FirstOrDefault();
                 if (firstIp.Truthy())
                 {
-                    return firstIp.Trim();
+                    return firstIp!.Trim();
                 }
             }
         }

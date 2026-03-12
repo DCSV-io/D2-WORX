@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("signup form (/design/signup-form)", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/design/signup-form");
+    await page.goto("/debug/design/signup-form");
     await page.waitForLoadState("networkidle");
   });
 
@@ -23,7 +23,7 @@ test.describe("signup form (/design/signup-form)", () => {
 
   test("back link navigates to design index", async ({ page }) => {
     await page.getByRole("link", { name: /back to design system/i }).click();
-    await expect(page).toHaveURL("/design");
+    await expect(page).toHaveURL("/debug/design");
   });
 
   test("password fields start with type=password (masked)", async ({ page }) => {

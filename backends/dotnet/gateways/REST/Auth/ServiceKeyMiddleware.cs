@@ -83,7 +83,7 @@ public class ServiceKeyMiddleware
 
         // Timing-safe key validation: compare against ALL keys using
         // FixedTimeEquals to prevent timing side-channel attacks.
-        var apiKeyBytes = Encoding.UTF8.GetBytes(apiKey);
+        var apiKeyBytes = Encoding.UTF8.GetBytes(apiKey!);
         var matched = false;
         foreach (var validKeyBytes in r_validKeyBytes)
         {
