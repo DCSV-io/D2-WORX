@@ -3,6 +3,8 @@ import { LogLevel, type ILogger } from "./i-logger.js";
 import type { LoggerOptions } from "./logger-options.js";
 import { PinoLogger } from "./pino-logger.js";
 
+const VALID_LEVELS = new Set(Object.values(LogLevel) as string[]);
+
 /**
  * Creates an ILogger instance backed by Pino.
  *
@@ -12,8 +14,7 @@ import { PinoLogger } from "./pino-logger.js";
  */
 export function createLogger(options?: LoggerOptions): ILogger {
   const envLevel = process.env.LOG_LEVEL?.toLowerCase();
-  const validLevels = new Set(Object.values(LogLevel) as string[]);
-  const level = options?.level ?? (envLevel && validLevels.has(envLevel) ? (envLevel as LogLevel) : LogLevel.Info);
+  const level = options?.level ?? (envLevel && VALID_LEVELS.has(envLevel) ? (envLevel as LogLevel) : LogLevel.Info);
 
   const pinoOptions: pino.LoggerOptions = {
     level,

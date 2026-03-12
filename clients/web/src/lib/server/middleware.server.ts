@@ -57,13 +57,29 @@ export interface MiddlewareContext {
   getGeoRefData: GetGeoRefData;
 }
 
-let cached: MiddlewareContext | undefined;
+let cached: MiddlewareContext | null | undefined;
+
+/**
+ * Whether infrastructure middleware can be skipped.
+ *
+ * Auto-detected via `CI` env var (GitHub Actions, GitLab CI, etc.) or
+ * explicitly via `D2_SKIP_INFRA_MIDDLEWARE=true`. When enabled AND required
+ * env vars are missing, returns null instead of throwing FATAL — allows
+ * the SvelteKit dev server to serve pages that don't need middleware
+ * (e.g. Playwright E2E tests against UI-only routes).
+ *
+ * In production (neither flag set), missing env vars always FATAL.
+ */
+const INFRA_SKIPPABLE =
+  process.env.CI === "true" || process.env.D2_SKIP_INFRA_MIDDLEWARE === "true";
 
 /**
  * Returns the shared middleware context (lazy singleton).
- * Throws if required env vars are missing — infrastructure must be running.
+ *
+ * - Production: throws FATAL if required env vars are missing.
+ * - CI / skip mode: returns null when env vars are missing (hooks skip gracefully).
  */
-export function getMiddlewareContext(): MiddlewareContext {
+export function getMiddlewareContext(): MiddlewareContext | null {
   if (cached !== undefined) return cached;
 
   const redisConnectionString = process.env.REDIS_URL;
@@ -75,6 +91,15 @@ export function getMiddlewareContext(): MiddlewareContext {
     if (!redisConnectionString) missing.push("REDIS_URL");
     if (!geoAddress) missing.push("GEO_GRPC_ADDRESS");
     if (!geoApiKey) missing.push("SVELTEKIT_GEO_CLIENT__APIKEY");
+
+    if (INFRA_SKIPPABLE) {
+      console.warn(
+        `[d2-sveltekit] Infrastructure middleware skipped (missing: ${missing.join(", ")}). ` +
+          "Requests will not be enriched, rate-limited, or idempotency-checked.",
+      );
+      cached = null;
+      return null;
+    }
 
     throw new Error(
       `[d2-sveltekit] FATAL: Missing required env vars: ${missing.join(", ")}. ` +

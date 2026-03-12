@@ -13,6 +13,7 @@ import { getMiddlewareContext } from "./middleware.server.js";
 /** Get geo reference data (memory-cached after first call). */
 export async function getGeoRefData(): Promise<GeoRefData | null> {
   const ctx = getMiddlewareContext();
+  if (!ctx) return null;
   const result = await ctx.getGeoRefData.handleAsync({});
   return result.checkSuccess()?.data ?? null;
 }

@@ -56,10 +56,11 @@ public class CheckHealth : BaseHandler<H, I, O>, H
         var components = new Dictionary<string, ComponentHealth>();
 
         // Run DB and cache pings in parallel.
-        var dbTask = r_pingDb.HandleAsync(new ReadRepo.PingDbInput(), ct);
-        var cacheTask = r_pingCache.HandleAsync(new ReadCache.PingInput(), ct);
+        // Convert to Task once — ValueTask must not be awaited more than once.
+        var dbTask = r_pingDb.HandleAsync(new ReadRepo.PingDbInput(), ct).AsTask();
+        var cacheTask = r_pingCache.HandleAsync(new ReadCache.PingInput(), ct).AsTask();
 
-        await Task.WhenAll(dbTask.AsTask(), cacheTask.AsTask());
+        await Task.WhenAll(dbTask, cacheTask);
 
         var dbResult = await dbTask;
         if (dbResult.Data is not null)

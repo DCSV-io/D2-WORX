@@ -14,7 +14,10 @@ export interface RequestLoggerVariables {
 }
 
 /**
- * Extracts non-PII fields from request context for Pino child logger bindings.
+ * Extracts request context fields for Pino child logger bindings.
+ * Includes identity, org, and network correlation fields (fingerprints,
+ * city, country) for debugging and tracing. These are quasi-identifiers —
+ * ensure log pipelines have appropriate retention/access controls.
  * Mirrors .NET RequestContextLoggingMiddleware field selection.
  */
 function buildLogBindings(ctx: IRequestContext): Record<string, unknown> {
@@ -40,7 +43,7 @@ function buildLogBindings(ctx: IRequestContext): Record<string, unknown> {
 
 /**
  * Creates Hono middleware that creates a per-request child logger
- * enriched with non-PII request context fields.
+ * enriched with request context fields (identity, org, network correlation).
  *
  * Runs after request enrichment so network fields are available.
  * The scope middleware further enriches with auth fields when available.
