@@ -7,8 +7,10 @@ let svelteKitPort: number | undefined;
 
 /**
  * Finds a random available port by binding to port 0.
+ * Exported so global-setup can pre-allocate the SvelteKit port before
+ * starting the auth service (needed for CORS/trusted origins config).
  */
-async function getAvailablePort(): Promise<number> {
+export async function getAvailablePort(): Promise<number> {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
     server.listen(0, () => {
@@ -58,10 +60,11 @@ export async function startSvelteKitServer(opts: {
   redisUrl: string;
   geoAddress: string;
   geoApiKey: string;
+  port?: number;
 }): Promise<string> {
   const webDir = resolve(import.meta.dirname, "../../../../../../clients/web");
 
-  const port = await getAvailablePort();
+  const port = opts.port ?? (await getAvailablePort());
   svelteKitPort = port;
 
   const env: Record<string, string> = {

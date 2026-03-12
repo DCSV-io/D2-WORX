@@ -34,6 +34,7 @@ export async function startAuthService(opts: {
   rabbitMqUrl: string;
   geoAddress: string;
   geoApiKey: string;
+  corsOrigins?: string[];
 }): Promise<AuthServiceHandle> {
   // Create RabbitMQ publisher for auth events
   messageBus = new MessageBus({
@@ -50,7 +51,7 @@ export async function startAuthService(opts: {
     databaseUrl: opts.databaseUrl,
     redisUrl: opts.redisUrl,
     baseUrl: "http://localhost:3333",
-    corsOrigins: ["http://localhost:5173"],
+    corsOrigins: opts.corsOrigins ?? ["http://localhost:5173"],
     jwtIssuer: "e2e-test-issuer",
     jwtAudience: "e2e-test-audience",
     jwtExpirationSeconds: 900,

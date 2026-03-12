@@ -19,7 +19,7 @@ import { startGeoService } from "../helpers/geo-dotnet-service.js";
 import { startAuthService, type AuthServiceHandle } from "../helpers/auth-service.js";
 import { startAuthHttpServer, type AuthHttpServer } from "../helpers/auth-http-server.js";
 import { startCommsService, type CommsServiceHandle } from "../helpers/comms-service.js";
-import { startSvelteKitServer } from "../helpers/sveltekit-server.js";
+import { startSvelteKitServer, getAvailablePort } from "../helpers/sveltekit-server.js";
 
 const GEO_API_KEY = "e2e-test-key";
 
@@ -35,7 +35,13 @@ export default async function globalSetup() {
   await startContainers();
   console.log("[Browser E2E] Containers ready.");
 
-  // 2. Start .NET Geo service
+  // 2. Pre-allocate the SvelteKit port so we can add it to auth's trusted origins.
+  //    Auth starts before SvelteKit (SvelteKit needs the auth URL), but BetterAuth's
+  //    CSRF/CORS checks need to trust the SvelteKit origin for browser requests.
+  const svelteKitPort = await getAvailablePort();
+  const svelteKitOrigin = `http://localhost:${svelteKitPort}`;
+
+  // 3. Start .NET Geo service
   const geoAddress = await startGeoService({
     pgUrl: getGeoPgUrl(),
     redisUrl: getRedisUrl(),
@@ -44,18 +50,19 @@ export default async function globalSetup() {
   });
   console.log(`[Browser E2E] Geo service ready at ${geoAddress}`);
 
-  // 3. Start auth service (in-process) + wrap in HTTP server
+  // 4. Start auth service (in-process) + wrap in HTTP server
   authHandle = await startAuthService({
     databaseUrl: getAuthPgUrl(),
     redisUrl: getRedisUrl(),
     rabbitMqUrl: getRabbitUrl(),
     geoAddress,
     geoApiKey: GEO_API_KEY,
+    corsOrigins: [svelteKitOrigin],
   });
   authHttp = await startAuthHttpServer(authHandle.app);
   console.log(`[Browser E2E] Auth service ready at ${authHttp.baseUrl}`);
 
-  // 4. Start comms service (in-process with stub email)
+  // 5. Start comms service (in-process with stub email)
   commsHandle = await startCommsService({
     databaseUrl: getCommsPgUrl(),
     rabbitMqUrl: getRabbitUrl(),
@@ -64,12 +71,13 @@ export default async function globalSetup() {
   });
   console.log("[Browser E2E] Comms service ready.");
 
-  // 5. Start SvelteKit dev server pointing at all services
+  // 6. Start SvelteKit dev server on the pre-allocated port
   const svelteKitUrl = await startSvelteKitServer({
     authUrl: authHttp.baseUrl,
     redisUrl: getRedisUrl(),
     geoAddress,
     geoApiKey: GEO_API_KEY,
+    port: svelteKitPort,
   });
   console.log(`[Browser E2E] SvelteKit ready at ${svelteKitUrl}`);
 
