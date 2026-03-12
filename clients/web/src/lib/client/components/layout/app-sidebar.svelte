@@ -2,6 +2,7 @@
   import LayoutDashboardIcon from "@lucide/svelte/icons/layout-dashboard";
   import SettingsIcon from "@lucide/svelte/icons/settings";
   import UserIcon from "@lucide/svelte/icons/user";
+  import { resolve } from "$app/paths";
   import * as Sidebar from "$lib/client/components/ui/sidebar/index.js";
   import * as Avatar from "$lib/client/components/ui/avatar/index.js";
 
@@ -47,8 +48,7 @@
             <Sidebar.SidebarMenuItem>
               <Sidebar.SidebarMenuButton tooltipContent={item.label}>
                 {#snippet child({ props })}
-                  <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- dynamic href from nav items data -->
-                  <a href={item.href} {...props}>
+                  <a href={resolve(item.href)} {...props}>
                     <item.icon />
                     <span>{item.label}</span>
                   </a>

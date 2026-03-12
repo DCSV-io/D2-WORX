@@ -34,10 +34,7 @@ export function createServiceKeyMiddleware(
     if (!apiKey) {
       if (requireKey) {
         return c.json(
-          D2Result.fail({
-            messages: ["API key required."],
-            errorCode: "UNAUTHORIZED",
-          }),
+          D2Result.unauthorized({ messages: ["API key required."] }),
           401 as ContentfulStatusCode,
         );
       }
@@ -54,10 +51,7 @@ export function createServiceKeyMiddleware(
     // Invalid key → 401 immediately
     if (!validKeys.has(apiKey)) {
       return c.json(
-        D2Result.fail({
-          messages: ["Invalid API key."],
-          errorCode: "UNAUTHORIZED",
-        }),
+        D2Result.unauthorized({ messages: ["Invalid API key."] }),
         401 as ContentfulStatusCode,
       );
     }

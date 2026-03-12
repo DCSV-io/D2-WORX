@@ -11,7 +11,9 @@ import { PinoLogger } from "./pino-logger.js";
  * OTel log pipeline. No code changes needed here.
  */
 export function createLogger(options?: LoggerOptions): ILogger {
-  const level = options?.level ?? (process.env.LOG_LEVEL as LogLevel) ?? LogLevel.Info;
+  const envLevel = process.env.LOG_LEVEL?.toLowerCase();
+  const validLevels = new Set(Object.values(LogLevel) as string[]);
+  const level = options?.level ?? (envLevel && validLevels.has(envLevel) ? (envLevel as LogLevel) : LogLevel.Info);
 
   const pinoOptions: pino.LoggerOptions = {
     level,

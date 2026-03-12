@@ -61,8 +61,7 @@
             return;
           }
 
-          // eslint-disable-next-line svelte/no-navigation-without-resolve -- verify-email route not yet created
-          await goto(`/verify-email?email=${encodeURIComponent(email)}`);
+          await goto(resolve(`/verify-email?email=${encodeURIComponent(email)}`));
         } catch {
           serverError = m.common_errors_unknown();
         } finally {

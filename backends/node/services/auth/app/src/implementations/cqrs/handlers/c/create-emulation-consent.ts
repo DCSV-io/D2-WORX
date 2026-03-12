@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
-import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { D2Result } from "@d2/result";
 import {
   createEmulationConsent,
   canEmulate,
@@ -71,20 +71,16 @@ export class CreateEmulationConsent extends BaseHandler<
     if (!validation.success) return D2Result.bubbleFail(validation);
 
     if (!canEmulate(input.activeOrgType)) {
-      return D2Result.fail({
+      return D2Result.forbidden({
         messages: [`Organization type "${input.activeOrgType}" is not allowed to emulate.`],
-        statusCode: HttpStatusCode.Forbidden,
-        errorCode: ErrorCodes.FORBIDDEN,
       });
     }
 
     // Verify target org exists
     const orgExists = await this.checkOrgExists(input.grantedToOrgId);
     if (!orgExists) {
-      return D2Result.fail({
+      return D2Result.notFound({
         messages: ["Target organization not found."],
-        statusCode: HttpStatusCode.NotFound,
-        errorCode: ErrorCodes.NOT_FOUND,
       });
     }
 
@@ -94,10 +90,8 @@ export class CreateEmulationConsent extends BaseHandler<
       grantedToOrgId: input.grantedToOrgId,
     });
     if (findResult.success && findResult.data?.consent) {
-      return D2Result.fail({
+      return D2Result.conflict({
         messages: ["An active consent already exists for this organization."],
-        statusCode: HttpStatusCode.Conflict,
-        errorCode: ErrorCodes.CONFLICT,
       });
     }
 

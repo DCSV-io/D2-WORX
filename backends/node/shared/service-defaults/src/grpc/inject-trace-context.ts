@@ -2,12 +2,15 @@ import { InterceptingCall, type Interceptor } from "@grpc/grpc-js";
 import { context, propagation } from "@opentelemetry/api";
 
 /**
- * Creates a gRPC client interceptor that injects the W3C trace context
- * (`traceparent` / `tracestate`) into outgoing gRPC metadata.
+ * Creates a gRPC client interceptor that injects the active OTel propagator's
+ * fields (W3C trace context + baggage) into outgoing gRPC metadata.
  *
  * This is the client-side counterpart to {@link extractGrpcTraceContext},
  * which extracts trace context on the server side. Together they ensure
  * distributed traces propagate across gRPC service boundaries.
+ *
+ * Uses `propagation.inject()` which injects whatever the globally configured
+ * propagator supports (by default: `traceparent`/`tracestate` + `baggage`).
  *
  * Needed because `@opentelemetry/instrumentation-grpc` auto-instrumentation
  * does not reliably patch `@grpc/grpc-js` client-side context injection in ESM.

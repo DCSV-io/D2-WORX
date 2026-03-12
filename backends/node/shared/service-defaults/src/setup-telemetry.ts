@@ -27,11 +27,11 @@ import type { TelemetryConfig } from "./telemetry-config.js";
  *
  * @see getServerSpan in hono-otel.ts
  */
-export const OTEL_SPAN_KEY = "__otelSpan" as const;
+export const OTEL_SPAN_KEY = Symbol.for("d2.otel.incomingSpan");
 
 /** Augmented IncomingMessage with optional stored OTel span. */
 export interface OTelIncomingMessage extends IncomingMessage {
-  [OTEL_SPAN_KEY]?: Span;
+  [OTEL_SPAN_KEY]?: Span | undefined;
 }
 
 /**

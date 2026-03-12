@@ -32,7 +32,9 @@ export function createTranslator(options: {
   const loadedLocales: string[] = [];
 
   // Load all locale files at startup
-  const files = readdirSync(options.messagesDir).filter((f: string) => f.endsWith(".json"));
+  const files = readdirSync(options.messagesDir)
+    .filter((f: string) => f.endsWith(".json"))
+    .sort();
   for (const file of files) {
     const locale = file.replace(".json", "");
     if (!isValidLocale(locale)) continue;
