@@ -39,14 +39,14 @@ WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and
 | Area                          | Status         | Tests         |
 | ----------------------------- | -------------- | ------------- |
 | .NET shared infrastructure    | ✅ Done        | 1,528 passing |
-| Node.js shared infrastructure | ✅ Done        | 857 passing   |
+| Node.js shared infrastructure | ✅ Done        | 1,127 passing |
 | Geo service (.NET)            | ✅ Done        | 759 passing   |
 | .NET REST gateway             | ✅ Done        | —             |
-| Auth service (Node.js)        | ✅ Stage B     | 922 passing   |
-| Comms service (Node.js)       | ✅ Phase 1     | 592 passing   |
+| Auth service (Node.js)        | ✅ Stage B     | 969 passing   |
+| Comms service (Node.js)       | ✅ Phase 1     | 575 passing   |
 | Scheduled jobs (Dkron)        | ✅ Done        | 64 passing    |
-| E2E cross-service tests       | ✅ Done        | 15 passing    |
-| SvelteKit web client          | 🚧 In Progress | Steps 0–9/12  |
+| E2E cross-service tests       | ✅ Done        | 22 passing    |
+| SvelteKit web client          | 🚧 In Progress | 551 passing   |
 
 **Current focus:** SvelteKit web client — design system, routing, auth BFF proxy, API gateway client, forms, auth pages, device fingerprinting, and client telemetry (Grafana Faro) done. Onboarding flow next. See [PLANNING.md](PLANNING.md) for architecture decisions, detailed status, and roadmap.
 
@@ -278,9 +278,9 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 > | Concern       | .NET                                                                                                                 | Node.js                                                                                 | Description                                |
 > | ------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------ |
-> | Batch Query   | [Batch.Pg](backends/dotnet/shared/Implementations/Repository/Batch/Batch.Pg/BATCH_PG.md)                             | [@d2/batch-pg](backends/node/shared/implementations/repository/pg/batch/BATCH_PG.md)    | Reusable batched query utilities           |
+> | Batch Query   | [Batch.Pg](backends/dotnet/shared/Implementations/Repository/Batch/Batch.Pg/BATCH_PG.md)                             | [@d2/batch-pg](backends/node/shared/implementations/repository/batch/pg/BATCH_PG.md)    | Reusable batched query utilities           |
 > | Transactions  | [Transactions.Pg](backends/dotnet/shared/Implementations/Repository/Transactions/Transactions.Pg/TRANSACTIONS_PG.md) | —                                                                                       | PostgreSQL transaction management handlers |
-> | Error Helpers | [Errors.Pg](backends/dotnet/shared/Implementations/Repository/Errors/Errors.Pg/ERRORS_PG.md)                         | [@d2/errors-pg](backends/node/shared/implementations/repository/pg/errors/ERRORS_PG.md) | PostgreSQL constraint error detection      |
+> | Error Helpers | [Errors.Pg](backends/dotnet/shared/Implementations/Repository/Errors/Errors.Pg/ERRORS_PG.md)                         | [@d2/errors-pg](backends/node/shared/implementations/repository/errors/pg/ERRORS_PG.md) | PostgreSQL constraint error detection      |
 >
 > _Middleware:_
 >
@@ -303,8 +303,8 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 > | Service                                                    | Platform | Status      | Description                                                                           |
 > | ---------------------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------- |
 > | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)         | .NET     | ✅ Done     | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching     |
-> | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (922 tests) |
-> | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (592 tests)  |
+> | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (969 tests) |
+> | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (575 tests)  |
 > | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md) | Node.js  | ✅ Done     | Declarative Dkron job reconciler — drift detection, orphan cleanup (64 tests)         |
 >
 > **Client Libraries:**
