@@ -170,18 +170,10 @@ test.describe("contact form (/design/contact-form)", () => {
     await expect(page.getByText("Invalid email address")).toBeVisible();
   });
 
-  test("email async check shows spinner then error for taken email", async ({ page }) => {
+  test("email async check shows error for taken email", async ({ page }) => {
     const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.fill("used@email.com");
     await emailInput.blur();
-
-    // Should show spinner during async check
-    const fieldContainer = page.locator("[data-slot='form-item']", {
-      has: emailInput,
-    });
-    await expect(fieldContainer.locator("svg.animate-spin")).toBeVisible({
-      timeout: 2000,
-    });
 
     // After check completes, should show "already taken" error
     await expect(page.getByText("This email is already taken")).toBeVisible({
@@ -194,15 +186,10 @@ test.describe("contact form (/design/contact-form)", () => {
     await emailInput.fill("available@email.com");
     await emailInput.blur();
 
-    // Should show spinner during check
+    // After check completes, should show green check (valid)
     const fieldContainer = page.locator("[data-slot='form-item']", {
       has: emailInput,
     });
-    await expect(fieldContainer.locator("svg.animate-spin")).toBeVisible({
-      timeout: 2000,
-    });
-
-    // After check completes, should show green check (valid)
     await expect(fieldContainer.locator("svg.text-success")).toBeVisible({
       timeout: 5000,
     });

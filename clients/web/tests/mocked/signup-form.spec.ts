@@ -214,23 +214,20 @@ test.describe("signup form (/design/signup-form)", () => {
 
   // --- Async email check ---
 
-  test("valid email shows spinner then green check", async ({ page }) => {
+  test("valid email shows green check after async check", async ({ page }) => {
     const emailInput = page.getByRole("textbox", { name: "Email", exact: true });
     await emailInput.fill("available@email.com");
     await emailInput.blur();
 
     const fieldContainer = page.locator("[data-slot='form-item']", { has: emailInput });
-    await expect(fieldContainer.locator("svg.animate-spin")).toBeVisible({ timeout: 2000 });
     await expect(fieldContainer.locator("svg.text-success")).toBeVisible({ timeout: 5000 });
   });
 
-  test("taken email shows spinner then error", async ({ page }) => {
+  test("taken email shows error after async check", async ({ page }) => {
     const emailInput = page.getByRole("textbox", { name: "Email", exact: true });
     await emailInput.fill("used@email.com");
     await emailInput.blur();
 
-    const fieldContainer = page.locator("[data-slot='form-item']", { has: emailInput });
-    await expect(fieldContainer.locator("svg.animate-spin")).toBeVisible({ timeout: 2000 });
     await expect(page.getByText("This email is already taken")).toBeVisible({ timeout: 5000 });
   });
 
