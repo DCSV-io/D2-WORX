@@ -84,7 +84,8 @@ After completing a task, briefly report:
 
 ## §2. Commands
 
-> ⚠️ **DO NOT START SERVICES** — Never run `dotnet run`, `pnpm dev`, `pnpm preview`, or any long-running server.
+> ⚠️ **DO NOT START SERVICES MANUALLY** — Never run `dotnet run`, `pnpm dev`, `pnpm preview`, or any long-running server directly.
+> E2E tests that self-manage their infrastructure (Testcontainers, child processes with cleanup) ARE allowed — they start and stop their own services.
 
 **Build:**
 
@@ -109,7 +110,11 @@ dotnet test --filter FindWhoIs                      # Specific test filter
 
 # SvelteKit
 pnpm --filter d2-sveltekit exec vitest run          # Unit tests (browser mode)
-pnpm --filter d2-sveltekit exec playwright test     # E2E tests
+pnpm --filter d2-sveltekit exec playwright test     # Mocked Playwright tests
+
+# E2E (full-stack, self-contained via Testcontainers)
+pnpm vitest run --project e2e-tests                 # API-level E2E tests
+cd backends/node/services/e2e && npx playwright test  # Browser E2E tests
 ```
 
 **Lint/Style:**

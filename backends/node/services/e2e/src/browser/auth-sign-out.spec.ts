@@ -36,23 +36,13 @@ test.describe("sign-out flow (full stack)", () => {
     await page.getByRole("textbox", { name: "Password" }).fill(TEST_PASSWORD);
     await page.getByRole("button", { name: "Sign In" }).click();
 
-    // Wait for redirect away from sign-in
+    // Wait for redirect away from sign-in (new user without org → /welcome onboarding)
     await expect(page).not.toHaveURL(/\/sign-in$/, { timeout: 15_000 });
 
-    // Look for sign-out button/link and click it
-    const signOutButton = page.getByRole("button", { name: /sign out|log out/i });
-    const signOutLink = page.getByRole("link", { name: /sign out|log out/i });
+    // Click the sign-out button (available on the onboarding layout)
+    await page.getByRole("button", { name: /sign out/i }).click();
 
-    if (await signOutButton.isVisible().catch(() => false)) {
-      await signOutButton.click();
-    } else if (await signOutLink.isVisible().catch(() => false)) {
-      await signOutLink.click();
-    } else {
-      // If no visible sign-out button, navigate to a sign-out URL directly
-      await page.goto("/sign-in");
-    }
-
-    // Should end up on sign-in page
+    // Should end up on sign-in page after sign-out clears session
     await expect(page).toHaveURL(/\/sign-in/, { timeout: 15_000 });
   });
 });
