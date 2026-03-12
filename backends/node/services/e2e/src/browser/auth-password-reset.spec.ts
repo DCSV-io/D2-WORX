@@ -31,7 +31,7 @@ test.describe("password reset request (full stack)", () => {
     await page.goto("/forgot-password");
     await page.waitForLoadState("networkidle");
 
-    await page.getByLabel("Email", { exact: true }).fill(TEST_EMAIL);
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(TEST_EMAIL);
     await page.getByRole("button", { name: "Send Reset Link" }).click();
 
     // Should show a success/confirmation message or redirect
@@ -47,7 +47,7 @@ test.describe("password reset request (full stack)", () => {
     await page.goto("/forgot-password");
     await page.waitForLoadState("networkidle");
 
-    await page.getByLabel("Email", { exact: true }).fill("unknown@e2e-test.com");
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill("unknown@e2e-test.com");
     await page.getByRole("button", { name: "Send Reset Link" }).click();
 
     // Should still show confirmation (don't reveal whether email exists)

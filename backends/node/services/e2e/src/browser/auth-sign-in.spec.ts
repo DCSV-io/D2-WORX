@@ -32,8 +32,8 @@ test.describe("sign-in flow (full stack)", () => {
   });
 
   test("sign-in with valid credentials redirects to authenticated area", async ({ page }) => {
-    await page.getByLabel("Email", { exact: true }).fill(TEST_EMAIL);
-    await page.getByLabel("Password").fill(TEST_PASSWORD);
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(TEST_EMAIL);
+    await page.getByRole("textbox", { name: "Password" }).fill(TEST_PASSWORD);
 
     await page.getByRole("button", { name: "Sign In" }).click();
 
@@ -42,8 +42,8 @@ test.describe("sign-in flow (full stack)", () => {
   });
 
   test("sign-in with wrong password shows error", async ({ page }) => {
-    await page.getByLabel("Email", { exact: true }).fill(TEST_EMAIL);
-    await page.getByLabel("Password").fill("WrongPassword123");
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(TEST_EMAIL);
+    await page.getByRole("textbox", { name: "Password" }).fill("WrongPassword123");
 
     await page.getByRole("button", { name: "Sign In" }).click();
 
@@ -54,8 +54,8 @@ test.describe("sign-in flow (full stack)", () => {
   });
 
   test("sign-in with non-existent email shows error", async ({ page }) => {
-    await page.getByLabel("Email", { exact: true }).fill("nonexistent@e2e-test.com");
-    await page.getByLabel("Password").fill(TEST_PASSWORD);
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill("nonexistent@e2e-test.com");
+    await page.getByRole("textbox", { name: "Password" }).fill(TEST_PASSWORD);
 
     await page.getByRole("button", { name: "Sign In" }).click();
 

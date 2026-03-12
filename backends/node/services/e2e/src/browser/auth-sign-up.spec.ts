@@ -16,12 +16,12 @@ test.describe("sign-up flow (full stack)", () => {
   }) => {
     const uniqueEmail = `test-${Date.now()}@e2e-test.com`;
 
-    await page.getByLabel("First Name").fill("E2E");
-    await page.getByLabel("Last Name").fill("TestUser");
-    await page.getByLabel("Email", { exact: true }).fill(uniqueEmail);
-    await page.getByLabel("Confirm Email").fill(uniqueEmail);
-    await page.getByLabel("Password", { exact: true }).fill("SecurePass12345");
-    await page.getByLabel("Confirm Password").fill("SecurePass12345");
+    await page.getByRole("textbox", { name: "First Name" }).fill("E2E");
+    await page.getByRole("textbox", { name: "Last Name" }).fill("TestUser");
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(uniqueEmail);
+    await page.getByRole("textbox", { name: "Confirm Email" }).fill(uniqueEmail);
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("SecurePass12345");
+    await page.getByRole("textbox", { name: "Confirm Password" }).fill("SecurePass12345");
 
     await page.getByRole("button", { name: "Sign Up" }).click();
 
@@ -34,12 +34,12 @@ test.describe("sign-up flow (full stack)", () => {
     const sharedEmail = `dup-${Date.now()}@e2e-test.com`;
 
     // First sign-up should succeed
-    await page.getByLabel("First Name").fill("First");
-    await page.getByLabel("Last Name").fill("User");
-    await page.getByLabel("Email", { exact: true }).fill(sharedEmail);
-    await page.getByLabel("Confirm Email").fill(sharedEmail);
-    await page.getByLabel("Password", { exact: true }).fill("SecurePass12345");
-    await page.getByLabel("Confirm Password").fill("SecurePass12345");
+    await page.getByRole("textbox", { name: "First Name" }).fill("First");
+    await page.getByRole("textbox", { name: "Last Name" }).fill("User");
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(sharedEmail);
+    await page.getByRole("textbox", { name: "Confirm Email" }).fill(sharedEmail);
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("SecurePass12345");
+    await page.getByRole("textbox", { name: "Confirm Password" }).fill("SecurePass12345");
     await page.getByRole("button", { name: "Sign Up" }).click();
     await expect(page).toHaveURL(/\/verify-email/, { timeout: 15_000 });
 
@@ -47,12 +47,12 @@ test.describe("sign-up flow (full stack)", () => {
     await page.goto("/sign-up");
     await page.waitForLoadState("networkidle");
 
-    await page.getByLabel("First Name").fill("Second");
-    await page.getByLabel("Last Name").fill("User");
-    await page.getByLabel("Email", { exact: true }).fill(sharedEmail);
-    await page.getByLabel("Confirm Email").fill(sharedEmail);
-    await page.getByLabel("Password", { exact: true }).fill("SecurePass12345");
-    await page.getByLabel("Confirm Password").fill("SecurePass12345");
+    await page.getByRole("textbox", { name: "First Name" }).fill("Second");
+    await page.getByRole("textbox", { name: "Last Name" }).fill("User");
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(sharedEmail);
+    await page.getByRole("textbox", { name: "Confirm Email" }).fill(sharedEmail);
+    await page.getByRole("textbox", { name: "Password", exact: true }).fill("SecurePass12345");
+    await page.getByRole("textbox", { name: "Confirm Password" }).fill("SecurePass12345");
     await page.getByRole("button", { name: "Sign Up" }).click();
 
     // Should show error (user already exists)

@@ -28,8 +28,8 @@ test.describe("sign-out flow (full stack)", () => {
     await page.goto("/sign-in");
     await page.waitForLoadState("networkidle");
 
-    await page.getByLabel("Email", { exact: true }).fill(TEST_EMAIL);
-    await page.getByLabel("Password").fill(TEST_PASSWORD);
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(TEST_EMAIL);
+    await page.getByRole("textbox", { name: "Password" }).fill(TEST_PASSWORD);
     await page.getByRole("button", { name: "Sign In" }).click();
 
     // Wait for redirect away from sign-in
