@@ -1,4 +1,7 @@
-<script lang="ts" generics="T extends Record<string, unknown>, U extends FormPath<T>">
+<script
+  lang="ts"
+  generics="T extends Record<string, unknown>, U extends FormPath<T>"
+>
   import type { FormPath, SuperForm } from "sveltekit-superforms";
   import { Control } from "formsnap";
   import { cn } from "$lib/shared/utils/utils.js";
@@ -85,21 +88,32 @@
   }
 </script>
 
-<Form.Field {form} name={field}>
+<Form.Field
+  {form}
+  name={field}
+>
   <Control>
     {#snippet children({ props })}
       {@const { name: fieldName, ...inputProps } = props}
       <Form.Label>
         {label}
-        {#if isRequired}<span class="text-destructive">*</span>{/if}
+        {#if isRequired}<span
+            class="text-destructive"
+            aria-hidden="true">*</span
+          >{/if}
         <FieldStatusIcon status={fieldStatus} />
       </Form.Label>
-      <input type="hidden" name={fieldName} {value} autocomplete="off" />
+      <input
+        type="hidden"
+        name={fieldName}
+        {value}
+        autocomplete="off"
+      />
       <Combobox.Root
         type="single"
         {disabled}
         bind:open
-        value={value}
+        {value}
         onValueChange={handleValueChange}
         items={options.map((o) => ({ value: o.value, label: o.label }))}
         onOpenChangeComplete={handleOpenChangeComplete}
@@ -109,7 +123,7 @@
             <img
               src={selectedOption.flag}
               alt=""
-              class="absolute left-2.5 top-1/2 z-10 h-3 w-4 -translate-y-1/2 object-cover"
+              class="absolute top-1/2 left-2.5 z-10 h-3 w-4 -translate-y-1/2 object-cover"
             />
           {/if}
           <Combobox.Input
@@ -122,7 +136,7 @@
             onclick={() => {
               open = true;
             }}
-            placeholder={placeholder}
+            {placeholder}
             class={cn(
               "border-input bg-background dark:bg-input/30 placeholder:text-muted-foreground flex h-9 w-full min-w-0 rounded-md border px-3 py-1 pr-8 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm",
               "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
@@ -132,7 +146,7 @@
               fieldStatus === "valid" && "border-success/70 dark:border-success/50",
             )}
           />
-          <Combobox.Trigger class="absolute right-2 top-1/2 -translate-y-1/2">
+          <Combobox.Trigger class="absolute top-1/2 right-2 -translate-y-1/2">
             <ChevronsUpDownIcon class="size-4 opacity-50" />
           </Combobox.Trigger>
         </div>
@@ -142,14 +156,10 @@
             preventScroll={true}
             class="bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-end-2 data-[side=right]:slide-in-from-start-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--bits-combobox-content-available-height) min-w-[8rem] origin-(--bits-combobox-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
           >
-            <Combobox.ScrollUpButton
-              class="flex cursor-default items-center justify-center py-1"
-            >
+            <Combobox.ScrollUpButton class="flex cursor-default items-center justify-center py-1">
               <ChevronUpIcon class="size-4" />
             </Combobox.ScrollUpButton>
-            <Combobox.Viewport
-              class="w-full min-w-(--bits-combobox-anchor-width) scroll-my-1 p-1"
-            >
+            <Combobox.Viewport class="w-full min-w-(--bits-combobox-anchor-width) scroll-my-1 p-1">
               {#each filteredOptions as option (option.value)}
                 <Combobox.Item
                   value={option.value}
@@ -178,9 +188,7 @@
                 </div>
               {/each}
             </Combobox.Viewport>
-            <Combobox.ScrollDownButton
-              class="flex cursor-default items-center justify-center py-1"
-            >
+            <Combobox.ScrollDownButton class="flex cursor-default items-center justify-center py-1">
               <ChevronDownIcon class="size-4" />
             </Combobox.ScrollDownButton>
           </Combobox.Content>

@@ -1,4 +1,7 @@
-<script lang="ts" generics="T extends Record<string, unknown>, U extends FormPath<T>">
+<script
+  lang="ts"
+  generics="T extends Record<string, unknown>, U extends FormPath<T>"
+>
   import type { FormPath, SuperForm } from "sveltekit-superforms";
   import { Control } from "formsnap";
   import { cn } from "$lib/shared/utils/utils.js";
@@ -60,12 +63,18 @@
   }
 </script>
 
-<Form.Field {form} name={field}>
+<Form.Field
+  {form}
+  name={field}
+>
   <Control>
     {#snippet children({ props })}
       <Form.Label>
         {label}
-        {#if isRequired}<span class="text-destructive">*</span>{/if}
+        {#if isRequired}<span
+            class="text-destructive"
+            aria-hidden="true">*</span
+          >{/if}
         <FieldStatusIcon status={fieldStatus} />
       </Form.Label>
       <Textarea

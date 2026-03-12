@@ -10,13 +10,13 @@ test.describe("sign-in page (/sign-in)", () => {
 
   test("page title and heading visible", async ({ page }) => {
     await expect(page).toHaveTitle("Sign In — DCSV WORX");
-    await expect(page.getByText("Sign In")).toBeVisible();
+    await expect(page.locator("[data-slot='card-title']").getByText("Sign In")).toBeVisible();
     await expect(page.getByText("Enter your credentials to access your account.")).toBeVisible();
   });
 
   test("email and password fields visible", async ({ page }) => {
-    await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Email" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Password" })).toBeVisible();
   });
 
   test("has sign-up link", async ({ page }) => {
@@ -28,21 +28,21 @@ test.describe("sign-in page (/sign-in)", () => {
   // --- Client-side validation ---
 
   test("blur empty email shows error", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.focus();
     await emailInput.blur();
     await expect(page.getByText("Required").first()).toBeVisible({ timeout: 2000 });
   });
 
   test("blur empty password shows error", async ({ page }) => {
-    const passwordInput = page.getByLabel("Password");
+    const passwordInput = page.getByRole("textbox", { name: "Password" });
     await passwordInput.focus();
     await passwordInput.blur();
     await expect(page.getByText("Password is required")).toBeVisible({ timeout: 2000 });
   });
 
   test("invalid email format shows error on blur", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.fill("not-an-email");
     await emailInput.blur();
     await expect(page.getByText("Invalid email address")).toBeVisible({ timeout: 2000 });
@@ -56,7 +56,7 @@ test.describe("sign-in page (/sign-in)", () => {
   // --- Error clearing ---
 
   test("fixing invalid email clears error on blur", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.fill("not-valid");
     await emailInput.blur();
     await expect(page.getByText("Invalid email address")).toBeVisible({ timeout: 2000 });
@@ -67,7 +67,7 @@ test.describe("sign-in page (/sign-in)", () => {
   });
 
   test("fixing empty password clears error on blur", async ({ page }) => {
-    const passwordInput = page.getByLabel("Password");
+    const passwordInput = page.getByRole("textbox", { name: "Password" });
     await passwordInput.focus();
     await passwordInput.blur();
     await expect(page.getByText("Password is required")).toBeVisible({ timeout: 2000 });
@@ -80,7 +80,7 @@ test.describe("sign-in page (/sign-in)", () => {
   // --- Password field has no type constraint ---
 
   test("password field does not show complexity errors", async ({ page }) => {
-    const passwordInput = page.getByLabel("Password");
+    const passwordInput = page.getByRole("textbox", { name: "Password" });
     await passwordInput.fill("123456789012");
     await passwordInput.blur();
     // Sign-in has no numeric-only rule — should NOT show password complexity error

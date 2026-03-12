@@ -31,16 +31,16 @@ test.describe("reset-password page — with token (/reset-password?token=...)", 
   // --- Rendering ---
 
   test("renders heading and form when token param present", async ({ page }) => {
-    await expect(page.locator("h1")).toContainText("Reset Password");
+    await expect(page.locator("[data-slot='card-title']")).toContainText("Reset Password");
     await expect(page.getByText("Enter your new password.")).toBeVisible();
   });
 
   test("has new password input", async ({ page }) => {
-    await expect(page.getByLabel("New Password", { exact: true })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "New Password", exact: true })).toBeVisible();
   });
 
   test("has confirm password input", async ({ page }) => {
-    await expect(page.getByLabel("Confirm New Password")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Confirm New Password" })).toBeVisible();
   });
 
   test("has submit button", async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe("reset-password page — with token (/reset-password?token=...)", 
   });
 
   test("has OG tags and meta description", async ({ page }) => {
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    await expect(page.locator('meta[name="description"]').last()).toHaveAttribute(
       "content",
       "Enter your new password.",
     );
@@ -73,7 +73,7 @@ test.describe("reset-password page — with token (/reset-password?token=...)", 
   // --- Client-side validation ---
 
   test("blur empty new password shows error", async ({ page }) => {
-    const passwordInput = page.getByLabel("New Password", { exact: true });
+    const passwordInput = page.getByRole("textbox", { name: "New Password", exact: true });
     await passwordInput.focus();
     await passwordInput.blur();
     await expect(page.getByText("Password must be at least 12 characters")).toBeVisible({
@@ -82,7 +82,7 @@ test.describe("reset-password page — with token (/reset-password?token=...)", 
   });
 
   test("password fewer than 12 chars shows error on blur", async ({ page }) => {
-    const passwordInput = page.getByLabel("New Password", { exact: true });
+    const passwordInput = page.getByRole("textbox", { name: "New Password", exact: true });
     await passwordInput.fill("short");
     await passwordInput.blur();
     await expect(page.getByText("Password must be at least 12 characters")).toBeVisible({
@@ -91,30 +91,32 @@ test.describe("reset-password page — with token (/reset-password?token=...)", 
   });
 
   test("numeric-only password rejected on blur", async ({ page }) => {
-    const passwordInput = page.getByLabel("New Password", { exact: true });
+    const passwordInput = page.getByRole("textbox", { name: "New Password", exact: true });
     await passwordInput.fill("123456789012");
     await passwordInput.blur();
-    await expect(page.getByText("Password cannot be only numbers")).toBeVisible({ timeout: 2000 });
+    await expect(page.getByText("Password cannot be only numbers", { exact: true })).toBeVisible({
+      timeout: 2000,
+    });
   });
 
   test("date-like password rejected on blur", async ({ page }) => {
-    const passwordInput = page.getByLabel("New Password", { exact: true });
+    const passwordInput = page.getByRole("textbox", { name: "New Password", exact: true });
     await passwordInput.fill("2025-01-01-01");
     await passwordInput.blur();
-    await expect(
-      page.getByText("Password cannot be only numbers and date separators"),
-    ).toBeVisible({ timeout: 2000 });
+    await expect(page.getByText("Password cannot be only numbers and date separators")).toBeVisible(
+      { timeout: 2000 },
+    );
   });
 
   test("blur empty confirm password shows error", async ({ page }) => {
-    const confirmInput = page.getByLabel("Confirm New Password");
+    const confirmInput = page.getByRole("textbox", { name: "Confirm New Password" });
     await confirmInput.focus();
     await confirmInput.blur();
     await expect(page.getByText("Required")).toBeVisible({ timeout: 2000 });
   });
 
   test("blur valid password clears error on re-blur", async ({ page }) => {
-    const passwordInput = page.getByLabel("New Password", { exact: true });
+    const passwordInput = page.getByRole("textbox", { name: "New Password", exact: true });
     await passwordInput.fill("short");
     await passwordInput.blur();
     await expect(page.getByText("Password must be at least 12 characters")).toBeVisible({
@@ -129,7 +131,7 @@ test.describe("reset-password page — with token (/reset-password?token=...)", 
   });
 
   test("whitespace-only password shows error", async ({ page }) => {
-    const passwordInput = page.getByLabel("New Password", { exact: true });
+    const passwordInput = page.getByRole("textbox", { name: "New Password", exact: true });
     await passwordInput.fill("            ");
     await passwordInput.blur();
     // 12 spaces meets length but is not a valid password — still triggers min-length
@@ -147,16 +149,19 @@ test.describe("reset-password page — with token (/reset-password?token=...)", 
   // --- Password toggle ---
 
   test("both password fields start masked", async ({ page }) => {
-    await expect(page.getByLabel("New Password", { exact: true })).toHaveAttribute(
+    await expect(page.getByRole("textbox", { name: "New Password", exact: true })).toHaveAttribute(
       "type",
       "password",
     );
-    await expect(page.getByLabel("Confirm New Password")).toHaveAttribute("type", "password");
+    await expect(page.getByRole("textbox", { name: "Confirm New Password" })).toHaveAttribute(
+      "type",
+      "password",
+    );
   });
 
   test("toggling show/hide changes both fields type attribute", async ({ page }) => {
-    const newPasswordInput = page.getByLabel("New Password", { exact: true });
-    const confirmInput = page.getByLabel("Confirm New Password");
+    const newPasswordInput = page.getByRole("textbox", { name: "New Password", exact: true });
+    const confirmInput = page.getByRole("textbox", { name: "Confirm New Password" });
 
     // Initial state: both masked
     await expect(newPasswordInput).toHaveAttribute("type", "password");

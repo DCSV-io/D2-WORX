@@ -1,4 +1,7 @@
-<script lang="ts" generics="T extends Record<string, unknown>, U extends FormPath<T>">
+<script
+  lang="ts"
+  generics="T extends Record<string, unknown>, U extends FormPath<T>"
+>
   import type { FormPath, SuperForm } from "sveltekit-superforms";
   import { Control } from "formsnap";
   import * as Form from "$lib/client/components/ui/form/index.js";
@@ -57,16 +60,30 @@
   }
 </script>
 
-<Form.Field {form} name={field}>
+<Form.Field
+  {form}
+  name={field}
+>
   <Control>
     {#snippet children({ props })}
       <Form.Label>
         {label}
-        {#if isRequired}<span class="text-destructive">*</span>{/if}
+        {#if isRequired}<span
+            class="text-destructive"
+            aria-hidden="true">*</span
+          >{/if}
         <FieldStatusIcon status={fieldStatus} />
       </Form.Label>
-      <Select.Root type="single" value={value} onValueChange={handleChange} {disabled}>
-        <Select.Trigger {...props} class="w-full">
+      <Select.Root
+        type="single"
+        {value}
+        onValueChange={handleChange}
+        {disabled}
+      >
+        <Select.Trigger
+          {...props}
+          class="w-full"
+        >
           <span class="truncate">{selectedLabel}</span>
         </Select.Trigger>
         <Select.Content>

@@ -46,7 +46,10 @@
 
             // 403 = email not verified → redirect to verify-email page
             if (status === 403) {
-              await goto(`${resolve("/verify-email")}?email=${encodeURIComponent(email)}&resent=true`);
+              const verifyUrl =
+                resolve("/verify-email") + `?email=${encodeURIComponent(email)}&resent=true`;
+              // eslint-disable-next-line svelte/no-navigation-without-resolve -- pre-resolved above
+              await goto(verifyUrl);
               return;
             }
 

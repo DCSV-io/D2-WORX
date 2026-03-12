@@ -2,13 +2,17 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   webServer: {
-    command: "pnpm dev",
-    port: 5173,
-    timeout: 120_000,
-    reuseExistingServer: !process.env.CI,
+    command: "pnpm dev --port 5174",
+    port: 5174,
+    timeout: 30_000,
+    reuseExistingServer: false,
+    env: {
+      D2_MOCK_INFRA: "true",
+    },
   },
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: "http://localhost:5174",
   },
-  testDir: "e2e",
+  testDir: "tests/mocked",
+  retries: 1,
 });

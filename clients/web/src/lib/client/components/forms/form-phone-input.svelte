@@ -1,4 +1,7 @@
-<script lang="ts" generics="T extends Record<string, unknown>, U extends FormPath<T>">
+<script
+  lang="ts"
+  generics="T extends Record<string, unknown>, U extends FormPath<T>"
+>
   import type { FormPath, SuperForm } from "sveltekit-superforms";
   import { Control } from "formsnap";
   import { cn } from "$lib/shared/utils/utils.js";
@@ -36,7 +39,9 @@
 
   let countryOpen = $state(false);
   let selectedCountryCode = $state(initDefault());
-  function initDefault() { return defaultCountry; }
+  function initDefault() {
+    return defaultCountry;
+  }
   /** The formatted display value the user sees. */
   let displayValue = $state("");
   let showStatus = $state(false);
@@ -101,13 +106,19 @@
   }
 </script>
 
-<Form.Field {form} name={field}>
+<Form.Field
+  {form}
+  name={field}
+>
   <Control>
     {#snippet children({ props })}
       {@const { name: fieldName, ...triggerProps } = props}
       <Form.Label>
         {label}
-        {#if isRequired}<span class="text-destructive">*</span>{/if}
+        {#if isRequired}<span
+            class="text-destructive"
+            aria-hidden="true">*</span
+          >{/if}
         <FieldStatusIcon status={fieldStatus} />
       </Form.Label>
       <input
@@ -132,10 +143,13 @@
                 class="h-3 w-4 shrink-0 object-cover"
               />
             {/if}
-            <span class="text-xs text-muted-foreground">{prefix}</span>
+            <span class="text-muted-foreground text-xs">{prefix}</span>
             <ChevronsUpDownIcon class="ml-auto size-3 shrink-0 opacity-50" />
           </Popover.Trigger>
-          <Popover.Content class="w-[280px] p-0" align="start">
+          <Popover.Content
+            class="w-[280px] p-0"
+            align="start"
+          >
             <Command.Root>
               <Command.Input placeholder="Search country..." />
               <Command.List>

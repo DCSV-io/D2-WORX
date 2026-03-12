@@ -9,14 +9,12 @@ test.describe("forgot-password page (/forgot-password)", () => {
   // --- Rendering ---
 
   test("renders heading and description", async ({ page }) => {
-    await expect(page.locator("h1")).toContainText("Forgot Password");
-    await expect(
-      page.getByText("Enter your email and we'll send you a reset link."),
-    ).toBeVisible();
+    await expect(page.locator("[data-slot='card-title']")).toContainText("Forgot Password");
+    await expect(page.getByText("Enter your email and we'll send you a reset link.")).toBeVisible();
   });
 
   test("has email input", async ({ page }) => {
-    await expect(page.getByLabel("Email", { exact: true })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Email" })).toBeVisible();
   });
 
   test("has submit button", async ({ page }) => {
@@ -37,7 +35,7 @@ test.describe("forgot-password page (/forgot-password)", () => {
   });
 
   test("has OG tags and meta description", async ({ page }) => {
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    await expect(page.locator('meta[name="description"]').last()).toHaveAttribute(
       "content",
       "Enter your email and we'll send you a reset link.",
     );
@@ -55,28 +53,28 @@ test.describe("forgot-password page (/forgot-password)", () => {
   // --- Client-side validation ---
 
   test("blur empty email shows error", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.focus();
     await emailInput.blur();
     await expect(page.getByText("Required")).toBeVisible({ timeout: 2000 });
   });
 
   test("blur whitespace-only email shows error", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.fill("   ");
     await emailInput.blur();
     await expect(page.getByText("Required")).toBeVisible({ timeout: 2000 });
   });
 
   test("blur invalid email format shows error", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.fill("notanemail");
     await emailInput.blur();
     await expect(page.getByText("Invalid email address")).toBeVisible({ timeout: 2000 });
   });
 
   test("blur email exceeding max length shows error", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     // 255 chars total — exceeds 254-char max
     await emailInput.fill("a".repeat(243) + "@example.com");
     await emailInput.blur();
@@ -84,7 +82,7 @@ test.describe("forgot-password page (/forgot-password)", () => {
   });
 
   test("blur valid email clears error", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.focus();
     await emailInput.blur();
     await expect(page.getByText("Required")).toBeVisible({ timeout: 2000 });
@@ -95,7 +93,7 @@ test.describe("forgot-password page (/forgot-password)", () => {
   });
 
   test("fixing invalid email clears error on re-blur", async ({ page }) => {
-    const emailInput = page.getByLabel("Email", { exact: true });
+    const emailInput = page.getByRole("textbox", { name: "Email" });
     await emailInput.fill("not-valid");
     await emailInput.blur();
     await expect(page.getByText("Invalid email address")).toBeVisible({ timeout: 2000 });

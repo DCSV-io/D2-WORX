@@ -1,4 +1,7 @@
-<script lang="ts" generics="T extends Record<string, unknown>, U extends FormPath<T>">
+<script
+  lang="ts"
+  generics="T extends Record<string, unknown>, U extends FormPath<T>"
+>
   import type { Snippet } from "svelte";
   import type { FormPath, SuperForm } from "sveltekit-superforms";
   import { Control } from "formsnap";
@@ -82,21 +85,30 @@
   }
 </script>
 
-<Form.Field {form} name={field}>
+<Form.Field
+  {form}
+  name={field}
+>
   <Control>
     {#snippet children({ props })}
       {#if labelRight}
         <div class="flex items-center justify-between">
           <Form.Label>
             {label}
-            {#if isRequired}<span class="text-destructive">*</span>{/if}
+            {#if isRequired}<span
+                class="text-destructive"
+                aria-hidden="true">*</span
+              >{/if}
           </Form.Label>
           {@render labelRight()}
         </div>
       {:else}
         <Form.Label>
           {label}
-          {#if isRequired}<span class="text-destructive">*</span>{/if}
+          {#if isRequired}<span
+              class="text-destructive"
+              aria-hidden="true">*</span
+            >{/if}
         </Form.Label>
       {/if}
       <div class="relative">
@@ -128,7 +140,7 @@
           </div>
         {/if}
         {#if inputAction}
-          <div class="absolute right-2.5 top-0 flex h-full items-center">
+          <div class="absolute top-0 right-2.5 flex h-full items-center">
             {@render inputAction()}
           </div>
         {/if}

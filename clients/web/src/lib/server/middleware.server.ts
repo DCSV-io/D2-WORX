@@ -39,6 +39,7 @@ import { CheckRateLimit } from "@d2/ratelimit";
 import { CheckIdempotency, checkIdempotency } from "@d2/idempotency";
 import { enrichRequest } from "@d2/request-enrichment";
 import type { RateLimit, Idempotency, DistributedCache } from "@d2/interfaces";
+import { createMockMiddlewareContext } from "./middleware.mock.server.js";
 
 // Re-export for use in hook wrappers.
 export { enrichRequest };
@@ -60,27 +61,35 @@ export interface MiddlewareContext {
 let cached: MiddlewareContext | null | undefined;
 
 /**
- * Whether infrastructure middleware can be skipped.
+ * Whether infrastructure deps should be mocked when env vars are missing.
  *
- * Auto-detected via `CI` env var (GitHub Actions, GitLab CI, etc.) or
- * explicitly via `D2_SKIP_INFRA_MIDDLEWARE=true`. When enabled AND required
- * env vars are missing, returns null instead of throwing FATAL — allows
- * the SvelteKit dev server to serve pages that don't need middleware
- * (e.g. Playwright E2E tests against UI-only routes).
+ * Enabled in CI (`CI=true`) or explicitly via `D2_MOCK_INFRA=true`.
+ * Returns a mock context with stub handlers instead of throwing FATAL —
+ * the full middleware pipeline runs with no-op implementations so pages
+ * render normally (e.g. mocked Playwright tests).
  *
  * In production (neither flag set), missing env vars always FATAL.
  */
-const INFRA_SKIPPABLE =
-  process.env.CI === "true" || process.env.D2_SKIP_INFRA_MIDDLEWARE === "true";
+const MOCK_INFRA = process.env.D2_MOCK_INFRA === "true" || process.env.CI === "true";
 
 /**
  * Returns the shared middleware context (lazy singleton).
  *
  * - Production: throws FATAL if required env vars are missing.
- * - CI / skip mode: returns null when env vars are missing (hooks skip gracefully).
+ * - Mock mode: returns a mock context with stub handlers.
  */
 export function getMiddlewareContext(): MiddlewareContext | null {
   if (cached !== undefined) return cached;
+
+  // Mock mode: always use stub handlers, regardless of env vars present.
+  // This ensures `D2_MOCK_INFRA=true` overrides even when .env.local is loaded.
+  if (MOCK_INFRA) {
+    console.warn(
+      "[d2-sveltekit] Infrastructure mocked. Middleware pipeline runs with stub handlers.",
+    );
+    cached = createMockMiddlewareContext();
+    return cached;
+  }
 
   const redisConnectionString = process.env.REDIS_URL;
   const geoAddress = process.env.GEO_GRPC_ADDRESS;
@@ -91,15 +100,6 @@ export function getMiddlewareContext(): MiddlewareContext | null {
     if (!redisConnectionString) missing.push("REDIS_URL");
     if (!geoAddress) missing.push("GEO_GRPC_ADDRESS");
     if (!geoApiKey) missing.push("SVELTEKIT_GEO_CLIENT__APIKEY");
-
-    if (INFRA_SKIPPABLE) {
-      console.warn(
-        `[d2-sveltekit] Infrastructure middleware skipped (missing: ${missing.join(", ")}). ` +
-          "Requests will not be enriched, rate-limited, or idempotency-checked.",
-      );
-      cached = null;
-      return null;
-    }
 
     throw new Error(
       `[d2-sveltekit] FATAL: Missing required env vars: ${missing.join(", ")}. ` +

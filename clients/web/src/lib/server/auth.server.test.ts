@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock @d2/logging before importing the module under test
 vi.mock("@d2/logging", () => ({
@@ -18,36 +18,110 @@ vi.mock("@d2/auth-bff-client", () => ({
   AuthProxy: vi.fn(),
 }));
 
+// Mock @d2/result (used by middleware.mock.server for stub handlers)
+vi.mock("@d2/result", () => ({
+  D2Result: { ok: vi.fn(() => ({ success: true })) },
+}));
+
 describe("getAuthContext", () => {
+  const ENV_BACKUP: Record<string, string | undefined> = {};
+
+  function setEnv(key: string, value: string) {
+    ENV_BACKUP[key] = process.env[key];
+    process.env[key] = value;
+  }
+
+  function clearEnv(key: string) {
+    ENV_BACKUP[key] = process.env[key];
+    delete process.env[key];
+  }
+
+  function clearMockFlags() {
+    clearEnv("D2_MOCK_INFRA");
+    clearEnv("CI");
+  }
+
   beforeEach(() => {
     vi.resetModules();
-    delete process.env.SVELTEKIT_AUTH__URL;
-    delete process.env.SVELTEKIT_AUTH__API_KEY;
-    delete process.env.CI;
-    delete process.env.D2_SKIP_INFRA_MIDDLEWARE;
   });
 
-  it("throws when SVELTEKIT_AUTH__URL is missing in production", async () => {
-    const { getAuthContext } = await import("./auth.server.js");
-    expect(() => getAuthContext()).toThrow("SVELTEKIT_AUTH__URL");
+  afterEach(() => {
+    for (const [key, value] of Object.entries(ENV_BACKUP)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+    Object.keys(ENV_BACKUP).forEach((k) => delete ENV_BACKUP[k]);
   });
 
-  it("returns null when SVELTEKIT_AUTH__URL is missing in CI", async () => {
-    process.env.CI = "true";
-    const { getAuthContext } = await import("./auth.server.js");
-    const ctx = getAuthContext();
-    expect(ctx).toBeNull();
+  describe("production mode (no mock flags)", () => {
+    it("throws when SVELTEKIT_AUTH__URL is missing", async () => {
+      clearMockFlags();
+      const { getAuthContext } = await import("./auth.server.js");
+      expect(() => getAuthContext()).toThrow("FATAL");
+      expect(() => getAuthContext()).toThrow("SVELTEKIT_AUTH__URL");
+    });
   });
 
-  it("returns null when SVELTEKIT_AUTH__URL is missing with D2_SKIP_INFRA_MIDDLEWARE", async () => {
-    process.env.D2_SKIP_INFRA_MIDDLEWARE = "true";
-    const { getAuthContext } = await import("./auth.server.js");
-    const ctx = getAuthContext();
-    expect(ctx).toBeNull();
+  describe("mock mode (D2_MOCK_INFRA / CI)", () => {
+    it("returns mock context when D2_MOCK_INFRA=true and env vars are missing", async () => {
+      setEnv("D2_MOCK_INFRA", "true");
+
+      const { getAuthContext } = await import("./auth.server.js");
+      const ctx = getAuthContext();
+
+      expect(ctx).not.toBeNull();
+      expect(ctx!.logger).toBeDefined();
+      expect(ctx!.sessionResolver).toBeDefined();
+      expect(ctx!.jwtManager).toBeDefined();
+      expect(ctx!.authProxy).toBeDefined();
+    });
+
+    it("returns mock context when CI=true and env vars are missing", async () => {
+      setEnv("CI", "true");
+
+      const { getAuthContext } = await import("./auth.server.js");
+      const ctx = getAuthContext();
+
+      expect(ctx).not.toBeNull();
+      expect(ctx!.logger).toBeDefined();
+    });
+
+    it("caches mock context on subsequent calls", async () => {
+      setEnv("D2_MOCK_INFRA", "true");
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { getAuthContext } = await import("./auth.server.js");
+
+      getAuthContext();
+      getAuthContext();
+      getAuthContext();
+
+      // Warning logged only once (first call caches).
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      warnSpy.mockRestore();
+    });
+
+    it("uses mock context even when env vars ARE present with mock flag", async () => {
+      setEnv("D2_MOCK_INFRA", "true");
+      setEnv("SVELTEKIT_AUTH__URL", "http://localhost:5100");
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { getAuthContext } = await import("./auth.server.js");
+      const ctx = getAuthContext();
+
+      expect(ctx).not.toBeNull();
+      // Mock flag overrides — warn is called (mock path), not real init.
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Auth context mocked"));
+      warnSpy.mockRestore();
+    });
   });
 
   it("returns AuthContext when SVELTEKIT_AUTH__URL is set", async () => {
-    process.env.SVELTEKIT_AUTH__URL = "http://localhost:5100";
+    clearMockFlags();
+    setEnv("SVELTEKIT_AUTH__URL", "http://localhost:5100");
 
     const { getAuthContext } = await import("./auth.server.js");
     const ctx = getAuthContext();
@@ -61,8 +135,9 @@ describe("getAuthContext", () => {
   });
 
   it("passes apiKey from SVELTEKIT_AUTH__API_KEY to config", async () => {
-    process.env.SVELTEKIT_AUTH__URL = "http://localhost:5100";
-    process.env.SVELTEKIT_AUTH__API_KEY = "test-api-key";
+    clearMockFlags();
+    setEnv("SVELTEKIT_AUTH__URL", "http://localhost:5100");
+    setEnv("SVELTEKIT_AUTH__API_KEY", "test-api-key");
 
     const { getAuthContext } = await import("./auth.server.js");
     const ctx = getAuthContext();
@@ -71,7 +146,8 @@ describe("getAuthContext", () => {
   });
 
   it("returns same instance on subsequent calls (singleton)", async () => {
-    process.env.SVELTEKIT_AUTH__URL = "http://localhost:5100";
+    clearMockFlags();
+    setEnv("SVELTEKIT_AUTH__URL", "http://localhost:5100");
 
     const { getAuthContext } = await import("./auth.server.js");
     const first = getAuthContext();

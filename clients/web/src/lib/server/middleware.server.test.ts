@@ -103,10 +103,10 @@ describe("middleware.server", () => {
     setEnv("SVELTEKIT_GEO_CLIENT__APIKEY", "test-key");
   }
 
-  /** Ensure CI/skip flags are cleared so INFRA_SKIPPABLE is false at module load. */
-  function clearSkipFlags() {
+  /** Ensure mock flags are cleared so MOCK_INFRA is false at module load. */
+  function clearMockFlags() {
+    clearEnv("D2_MOCK_INFRA");
     clearEnv("CI");
-    clearEnv("D2_SKIP_INFRA_MIDDLEWARE");
   }
 
   beforeEach(() => {
@@ -126,7 +126,7 @@ describe("middleware.server", () => {
 
   describe("production mode (no CI/skip flags)", () => {
     it("throws when Redis connection string is missing", async () => {
-      clearSkipFlags();
+      clearMockFlags();
       setEnv("GEO_GRPC_ADDRESS", "localhost:5138");
       setEnv("SVELTEKIT_GEO_CLIENT__APIKEY", "test-key");
 
@@ -137,7 +137,7 @@ describe("middleware.server", () => {
     });
 
     it("throws when GEO_GRPC_ADDRESS is missing", async () => {
-      clearSkipFlags();
+      clearMockFlags();
       setEnv("REDIS_URL", "redis://:pass@localhost:6379");
       setEnv("SVELTEKIT_GEO_CLIENT__APIKEY", "test-key");
 
@@ -148,7 +148,7 @@ describe("middleware.server", () => {
     });
 
     it("throws when SVELTEKIT_GEO_CLIENT__APIKEY is missing", async () => {
-      clearSkipFlags();
+      clearMockFlags();
       setEnv("REDIS_URL", "redis://:pass@localhost:6379");
       setEnv("GEO_GRPC_ADDRESS", "localhost:5138");
 
@@ -159,7 +159,7 @@ describe("middleware.server", () => {
     });
 
     it("throws every time when env vars are missing (no cached null)", async () => {
-      clearSkipFlags();
+      clearMockFlags();
       const { getMiddlewareContext } = await import("./middleware.server");
 
       expect(() => getMiddlewareContext()).toThrow("FATAL");
@@ -168,28 +168,32 @@ describe("middleware.server", () => {
     });
   });
 
-  describe("CI / skip mode", () => {
-    it("returns null when CI=true and env vars are missing", async () => {
+  describe("mock mode (D2_MOCK_INFRA / CI)", () => {
+    it("returns mock context when D2_MOCK_INFRA=true and env vars are missing", async () => {
+      setEnv("D2_MOCK_INFRA", "true");
+
+      const { getMiddlewareContext } = await import("./middleware.server");
+      const ctx = getMiddlewareContext();
+
+      expect(ctx).not.toBeNull();
+      expect(ctx!.logger).toBeDefined();
+      expect(ctx!.findWhoIs).toBeDefined();
+      expect(ctx!.rateLimitCheck).toBeDefined();
+      expect(ctx!.getGeoRefData).toBeDefined();
+    });
+
+    it("returns mock context when CI=true and env vars are missing", async () => {
       setEnv("CI", "true");
 
       const { getMiddlewareContext } = await import("./middleware.server");
       const ctx = getMiddlewareContext();
 
-      expect(ctx).toBeNull();
+      expect(ctx).not.toBeNull();
+      expect(ctx!.logger).toBeDefined();
     });
 
-    it("returns null when D2_SKIP_INFRA_MIDDLEWARE=true and env vars are missing", async () => {
-      clearEnv("CI");
-      setEnv("D2_SKIP_INFRA_MIDDLEWARE", "true");
-
-      const { getMiddlewareContext } = await import("./middleware.server");
-      const ctx = getMiddlewareContext();
-
-      expect(ctx).toBeNull();
-    });
-
-    it("caches null on subsequent calls in skip mode", async () => {
-      setEnv("CI", "true");
+    it("caches mock context on subsequent calls", async () => {
+      setEnv("D2_MOCK_INFRA", "true");
 
       const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const { getMiddlewareContext } = await import("./middleware.server");
@@ -198,26 +202,29 @@ describe("middleware.server", () => {
       getMiddlewareContext();
       getMiddlewareContext();
 
-      // Warning logged only once (first call caches null).
+      // Warning logged only once (first call caches).
       expect(warnSpy).toHaveBeenCalledTimes(1);
       warnSpy.mockRestore();
     });
 
-    it("still initializes normally when env vars ARE present in CI", async () => {
-      setEnv("CI", "true");
+    it("uses mock context even when env vars ARE present with mock flag", async () => {
+      setEnv("D2_MOCK_INFRA", "true");
       setRequiredEnv();
 
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
       const { getMiddlewareContext } = await import("./middleware.server");
       const ctx = getMiddlewareContext();
 
       expect(ctx).not.toBeNull();
       expect(ctx!.logger).toBeDefined();
-      expect(ctx!.findWhoIs).toBeDefined();
+      // Mock flag overrides — warn is called (mock path), not real init.
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("Infrastructure mocked"));
+      warnSpy.mockRestore();
     });
   });
 
   it("returns context when all env vars are present", async () => {
-    clearSkipFlags();
+    clearMockFlags();
     setRequiredEnv();
 
     const { getMiddlewareContext } = await import("./middleware.server");
@@ -234,7 +241,7 @@ describe("middleware.server", () => {
   });
 
   it("returns cached singleton on subsequent calls", async () => {
-    clearSkipFlags();
+    clearMockFlags();
     setRequiredEnv();
 
     const { getMiddlewareContext } = await import("./middleware.server");

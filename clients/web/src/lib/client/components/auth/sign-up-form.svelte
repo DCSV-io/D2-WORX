@@ -61,7 +61,9 @@
             return;
           }
 
-          await goto(`${resolve("/verify-email")}?email=${encodeURIComponent(email)}`);
+          const verifyUrl = resolve("/verify-email") + `?email=${encodeURIComponent(email)}`;
+          // eslint-disable-next-line svelte/no-navigation-without-resolve -- pre-resolved above
+          await goto(verifyUrl);
         } catch {
           serverError = m.common_errors_unknown();
         } finally {

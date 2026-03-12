@@ -6,6 +6,9 @@
  * calls are effectively free.
  *
  * Returns `null` if the gRPC call fails (e.g. Geo service temporarily unavailable).
+ *
+ * When `D2_MOCK_INFRA=true`, the middleware context provides a mock
+ * getGeoRefData handler that returns stub countries/subdivisions.
  */
 import type { GeoRefData } from "@d2/protos";
 import { getMiddlewareContext } from "./middleware.server.js";

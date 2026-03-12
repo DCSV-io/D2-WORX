@@ -47,7 +47,7 @@ Present the plan to the user. Iterate until approved. Do NOT start implementatio
 Write code following §5 (Code Quality Rules) and §6 (Code Conventions).
 
 - Track deviations from the plan — if something changes, note it
-- Fix bugs immediately when discovered (even if pre-existing in modified files)
+- Fix bugs/warnings immediately when discovered — anywhere in the project, not just in files you modified
 - After editing TS code → check `mcp__cclsp__get_diagnostics`
 - After editing .NET code → `dotnet build` (zero warnings)
 
@@ -56,7 +56,7 @@ Write code following §5 (Code Quality Rules) and §6 (Code Conventions).
 Every item MUST pass before a change is "done":
 
 - [ ] **Builds clean** — zero warnings/errors on ALL affected platforms:
-  - `.NET`: `dotnet build` — zero StyleCop (SA****), CS**** warnings, null ref warnings
+  - `.NET`: `dotnet build` — zero StyleCop (SA\***\*), CS\*\*** warnings, null ref warnings
   - `Node.js @d2/*`: `pnpm --filter @d2/xxx exec tsc` (full build if consumers need `dist/`)
   - `SvelteKit`: `pnpm --filter d2-sveltekit exec svelte-check`
 - [ ] **Lint/style clean** — zero warnings:
@@ -65,7 +65,7 @@ Every item MUST pass before a change is "done":
   - (StyleCop is part of `dotnet build` above)
 - [ ] **Tests pass** — existing tests still pass + new tests for new behavior
 - [ ] **Pattern adherence** — code follows established patterns (§4), correct TLC/2LC/3LC structure
-- [ ] **Branch ownership** — ALL errors in branch-modified files are fixed (check `git diff main --name-only`)
+- [ ] **Zero tolerance** — ALL errors/warnings encountered anywhere in the project are fixed, not just in branch-modified files. If you see it, fix it.
 - [ ] **i18n** — no hardcoded user-visible strings (UI, handler messages, input errors, notifications). All locale files in sync.
 - [ ] **Documentation** — affected `.md` files updated
 - [ ] **TS diagnostics** — `mcp__cclsp__get_diagnostics` clean for edited TS files
@@ -73,6 +73,7 @@ Every item MUST pass before a change is "done":
 ### Step 6: Report
 
 After completing a task, briefly report:
+
 1. What was completed
 2. Any deviations from the plan
 3. Any bugs found and fixed (or flagged)
@@ -124,28 +125,28 @@ pnpm format:check                                   # Prettier check
 
 Read these docs BEFORE working in the relevant area. Each doc is the authority for its domain. The summary tells you enough to know whether you need the full doc.
 
-| Document | Summary | When to Read |
-| --- | --- | --- |
-| [PLANNING.md](PLANNING.md) | Current phase, ADRs (1-18), resolved decisions, implementation status, open issues, roadmap | **Always first** — before any task |
-| [BACKENDS.md](backends/BACKENDS.md) | TLC/2LC/3LC folder convention, handler categories (Q/C/U/X), layer-specific verbiage, DI registration, Node.js workspace, package dependency graph, Dkron jobs | Any backend work (services, handlers, repos) |
-| [.NET HANDLER.md](backends/dotnet/shared/Handler/HANDLER.md) | BaseHandler pattern, IHandlerContext, HandlerOptions, OTel metrics (4), IRequestContext field tables, implementation example with using aliases | Adding/modifying any .NET handler |
-| [Node.js HANDLER.md](backends/node/shared/handler/HANDLER.md) | BaseHandler, RedactionSpec, validateInput (Zod), HandlerOptions, OTel metrics, ambient context (AsyncLocalStorage), IRequestContext fields, createServiceScope, implementation + interface + DI examples | Adding/modifying any Node.js handler |
-| [.NET RESULT.md](backends/dotnet/shared/Result/RESULT.md) | D2Result factory methods (12+), BubbleFail/Bubble error propagation, CheckSuccess/CheckFailure pattern matching, best practices | .NET error handling, result patterns |
-| [Node.js RESULT.md](backends/node/shared/result/RESULT.md) | D2Result factory methods (camelCase), bubbleFail/bubble, checkSuccess/checkFailure, error codes table, retry helpers (retryResultAsync/retryExternalAsync), transient detection | Node.js error handling, result patterns |
-| [.NET TESTS.md](backends/dotnet/shared/Tests/TESTS.md) | Case coverage checklist (8 categories), test naming conventions, form/endpoint testing patterns, frameworks per platform | Writing any tests |
-| [Node.js TESTING.md](backends/node/shared/testing/TESTING.md) | Custom Vitest matchers (7), PostgresTestHelper (Testcontainers), test project architecture, vitest monorepo setup, createTestContext pattern | Node.js test infrastructure, Vitest setup |
-| [GEO_SERVICE.md](backends/dotnet/services/Geo/GEO_SERVICE.md) | Geo service architecture — domain model, caching strategy, validation, DB design. **Primary reference implementation** | Understanding established service structure |
-| [GEO_CLIENT.md](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | Client library pattern: inter-service gRPC calls, multi-tier caching (Mem→Redis→DB→Disk), singleflight dedup, circuit breaker, DI registration, usage examples | Client library work, caching, gRPC calls |
-| [AUTH.md](backends/node/services/auth/AUTH.md) | Auth architecture (BetterAuth + Hono), sessions (3-tier: cookie→Redis→PG), JWT (RS256/JWKS), request flow (Hybrid C), SvelteKit proxy, S2S trust, secure endpoint checklist, cookie signing | Any auth, security, session, or JWT work |
-| [AUTH_BFF_CLIENT.md](backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md) | SvelteKit BFF auth client: SessionResolver, JwtManager, AuthProxy, route guards (`requireAuth`, `requireOrg`, `redirectIfAuthenticated`), cookie signing, config | SvelteKit auth hooks, SSR session, route guards |
-| [AUTH_APP.md](backends/node/services/auth/app/AUTH_APP.md) | Auth CQRS handlers (18): sign-in events, throttle, emulation consent, org contacts, user contacts, 4 job handlers. Repository interfaces, DI registration, service keys | Auth handler work, auth DI, org contacts |
-| [COMMS.md](backends/node/services/comms/COMMS.md) | Comms service architecture: delivery engine (RabbitMQ), in-app notifications, conversational messaging (threads), entity model, channel resolution, retry topology, SignalR gateway, client library usage | Any notification, messaging, or delivery work |
-| [COMMS_CLIENT.md](backends/node/services/comms/client/COMMS_CLIENT.md) | Thin RabbitMQ publisher client: `Notify` handler with universal message shape, DI registration (`addCommsClient`), Auth caller example, fire-and-forget via fanout exchange | Sending notifications from any service |
-| [COMMS_APP.md](backends/node/services/comms/app/COMMS_APP.md) | Comms CQRS handlers (7): Deliver orchestrator, RecipientResolver, channel preferences, 2 job handlers. Provider interfaces, repository bundles, DI registration | Comms handler work, delivery pipeline |
-| [REQUEST_ENRICHMENT.md](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | IP resolution (CF-Connecting-IP→X-Real-IP→X-Forwarded-For→RemoteIp), fingerprinting (server/client/device SHA-256), WhoIs lookup, IRequestContext population, config | Middleware, request context, fingerprinting |
-| [RATE_LIMIT.md](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md) | Sliding window approximation algorithm, 4 dimensions (fingerprint 100/min, IP 5K, city 25K, country 100K), fail-open, country whitelist, trusted service bypass, config | Rate limiting changes |
-| [IDEMPOTENCY.md](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md) | Idempotency-Key header, Redis SET NX with sentinel, response caching, edge cases table, Node.js orchestrator, config | Idempotency middleware |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branch naming, conventional commits, PR process, license notice | PR preparation |
+| Document                                                                                                                   | Summary                                                                                                                                                                                                   | When to Read                                    |
+| -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| [PLANNING.md](PLANNING.md)                                                                                                 | Current phase, ADRs (1-18), resolved decisions, implementation status, open issues, roadmap                                                                                                               | **Always first** — before any task              |
+| [BACKENDS.md](backends/BACKENDS.md)                                                                                        | TLC/2LC/3LC folder convention, handler categories (Q/C/U/X), layer-specific verbiage, DI registration, Node.js workspace, package dependency graph, Dkron jobs                                            | Any backend work (services, handlers, repos)    |
+| [.NET HANDLER.md](backends/dotnet/shared/Handler/HANDLER.md)                                                               | BaseHandler pattern, IHandlerContext, HandlerOptions, OTel metrics (4), IRequestContext field tables, implementation example with using aliases                                                           | Adding/modifying any .NET handler               |
+| [Node.js HANDLER.md](backends/node/shared/handler/HANDLER.md)                                                              | BaseHandler, RedactionSpec, validateInput (Zod), HandlerOptions, OTel metrics, ambient context (AsyncLocalStorage), IRequestContext fields, createServiceScope, implementation + interface + DI examples  | Adding/modifying any Node.js handler            |
+| [.NET RESULT.md](backends/dotnet/shared/Result/RESULT.md)                                                                  | D2Result factory methods (12+), BubbleFail/Bubble error propagation, CheckSuccess/CheckFailure pattern matching, best practices                                                                           | .NET error handling, result patterns            |
+| [Node.js RESULT.md](backends/node/shared/result/RESULT.md)                                                                 | D2Result factory methods (camelCase), bubbleFail/bubble, checkSuccess/checkFailure, error codes table, retry helpers (retryResultAsync/retryExternalAsync), transient detection                           | Node.js error handling, result patterns         |
+| [.NET TESTS.md](backends/dotnet/shared/Tests/TESTS.md)                                                                     | Case coverage checklist (8 categories), test naming conventions, form/endpoint testing patterns, frameworks per platform                                                                                  | Writing any tests                               |
+| [Node.js TESTING.md](backends/node/shared/testing/TESTING.md)                                                              | Custom Vitest matchers (7), PostgresTestHelper (Testcontainers), test project architecture, vitest monorepo setup, createTestContext pattern                                                              | Node.js test infrastructure, Vitest setup       |
+| [GEO_SERVICE.md](backends/dotnet/services/Geo/GEO_SERVICE.md)                                                              | Geo service architecture — domain model, caching strategy, validation, DB design. **Primary reference implementation**                                                                                    | Understanding established service structure     |
+| [GEO_CLIENT.md](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md)                                                     | Client library pattern: inter-service gRPC calls, multi-tier caching (Mem→Redis→DB→Disk), singleflight dedup, circuit breaker, DI registration, usage examples                                            | Client library work, caching, gRPC calls        |
+| [AUTH.md](backends/node/services/auth/AUTH.md)                                                                             | Auth architecture (BetterAuth + Hono), sessions (3-tier: cookie→Redis→PG), JWT (RS256/JWKS), request flow (Hybrid C), SvelteKit proxy, S2S trust, secure endpoint checklist, cookie signing               | Any auth, security, session, or JWT work        |
+| [AUTH_BFF_CLIENT.md](backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md)                                            | SvelteKit BFF auth client: SessionResolver, JwtManager, AuthProxy, route guards (`requireAuth`, `requireOrg`, `redirectIfAuthenticated`), cookie signing, config                                          | SvelteKit auth hooks, SSR session, route guards |
+| [AUTH_APP.md](backends/node/services/auth/app/AUTH_APP.md)                                                                 | Auth CQRS handlers (18): sign-in events, throttle, emulation consent, org contacts, user contacts, 4 job handlers. Repository interfaces, DI registration, service keys                                   | Auth handler work, auth DI, org contacts        |
+| [COMMS.md](backends/node/services/comms/COMMS.md)                                                                          | Comms service architecture: delivery engine (RabbitMQ), in-app notifications, conversational messaging (threads), entity model, channel resolution, retry topology, SignalR gateway, client library usage | Any notification, messaging, or delivery work   |
+| [COMMS_CLIENT.md](backends/node/services/comms/client/COMMS_CLIENT.md)                                                     | Thin RabbitMQ publisher client: `Notify` handler with universal message shape, DI registration (`addCommsClient`), Auth caller example, fire-and-forget via fanout exchange                               | Sending notifications from any service          |
+| [COMMS_APP.md](backends/node/services/comms/app/COMMS_APP.md)                                                              | Comms CQRS handlers (7): Deliver orchestrator, RecipientResolver, channel preferences, 2 job handlers. Provider interfaces, repository bundles, DI registration                                           | Comms handler work, delivery pipeline           |
+| [REQUEST_ENRICHMENT.md](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | IP resolution (CF-Connecting-IP→X-Real-IP→X-Forwarded-For→RemoteIp), fingerprinting (server/client/device SHA-256), WhoIs lookup, IRequestContext population, config                                      | Middleware, request context, fingerprinting     |
+| [RATE_LIMIT.md](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | Sliding window approximation algorithm, 4 dimensions (fingerprint 100/min, IP 5K, city 25K, country 100K), fail-open, country whitelist, trusted service bypass, config                                   | Rate limiting changes                           |
+| [IDEMPOTENCY.md](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                     | Idempotency-Key header, Redis SET NX with sentinel, response caching, edge cases table, Node.js orchestrator, config                                                                                      | Idempotency middleware                          |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                                                                                         | Branch naming, conventional commits, PR process, license notice                                                                                                                                           | PR preparation                                  |
 
 ---
 
@@ -157,22 +158,22 @@ Read these docs BEFORE working in the relevant area. Each doc is the authority f
 
 Three-tier folder hierarchy for all backend code. TLC = architectural concern, 2LC = implementation type, 3LC = operation type. **3LC verbiage varies by layer:**
 
-| TLC            | 3LC Verbiage                                                    | Meaning                  |
-| -------------- | --------------------------------------------------------------- | ------------------------ |
-| **CQRS**       | `C/` Commands, `Q/` Queries, `U/` Utilities, `X/` Complex      | Business operation intent |
-| **Messaging**  | `Pub/` Publishers, `Sub/` Subscribers                           | Message direction        |
-| **Repository** | `C/` Create, `R/` Read, `U/` Update, `D/` Delete               | CRUD operation           |
-| **Caching**    | `C/` Create, `R/` Read, `U/` Update, `D/` Delete               | CRUD operation           |
+| TLC            | 3LC Verbiage                                              | Meaning                   |
+| -------------- | --------------------------------------------------------- | ------------------------- |
+| **CQRS**       | `C/` Commands, `Q/` Queries, `U/` Utilities, `X/` Complex | Business operation intent |
+| **Messaging**  | `Pub/` Publishers, `Sub/` Subscribers                     | Message direction         |
+| **Repository** | `C/` Create, `R/` Read, `U/` Update, `D/` Delete          | CRUD operation            |
+| **Caching**    | `C/` Create, `R/` Read, `U/` Update, `D/` Delete          | CRUD operation            |
 
 Interfaces live in `Interfaces/{TLC}/Handlers/{3LC}/`. Implementations live in `Implementations/{TLC}/Handlers/{3LC}/` (app layer) or `{TLC}/Handlers/{3LC}/` (infra layer). Full details → [BACKENDS.md](backends/BACKENDS.md)
 
 ### CQRS Handler Categories
 
-| Type        | Distributed Cache | DB Write | External API | Message Publish | Key Test                                                    |
-| ----------- | ----------------- | -------- | ------------ | --------------- | ----------------------------------------------------------- |
-| **Query**   | No                | No       | No           | No              | "If the process dies after, would state persist?" → **No**  |
-| **Command** | Yes               | Yes      | Yes          | Yes             | Primary intent = mutation of persistent/shared state        |
-| **Complex** | Yes               | Yes      | Yes          | Yes             | Primary intent = retrieval, but may mutate as side effect   |
+| Type        | Distributed Cache | DB Write | External API | Message Publish | Key Test                                                   |
+| ----------- | ----------------- | -------- | ------------ | --------------- | ---------------------------------------------------------- |
+| **Query**   | No                | No       | No           | No              | "If the process dies after, would state persist?" → **No** |
+| **Command** | Yes               | Yes      | Yes          | Yes             | Primary intent = mutation of persistent/shared state       |
+| **Complex** | Yes               | Yes      | Yes          | Yes             | Primary intent = retrieval, but may mutate as side effect  |
 
 Local/in-memory caching is always OK (instance-scoped, ephemeral — doesn't affect other instances).
 
@@ -233,9 +234,9 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **D2Result semantic factories**: Never raw `Fail()` with manual `statusCode` when a factory exists. See list in §4.
 - **RedactionSpec on PII handlers**: Every handler touching PII (emails, phones, IPs, addresses, names, message content) MUST declare a `RedactionSpec`. Applies to BOTH app AND repo handlers — each `BaseHandler` independently logs its I/O.
 - **Input validation on all handlers**: Node.js = Zod via `this.validateInput()`. .NET = FluentValidation/DataAnnotations. All string fields need max length.
-- **Build warnings = bugs**: Fix ALL warnings — StyleCop (SA****), CS**** (null refs, hiding), ESLint, `svelte-check`. Never suppress with `#pragma warning disable`, `!` (for silencing warnings), or `@ts-ignore`.
+- **Build warnings = bugs**: Fix ALL warnings — StyleCop (SA\***\*), CS\*\*** (null refs, hiding), ESLint, `svelte-check`. Never suppress with `#pragma warning disable`, `!` (for silencing warnings), or `@ts-ignore`.
 - **Lint/style warnings = bugs**: `pnpm lint` (ESLint) and `pnpm format:check` (Prettier) must be zero warnings.
-- **Branch ownership**: All errors in files modified on this branch = YOUR responsibility. Check `git diff main --name-only`. Don't dismiss as "pre-existing" without verifying via `git diff main` or `git log`.
+- **Zero tolerance for warnings/errors**: Fix ALL errors and warnings encountered anywhere in the project — not just in branch-modified files. Never dismiss as "pre-existing." If you see it during your work, fix it. Every session leaves the codebase cleaner.
 - **Tests are adversarial**: Happy path + garbage input + boundary values + cross-field deps + error propagation + idempotency + concurrency. Full checklist → [TESTS.md](backends/dotnet/shared/Tests/TESTS.md).
 - **Validate inputs BEFORE infrastructure calls** — never let Redis/DB be the first to reject invalid data. Call `this.validateInput(schema, input)` (Node.js) or validate with FluentValidation (.NET) at the TOP of `executeAsync`, before any downstream calls. → [AUTH_APP.md](backends/node/services/auth/app/AUTH_APP.md) § Handler Implementation Patterns
 - **RedactionSpec covers automatic I/O logging only** — any `this.context.logger.*` calls inside `executeAsync()` must be manually reviewed. Never log fields that appear in your `inputFields`/`outputFields` redaction list via manual log calls. → [AUTH_APP.md](backends/node/services/auth/app/AUTH_APP.md) § Handler Implementation Patterns, [Node.js HANDLER.md](backends/node/shared/handler/HANDLER.md)
@@ -244,7 +245,7 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Cross-platform enum/constant changes in one commit** — when renaming `OrgType`, `Role`, or any enum stored as text in the database, update BOTH .NET and Node.js simultaneously. Mismatches are data integrity bugs.
 - **Auth flags initialize to `null`, not `false`** — `isAuthenticated`, `isTrustedService`, `isOrgEmulating`, `isUserImpersonating` on `IRequestContext` use `boolean | null` (.NET: `bool?`). `null` = "not yet determined" (pre-auth). `false` = "confirmed not." Never treat `null` as `false` in logic.
 - **Don't create patterns**: Follow existing ones (§4). If no pattern fits, ask before inventing.
-- **Don't leave broken things behind**: If you touch a file, fix ALL issues in it. Every change leaves the codebase cleaner.
+- **Don't leave broken things behind**: Fix ALL issues you encounter in the project — not just in files you touched. Every session leaves the codebase cleaner.
 
 ### C#
 
@@ -266,7 +267,7 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Error handling**: `@d2/result` (D2Result) — same semantics as .NET.
 - **ESM only**: All packages `"type": "module"`.
 - **After editing**: Check `mcp__cclsp__get_diagnostics`. Fix type errors and missing imports immediately.
-- **After modifying @d2/* source**: Full `tsc` build (not `--noEmit`) so `dist/` is updated. Stale output = silent runtime failures.
+- **After modifying @d2/\* source**: Full `tsc` build (not `--noEmit`) so `dist/` is updated. Stale output = silent runtime failures.
 - **Drizzle UPDATE/DELETE must chain `.returning()`** — check the result array. Empty = row didn't exist → return `notFound()`, not `ok()`. → [AUTH_INFRA.md](backends/node/services/auth/infra/AUTH_INFRA.md) § Repository Handler Patterns
 - **`.d.ts` files in `src/` are NOT emitted to `dist/`** — module augmentations (`declare module`) and ambient declarations must be inside `.ts` source files, not standalone `.d.ts`.
 - **Non-TS assets (SQL migrations, JSON fixtures) not copied by `tsc`** — use path construction relative to `src/` at runtime, not `import.meta.dirname` which resolves to `dist/`.
@@ -314,7 +315,7 @@ Full checklist → [AUTH.md](backends/node/services/auth/AUTH.md) § "Secure End
 | Private readonly instance fields | `r_camelCase`   | `r_getFromMem`      |
 | Private static fields            | `s_camelCase`   | `s_instance`        |
 | Private static readonly fields   | `sr_camelCase`  | `sr_activitySource` |
-| Static readonly (non-private)    | `SR_PascalCase` | `SR_ActivitySource`  |
+| Static readonly (non-private)    | `SR_PascalCase` | `SR_ActivitySource` |
 | Private constants                | `_UPPER_CASE`   | `_BATCH_SIZE`       |
 | Public/Internal constants        | `UPPER_CASE`    | `MAX_ATTEMPTS`      |
 | Local constants (tests)          | `snake_case`    | `expected_count`    |
@@ -349,13 +350,13 @@ Full checklist → [AUTH.md](backends/node/services/auth/AUTH.md) § "Secure End
 
 All logs and spans MUST include these fields for cross-service correlation:
 
-| Field         | Source                                    | Purpose                    |
-| ------------- | ----------------------------------------- | -------------------------- |
+| Field         | Source                                           | Purpose                    |
+| ------------- | ------------------------------------------------ | -------------------------- |
 | traceId       | `IRequestContext.traceId` (auto via BaseHandler) | End-to-end request tracing |
-| correlationId | `Idempotency-Key` / RabbitMQ header       | Async message tracking     |
-| userId        | JWT `sub` claim / session                  | User audit trail           |
-| orgId         | JWT `activeOrganizationId` / session       | Multi-tenant context       |
-| service       | `OTEL_SERVICE_NAME`                        | Service origin             |
+| correlationId | `Idempotency-Key` / RabbitMQ header              | Async message tracking     |
+| userId        | JWT `sub` claim / session                        | User audit trail           |
+| orgId         | JWT `activeOrganizationId` / session             | Multi-tenant context       |
+| service       | `OTEL_SERVICE_NAME`                              | Service origin             |
 
 ### Git
 
