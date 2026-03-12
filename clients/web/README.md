@@ -126,9 +126,9 @@ Runs on every request via `hooks.server.ts`:
 
 ### Testing
 
-- Vitest 4.0.18 with dual-project setup (browser + server)
+- Vitest 3.2.4 with dual-project setup (browser + server)
 - vitest-browser-svelte for component tests (real Chromium)
-- Playwright E2E config
+- Three-tier Playwright test architecture (mocked CI, local E2E, cross-service E2E)
 - Error page with traceId display
 
 ### Sign-Out Flow
@@ -217,7 +217,7 @@ This applies to ALL navigation: `<a href>`, `goto()`, `redirect()`, and `fetch()
 | OTel (server) | `@opentelemetry/sdk-node` + exporters       | 0.212.0         |
 | Faro (client) | `@grafana/faro-web-sdk` + tracing           | 1.19.0          |
 | Charts        | `layerchart`                                | 2.0.0-next.43   |
-| Testing       | `vitest` + `@vitest/browser` + `playwright` | 4.0.18 / 1.58.0 |
+| Testing       | `vitest` + `@vitest/browser` + `playwright` | 3.2.4 / 1.58.0  |
 | Toast         | `svelte-sonner`                             | 1.0.7           |
 | Theme         | `mode-watcher`                              | 1.1.0           |
 
@@ -257,8 +257,9 @@ pnpm build            # Production build
 pnpm preview          # Preview production build
 pnpm check            # Type checking (svelte-check)
 pnpm test:unit        # Vitest (component + server tests)
-pnpm test:e2e         # Playwright E2E tests
-pnpm test             # All tests
+pnpm test:e2e:mocked  # Playwright mocked tests (CI-safe, no backends needed)
+pnpm test:e2e:local   # Playwright local E2E (requires all services running)
+pnpm test             # All tests (unit + mocked E2E)
 ```
 
 ### Environment Variables
@@ -271,6 +272,7 @@ pnpm test             # All tests
 | `PUBLIC_GATEWAY_URL`          | .NET Gateway URL (client-side)   | For client API calls |
 | `SVELTEKIT_AUTH__URL`         | Auth service URL (server-side)   | For auth proxy       |
 | `GATEWAY_URL`                 | .NET Gateway URL (server-side)   | For SSR API calls    |
+| `D2_MOCK_INFRA`               | Enable mock infra for tests      | For mocked E2E tests |
 
 See `.env.local.example` in the project root for all environment variables.
 
@@ -278,13 +280,35 @@ See `.env.local.example` in the project root for all environment variables.
 
 ## Testing Strategy
 
-| Level         | Tool                   | File Pattern       | Environment        |
-| ------------- | ---------------------- | ------------------ | ------------------ |
-| Unit          | Vitest (Node)          | `*.test.ts`        | Node               |
-| Component     | vitest-browser-svelte  | `*.svelte.test.ts` | Browser (Chromium) |
-| E2E           | Playwright             | `e2e/*.spec.ts`    | Browser (full app) |
-| Accessibility | axe-core/playwright    | In E2E suite       | Browser            |
-| Visual        | Playwright screenshots | In E2E suite       | Browser            |
-| Performance   | Lighthouse CI          | CI pipeline        | Browser            |
+### Unit & Component Tests
+
+| Level     | Tool                  | File Pattern       | Environment        |
+| --------- | --------------------- | ------------------ | ------------------ |
+| Unit      | Vitest (Node)         | `*.test.ts`        | Node               |
+| Component | vitest-browser-svelte | `*.svelte.test.ts` | Browser (Chromium) |
+
+### Playwright Tests (Three-Tier Architecture)
+
+E2E tests are split into three tiers based on infrastructure requirements:
+
+| Tier            | Directory                        | Config                       | Script                 | Backends Required | CI  |
+| --------------- | -------------------------------- | ---------------------------- | ---------------------- | ----------------- | --- |
+| **Mocked**      | `tests/mocked/`                  | `playwright.config.ts`       | `pnpm test:e2e:mocked` | None              | Yes |
+| **Local E2E**   | `tests/e2e/`                     | `playwright.local.config.ts` | `pnpm test:e2e:local`  | All (Aspire)      | No  |
+| **True E2E**    | `backends/node/services/e2e/`    | (separate project)           | (separate project)     | All (Aspire)      | No  |
+
+**Tier 1 — Mocked tests** (`tests/mocked/*.spec.ts`): Run against the SvelteKit dev server with `D2_MOCK_INFRA=true`. Client-side HTTP requests are intercepted via Playwright's `page.route()` API. Server-side data loading (e.g., geo ref data via gRPC) is handled by the `D2_MOCK_INFRA` env var, which provides mock data at the SSR level. Shared mock helpers live in `tests/mocked/fixtures.ts` (e.g., `mockEmailCheck`). These tests run in CI and use `retries: 1` for flaky async behavior.
+
+**Tier 2 — Local E2E** (`tests/e2e/*.spec.ts`): Full integration tests that require all backend services running (via Aspire or manually). Uses `playwright.local.config.ts` which reuses an existing dev server on port 5173. Not included in CI — local development only.
+
+**Tier 3 — True E2E** (`backends/node/services/e2e/`): Cross-service E2E tests in a separate project. Tests the full stack including Auth, Comms, and Geo services. Managed independently from the web client.
+
+### Other Test Types
+
+| Level         | Tool                   | Status         |
+| ------------- | ---------------------- | -------------- |
+| Accessibility | axe-core/playwright    | Not integrated |
+| Visual        | Playwright screenshots | In E2E suite   |
+| Performance   | Lighthouse CI          | Not configured |
 
 See [`SVELTEKIT_STRATEGY.md` §7](SVELTEKIT_STRATEGY.md#7-frontend-testing-strategy) for full testing architecture.

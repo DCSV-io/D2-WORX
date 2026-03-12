@@ -71,7 +71,7 @@
 
 **Stage C — Auth Client Libraries (In Progress)**
 
-- **@d2/auth-bff-client** ✅ — BFF client for SvelteKit (ADR-017). SessionResolver, JwtManager, AuthProxy, route guards. 32 unit + 10 E2E tests.
+- **@d2/auth-bff-client** ✅ — BFF client for SvelteKit (ADR-017). SessionResolver, JwtManager, AuthProxy, route guards. 42 unit + 10 E2E tests.
 - **@d2/auth-client** — Backend gRPC client for other Node.js services (mirrors `@d2/geo-client` pattern). Planned.
 - **.NET Auth.Client** — JWT validation via JWKS + `AddJwtBearer()`, gRPC client. Planned.
 
@@ -193,6 +193,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Recently Completed
 
+- Playwright test restructure: Mocked tests moved from `e2e/` to `tests/mocked/` with `D2_MOCK_INFRA` mock injection. 146 mocked tests passing (5 skipped pending authenticated sessions). Three-tier test architecture: mocked CI, local E2E (`tests/e2e/`), true browser E2E (`backends/node/services/e2e/`)
 - PR review fixes (#42–#53): CI job for bff-client tests, 72 new tests (reset-password, forgot-password, form-actions, auth-gateway-client, auth.server, middleware.server), shared `executeFetch()` extraction, schema dedup, .NET CORS multi-origin, empty-message fallback bug fix, CLAUDE.md path fix
 - Singleflight deduplication (#32): `Singleflight` utility on both .NET and Node.js, wired into FindWhoIs to coalesce concurrent gRPC calls for the same cache key
 - Ambient per-request context (#41): AsyncLocalStorage in `@d2/handler` — all Node.js handlers (including pre-auth singletons) automatically see per-request context, matching .NET DI scoping
@@ -306,6 +307,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)                                           |
 | API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)                                              |
 | Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit                                            |
+| Playwright Tests     | ✅ Done        | Three-tier: mocked CI (`tests/mocked/`, 146 passing, 5 skipped), local E2E, true browser E2E          |
 | OpenTelemetry        | ✅ Done        | Server instrumentation via OTLP/HTTP. Client telemetry via Grafana Faro (Step 9)                       |
 
 ---

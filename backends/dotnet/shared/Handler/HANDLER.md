@@ -88,7 +88,7 @@ Two implementations exist:
 
 | Property          | Type      | Description                                      |
 | ----------------- | --------- | ------------------------------------------------ |
-| `IsAuthenticated` | `bool`    | Whether the user is authenticated                |
+| `IsAuthenticated` | `bool?`   | Whether the user is authenticated                |
 | `UserId`          | `Guid?`   | User ID (impersonated user during impersonation) |
 | `Email`           | `string?` | User email                                       |
 | `Username`        | `string?` | User login handle                                |
@@ -115,11 +115,11 @@ Two implementations exist:
 
 | Property                | Type      | Description                            |
 | ----------------------- | --------- | -------------------------------------- |
-| `IsOrgEmulating`        | `bool`    | Staff viewing another org as read-only |
+| `IsOrgEmulating`        | `bool?`   | Staff viewing another org as read-only |
 | `ImpersonatedBy`        | `Guid?`   | Admin who initiated impersonation      |
 | `ImpersonatingEmail`    | `string?` | Impersonator's email                   |
 | `ImpersonatingUsername` | `string?` | Impersonator's username                |
-| `IsUserImpersonating`   | `bool`    | Whether user impersonation is active   |
+| `IsUserImpersonating`   | `bool?`   | Whether user impersonation is active   |
 
 **Network / Enrichment** (gateway only — `null` in non-gateway services):
 
@@ -140,9 +140,11 @@ Two implementations exist:
 
 **Trust:**
 
-| Property           | Type   | Description                                  |
-| ------------------ | ------ | -------------------------------------------- |
-| `IsTrustedService` | `bool` | Request from a trusted service (`X-Api-Key`) |
+| Property           | Type    | Description                                  |
+| ------------------ | ------- | -------------------------------------------- |
+| `IsTrustedService` | `bool?` | Request from a trusted service (`X-Api-Key`) |
+
+**`bool?` auth flags:** `IsAuthenticated`, `IsTrustedService`, `IsOrgEmulating`, and `IsUserImpersonating` use `bool?` (nullable). `null` = "not yet determined" (pre-auth middleware). `false` = "confirmed not." Never treat `null` as `false` — e.g., `if (!ctx.IsAuthenticated)` is wrong when the value is `null` because `!null` is `null` (falsey in C# conditional), which would incorrectly deny access before auth middleware has run. Always check explicitly: `if (ctx.IsAuthenticated != true)` or `if (ctx.IsAuthenticated is null or false)`.
 
 **Helpers** (computed from org fields):
 

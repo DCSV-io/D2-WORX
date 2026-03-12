@@ -24,6 +24,8 @@ Before writing any code, understand what you're changing and what it touches.
 
 ### Step 2: Plan
 
+**ALWAYS use Plan Mode** (`/plan` or `EnterPlanMode`) for planning. Plan Mode creates a persistent plan file that survives context compaction, keeps the plan visible throughout implementation, and allows iterative refinement before any code is written. Never plan inline in chat — always use the dedicated planning tool.
+
 Design your approach before touching code. Plans must address:
 
 - **Scope**: Files to create/modify
@@ -386,6 +388,7 @@ All logs and spans MUST include these fields for cross-service correlation:
 7. **Always write tests** — Adversarial, not just happy-path. Every behavioral change needs coverage. → [TESTS.md](backends/dotnet/shared/Tests/TESTS.md)
 8. **Check [PLANNING.md](PLANNING.md)** — For current phase, status, and resolved decisions.
 9. **Provide options** — When multiple approaches exist, present them for user decision.
+10. **Maximize parallelization** — Spawn as many sub-agents as makes sense to complete tasks as fast as possible. Independent work (file reads, doc updates, code fixes, test runs, audits) should run in parallel, not sequentially. Use background agents for non-blocking work. The user values speed — don't serialize work that can be parallelized.
 
 ### Code Intelligence Tools
 

@@ -115,10 +115,10 @@ No BetterAuth dependency — this package only speaks HTTP to the Auth service.
 
 ## Testing
 
-40 unit tests covering all four modules:
+42 unit tests covering all four modules:
 
 - **session-resolver** (13 tests): Success, 401, network error, header forwarding, optional fields, identity validation, unsigned cookie detection, S2S api key
-- **jwt-manager** (10 tests): Obtain, cache, refresh, dedup, invalidate, error handling, S2S api key
+- **jwt-manager** (12 tests): Obtain, cache, refresh, dedup, invalidate, error handling, S2S api key
 - **auth-proxy** (7 tests): GET/POST proxy, set-cookie preservation, timeout, query params, S2S api key
 - **route-guard** (10 tests): requireAuth, requireOrg, redirectIfAuthenticated
 

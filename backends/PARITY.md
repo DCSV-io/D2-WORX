@@ -24,7 +24,7 @@ Tracks which shared infrastructure packages exist on both .NET and Node.js platf
 | PG batch queries          | `Batch.Pg`                           | `@d2/batch-pg`           | Parity    |
 | PG transactions           | `Transactions.Pg`                    | —                        | .NET-only |
 | PG error helpers          | `Errors.Pg`                          | `@d2/errors-pg`          | Parity    |
-| Messaging                 | MassTransit / RabbitMQ               | `@d2/messaging`          | Parity    |
+| Messaging                 | `Messaging.RabbitMQ`                 | `@d2/messaging`          | Parity    |
 | Geo client                | `Geo.Client`                         | `@d2/geo-client`         | Parity    |
 | Comms client              | —                                    | `@d2/comms-client`       | Node-only |
 | Auth BFF client           | —                                    | `@d2/auth-bff-client`    | Node-only |
