@@ -112,6 +112,22 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 - **Emulation/impersonation implementation details**: Authorization model decided (org emulation = read-only no consent, user impersonation = user-level consent, admin bypass). Remaining: should impersonation require 2FA? Should there be a max impersonation duration? How does `emulation_consent` integrate with BetterAuth's `impersonation` plugin hooks?
 
+### Pre-Launch SEO Checklist
+
+Items deferred from the initial SEO sweep that **MUST** be addressed before public launch:
+
+| Item                                  | Priority | Notes                                                                                                                                   |
+| ------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `og:image` social card                | P1       | Create a branded social card image (1200x630) for link previews. Add `og:image` to landing page and `twitter:card` / `twitter:image`.   |
+| `og:url` canonical URLs               | P1       | Add `og:url` with absolute URL to public pages. Requires passing `$page.url` from server or using `url.href` in `<svelte:head>`.        |
+| Twitter Card meta tags                | P2       | Add `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image` to landing page.                                            |
+| Canonical `<link rel="canonical">`    | P2       | Add self-referential canonical links to all indexable pages to prevent duplicate content across locale variants.                         |
+| Terms of Service page (`/terms`)      | P1       | Footer links exist but page not built. Add to sitemap once created.                                                                     |
+| Privacy Policy page (`/privacy`)      | P1       | Footer links exist but page not built. Add to sitemap once created.                                                                     |
+| Structured data (JSON-LD)             | P3       | `Organization` schema on landing page, `WebApplication` schema. Low priority for pre-alpha.                                             |
+| Localize app page titles              | P3       | Dashboard/Profile/Settings/Welcome titles are hardcoded English. Add paraglide message keys when i18n coverage expands beyond auth UX.   |
+| Prerender public pages                | P3       | Landing, terms, privacy could use `export const prerender = true` for faster TTFB. Requires confirming no dynamic dependencies.          |
+
 ### Deferred Upgrades
 
 From Q1 2026 audit:

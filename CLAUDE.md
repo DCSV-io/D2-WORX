@@ -297,6 +297,32 @@ Conventions for TypeScript and SvelteKit development:
 - Result patterns for error handling
 - **Playwright screenshots** must be saved to `clients/web/screenshots/` — never in the project root or monorepo root
 
+### SvelteKit i18n / SEO
+
+**All user-visible strings MUST use Paraglide translations** — never hardcode text in Svelte components. This includes:
+
+- `<title>` tags (pattern: `{m.page_title()} — {m.webclient_nav_brand()}`)
+- `<meta name="description">` tags
+- `<meta property="og:title">`, `og:description`, `og:type` tags
+- Button labels, headings, form labels, error messages, placeholders
+
+**Every new page MUST include** in `<svelte:head>`:
+1. `<title>` using translated strings
+2. `<meta name="description">` with translated description
+3. `<meta property="og:title">`, `og:description`, `og:type="website"` (OG tags)
+4. `<meta name="robots" content="noindex, nofollow" />` if the page should not be indexed
+
+**Translation key conventions:**
+- Auth pages: `auth_{feature}_{purpose}` (e.g., `auth_sign_in_title`, `auth_verify_email_description`)
+- App pages: `webclient_app_{page}_{purpose}` (e.g., `webclient_app_profile_title`)
+- Design/demo/debug: `webclient_{section}_{purpose}` (e.g., `webclient_debug_session_title`)
+- Reuse `common_ui_*` keys where they match (e.g., `common_ui_dashboard` for Dashboard title)
+
+**When adding new translation keys:**
+1. Add to ALL 5 locale files (`contracts/messages/{en,es,de,fr,ja}.json`) — they MUST stay in sync
+2. Run `npx @inlang/paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide` from `clients/web/`
+3. Verify the generated message functions exist before using them in components
+
 ---
 
 ## Documentation
@@ -556,6 +582,7 @@ Edit `~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/mark
 - Don't forget `RedactionSpec` on handlers that touch PII — includes repo handlers, not just app handlers
 - Don't cache per-user data in unkeyed singletons — any cache storing user-specific data (JWTs, session state) MUST be keyed by session identity, not shared across all requests
 - Don't use `tsc --noEmit` when consumers need updated `dist/` — type-checking alone leaves stale compiled output, causing silent runtime failures
+- Don't hardcode user-visible strings in SvelteKit components — always use Paraglide translations (`m.key_name()`). This includes `<title>`, meta descriptions, OG tags, headings, labels, and error messages. New keys must be added to ALL 5 locale files simultaneously
 
 ### Security Checklist for New Endpoints
 

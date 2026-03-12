@@ -6,6 +6,10 @@
   let { children } = $props();
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
 <div class="relative flex min-h-screen items-center justify-center px-4">
   <div class="absolute right-4 top-4 flex items-center gap-1">
     <ThemeToggle />

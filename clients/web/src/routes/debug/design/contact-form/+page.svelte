@@ -27,6 +27,7 @@
   import { useAddressLines } from "$lib/client/forms/address-lines.svelte.js";
   import { useAsyncFieldCheck } from "$lib/client/forms/async-field-check.svelte.js";
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
+  import * as m from "$lib/paraglide/messages.js";
 
   let { data } = $props();
 
@@ -59,7 +60,7 @@
     field: "email",
     preCheck: (v) => !!v && v.includes("@"),
     async checker(email) {
-      const res = await fetch(`/design/api/check-email?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`/debug/design/api/check-email?email=${encodeURIComponent(email)}`);
       const { available } = await res.json();
       return { valid: available, errorMessage: "This email is already taken" };
     },
@@ -67,14 +68,19 @@
 </script>
 
 <svelte:head>
-  <title>Contact Form Demo — DCSV WORX</title>
+  <title>{m.webclient_design_contact_form_title()} — {m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.webclient_design_contact_form_description()} />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title" content="{m.webclient_design_contact_form_title()} — {m.webclient_nav_brand()}" />
+  <meta property="og:description" content={m.webclient_design_contact_form_description()} />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="mx-auto max-w-2xl px-4 py-8">
   <!-- Header -->
   <div class="mb-6">
     <a
-      href={resolve("/design")}
+      href={resolve("/debug/design")}
       class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
     >
       <ArrowLeftIcon class="size-4" />

@@ -5,6 +5,7 @@
   import { Separator } from "$lib/client/components/ui/separator/index.js";
   import { authClient } from "$lib/client/stores/auth-client.js";
   import BugIcon from "@lucide/svelte/icons/bug";
+  import * as m from "$lib/paraglide/messages.js";
   import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw";
 
   let { data } = $props();
@@ -65,7 +66,12 @@
 </script>
 
 <svelte:head>
-  <title>Debug Session — DCSV WORX</title>
+  <title>{m.webclient_debug_session_title()} — {m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.webclient_debug_session_description()} />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title" content="{m.webclient_debug_session_title()} — {m.webclient_nav_brand()}" />
+  <meta property="og:description" content={m.webclient_debug_session_description()} />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 {#if !dev}

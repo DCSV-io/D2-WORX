@@ -8,6 +8,7 @@
   import { setClientFingerprint } from "$lib/client/rest/gateway-client.js";
   import { generateClientFingerprint } from "$lib/client/utils/fingerprint.js";
   import { setFaroUser, resetFaroUser } from "$lib/client/telemetry/faro.js";
+  import * as m from "$lib/paraglide/messages.js";
 
   let { data, children } = $props();
 
@@ -30,8 +31,8 @@
     rel="icon"
     href={favicon}
   />
-  <title>DCSV WORX</title>
-  <meta name="description" content="DCSV WORX — Decisive Works" />
+  <title>{m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.webclient_hero_tagline()} />
 </svelte:head>
 
 <ModeWatcher />

@@ -8,6 +8,7 @@
   import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw";
   import CircleCheckIcon from "@lucide/svelte/icons/circle-check";
   import CircleXIcon from "@lucide/svelte/icons/circle-x";
+  import * as m from "$lib/paraglide/messages.js";
   import TriangleAlertIcon from "@lucide/svelte/icons/triangle-alert";
 
   let { data } = $props();
@@ -33,7 +34,12 @@
 </script>
 
 <svelte:head>
-  <title>Debug Health — DCSV WORX</title>
+  <title>{m.webclient_debug_health_title()} — {m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.webclient_debug_health_description()} />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title" content="{m.webclient_debug_health_title()} — {m.webclient_nav_brand()}" />
+  <meta property="og:description" content={m.webclient_debug_health_description()} />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 {#if !dev}

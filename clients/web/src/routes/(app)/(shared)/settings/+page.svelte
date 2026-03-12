@@ -1,6 +1,15 @@
 <script lang="ts">
   import * as Card from "$lib/client/components/ui/card/index.js";
+  import * as m from "$lib/paraglide/messages.js";
 </script>
+
+<svelte:head>
+  <title>{m.webclient_app_settings_title()} — {m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.webclient_app_settings_description()} />
+  <meta property="og:title" content="{m.webclient_app_settings_title()} — {m.webclient_nav_brand()}" />
+  <meta property="og:description" content={m.webclient_app_settings_description()} />
+  <meta property="og:type" content="website" />
+</svelte:head>
 
 <div class="space-y-6">
   <h1 class="text-3xl font-bold tracking-tight">Settings</h1>

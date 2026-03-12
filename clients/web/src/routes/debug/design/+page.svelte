@@ -16,6 +16,7 @@
   import { resolve } from "$app/paths";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import PaletteIcon from "@lucide/svelte/icons/palette";
+  import * as m from "$lib/paraglide/messages.js";
 
   let editorOpen = $state(false);
 
@@ -34,13 +35,18 @@
   ] as const;
 
   const demos = [
-    { href: "/design/contact-form", label: "Contact Form", description: "Superforms + geo data, phone formatting, cascading selects" },
-    { href: "/design/signup-form", label: "Signup Form", description: "Password rules, email/password confirmation, show/hide toggle" },
+    { href: "/debug/design/contact-form", label: "Contact Form", description: "Superforms + geo data, phone formatting, cascading selects" },
+    { href: "/debug/design/signup-form", label: "Signup Form", description: "Password rules, email/password confirmation, show/hide toggle" },
   ] as const;
 </script>
 
 <svelte:head>
-  <title>Design System — DCSV WORX</title>
+  <title>{m.common_ui_design_system()} — {m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.webclient_design_description()} />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title" content="{m.common_ui_design_system()} — {m.webclient_nav_brand()}" />
+  <meta property="og:description" content={m.webclient_design_description()} />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="mx-auto max-w-6xl px-4 py-8">

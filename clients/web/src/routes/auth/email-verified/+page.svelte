@@ -28,8 +28,23 @@
 
 <svelte:head>
   <title
-    >{success ? m.auth_email_verified_title() : m.auth_email_failed_title()} — DCSV WORX</title
+    >{success ? m.auth_email_verified_title() : m.auth_email_failed_title()} —
+    {m.webclient_nav_brand()}</title
   >
+  <meta
+    name="description"
+    content={success ? m.auth_email_verified_description() : m.auth_email_failed_description()}
+  />
+  <meta name="robots" content="noindex" />
+  <meta
+    property="og:title"
+    content="{success ? m.auth_email_verified_title() : m.auth_email_failed_title()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={success ? m.auth_email_verified_description() : m.auth_email_failed_description()}
+  />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="relative flex min-h-screen items-center justify-center px-4">

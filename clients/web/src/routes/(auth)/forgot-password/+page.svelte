@@ -8,6 +8,11 @@
 
 <svelte:head>
   <title>{m.auth_forgot_password_title()} — {m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.auth_forgot_password_description()} />
+  <meta name="robots" content="noindex" />
+  <meta property="og:title" content="{m.auth_forgot_password_title()} — {m.webclient_nav_brand()}" />
+  <meta property="og:description" content={m.auth_forgot_password_description()} />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <Card.Root>

@@ -6,6 +6,10 @@
   let { data, children } = $props();
 </script>
 
+<svelte:head>
+  <meta name="robots" content="noindex, nofollow" />
+</svelte:head>
+
 <SidebarProvider>
   <AppSidebar orgType={data.orgType} role={data.role} />
   <SidebarInset>

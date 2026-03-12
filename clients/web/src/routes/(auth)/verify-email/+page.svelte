@@ -3,13 +3,19 @@
   import * as Card from "$lib/client/components/ui/card/index.js";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import MailIcon from "@lucide/svelte/icons/mail";
+  import * as m from "$lib/paraglide/messages.js";
 
   const email = $derived($page.url.searchParams.get("email") ?? "");
   const resent = $derived($page.url.searchParams.get("resent") === "true");
 </script>
 
 <svelte:head>
-  <title>Verify Email — DCSV WORX</title>
+  <title>{m.auth_verify_email_title()} — {m.webclient_nav_brand()}</title>
+  <meta name="description" content={m.auth_verify_email_description()} />
+  <meta name="robots" content="noindex" />
+  <meta property="og:title" content="{m.auth_verify_email_title()} — {m.webclient_nav_brand()}" />
+  <meta property="og:description" content={m.auth_verify_email_description()} />
+  <meta property="og:type" content="website" />
 </svelte:head>
 
 <Card.Root>

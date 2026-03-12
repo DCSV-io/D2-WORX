@@ -257,7 +257,7 @@
       <div class="rounded-lg border p-6">
         <div class="flex flex-col gap-1">
           <h4 class="text-sm font-medium">DCSV WORX</h4>
-          <p class="text-xs text-muted-foreground">An open-source microservices framework</p>
+          <p class="text-xs text-muted-foreground">Business tools for contractors and operators</p>
         </div>
         <Separator class="my-4" />
         <div class="flex h-5 items-center gap-4 text-sm">
