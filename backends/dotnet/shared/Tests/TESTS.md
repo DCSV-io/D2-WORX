@@ -38,16 +38,16 @@ High line coverage with only happy-path tests is insufficient. Every feature mus
 
 Apply to ALL test layers (xUnit, Vitest, Playwright):
 
-| Category                    | What to Test                                                                                                      |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Happy path**              | Valid inputs produce expected outputs                                                                             |
-| **Invalid/garbage inputs**  | Nulls, empty strings, whitespace-only, wrong types, negative numbers, zero-length arrays                         |
-| **Boundary values**         | Max length strings, exactly-at-limit, one-over-limit, empty collections                                         |
-| **Format violations**       | Malformed emails, invalid UUIDs, bad date formats, non-UTF8                                                      |
-| **Cross-field dependencies**| Field A valid alone but invalid given field B's value                                                             |
-| **Error propagation**       | Upstream failures (gRPC down, Redis timeout, DB constraint violation) handled gracefully, not swallowed or 500'd |
-| **Idempotency**             | Same operation twice produces same result (especially for handlers with side effects)                            |
-| **Concurrency**             | Concurrent identical requests don't corrupt state (singleflight, circuit breaker, cache races)                   |
+| Category                     | What to Test                                                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Happy path**               | Valid inputs produce expected outputs                                                                            |
+| **Invalid/garbage inputs**   | Nulls, empty strings, whitespace-only, wrong types, negative numbers, zero-length arrays                         |
+| **Boundary values**          | Max length strings, exactly-at-limit, one-over-limit, empty collections                                          |
+| **Format violations**        | Malformed emails, invalid UUIDs, bad date formats, non-UTF8                                                      |
+| **Cross-field dependencies** | Field A valid alone but invalid given field B's value                                                            |
+| **Error propagation**        | Upstream failures (gRPC down, Redis timeout, DB constraint violation) handled gracefully, not swallowed or 500'd |
+| **Idempotency**              | Same operation twice produces same result (especially for handlers with side effects)                            |
+| **Concurrency**              | Concurrent identical requests don't corrupt state (singleflight, circuit breaker, cache races)                   |
 
 ### Test Naming
 
@@ -76,8 +76,8 @@ If code accepts user input or external data, try to **break it**. If it doesn't 
 
 ### Frameworks
 
-| Platform  | Frameworks                                                           |
-| --------- | -------------------------------------------------------------------- |
+| Platform  | Frameworks                                                          |
+| --------- | ------------------------------------------------------------------- |
 | .NET      | xUnit, FluentAssertions, Moq, Testcontainers (PostgreSQL 18, Redis) |
 | Node.js   | Vitest 4.x, Testcontainers (PostgreSQL + Redis modules)             |
-| SvelteKit | vitest-browser-svelte (components), Playwright (E2E)                 |
+| SvelteKit | vitest-browser-svelte (components), Playwright (E2E)                |

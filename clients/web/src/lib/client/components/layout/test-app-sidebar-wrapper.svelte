@@ -11,5 +11,8 @@
 </script>
 
 <SidebarProvider open={true}>
-  <AppSidebar {orgType} {role} />
+  <AppSidebar
+    {orgType}
+    {role}
+  />
 </SidebarProvider>

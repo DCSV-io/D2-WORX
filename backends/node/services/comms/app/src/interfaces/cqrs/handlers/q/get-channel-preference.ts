@@ -10,5 +10,7 @@ export interface GetChannelPreferenceOutput {
 }
 
 /** Handler for retrieving channel preferences. */
-export interface IGetChannelPreferenceHandler
-  extends IHandler<GetChannelPreferenceInput, GetChannelPreferenceOutput> {}
+export interface IGetChannelPreferenceHandler extends IHandler<
+  GetChannelPreferenceInput,
+  GetChannelPreferenceOutput
+> {}

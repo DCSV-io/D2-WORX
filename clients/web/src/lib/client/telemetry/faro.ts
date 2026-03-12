@@ -1,9 +1,4 @@
-import {
-  type Faro,
-  getWebInstrumentations,
-  initializeFaro,
-  LogLevel,
-} from "@grafana/faro-web-sdk";
+import { type Faro, getWebInstrumentations, initializeFaro, LogLevel } from "@grafana/faro-web-sdk";
 import { TracingInstrumentation } from "@grafana/faro-web-tracing";
 import { env } from "$env/dynamic/public";
 import { dev } from "$app/environment";
@@ -19,8 +14,7 @@ export function initFaro(): Faro | undefined {
   if (typeof window === "undefined") return undefined;
   if (faro) return faro;
 
-  const collectorUrl =
-    env.PUBLIC_FARO_COLLECTOR_URL ?? "http://localhost:12347/collect";
+  const collectorUrl = env.PUBLIC_FARO_COLLECTOR_URL ?? "http://localhost:12347/collect";
   const gatewayUrl = env.PUBLIC_GATEWAY_URL ?? "http://localhost:5461";
 
   try {
@@ -40,9 +34,7 @@ export function initFaro(): Faro | undefined {
         new TracingInstrumentation({
           instrumentationOptions: {
             propagateTraceHeaderCorsUrls: [
-              new RegExp(
-                gatewayUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-              ),
+              new RegExp(gatewayUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
             ],
           },
         }),
@@ -54,10 +46,7 @@ export function initFaro(): Faro | undefined {
 
       beforeSend: (event) => {
         // Filter out SvelteKit internal data fetches from logs
-        if (
-          event.meta?.page?.url &&
-          /__data\.json/.test(event.meta.page.url)
-        ) {
+        if (event.meta?.page?.url && /__data\.json/.test(event.meta.page.url)) {
           return null;
         }
         return event;

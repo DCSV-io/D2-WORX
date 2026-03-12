@@ -45,7 +45,6 @@ import {
   buildGrpcServer,
 } from "./setup/index.js";
 
-
 /**
  * Optional overrides for the composition root.
  * Primarily used by tests to replace infrastructure dependencies.

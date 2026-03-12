@@ -6,10 +6,22 @@
 
 <svelte:head>
   <title>{m.webclient_nav_brand()} — {m.webclient_hero_tagline()}</title>
-  <meta name="description" content={m.webclient_hero_tagline()} />
-  <meta property="og:title" content={m.webclient_nav_brand()} />
-  <meta property="og:description" content={m.webclient_hero_tagline()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_hero_tagline()}
+  />
+  <meta
+    property="og:title"
+    content={m.webclient_nav_brand()}
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_hero_tagline()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <div class="flex flex-col items-center justify-center py-20 text-center">
@@ -18,6 +30,9 @@
     {m.webclient_hero_tagline()}
   </p>
   <div class="mt-8">
-    <Button href={resolve("/sign-up")} size="lg">{m.common_ui_get_started()}</Button>
+    <Button
+      href={resolve("/sign-up")}
+      size="lg">{m.common_ui_get_started()}</Button
+    >
   </div>
 </div>

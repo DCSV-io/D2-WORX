@@ -15,7 +15,9 @@ export const RESOLVE_RECIPIENT_REDACTION: RedactionSpec = {
 };
 
 /** Handler for resolving recipient contact information. Requires redaction (output contains PII). */
-export interface IRecipientResolverHandler
-  extends IHandler<ResolveRecipientInput, ResolveRecipientOutput> {
+export interface IRecipientResolverHandler extends IHandler<
+  ResolveRecipientInput,
+  ResolveRecipientOutput
+> {
   readonly redaction: RedactionSpec;
 }

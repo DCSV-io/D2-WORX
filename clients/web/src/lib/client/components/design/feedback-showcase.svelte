@@ -8,26 +8,29 @@
   import InboxIcon from "@lucide/svelte/icons/inbox";
 </script>
 
-<Section id="feedback" title="Feedback">
+<Section
+  id="feedback"
+  title="Feedback"
+>
   <div class="grid gap-6 md:grid-cols-2">
     <!-- Progress -->
     <div class="flex flex-col gap-4 rounded-lg border p-6">
-      <h3 class="text-sm font-medium text-muted-foreground">Progress Bars</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Progress Bars</h3>
       <div class="flex flex-col gap-3">
         <div class="flex flex-col gap-1.5">
-          <span class="text-xs text-muted-foreground">25%</span>
+          <span class="text-muted-foreground text-xs">25%</span>
           <Progress value={25} />
         </div>
         <div class="flex flex-col gap-1.5">
-          <span class="text-xs text-muted-foreground">50%</span>
+          <span class="text-muted-foreground text-xs">50%</span>
           <Progress value={50} />
         </div>
         <div class="flex flex-col gap-1.5">
-          <span class="text-xs text-muted-foreground">75%</span>
+          <span class="text-muted-foreground text-xs">75%</span>
           <Progress value={75} />
         </div>
         <div class="flex flex-col gap-1.5">
-          <span class="text-xs text-muted-foreground">100%</span>
+          <span class="text-muted-foreground text-xs">100%</span>
           <Progress value={100} />
         </div>
       </div>
@@ -35,7 +38,7 @@
 
     <!-- Skeleton -->
     <div class="flex flex-col gap-4 rounded-lg border p-6">
-      <h3 class="text-sm font-medium text-muted-foreground">Skeleton Loaders</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Skeleton Loaders</h3>
       <div class="flex flex-col gap-4">
         <!-- Card skeleton -->
         <div class="flex items-center gap-4">
@@ -61,47 +64,50 @@
 
     <!-- Spinner -->
     <div class="flex flex-col gap-4 rounded-lg border p-6">
-      <h3 class="text-sm font-medium text-muted-foreground">Spinners</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Spinners</h3>
       <div class="flex items-center gap-8">
         <div class="flex flex-col items-center gap-2">
-          <LoaderCircleIcon class="size-4 animate-spin text-muted-foreground" />
-          <span class="text-xs text-muted-foreground">sm</span>
+          <LoaderCircleIcon class="text-muted-foreground size-4 animate-spin" />
+          <span class="text-muted-foreground text-xs">sm</span>
         </div>
         <div class="flex flex-col items-center gap-2">
-          <LoaderCircleIcon class="size-6 animate-spin text-muted-foreground" />
-          <span class="text-xs text-muted-foreground">md</span>
+          <LoaderCircleIcon class="text-muted-foreground size-6 animate-spin" />
+          <span class="text-muted-foreground text-xs">md</span>
         </div>
         <div class="flex flex-col items-center gap-2">
-          <LoaderCircleIcon class="size-10 animate-spin text-muted-foreground" />
-          <span class="text-xs text-muted-foreground">lg</span>
+          <LoaderCircleIcon class="text-muted-foreground size-10 animate-spin" />
+          <span class="text-muted-foreground text-xs">lg</span>
         </div>
         <div class="flex flex-col items-center gap-2">
-          <LoaderCircleIcon class="size-6 animate-spin text-primary" />
-          <span class="text-xs text-muted-foreground">primary</span>
+          <LoaderCircleIcon class="text-primary size-6 animate-spin" />
+          <span class="text-muted-foreground text-xs">primary</span>
         </div>
       </div>
     </div>
 
     <!-- Empty State -->
     <div class="flex flex-col gap-4 rounded-lg border p-6">
-      <h3 class="text-sm font-medium text-muted-foreground">Empty State</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Empty State</h3>
       <div class="flex flex-col items-center justify-center gap-3 py-8">
-        <div class="rounded-full bg-muted p-3">
-          <InboxIcon class="size-8 text-muted-foreground" />
+        <div class="bg-muted rounded-full p-3">
+          <InboxIcon class="text-muted-foreground size-8" />
         </div>
         <div class="text-center">
           <h4 class="text-sm font-medium">No results found</h4>
-          <p class="mt-1 text-xs text-muted-foreground">
+          <p class="text-muted-foreground mt-1 text-xs">
             Try adjusting your search or filter to find what you're looking for.
           </p>
         </div>
-        <Button variant="outline" size="sm">Clear Filters</Button>
+        <Button
+          variant="outline"
+          size="sm">Clear Filters</Button
+        >
       </div>
     </div>
 
     <!-- Toasts -->
     <div class="flex flex-col gap-4 rounded-lg border p-6 md:col-span-2">
-      <h3 class="text-sm font-medium text-muted-foreground">Toast Notifications</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Toast Notifications</h3>
       <div class="flex flex-wrap gap-3">
         <Button
           variant="outline"
@@ -135,9 +141,7 @@
         </Button>
         <Button
           variant="outline"
-          onclick={() =>
-            toast("Event created", { description: "Monday, January 3rd at 6:00pm" })
-          }
+          onclick={() => toast("Event created", { description: "Monday, January 3rd at 6:00pm" })}
         >
           With Description
         </Button>

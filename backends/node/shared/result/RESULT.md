@@ -51,7 +51,10 @@ D2Result.forbidden<OrgDTO>({ messages: ["Insufficient permissions."] });
 
 // Validation failed (400, VALIDATION_FAILED)
 D2Result.validationFailed({
-  inputErrors: [["email", "Email is required."], ["name", "Name too long."]],
+  inputErrors: [
+    ["email", "Email is required."],
+    ["name", "Name too long."],
+  ],
 });
 
 // Conflict (409, CONFLICT)
@@ -118,43 +121,47 @@ if (partial && result.errorCode === "SOME_FOUND") {
 return D2Result.bubbleFail(result);
 
 // Direct property checks
-if (result.success) { /* use result.data */ }
-if (result.failed) { /* check result.errorCode, result.messages */ }
+if (result.success) {
+  /* use result.data */
+}
+if (result.failed) {
+  /* check result.errorCode, result.messages */
+}
 ```
 
 ### Instance Properties
 
-| Property     | Type                          | Description                                          |
-| ------------ | ----------------------------- | ---------------------------------------------------- |
-| `success`    | `boolean`                     | Whether the operation succeeded                      |
-| `failed`     | `boolean`                     | Inverse of `success` (convenience getter)            |
-| `data`       | `TData \| undefined`         | Typed data payload (present on success, maybe partial on `SOME_FOUND`) |
-| `messages`   | `readonly string[]`           | Human-readable messages (frozen array)               |
-| `inputErrors`| `readonly InputError[]`       | Field-level validation errors: `[field, ...errors]`  |
-| `statusCode` | `HttpStatusCode`              | HTTP status code (200, 400, 404, 500, etc.)          |
-| `errorCode`  | `ErrorCode \| string \| undefined` | Semantic error code (e.g., `NOT_FOUND`, `CONFLICT`)  |
-| `traceId`    | `string \| undefined`        | Auto-injected by BaseHandler; explicit outside handlers |
+| Property      | Type                               | Description                                                            |
+| ------------- | ---------------------------------- | ---------------------------------------------------------------------- |
+| `success`     | `boolean`                          | Whether the operation succeeded                                        |
+| `failed`      | `boolean`                          | Inverse of `success` (convenience getter)                              |
+| `data`        | `TData \| undefined`               | Typed data payload (present on success, maybe partial on `SOME_FOUND`) |
+| `messages`    | `readonly string[]`                | Human-readable messages (frozen array)                                 |
+| `inputErrors` | `readonly InputError[]`            | Field-level validation errors: `[field, ...errors]`                    |
+| `statusCode`  | `HttpStatusCode`                   | HTTP status code (200, 400, 404, 500, etc.)                            |
+| `errorCode`   | `ErrorCode \| string \| undefined` | Semantic error code (e.g., `NOT_FOUND`, `CONFLICT`)                    |
+| `traceId`     | `string \| undefined`              | Auto-injected by BaseHandler; explicit outside handlers                |
 
 ---
 
 ## Error Codes
 
-| Constant                      | Description                                |
-| ----------------------------- | ------------------------------------------ |
-| `NOT_FOUND`                   | Resource not found (404)                   |
-| `SOME_FOUND`                  | Partial success — some items found (206)   |
-| `FORBIDDEN`                   | Insufficient permissions (403)             |
-| `UNAUTHORIZED`                | Not authenticated (401)                    |
-| `VALIDATION_FAILED`           | Input validation errors (400)              |
-| `CONFLICT`                    | Duplicate/constraint violation (409)       |
-| `UNHANDLED_EXCEPTION`         | Unexpected server error (500)              |
-| `SERVICE_UNAVAILABLE`         | Downstream service down (503)              |
-| `RATE_LIMITED`                | Rate limit exceeded (429)                  |
-| `IDEMPOTENCY_IN_FLIGHT`       | Duplicate request in progress (409)        |
-| `PAYLOAD_TOO_LARGE`           | Request body too large (413)               |
-| `CANCELLED`                   | Operation cancelled (400)                  |
-| `COULD_NOT_BE_SERIALIZED`     | Serialization failure                      |
-| `COULD_NOT_BE_DESERIALIZED`   | Deserialization failure                    |
+| Constant                    | Description                              |
+| --------------------------- | ---------------------------------------- |
+| `NOT_FOUND`                 | Resource not found (404)                 |
+| `SOME_FOUND`                | Partial success — some items found (206) |
+| `FORBIDDEN`                 | Insufficient permissions (403)           |
+| `UNAUTHORIZED`              | Not authenticated (401)                  |
+| `VALIDATION_FAILED`         | Input validation errors (400)            |
+| `CONFLICT`                  | Duplicate/constraint violation (409)     |
+| `UNHANDLED_EXCEPTION`       | Unexpected server error (500)            |
+| `SERVICE_UNAVAILABLE`       | Downstream service down (503)            |
+| `RATE_LIMITED`              | Rate limit exceeded (429)                |
+| `IDEMPOTENCY_IN_FLIGHT`     | Duplicate request in progress (409)      |
+| `PAYLOAD_TOO_LARGE`         | Request body too large (413)             |
+| `CANCELLED`                 | Operation cancelled (400)                |
+| `COULD_NOT_BE_SERIALIZED`   | Serialization failure                    |
+| `COULD_NOT_BE_DESERIALIZED` | Deserialization failure                  |
 
 ---
 
@@ -167,14 +174,11 @@ For operations that already return `D2Result`:
 ```typescript
 import { retryResultAsync } from "@d2/result";
 
-const result = await retryResultAsync(
-  (attempt) => geoClient.findWhoIs(input),
-  {
-    maxAttempts: 3,
-    baseDelayMs: 500,
-    backoffMultiplier: 2,
-  },
-);
+const result = await retryResultAsync((attempt) => geoClient.findWhoIs(input), {
+  maxAttempts: 3,
+  baseDelayMs: 500,
+  backoffMultiplier: 2,
+});
 ```
 
 ### `retryExternalAsync` (dirty retrier)
@@ -187,23 +191,21 @@ import { retryExternalAsync, D2Result } from "@d2/result";
 const result = await retryExternalAsync(
   (attempt) => fetch(`https://api.example.com/data`),
   (response) =>
-    response.ok
-      ? D2Result.ok({ data: response.json() })
-      : D2Result.serviceUnavailable(),
+    response.ok ? D2Result.ok({ data: response.json() }) : D2Result.serviceUnavailable(),
   { maxAttempts: 3 },
 );
 ```
 
 ### Retry Configuration
 
-| Option             | Type       | Default | Description                                         |
-| ------------------ | ---------- | ------- | --------------------------------------------------- |
-| `maxAttempts`      | `number`   | 5       | Maximum attempts (including initial call)            |
-| `baseDelayMs`      | `number`   | 1000    | Base delay before first retry                        |
-| `backoffMultiplier`| `number`   | 2       | Multiplier applied after each retry                  |
-| `maxDelayMs`       | `number`   | 30000   | Maximum delay cap                                    |
-| `jitter`           | `boolean`  | true    | Apply full jitter (uniform [0, calculated))          |
-| `signal`           | `AbortSignal` | —    | Abort signal for cancellation                        |
+| Option              | Type          | Default | Description                                 |
+| ------------------- | ------------- | ------- | ------------------------------------------- |
+| `maxAttempts`       | `number`      | 5       | Maximum attempts (including initial call)   |
+| `baseDelayMs`       | `number`      | 1000    | Base delay before first retry               |
+| `backoffMultiplier` | `number`      | 2       | Multiplier applied after each retry         |
+| `maxDelayMs`        | `number`      | 30000   | Maximum delay cap                           |
+| `jitter`            | `boolean`     | true    | Apply full jitter (uniform [0, calculated)) |
+| `signal`            | `AbortSignal` | —       | Abort signal for cancellation               |
 
 ### Transient Detection
 

@@ -12,5 +12,7 @@ export interface SetChannelPreferenceOutput {
 }
 
 /** Handler for creating or updating channel preferences. */
-export interface ISetChannelPreferenceHandler
-  extends IHandler<SetChannelPreferenceInput, SetChannelPreferenceOutput> {}
+export interface ISetChannelPreferenceHandler extends IHandler<
+  SetChannelPreferenceInput,
+  SetChannelPreferenceOutput
+> {}

@@ -132,15 +132,15 @@ Custom `definePayload` emits: `sub`, `email`, `username`, `orgId`, `orgType`, `r
 
 The composition root provides these callbacks to avoid circular dependencies between infra and app layers:
 
-| Callback                          | Purpose                                                    |
-| --------------------------------- | ---------------------------------------------------------- |
-| `onSignIn`                        | Records audit event after successful sign-in               |
-| `getFingerprintForCurrentRequest` | Returns client fingerprint for JWT `fp` claim              |
-| `getDeviceFingerprintForCurrentRequest` | Returns device fingerprint for sign-in event audit   |
-| `passwordFunctions`               | Custom hash/verify with domain validation + HIBP check     |
-| `publishVerificationEmail`        | Publishes verification email event to RabbitMQ             |
-| `publishPasswordReset`            | Publishes password reset email event to RabbitMQ           |
-| `createUserContact`               | Creates Geo contact before user record (fail-fast pattern) |
+| Callback                                | Purpose                                                    |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `onSignIn`                              | Records audit event after successful sign-in               |
+| `getFingerprintForCurrentRequest`       | Returns client fingerprint for JWT `fp` claim              |
+| `getDeviceFingerprintForCurrentRequest` | Returns device fingerprint for sign-in event audit         |
+| `passwordFunctions`                     | Custom hash/verify with domain validation + HIBP check     |
+| `publishVerificationEmail`              | Publishes verification email event to RabbitMQ             |
+| `publishPasswordReset`                  | Publishes password reset email event to RabbitMQ           |
+| `createUserContact`                     | Creates Geo contact before user record (fail-fast pattern) |
 
 ## RBAC Access Control
 
@@ -188,11 +188,11 @@ Hierarchical role permissions (each level inherits from below):
 
 ### Custom Tables (3)
 
-| Table               | Columns                                                                | Indexes                                                                                    |
-| ------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Table               | Columns                                                                                    | Indexes                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
 | `sign_in_event`     | id, user_id, successful, ip_address, user_agent, who_is_id, device_fingerprint, created_at | idx_sign_in_event_user_id                                                                  |
-| `emulation_consent` | id, user_id, granted_to_org_id, expires_at, revoked_at, created_at     | idx_emulation_consent_user_id, unique(user_id, granted_to_org_id) WHERE revoked_at IS NULL |
-| `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at         | idx_org_contact_organization_id                                                            |
+| `emulation_consent` | id, user_id, granted_to_org_id, expires_at, revoked_at, created_at                         | idx_emulation_consent_user_id, unique(user_id, granted_to_org_id) WHERE revoked_at IS NULL |
+| `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at                             | idx_org_contact_organization_id                                                            |
 
 ## Purge Repository Handlers
 
@@ -269,6 +269,7 @@ export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): v
 ```
 
 **Checklist when adding a new handler:**
+
 1. Create the interface in `@d2/auth-app` interfaces
 2. Create the implementation in `@d2/auth-infra` repository handlers
 3. Add `ServiceKey` in `service-keys.ts`

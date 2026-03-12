@@ -80,9 +80,10 @@ export function addCommsApp(
   );
 
   services.addTransient(IDeliverKey, (sp) => {
-    const emailWrapper = (emailFooterText || emailTemplatePath)
-      ? loadEmailWrapper(emailFooterText ?? "D2-WORX", emailTemplatePath)
-      : undefined;
+    const emailWrapper =
+      emailFooterText || emailTemplatePath
+        ? loadEmailWrapper(emailFooterText ?? "D2-WORX", emailTemplatePath)
+        : undefined;
     const dispatchers: IChannelDispatcher[] = [
       new EmailDispatcher(sp.resolve(IEmailProviderKey), emailWrapper),
     ];

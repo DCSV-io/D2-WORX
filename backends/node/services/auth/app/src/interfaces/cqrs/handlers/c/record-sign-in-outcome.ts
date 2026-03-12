@@ -11,5 +11,7 @@ export interface RecordSignInOutcomeOutput {
 }
 
 /** Handler for recording sign-in outcomes for brute-force throttling. */
-export interface IRecordSignInOutcomeHandler
-  extends IHandler<RecordSignInOutcomeInput, RecordSignInOutcomeOutput> {}
+export interface IRecordSignInOutcomeHandler extends IHandler<
+  RecordSignInOutcomeInput,
+  RecordSignInOutcomeOutput
+> {}

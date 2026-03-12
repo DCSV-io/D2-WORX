@@ -16,12 +16,7 @@
  * We log a warning for this case as a monitoring signal.
  */
 import type { ILogger } from "@d2/logging";
-import type {
-  AuthBffConfig,
-  AuthSession,
-  AuthUser,
-  BetterAuthSessionResponse,
-} from "./types.js";
+import type { AuthBffConfig, AuthSession, AuthUser, BetterAuthSessionResponse } from "./types.js";
 
 export interface SessionResolveResult {
   session: AuthSession | null;
@@ -71,14 +66,11 @@ export class SessionResolver {
     const timeout = this.config.timeout ?? DEFAULT_TIMEOUT;
 
     try {
-      const response = await fetch(
-        `${this.config.authServiceUrl}/api/auth/get-session`,
-        {
-          method: "GET",
-          headers,
-          signal: AbortSignal.timeout(timeout),
-        },
-      );
+      const response = await fetch(`${this.config.authServiceUrl}/api/auth/get-session`, {
+        method: "GET",
+        headers,
+        signal: AbortSignal.timeout(timeout),
+      });
 
       if (!response.ok) {
         // 401 = not authenticated, which is a normal response (not an error)

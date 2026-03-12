@@ -104,9 +104,9 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 ### Open — Can Fix Now
 
-| #  | Item                    | Owner | Effort | Notes                                                                                                                                                                                                                                                                                                                                |
-| -- | ----------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 40 | OTel alerting rules     | All   | Medium | Grafana is running — no longer blocked. Define Grafana alert rules + alerting channel config. Targets: error rate >5% 5xx over 5min, latency P99 >2s, rate limit blocks per dimension, delivery failures, gRPC failure rate, service unavailability (RabbitMQ down, Redis down). Requires alert rule YAML + notification channel setup. |
+| #   | Item                | Owner | Effort | Notes                                                                                                                                                                                                                                                                                                                                   |
+| --- | ------------------- | ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 40  | OTel alerting rules | All   | Medium | Grafana is running — no longer blocked. Define Grafana alert rules + alerting channel config. Targets: error rate >5% 5xx over 5min, latency P99 >2s, rate limit blocks per dimension, delivery failures, gRPC failure rate, service unavailability (RabbitMQ down, Redis down). Requires alert rule YAML + notification channel setup. |
 
 ### Open Questions
 
@@ -116,17 +116,17 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 Items deferred from the initial SEO sweep that **MUST** be addressed before public launch:
 
-| Item                                  | Priority | Notes                                                                                                                                   |
-| ------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `og:image` social card                | P1       | Create a branded social card image (1200x630) for link previews. Add `og:image` to landing page and `twitter:card` / `twitter:image`.   |
-| `og:url` canonical URLs               | P1       | Add `og:url` with absolute URL to public pages. Requires passing `$page.url` from server or using `url.href` in `<svelte:head>`.        |
-| Twitter Card meta tags                | P2       | Add `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image` to landing page.                                            |
-| Canonical `<link rel="canonical">`    | P2       | Add self-referential canonical links to all indexable pages to prevent duplicate content across locale variants.                         |
-| Terms of Service page (`/terms`)      | P1       | Footer links exist but page not built. Add to sitemap once created.                                                                     |
-| Privacy Policy page (`/privacy`)      | P1       | Footer links exist but page not built. Add to sitemap once created.                                                                     |
-| Structured data (JSON-LD)             | P3       | `Organization` schema on landing page, `WebApplication` schema. Low priority for pre-alpha.                                             |
-| Localize app page titles              | P3       | Dashboard/Profile/Settings/Welcome titles are hardcoded English. Add paraglide message keys when i18n coverage expands beyond auth UX.   |
-| Prerender public pages                | P3       | Landing, terms, privacy could use `export const prerender = true` for faster TTFB. Requires confirming no dynamic dependencies.          |
+| Item                               | Priority | Notes                                                                                                                                  |
+| ---------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `og:image` social card             | P1       | Create a branded social card image (1200x630) for link previews. Add `og:image` to landing page and `twitter:card` / `twitter:image`.  |
+| `og:url` canonical URLs            | P1       | Add `og:url` with absolute URL to public pages. Requires passing `$page.url` from server or using `url.href` in `<svelte:head>`.       |
+| Twitter Card meta tags             | P2       | Add `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image` to landing page.                                           |
+| Canonical `<link rel="canonical">` | P2       | Add self-referential canonical links to all indexable pages to prevent duplicate content across locale variants.                       |
+| Terms of Service page (`/terms`)   | P1       | Footer links exist but page not built. Add to sitemap once created.                                                                    |
+| Privacy Policy page (`/privacy`)   | P1       | Footer links exist but page not built. Add to sitemap once created.                                                                    |
+| Structured data (JSON-LD)          | P3       | `Organization` schema on landing page, `WebApplication` schema. Low priority for pre-alpha.                                            |
+| Localize app page titles           | P3       | Dashboard/Profile/Settings/Welcome titles are hardcoded English. Add paraglide message keys when i18n coverage expands beyond auth UX. |
+| Prerender public pages             | P3       | Landing, terms, privacy could use `export const prerender = true` for faster TTFB. Requires confirming no dynamic dependencies.        |
 
 ### Deferred Upgrades
 
@@ -143,16 +143,16 @@ From Q1 2026 audit:
 
 ### Blocked — Can Only Fix Later
 
-| #   | Item                                        | Blocker                                        | Priority | Notes                                                                                                                                                          |
-| --- | ------------------------------------------- | ---------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API             | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
-| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                     | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
-| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)    | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
-| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built      | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
-| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)            | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
-| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                     | P3       | Automated dependency staleness checks                                                                                                                          |
-| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health)  | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
-| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)         | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
+| #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
+| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
+| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
+| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
+| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
+| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
+| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
+| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
+| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
 
 ---
 
@@ -164,24 +164,24 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### SvelteKit Implementation Progress
 
-| Step | Name                                | Status  | Notes                                                                                |
-| ---- | ----------------------------------- | ------- | ------------------------------------------------------------------------------------ |
-| 0    | Document Implementation Plan        | ✅ Done |                                                                                      |
-| 1    | Error Handling Foundation + Types   | ✅ Done | App.Error, hooks, error page, client-error endpoint                                  |
-| 2    | shadcn-svelte + Theme + Tokens      | ✅ Done | Zinc OKLCH theme, Gabarito font, mode-watcher, Sonner toasts                         |
-| 2.5  | Server-Side Middleware              | ✅ Done | Request enrichment, rate limiting, idempotency. SvelteKit→Geo gRPC                   |
-| 3    | Design System Sprint (Kitchen Sink) | ✅ Done | 27 components, 3 OKLCH presets, live theme editor at `/design`                       |
-| 3.5  | Design Review & Polish              | ✅ Done | Playwright visual QA, 11 fixes across 6 theme/mode combos                            |
-| 4    | Route Groups + Layout System        | ✅ Done | (auth), (onboarding), (app) groups, sidebar, auth guard stubs                        |
-| 5    | @d2/auth-bff-client + Auth Proxy    | ✅ Done | 34 unit + 10 E2E tests. Session resolver, JWT manager (per-session cache), route guards |
-| 6    | API Client Layer (Gateway)          | ✅ Done | 90 tests. camelCase normalizer, dynamic public URL, service key bypass, shared executeFetch |
-| 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done | 5 chart types: area, bar, line, donut, sparkline                                     |
+| Step | Name                                | Status  | Notes                                                                                            |
+| ---- | ----------------------------------- | ------- | ------------------------------------------------------------------------------------------------ |
+| 0    | Document Implementation Plan        | ✅ Done |                                                                                                  |
+| 1    | Error Handling Foundation + Types   | ✅ Done | App.Error, hooks, error page, client-error endpoint                                              |
+| 2    | shadcn-svelte + Theme + Tokens      | ✅ Done | Zinc OKLCH theme, Gabarito font, mode-watcher, Sonner toasts                                     |
+| 2.5  | Server-Side Middleware              | ✅ Done | Request enrichment, rate limiting, idempotency. SvelteKit→Geo gRPC                               |
+| 3    | Design System Sprint (Kitchen Sink) | ✅ Done | 27 components, 3 OKLCH presets, live theme editor at `/design`                                   |
+| 3.5  | Design Review & Polish              | ✅ Done | Playwright visual QA, 11 fixes across 6 theme/mode combos                                        |
+| 4    | Route Groups + Layout System        | ✅ Done | (auth), (onboarding), (app) groups, sidebar, auth guard stubs                                    |
+| 5    | @d2/auth-bff-client + Auth Proxy    | ✅ Done | 34 unit + 10 E2E tests. Session resolver, JWT manager (per-session cache), route guards          |
+| 6    | API Client Layer (Gateway)          | ✅ Done | 90 tests. camelCase normalizer, dynamic public URL, service key bypass, shared executeFetch      |
+| 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done | 5 chart types: area, bar, line, donut, sparkline                                                 |
 | 7    | Forms Architecture (Superforms)     | ✅ Done | 108 tests. Superforms + Formsnap + Zod 4, field presets, D2Result mapping, form-actions pipeline |
-| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done | Sign-in, sign-up, forgot/reset password, verify-email. i18n (5 locales)              |
-| 9    | Client Telemetry (Grafana Faro)     | ✅ Done | Faro SDK, Alloy faro.receiver pipeline, Web Vitals → Mimir histograms, RUM dashboard |
-| 10   | Onboarding Flow                     | Pending | Post-auth org selection/creation + Radar address autocomplete backend                |
-| 11   | App Shell (Sidebar, Header, Org)    | Pending | Org-type nav, org switcher, emulation banner, breadcrumbs                            |
-| 12   | SignalR Abstraction Layer           | Pending | Browser → .NET SignalR gateway direct (`@microsoft/signalr`)                         |
+| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done | Sign-in, sign-up, forgot/reset password, verify-email. i18n (5 locales)                          |
+| 9    | Client Telemetry (Grafana Faro)     | ✅ Done | Faro SDK, Alloy faro.receiver pipeline, Web Vitals → Mimir histograms, RUM dashboard             |
+| 10   | Onboarding Flow                     | Pending | Post-auth org selection/creation + Radar address autocomplete backend                            |
+| 11   | App Shell (Sidebar, Header, Org)    | Pending | Org-type nav, org switcher, emulation banner, breadcrumbs                                        |
+| 12   | SignalR Abstraction Layer           | Pending | Browser → .NET SignalR gateway direct (`@microsoft/signalr`)                                     |
 
 ### Other Active Work
 

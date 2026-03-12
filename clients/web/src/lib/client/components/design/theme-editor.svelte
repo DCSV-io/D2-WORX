@@ -18,12 +18,7 @@
     saveCustomPreset,
     deleteCustomPreset,
   } from "./theme-presets.js";
-  import {
-    theme,
-    getActivePresetName,
-    applyPreset,
-    reset,
-  } from "./theme-state.svelte.js";
+  import { theme, getActivePresetName, applyPreset, reset } from "./theme-state.svelte.js";
   import { oklchToHex, hexToOklch } from "./color-convert.js";
   import ExportDialog from "./export-dialog.svelte";
   import RotateCcwIcon from "@lucide/svelte/icons/rotate-ccw";
@@ -57,9 +52,7 @@
   const destructiveHex = $derived(
     oklchToHex(theme.destructiveLightness, theme.destructiveChroma, theme.destructiveHue),
   );
-  const infoHex = $derived(
-    oklchToHex(theme.infoLightness, theme.infoChroma, theme.infoHue),
-  );
+  const infoHex = $derived(oklchToHex(theme.infoLightness, theme.infoChroma, theme.infoHue));
   const successHex = $derived(
     oklchToHex(theme.successLightness, theme.successChroma, theme.successHue),
   );
@@ -156,7 +149,10 @@
 </script>
 
 <Sheet bind:open>
-  <SheetContent side="right" class="w-80 overflow-y-auto sm:max-w-80">
+  <SheetContent
+    side="right"
+    class="w-80 overflow-y-auto sm:max-w-80"
+  >
     <SheetHeader>
       <SheetTitle>Theme Editor</SheetTitle>
       <SheetDescription>Adjust colors, radius, and presets. Changes are live.</SheetDescription>
@@ -170,7 +166,10 @@
           {#each allPresets as preset (preset.name)}
             <div class="group relative">
               <button
-                class="size-8 rounded-full border-2 transition-all {getActivePresetName() === preset.name ? 'border-ring ring-ring/30 ring-2 scale-110' : 'border-border hover:scale-105'}"
+                class="size-8 rounded-full border-2 transition-all {getActivePresetName() ===
+                preset.name
+                  ? 'border-ring ring-ring/30 scale-110 ring-2'
+                  : 'border-border hover:scale-105'}"
                 style="background: {presetSwatchColor(preset)}"
                 title={preset.name}
                 onclick={() => applyPreset(preset)}
@@ -179,7 +178,7 @@
               </button>
               {#if !preset.builtIn}
                 <button
-                  class="absolute -right-1 -top-1 hidden size-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground group-hover:flex"
+                  class="bg-destructive text-destructive-foreground absolute -top-1 -right-1 hidden size-4 items-center justify-center rounded-full group-hover:flex"
                   title="Delete {preset.name}"
                   onclick={() => handleDeletePreset(preset.name)}
                 >
@@ -208,7 +207,11 @@
                 class="h-7 text-xs"
                 onkeydown={(e: KeyboardEvent) => e.key === "Enter" && handleSavePreset()}
               />
-              <Button size="sm" class="h-7 text-xs" onclick={handleSavePreset}>Save</Button>
+              <Button
+                size="sm"
+                class="h-7 text-xs"
+                onclick={handleSavePreset}>Save</Button
+              >
               <Button
                 variant="ghost"
                 size="sm"
@@ -341,26 +344,41 @@
         <div class="flex items-center justify-between">
           <span class="text-sm font-medium">Border Radius</span>
           <div
-            class="size-6 border border-border bg-primary"
+            class="border-border bg-primary size-6 border"
             style="border-radius: {theme.radius}rem"
           ></div>
         </div>
         <div class="flex justify-between">
           <span class="text-muted-foreground text-xs">Radius</span>
-          <span class="text-muted-foreground text-xs tabular-nums">{theme.radius.toFixed(3)}rem</span>
+          <span class="text-muted-foreground text-xs tabular-nums"
+            >{theme.radius.toFixed(3)}rem</span
+          >
         </div>
-        <Slider type="single" bind:value={theme.radius} min={0} max={1} step={0.025} />
+        <Slider
+          type="single"
+          bind:value={theme.radius}
+          min={0}
+          max={1}
+          step={0.025}
+        />
       </label>
 
       <Separator />
 
       <!-- Actions -->
       <div class="flex flex-col gap-2">
-        <Button onclick={() => (exportOpen = true)} class="w-full">
+        <Button
+          onclick={() => (exportOpen = true)}
+          class="w-full"
+        >
           <DownloadIcon class="size-4" />
           Copy Theme CSS
         </Button>
-        <Button variant="outline" onclick={reset} class="w-full">
+        <Button
+          variant="outline"
+          onclick={reset}
+          class="w-full"
+        >
           <RotateCcwIcon class="size-4" />
           Reset to WORX
         </Button>

@@ -4,7 +4,11 @@
 export { COMMS_CACHE_KEYS } from "./cache-keys.js";
 
 // --- CQRS Handler Interfaces (app-layer contracts) ---
-export { Commands as CommsCommands, Queries as CommsQueries, Complex as CommsComplex } from "./interfaces/cqrs/handlers/index.js";
+export {
+  Commands as CommsCommands,
+  Queries as CommsQueries,
+  Complex as CommsComplex,
+} from "./interfaces/cqrs/handlers/index.js";
 
 import type { IHandlerContext } from "@d2/handler";
 import type { ChannelPreference } from "@d2/comms-domain";

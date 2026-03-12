@@ -15,9 +15,7 @@ interface TestJobOutput extends JobRpcOutput {
 }
 
 const ITestJobHandlerKey = createServiceKey<{
-  handleAsync(
-    input: Record<string, never>,
-  ): Promise<D2Result<TestJobOutput | undefined>>;
+  handleAsync(input: Record<string, never>): Promise<D2Result<TestJobOutput | undefined>>;
 }>("ITestJobHandler");
 
 function createMockCall(): grpc.ServerUnaryCall<TriggerJobRequest, TriggerJobResponse> {
@@ -29,9 +27,7 @@ function createMockCall(): grpc.ServerUnaryCall<TriggerJobRequest, TriggerJobRes
 }
 
 function createProvider(handler: {
-  handleAsync(
-    input: Record<string, never>,
-  ): Promise<D2Result<TestJobOutput | undefined>>;
+  handleAsync(input: Record<string, never>): Promise<D2Result<TestJobOutput | undefined>>;
 }): ServiceProvider {
   const services = new ServiceCollection();
 

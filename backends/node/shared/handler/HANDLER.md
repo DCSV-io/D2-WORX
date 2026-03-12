@@ -11,14 +11,14 @@ BaseHandler pattern with automatic OTel tracing, metrics, and structured logging
 | [i-handler-context.ts](src/i-handler-context.ts)       | `IHandlerContext` interface bundling `IRequestContext` + `ILogger`.                                                                                                                   |
 | [handler-context.ts](src/handler-context.ts)           | `HandlerContext` implementation of `IHandlerContext`.                                                                                                                                 |
 | [i-request-context.ts](src/i-request-context.ts)       | `IRequestContext` interface (tracing, identity, org, network/enrichment, trust, helpers).                                                                                             |
-| [handler-options.ts](src/handler-options.ts)            | `HandlerOptions` type + `DEFAULT_HANDLER_OPTIONS` constant.                                                                                                                           |
-| [redaction-spec.ts](src/redaction-spec.ts)              | `RedactionSpec` type for declaring handler input/output redaction posture.                                                                                                            |
-| [validators.ts](src/validators.ts)                      | Shared Zod refinements (`zodGuid`, `zodHashId`, `zodIpAddress`, `zodEmail`, `zodPhoneE164`, `zodNonEmptyString`, `zodNonEmptyArray`, `zodAllowedContextKey`) + standalone validators. |
-| [org-type.ts](src/org-type.ts)                          | `OrgType` enum (Admin, Support, Affiliate, Customer, ThirdParty).                                                                                                                     |
-| [service-keys.ts](src/service-keys.ts)                  | DI keys for `IRequestContext` (`IRequestContextKey`) and `IHandlerContext` (`IHandlerContextKey`).                                                                                    |
-| [ambient-context.ts](src/ambient-context.ts)            | `requestContextStorage` + `requestLoggerStorage` — AsyncLocalStorage for per-request ambient context.                                                                                 |
-| [create-service-scope.ts](src/create-service-scope.ts)  | `createServiceScope()` — shared per-request DI scope factory (used by Auth, Comms, E2E). Sets ambient storage.                                                                        |
-| [index.ts](src/index.ts)                                | Barrel re-export of all types, interfaces, and classes.                                                                                                                               |
+| [handler-options.ts](src/handler-options.ts)           | `HandlerOptions` type + `DEFAULT_HANDLER_OPTIONS` constant.                                                                                                                           |
+| [redaction-spec.ts](src/redaction-spec.ts)             | `RedactionSpec` type for declaring handler input/output redaction posture.                                                                                                            |
+| [validators.ts](src/validators.ts)                     | Shared Zod refinements (`zodGuid`, `zodHashId`, `zodIpAddress`, `zodEmail`, `zodPhoneE164`, `zodNonEmptyString`, `zodNonEmptyArray`, `zodAllowedContextKey`) + standalone validators. |
+| [org-type.ts](src/org-type.ts)                         | `OrgType` enum (Admin, Support, Affiliate, Customer, ThirdParty).                                                                                                                     |
+| [service-keys.ts](src/service-keys.ts)                 | DI keys for `IRequestContext` (`IRequestContextKey`) and `IHandlerContext` (`IHandlerContextKey`).                                                                                    |
+| [ambient-context.ts](src/ambient-context.ts)           | `requestContextStorage` + `requestLoggerStorage` — AsyncLocalStorage for per-request ambient context.                                                                                 |
+| [create-service-scope.ts](src/create-service-scope.ts) | `createServiceScope()` — shared per-request DI scope factory (used by Auth, Comms, E2E). Sets ambient storage.                                                                        |
+| [index.ts](src/index.ts)                               | Barrel re-export of all types, interfaces, and classes.                                                                                                                               |
 
 ---
 
@@ -45,11 +45,11 @@ Controls handler logging and timing behavior. Can be provided per-call or as a h
 
 ```typescript
 interface HandlerOptions {
-  logInput: boolean;              // Log input at debug level (default: true)
-  logOutput: boolean;             // Log output at debug level (default: true)
-  suppressTimeWarnings: boolean;  // Skip elapsed-time warning/critical levels (default: false)
-  warningThresholdMs: number;     // Elapsed time for warning level (default: 100)
-  criticalThresholdMs: number;    // Elapsed time for critical level (default: 500)
+  logInput: boolean; // Log input at debug level (default: true)
+  logOutput: boolean; // Log output at debug level (default: true)
+  suppressTimeWarnings: boolean; // Skip elapsed-time warning/critical levels (default: false)
+  warningThresholdMs: number; // Elapsed time for warning level (default: 100)
+  criticalThresholdMs: number; // Elapsed time for critical level (default: 500)
 }
 ```
 
@@ -61,10 +61,10 @@ Declares a handler's intrinsic data redaction posture. Defined alongside handler
 
 ```typescript
 interface RedactionSpec {
-  readonly inputFields?: readonly string[];   // Top-level input fields to mask with "[REDACTED]"
-  readonly outputFields?: readonly string[];  // Top-level output fields to mask with "[REDACTED]"
-  readonly suppressInput?: boolean;           // Skip input logging entirely
-  readonly suppressOutput?: boolean;          // Skip output logging entirely
+  readonly inputFields?: readonly string[]; // Top-level input fields to mask with "[REDACTED]"
+  readonly outputFields?: readonly string[]; // Top-level output fields to mask with "[REDACTED]"
+  readonly suppressInput?: boolean; // Skip input logging entirely
+  readonly suppressOutput?: boolean; // Skip output logging entirely
 }
 ```
 
@@ -94,16 +94,16 @@ protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>
 
 **All handlers MUST validate input.** All string fields need max length. Use the shared Zod refinements from `@d2/handler`:
 
-| Refinement             | Description                                            |
-| ---------------------- | ------------------------------------------------------ |
-| `zodGuid`              | Valid UUID (any version)                               |
-| `zodHashId`            | 64-char hex SHA-256 hash ID                            |
-| `zodIpAddress`         | Valid IPv4 or IPv6 address                             |
-| `zodEmail`             | Basic email format validation                          |
-| `zodPhoneE164`         | 7-15 digits (E.164)                                    |
-| `zodNonEmptyString(n)` | Non-empty string with max length `n`                   |
-| `zodNonEmptyArray(s)`  | Non-empty array of items matching schema `s`           |
-| `zodAllowedContextKey` | String in allowed list (empty list disables validation)|
+| Refinement             | Description                                             |
+| ---------------------- | ------------------------------------------------------- |
+| `zodGuid`              | Valid UUID (any version)                                |
+| `zodHashId`            | 64-char hex SHA-256 hash ID                             |
+| `zodIpAddress`         | Valid IPv4 or IPv6 address                              |
+| `zodEmail`             | Basic email format validation                           |
+| `zodPhoneE164`         | 7-15 digits (E.164)                                     |
+| `zodNonEmptyString(n)` | Non-empty string with max length `n`                    |
+| `zodNonEmptyArray(s)`  | Non-empty array of items matching schema `s`            |
+| `zodAllowedContextKey` | String in allowed list (empty list disables validation) |
 
 ---
 
@@ -138,20 +138,20 @@ Unified request context interface carrying tracing, identity, organization, netw
 
 **Tracing:**
 
-| Property      | Type                | Description               |
-| ------------- | ------------------- | ------------------------- |
-| `traceId`     | `string?`           | OTel trace ID             |
-| `requestId`   | `string?`           | HTTP request ID            |
-| `requestPath` | `string?`           | HTTP request path          |
+| Property      | Type      | Description       |
+| ------------- | --------- | ----------------- |
+| `traceId`     | `string?` | OTel trace ID     |
+| `requestId`   | `string?` | HTTP request ID   |
+| `requestPath` | `string?` | HTTP request path |
 
 **User / Identity:**
 
-| Property          | Type           | Description                                          |
-| ----------------- | -------------- | ---------------------------------------------------- |
-| `isAuthenticated` | `boolean\|null`| `null` = auth hasn't run yet (pre-auth handlers)     |
-| `userId`          | `string?`      | User ID (impersonated user during impersonation)     |
-| `email`           | `string?`      | User email                                           |
-| `username`        | `string?`      | User login handle                                    |
+| Property          | Type            | Description                                      |
+| ----------------- | --------------- | ------------------------------------------------ |
+| `isAuthenticated` | `boolean\|null` | `null` = auth hasn't run yet (pre-auth handlers) |
+| `userId`          | `string?`       | User ID (impersonated user during impersonation) |
+| `email`           | `string?`       | User email                                       |
+| `username`        | `string?`       | User login handle                                |
 
 **Agent Organization** (user's actual org membership):
 
@@ -173,13 +173,13 @@ Unified request context interface carrying tracing, identity, organization, netw
 
 **Org Emulation / User Impersonation:**
 
-| Property                | Type           | Description                            |
-| ----------------------- | -------------- | -------------------------------------- |
-| `isOrgEmulating`        | `boolean\|null`| `null` = auth hasn't run. Staff viewing another org as read-only |
-| `impersonatedBy`        | `string?`      | Admin who initiated impersonation      |
-| `impersonatingEmail`    | `string?`      | Impersonator's email                   |
-| `impersonatingUsername` | `string?`      | Impersonator's username                |
-| `isUserImpersonating`   | `boolean\|null`| `null` = auth hasn't run               |
+| Property                | Type            | Description                                                      |
+| ----------------------- | --------------- | ---------------------------------------------------------------- |
+| `isOrgEmulating`        | `boolean\|null` | `null` = auth hasn't run. Staff viewing another org as read-only |
+| `impersonatedBy`        | `string?`       | Admin who initiated impersonation                                |
+| `impersonatingEmail`    | `string?`       | Impersonator's email                                             |
+| `impersonatingUsername` | `string?`       | Impersonator's username                                          |
+| `isUserImpersonating`   | `boolean\|null` | `null` = auth hasn't run                                         |
 
 **Network / Enrichment** (gateway only — `undefined` in non-gateway services):
 
@@ -200,9 +200,9 @@ Unified request context interface carrying tracing, identity, organization, netw
 
 **Trust:**
 
-| Property           | Type           | Description                                  |
-| ------------------ | -------------- | -------------------------------------------- |
-| `isTrustedService` | `boolean\|null`| `null` = service-key middleware hasn't run yet |
+| Property           | Type            | Description                                    |
+| ------------------ | --------------- | ---------------------------------------------- |
+| `isTrustedService` | `boolean\|null` | `null` = service-key middleware hasn't run yet |
 
 **Helpers** (computed from org fields):
 
@@ -236,6 +236,7 @@ const scope = createServiceScope(provider, customLogger);
 ```
 
 Sets up:
+
 - Fresh `IRequestContext` with `crypto.randomUUID()` traceId
 - `IHandlerContext` (context + logger) registered in scope
 - Ambient `AsyncLocalStorage` bound via `enterWith()` so all handlers see per-request context
@@ -267,8 +268,10 @@ export const GET_CONTACTS_BY_IDS_REDACTION: RedactionSpec = {
 };
 
 /** Handler interface. Requires redaction (output contains PII). */
-export interface IGetContactsByIdsHandler
-  extends IHandler<GetContactsByIdsInput, GetContactsByIdsOutput> {
+export interface IGetContactsByIdsHandler extends IHandler<
+  GetContactsByIdsInput,
+  GetContactsByIdsOutput
+> {
   readonly redaction: RedactionSpec;
 }
 ```

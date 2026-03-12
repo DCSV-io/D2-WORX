@@ -13,7 +13,7 @@
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -- callers resolve href -->
 <a
-  class={cn("text-primary underline-offset-2 hover:underline decoration-[0.1rem]", className)}
+  class={cn("text-primary decoration-[0.1rem] underline-offset-2 hover:underline", className)}
   {...restProps}
 >
   {@render children()}

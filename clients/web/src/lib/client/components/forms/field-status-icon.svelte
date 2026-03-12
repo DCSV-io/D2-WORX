@@ -12,9 +12,9 @@
 </script>
 
 {#if status === "valid"}
-  <CircleCheckIcon class="size-3.5 text-success" />
+  <CircleCheckIcon class="text-success size-3.5" />
 {:else if status === "invalid"}
-  <CircleXIcon class="size-3.5 text-destructive" />
+  <CircleXIcon class="text-destructive size-3.5" />
 {:else if status === "validating"}
-  <LoaderCircleIcon class="size-3.5 animate-spin text-muted-foreground" />
+  <LoaderCircleIcon class="text-muted-foreground size-3.5 animate-spin" />
 {/if}

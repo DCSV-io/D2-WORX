@@ -24,9 +24,14 @@
   }
 </script>
 
-<nav class="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur-sm">
+<nav
+  class="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur-sm"
+>
   <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-    <a href={resolve("/")} class="flex items-center gap-2">
+    <a
+      href={resolve("/")}
+      class="flex items-center gap-2"
+    >
       <div
         class="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md text-xs font-bold"
       >
@@ -40,13 +45,30 @@
       <ThemeToggle />
       <ThemeSelector />
       {#if $page.data.session}
-        <Button variant="default" size="sm" href={resolve("/dashboard")}>{m.common_ui_dashboard()}</Button>
-        <Button variant="outline" size="sm" onclick={handleSignOut} disabled={signingOut}>
+        <Button
+          variant="default"
+          size="sm"
+          href={resolve("/dashboard")}>{m.common_ui_dashboard()}</Button
+        >
+        <Button
+          variant="outline"
+          size="sm"
+          onclick={handleSignOut}
+          disabled={signingOut}
+        >
           {m.common_ui_sign_out()}
         </Button>
       {:else}
-        <Button variant="outline" size="sm" href={resolve("/sign-in")}>{m.common_ui_sign_in()}</Button>
-        <Button variant="default" size="sm" href={resolve("/sign-up")}>{m.common_ui_sign_up()}</Button>
+        <Button
+          variant="outline"
+          size="sm"
+          href={resolve("/sign-in")}>{m.common_ui_sign_in()}</Button
+        >
+        <Button
+          variant="default"
+          size="sm"
+          href={resolve("/sign-up")}>{m.common_ui_sign_up()}</Button
+        >
       {/if}
     </div>
   </div>

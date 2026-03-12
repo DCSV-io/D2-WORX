@@ -12,5 +12,7 @@ export interface GetActiveConsentsOutput {
 }
 
 /** Handler for retrieving active emulation consents. */
-export interface IGetActiveConsentsHandler
-  extends IHandler<GetActiveConsentsInput, GetActiveConsentsOutput> {}
+export interface IGetActiveConsentsHandler extends IHandler<
+  GetActiveConsentsInput,
+  GetActiveConsentsOutput
+> {}

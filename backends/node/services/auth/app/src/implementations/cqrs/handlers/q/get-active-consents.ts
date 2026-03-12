@@ -27,9 +27,7 @@ export class GetActiveConsents
     this.findActiveByUserId = findActiveByUserId;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -45,4 +43,7 @@ export class GetActiveConsents
   }
 }
 
-export type { GetActiveConsentsInput, GetActiveConsentsOutput } from "../../../../interfaces/cqrs/handlers/q/get-active-consents.js";
+export type {
+  GetActiveConsentsInput,
+  GetActiveConsentsOutput,
+} from "../../../../interfaces/cqrs/handlers/q/get-active-consents.js";

@@ -14,7 +14,9 @@ const VALID_LEVELS = new Set(Object.values(LogLevel) as string[]);
  */
 export function createLogger(options?: LoggerOptions): ILogger {
   const envLevel = process.env.LOG_LEVEL?.toLowerCase();
-  const level = options?.level ?? (envLevel && VALID_LEVELS.has(envLevel) ? (envLevel as LogLevel) : LogLevel.Info);
+  const level =
+    options?.level ??
+    (envLevel && VALID_LEVELS.has(envLevel) ? (envLevel as LogLevel) : LogLevel.Info);
 
   const pinoOptions: pino.LoggerOptions = {
     level,

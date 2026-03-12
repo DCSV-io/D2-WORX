@@ -14,12 +14,12 @@ using FluentAssertions;
 /// </summary>
 public class ConnectionStringHelperTests : IDisposable
 {
-    private readonly List<string> _envKeysSet = [];
+    private readonly List<string> r_envKeysSet = [];
 
     /// <inheritdoc />
     public void Dispose()
     {
-        foreach (var key in _envKeysSet)
+        foreach (var key in r_envKeysSet)
         {
             Environment.SetEnvironmentVariable(key, null);
         }
@@ -342,7 +342,7 @@ public class ConnectionStringHelperTests : IDisposable
     private void SetEnv(string key, string value)
     {
         Environment.SetEnvironmentVariable(key, value);
-        _envKeysSet.Add(key);
+        r_envKeysSet.Add(key);
     }
 
     #endregion

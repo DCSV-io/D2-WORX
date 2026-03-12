@@ -18,7 +18,8 @@ const resolveRecipientSchema = z.object({
  * Uses geo-client's built-in LRU caching — contacts are immutable,
  * so no additional cache layer is needed.
  */
-export class RecipientResolver extends BaseHandler<Input, Output>
+export class RecipientResolver
+  extends BaseHandler<Input, Output>
   implements Queries.IRecipientResolverHandler
 {
   private readonly getContactsByIds: GeoQueries.IGetContactsByIdsHandler;
@@ -32,9 +33,7 @@ export class RecipientResolver extends BaseHandler<Input, Output>
     this.getContactsByIds = getContactsByIds;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(resolveRecipientSchema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 

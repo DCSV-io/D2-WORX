@@ -8,5 +8,7 @@ export interface DeleteOrgContactInput {
 export type DeleteOrgContactOutput = Record<string, never>;
 
 /** Handler for deleting org contacts. */
-export interface IDeleteOrgContactHandler
-  extends IHandler<DeleteOrgContactInput, DeleteOrgContactOutput> {}
+export interface IDeleteOrgContactHandler extends IHandler<
+  DeleteOrgContactInput,
+  DeleteOrgContactOutput
+> {}

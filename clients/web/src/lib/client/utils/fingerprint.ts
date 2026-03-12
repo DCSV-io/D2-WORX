@@ -21,9 +21,7 @@ let cached: string | undefined;
  * Read the `d2-cfp` cookie if it already exists.
  */
 function readExistingCookie(): string | undefined {
-  const match = document.cookie
-    .split("; ")
-    .find((c) => c.startsWith(`${COOKIE_NAME}=`));
+  const match = document.cookie.split("; ").find((c) => c.startsWith(`${COOKIE_NAME}=`));
   return match?.split("=")[1];
 }
 

@@ -9,5 +9,7 @@ export interface RunDeliveryHistoryPurgeOutput {
 }
 
 /** Handler for purging old delivery history (scheduled job). */
-export interface IRunDeliveryHistoryPurgeHandler
-  extends IHandler<RunDeliveryHistoryPurgeInput, RunDeliveryHistoryPurgeOutput> {}
+export interface IRunDeliveryHistoryPurgeHandler extends IHandler<
+  RunDeliveryHistoryPurgeInput,
+  RunDeliveryHistoryPurgeOutput
+> {}

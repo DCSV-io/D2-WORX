@@ -34,9 +34,7 @@ export class RunSessionPurge
     this.options = options;
   }
 
-  protected async executeAsync(
-    _input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -76,4 +74,7 @@ export class RunSessionPurge
   }
 }
 
-export type { RunSessionPurgeInput, RunSessionPurgeOutput } from "../../../../interfaces/cqrs/handlers/c/run-session-purge.js";
+export type {
+  RunSessionPurgeInput,
+  RunSessionPurgeOutput,
+} from "../../../../interfaces/cqrs/handlers/c/run-session-purge.js";

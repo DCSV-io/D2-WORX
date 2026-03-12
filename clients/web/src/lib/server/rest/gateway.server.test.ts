@@ -140,9 +140,9 @@ describe("gateway.server", () => {
       setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
       mockGetToken.mockResolvedValue("jwt-token-abc");
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 200 }),
-      );
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
       const { gatewayFetch } = await import("./gateway.server");
       await gatewayFetch("/api/v1/test", "cookies=here");
@@ -157,9 +157,9 @@ describe("gateway.server", () => {
       setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
       mockGetToken.mockResolvedValue("jwt-token");
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 200 }),
-      );
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
       const { gatewayFetch } = await import("./gateway.server");
       await gatewayFetch("/api/v1/test", "cookies", {
@@ -180,9 +180,9 @@ describe("gateway.server", () => {
       setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
       mockGetToken.mockResolvedValue("jwt-token");
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 200 }),
-      );
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
       const { gatewayFetch } = await import("./gateway.server");
       await gatewayFetch("/api/v1/test", "cookies", {
@@ -200,9 +200,7 @@ describe("gateway.server", () => {
       setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
       mockGetToken.mockResolvedValue("jwt-token");
 
-      const fetchSpy = vi
-        .spyOn(globalThis, "fetch")
-        .mockRejectedValue(new Error("ECONNREFUSED"));
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("ECONNREFUSED"));
 
       const { gatewayFetch } = await import("./gateway.server");
       const result = await gatewayFetch("/api/v1/test", "cookies");
@@ -252,9 +250,9 @@ describe("gateway.server", () => {
       setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
       mockGetToken.mockResolvedValue("jwt-token");
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 200 }),
-      );
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
       const { gatewayFetch } = await import("./gateway.server");
       await gatewayFetch("/api/v1/test", "cookies");
@@ -272,9 +270,11 @@ describe("gateway.server", () => {
     it("sends no auth headers", async () => {
       setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
 
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(JSON.stringify({ success: true, data: [] }), { status: 200 }),
-      );
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(
+          new Response(JSON.stringify({ success: true, data: [] }), { status: 200 }),
+        );
 
       const { gatewayFetchAnon } = await import("./gateway.server");
       await gatewayFetchAnon("/api/v1/geo/countries");
@@ -290,10 +290,10 @@ describe("gateway.server", () => {
       setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
 
       const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-        new Response(
-          JSON.stringify({ Success: true, Data: { items: [1, 2, 3] } }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
+        new Response(JSON.stringify({ Success: true, Data: { items: [1, 2, 3] } }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
       );
 
       const { gatewayFetchAnon } = await import("./gateway.server");

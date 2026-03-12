@@ -24,7 +24,9 @@ export const UPDATE_ORG_CONTACT_REDACTION: RedactionSpec = {
 };
 
 /** Handler for updating org contacts. Requires redaction (I/O contains PII). */
-export interface IUpdateOrgContactHandler
-  extends IHandler<UpdateOrgContactHandlerInput, UpdateOrgContactOutput> {
+export interface IUpdateOrgContactHandler extends IHandler<
+  UpdateOrgContactHandlerInput,
+  UpdateOrgContactOutput
+> {
   readonly redaction: RedactionSpec;
 }

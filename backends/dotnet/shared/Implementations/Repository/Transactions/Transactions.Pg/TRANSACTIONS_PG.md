@@ -48,6 +48,7 @@ catch (Exception)
 ```
 
 **Key behaviors:**
+
 - `Begin` accepts an isolation level (defaults to `ReadCommitted`)
 - `Commit` persists all operations atomically
 - `Rollback` discards all operations — data is NOT persisted

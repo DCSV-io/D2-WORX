@@ -80,9 +80,9 @@ describe("check-email routes", () => {
 
   it("returns handler status code when handler fails", async () => {
     const handler = createMockHandler();
-    handler.handleAsync = vi.fn().mockResolvedValue(
-      D2Result.fail({ messages: ["Invalid email"], statusCode: 400 }),
-    );
+    handler.handleAsync = vi
+      .fn()
+      .mockResolvedValue(D2Result.fail({ messages: ["Invalid email"], statusCode: 400 }));
     const app = createApp(handler);
 
     const res = await app.request("/api/auth/check-email?email=bad");
@@ -95,9 +95,7 @@ describe("check-email routes", () => {
 
   it("defaults to 400 when handler fails without statusCode", async () => {
     const handler = createMockHandler();
-    handler.handleAsync = vi.fn().mockResolvedValue(
-      D2Result.fail({ messages: ["Unknown error"] }),
-    );
+    handler.handleAsync = vi.fn().mockResolvedValue(D2Result.fail({ messages: ["Unknown error"] }));
     const app = createApp(handler);
 
     const res = await app.request("/api/auth/check-email?email=bad@test.com");
@@ -113,9 +111,7 @@ describe("check-email routes", () => {
     const handler = createMockHandler(true);
     const app = createApp(handler);
 
-    const res = await app.request(
-      "/api/auth/check-email?email=user%2Btag%40example.com",
-    );
+    const res = await app.request("/api/auth/check-email?email=user%2Btag%40example.com");
 
     expect(res.status).toBe(200);
     expect(handler.handleAsync).toHaveBeenCalledWith({ email: "user+tag@example.com" });

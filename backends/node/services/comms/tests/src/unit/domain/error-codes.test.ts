@@ -12,5 +12,4 @@ describe("COMMS_ERROR_CODES", () => {
     const values = Object.values(COMMS_ERROR_CODES);
     expect(new Set(values).size).toBe(values.length);
   });
-
 });

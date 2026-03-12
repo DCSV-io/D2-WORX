@@ -37,9 +37,7 @@ export class RecordSignInEvent
     this.createRecord = createRecord;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) {
       this.context.logger.warn("RecordSignInEvent validation failed", {
@@ -72,4 +70,7 @@ export class RecordSignInEvent
   }
 }
 
-export type { RecordSignInEventInput, RecordSignInEventOutput } from "../../../../interfaces/cqrs/handlers/c/record-sign-in-event.js";
+export type {
+  RecordSignInEventInput,
+  RecordSignInEventOutput,
+} from "../../../../interfaces/cqrs/handlers/c/record-sign-in-event.js";

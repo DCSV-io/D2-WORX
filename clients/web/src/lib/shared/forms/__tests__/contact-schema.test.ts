@@ -174,9 +174,7 @@ describe("contactSchema — cross-field: street2/street3 dependency", () => {
 
   it("allows all street fields empty (only street1 required by base schema)", () => {
     // street1 is required by streetField(), so empty street1 fails
-    const result = contactSchema.safeParse(
-      validData({ street1: "", street2: "", street3: "" }),
-    );
+    const result = contactSchema.safeParse(validData({ street1: "", street2: "", street3: "" }));
     expect(result.success).toBe(false); // street1 required
   });
 

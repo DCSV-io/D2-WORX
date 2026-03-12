@@ -60,9 +60,7 @@ export class UpdateOrgContactHandler
     return Commands.UPDATE_ORG_CONTACT_REDACTION;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -127,4 +125,7 @@ export class UpdateOrgContactHandler
   }
 }
 
-export type { UpdateOrgContactHandlerInput, UpdateOrgContactOutput } from "../../../../interfaces/cqrs/handlers/c/update-org-contact.js";
+export type {
+  UpdateOrgContactHandlerInput,
+  UpdateOrgContactOutput,
+} from "../../../../interfaces/cqrs/handlers/c/update-org-contact.js";

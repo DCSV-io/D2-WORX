@@ -11,5 +11,7 @@ export interface CreateEmulationConsentInput {
 export type CreateEmulationConsentOutput = { consent: EmulationConsent };
 
 /** Handler for creating emulation consent records. */
-export interface ICreateEmulationConsentHandler
-  extends IHandler<CreateEmulationConsentInput, CreateEmulationConsentOutput> {}
+export interface ICreateEmulationConsentHandler extends IHandler<
+  CreateEmulationConsentInput,
+  CreateEmulationConsentOutput
+> {}

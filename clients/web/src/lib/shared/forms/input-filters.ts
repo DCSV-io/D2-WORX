@@ -59,7 +59,8 @@ function applyFilter(e: InputEvent, transform: (value: string) => string): void 
 
   if (before !== after) {
     // Calculate how many characters were removed before the cursor
-    const removedBefore = before.slice(0, cursorPos).length - transform(before.slice(0, cursorPos)).length;
+    const removedBefore =
+      before.slice(0, cursorPos).length - transform(before.slice(0, cursorPos)).length;
     input.value = after;
     const newPos = Math.max(0, cursorPos - removedBefore);
     input.setSelectionRange(newPos, newPos);

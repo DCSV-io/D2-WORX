@@ -141,9 +141,9 @@ describe("JwtManager", () => {
   it("should return null on auth service failure", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ error: "Internal" }), { status: 500 }),
-      ),
+      vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify({ error: "Internal" }), { status: 500 })),
     );
 
     const result = await manager.getToken("session_token=abc");

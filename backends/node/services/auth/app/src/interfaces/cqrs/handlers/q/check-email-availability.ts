@@ -14,7 +14,9 @@ export const CHECK_EMAIL_AVAILABILITY_REDACTION: RedactionSpec = {
 };
 
 /** Handler for checking email availability. Requires redaction (input contains PII). */
-export interface ICheckEmailAvailabilityHandler
-  extends IHandler<CheckEmailAvailabilityInput, CheckEmailAvailabilityOutput> {
+export interface ICheckEmailAvailabilityHandler extends IHandler<
+  CheckEmailAvailabilityInput,
+  CheckEmailAvailabilityOutput
+> {
   readonly redaction: RedactionSpec;
 }

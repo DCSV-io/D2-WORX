@@ -43,11 +43,14 @@
   ];
 </script>
 
-<Section id="data-display" title="Data Display">
+<Section
+  id="data-display"
+  title="Data Display"
+>
   <div class="flex flex-col gap-6">
     <!-- Avatars -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Avatars</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Avatars</h3>
       <div class="flex items-center gap-4 rounded-lg border p-6">
         <Avatar class="size-8">
           <AvatarFallback>SM</AvatarFallback>
@@ -62,7 +65,10 @@
           <AvatarFallback>XL</AvatarFallback>
         </Avatar>
         <Avatar>
-          <AvatarImage src="https://api.dicebear.com/9.x/initials/svg?seed=JD" alt="JD" />
+          <AvatarImage
+            src="https://api.dicebear.com/9.x/initials/svg?seed=JD"
+            alt="JD"
+          />
           <AvatarFallback>JD</AvatarFallback>
         </Avatar>
       </div>
@@ -70,7 +76,7 @@
 
     <!-- Badges -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Badges</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Badges</h3>
       <div class="flex flex-wrap items-center gap-3 rounded-lg border p-6">
         <Badge>Default</Badge>
         <Badge variant="secondary">Secondary</Badge>
@@ -82,18 +88,25 @@
 
     <!-- Status Badges -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Status Badges</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Status Badges</h3>
       <div class="flex flex-wrap items-center gap-3 rounded-lg border p-6">
         <Badge class="bg-info text-info-foreground hover:bg-info/80 border-transparent">Info</Badge>
-        <Badge class="bg-success text-success-foreground hover:bg-success/80 border-transparent">Success</Badge>
-        <Badge class="bg-warning text-warning-foreground hover:bg-warning/80 border-transparent">Warning</Badge>
-        <Badge class="bg-destructive text-destructive-foreground hover:bg-destructive/80 border-transparent">Danger</Badge>
+        <Badge class="bg-success text-success-foreground hover:bg-success/80 border-transparent"
+          >Success</Badge
+        >
+        <Badge class="bg-warning text-warning-foreground hover:bg-warning/80 border-transparent"
+          >Warning</Badge
+        >
+        <Badge
+          class="bg-destructive text-destructive-foreground hover:bg-destructive/80 border-transparent"
+          >Danger</Badge
+        >
       </div>
     </div>
 
     <!-- Alerts -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Alerts</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Alerts</h3>
       <div class="flex flex-col gap-3">
         <Alert.Root>
           <CircleAlertIcon />
@@ -114,9 +127,7 @@
         <Alert.Root variant="success">
           <CheckCircleIcon />
           <Alert.Title>Success</Alert.Title>
-          <Alert.Description>
-            Your changes have been saved successfully.
-          </Alert.Description>
+          <Alert.Description>Your changes have been saved successfully.</Alert.Description>
         </Alert.Root>
 
         <Alert.Root variant="warning">
@@ -140,12 +151,15 @@
     <!-- Tooltips + Toggle -->
     <div class="grid gap-6 md:grid-cols-2">
       <div class="flex flex-col gap-3">
-        <h3 class="text-sm font-medium text-muted-foreground">Tooltips</h3>
+        <h3 class="text-muted-foreground text-sm font-medium">Tooltips</h3>
         <div class="flex gap-3 rounded-lg border p-6">
           <Tooltip.Provider>
             <Tooltip.Root>
               <Tooltip.Trigger>
-                <Button variant="outline" size="sm">Hover me</Button>
+                <Button
+                  variant="outline"
+                  size="sm">Hover me</Button
+                >
               </Tooltip.Trigger>
               <Tooltip.Content>
                 <p>This is a tooltip message</p>
@@ -156,7 +170,7 @@
       </div>
 
       <div class="flex flex-col gap-3">
-        <h3 class="text-sm font-medium text-muted-foreground">Toggle</h3>
+        <h3 class="text-muted-foreground text-sm font-medium">Toggle</h3>
         <div class="flex gap-2 rounded-lg border p-6">
           <Toggle aria-label="Toggle bold">
             <BoldIcon class="size-4" />
@@ -173,29 +187,29 @@
 
     <!-- Collapsible -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Collapsible</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Collapsible</h3>
       <div class="rounded-lg border p-6">
-        <Collapsible.Root bind:open={collapsibleOpen} class="w-full max-w-sm">
+        <Collapsible.Root
+          bind:open={collapsibleOpen}
+          class="w-full max-w-sm"
+        >
           <div class="flex items-center justify-between">
             <h4 class="text-sm font-semibold">@peduarte starred 3 repositories</h4>
             <Collapsible.Trigger>
-              <Button variant="ghost" size="sm">
+              <Button
+                variant="ghost"
+                size="sm"
+              >
                 <ChevronsUpDownIcon class="size-4" />
                 <span class="sr-only">Toggle</span>
               </Button>
             </Collapsible.Trigger>
           </div>
-          <div class="mt-2 rounded-md border px-4 py-2 text-sm">
-            @radix-ui/primitives
-          </div>
+          <div class="mt-2 rounded-md border px-4 py-2 text-sm">@radix-ui/primitives</div>
           <Collapsible.Content>
             <div class="mt-2 flex flex-col gap-2">
-              <div class="rounded-md border px-4 py-2 text-sm">
-                @radix-ui/colors
-              </div>
-              <div class="rounded-md border px-4 py-2 text-sm">
-                @stitches/react
-              </div>
+              <div class="rounded-md border px-4 py-2 text-sm">@radix-ui/colors</div>
+              <div class="rounded-md border px-4 py-2 text-sm">@stitches/react</div>
             </div>
           </Collapsible.Content>
         </Collapsible.Root>
@@ -204,7 +218,7 @@
 
     <!-- Carousel -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Carousel</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Carousel</h3>
       <div class="mx-auto w-full max-w-md rounded-lg border p-6">
         <Carousel.Root class="w-full">
           <Carousel.Content>
@@ -212,7 +226,9 @@
               <Carousel.Item>
                 <div class="p-1">
                   <Card.Root>
-                    <Card.Content class="flex aspect-square items-center justify-center p-6 {item.color}">
+                    <Card.Content
+                      class="flex aspect-square items-center justify-center p-6 {item.color}"
+                    >
                       <span class="text-3xl font-semibold">{i + 1}</span>
                     </Card.Content>
                   </Card.Root>
@@ -228,21 +244,27 @@
 
     <!-- Aspect Ratio -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Aspect Ratio</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Aspect Ratio</h3>
       <div class="grid gap-4 md:grid-cols-2">
         <div class="flex flex-col gap-2">
-          <span class="text-xs text-muted-foreground">16:9</span>
-          <AspectRatio ratio={16 / 9} class="rounded-lg border bg-muted">
-            <div class="flex h-full items-center justify-center gap-2 text-muted-foreground">
+          <span class="text-muted-foreground text-xs">16:9</span>
+          <AspectRatio
+            ratio={16 / 9}
+            class="bg-muted rounded-lg border"
+          >
+            <div class="text-muted-foreground flex h-full items-center justify-center gap-2">
               <ImageIcon class="size-6" />
               <span class="text-sm">16:9 Content</span>
             </div>
           </AspectRatio>
         </div>
         <div class="flex flex-col gap-2">
-          <span class="text-xs text-muted-foreground">1:1</span>
-          <AspectRatio ratio={1} class="rounded-lg border bg-muted">
-            <div class="flex h-full items-center justify-center gap-2 text-muted-foreground">
+          <span class="text-muted-foreground text-xs">1:1</span>
+          <AspectRatio
+            ratio={1}
+            class="bg-muted rounded-lg border"
+          >
+            <div class="text-muted-foreground flex h-full items-center justify-center gap-2">
               <ImageIcon class="size-6" />
               <span class="text-sm">1:1 Content</span>
             </div>
@@ -253,11 +275,11 @@
 
     <!-- Separator -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Separator</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Separator</h3>
       <div class="rounded-lg border p-6">
         <div class="flex flex-col gap-1">
           <h4 class="text-sm font-medium">DCSV WORX</h4>
-          <p class="text-xs text-muted-foreground">Business tools for contractors and operators</p>
+          <p class="text-muted-foreground text-xs">Business tools for contractors and operators</p>
         </div>
         <Separator class="my-4" />
         <div class="flex h-5 items-center gap-4 text-sm">
@@ -272,7 +294,7 @@
 
     <!-- Scroll Area -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Scroll Area</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Scroll Area</h3>
       <ScrollArea class="h-48 rounded-lg border">
         <div class="p-4">
           {#each Array.from({ length: 20 }, (_, i) => i + 1) as n (n)}
@@ -289,7 +311,7 @@
 
     <!-- Table -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Table</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Table</h3>
       <div class="rounded-lg border">
         <Table.Root>
           <Table.Header>
@@ -305,7 +327,13 @@
               <Table.Row>
                 <Table.Cell class="font-medium">{row.id}</Table.Cell>
                 <Table.Cell>
-                  <Badge variant={row.status === "Paid" ? "default" : row.status === "Pending" ? "secondary" : "outline"}>
+                  <Badge
+                    variant={row.status === "Paid"
+                      ? "default"
+                      : row.status === "Pending"
+                        ? "secondary"
+                        : "outline"}
+                  >
                     {row.status}
                   </Badge>
                 </Table.Cell>

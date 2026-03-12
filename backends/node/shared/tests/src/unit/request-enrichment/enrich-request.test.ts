@@ -102,11 +102,9 @@ describe("enrichRequest", () => {
 
   it("should read clientFingerprint from d2-cfp cookie (primary source)", async () => {
     const handler = createMockFindWhoIs();
-    const info = await enrichRequest(
-      { cookie: "d2-cfp=cookie-fp-456; other=val" },
-      handler,
-      { enableWhoIsLookup: false },
-    );
+    const info = await enrichRequest({ cookie: "d2-cfp=cookie-fp-456; other=val" }, handler, {
+      enableWhoIsLookup: false,
+    });
     expect(info.clientFingerprint).toBe("cookie-fp-456");
   });
 
@@ -160,16 +158,12 @@ describe("enrichRequest", () => {
 
   it("should produce different deviceFingerprints for different clientFingerprints", async () => {
     const handler = createMockFindWhoIs();
-    const info1 = await enrichRequest(
-      { "x-client-fingerprint": "fp-aaa" },
-      handler,
-      { enableWhoIsLookup: false },
-    );
-    const info2 = await enrichRequest(
-      { "x-client-fingerprint": "fp-bbb" },
-      handler,
-      { enableWhoIsLookup: false },
-    );
+    const info1 = await enrichRequest({ "x-client-fingerprint": "fp-aaa" }, handler, {
+      enableWhoIsLookup: false,
+    });
+    const info2 = await enrichRequest({ "x-client-fingerprint": "fp-bbb" }, handler, {
+      enableWhoIsLookup: false,
+    });
     expect(info1.deviceFingerprint).not.toBe(info2.deviceFingerprint);
   });
 
@@ -408,11 +402,10 @@ describe("enrichRequest", () => {
     it("should truncate client fingerprint exceeding maxFingerprintLength", async () => {
       const handler = createMockFindWhoIs();
       const longFp = "X".repeat(1000);
-      const info = await enrichRequest(
-        { "x-client-fingerprint": longFp },
-        handler,
-        { enableWhoIsLookup: false, maxFingerprintLength: 256 },
-      );
+      const info = await enrichRequest({ "x-client-fingerprint": longFp }, handler, {
+        enableWhoIsLookup: false,
+        maxFingerprintLength: 256,
+      });
 
       expect(info.clientFingerprint).toHaveLength(256);
       expect(info.clientFingerprint).toBe("X".repeat(256));
@@ -421,11 +414,10 @@ describe("enrichRequest", () => {
     it("should truncate client fingerprint to custom maxFingerprintLength", async () => {
       const handler = createMockFindWhoIs();
       const longFp = "Z".repeat(500);
-      const info = await enrichRequest(
-        { "x-client-fingerprint": longFp },
-        handler,
-        { enableWhoIsLookup: false, maxFingerprintLength: 50 },
-      );
+      const info = await enrichRequest({ "x-client-fingerprint": longFp }, handler, {
+        enableWhoIsLookup: false,
+        maxFingerprintLength: 50,
+      });
 
       expect(info.clientFingerprint).toHaveLength(50);
       expect(info.clientFingerprint).toBe("Z".repeat(50));
@@ -476,16 +468,12 @@ describe("enrichRequest", () => {
 
     it("should produce different server fingerprints for different unicode user-agents", async () => {
       const handler = createMockFindWhoIs();
-      const info1 = await enrichRequest(
-        { "user-agent": "\u{1F600}" },
-        handler,
-        { enableWhoIsLookup: false },
-      );
-      const info2 = await enrichRequest(
-        { "user-agent": "\u{1F4A9}" },
-        handler,
-        { enableWhoIsLookup: false },
-      );
+      const info1 = await enrichRequest({ "user-agent": "\u{1F600}" }, handler, {
+        enableWhoIsLookup: false,
+      });
+      const info2 = await enrichRequest({ "user-agent": "\u{1F4A9}" }, handler, {
+        enableWhoIsLookup: false,
+      });
 
       expect(info1.serverFingerprint).not.toBe(info2.serverFingerprint);
     });
@@ -505,11 +493,9 @@ describe("enrichRequest", () => {
 
     it("should handle cookie header with null bytes without crashing", async () => {
       const handler = createMockFindWhoIs();
-      const info = await enrichRequest(
-        { cookie: "d2-cfp=\x00abc\x00; other=val" },
-        handler,
-        { enableWhoIsLookup: false },
-      );
+      const info = await enrichRequest({ cookie: "d2-cfp=\x00abc\x00; other=val" }, handler, {
+        enableWhoIsLookup: false,
+      });
 
       // Cookie parsing should still extract the value (null bytes are part of the value)
       expect(info.clientFingerprint).toBe("\x00abc\x00");
@@ -518,11 +504,10 @@ describe("enrichRequest", () => {
     it("should not crash when client fingerprint is exactly at maxFingerprintLength", async () => {
       const handler = createMockFindWhoIs();
       const exactLengthFp = "A".repeat(256);
-      const info = await enrichRequest(
-        { "x-client-fingerprint": exactLengthFp },
-        handler,
-        { enableWhoIsLookup: false, maxFingerprintLength: 256 },
-      );
+      const info = await enrichRequest({ "x-client-fingerprint": exactLengthFp }, handler, {
+        enableWhoIsLookup: false,
+        maxFingerprintLength: 256,
+      });
 
       // Exactly at limit — should NOT be truncated
       expect(info.clientFingerprint).toHaveLength(256);
@@ -532,18 +517,21 @@ describe("enrichRequest", () => {
     it("should truncate client fingerprint one char over maxFingerprintLength", async () => {
       const handler = createMockFindWhoIs();
       const overLimitFp = "A".repeat(257);
-      const info = await enrichRequest(
-        { "x-client-fingerprint": overLimitFp },
-        handler,
-        { enableWhoIsLookup: false, maxFingerprintLength: 256 },
-      );
+      const info = await enrichRequest({ "x-client-fingerprint": overLimitFp }, handler, {
+        enableWhoIsLookup: false,
+        maxFingerprintLength: 256,
+      });
 
       expect(info.clientFingerprint).toHaveLength(256);
     });
 
     it("should produce consistent deviceFingerprint for same inputs", async () => {
       const handler = createMockFindWhoIs();
-      const headers = { "cf-connecting-ip": "10.0.0.1", "user-agent": "Bot/1.0", "x-client-fingerprint": "fp-stable" };
+      const headers = {
+        "cf-connecting-ip": "10.0.0.1",
+        "user-agent": "Bot/1.0",
+        "x-client-fingerprint": "fp-stable",
+      };
       const info1 = await enrichRequest(headers, handler, { enableWhoIsLookup: false });
       const info2 = await enrichRequest(headers, handler, { enableWhoIsLookup: false });
 

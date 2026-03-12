@@ -22,7 +22,7 @@ using Moq;
 /// </summary>
 public class JwtFingerprintMiddlewareTests
 {
-    private readonly Mock<ILogger<JwtFingerprintMiddleware>> _mockLogger = new();
+    private readonly Mock<ILogger<JwtFingerprintMiddleware>> r_mockLogger = new();
 
     /// <summary>
     /// Tests that a matching fingerprint allows the request through.
@@ -495,7 +495,7 @@ public class JwtFingerprintMiddlewareTests
     /// </summary>
     private JwtFingerprintMiddleware CreateMiddleware(RequestDelegate next)
     {
-        return new JwtFingerprintMiddleware(next, _mockLogger.Object);
+        return new JwtFingerprintMiddleware(next, r_mockLogger.Object);
     }
 
     #endregion

@@ -4,16 +4,16 @@ HTTP middleware that enriches requests with client information including IP reso
 
 ## Files
 
-| File Name                                                                              | Description                                                                                   |
-| -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| [MutableRequestContext.cs](MutableRequestContext.cs)                                    | Mutable implementation of `IRequestContext` progressively populated by gateway middleware.     |
-| [IpResolver.cs](IpResolver.cs)                                                         | Static helper for resolving client IP from various headers.                                   |
-| [FingerprintBuilder.cs](FingerprintBuilder.cs)                                         | Static helpers for server + device fingerprint computation.                                   |
-| [InfrastructurePaths.cs](InfrastructurePaths.cs)                                       | Helper for detecting infrastructure endpoints (health, metrics) to skip enrichment/logging.   |
-| [RequestEnrichmentOptions.cs](RequestEnrichmentOptions.cs)                              | Configuration options for the middleware.                                                     |
-| [RequestEnrichmentMiddleware.cs](RequestEnrichmentMiddleware.cs)                        | The middleware implementation that performs enrichment.                                        |
-| [RequestContextLoggingMiddleware.cs](RequestContextLoggingMiddleware.cs)                | Middleware pushing non-PII context fields into Serilog LogContext + OTel trace span tags.      |
-| [Extensions.cs](Extensions.cs)                                                         | DI registration and app builder extension methods.                                            |
+| File Name                                                                | Description                                                                                 |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [MutableRequestContext.cs](MutableRequestContext.cs)                     | Mutable implementation of `IRequestContext` progressively populated by gateway middleware.  |
+| [IpResolver.cs](IpResolver.cs)                                           | Static helper for resolving client IP from various headers.                                 |
+| [FingerprintBuilder.cs](FingerprintBuilder.cs)                           | Static helpers for server + device fingerprint computation.                                 |
+| [InfrastructurePaths.cs](InfrastructurePaths.cs)                         | Helper for detecting infrastructure endpoints (health, metrics) to skip enrichment/logging. |
+| [RequestEnrichmentOptions.cs](RequestEnrichmentOptions.cs)               | Configuration options for the middleware.                                                   |
+| [RequestEnrichmentMiddleware.cs](RequestEnrichmentMiddleware.cs)         | The middleware implementation that performs enrichment.                                     |
+| [RequestContextLoggingMiddleware.cs](RequestContextLoggingMiddleware.cs) | Middleware pushing non-PII context fields into Serilog LogContext + OTel trace span tags.   |
+| [Extensions.cs](Extensions.cs)                                           | DI registration and app builder extension methods.                                          |
 
 ## Overview
 
@@ -49,20 +49,20 @@ The enrichment middleware creates the instance with network fields, then subsequ
 
 ### Network / Enrichment Fields (set by RequestEnrichmentMiddleware)
 
-| Property            | Type      | Description                                                              |
-| ------------------- | --------- | ------------------------------------------------------------------------ |
-| `ClientIp`          | `string?` | Resolved client IP address.                                              |
-| `ServerFingerprint` | `string?` | Server-computed fingerprint for logging.                                 |
-| `ClientFingerprint` | `string?` | Client-provided fingerprint from cookie/header (nullable).               |
-| `DeviceFingerprint` | `string?` | Combined fingerprint: SHA-256(clientFP + serverFP + IP).                 |
-| `WhoIsHashId`       | `string?` | Content-addressable hash for WhoIs lookups.                              |
-| `City`              | `string?` | City from WhoIs data.                                                    |
-| `CountryCode`       | `string?` | ISO 3166-1 alpha-2 country code.                                         |
-| `SubdivisionCode`   | `string?` | ISO 3166-2 subdivision code.                                             |
-| `IsVpn`             | `bool?`   | Whether IP is from a VPN.                                                |
-| `IsProxy`           | `bool?`   | Whether IP is from a proxy.                                              |
-| `IsTor`             | `bool?`   | Whether IP is from a Tor exit node.                                      |
-| `IsHosting`         | `bool?`   | Whether IP is from a hosting provider.                                   |
+| Property            | Type      | Description                                                |
+| ------------------- | --------- | ---------------------------------------------------------- |
+| `ClientIp`          | `string?` | Resolved client IP address.                                |
+| `ServerFingerprint` | `string?` | Server-computed fingerprint for logging.                   |
+| `ClientFingerprint` | `string?` | Client-provided fingerprint from cookie/header (nullable). |
+| `DeviceFingerprint` | `string?` | Combined fingerprint: SHA-256(clientFP + serverFP + IP).   |
+| `WhoIsHashId`       | `string?` | Content-addressable hash for WhoIs lookups.                |
+| `City`              | `string?` | City from WhoIs data.                                      |
+| `CountryCode`       | `string?` | ISO 3166-1 alpha-2 country code.                           |
+| `SubdivisionCode`   | `string?` | ISO 3166-2 subdivision code.                               |
+| `IsVpn`             | `bool?`   | Whether IP is from a VPN.                                  |
+| `IsProxy`           | `bool?`   | Whether IP is from a proxy.                                |
+| `IsTor`             | `bool?`   | Whether IP is from a Tor exit node.                        |
+| `IsHosting`         | `bool?`   | Whether IP is from a hosting provider.                     |
 
 See `HANDLER.md` for the full `IRequestContext` interface (including identity, org, trust, and helper fields).
 

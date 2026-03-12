@@ -14,7 +14,8 @@ const getChannelPreferenceSchema = z.object({
   contactId: zodGuid,
 });
 
-export class GetChannelPreference extends BaseHandler<Input, Output>
+export class GetChannelPreference
+  extends BaseHandler<Input, Output>
   implements Queries.IGetChannelPreferenceHandler
 {
   private readonly repo: ChannelPreferenceRepoHandlers;
@@ -36,9 +37,7 @@ export class GetChannelPreference extends BaseHandler<Input, Output>
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(getChannelPreferenceSchema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 

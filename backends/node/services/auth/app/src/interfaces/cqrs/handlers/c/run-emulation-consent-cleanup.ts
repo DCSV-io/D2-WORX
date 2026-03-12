@@ -9,5 +9,7 @@ export interface RunEmulationConsentCleanupOutput {
 }
 
 /** Handler for cleaning up expired emulation consents (scheduled job). */
-export interface IRunEmulationConsentCleanupHandler
-  extends IHandler<RunEmulationConsentCleanupInput, RunEmulationConsentCleanupOutput> {}
+export interface IRunEmulationConsentCleanupHandler extends IHandler<
+  RunEmulationConsentCleanupInput,
+  RunEmulationConsentCleanupOutput
+> {}

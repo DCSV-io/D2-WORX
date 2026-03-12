@@ -14,10 +14,7 @@ describe("Singleflight", () => {
       () => new Promise<string>((resolve) => setTimeout(() => resolve("shared"), 50)),
     );
 
-    const [a, b] = await Promise.all([
-      sf.execute("key", operation),
-      sf.execute("key", operation),
-    ]);
+    const [a, b] = await Promise.all([sf.execute("key", operation), sf.execute("key", operation)]);
 
     expect(a).toBe("shared");
     expect(b).toBe("shared");
@@ -29,10 +26,7 @@ describe("Singleflight", () => {
     const opA = vi.fn(() => Promise.resolve("a"));
     const opB = vi.fn(() => Promise.resolve("b"));
 
-    const [a, b] = await Promise.all([
-      sf.execute("key-a", opA),
-      sf.execute("key-b", opB),
-    ]);
+    const [a, b] = await Promise.all([sf.execute("key-a", opA), sf.execute("key-b", opB)]);
 
     expect(a).toBe("a");
     expect(b).toBe("b");

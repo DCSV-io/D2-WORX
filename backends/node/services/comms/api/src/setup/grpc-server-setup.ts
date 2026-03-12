@@ -61,18 +61,14 @@ export async function buildGrpcServer(options: CommsGrpcServerOptions): Promise<
   }
 
   await new Promise<void>((resolve, reject) => {
-    server.bindAsync(
-      `0.0.0.0:${grpcPort}`,
-      grpc.ServerCredentials.createInsecure(),
-      (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        logger.info(`Comms gRPC server listening on 0.0.0.0:${grpcPort}`);
-        resolve();
-      },
-    );
+    server.bindAsync(`0.0.0.0:${grpcPort}`, grpc.ServerCredentials.createInsecure(), (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      logger.info(`Comms gRPC server listening on 0.0.0.0:${grpcPort}`);
+      resolve();
+    });
   });
 
   return server;

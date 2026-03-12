@@ -65,10 +65,7 @@ export function parsePhone(
   defaultCountry?: string,
 ): { countryCode: string; nationalNumber: string; e164: string } | null {
   try {
-    const parsed = parsePhoneNumberFromString(
-      number,
-      defaultCountry as CountryCode | undefined,
-    );
+    const parsed = parsePhoneNumberFromString(number, defaultCountry as CountryCode | undefined);
     if (!parsed?.isValid()) return null;
     return {
       countryCode: parsed.country ?? defaultCountry ?? "",

@@ -43,9 +43,7 @@ export class DeleteOrgContact
     this.deleteContactsByExtKeys = deleteContactsByExtKeys;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -81,4 +79,7 @@ export class DeleteOrgContact
   }
 }
 
-export type { DeleteOrgContactInput, DeleteOrgContactOutput } from "../../../../interfaces/cqrs/handlers/c/delete-org-contact.js";
+export type {
+  DeleteOrgContactInput,
+  DeleteOrgContactOutput,
+} from "../../../../interfaces/cqrs/handlers/c/delete-org-contact.js";

@@ -67,9 +67,7 @@ export class AuthProxy {
     // Forward client IP if available from request enrichment
     const locals = event.locals as Record<string, unknown>;
     const requestContext = locals.requestContext as { clientIp?: string } | undefined;
-    const clientIp =
-      requestContext?.clientIp ??
-      request.headers.get("x-forwarded-for");
+    const clientIp = requestContext?.clientIp ?? request.headers.get("x-forwarded-for");
     if (clientIp) {
       headers.set("x-forwarded-for", clientIp);
     }

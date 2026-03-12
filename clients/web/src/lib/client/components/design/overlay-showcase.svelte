@@ -14,7 +14,10 @@
   let goalValue = $state(350);
 </script>
 
-<Section id="overlays" title="Overlays">
+<Section
+  id="overlays"
+  title="Overlays"
+>
   <div class="flex flex-col gap-6">
     <!-- Existing overlays row -->
     <div class="flex flex-wrap gap-4 rounded-lg border p-6">
@@ -33,11 +36,17 @@
           <div class="grid gap-4 py-4">
             <div class="flex flex-col gap-2">
               <Label for="dialog-name">Name</Label>
-              <Input id="dialog-name" value="Jane Doe" />
+              <Input
+                id="dialog-name"
+                value="Jane Doe"
+              />
             </div>
             <div class="flex flex-col gap-2">
               <Label for="dialog-email">Email</Label>
-              <Input id="dialog-email" value="jane@example.com" />
+              <Input
+                id="dialog-email"
+                value="jane@example.com"
+              />
             </div>
           </div>
           <Dialog.Footer>
@@ -70,15 +79,29 @@
         <Popover.Content class="w-72">
           <div class="flex flex-col gap-3">
             <h4 class="text-sm font-medium">Dimensions</h4>
-            <p class="text-xs text-muted-foreground">Set the dimensions for the layer.</p>
+            <p class="text-muted-foreground text-xs">Set the dimensions for the layer.</p>
             <div class="grid grid-cols-2 gap-2">
               <div class="flex flex-col gap-1">
-                <Label for="pop-w" class="text-xs">Width</Label>
-                <Input id="pop-w" value="100%" class="h-8 text-xs" />
+                <Label
+                  for="pop-w"
+                  class="text-xs">Width</Label
+                >
+                <Input
+                  id="pop-w"
+                  value="100%"
+                  class="h-8 text-xs"
+                />
               </div>
               <div class="flex flex-col gap-1">
-                <Label for="pop-h" class="text-xs">Height</Label>
-                <Input id="pop-h" value="25px" class="h-8 text-xs" />
+                <Label
+                  for="pop-h"
+                  class="text-xs">Height</Label
+                >
+                <Input
+                  id="pop-h"
+                  value="25px"
+                  class="h-8 text-xs"
+                />
               </div>
             </div>
           </div>
@@ -96,9 +119,18 @@
             <Sheet.Description>Example side navigation panel.</Sheet.Description>
           </Sheet.Header>
           <div class="flex flex-col gap-2 py-4">
-            <Button variant="ghost" class="justify-start">Dashboard</Button>
-            <Button variant="ghost" class="justify-start">Settings</Button>
-            <Button variant="ghost" class="justify-start">Help</Button>
+            <Button
+              variant="ghost"
+              class="justify-start">Dashboard</Button
+            >
+            <Button
+              variant="ghost"
+              class="justify-start">Settings</Button
+            >
+            <Button
+              variant="ghost"
+              class="justify-start">Help</Button
+            >
           </div>
         </Sheet.Content>
       </Sheet.Root>
@@ -112,13 +144,16 @@
           <AlertDialog.Header>
             <AlertDialog.Title>Are you absolutely sure?</AlertDialog.Title>
             <AlertDialog.Description>
-              This action cannot be undone. This will permanently delete your account
-              and remove your data from our servers.
+              This action cannot be undone. This will permanently delete your account and remove
+              your data from our servers.
             </AlertDialog.Description>
           </AlertDialog.Header>
           <AlertDialog.Footer>
             <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-            <AlertDialog.Action class="bg-destructive text-white hover:bg-destructive/90 dark:bg-destructive/60 dark:hover:bg-destructive/80">Delete</AlertDialog.Action>
+            <AlertDialog.Action
+              class="bg-destructive hover:bg-destructive/90 dark:bg-destructive/60 dark:hover:bg-destructive/80 text-white"
+              >Delete</AlertDialog.Action
+            >
           </AlertDialog.Footer>
         </AlertDialog.Content>
       </AlertDialog.Root>
@@ -134,10 +169,10 @@
             <Drawer.Description>Set your daily activity goal.</Drawer.Description>
           </Drawer.Header>
           <div class="flex flex-col items-center gap-4 p-4 pb-0">
-            <div class="text-5xl font-bold tabular-nums tracking-tighter">
+            <div class="text-5xl font-bold tracking-tighter tabular-nums">
               {goalValue}
             </div>
-            <p class="text-sm text-muted-foreground">calories/day</p>
+            <p class="text-muted-foreground text-sm">calories/day</p>
             <div class="flex gap-2">
               <Button
                 variant="outline"
@@ -158,7 +193,10 @@
           <Drawer.Footer>
             <Button>Submit</Button>
             <Drawer.Close>
-              <Button variant="outline" class="w-full">Cancel</Button>
+              <Button
+                variant="outline"
+                class="w-full">Cancel</Button
+              >
             </Drawer.Close>
           </Drawer.Footer>
         </Drawer.Content>
@@ -167,10 +205,12 @@
 
     <!-- Context Menu -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Context Menu</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Context Menu</h3>
       <ContextMenu.Root>
         <ContextMenu.Trigger>
-          <div class="flex h-36 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+          <div
+            class="text-muted-foreground flex h-36 items-center justify-center rounded-lg border border-dashed text-sm"
+          >
             Right-click here
           </div>
         </ContextMenu.Trigger>

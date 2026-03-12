@@ -4,14 +4,14 @@ Request enrichment middleware for IP resolution, fingerprinting, and WhoIs looku
 
 ## Files
 
-| File Name                                                          | Description                                                                     |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| [enrich-request.ts](src/enrich-request.ts)                         | `enrichRequest()` — main orchestration function combining all enrichment steps. |
-| [ip-resolver.ts](src/ip-resolver.ts)                               | `resolveIp()` + `isLocalhost()` — extract client IP from proxy headers.         |
-| [fingerprint-builder.ts](src/fingerprint-builder.ts)               | `buildServerFingerprint()` + `buildDeviceFingerprint()` — SHA-256 hashing.      |
+| File Name                                                          | Description                                                                      |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| [enrich-request.ts](src/enrich-request.ts)                         | `enrichRequest()` — main orchestration function combining all enrichment steps.  |
+| [ip-resolver.ts](src/ip-resolver.ts)                               | `resolveIp()` + `isLocalhost()` — extract client IP from proxy headers.          |
+| [fingerprint-builder.ts](src/fingerprint-builder.ts)               | `buildServerFingerprint()` + `buildDeviceFingerprint()` — SHA-256 hashing.       |
 | [request-info.ts](src/request-info.ts)                             | `MutableRequestContext` class implementing `IRequestContext` from `@d2/handler`. |
-| [request-enrichment-options.ts](src/request-enrichment-options.ts) | `RequestEnrichmentOptions` + `DEFAULT_REQUEST_ENRICHMENT_OPTIONS`.              |
-| [index.ts](src/index.ts)                                           | Barrel re-export of `enrichRequest`, helpers, and types.                        |
+| [request-enrichment-options.ts](src/request-enrichment-options.ts) | `RequestEnrichmentOptions` + `DEFAULT_REQUEST_ENRICHMENT_OPTIONS`.               |
+| [index.ts](src/index.ts)                                           | Barrel re-export of `enrichRequest`, helpers, and types.                         |
 
 ## Logic Flow
 

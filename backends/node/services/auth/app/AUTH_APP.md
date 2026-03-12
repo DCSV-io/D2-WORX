@@ -8,17 +8,17 @@ Defines the CQRS handler layer between the API (routes) and infrastructure (repo
 
 ## Design Decisions
 
-| Decision                           | Rationale                                                                        |
-| ---------------------------------- | -------------------------------------------------------------------------------- |
-| Interfaces defined here, not infra | Prevents circular dependency (infra cannot import from app)                      |
-| Repository handler bundles         | Group related repo handlers into typed objects for factory convenience           |
-| Handler-per-operation              | One class per CQRS operation — matches .NET Geo pattern and `BaseHandler` model  |
-| Zod validation at handler boundary | `this.validateInput(schema, input)` before any persistence or external calls     |
-| Geo contact ops via geo-client     | Org contacts are junctions — actual contact data lives in Geo service (gRPC)     |
-| Fail-open throttle handlers        | All store errors swallowed — sign-in availability > throttle accuracy            |
-| ISignInThrottleStore interface     | Non-handler contract (stateful Redis store) — structurally implemented in infra  |
-| DI registration via `addAuthApp()` | Mirrors .NET `services.AddAuthApp()` — all handlers registered as transient      |
-| Service keys alongside interfaces  | Keys live in app (with interfaces), infra re-exports for composition root access |
+| Decision                           | Rationale                                                                                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Interfaces defined here, not infra | Prevents circular dependency (infra cannot import from app)                                                                     |
+| Repository handler bundles         | Group related repo handlers into typed objects for factory convenience                                                          |
+| Handler-per-operation              | One class per CQRS operation — matches .NET Geo pattern and `BaseHandler` model                                                 |
+| Zod validation at handler boundary | `this.validateInput(schema, input)` before any persistence or external calls                                                    |
+| Geo contact ops via geo-client     | Org contacts are junctions — actual contact data lives in Geo service (gRPC)                                                    |
+| Fail-open throttle handlers        | All store errors swallowed — sign-in availability > throttle accuracy                                                           |
+| ISignInThrottleStore interface     | Non-handler contract (stateful Redis store) — structurally implemented in infra                                                 |
+| DI registration via `addAuthApp()` | Mirrors .NET `services.AddAuthApp()` — all handlers registered as transient                                                     |
+| Service keys alongside interfaces  | Keys live in app (with interfaces), infra re-exports for composition root access                                                |
 | Handler interface extraction       | App-layer I/O types, redaction constants, and IHandler interfaces live in separate interface files — mirrors geo-client pattern |
 
 ## Package Structure
@@ -141,7 +141,7 @@ Scheduled job orchestrators that acquire a distributed lock (Redis), delegate to
 | `GetSignInEvents`        | userId, limit, offset | `{ events, total }`  | Paginated with local cache + staleness check (append-only data)    |
 | `GetActiveConsents`      | userId, limit, offset | `{ consents }`       | Active (non-revoked, non-expired) emulation consents               |
 | `GetOrgContacts`         | orgId, limit, offset  | `{ contacts[] }`     | Junction records hydrated with Geo contact data via ext-key lookup |
-| `CheckSignInThrottle`    | identifierHash, etc.  | `{ blocked, retry?}` | Optimized Redis round-trips: 0 on local cache hit, 1 otherwise    |
+| `CheckSignInThrottle`    | identifierHash, etc.  | `{ blocked, retry?}` | Optimized Redis round-trips: 0 on local cache hit, 1 otherwise     |
 | `CheckHealth`            | _(none)_              | `{ status, ... }`    | Aggregates DB, cache, and message bus pings into health report     |
 
 ## Repository Handler Interfaces

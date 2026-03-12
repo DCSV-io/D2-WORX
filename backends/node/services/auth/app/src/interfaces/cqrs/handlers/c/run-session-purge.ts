@@ -9,5 +9,7 @@ export interface RunSessionPurgeOutput {
 }
 
 /** Handler for purging expired sessions (scheduled job). */
-export interface IRunSessionPurgeHandler
-  extends IHandler<RunSessionPurgeInput, RunSessionPurgeOutput> {}
+export interface IRunSessionPurgeHandler extends IHandler<
+  RunSessionPurgeInput,
+  RunSessionPurgeOutput
+> {}

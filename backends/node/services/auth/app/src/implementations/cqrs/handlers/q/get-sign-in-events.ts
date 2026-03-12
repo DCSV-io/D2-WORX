@@ -64,9 +64,7 @@ export class GetSignInEvents
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const limit = Math.min(input.limit ?? 50, 100);
     const offset = Math.max(input.offset ?? 0, 0);
 
@@ -125,4 +123,7 @@ export class GetSignInEvents
   }
 }
 
-export type { GetSignInEventsInput, GetSignInEventsOutput } from "../../../../interfaces/cqrs/handlers/q/get-sign-in-events.js";
+export type {
+  GetSignInEventsInput,
+  GetSignInEventsOutput,
+} from "../../../../interfaces/cqrs/handlers/q/get-sign-in-events.js";

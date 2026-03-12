@@ -51,7 +51,9 @@ export const CREATE_ORG_CONTACT_REDACTION: RedactionSpec = {
 };
 
 /** Handler for creating org contacts. Requires redaction (I/O contains PII). */
-export interface ICreateOrgContactHandler
-  extends IHandler<CreateOrgContactInput, CreateOrgContactOutput> {
+export interface ICreateOrgContactHandler extends IHandler<
+  CreateOrgContactInput,
+  CreateOrgContactOutput
+> {
   readonly redaction: RedactionSpec;
 }

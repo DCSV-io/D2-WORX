@@ -40,12 +40,12 @@ Auth (always proxied, cookie-based):
 
 ### Route Groups
 
-| Group           | Purpose                              | Auth Required | Org Required |
-| --------------- | ------------------------------------ | ------------- | ------------ |
-| `(public)/`     | Marketing, legal, pricing            | No            | No           |
-| `(auth)/`       | Sign-in, sign-up, password reset     | No            | No           |
-| `(onboarding)/` | Welcome, create/select org           | Yes           | No           |
-| `(app)/`        | Main authenticated application       | Yes           | Yes          |
+| Group           | Purpose                          | Auth Required | Org Required |
+| --------------- | -------------------------------- | ------------- | ------------ |
+| `(public)/`     | Marketing, legal, pricing        | No            | No           |
+| `(auth)/`       | Sign-in, sign-up, password reset | No            | No           |
+| `(onboarding)/` | Welcome, create/select org       | Yes           | No           |
+| `(app)/`        | Main authenticated application   | Yes           | Yes          |
 
 The `(app)/` group is further subdivided by org type: `(customer)/`, `(support)/`, `(admin)/`, `(shared)/`.
 
@@ -71,10 +71,10 @@ Runs on every request via `hooks.server.ts`:
 
 ## Documentation Index
 
-| Document                                                 | Description                                                                                               |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [`SVELTEKIT_STRATEGY.md`](SVELTEKIT_STRATEGY.md)        | Comprehensive strategy report: old system analysis, library recommendations, testing, client-side telemetry |
-| [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md)       | Step-by-step implementation plan with progress tracker                                                    |
+| Document                                           | Description                                                                                                 |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| [`SVELTEKIT_STRATEGY.md`](SVELTEKIT_STRATEGY.md)   | Comprehensive strategy report: old system analysis, library recommendations, testing, client-side telemetry |
+| [`IMPLEMENTATION_PLAN.md`](IMPLEMENTATION_PLAN.md) | Step-by-step implementation plan with progress tracker                                                      |
 
 ---
 
@@ -142,18 +142,18 @@ Sign-out must clear ALL auth state in three steps. Missing any step leaves stale
   import { invalidateToken } from "$lib/client/rest/gateway-client.js";
 
   async function handleSignOut() {
-    await authClient.signOut();   // 1. Clear server session (cookie + Redis + PG)
-    invalidateToken();            // 2. Clear in-memory JWT (prevents stale token reuse)
-    await invalidateAll();        // 3. Invalidate SvelteKit data loaders (re-fetch sees no session)
+    await authClient.signOut(); // 1. Clear server session (cookie + Redis + PG)
+    invalidateToken(); // 2. Clear in-memory JWT (prevents stale token reuse)
+    await invalidateAll(); // 3. Invalidate SvelteKit data loaders (re-fetch sees no session)
   }
 </script>
 ```
 
-| Step               | What it clears                    | Without it                                           |
-| ------------------ | --------------------------------- | ---------------------------------------------------- |
+| Step                   | What it clears                     | Without it                                          |
+| ---------------------- | ---------------------------------- | --------------------------------------------------- |
 | `authClient.signOut()` | Server session (cookie, Redis, PG) | User appears logged in until cookie expires (5 min) |
-| `invalidateToken()`   | In-memory JWT in gateway client   | Stale JWT keeps authorizing API calls until expiry  |
-| `invalidateAll()`      | SvelteKit layout/page data        | UI shows stale session data until next navigation   |
+| `invalidateToken()`    | In-memory JWT in gateway client    | Stale JWT keeps authorizing API calls until expiry  |
+| `invalidateAll()`      | SvelteKit layout/page data         | UI shows stale session data until next navigation   |
 
 ### Navigation & resolve()
 
@@ -196,48 +196,48 @@ This applies to ALL navigation: `<a href>`, `goto()`, `redirect()`, and `fetch()
 
 ### Installed Dependencies
 
-| Category         | Package                                   | Version   |
-| ---------------- | ----------------------------------------- | --------- |
-| Framework        | `svelte`                                  | 5.53.5    |
-| Framework        | `@sveltejs/kit`                           | 2.53.3    |
-| Build            | `vite`                                    | 7.3.1     |
-| Styling          | `tailwindcss`                             | 4.2.1     |
-| Styling          | `clsx` + `tailwind-merge`                 | 2.1.1 / 3.5.0 |
-| Styling          | `tailwind-variants`                       | 3.2.2     |
-| UI               | `bits-ui` (shadcn-svelte)                 | 2.16.2    |
-| Icons            | `@lucide/svelte`                          | 0.561.0   |
-| Forms            | `sveltekit-superforms` + `formsnap`       | 2.30.0 / 2.0.1 |
-| Validation       | `zod`                                     | 4.3.6     |
-| i18n             | `@inlang/paraglide-js`                    | 2.13.0    |
-| Phone            | `libphonenumber-js`                       | 1.12.38   |
-| Postal codes     | `postcode-validator`                      | 3.10.9    |
-| Dates            | `@internationalized/date`                 | 3.11.0    |
-| Auth             | `better-auth` + `@d2/auth-bff-client`    | 1.5.0     |
-| Payments         | `@stripe/stripe-js`                       | 8.8.0     |
-| OTel (server)    | `@opentelemetry/sdk-node` + exporters     | 0.212.0   |
-| Faro (client)    | `@grafana/faro-web-sdk` + tracing         | 1.19.0    |
-| Charts           | `layerchart`                              | 2.0.0-next.43 |
-| Testing          | `vitest` + `@vitest/browser` + `playwright` | 4.0.18 / 1.58.0 |
-| Toast            | `svelte-sonner`                           | 1.0.7     |
-| Theme            | `mode-watcher`                            | 1.1.0     |
+| Category      | Package                                     | Version         |
+| ------------- | ------------------------------------------- | --------------- |
+| Framework     | `svelte`                                    | 5.53.5          |
+| Framework     | `@sveltejs/kit`                             | 2.53.3          |
+| Build         | `vite`                                      | 7.3.1           |
+| Styling       | `tailwindcss`                               | 4.2.1           |
+| Styling       | `clsx` + `tailwind-merge`                   | 2.1.1 / 3.5.0   |
+| Styling       | `tailwind-variants`                         | 3.2.2           |
+| UI            | `bits-ui` (shadcn-svelte)                   | 2.16.2          |
+| Icons         | `@lucide/svelte`                            | 0.561.0         |
+| Forms         | `sveltekit-superforms` + `formsnap`         | 2.30.0 / 2.0.1  |
+| Validation    | `zod`                                       | 4.3.6           |
+| i18n          | `@inlang/paraglide-js`                      | 2.13.0          |
+| Phone         | `libphonenumber-js`                         | 1.12.38         |
+| Postal codes  | `postcode-validator`                        | 3.10.9          |
+| Dates         | `@internationalized/date`                   | 3.11.0          |
+| Auth          | `better-auth` + `@d2/auth-bff-client`       | 1.5.0           |
+| Payments      | `@stripe/stripe-js`                         | 8.8.0           |
+| OTel (server) | `@opentelemetry/sdk-node` + exporters       | 0.212.0         |
+| Faro (client) | `@grafana/faro-web-sdk` + tracing           | 1.19.0          |
+| Charts        | `layerchart`                                | 2.0.0-next.43   |
+| Testing       | `vitest` + `@vitest/browser` + `playwright` | 4.0.18 / 1.58.0 |
+| Toast         | `svelte-sonner`                             | 1.0.7           |
+| Theme         | `mode-watcher`                              | 1.1.0           |
 
 ### Workspace Dependencies (`@d2/*`)
 
-| Package                    | Purpose                                            |
-| -------------------------- | -------------------------------------------------- |
-| `@d2/auth-bff-client`     | BFF auth proxy, session resolution, JWT management |
-| `@d2/geo-client`          | Geo service gRPC client (FindWhoIs, ref data)      |
-| `@d2/request-enrichment`  | IP, fingerprint, WhoIs middleware                  |
-| `@d2/ratelimit`           | Multi-dimensional rate limiting                    |
-| `@d2/idempotency`         | Idempotency-Key header middleware                  |
-| `@d2/cache-memory`        | In-memory cache (LRU)                              |
-| `@d2/cache-redis`         | Redis distributed cache                            |
-| `@d2/handler`             | BaseHandler pattern                                |
-| `@d2/interfaces`          | Cache + middleware contracts                       |
-| `@d2/logging`             | Structured Pino logger (OTel-instrumented)         |
-| `@d2/service-defaults`    | OTel SDK bootstrap                                 |
-| `@d2/protos`              | Generated gRPC types                               |
-| `@d2/result`              | D2Result pattern                                   |
+| Package                  | Purpose                                            |
+| ------------------------ | -------------------------------------------------- |
+| `@d2/auth-bff-client`    | BFF auth proxy, session resolution, JWT management |
+| `@d2/geo-client`         | Geo service gRPC client (FindWhoIs, ref data)      |
+| `@d2/request-enrichment` | IP, fingerprint, WhoIs middleware                  |
+| `@d2/ratelimit`          | Multi-dimensional rate limiting                    |
+| `@d2/idempotency`        | Idempotency-Key header middleware                  |
+| `@d2/cache-memory`       | In-memory cache (LRU)                              |
+| `@d2/cache-redis`        | Redis distributed cache                            |
+| `@d2/handler`            | BaseHandler pattern                                |
+| `@d2/interfaces`         | Cache + middleware contracts                       |
+| `@d2/logging`            | Structured Pino logger (OTel-instrumented)         |
+| `@d2/service-defaults`   | OTel SDK bootstrap                                 |
+| `@d2/protos`             | Generated gRPC types                               |
+| `@d2/result`             | D2Result pattern                                   |
 
 ---
 
@@ -263,14 +263,14 @@ pnpm test             # All tests
 
 ### Environment Variables
 
-| Variable                       | Purpose                             | Required        |
-| ------------------------------ | ----------------------------------- | --------------- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint             | For observability |
-| `OTEL_SERVICE_NAME`            | Service name for traces/logs        | For observability |
-| `PUBLIC_FARO_COLLECTOR_URL`    | Faro collector URL (client-side)    | For client telemetry |
-| `PUBLIC_GATEWAY_URL`           | .NET Gateway URL (client-side)      | For client API calls |
-| `SVELTEKIT_AUTH__URL`          | Auth service URL (server-side)      | For auth proxy  |
-| `GATEWAY_URL`                  | .NET Gateway URL (server-side)      | For SSR API calls |
+| Variable                      | Purpose                          | Required             |
+| ----------------------------- | -------------------------------- | -------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint          | For observability    |
+| `OTEL_SERVICE_NAME`           | Service name for traces/logs     | For observability    |
+| `PUBLIC_FARO_COLLECTOR_URL`   | Faro collector URL (client-side) | For client telemetry |
+| `PUBLIC_GATEWAY_URL`          | .NET Gateway URL (client-side)   | For client API calls |
+| `SVELTEKIT_AUTH__URL`         | Auth service URL (server-side)   | For auth proxy       |
+| `GATEWAY_URL`                 | .NET Gateway URL (server-side)   | For SSR API calls    |
 
 See `.env.local.example` in the project root for all environment variables.
 
@@ -278,13 +278,13 @@ See `.env.local.example` in the project root for all environment variables.
 
 ## Testing Strategy
 
-| Level       | Tool                   | File Pattern        | Environment         |
-| ----------- | ---------------------- | ------------------- | ------------------- |
-| Unit        | Vitest (Node)          | `*.test.ts`         | Node                |
-| Component   | vitest-browser-svelte  | `*.svelte.test.ts`  | Browser (Chromium)  |
-| E2E         | Playwright             | `e2e/*.spec.ts`     | Browser (full app)  |
-| Accessibility | axe-core/playwright  | In E2E suite        | Browser             |
-| Visual      | Playwright screenshots | In E2E suite        | Browser             |
-| Performance | Lighthouse CI          | CI pipeline         | Browser             |
+| Level         | Tool                   | File Pattern       | Environment        |
+| ------------- | ---------------------- | ------------------ | ------------------ |
+| Unit          | Vitest (Node)          | `*.test.ts`        | Node               |
+| Component     | vitest-browser-svelte  | `*.svelte.test.ts` | Browser (Chromium) |
+| E2E           | Playwright             | `e2e/*.spec.ts`    | Browser (full app) |
+| Accessibility | axe-core/playwright    | In E2E suite       | Browser            |
+| Visual        | Playwright screenshots | In E2E suite       | Browser            |
+| Performance   | Lighthouse CI          | CI pipeline        | Browser            |
 
 See [`SVELTEKIT_STRATEGY.md` §7](SVELTEKIT_STRATEGY.md#7-frontend-testing-strategy) for full testing architecture.

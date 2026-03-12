@@ -5,10 +5,7 @@ import type { IMessagePublisher } from "@d2/messaging";
 import type { GetContactsByExtKeys } from "@d2/geo-client";
 import { INotifyKey } from "@d2/comms-client";
 import { GEO_CONTEXT_KEYS, AUTH_MESSAGING } from "@d2/auth-domain";
-import {
-  IRecordSignInEventKey,
-  ICreateUserContactKey,
-} from "@d2/auth-app";
+import { IRecordSignInEventKey, ICreateUserContactKey } from "@d2/auth-app";
 import type { AuthHooks } from "@d2/auth-infra";
 import type { Translator } from "@d2/i18n";
 import { resolveLocale } from "@d2/i18n";
@@ -72,7 +69,9 @@ export function createAuthCallbacks(
         if (!contactId) return;
 
         const t = translator.t;
-        const locale = resolveLocale((input as Record<string, unknown>).locale as string | undefined);
+        const locale = resolveLocale(
+          (input as Record<string, unknown>).locale as string | undefined,
+        );
 
         const notifier = scope.resolve(INotifyKey);
         await notifier.handleAsync({
@@ -113,7 +112,9 @@ export function createAuthCallbacks(
         if (!contactId) return;
 
         const t = translator.t;
-        const locale = resolveLocale((input as Record<string, unknown>).locale as string | undefined);
+        const locale = resolveLocale(
+          (input as Record<string, unknown>).locale as string | undefined,
+        );
 
         const notifier = scope.resolve(INotifyKey);
         await notifier.handleAsync({

@@ -43,9 +43,7 @@ export class CheckSignInThrottle
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     try {
       const cacheKey = AUTH_CACHE_KEYS.signInThrottle(input.identifierHash, input.identityHash);
 
@@ -93,4 +91,7 @@ export class CheckSignInThrottle
   }
 }
 
-export type { CheckSignInThrottleInput, CheckSignInThrottleOutput } from "../../../../interfaces/cqrs/handlers/q/check-sign-in-throttle.js";
+export type {
+  CheckSignInThrottleInput,
+  CheckSignInThrottleOutput,
+} from "../../../../interfaces/cqrs/handlers/q/check-sign-in-throttle.js";

@@ -53,9 +53,7 @@ export class CreateEmulationConsent
     this.checkOrgExists = checkOrgExists;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -97,4 +95,7 @@ export class CreateEmulationConsent
   }
 }
 
-export type { CreateEmulationConsentInput, CreateEmulationConsentOutput } from "../../../../interfaces/cqrs/handlers/c/create-emulation-consent.js";
+export type {
+  CreateEmulationConsentInput,
+  CreateEmulationConsentOutput,
+} from "../../../../interfaces/cqrs/handlers/c/create-emulation-consent.js";

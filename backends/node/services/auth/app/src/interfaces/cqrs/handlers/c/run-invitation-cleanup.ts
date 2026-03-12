@@ -9,5 +9,7 @@ export interface RunInvitationCleanupOutput {
 }
 
 /** Handler for cleaning up expired invitations (scheduled job). */
-export interface IRunInvitationCleanupHandler
-  extends IHandler<RunInvitationCleanupInput, RunInvitationCleanupOutput> {}
+export interface IRunInvitationCleanupHandler extends IHandler<
+  RunInvitationCleanupInput,
+  RunInvitationCleanupOutput
+> {}

@@ -58,11 +58,26 @@
 
 <svelte:head>
   <title>{m.webclient_design_signup_form_title()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_design_signup_form_description()} />
-  <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="{m.webclient_design_signup_form_title()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.webclient_design_signup_form_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_design_signup_form_description()}
+  />
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  />
+  <meta
+    property="og:title"
+    content="{m.webclient_design_signup_form_title()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_design_signup_form_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <div class="mx-auto max-w-2xl px-4 py-8">
@@ -70,15 +85,15 @@
   <div class="mb-6">
     <a
       href={resolve("/debug/design")}
-      class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      class="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
     >
       <ArrowLeftIcon class="size-4" />
       Back to Design System
     </a>
     <h1 class="text-2xl font-bold tracking-tight">Signup Form</h1>
-    <p class="mt-1 text-sm text-muted-foreground">
-      Demonstrates password rules, email/password confirmation, show/hide toggle,
-      and async email availability check.
+    <p class="text-muted-foreground mt-1 text-sm">
+      Demonstrates password rules, email/password confirmation, show/hide toggle, and async email
+      availability check.
     </p>
   </div>
 
@@ -86,15 +101,29 @@
     <Card.Header>
       <Card.Title>Create Account</Card.Title>
       <Card.Description>
-        Password rules mirror the auth service: min 12 chars, no numeric-only, no date-like patterns.
+        Password rules mirror the auth service: min 12 chars, no numeric-only, no date-like
+        patterns.
       </Card.Description>
     </Card.Header>
     <Card.Content>
-      <form method="POST" use:enhance autocomplete="off" class="flex flex-col gap-5">
+      <form
+        method="POST"
+        use:enhance
+        autocomplete="off"
+        class="flex flex-col gap-5"
+      >
         <!-- Name row -->
         <div class="grid gap-4 sm:grid-cols-2">
-          <FormInput {form} field="firstName" {...FIRST_NAME} />
-          <FormInput {form} field="lastName" {...LAST_NAME} />
+          <FormInput
+            {form}
+            field="firstName"
+            {...FIRST_NAME}
+          />
+          <FormInput
+            {form}
+            field="lastName"
+            {...LAST_NAME}
+          />
         </div>
 
         <!-- Email with async availability check -->
@@ -108,10 +137,19 @@
         />
 
         <!-- Confirm Email -->
-        <FormInput {form} field="confirmEmail" {...CONFIRM_EMAIL} />
+        <FormInput
+          {form}
+          field="confirmEmail"
+          {...CONFIRM_EMAIL}
+        />
 
         <!-- Password with show/hide toggle -->
-        <FormInput {form} field="password" {...PASSWORD} type={showPassword ? "text" : "password"}>
+        <FormInput
+          {form}
+          field="password"
+          {...PASSWORD}
+          type={showPassword ? "text" : "password"}
+        >
           {#snippet inputAction()}
             <button
               type="button"
@@ -153,7 +191,10 @@
 
         <!-- Actions -->
         <div class="flex justify-end gap-2 pt-2">
-          <Button variant="outline" type="reset">Reset</Button>
+          <Button
+            variant="outline"
+            type="reset">Reset</Button
+          >
           <Button type="submit">Sign Up</Button>
         </div>
       </form>

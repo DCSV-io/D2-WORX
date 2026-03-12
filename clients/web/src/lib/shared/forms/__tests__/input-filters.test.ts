@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import { digitsOnly, alphaOnly, noSpaces, uppercase, maxLength } from "../input-filters.js";
 
 /** Create a mock input event for testing filters. */
-function createInputEvent(value: string, cursorPos?: number): Event & { currentTarget: HTMLInputElement } {
+function createInputEvent(
+  value: string,
+  cursorPos?: number,
+): Event & { currentTarget: HTMLInputElement } {
   const input = {
     value,
     selectionStart: cursorPos ?? value.length,

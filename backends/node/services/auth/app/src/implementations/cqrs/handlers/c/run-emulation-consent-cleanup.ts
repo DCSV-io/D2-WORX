@@ -34,9 +34,7 @@ export class RunEmulationConsentCleanup
     this.options = options;
   }
 
-  protected async executeAsync(
-    _input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -76,4 +74,7 @@ export class RunEmulationConsentCleanup
   }
 }
 
-export type { RunEmulationConsentCleanupInput, RunEmulationConsentCleanupOutput } from "../../../../interfaces/cqrs/handlers/c/run-emulation-consent-cleanup.js";
+export type {
+  RunEmulationConsentCleanupInput,
+  RunEmulationConsentCleanupOutput,
+} from "../../../../interfaces/cqrs/handlers/c/run-emulation-consent-cleanup.js";

@@ -16,7 +16,12 @@
 <DropdownMenu.Root>
   <DropdownMenu.Trigger>
     {#snippet child({ props })}
-      <Button {...props} variant="ghost" size="icon" aria-label="Select theme">
+      <Button
+        {...props}
+        variant="ghost"
+        size="icon"
+        aria-label="Select theme"
+      >
         <PaletteIcon class="size-4" />
       </Button>
     {/snippet}
@@ -25,7 +30,7 @@
     {#each builtInPresets as preset (preset.name)}
       <DropdownMenu.Item onclick={() => applyPreset(preset)}>
         <span
-          class="mr-2 size-4 shrink-0 rounded-full border border-border"
+          class="border-border mr-2 size-4 shrink-0 rounded-full border"
           style="background: {presetSwatchColor(preset)}"
         ></span>
         {preset.name}

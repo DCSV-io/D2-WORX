@@ -29,19 +29,19 @@ All infrastructure starts in `beforeAll` (per test file) and tears down in `afte
 | RabbitMQ   | `rabbitmq:4.1-management` | Async event bus (Auth → Comms)                                        |
 | Geo.API    | .NET child process        | gRPC service for contacts + WhoIs                                     |
 | Gateway    | .NET child process        | REST → gRPC routing gateway (for Dkron job chain tests)               |
-| Dkron      | `dkron/dkron:4.0.9`      | Distributed job scheduler (GenericContainer, for job chain tests)     |
+| Dkron      | `dkron/dkron:4.0.9`       | Distributed job scheduler (GenericContainer, for job chain tests)     |
 | Auth       | In-process (`createApp`)  | BetterAuth + Hono, publishes to RabbitMQ                              |
 | Comms      | In-process (DI wired)     | Notification consumer + stub email provider                           |
 
 ## Vitest Configuration
 
-| Setting           | Value             | Reason                                                 |
-| ----------------- | ----------------- | ------------------------------------------------------ |
-| `testTimeout`     | 30,000 ms         | Async pipeline needs time to propagate events          |
-| `hookTimeout`     | 180,000 ms        | Container startup (PG + Redis + RabbitMQ + .NET build) |
-| `fileParallelism` | `false`           | Avoids .NET build lock contention between test files   |
+| Setting           | Value             | Reason                                                           |
+| ----------------- | ----------------- | ---------------------------------------------------------------- |
+| `testTimeout`     | 30,000 ms         | Async pipeline needs time to propagate events                    |
+| `hookTimeout`     | 180,000 ms        | Container startup (PG + Redis + RabbitMQ + .NET build)           |
+| `fileParallelism` | `false`           | Avoids .NET build lock contention between test files             |
 | `globalSetup`     | `global-setup.ts` | Pre-builds Geo.API + REST Gateway so test files use `--no-build` |
-| `setupFiles`      | `setup.ts`        | Registers `@d2/testing` custom D2Result matchers       |
+| `setupFiles`      | `setup.ts`        | Registers `@d2/testing` custom D2Result matchers                 |
 
 Run: `pnpm vitest run --project e2e-tests`
 
@@ -69,18 +69,18 @@ Run: `pnpm vitest run --project e2e-tests`
 
 ### `job-execution.test.ts` (4 tests)
 
-| Test                                                                        | Validates                                                                            |
-| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Should register all 8 jobs on initial reconciliation                        | dkron-mgr reconciler creates all jobs in a fresh Dkron container                     |
-| Should report all unchanged on second reconciliation                        | Idempotent — re-running reconciliation produces no changes                           |
-| Should detect and correct schedule drift                                    | Tampered job schedule is restored to the declared definition                         |
-| Should delete orphaned managed jobs while leaving unmanaged jobs untouched  | Orphan cleanup removes stale managed jobs, ignores manually-created Dkron jobs       |
+| Test                                                                       | Validates                                                                      |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Should register all 8 jobs on initial reconciliation                       | dkron-mgr reconciler creates all jobs in a fresh Dkron container               |
+| Should report all unchanged on second reconciliation                       | Idempotent — re-running reconciliation produces no changes                     |
+| Should detect and correct schedule drift                                   | Tampered job schedule is restored to the declared definition                   |
+| Should delete orphaned managed jobs while leaving unmanaged jobs untouched | Orphan cleanup removes stale managed jobs, ignores manually-created Dkron jobs |
 
 ### `dkron-job-chain.test.ts` (1 test)
 
-| Test                                                                       | Validates                                                                                  |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Should execute a Dkron job through the full chain (Dkron → Gateway → Geo)  | Dkron fires HTTP → Gateway (service key auth) → gRPC (API key) → Geo handler → DB cleanup |
+| Test                                                                      | Validates                                                                                 |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Should execute a Dkron job through the full chain (Dkron → Gateway → Geo) | Dkron fires HTTP → Gateway (service key auth) → gRPC (API key) → Geo handler → DB cleanup |
 
 ### `geo-unavailable.test.ts` (2 tests)
 
@@ -161,7 +161,7 @@ Polling utilities for async assertions:
 | `@d2/result`                 | D2Result pattern                               |
 | `@d2/testing`                | Custom Vitest matchers                         |
 | `@d2/utilities`              | UUIDv7 generation                              |
-| `@d2/dkron-mgr`             | Dkron job definitions + reconciler             |
+| `@d2/dkron-mgr`              | Dkron job definitions + reconciler             |
 | `testcontainers`             | GenericContainer for Dkron                     |
 | `@testcontainers/postgresql` | PostgreSQL container                           |
 | `@testcontainers/rabbitmq`   | RabbitMQ container                             |

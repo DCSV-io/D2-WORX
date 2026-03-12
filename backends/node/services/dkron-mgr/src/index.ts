@@ -9,10 +9,4 @@ export { parseConfig, logConfig, type DkronMgrConfig } from "./config.js";
 export { checkHealth, listJobs, upsertJob, deleteJob } from "./dkron-client.js";
 export { getDesiredJobs } from "./job-definitions.js";
 export { reconcile, buildComparableKey } from "./reconciler.js";
-export type {
-  JobFields,
-  DesiredJob,
-  DkronJob,
-  ReconcileResult,
-  ReconcileError,
-} from "./types.js";
+export type { JobFields, DesiredJob, DkronJob, ReconcileResult, ReconcileError } from "./types.js";

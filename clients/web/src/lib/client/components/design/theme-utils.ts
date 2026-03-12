@@ -80,13 +80,7 @@ export const SEMANTIC_TOKENS = [
   "ring",
 ] as const;
 
-export const CHART_TOKENS = [
-  "chart-1",
-  "chart-2",
-  "chart-3",
-  "chart-4",
-  "chart-5",
-] as const;
+export const CHART_TOKENS = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"] as const;
 
 export const SIDEBAR_TOKENS = [
   "sidebar",

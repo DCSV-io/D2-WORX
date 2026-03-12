@@ -43,9 +43,12 @@ describe("field presets — all presets have required properties", () => {
     expect(preset.label.trim().length).toBeGreaterThan(0);
   });
 
-  it.each(inputPresets)("%s has a non-empty placeholder or empty string for phone", (_name, preset) => {
-    expect(typeof preset.placeholder).toBe("string");
-  });
+  it.each(inputPresets)(
+    "%s has a non-empty placeholder or empty string for phone",
+    (_name, preset) => {
+      expect(typeof preset.placeholder).toBe("string");
+    },
+  );
 
   it.each(comboboxPresets)("%s has a non-empty label", (_name, preset) => {
     expect(preset.label.trim().length).toBeGreaterThan(0);

@@ -15,13 +15,13 @@
 
 The AppHost configures a full LGTM (Loki, Grafana, Tempo, Mimir) observability stack via Aspire container resources:
 
-| Component      | Port(s)     | Purpose                                                    |
-| -------------- | ----------- | ---------------------------------------------------------- |
-| Grafana Alloy  | 4317, 4318, 12345, 12347 | OTLP receiver (gRPC + HTTP), self-scrape, Faro receiver |
-| Grafana        | 3000        | Dashboards and visualization                               |
-| Loki           | 3100        | Log aggregation                                            |
-| Tempo          | 3200, 4317  | Distributed tracing                                        |
-| Mimir          | 9009        | Metrics (Prometheus-compatible)                            |
+| Component     | Port(s)                  | Purpose                                                 |
+| ------------- | ------------------------ | ------------------------------------------------------- |
+| Grafana Alloy | 4317, 4318, 12345, 12347 | OTLP receiver (gRPC + HTTP), self-scrape, Faro receiver |
+| Grafana       | 3000                     | Dashboards and visualization                            |
+| Loki          | 3100                     | Log aggregation                                         |
+| Tempo         | 3200, 4317               | Distributed tracing                                     |
+| Mimir         | 9009                     | Metrics (Prometheus-compatible)                         |
 
 ### Grafana Faro (Client Telemetry)
 
@@ -34,10 +34,10 @@ Alloy exposes a `faro.receiver` on port **12347** for browser-side telemetry col
 
 **Environment variables:**
 
-| Variable                    | Description                                    | Example                                    |
-| --------------------------- | ---------------------------------------------- | ------------------------------------------ |
-| `FARO_CORS_ORIGINS`        | Comma-separated allowed origins for Faro receiver | `http://localhost:5173,https://t.dcsv.io` |
-| `FARO_RECEIVER_PORT`       | Host port for Faro receiver                    | `12347`                                    |
-| `PUBLIC_FARO_COLLECTOR_URL` | Client-facing Faro collector URL (passed to SvelteKit) | `https://t-d2-gf.dcsv.io/collect`   |
+| Variable                    | Description                                            | Example                                   |
+| --------------------------- | ------------------------------------------------------ | ----------------------------------------- |
+| `FARO_CORS_ORIGINS`         | Comma-separated allowed origins for Faro receiver      | `http://localhost:5173,https://t.dcsv.io` |
+| `FARO_RECEIVER_PORT`        | Host port for Faro receiver                            | `12347`                                   |
+| `PUBLIC_FARO_COLLECTOR_URL` | Client-facing Faro collector URL (passed to SvelteKit) | `https://t-d2-gf.dcsv.io/collect`         |
 
 See [`observability/alloy/config/config.alloy`](../../../../observability/alloy/config/config.alloy) for the full Alloy configuration.

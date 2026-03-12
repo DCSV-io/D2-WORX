@@ -6,26 +6,43 @@
   import LoaderCircleIcon from "@lucide/svelte/icons/loader-circle";
   import SparklesIcon from "@lucide/svelte/icons/sparkles";
 
-  const variants = ["default", "secondary", "accent", "destructive", "outline", "ghost", "link"] as const;
+  const variants = [
+    "default",
+    "secondary",
+    "accent",
+    "destructive",
+    "outline",
+    "ghost",
+    "link",
+  ] as const;
   const sizes = ["sm", "default", "lg"] as const;
 </script>
 
-<Section id="buttons" title="Buttons">
+<Section
+  id="buttons"
+  title="Buttons"
+>
   <div class="flex flex-col gap-6">
     <!-- Variant × Size grid -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Variants &times; Sizes</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Variants &times; Sizes</h3>
       <div class="overflow-x-auto rounded-lg border p-6">
-        <div class="grid grid-cols-4 items-center gap-4" style="grid-template-columns: auto repeat(3, 1fr);">
+        <div
+          class="grid grid-cols-4 items-center gap-4"
+          style="grid-template-columns: auto repeat(3, 1fr);"
+        >
           <div></div>
           {#each sizes as size (size)}
-            <div class="text-center text-xs text-muted-foreground font-medium">{size}</div>
+            <div class="text-muted-foreground text-center text-xs font-medium">{size}</div>
           {/each}
           {#each variants as variant (variant)}
-            <div class="text-xs text-muted-foreground font-medium text-right pr-2">{variant}</div>
+            <div class="text-muted-foreground pr-2 text-right text-xs font-medium">{variant}</div>
             {#each sizes as size (size)}
               <div class="flex justify-center">
-                <Button {variant} {size}>{variant}</Button>
+                <Button
+                  {variant}
+                  {size}>{variant}</Button
+                >
               </div>
             {/each}
           {/each}
@@ -35,17 +52,20 @@
 
     <!-- Disabled -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Disabled States</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Disabled States</h3>
       <div class="flex flex-wrap gap-3 rounded-lg border p-6">
         {#each variants as variant (variant)}
-          <Button {variant} disabled>{variant}</Button>
+          <Button
+            {variant}
+            disabled>{variant}</Button
+          >
         {/each}
       </div>
     </div>
 
     <!-- With icons -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">With Icons</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">With Icons</h3>
       <div class="flex flex-wrap items-center gap-3 rounded-lg border p-6">
         <Button>
           <MailIcon class="size-4" />
@@ -63,10 +83,16 @@
           <LoaderCircleIcon class="size-4 animate-spin" />
           Loading...
         </Button>
-        <Button variant="ghost" size="icon">
+        <Button
+          variant="ghost"
+          size="icon"
+        >
           <PlusIcon class="size-4" />
         </Button>
-        <Button variant="outline" size="icon-sm">
+        <Button
+          variant="outline"
+          size="icon-sm"
+        >
           <MailIcon class="size-4" />
         </Button>
       </div>

@@ -12,9 +12,7 @@ type Output = Queries.CheckHealthOutput;
  * health check response. Each dependency check is a BaseHandler with its own
  * OTel span.
  */
-export class CheckHealth extends BaseHandler<Input, Output>
-  implements Queries.ICheckHealthHandler
-{
+export class CheckHealth extends BaseHandler<Input, Output> implements Queries.ICheckHealthHandler {
   private readonly pingDb: IPingDbHandler;
   private readonly pingCache?: DistributedCache.IPingHandler;
   private readonly pingMessageBus?: Messaging.IPingHandler;
@@ -31,9 +29,7 @@ export class CheckHealth extends BaseHandler<Input, Output>
     this.pingMessageBus = pingMessageBus;
   }
 
-  protected async executeAsync(
-    _input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const components: Record<string, Queries.ComponentHealth> = {};
 
     // Fan out all pings in parallel

@@ -18,7 +18,12 @@
 <DropdownMenu.Root>
   <DropdownMenu.Trigger>
     {#snippet child({ props })}
-      <Button {...props} variant="ghost" size="icon" aria-label={m.webclient_language_label()}>
+      <Button
+        {...props}
+        variant="ghost"
+        size="icon"
+        aria-label={m.webclient_language_label()}
+      >
         <LanguagesIcon class="size-4" />
       </Button>
     {/snippet}

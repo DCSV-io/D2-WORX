@@ -50,14 +50,14 @@ expect(result).toHaveInputErrors([
 
 ### Matcher Reference
 
-| Matcher              | Assertion                                                   |
-| -------------------- | ----------------------------------------------------------- |
-| `toBeSuccess()`      | `result.success === true`                                   |
-| `toBeFailure()`      | `result.success === false`                                  |
-| `toHaveStatusCode(n)`| `result.statusCode === n`                                   |
-| `toHaveErrorCode(s)` | `result.errorCode === s`                                    |
-| `toHaveMessages(a)`  | `result.messages` deeply equals `a` (order-sensitive)       |
-| `toHaveData(v)`      | `result.data` deep-equals `v` (via JSON.stringify)          |
+| Matcher                | Assertion                                                |
+| ---------------------- | -------------------------------------------------------- |
+| `toBeSuccess()`        | `result.success === true`                                |
+| `toBeFailure()`        | `result.success === false`                               |
+| `toHaveStatusCode(n)`  | `result.statusCode === n`                                |
+| `toHaveErrorCode(s)`   | `result.errorCode === s`                                 |
+| `toHaveMessages(a)`    | `result.messages` deeply equals `a` (order-sensitive)    |
+| `toHaveData(v)`        | `result.data` deep-equals `v` (via JSON.stringify)       |
 | `toHaveInputErrors(a)` | `result.inputErrors` deeply equals `a` (order-sensitive) |
 
 ### Combining Matchers
@@ -154,14 +154,14 @@ const pg = createPostgresTestHelper(runMigrations, {
 
 ### API
 
-| Method              | Returns           | Description                                        |
-| ------------------- | ----------------- | -------------------------------------------------- |
-| `start()`           | `Promise<void>`   | Start container (or connect to URI) + run migrations |
-| `stop()`            | `Promise<void>`   | Close pool + stop container (if we own it)          |
-| `getPool()`         | `pg.Pool`         | Underlying pg.Pool for raw queries                  |
-| `getDb()`           | `NodePgDatabase`  | Drizzle database instance                          |
-| `getConnectionUri()`| `string`          | Connection URI (for passing to other services)      |
-| `clean(sql)`        | `Promise<void>`   | Execute raw SQL (e.g., `TRUNCATE TABLE ... CASCADE`)|
+| Method               | Returns          | Description                                          |
+| -------------------- | ---------------- | ---------------------------------------------------- |
+| `start()`            | `Promise<void>`  | Start container (or connect to URI) + run migrations |
+| `stop()`             | `Promise<void>`  | Close pool + stop container (if we own it)           |
+| `getPool()`          | `pg.Pool`        | Underlying pg.Pool for raw queries                   |
+| `getDb()`            | `NodePgDatabase` | Drizzle database instance                            |
+| `getConnectionUri()` | `string`         | Connection URI (for passing to other services)       |
+| `clean(sql)`         | `Promise<void>`  | Execute raw SQL (e.g., `TRUNCATE TABLE ... CASCADE`) |
 
 ---
 
@@ -184,15 +184,15 @@ const pg = createPostgresTestHelper(runMigrations, {
 
 Test projects are **separate** from source packages (mirrors .NET). Source packages have zero test dependencies — all test deps live in dedicated test projects.
 
-| Package               | Purpose                                     | .NET Equivalent           |
-| --------------------- | ------------------------------------------- | ------------------------- |
-| `@d2/testing`         | Shared test infra (matchers, containers)    | `D2.Shared.Tests` (infra) |
-| `@d2/shared-tests`    | Tests for all shared packages               | `D2.Shared.Tests` (tests) |
-| `@d2/auth-tests`      | Tests for Auth service                      | `Geo.Tests` (pattern)     |
-| `@d2/comms-tests`     | Tests for Comms service                     | `Geo.Tests` (pattern)     |
-| `@d2/e2e-tests`       | Cross-service E2E tests                     | —                         |
-| `@d2/auth-bff-client` | Co-located tests (`src/__tests__/`)         | —                         |
-| `d2-sveltekit`        | SvelteKit unit + Playwright E2E tests       | —                         |
+| Package               | Purpose                                  | .NET Equivalent           |
+| --------------------- | ---------------------------------------- | ------------------------- |
+| `@d2/testing`         | Shared test infra (matchers, containers) | `D2.Shared.Tests` (infra) |
+| `@d2/shared-tests`    | Tests for all shared packages            | `D2.Shared.Tests` (tests) |
+| `@d2/auth-tests`      | Tests for Auth service                   | `Geo.Tests` (pattern)     |
+| `@d2/comms-tests`     | Tests for Comms service                  | `Geo.Tests` (pattern)     |
+| `@d2/e2e-tests`       | Cross-service E2E tests                  | —                         |
+| `@d2/auth-bff-client` | Co-located tests (`src/__tests__/`)      | —                         |
+| `d2-sveltekit`        | SvelteKit unit + Playwright E2E tests    | —                         |
 
 ### Vitest Monorepo Setup
 

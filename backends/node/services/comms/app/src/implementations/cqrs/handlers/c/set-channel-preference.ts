@@ -17,7 +17,8 @@ const schema = z.object({
   smsEnabled: z.boolean().optional(),
 });
 
-export class SetChannelPreference extends BaseHandler<Input, Output>
+export class SetChannelPreference
+  extends BaseHandler<Input, Output>
   implements Commands.ISetChannelPreferenceHandler
 {
   private readonly repo: ChannelPreferenceRepoHandlers;
@@ -39,9 +40,7 @@ export class SetChannelPreference extends BaseHandler<Input, Output>
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 

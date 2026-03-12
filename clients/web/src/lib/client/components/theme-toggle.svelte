@@ -11,7 +11,12 @@
 <DropdownMenu.Root>
   <DropdownMenu.Trigger>
     {#snippet child({ props })}
-      <Button {...props} variant="ghost" size="icon" aria-label="Toggle theme">
+      <Button
+        {...props}
+        variant="ghost"
+        size="icon"
+        aria-label="Toggle theme"
+      >
         {#if mode.current === "light"}
           <SunIcon class="size-4" />
         {:else}

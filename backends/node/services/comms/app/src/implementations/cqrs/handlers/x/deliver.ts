@@ -289,4 +289,7 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
   }
 }
 
-export type { DeliverInput, DeliverOutput } from "../../../../interfaces/cqrs/handlers/x/deliver.js";
+export type {
+  DeliverInput,
+  DeliverOutput,
+} from "../../../../interfaces/cqrs/handlers/x/deliver.js";

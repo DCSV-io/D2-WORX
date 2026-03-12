@@ -99,14 +99,11 @@ export class JwtManager {
         fetchHeaders["x-api-key"] = this.config.apiKey;
       }
 
-      const response = await fetch(
-        `${this.config.authServiceUrl}/api/auth/token`,
-        {
-          method: "GET",
-          headers: fetchHeaders,
-          signal: AbortSignal.timeout(timeout),
-        },
-      );
+      const response = await fetch(`${this.config.authServiceUrl}/api/auth/token`, {
+        method: "GET",
+        headers: fetchHeaders,
+        signal: AbortSignal.timeout(timeout),
+      });
 
       if (!response.ok) {
         this.logger.warn("Failed to obtain JWT from Auth service", {
@@ -168,9 +165,9 @@ function parseJwtExpiry(token: string): number {
     const payloadPart = parts[1];
     if (parts.length !== 3 || !payloadPart) return Date.now() + 15 * 60 * 1000; // fallback 15min
 
-    const payload = JSON.parse(
-      Buffer.from(payloadPart, "base64url").toString("utf-8"),
-    ) as { exp?: number };
+    const payload = JSON.parse(Buffer.from(payloadPart, "base64url").toString("utf-8")) as {
+      exp?: number;
+    };
 
     if (payload.exp) {
       return payload.exp * 1000; // exp is in seconds

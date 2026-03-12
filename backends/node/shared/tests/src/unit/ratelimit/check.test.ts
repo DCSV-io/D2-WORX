@@ -80,7 +80,13 @@ function createMockHandlers(): MockHandlers {
 }
 
 function createCheck(mocks: MockHandlers, options?: Record<string, unknown>): Check {
-  return new CheckRateLimit(mocks.getTtl, mocks.increment, mocks.set, options ?? {}, createTestContext());
+  return new CheckRateLimit(
+    mocks.getTtl,
+    mocks.increment,
+    mocks.set,
+    options ?? {},
+    createTestContext(),
+  );
 }
 
 describe("RateLimit Check handler", () => {

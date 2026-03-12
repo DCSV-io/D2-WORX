@@ -6,10 +6,22 @@
 
 <svelte:head>
   <title>{m.webclient_onboarding_welcome_title()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_onboarding_welcome_description()} />
-  <meta property="og:title" content="{m.webclient_onboarding_welcome_title()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.webclient_onboarding_welcome_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_onboarding_welcome_description()}
+  />
+  <meta
+    property="og:title"
+    content="{m.webclient_onboarding_welcome_title()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_onboarding_welcome_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <Card.Card>

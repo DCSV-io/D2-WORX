@@ -35,11 +35,26 @@
 
 <svelte:head>
   <title>{m.webclient_debug_health_title()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_debug_health_description()} />
-  <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="{m.webclient_debug_health_title()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.webclient_debug_health_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_debug_health_description()}
+  />
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  />
+  <meta
+    property="og:title"
+    content="{m.webclient_debug_health_title()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_debug_health_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 {#if !dev}
@@ -48,8 +63,8 @@
   <div class="mx-auto flex max-w-4xl flex-col gap-6 p-6">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="flex size-10 items-center justify-center rounded-full bg-muted">
-          <ActivityIcon class="size-5 text-muted-foreground" />
+        <div class="bg-muted flex size-10 items-center justify-center rounded-full">
+          <ActivityIcon class="text-muted-foreground size-5" />
         </div>
         <div>
           <h1 class="text-2xl font-bold">System Health</h1>
@@ -58,7 +73,12 @@
           </p>
         </div>
       </div>
-      <Button variant="outline" size="sm" onclick={refresh} disabled={refreshing}>
+      <Button
+        variant="outline"
+        size="sm"
+        onclick={refresh}
+        disabled={refreshing}
+      >
         <RefreshCwIcon class="mr-2 size-4" />
         {refreshing ? "Refreshing..." : "Refresh"}
       </Button>
@@ -76,7 +96,7 @@
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          <pre class="rounded bg-muted p-3 font-mono text-xs">{data.error}</pre>
+          <pre class="bg-muted rounded p-3 font-mono text-xs">{data.error}</pre>
         </Card.Content>
       </Card.Root>
     {:else if data.health}
@@ -108,7 +128,11 @@
             <Card.Header class="pb-3">
               <Card.Title class="flex items-center justify-between text-base">
                 <span class="capitalize">{serviceName}</span>
-                <span class="flex items-center gap-1.5 text-sm font-normal {statusColor(service.status)}">
+                <span
+                  class="flex items-center gap-1.5 text-sm font-normal {statusColor(
+                    service.status,
+                  )}"
+                >
                   {#if service.status === "healthy"}
                     <CircleCheckIcon class="size-4" />
                   {:else if service.status === "degraded"}
@@ -140,7 +164,9 @@
                       </dd>
                     </div>
                     {#if comp.error}
-                      <div class="rounded bg-red-50 p-2 font-mono text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+                      <div
+                        class="rounded bg-red-50 p-2 font-mono text-xs text-red-700 dark:bg-red-950 dark:text-red-300"
+                      >
                         {comp.error}
                       </div>
                     {/if}
@@ -163,7 +189,12 @@
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          <pre class="max-h-96 overflow-auto rounded bg-muted p-3 font-mono text-xs">{JSON.stringify(health, null, 2)}</pre>
+          <pre
+            class="bg-muted max-h-96 overflow-auto rounded p-3 font-mono text-xs">{JSON.stringify(
+              health,
+              null,
+              2,
+            )}</pre>
         </Card.Content>
       </Card.Root>
     {/if}

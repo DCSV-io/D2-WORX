@@ -35,18 +35,41 @@
   ] as const;
 
   const demos = [
-    { href: "/debug/design/contact-form", label: "Contact Form", description: "Superforms + geo data, phone formatting, cascading selects" },
-    { href: "/debug/design/signup-form", label: "Signup Form", description: "Password rules, email/password confirmation, show/hide toggle" },
+    {
+      href: "/debug/design/contact-form",
+      label: "Contact Form",
+      description: "Superforms + geo data, phone formatting, cascading selects",
+    },
+    {
+      href: "/debug/design/signup-form",
+      label: "Signup Form",
+      description: "Password rules, email/password confirmation, show/hide toggle",
+    },
   ] as const;
 </script>
 
 <svelte:head>
   <title>{m.common_ui_design_system()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_design_description()} />
-  <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="{m.common_ui_design_system()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.webclient_design_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_design_description()}
+  />
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  />
+  <meta
+    property="og:title"
+    content="{m.common_ui_design_system()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_design_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <div class="mx-auto max-w-6xl px-4 py-8">
@@ -54,14 +77,17 @@
   <div class="mb-8 flex items-center justify-between">
     <div>
       <h1 class="text-3xl font-bold tracking-tight">Design System</h1>
-      <p class="mt-1 text-muted-foreground">
+      <p class="text-muted-foreground mt-1">
         Kitchen sink — preview all components with live theme editing.
       </p>
     </div>
     <div class="flex items-center gap-2">
       <ThemeSelector />
       <ThemeToggle />
-      <Button variant="outline" onclick={() => (editorOpen = true)}>
+      <Button
+        variant="outline"
+        onclick={() => (editorOpen = true)}
+      >
         <PaletteIcon class="size-4" />
         Theme Editor
       </Button>
@@ -69,12 +95,14 @@
   </div>
 
   <!-- Section nav -->
-  <nav class="sticky top-0 z-10 -mx-4 mb-8 overflow-x-auto border-b bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+  <nav
+    class="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 -mx-4 mb-8 overflow-x-auto border-b px-4 py-3 backdrop-blur"
+  >
     <div class="flex gap-2">
       {#each sections as s (s.id)}
         <a
           href="#{s.id}"
-          class="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          class="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
         >
           {s.label}
         </a>
@@ -88,10 +116,10 @@
       {#each demos as demo (demo.href)}
         <a
           href={resolve(demo.href)}
-          class="group rounded-lg border p-4 transition-colors hover:border-primary hover:bg-accent"
+          class="group hover:border-primary hover:bg-accent rounded-lg border p-4 transition-colors"
         >
-          <span class="font-medium group-hover:text-primary">{demo.label}</span>
-          <p class="mt-1 text-xs text-muted-foreground">{demo.description}</p>
+          <span class="group-hover:text-primary font-medium">{demo.label}</span>
+          <p class="text-muted-foreground mt-1 text-xs">{demo.description}</p>
         </a>
       {/each}
     </div>

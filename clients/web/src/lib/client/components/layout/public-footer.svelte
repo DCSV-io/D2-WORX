@@ -9,8 +9,14 @@
       &copy; {new Date().getFullYear()} DCSV. All rights reserved.
     </p>
     <div class="text-muted-foreground flex gap-4 text-sm">
-      <a href={resolve("/terms")} class="hover:text-foreground transition-colors">{m.webclient_legal_terms_link()}</a>
-      <a href={resolve("/privacy")} class="hover:text-foreground transition-colors">{m.webclient_legal_privacy_link()}</a>
+      <a
+        href={resolve("/terms")}
+        class="hover:text-foreground transition-colors">{m.webclient_legal_terms_link()}</a
+      >
+      <a
+        href={resolve("/privacy")}
+        class="hover:text-foreground transition-colors">{m.webclient_legal_privacy_link()}</a
+      >
     </div>
   </div>
 </footer>

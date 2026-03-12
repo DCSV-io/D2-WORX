@@ -11,7 +11,8 @@ type Output = Commands.RunDeliveryHistoryPurgeOutput;
 
 const LOCK_KEY = "lock:job:purge-delivery-history";
 
-export class RunDeliveryHistoryPurge extends BaseHandler<Input, Output>
+export class RunDeliveryHistoryPurge
+  extends BaseHandler<Input, Output>
   implements Commands.IRunDeliveryHistoryPurgeHandler
 {
   private readonly acquireLock: DistributedCache.IAcquireLockHandler;
@@ -33,9 +34,7 @@ export class RunDeliveryHistoryPurge extends BaseHandler<Input, Output>
     this.options = options;
   }
 
-  protected async executeAsync(
-    _input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 

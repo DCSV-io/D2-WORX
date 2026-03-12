@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-  CircuitBreaker,
-  CircuitOpenError,
-  CircuitState,
-} from "@d2/utilities";
+import { CircuitBreaker, CircuitOpenError, CircuitState } from "@d2/utilities";
 
 describe("CircuitBreaker", () => {
   let now: number;
@@ -13,13 +9,15 @@ describe("CircuitBreaker", () => {
     now = 1_000_000;
   });
 
-  function createBreaker(overrides?: Partial<Parameters<typeof CircuitBreaker.prototype.execute>[0]> & {
-    failureThreshold?: number;
-    cooldownMs?: number;
-    isFailure?: (r: unknown) => boolean;
-    isFailureError?: (e: unknown) => boolean;
-    onStateChange?: (from: CircuitState, to: CircuitState) => void;
-  }) {
+  function createBreaker(
+    overrides?: Partial<Parameters<typeof CircuitBreaker.prototype.execute>[0]> & {
+      failureThreshold?: number;
+      cooldownMs?: number;
+      isFailure?: (r: unknown) => boolean;
+      isFailureError?: (e: unknown) => boolean;
+      onStateChange?: (from: CircuitState, to: CircuitState) => void;
+    },
+  ) {
     return new CircuitBreaker({ _nowFn: nowFn, ...overrides });
   }
 
@@ -45,7 +43,12 @@ describe("CircuitBreaker", () => {
 
     // 3 failures
     for (let i = 0; i < 3; i++) {
-      await breaker.execute(() => Promise.reject(new Error("fail")), () => "fb").catch(() => {});
+      await breaker
+        .execute(
+          () => Promise.reject(new Error("fail")),
+          () => "fb",
+        )
+        .catch(() => {});
     }
     expect(breaker.failureCount).toBe(3);
 
@@ -58,7 +61,9 @@ describe("CircuitBreaker", () => {
     const breaker = createBreaker({ failureThreshold: 5 });
 
     for (let i = 0; i < 3; i++) {
-      await expect(breaker.execute(() => Promise.reject(new Error("fail")))).rejects.toThrow("fail");
+      await expect(breaker.execute(() => Promise.reject(new Error("fail")))).rejects.toThrow(
+        "fail",
+      );
     }
 
     expect(breaker.failureCount).toBe(3);
@@ -97,7 +102,9 @@ describe("CircuitBreaker", () => {
     });
 
     // TypeError doesn't count
-    await expect(breaker.execute(() => Promise.reject(new TypeError("nope")))).rejects.toThrow(TypeError);
+    await expect(breaker.execute(() => Promise.reject(new TypeError("nope")))).rejects.toThrow(
+      TypeError,
+    );
     expect(breaker.failureCount).toBe(0);
 
     // Regular error counts
@@ -177,7 +184,9 @@ describe("CircuitBreaker", () => {
     await expect(breaker.execute(() => Promise.reject(new Error("fail")))).rejects.toThrow();
     now += 1000;
 
-    await expect(breaker.execute(() => Promise.reject(new Error("still down")))).rejects.toThrow("still down");
+    await expect(breaker.execute(() => Promise.reject(new Error("still down")))).rejects.toThrow(
+      "still down",
+    );
     expect(breaker.state).toBe(CircuitState.OPEN);
   });
 
@@ -189,7 +198,10 @@ describe("CircuitBreaker", () => {
     // Start a slow probe that doesn't resolve yet
     let resolveProbe!: (v: string) => void;
     const probePromise = breaker.execute(
-      () => new Promise<string>((r) => { resolveProbe = r; }),
+      () =>
+        new Promise<string>((r) => {
+          resolveProbe = r;
+        }),
     );
 
     // Second caller while probe is in-flight

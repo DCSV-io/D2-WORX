@@ -88,7 +88,12 @@ export async function createCommsService(config: CommsServiceConfig) {
 
   // Layer registrations
   addCommsInfra(services, db);
-  addCommsApp(services, config.jobOptions ?? DEFAULT_COMMS_JOB_OPTIONS, config.emailFooterText, config.emailTemplatePath);
+  addCommsApp(
+    services,
+    config.jobOptions ?? DEFAULT_COMMS_JOB_OPTIONS,
+    config.emailFooterText,
+    config.emailTemplatePath,
+  );
 
   // Delivery providers (email + SMS)
   addDeliveryProviders(services, config, serviceContext, logger);

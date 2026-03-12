@@ -16,7 +16,7 @@ using Xunit;
 /// </summary>
 public class BatchQueryTests : IDisposable
 {
-    private readonly TestDbContext _db;
+    private readonly TestDbContext r_db;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchQueryTests"/> class.
@@ -27,7 +27,7 @@ public class BatchQueryTests : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _db = new TestDbContext(options);
+        r_db = new TestDbContext(options);
     }
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -41,7 +41,7 @@ public class BatchQueryTests : IDisposable
     public void EmptyInput_IdCount_IsZero()
     {
         // Arrange & Act
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             Array.Empty<int>(),
             e => e.Id);
 
@@ -56,7 +56,7 @@ public class BatchQueryTests : IDisposable
     public void EmptyInput_BatchCount_IsZero()
     {
         // Arrange & Act
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             Array.Empty<int>(),
             e => e.Id);
 
@@ -73,7 +73,7 @@ public class BatchQueryTests : IDisposable
     public async Task EmptyInput_ToListAsync_ReturnsEmptyList()
     {
         // Arrange
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             Array.Empty<int>(),
             e => e.Id);
 
@@ -93,7 +93,7 @@ public class BatchQueryTests : IDisposable
     public async Task EmptyInput_ToDictionaryAsync_ReturnsEmptyDictionary()
     {
         // Arrange
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             Array.Empty<int>(),
             e => e.Id);
 
@@ -118,7 +118,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { 1, 2, 3 };
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.IdCount.Should().Be(3);
@@ -134,7 +134,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { 1, 2, 3 };
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.BatchCount.Should().Be(1);
@@ -150,7 +150,7 @@ public class BatchQueryTests : IDisposable
         var ids = Enumerable.Range(1, 500).ToArray();
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.BatchCount.Should().Be(1);
@@ -170,7 +170,7 @@ public class BatchQueryTests : IDisposable
         var ids = Enumerable.Range(1, 501).ToArray();
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.BatchCount.Should().Be(2);
@@ -186,7 +186,7 @@ public class BatchQueryTests : IDisposable
         var ids = Enumerable.Range(1, 1000).ToArray();
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.BatchCount.Should().Be(2);
@@ -202,7 +202,7 @@ public class BatchQueryTests : IDisposable
         var ids = Enumerable.Range(1, 1001).ToArray();
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.BatchCount.Should().Be(3);
@@ -222,7 +222,7 @@ public class BatchQueryTests : IDisposable
         var ids = Enumerable.Range(1, 10).ToArray();
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             ids,
             e => e.Id,
             opts => opts.BatchSize = 3);
@@ -242,7 +242,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { 1, 2, 3, 4, 5 };
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             ids,
             e => e.Id,
             opts => opts.BatchSize = 1);
@@ -265,7 +265,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { 1, 2, 2, 3, 3, 3 };
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.IdCount.Should().Be(3);
@@ -281,7 +281,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { 1, 2, 2, 3, 3, 3 };
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             ids,
             e => e.Id,
             opts => opts.DeduplicateIds = false);
@@ -304,7 +304,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { 0, 1, 0, 2, 3 };
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.TestEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.IdCount.Should().Be(3);
@@ -322,7 +322,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { Guid.Empty, validGuid1, Guid.Empty, validGuid2 };
 
         // Act
-        var query = _db.GuidEntities.BatchGetByIds(ids, e => e.Id);
+        var query = r_db.GuidEntities.BatchGetByIds(ids, e => e.Id);
 
         // Assert
         query.IdCount.Should().Be(2);
@@ -339,7 +339,7 @@ public class BatchQueryTests : IDisposable
         var ids = new[] { 0, 1, 0, 2, 3 };
 
         // Act
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             ids,
             e => e.Id,
             opts =>
@@ -365,13 +365,13 @@ public class BatchQueryTests : IDisposable
     public async Task ToListAsync_WithExistingEntities_ReturnsMatchingEntities()
     {
         // Arrange
-        _db.TestEntities.AddRange(
+        r_db.TestEntities.AddRange(
             new TestEntity { Id = 1, Name = "One" },
             new TestEntity { Id = 2, Name = "Two" },
             new TestEntity { Id = 3, Name = "Three" });
-        await _db.SaveChangesAsync(Ct);
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 3 },
             e => e.Id);
 
@@ -392,10 +392,10 @@ public class BatchQueryTests : IDisposable
     public async Task ToListAsync_WithSomeMissingIds_ReturnsOnlyFoundEntities()
     {
         // Arrange
-        _db.TestEntities.Add(new TestEntity { Id = 1, Name = "One" });
-        await _db.SaveChangesAsync(Ct);
+        r_db.TestEntities.Add(new TestEntity { Id = 1, Name = "One" });
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 99 },
             e => e.Id);
 
@@ -420,12 +420,12 @@ public class BatchQueryTests : IDisposable
     public async Task ToDictionaryAsync_WithExistingEntities_ReturnsDictionaryKeyedById()
     {
         // Arrange
-        _db.TestEntities.AddRange(
+        r_db.TestEntities.AddRange(
             new TestEntity { Id = 1, Name = "One" },
             new TestEntity { Id = 2, Name = "Two" });
-        await _db.SaveChangesAsync(Ct);
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 2 },
             e => e.Id);
 
@@ -451,10 +451,10 @@ public class BatchQueryTests : IDisposable
     public async Task GetMissingIdsAsync_WithSomeMissingIds_ReturnsMissingIds()
     {
         // Arrange
-        _db.TestEntities.Add(new TestEntity { Id = 1, Name = "One" });
-        await _db.SaveChangesAsync(Ct);
+        r_db.TestEntities.Add(new TestEntity { Id = 1, Name = "One" });
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 2, 3 },
             e => e.Id);
 
@@ -474,12 +474,12 @@ public class BatchQueryTests : IDisposable
     public async Task GetMissingIdsAsync_WhenAllFound_ReturnsEmptySet()
     {
         // Arrange
-        _db.TestEntities.AddRange(
+        r_db.TestEntities.AddRange(
             new TestEntity { Id = 1, Name = "One" },
             new TestEntity { Id = 2, Name = "Two" });
-        await _db.SaveChangesAsync(Ct);
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 2 },
             e => e.Id);
 
@@ -495,7 +495,7 @@ public class BatchQueryTests : IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        _db.Dispose();
+        r_db.Dispose();
         GC.SuppressFinalize(this);
     }
 

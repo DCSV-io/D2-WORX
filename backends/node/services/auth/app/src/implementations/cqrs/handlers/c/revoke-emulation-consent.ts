@@ -38,9 +38,7 @@ export class RevokeEmulationConsent
     this.revokeRecord = revokeRecord;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -72,4 +70,7 @@ export class RevokeEmulationConsent
   }
 }
 
-export type { RevokeEmulationConsentInput, RevokeEmulationConsentOutput } from "../../../../interfaces/cqrs/handlers/c/revoke-emulation-consent.js";
+export type {
+  RevokeEmulationConsentInput,
+  RevokeEmulationConsentOutput,
+} from "../../../../interfaces/cqrs/handlers/c/revoke-emulation-consent.js";

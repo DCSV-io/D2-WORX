@@ -51,31 +51,31 @@ This means handlers can always inject `IRequestContext` regardless of whether th
 
 The `RequestContext` implementation extracts identity/org information from JWT claims. Used by non-gateway gRPC services.
 
-| Property               | Source                                             |
-| ---------------------- | -------------------------------------------------- |
-| `TraceId`              | `Activity.Current?.TraceId`                        |
-| `RequestId`            | `HttpContext.TraceIdentifier`                      |
-| `RequestPath`          | `HttpContext.Request.Path`                         |
-| `IsAuthenticated`      | `HttpContext.User.Identity.IsAuthenticated`        |
-| `UserId`               | JWT `sub` claim                                    |
-| `Email`                | JWT `email` claim                                  |
-| `Username`             | JWT `name` claim                                   |
-| `AgentOrgId`           | JWT `orgId` claim                                  |
-| `AgentOrgName`         | JWT `orgName` claim                                |
-| `AgentOrgType`         | JWT `orgType` claim → `OrgType` enum               |
-| `AgentOrgRole`         | JWT `role` claim                                   |
-| `IsAgentStaff`         | AgentOrgType ∈ {Admin, Support}                    |
-| `IsAgentAdmin`         | AgentOrgType = Admin                               |
-| `TargetOrgId`          | Emulated org ID (if emulating) ?? Agent org ID     |
-| `TargetOrgName`        | Emulated org name (if emulating) ?? Agent org name |
-| `TargetOrgType`        | Emulated org type (if emulating) ?? Agent org type |
-| `TargetOrgRole`        | `"auditor"` (if emulating) ?? Agent org role       |
-| `IsTargetingStaff`     | TargetOrgType ∈ {Admin, Support}                   |
-| `IsTargetingAdmin`     | TargetOrgType = Admin                              |
-| `IsOrgEmulating`       | JWT `isEmulating` claim                            |
-| `ImpersonatedBy`       | JWT `impersonatedBy` claim                         |
-| `ImpersonatingEmail`   | JWT `impersonatingEmail` claim                     |
+| Property                | Source                                             |
+| ----------------------- | -------------------------------------------------- |
+| `TraceId`               | `Activity.Current?.TraceId`                        |
+| `RequestId`             | `HttpContext.TraceIdentifier`                      |
+| `RequestPath`           | `HttpContext.Request.Path`                         |
+| `IsAuthenticated`       | `HttpContext.User.Identity.IsAuthenticated`        |
+| `UserId`                | JWT `sub` claim                                    |
+| `Email`                 | JWT `email` claim                                  |
+| `Username`              | JWT `name` claim                                   |
+| `AgentOrgId`            | JWT `orgId` claim                                  |
+| `AgentOrgName`          | JWT `orgName` claim                                |
+| `AgentOrgType`          | JWT `orgType` claim → `OrgType` enum               |
+| `AgentOrgRole`          | JWT `role` claim                                   |
+| `IsAgentStaff`          | AgentOrgType ∈ {Admin, Support}                    |
+| `IsAgentAdmin`          | AgentOrgType = Admin                               |
+| `TargetOrgId`           | Emulated org ID (if emulating) ?? Agent org ID     |
+| `TargetOrgName`         | Emulated org name (if emulating) ?? Agent org name |
+| `TargetOrgType`         | Emulated org type (if emulating) ?? Agent org type |
+| `TargetOrgRole`         | `"auditor"` (if emulating) ?? Agent org role       |
+| `IsTargetingStaff`      | TargetOrgType ∈ {Admin, Support}                   |
+| `IsTargetingAdmin`      | TargetOrgType = Admin                              |
+| `IsOrgEmulating`        | JWT `isEmulating` claim                            |
+| `ImpersonatedBy`        | JWT `impersonatedBy` claim                         |
+| `ImpersonatingEmail`    | JWT `impersonatingEmail` claim                     |
 | `ImpersonatingUsername` | JWT `impersonatingUsername` claim                  |
-| `IsUserImpersonating`  | JWT `isImpersonating` claim                        |
+| `IsUserImpersonating`   | JWT `isImpersonating` claim                        |
 
 Network/enrichment fields (`ClientIp`, `ServerFingerprint`, `ClientFingerprint`, `DeviceFingerprint`, `WhoIsHashId`, `City`, `CountryCode`, `SubdivisionCode`, `IsVpn`, `IsProxy`, `IsTor`, `IsHosting`) always return `null`. `IsTrustedService` always returns `false`. These fields are only populated by the gateway's `MutableRequestContext`.

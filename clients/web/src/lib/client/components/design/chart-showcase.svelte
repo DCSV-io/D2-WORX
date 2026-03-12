@@ -2,7 +2,15 @@
   import Section from "./section.svelte";
   import * as Card from "$lib/client/components/ui/card/index.js";
   import * as Chart from "$lib/client/components/ui/chart/index.js";
-  import { AreaChart, BarChart, LineChart, PieChart, Chart as ChartRoot, Svg, Spline } from "layerchart";
+  import {
+    AreaChart,
+    BarChart,
+    LineChart,
+    PieChart,
+    Chart as ChartRoot,
+    Svg,
+    Spline,
+  } from "layerchart";
   import { scaleUtc, scaleBand } from "d3-scale";
   import { curveNatural } from "d3-shape";
 
@@ -108,7 +116,10 @@
   ];
 </script>
 
-<Section id="charts" title="Charts">
+<Section
+  id="charts"
+  title="Charts"
+>
   <div class="flex flex-col gap-6">
     <!-- Area + Bar -->
     <div class="grid gap-6 md:grid-cols-2">
@@ -126,7 +137,11 @@
               xScale={scaleUtc()}
               seriesLayout="stack"
               series={[
-                { key: "desktop", label: areaConfig.desktop.label, color: areaConfig.desktop.color },
+                {
+                  key: "desktop",
+                  label: areaConfig.desktop.label,
+                  color: areaConfig.desktop.color,
+                },
                 { key: "mobile", label: areaConfig.mobile.label, color: areaConfig.mobile.color },
               ]}
               props={{
@@ -137,7 +152,8 @@
                 <Chart.Tooltip
                   indicator="dot"
                   labelFormatter={(v: unknown) => {
-                    if (v instanceof Date) return v.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+                    if (v instanceof Date)
+                      return v.toLocaleDateString("en-US", { month: "long", year: "numeric" });
                     return `${v}`;
                   }}
                 />
@@ -161,9 +177,21 @@
               xScale={scaleBand()}
               seriesLayout="group"
               series={[
-                { key: "products", label: barConfig.products.label, color: barConfig.products.color },
-                { key: "services", label: barConfig.services.label, color: barConfig.services.color },
-                { key: "subscriptions", label: barConfig.subscriptions.label, color: barConfig.subscriptions.color },
+                {
+                  key: "products",
+                  label: barConfig.products.label,
+                  color: barConfig.products.color,
+                },
+                {
+                  key: "services",
+                  label: barConfig.services.label,
+                  color: barConfig.services.color,
+                },
+                {
+                  key: "subscriptions",
+                  label: barConfig.subscriptions.label,
+                  color: barConfig.subscriptions.color,
+                },
               ]}
               props={{
                 xAxis: { format: (d: string) => d.slice(0, 3) },
@@ -193,8 +221,16 @@
               x="date"
               xScale={scaleUtc()}
               series={[
-                { key: "pageViews", label: lineConfig.pageViews.label, color: lineConfig.pageViews.color },
-                { key: "visitors", label: lineConfig.visitors.label, color: lineConfig.visitors.color },
+                {
+                  key: "pageViews",
+                  label: lineConfig.pageViews.label,
+                  color: lineConfig.pageViews.color,
+                },
+                {
+                  key: "visitors",
+                  label: lineConfig.visitors.label,
+                  color: lineConfig.visitors.color,
+                },
               ]}
               points={true}
               props={{
@@ -206,7 +242,8 @@
                 <Chart.Tooltip
                   indicator="dashed"
                   labelFormatter={(v: unknown) => {
-                    if (v instanceof Date) return v.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+                    if (v instanceof Date)
+                      return v.toLocaleDateString("en-US", { month: "long", year: "numeric" });
                     return `${v}`;
                   }}
                 />
@@ -236,7 +273,10 @@
               legend={true}
             >
               {#snippet tooltip()}
-                <Chart.Tooltip indicator="dot" nameKey="browser" />
+                <Chart.Tooltip
+                  indicator="dot"
+                  nameKey="browser"
+                />
               {/snippet}
             </PieChart>
           </Chart.Container>
@@ -246,24 +286,28 @@
 
     <!-- Sparklines -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Sparklines</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Sparklines</h3>
       <div class="grid gap-4 md:grid-cols-3">
-        {#each [
-          { label: "Revenue", value: "$12.4k", change: "+12%", data: sparkData1, color: "stroke-chart-1" },
-          { label: "Churn Rate", value: "2.4%", change: "-8%", data: sparkData2, color: "stroke-chart-3" },
-          { label: "Active Users", value: "1,429", change: "+24%", data: sparkData3, color: "stroke-chart-5" },
-        ] as item (item.label)}
+        {#each [{ label: "Revenue", value: "$12.4k", change: "+12%", data: sparkData1, color: "stroke-chart-1" }, { label: "Churn Rate", value: "2.4%", change: "-8%", data: sparkData2, color: "stroke-chart-3" }, { label: "Active Users", value: "1,429", change: "+24%", data: sparkData3, color: "stroke-chart-5" }] as item (item.label)}
           <Card.Root>
             <Card.Content class="flex items-center gap-4 p-4">
               <div class="flex-1">
-                <p class="text-sm text-muted-foreground">{item.label}</p>
+                <p class="text-muted-foreground text-sm">{item.label}</p>
                 <p class="text-2xl font-bold">{item.value}</p>
-                <p class="text-xs text-muted-foreground">{item.change} vs last month</p>
+                <p class="text-muted-foreground text-xs">{item.change} vs last month</p>
               </div>
               <div class="h-12 w-24">
-                <ChartRoot data={item.data} x="index" y="value" padding={{ top: 4, bottom: 4, left: 0, right: 0 }}>
+                <ChartRoot
+                  data={item.data}
+                  x="index"
+                  y="value"
+                  padding={{ top: 4, bottom: 4, left: 0, right: 0 }}
+                >
                   <Svg>
-                    <Spline class="{item.color} fill-none stroke-2" curve={curveNatural} />
+                    <Spline
+                      class="{item.color} fill-none stroke-2"
+                      curve={curveNatural}
+                    />
                   </Svg>
                 </ChartRoot>
               </div>

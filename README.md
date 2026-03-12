@@ -36,17 +36,17 @@ WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and
 
 **Phase:** Pre-Alpha (Core Infrastructure + Auth + SvelteKit)
 
-| Area                          | Status         | Tests          |
-| ----------------------------- | -------------- | -------------- |
-| .NET shared infrastructure    | ✅ Done        | 1,528 passing  |
-| Node.js shared infrastructure | ✅ Done        | 857 passing    |
-| Geo service (.NET)            | ✅ Done        | 759 passing    |
-| .NET REST gateway             | ✅ Done        | —              |
-| Auth service (Node.js)        | ✅ Stage B     | 922 passing    |
-| Comms service (Node.js)       | ✅ Phase 1     | 592 passing    |
-| Scheduled jobs (Dkron)        | ✅ Done        | 64 passing     |
-| E2E cross-service tests       | ✅ Done        | 15 passing     |
-| SvelteKit web client          | 🚧 In Progress | Steps 0–9/12   |
+| Area                          | Status         | Tests         |
+| ----------------------------- | -------------- | ------------- |
+| .NET shared infrastructure    | ✅ Done        | 1,528 passing |
+| Node.js shared infrastructure | ✅ Done        | 857 passing   |
+| Geo service (.NET)            | ✅ Done        | 759 passing   |
+| .NET REST gateway             | ✅ Done        | —             |
+| Auth service (Node.js)        | ✅ Stage B     | 922 passing   |
+| Comms service (Node.js)       | ✅ Phase 1     | 592 passing   |
+| Scheduled jobs (Dkron)        | ✅ Done        | 64 passing    |
+| E2E cross-service tests       | ✅ Done        | 15 passing    |
+| SvelteKit web client          | 🚧 In Progress | Steps 0–9/12  |
 
 **Current focus:** SvelteKit web client — design system, routing, auth BFF proxy, API gateway client, forms, auth pages, device fingerprinting, and client telemetry (Grafana Faro) done. Onboarding flow next. See [PLANNING.md](PLANNING.md) for architecture decisions, detailed status, and roadmap.
 
@@ -300,22 +300,22 @@ See [BACKENDS.md](backends/BACKENDS.md) for a detailed explanation of the hierar
 >
 > _Domain-specific microservices implementing business logic. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async)._
 >
-> | Service                                                       | Platform | Status       | Description                                                                           |
-> | ------------------------------------------------------------- | -------- | ------------ | ------------------------------------------------------------------------------------- |
-> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)            | .NET     | ✅ Done      | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching     |
-> | [Auth](backends/node/services/auth/AUTH.md)                    | Node.js  | 🚧 Stage B+  | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (922 tests) |
-> | [Comms](backends/node/services/comms/COMMS.md)                | Node.js  | 🚧 Phase 1   | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (592 tests)  |
-> | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md)   | Node.js  | ✅ Done      | Declarative Dkron job reconciler — drift detection, orphan cleanup (64 tests)         |
+> | Service                                                    | Platform | Status      | Description                                                                           |
+> | ---------------------------------------------------------- | -------- | ----------- | ------------------------------------------------------------------------------------- |
+> | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)         | .NET     | ✅ Done     | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching     |
+> | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage B+ | Standalone Hono + BetterAuth + Drizzle — DDD layers + scheduled jobs done (922 tests) |
+> | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Phase 1  | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs (592 tests)  |
+> | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md) | Node.js  | ✅ Done     | Declarative Dkron job reconciler — drift detection, orphan cleanup (64 tests)         |
 >
 > **Client Libraries:**
 >
 > _Service-owned client libraries for consumers. Each service publishes a client package so consumers don't need to know gRPC details._
 >
-> | Client       | .NET                                                                 | Node.js                                                                 | Description                     |
-> | ------------ | -------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------- |
-> | Geo Client   | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md)   | Service-owned consumer library  |
-> | Comms Client | —                                                                    | [@d2/comms-client](backends/node/services/comms/client/COMMS_CLIENT.md) | RabbitMQ notification publisher |
-> | Auth BFF     | —                                                                    | [@d2/auth-bff-client](backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md) | SvelteKit auth proxy + JWT manager |
+> | Client       | .NET                                                                | Node.js                                                                          | Description                        |
+> | ------------ | ------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------- |
+> | Geo Client   | [Geo.Client](backends/dotnet/services/Geo/Geo.Client/GEO_CLIENT.md) | [@d2/geo-client](backends/node/services/geo/geo-client/GEO_CLIENT.md)            | Service-owned consumer library     |
+> | Comms Client | —                                                                   | [@d2/comms-client](backends/node/services/comms/client/COMMS_CLIENT.md)          | RabbitMQ notification publisher    |
+> | Auth BFF     | —                                                                   | [@d2/auth-bff-client](backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md) | SvelteKit auth proxy + JWT manager |
 >
 > **Gateways:**
 >

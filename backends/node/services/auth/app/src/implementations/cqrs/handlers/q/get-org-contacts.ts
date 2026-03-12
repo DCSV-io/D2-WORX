@@ -47,9 +47,7 @@ export class GetOrgContacts
     return Queries.GET_ORG_CONTACTS_REDACTION;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -93,4 +91,8 @@ export class GetOrgContacts
   }
 }
 
-export type { HydratedOrgContact, GetOrgContactsInput, GetOrgContactsOutput } from "../../../../interfaces/cqrs/handlers/q/get-org-contacts.js";
+export type {
+  HydratedOrgContact,
+  GetOrgContactsInput,
+  GetOrgContactsOutput,
+} from "../../../../interfaces/cqrs/handlers/q/get-org-contacts.js";

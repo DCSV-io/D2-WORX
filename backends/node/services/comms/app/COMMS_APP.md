@@ -11,17 +11,17 @@ The app layer sits between the domain (`@d2/comms-domain`) and infrastructure (`
 
 ## Design Decisions
 
-| Decision                        | Rationale                                                                            |
-| ------------------------------- | ------------------------------------------------------------------------------------ |
-| Repository handler bundles      | Typed groupings (MessageRepoHandlers, etc.) reduce parameter lists in factories      |
-| Provider interfaces as IHandler | Email/SMS providers extend BaseHandler -- same OTel tracing as all handlers          |
-| Markdown rendering in Deliver   | `marked` + `isomorphic-dompurify` for XSS-safe markdown-to-HTML in email bodies      |
-| Idempotency via correlationId   | Deliver checks for existing DeliveryRequest before processing, returns cached data   |
-| Optional in-memory cache        | GetChannelPreference/SetChannelPreference accept optional cache for warm reads       |
-| ServiceKeys in app, not infra   | Infra keys live in app (interfaces defined here); prevents circular deps             |
-| DI via addCommsApp(services)    | All CQRS handlers registered as transient -- new instance per resolve                |
-| CommsJobOptions via Options     | Job retention periods, lock TTL, batch size passed to addCommsApp; sensible defaults |
-| Distributed lock for jobs       | AcquireLock/ReleaseLock prevent concurrent job runs across instances                 |
+| Decision                        | Rationale                                                                                                                  |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Repository handler bundles      | Typed groupings (MessageRepoHandlers, etc.) reduce parameter lists in factories                                            |
+| Provider interfaces as IHandler | Email/SMS providers extend BaseHandler -- same OTel tracing as all handlers                                                |
+| Markdown rendering in Deliver   | `marked` + `isomorphic-dompurify` for XSS-safe markdown-to-HTML in email bodies                                            |
+| Idempotency via correlationId   | Deliver checks for existing DeliveryRequest before processing, returns cached data                                         |
+| Optional in-memory cache        | GetChannelPreference/SetChannelPreference accept optional cache for warm reads                                             |
+| ServiceKeys in app, not infra   | Infra keys live in app (interfaces defined here); prevents circular deps                                                   |
+| DI via addCommsApp(services)    | All CQRS handlers registered as transient -- new instance per resolve                                                      |
+| CommsJobOptions via Options     | Job retention periods, lock TTL, batch size passed to addCommsApp; sensible defaults                                       |
+| Distributed lock for jobs       | AcquireLock/ReleaseLock prevent concurrent job runs across instances                                                       |
 | Handler interface extraction    | App-layer I/O types, redaction constants, and IHandler interfaces in separate interface files — mirrors geo-client pattern |
 
 ## Package Structure

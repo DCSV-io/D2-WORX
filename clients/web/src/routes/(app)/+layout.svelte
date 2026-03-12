@@ -7,11 +7,17 @@
 </script>
 
 <svelte:head>
-  <meta name="robots" content="noindex, nofollow" />
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  />
 </svelte:head>
 
 <SidebarProvider>
-  <AppSidebar orgType={data.orgType} role={data.role} />
+  <AppSidebar
+    orgType={data.orgType}
+    role={data.role}
+  />
   <SidebarInset>
     <AppHeader />
     <main class="flex-1 p-4 sm:p-6">

@@ -18,7 +18,9 @@ export const GET_SIGN_IN_EVENTS_REDACTION: RedactionSpec = {
 };
 
 /** Handler for retrieving paginated sign-in events. Requires redaction (output contains PII). */
-export interface IGetSignInEventsHandler
-  extends IHandler<GetSignInEventsInput, GetSignInEventsOutput> {
+export interface IGetSignInEventsHandler extends IHandler<
+  GetSignInEventsInput,
+  GetSignInEventsOutput
+> {
   readonly redaction: RedactionSpec;
 }

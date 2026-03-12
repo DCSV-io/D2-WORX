@@ -33,8 +33,12 @@
 
   // Page data is stable for the component lifetime (navigation remounts).
   // Use untrack to read the initial values without subscribing to changes.
-  const { form: formDefaults, countries, subdivisionsByCountry, countriesWithSubdivisions } =
-    untrack(() => data);
+  const {
+    form: formDefaults,
+    countries,
+    subdivisionsByCountry,
+    countriesWithSubdivisions,
+  } = untrack(() => data);
 
   const schema = createContactSchema(new Set(countriesWithSubdivisions));
 
@@ -69,11 +73,26 @@
 
 <svelte:head>
   <title>{m.webclient_design_contact_form_title()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_design_contact_form_description()} />
-  <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="{m.webclient_design_contact_form_title()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.webclient_design_contact_form_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_design_contact_form_description()}
+  />
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  />
+  <meta
+    property="og:title"
+    content="{m.webclient_design_contact_form_title()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_design_contact_form_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <div class="mx-auto max-w-2xl px-4 py-8">
@@ -81,15 +100,15 @@
   <div class="mb-6">
     <a
       href={resolve("/debug/design")}
-      class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      class="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
     >
       <ArrowLeftIcon class="size-4" />
       Back to Design System
     </a>
     <h1 class="text-2xl font-bold tracking-tight">Contact Form</h1>
-    <p class="mt-1 text-sm text-muted-foreground">
-      Demonstrates Superforms + Formsnap with geo reference data, cascading selects,
-      phone formatting, and cross-field validation.
+    <p class="text-muted-foreground mt-1 text-sm">
+      Demonstrates Superforms + Formsnap with geo reference data, cascading selects, phone
+      formatting, and cross-field validation.
     </p>
   </div>
 
@@ -97,16 +116,29 @@
     <Card.Header>
       <Card.Title>New Contact</Card.Title>
       <Card.Description>
-        All fields use live geo reference data from the 4-tier cache
-        (Memory &rarr; Redis &rarr; Disk &rarr; gRPC).
+        All fields use live geo reference data from the 4-tier cache (Memory &rarr; Redis &rarr;
+        Disk &rarr; gRPC).
       </Card.Description>
     </Card.Header>
     <Card.Content>
-      <form method="POST" use:enhance autocomplete="off" class="flex flex-col gap-5">
+      <form
+        method="POST"
+        use:enhance
+        autocomplete="off"
+        class="flex flex-col gap-5"
+      >
         <!-- Name row -->
         <div class="grid gap-4 sm:grid-cols-2">
-          <FormInput {form} field="firstName" {...FIRST_NAME} />
-          <FormInput {form} field="lastName" {...LAST_NAME} />
+          <FormInput
+            {form}
+            field="firstName"
+            {...FIRST_NAME}
+          />
+          <FormInput
+            {form}
+            field="lastName"
+            {...LAST_NAME}
+          />
         </div>
 
         <!-- Email with async availability check -->
@@ -124,7 +156,7 @@
           {form}
           field="phone"
           label={PHONE.label}
-          countries={countries}
+          {countries}
           defaultCountry="US"
           description={PHONE.description}
         />
@@ -149,12 +181,16 @@
         {/if}
 
         <!-- Street address with expandable extra lines -->
-        <FormInput {form} field="street1" {...STREET1}>
+        <FormInput
+          {form}
+          field="street1"
+          {...STREET1}
+        >
           {#snippet labelRight()}
             <button
               type="button"
               onclick={addressLines.toggleExtraLines}
-              class="text-sm text-muted-foreground hover:text-foreground"
+              class="text-muted-foreground hover:text-foreground text-sm"
             >
               {addressLines.showExtraLines ? "- Fewer address lines" : "+ More address lines"}
             </button>
@@ -162,20 +198,39 @@
         </FormInput>
         {#if addressLines.showExtraLines}
           <div class="grid gap-4 sm:grid-cols-2">
-            <FormInput {form} field="street2" {...STREET2} />
-            <FormInput {form} field="street3" {...STREET3} />
+            <FormInput
+              {form}
+              field="street2"
+              {...STREET2}
+            />
+            <FormInput
+              {form}
+              field="street3"
+              {...STREET3}
+            />
           </div>
         {/if}
 
         <!-- City + Postal Code row -->
         <div class="grid gap-4 sm:grid-cols-2">
-          <FormInput {form} field="city" {...CITY} />
-          <FormInput {form} field="postalCode" {...POSTAL_CODE} />
+          <FormInput
+            {form}
+            field="city"
+            {...CITY}
+          />
+          <FormInput
+            {form}
+            field="postalCode"
+            {...POSTAL_CODE}
+          />
         </div>
 
         <!-- Actions -->
         <div class="flex justify-end gap-2 pt-2">
-          <Button variant="outline" type="reset">Reset</Button>
+          <Button
+            variant="outline"
+            type="reset">Reset</Button
+          >
           <Button type="submit">Submit</Button>
         </div>
       </form>
@@ -183,7 +238,7 @@
   </Card.Root>
 
   <!-- Data source indicator -->
-  <p class="mt-4 text-center text-xs text-muted-foreground">
+  <p class="text-muted-foreground mt-4 text-center text-xs">
     {countries.length} countries loaded (live geo reference data)
   </p>
 </div>

@@ -60,7 +60,10 @@ export function createTranslator(options: {
     if (!params) return message;
 
     // Replace {paramName} placeholders
-    return message.replace(/\{(\w+)\}/g, (_, paramName: string) => params[paramName] ?? `{${paramName}}`);
+    return message.replace(
+      /\{(\w+)\}/g,
+      (_, paramName: string) => params[paramName] ?? `{${paramName}}`,
+    );
   }
 
   return {

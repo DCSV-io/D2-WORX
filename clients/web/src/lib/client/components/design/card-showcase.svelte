@@ -9,7 +9,10 @@
   import TrendingUpIcon from "@lucide/svelte/icons/trending-up";
 </script>
 
-<Section id="cards" title="Cards">
+<Section
+  id="cards"
+  title="Cards"
+>
   <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
     <!-- Profile card -->
     <Card.Root>
@@ -25,13 +28,16 @@
         </div>
       </Card.Header>
       <Card.Content>
-        <p class="text-sm text-muted-foreground">
+        <p class="text-muted-foreground text-sm">
           Responsible for driving product strategy and managing the roadmap across 3 product lines.
         </p>
       </Card.Content>
       <Card.Footer class="flex gap-2">
         <Button size="sm">View Profile</Button>
-        <Button size="sm" variant="outline">Message</Button>
+        <Button
+          size="sm"
+          variant="outline">Message</Button
+        >
       </Card.Footer>
     </Card.Root>
 
@@ -49,7 +55,10 @@
         </div>
       </Card.Content>
       <Card.Footer>
-        <Progress value={72} class="w-full" />
+        <Progress
+          value={72}
+          class="w-full"
+        />
       </Card.Footer>
     </Card.Root>
 
@@ -63,16 +72,12 @@
       </Card.Header>
       <Card.Content>
         <div class="flex flex-col gap-3">
-          {#each [
-            { title: "New comment on PR #42", time: "2 min ago" },
-            { title: "Deployment succeeded", time: "15 min ago" },
-            { title: "New team member joined", time: "1 hour ago" },
-          ] as item (item.title)}
+          {#each [{ title: "New comment on PR #42", time: "2 min ago" }, { title: "Deployment succeeded", time: "15 min ago" }, { title: "New team member joined", time: "1 hour ago" }] as item (item.title)}
             <div class="flex items-start gap-3">
-              <BellIcon class="mt-0.5 size-4 text-muted-foreground" />
+              <BellIcon class="text-muted-foreground mt-0.5 size-4" />
               <div class="flex flex-col">
                 <span class="text-sm font-medium">{item.title}</span>
-                <span class="text-xs text-muted-foreground">{item.time}</span>
+                <span class="text-muted-foreground text-xs">{item.time}</span>
               </div>
             </div>
           {/each}

@@ -18,12 +18,12 @@ Shared utility extensions and helpers used across all contracts and services. Pr
 
 Lightweight circuit breaker (`CircuitBreaker<T>`) for protecting async operations against sustained downstream failures. Three states: **Closed** (normal) → **Open** (fast-fail) → **HalfOpen** (one probe allowed).
 
-| File                                                    | Description                                                                               |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| [CircuitBreaker.cs](CircuitBreaker/CircuitBreaker.cs)   | Generic circuit breaker with thread-safe state via `Interlocked`. Tracks consecutive failures, opens at threshold, probes after cooldown. |
-| [CircuitState.cs](CircuitBreaker/CircuitState.cs)       | Enum: Closed (0), Open (1), HalfOpen (2).                                                 |
-| [CircuitBreakerOptions.cs](CircuitBreaker/CircuitBreakerOptions.cs) | Configuration record: FailureThreshold (default 5), CooldownDuration (default 30s), NowFunc (test seam). |
-| [CircuitOpenException.cs](CircuitBreaker/CircuitOpenException.cs)   | Exception thrown when the circuit is open and no fallback is provided.                     |
+| File                                                                | Description                                                                                                                               |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| [CircuitBreaker.cs](CircuitBreaker/CircuitBreaker.cs)               | Generic circuit breaker with thread-safe state via `Interlocked`. Tracks consecutive failures, opens at threshold, probes after cooldown. |
+| [CircuitState.cs](CircuitBreaker/CircuitState.cs)                   | Enum: Closed (0), Open (1), HalfOpen (2).                                                                                                 |
+| [CircuitBreakerOptions.cs](CircuitBreaker/CircuitBreakerOptions.cs) | Configuration record: FailureThreshold (default 5), CooldownDuration (default 30s), NowFunc (test seam).                                  |
+| [CircuitOpenException.cs](CircuitBreaker/CircuitOpenException.cs)   | Exception thrown when the circuit is open and no fallback is provided.                                                                    |
 
 ### Usage
 

@@ -17,9 +17,7 @@ export interface GrpcServerOptions {
  * Creates, configures, and binds the gRPC server for AuthService + AuthJobService.
  * Caller is responsible for checking grpcPort availability before calling.
  */
-export async function buildGrpcServer(
-  options: GrpcServerOptions,
-): Promise<grpc.Server> {
+export async function buildGrpcServer(options: GrpcServerOptions): Promise<grpc.Server> {
   const { provider, grpcPort, authApiKeys, logger } = options;
 
   const server = new grpc.Server();
@@ -46,10 +44,8 @@ export async function buildGrpcServer(
   }
 
   await new Promise<void>((resolve, reject) => {
-    server.bindAsync(
-      `0.0.0.0:${grpcPort}`,
-      grpc.ServerCredentials.createInsecure(),
-      (err) => (err ? reject(err) : resolve()),
+    server.bindAsync(`0.0.0.0:${grpcPort}`, grpc.ServerCredentials.createInsecure(), (err) =>
+      err ? reject(err) : resolve(),
     );
   });
   logger.info(`Auth gRPC server listening on 0.0.0.0:${grpcPort}`);

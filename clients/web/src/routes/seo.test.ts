@@ -50,9 +50,7 @@ describe("robots.txt", () => {
 
   it("does NOT disallow public paths (/, /sign-in, /sign-up)", async () => {
     const body = await callRobotsTxt().text();
-    const disallowLines = body
-      .split("\n")
-      .filter((l: string) => l.startsWith("Disallow:"));
+    const disallowLines = body.split("\n").filter((l: string) => l.startsWith("Disallow:"));
 
     for (const line of disallowLines) {
       const path = line.replace("Disallow:", "").trim();

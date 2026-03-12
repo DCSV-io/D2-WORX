@@ -30,13 +30,13 @@ A local BetterAuth instance in SvelteKit would bypass the Auth service's securit
 
 ### Types
 
-| Type                        | Description                                              |
-| --------------------------- | -------------------------------------------------------- |
-| `AuthSession`               | Resolved session data (userId, org context, emulation)   |
-| `AuthUser`                  | Resolved user data (id, email, name, username, image)    |
-| `AuthBffConfig`             | Configuration (authServiceUrl, timeout, apiKey)          |
-| `AuthenticatedLocals`       | Narrowed type after `requireAuth()`                      |
-| `AuthenticatedWithOrgLocals`| Narrowed type after `requireOrg()` — org fields non-null |
+| Type                         | Description                                              |
+| ---------------------------- | -------------------------------------------------------- |
+| `AuthSession`                | Resolved session data (userId, org context, emulation)   |
+| `AuthUser`                   | Resolved user data (id, email, name, username, image)    |
+| `AuthBffConfig`              | Configuration (authServiceUrl, timeout, apiKey)          |
+| `AuthenticatedLocals`        | Narrowed type after `requireAuth()`                      |
+| `AuthenticatedWithOrgLocals` | Narrowed type after `requireOrg()` — org fields non-null |
 
 ### Classes
 
@@ -99,17 +99,17 @@ const { session } = requireOrg(locals);
 
 ## Configuration
 
-| Env Var                  | Required | Default | Description                                                        |
-| ------------------------ | -------- | ------- | ------------------------------------------------------------------ |
-| `SVELTEKIT_AUTH__URL`    | Yes      | —       | Auth service URL. Hard-fails on startup if missing                 |
-| `SVELTEKIT_AUTH__API_KEY`| No       | —       | S2S API key. When set, sent as `X-Api-Key` for trusted service ID  |
+| Env Var                   | Required | Default | Description                                                       |
+| ------------------------- | -------- | ------- | ----------------------------------------------------------------- |
+| `SVELTEKIT_AUTH__URL`     | Yes      | —       | Auth service URL. Hard-fails on startup if missing                |
+| `SVELTEKIT_AUTH__API_KEY` | No       | —       | S2S API key. When set, sent as `X-Api-Key` for trusted service ID |
 
 ## Dependencies
 
-| Package        | Type | Purpose                        |
-| -------------- | ---- | ------------------------------ |
-| `@d2/logging`  | dep  | Structured warning/error logs  |
-| `@sveltejs/kit`| peer | `redirect()`, `RequestEvent`   |
+| Package         | Type | Purpose                       |
+| --------------- | ---- | ----------------------------- |
+| `@d2/logging`   | dep  | Structured warning/error logs |
+| `@sveltejs/kit` | peer | `redirect()`, `RequestEvent`  |
 
 No BetterAuth dependency — this package only speaks HTTP to the Auth service.
 

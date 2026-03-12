@@ -35,22 +35,33 @@
     name="description"
     content={success ? m.auth_email_verified_description() : m.auth_email_failed_description()}
   />
-  <meta name="robots" content="noindex" />
+  <meta
+    name="robots"
+    content="noindex"
+  />
   <meta
     property="og:title"
-    content="{success ? m.auth_email_verified_title() : m.auth_email_failed_title()} — {m.webclient_nav_brand()}"
+    content="{success
+      ? m.auth_email_verified_title()
+      : m.auth_email_failed_title()} — {m.webclient_nav_brand()}"
   />
   <meta
     property="og:description"
     content={success ? m.auth_email_verified_description() : m.auth_email_failed_description()}
   />
-  <meta property="og:type" content="website" />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <div class="relative flex min-h-screen items-center justify-center px-4">
   <div class="w-full max-w-md">
     <div class="mb-8 flex justify-center">
-      <a href={resolve("/")} class="flex items-center gap-2">
+      <a
+        href={resolve("/")}
+        class="flex items-center gap-2"
+      >
         <div
           class="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg text-sm font-bold"
         >
@@ -89,10 +100,15 @@
       </Card.Content>
       <Card.Footer>
         {#if success}
-          <Button href={resolve("/dashboard")} class="w-full">{m.common_ui_dashboard()}</Button>
+          <Button
+            href={resolve("/dashboard")}
+            class="w-full">{m.common_ui_dashboard()}</Button
+          >
         {:else}
-          <Button variant="outline" href={resolve("/")} class="w-full"
-            >{m.common_ui_sign_in()}</Button
+          <Button
+            variant="outline"
+            href={resolve("/")}
+            class="w-full">{m.common_ui_sign_in()}</Button
           >
         {/if}
       </Card.Footer>

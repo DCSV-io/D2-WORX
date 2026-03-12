@@ -22,9 +22,7 @@ describe("gateway-client", () => {
   // -------------------------------------------------------------------------
   describe("setClientFingerprint", () => {
     it("sets the fingerprint used in X-Client-Fingerprint header", async () => {
-      fetchSpy.mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 200 }),
-      );
+      fetchSpy.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
       const { setClientFingerprint, apiCallAnon } = await import("./gateway-client");
       setClientFingerprint("fp-abc-123");
@@ -56,10 +54,7 @@ describe("gateway-client", () => {
 
     it("parses PascalCase gateway response", async () => {
       fetchSpy.mockResolvedValue(
-        new Response(
-          JSON.stringify({ Success: true, Data: { count: 5 } }),
-          { status: 200 },
-        ),
+        new Response(JSON.stringify({ Success: true, Data: { count: 5 } }), { status: 200 }),
       );
 
       const { apiCallAnon } = await import("./gateway-client");
@@ -70,9 +65,7 @@ describe("gateway-client", () => {
     });
 
     it("sends body and Content-Type for POST", async () => {
-      fetchSpy.mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 201 }),
-      );
+      fetchSpy.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 201 }));
 
       const { apiCallAnon } = await import("./gateway-client");
       await apiCallAnon("/api/v1/test", {
@@ -88,9 +81,7 @@ describe("gateway-client", () => {
     });
 
     it("sends Idempotency-Key header when provided", async () => {
-      fetchSpy.mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 200 }),
-      );
+      fetchSpy.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
       const { apiCallAnon } = await import("./gateway-client");
       await apiCallAnon("/api/v1/test", {
@@ -121,7 +112,8 @@ describe("gateway-client", () => {
     /** Mock the token endpoint to return a JWT. */
     function mockTokenEndpoint(token: string | null) {
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         if (url === "/api/auth/token") {
           if (!token) return new Response("Unauthorized", { status: 401 });
           // Create a minimal JWT with exp claim (15 min from now)
@@ -169,7 +161,8 @@ describe("gateway-client", () => {
     it("returns original 401 result when retry token fetch also fails", async () => {
       let callCount = 0;
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
         if (url === "/api/auth/token") {
           callCount++;
@@ -177,19 +170,17 @@ describe("gateway-client", () => {
             // First token fetch succeeds
             const exp = Math.floor(Date.now() / 1000) + 900;
             const payload = btoa(JSON.stringify({ exp }));
-            return new Response(
-              JSON.stringify({ token: `header.${payload}.signature` }),
-              { status: 200 },
-            );
+            return new Response(JSON.stringify({ token: `header.${payload}.signature` }), {
+              status: 200,
+            });
           }
           // Second token fetch fails (user signed out)
           return new Response("Unauthorized", { status: 401 });
         }
         // Gateway always returns 401
-        return new Response(
-          JSON.stringify({ success: false, messages: ["Token invalid"] }),
-          { status: 401 },
-        );
+        return new Response(JSON.stringify({ success: false, messages: ["Token invalid"] }), {
+          status: 401,
+        });
       });
 
       const { apiCall, invalidateToken } = await import("./gateway-client");
@@ -204,30 +195,28 @@ describe("gateway-client", () => {
     it("retries once on 401 with a fresh token", async () => {
       let callCount = 0;
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
         if (url === "/api/auth/token") {
           const exp = Math.floor(Date.now() / 1000) + 900;
           const payload = btoa(JSON.stringify({ exp }));
-          return new Response(
-            JSON.stringify({ token: `header.${payload}.signature` }),
-            { status: 200 },
-          );
+          return new Response(JSON.stringify({ token: `header.${payload}.signature` }), {
+            status: 200,
+          });
         }
 
         callCount++;
         if (callCount === 1) {
           // First gateway call returns 401
-          return new Response(
-            JSON.stringify({ success: false, messages: ["Token expired"] }),
-            { status: 401 },
-          );
+          return new Response(JSON.stringify({ success: false, messages: ["Token expired"] }), {
+            status: 401,
+          });
         }
         // Second gateway call succeeds
-        return new Response(
-          JSON.stringify({ success: true, data: { retried: true } }),
-          { status: 200 },
-        );
+        return new Response(JSON.stringify({ success: true, data: { retried: true } }), {
+          status: 200,
+        });
       });
 
       const { apiCall, invalidateToken } = await import("./gateway-client");
@@ -248,16 +237,14 @@ describe("gateway-client", () => {
     it("forces a fresh token fetch on next apiCall", async () => {
       let tokenCallCount = 0;
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
 
         if (url === "/api/auth/token") {
           tokenCallCount++;
           const exp = Math.floor(Date.now() / 1000) + 900;
           const payload = btoa(JSON.stringify({ exp }));
-          return new Response(
-            JSON.stringify({ token: `header.${payload}.sig` }),
-            { status: 200 },
-          );
+          return new Response(JSON.stringify({ token: `header.${payload}.sig` }), { status: 200 });
         }
         return new Response(JSON.stringify({ success: true }), { status: 200 });
       });
@@ -285,7 +272,8 @@ describe("gateway-client", () => {
   describe("token edge cases", () => {
     it("returns unauthorized when token endpoint returns OK but no token field", async () => {
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         if (url === "/api/auth/token") {
           return new Response(JSON.stringify({ noTokenHere: true }), { status: 200 });
         }
@@ -302,13 +290,13 @@ describe("gateway-client", () => {
 
     it("handles malformed JWT payload gracefully (uses fallback expiry)", async () => {
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         if (url === "/api/auth/token") {
           // Return a JWT with invalid base64 in the payload segment
-          return new Response(
-            JSON.stringify({ token: "header.!!!invalid-base64!!!.signature" }),
-            { status: 200 },
-          );
+          return new Response(JSON.stringify({ token: "header.!!!invalid-base64!!!.signature" }), {
+            status: 200,
+          });
         }
         return new Response(JSON.stringify({ success: true }), { status: 200 });
       });
@@ -324,16 +312,14 @@ describe("gateway-client", () => {
     it("re-fetches token when cached token is near expiry", async () => {
       let tokenCallCount = 0;
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         if (url === "/api/auth/token") {
           tokenCallCount++;
           // Token that expires in 1 minute (within 2-minute REFRESH_BUFFER_MS)
           const exp = Math.floor(Date.now() / 1000) + 60;
           const payload = btoa(JSON.stringify({ exp }));
-          return new Response(
-            JSON.stringify({ token: `header.${payload}.sig` }),
-            { status: 200 },
-          );
+          return new Response(JSON.stringify({ token: `header.${payload}.sig` }), { status: 200 });
         }
         return new Response(JSON.stringify({ success: true }), { status: 200 });
       });
@@ -351,7 +337,8 @@ describe("gateway-client", () => {
 
     it("returns null when token endpoint network error occurs", async () => {
       fetchSpy.mockImplementation(async (input: string | URL | Request) => {
-        const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
         if (url === "/api/auth/token") {
           throw new Error("Network failure");
         }
@@ -406,9 +393,7 @@ describe("gateway-client", () => {
       const original = dynamicEnv.env.PUBLIC_GATEWAY_URL;
       dynamicEnv.env.PUBLIC_GATEWAY_URL = "";
 
-      fetchSpy.mockResolvedValue(
-        new Response(JSON.stringify({ success: true }), { status: 200 }),
-      );
+      fetchSpy.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
 
       try {
         const { apiCallAnon } = await import("./gateway-client");

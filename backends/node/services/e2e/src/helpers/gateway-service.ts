@@ -80,7 +80,7 @@ export async function startGateway(opts: {
     AUTH_GRPC_ADDRESS: "localhost:1",
     COMMS_GRPC_ADDRESS: "localhost:1",
     // Service key config: allow Dkron's X-Api-Key to pass
-    "GATEWAY_SERVICEKEY__ValidKeys__0": opts.serviceKey,
+    GATEWAY_SERVICEKEY__ValidKeys__0: opts.serviceKey,
     // gRPC API keys (sent as call credentials to downstream services)
     GATEWAY_GEO_GRPC_API_KEY: opts.geoApiKey,
     // Auth + Comms keys required by startup validation but not called in Geo-only tests

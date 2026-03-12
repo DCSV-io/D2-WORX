@@ -65,9 +65,7 @@ export interface SubdivisionOption {
  * Popular countries appear first (in POPULAR_COUNTRIES order),
  * then remaining countries sorted alphabetically by display name.
  */
-export function countriesToOptions(
-  countries: Record<string, CountryDTO>,
-): CountryOption[] {
+export function countriesToOptions(countries: Record<string, CountryDTO>): CountryOption[] {
   const all = Object.values(countries).map((c) => ({
     value: c.iso31661Alpha2Code,
     label: c.displayName,

@@ -90,10 +90,7 @@ export class CircuitBreaker {
    * - **HALF_OPEN**: Execute one probe. Success → CLOSED, failure → OPEN.
    *   Additional callers while probe is in-flight get the fallback.
    */
-  async execute<T>(
-    operation: () => Promise<T>,
-    fallback?: () => T | Promise<T>,
-  ): Promise<T> {
+  async execute<T>(operation: () => Promise<T>, fallback?: () => T | Promise<T>): Promise<T> {
     // Check for OPEN → HALF_OPEN transition
     if (this._state === CircuitState.OPEN) {
       if (this._now() - this._openedAt >= this._cooldownMs) {

@@ -28,9 +28,7 @@ afterEach(() => {
 
 describe("checkHealth", () => {
   it("should return true when /v1/leader responds 200 with leader address", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response("127.0.0.1:8946", { status: 200 }),
-    );
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response("127.0.0.1:8946", { status: 200 }));
 
     const result = await checkHealth(baseUrl, logger);
 
@@ -55,9 +53,7 @@ describe("checkHealth", () => {
     const result = await checkHealth(baseUrl, logger);
 
     expect(result).toBe(false);
-    expect(logger.debug).toHaveBeenCalledWith(
-      expect.stringContaining("Raft not ready"),
-    );
+    expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining("Raft not ready"));
   });
 
   it("should return false on network error", async () => {
@@ -66,10 +62,7 @@ describe("checkHealth", () => {
     const result = await checkHealth(baseUrl, logger);
 
     expect(result).toBe(false);
-    expect(logger.debug).toHaveBeenCalledWith(
-      "Dkron health check failed",
-      expect.any(Error),
-    );
+    expect(logger.debug).toHaveBeenCalledWith("Dkron health check failed", expect.any(Error));
   });
 });
 
@@ -150,9 +143,9 @@ describe("upsertJob", () => {
   };
 
   it("should POST job payload to /v1/jobs", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(job), { status: 201 }),
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(job), { status: 201 }));
 
     await upsertJob(baseUrl, job, logger);
 
@@ -167,9 +160,9 @@ describe("upsertJob", () => {
   });
 
   it("should accept 200 as success (update)", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify(job), { status: 200 }),
-    );
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(job), { status: 200 }));
 
     await expect(upsertJob(baseUrl, job, logger)).resolves.toBeUndefined();
   });

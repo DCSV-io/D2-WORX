@@ -11,5 +11,7 @@ export interface CheckSignInThrottleOutput {
 }
 
 /** Handler for checking sign-in throttle status. */
-export interface ICheckSignInThrottleHandler
-  extends IHandler<CheckSignInThrottleInput, CheckSignInThrottleOutput> {}
+export interface ICheckSignInThrottleHandler extends IHandler<
+  CheckSignInThrottleInput,
+  CheckSignInThrottleOutput
+> {}

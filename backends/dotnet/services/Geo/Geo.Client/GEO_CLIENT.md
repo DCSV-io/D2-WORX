@@ -7,7 +7,7 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 | File Name                                  | Description                                                                                                                          |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | [Extensions.cs](Extensions.cs)             | DI extension methods: `AddGeoRefDataConsumer`, `AddGeoRefDataProvider`, `AddWhoIsCache`, `AddContactHandlers`.                       |
-| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, `ApiKey`, and circuit breaker settings.                   |
+| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, `ApiKey`, and circuit breaker settings.                  |
 | [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and Messaging.RabbitMQ. |
 
 ---
@@ -127,11 +127,11 @@ This allows input logging to remain enabled (useful for debugging) while ensurin
 >
 > #### X (Complex)
 >
-> | File Name                                                                | Description                                                                                                                     |
-> | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-> | [Get.cs](CQRS/Handlers/X/Get.cs)                                         | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.     |
+> | File Name                                                                | Description                                                                                                                                                                   |
+> | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | [Get.cs](CQRS/Handlers/X/Get.cs)                                         | Orchestrator handler implementing multi-tier cache fallback: Memory → Redis → Disk → gRPC, populating higher tiers on miss.                                                   |
 > | [FindWhoIs.cs](CQRS/Handlers/X/FindWhoIs.cs)                             | Handler for WhoIs lookups with local IMemoryCache caching, singleflight deduplication, circuit breaker, and Geo gRPC service fallback. Used by request enrichment middleware. |
-> | [UpdateContactsByExtKeys.cs](CQRS/Handlers/X/UpdateContactsByExtKeys.cs) | Handler replacing contacts at ext keys via gRPC (atomic delete + create) + ext-key cache eviction. PII redacted.                |
+> | [UpdateContactsByExtKeys.cs](CQRS/Handlers/X/UpdateContactsByExtKeys.cs) | Handler replacing contacts at ext keys via gRPC (atomic delete + create) + ext-key cache eviction. PII redacted.                                                              |
 
 ---
 
@@ -233,12 +233,12 @@ builder.Services.AddGeoRefDataConsumer(builder.Configuration);
     "WhoIsCacheExpiration": "08:00:00",
     "WhoIsCacheMaxEntries": 10000,
     "CircuitBreakerFailureThreshold": 5,
-    "CircuitBreakerCooldownDuration": "00:00:30"
+    "CircuitBreakerCooldownDuration": "00:00:30",
   },
   "AUTH_GEO_CLIENT": {
     "ApiKey": "your-api-key-here",
-    "AllowedContextKeys": ["auth_user", "auth_org_contact", "auth_org_invitation"]
-  }
+    "AllowedContextKeys": ["auth_user", "auth_org_contact", "auth_org_invitation"],
+  },
 }
 ```
 
@@ -384,10 +384,10 @@ if (output) {
 
 Contact caches use the ext-key pattern. WhoIs uses content-addressable hash IDs.
 
-| Entity  | Cache Key Pattern                            | TTL       | Eviction                                         |
-| ------- | -------------------------------------------- | --------- | ------------------------------------------------ |
-| WhoIs   | `whois:{hashId}`                             | 8 hours   | LRU (10,000 entries)                             |
-| Contact | `contact-ext:{contextKey}:{relatedEntityId}` | No TTL    | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
+| Entity  | Cache Key Pattern                            | TTL     | Eviction                                         |
+| ------- | -------------------------------------------- | ------- | ------------------------------------------------ |
+| WhoIs   | `whois:{hashId}`                             | 8 hours | LRU (10,000 entries)                             |
+| Contact | `contact-ext:{contextKey}:{relatedEntityId}` | No TTL  | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
 
 WhoIs cache keys are computed from the content-addressable SHA-256 hash of IP + fingerprint. Contact cache keys are computed from the ext-key pair (contextKey + relatedEntityId) — contacts are immutable, so no TTL is needed.
 

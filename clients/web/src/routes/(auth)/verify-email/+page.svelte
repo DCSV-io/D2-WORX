@@ -12,17 +12,32 @@
 
 <svelte:head>
   <title>{m.auth_verify_email_title()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.auth_verify_email_description()} />
-  <meta name="robots" content="noindex" />
-  <meta property="og:title" content="{m.auth_verify_email_title()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.auth_verify_email_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.auth_verify_email_description()}
+  />
+  <meta
+    name="robots"
+    content="noindex"
+  />
+  <meta
+    property="og:title"
+    content="{m.auth_verify_email_title()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.auth_verify_email_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <Card.Root>
   <Card.Header class="text-center">
-    <div class="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-muted">
-      <MailIcon class="size-6 text-muted-foreground" />
+    <div class="bg-muted mx-auto mb-2 flex size-12 items-center justify-center rounded-full">
+      <MailIcon class="text-muted-foreground size-6" />
     </div>
     <Card.Title class="text-2xl">Check Your Email</Card.Title>
   </Card.Header>
@@ -42,6 +57,10 @@
     </p>
   </Card.Content>
   <Card.Footer>
-    <Button variant="outline" href={resolve("/sign-in")} class="w-full">Back to Sign In</Button>
+    <Button
+      variant="outline"
+      href={resolve("/sign-in")}
+      class="w-full">Back to Sign In</Button
+    >
   </Card.Footer>
 </Card.Root>

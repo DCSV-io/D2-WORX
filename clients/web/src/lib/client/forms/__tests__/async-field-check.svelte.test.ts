@@ -123,10 +123,7 @@ describe("useAsyncFieldCheck", () => {
   });
 
   it("skips check when client-side validation errors already exist", async () => {
-    const form = createMockForm(
-      { email: "bad" },
-      { email: ["Invalid email format"] },
-    );
+    const form = createMockForm({ email: "bad" }, { email: ["Invalid email format"] });
     const checker = createPassingChecker();
     const result = useAsyncFieldCheck({ form, field: "email", checker });
 

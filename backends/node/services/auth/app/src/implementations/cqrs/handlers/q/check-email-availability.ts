@@ -55,9 +55,7 @@ export class CheckEmailAvailability
     return Queries.CHECK_EMAIL_AVAILABILITY_REDACTION;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -88,4 +86,7 @@ export class CheckEmailAvailability
   }
 }
 
-export type { CheckEmailAvailabilityInput, CheckEmailAvailabilityOutput } from "../../../../interfaces/cqrs/handlers/q/check-email-availability.js";
+export type {
+  CheckEmailAvailabilityInput,
+  CheckEmailAvailabilityOutput,
+} from "../../../../interfaces/cqrs/handlers/q/check-email-availability.js";

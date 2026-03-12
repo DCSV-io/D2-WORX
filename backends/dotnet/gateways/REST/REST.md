@@ -125,7 +125,7 @@ services.AddGrpcClient<AuthJobService.AuthJobServiceClient>(o =>
 
 | Client                                  | Address Env Var      | API Key Env Var              |
 | --------------------------------------- | -------------------- | ---------------------------- |
-| `GeoService.GeoServiceClient`          | `GEO_GRPC_ADDRESS`   | —                            |
+| `GeoService.GeoServiceClient`           | `GEO_GRPC_ADDRESS`   | —                            |
 | `GeoJobService.GeoJobServiceClient`     | `GEO_GRPC_ADDRESS`   | `GATEWAY_GEO_GRPC_API_KEY`   |
 | `AuthJobService.AuthJobServiceClient`   | `AUTH_GRPC_ADDRESS`  | `GATEWAY_AUTH_GRPC_API_KEY`  |
 | `CommsJobService.CommsJobServiceClient` | `COMMS_GRPC_ADDRESS` | `GATEWAY_COMMS_GRPC_API_KEY` |
@@ -212,6 +212,7 @@ foreach (var validKeyBytes in r_validKeyBytes)
 ```
 
 **Why this matters:**
+
 - `===` in JS or `==` in C# exits early on first mismatch — an attacker can measure response time to brute-force keys character by character
 - `CryptographicOperations.FixedTimeEquals` (C#) / `timingSafeEqual` (Node.js `node:crypto`) always takes the same time regardless of where the mismatch occurs
 - The loop iterates ALL valid keys even after a match — prevents leaking which key index matched

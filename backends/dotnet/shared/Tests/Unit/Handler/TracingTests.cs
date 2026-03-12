@@ -33,12 +33,12 @@ public class TracingTests
     public async Task SuccessfulHandler_CreatesActivityWithHandlerName()
     {
         // Arrange
-        var activity = await RunWithActivityCapture<Tracing_PlainHandler>(
+        var activity = await RunWithActivityCapture<TracingPlainHandler>(
             CreateContext());
 
         // Assert
         activity.Should().NotBeNull();
-        activity!.OperationName.Should().Be(nameof(Tracing_PlainHandler));
+        activity!.OperationName.Should().Be(nameof(TracingPlainHandler));
     }
 
     /// <summary>
@@ -60,11 +60,11 @@ public class TracingTests
             agentOrgId: agentOrgId,
             targetOrgId: targetOrgId);
 
-        var activity = await RunWithActivityCapture<Tracing_TagsHandler>(context);
+        var activity = await RunWithActivityCapture<TracingTagsHandler>(context);
 
         // Assert
         activity.Should().NotBeNull();
-        activity!.GetTagItem("handler.type").Should().Be(typeof(Tracing_TagsHandler).FullName);
+        activity!.GetTagItem("handler.type").Should().Be(typeof(TracingTagsHandler).FullName);
         activity.GetTagItem("trace.id").Should().Be("trace-abc");
 
         // SetTagIfNotNull converts values to string via .ToString() for OTel compatibility.
@@ -82,7 +82,7 @@ public class TracingTests
     public async Task SuccessfulHandler_SetsSuccessStatusAndTags()
     {
         // Arrange
-        var activity = await RunWithActivityCapture<Tracing_SuccessHandler>(
+        var activity = await RunWithActivityCapture<TracingSuccessHandler>(
             CreateContext());
 
         // Assert
@@ -102,7 +102,7 @@ public class TracingTests
     public async Task FailedHandler_SetsErrorStatus()
     {
         // Arrange
-        var activity = await RunWithActivityCapture<Tracing_FailingHandler>(
+        var activity = await RunWithActivityCapture<TracingFailingHandler>(
             CreateContext());
 
         // Assert
@@ -120,7 +120,7 @@ public class TracingTests
     public async Task ThrowingHandler_SetsErrorStatusAndAddsException()
     {
         // Arrange
-        var activity = await RunWithActivityCapture<Tracing_ThrowingHandler>(
+        var activity = await RunWithActivityCapture<TracingThrowingHandler>(
             CreateContext());
 
         // Assert
@@ -149,7 +149,7 @@ public class TracingTests
     {
         // Arrange
         var context = CreateContext(traceId: "auto-injected-trace");
-        var handler = new Tracing_NoTraceIdHandler(context);
+        var handler = new TracingNoTraceIdHandler(context);
 
         // Act
         var result = await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
@@ -168,7 +168,7 @@ public class TracingTests
     {
         // Arrange
         var context = CreateContext(traceId: "ambient-trace");
-        var handler = new Tracing_ExplicitTraceIdHandler(context);
+        var handler = new TracingExplicitTraceIdHandler(context);
 
         // Act
         var result = await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
@@ -226,9 +226,9 @@ public class TracingTests
 
     // Each handler type has a unique "Tracing_" prefix so that its Activity.OperationName
     // is distinguishable from handlers created by other parallel test classes.
-    private class Tracing_PlainHandler : BaseHandler<Tracing_PlainHandler, string, string>
+    private class TracingPlainHandler : BaseHandler<TracingPlainHandler, string, string>
     {
-        public Tracing_PlainHandler(IHandlerContext context)
+        public TracingPlainHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -238,9 +238,9 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class Tracing_TagsHandler : BaseHandler<Tracing_TagsHandler, string, string>
+    private class TracingTagsHandler : BaseHandler<TracingTagsHandler, string, string>
     {
-        public Tracing_TagsHandler(IHandlerContext context)
+        public TracingTagsHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -250,9 +250,9 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class Tracing_SuccessHandler : BaseHandler<Tracing_SuccessHandler, string, string>
+    private class TracingSuccessHandler : BaseHandler<TracingSuccessHandler, string, string>
     {
-        public Tracing_SuccessHandler(IHandlerContext context)
+        public TracingSuccessHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -262,9 +262,9 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class Tracing_ThrowingHandler : BaseHandler<Tracing_ThrowingHandler, string, string>
+    private class TracingThrowingHandler : BaseHandler<TracingThrowingHandler, string, string>
     {
-        public Tracing_ThrowingHandler(IHandlerContext context)
+        public TracingThrowingHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -274,9 +274,9 @@ public class TracingTests
             => throw new InvalidOperationException("Boom!");
     }
 
-    private class Tracing_NoTraceIdHandler : BaseHandler<Tracing_NoTraceIdHandler, string, string>
+    private class TracingNoTraceIdHandler : BaseHandler<TracingNoTraceIdHandler, string, string>
     {
-        public Tracing_NoTraceIdHandler(IHandlerContext context)
+        public TracingNoTraceIdHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -286,9 +286,9 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input));
     }
 
-    private class Tracing_ExplicitTraceIdHandler : BaseHandler<Tracing_ExplicitTraceIdHandler, string, string>
+    private class TracingExplicitTraceIdHandler : BaseHandler<TracingExplicitTraceIdHandler, string, string>
     {
-        public Tracing_ExplicitTraceIdHandler(IHandlerContext context)
+        public TracingExplicitTraceIdHandler(IHandlerContext context)
             : base(context)
         {
         }
@@ -298,9 +298,9 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input, traceId: "explicit-trace"));
     }
 
-    private class Tracing_FailingHandler : BaseHandler<Tracing_FailingHandler, string, string>
+    private class TracingFailingHandler : BaseHandler<TracingFailingHandler, string, string>
     {
-        public Tracing_FailingHandler(IHandlerContext context)
+        public TracingFailingHandler(IHandlerContext context)
             : base(context)
         {
         }

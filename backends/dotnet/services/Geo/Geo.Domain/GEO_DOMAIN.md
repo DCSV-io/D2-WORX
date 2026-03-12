@@ -86,12 +86,12 @@ Key fields: `ContextKey` + `RelatedEntityId` for loose coupling (e.g., `contextK
 
 ## Value Objects
 
-| Value Object      | Key Behavior                                                                |
-| ----------------- | --------------------------------------------------------------------------- |
-| `Coordinates`     | Immutable lat/long with 5-decimal precision validation (~1.1m accuracy)     |
-| `StreetAddress`   | Immutable 3-line address with line length validation                        |
-| `ContactMethods`  | Email + phone collections with primary item convenience properties          |
-| `EmailAddress`    | Validated, cleaned/lowercased email with user-defined label tags            |
-| `PhoneNumber`     | Digit-only cleaned phone with user-defined label tags                       |
-| `Personal`        | Name (title, first, middle, last, suffix), gender, DOB                     |
-| `Professional`    | Job title, company, department                                             |
+| Value Object     | Key Behavior                                                            |
+| ---------------- | ----------------------------------------------------------------------- |
+| `Coordinates`    | Immutable lat/long with 5-decimal precision validation (~1.1m accuracy) |
+| `StreetAddress`  | Immutable 3-line address with line length validation                    |
+| `ContactMethods` | Email + phone collections with primary item convenience properties      |
+| `EmailAddress`   | Validated, cleaned/lowercased email with user-defined label tags        |
+| `PhoneNumber`    | Digit-only cleaned phone with user-defined label tags                   |
+| `Personal`       | Name (title, first, middle, last, suffix), gender, DOB                  |
+| `Professional`   | Job title, company, department                                          |

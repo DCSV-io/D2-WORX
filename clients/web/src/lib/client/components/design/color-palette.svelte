@@ -20,10 +20,13 @@
   );
 </script>
 
-<Section id="colors" title="Colors">
+<Section
+  id="colors"
+  title="Colors"
+>
   <div class="flex flex-col gap-6">
     <div>
-      <h3 class="mb-3 text-sm font-medium text-muted-foreground">Semantic Tokens (Light)</h3>
+      <h3 class="text-muted-foreground mb-3 text-sm font-medium">Semantic Tokens (Light)</h3>
       <div class="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-7">
         {#each CORE_TOKENS as token (token)}
           <ColorSwatch
@@ -35,7 +38,7 @@
     </div>
 
     <div>
-      <h3 class="mb-3 text-sm font-medium text-muted-foreground">Semantic Tokens (Dark)</h3>
+      <h3 class="text-muted-foreground mb-3 text-sm font-medium">Semantic Tokens (Dark)</h3>
       <div class="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-7">
         {#each CORE_TOKENS as token (token)}
           <ColorSwatch
@@ -47,7 +50,7 @@
     </div>
 
     <div>
-      <h3 class="mb-3 text-sm font-medium text-muted-foreground">Status Colors (Light)</h3>
+      <h3 class="text-muted-foreground mb-3 text-sm font-medium">Status Colors (Light)</h3>
       <div class="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-8">
         {#each STATUS_TOKENS as token (token)}
           <ColorSwatch
@@ -59,7 +62,7 @@
     </div>
 
     <div>
-      <h3 class="mb-3 text-sm font-medium text-muted-foreground">Status Colors (Dark)</h3>
+      <h3 class="text-muted-foreground mb-3 text-sm font-medium">Status Colors (Dark)</h3>
       <div class="grid grid-cols-4 gap-3 sm:grid-cols-5 md:grid-cols-8">
         {#each STATUS_TOKENS as token (token)}
           <ColorSwatch
@@ -71,7 +74,7 @@
     </div>
 
     <div>
-      <h3 class="mb-3 text-sm font-medium text-muted-foreground">Chart Colors (Light)</h3>
+      <h3 class="text-muted-foreground mb-3 text-sm font-medium">Chart Colors (Light)</h3>
       <div class="grid grid-cols-5 gap-3">
         {#each CHART_TOKENS as token (token)}
           <ColorSwatch
@@ -83,7 +86,7 @@
     </div>
 
     <div>
-      <h3 class="mb-3 text-sm font-medium text-muted-foreground">Chart Colors (Dark)</h3>
+      <h3 class="text-muted-foreground mb-3 text-sm font-medium">Chart Colors (Dark)</h3>
       <div class="grid grid-cols-5 gap-3">
         {#each CHART_TOKENS as token (token)}
           <ColorSwatch

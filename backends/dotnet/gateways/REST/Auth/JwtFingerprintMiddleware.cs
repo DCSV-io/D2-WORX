@@ -112,7 +112,7 @@ public class JwtFingerprintMiddleware
             "JWT fingerprint mismatch for {Path}. Expected: {Expected}, Got: {Got}",
             context.Request.Path,
             Truncate(fpClaim ?? string.Empty),
-            Truncate(computed ?? string.Empty));
+            Truncate(computed));
 
         var response = D2Result.Fail(
             ["JWT fingerprint mismatch. Token cannot be used from this client."],
@@ -230,9 +230,9 @@ public class JwtFingerprintMiddleware
     /// </summary>
     private static string Truncate(string value)
     {
-        const int _PREFIX_LENGTH = 8;
-        return value.Length > _PREFIX_LENGTH
-            ? value[.._PREFIX_LENGTH] + "..."
+        const int prefix_length = 8;
+        return value.Length > prefix_length
+            ? value[..prefix_length] + "..."
             : value + "...";
     }
 }

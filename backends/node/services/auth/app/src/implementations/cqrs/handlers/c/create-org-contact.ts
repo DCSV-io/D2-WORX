@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  BaseHandler,
-  type IHandlerContext,
-  zodGuid,
-  zodNonEmptyString,
-} from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { generateUuidV7 } from "@d2/utilities";
 import { createOrgContact, GEO_CONTEXT_KEYS } from "@d2/auth-domain";
@@ -59,9 +54,7 @@ export class CreateOrgContact
     this.createContacts = createContacts;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -115,4 +108,8 @@ export class CreateOrgContact
   }
 }
 
-export type { ContactInput, CreateOrgContactInput, CreateOrgContactOutput } from "../../../../interfaces/cqrs/handlers/c/create-org-contact.js";
+export type {
+  ContactInput,
+  CreateOrgContactInput,
+  CreateOrgContactOutput,
+} from "../../../../interfaces/cqrs/handlers/c/create-org-contact.js";

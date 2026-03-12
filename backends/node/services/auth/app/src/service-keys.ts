@@ -101,8 +101,9 @@ export const IPurgeExpiredEmulationConsentsKey =
 
 // --- Email Availability Repository Handler ---
 
-export const ICheckEmailAvailabilityRepoKey =
-  createServiceKey<ICheckEmailAvailabilityHandler>("Auth.Repo.CheckEmailAvailability");
+export const ICheckEmailAvailabilityRepoKey = createServiceKey<ICheckEmailAvailabilityHandler>(
+  "Auth.Repo.CheckEmailAvailability",
+);
 
 // --- Health Check Repository Handler ---
 
@@ -153,15 +154,13 @@ export const IGetSignInEventsKey = createServiceKey<Queries.IGetSignInEventsHand
 export const IGetActiveConsentsKey = createServiceKey<Queries.IGetActiveConsentsHandler>(
   "Auth.App.GetActiveConsents",
 );
-export const IGetOrgContactsKey = createServiceKey<Queries.IGetOrgContactsHandler>(
-  "Auth.App.GetOrgContacts",
-);
+export const IGetOrgContactsKey =
+  createServiceKey<Queries.IGetOrgContactsHandler>("Auth.App.GetOrgContacts");
 export const ICheckSignInThrottleKey = createServiceKey<Queries.ICheckSignInThrottleHandler>(
   "Auth.App.CheckSignInThrottle",
 );
-export const ICheckHealthKey = createServiceKey<Queries.ICheckHealthHandler>(
-  "Auth.App.CheckHealth",
-);
+export const ICheckHealthKey =
+  createServiceKey<Queries.ICheckHealthHandler>("Auth.App.CheckHealth");
 export const ICheckEmailAvailabilityKey = createServiceKey<Queries.ICheckEmailAvailabilityHandler>(
   "Auth.App.CheckEmailAvailability",
 );

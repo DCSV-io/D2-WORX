@@ -10,46 +10,46 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 
 ## Progress Tracker
 
-| Step | Name                                | Status      | Notes |
-| ---- | ----------------------------------- | ----------- | ----- |
-| 0    | Document Implementation Plan        | Complete    |       |
-| 1    | Error Handling Foundation + Types   | Complete    | Fixed pre-existing Vitest 4 config (`environment: "browser"` → `browser.enabled`), installed Playwright Chromium, updated deprecated `@vitest/browser/context` imports |
-| 2    | shadcn-svelte + Theme + Tokens      | Complete    | Zinc OKLCH theme, Gabarito font, mode-watcher 3-way toggle, Sonner toasts. Added `optimizeDeps.include` for stable browser tests. Used `@lucide/svelte` (rebranded from `lucide-svelte`) |
-| 2.5  | Server-Side Middleware              | Complete    | Request enrichment, rate limiting, idempotency. Direct SvelteKit→Geo gRPC for FindWhoIs. Graceful degradation when Redis/Geo unavailable |
-| 3    | Design System Sprint (Kitchen Sink) | Complete    | Live theme editor at `/design` with 3 OKLCH presets (WORX, Zinc, Ocean), 27 shadcn-svelte components, 10 showcase sections. Client-only (`ssr: false`), theme overrides cleaned up on navigation away |
-| 3.5  | Design Review & Polish              | Complete    | Playwright-driven visual QA across all 6 theme/mode combos. Button hover visibility, ghost/outline differentiation, dark mode borders, overlay backdrops, Zinc accent fix, favicon |
-| 4    | Route Groups + Layout System        | Complete    | Route groups, layouts, sidebar, branding, auth guard stubs |
-| 5    | @d2/auth-bff-client + Auth Proxy    | Complete    | 32 unit tests, session resolver, JWT manager, auth proxy, route guards, SvelteKit hooks integration |
-| 6    | API Client Layer (Gateway)          | Complete    | 66 tests. camelCase normalizer for mixed-casing gateway. `$env/dynamic/public` for runtime URL. |
-| 6.5  | Chart Showcase (LayerChart 2.0)     | Complete    | layerchart@next + shadcn-svelte chart. 5 chart types: area, bar, line, donut, sparkline. Uses `--chart-1`..`--chart-5` tokens. |
-| 7    | Forms Architecture (Superforms)     | Complete    | 73 unit tests. Superforms + Formsnap + Zod 4. Geo ref data via geo-client. Mock contact form at `/design/contact-form` with cascading selects, phone formatting, flag icons |
-| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Complete    | Sign-in, sign-up, forgot-password, reset-password, verify-email pages. i18n (5 locales). Reusable TextLink component. Auth-aware public nav |
-| 8.5  | Debug Session Page + Role Audit     | Complete    | Dev-only `/debug/session` page, role audit docs in AUTH.md |
-| 8.7  | Device Fingerprinting               | Complete    | Cross-cutting: SvelteKit + Node.js + .NET. Client FP generator, `d2-cfp` cookie, `DeviceFingerprint` dimension (always evaluated). See ADR-004 (revised) |
-| 9    | Client Telemetry (Grafana Faro)     | Complete    | Faro SDK for errors→Loki, traces→Tempo, Web Vitals→Mimir. Alloy faro.receiver on port 12347. User enrichment via layout. Replaces custom /api/client-error endpoint |
-| 10   | Onboarding Flow                     | Pending     |       |
-| 11   | App Shell (Sidebar, Header, Org)    | Pending     |       |
-| 12   | SignalR Abstraction Layer           | Pending     |       |
+| Step | Name                                | Status   | Notes                                                                                                                                                                                                 |
+| ---- | ----------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | Document Implementation Plan        | Complete |                                                                                                                                                                                                       |
+| 1    | Error Handling Foundation + Types   | Complete | Fixed pre-existing Vitest 4 config (`environment: "browser"` → `browser.enabled`), installed Playwright Chromium, updated deprecated `@vitest/browser/context` imports                                |
+| 2    | shadcn-svelte + Theme + Tokens      | Complete | Zinc OKLCH theme, Gabarito font, mode-watcher 3-way toggle, Sonner toasts. Added `optimizeDeps.include` for stable browser tests. Used `@lucide/svelte` (rebranded from `lucide-svelte`)              |
+| 2.5  | Server-Side Middleware              | Complete | Request enrichment, rate limiting, idempotency. Direct SvelteKit→Geo gRPC for FindWhoIs. Graceful degradation when Redis/Geo unavailable                                                              |
+| 3    | Design System Sprint (Kitchen Sink) | Complete | Live theme editor at `/design` with 3 OKLCH presets (WORX, Zinc, Ocean), 27 shadcn-svelte components, 10 showcase sections. Client-only (`ssr: false`), theme overrides cleaned up on navigation away |
+| 3.5  | Design Review & Polish              | Complete | Playwright-driven visual QA across all 6 theme/mode combos. Button hover visibility, ghost/outline differentiation, dark mode borders, overlay backdrops, Zinc accent fix, favicon                    |
+| 4    | Route Groups + Layout System        | Complete | Route groups, layouts, sidebar, branding, auth guard stubs                                                                                                                                            |
+| 5    | @d2/auth-bff-client + Auth Proxy    | Complete | 32 unit tests, session resolver, JWT manager, auth proxy, route guards, SvelteKit hooks integration                                                                                                   |
+| 6    | API Client Layer (Gateway)          | Complete | 66 tests. camelCase normalizer for mixed-casing gateway. `$env/dynamic/public` for runtime URL.                                                                                                       |
+| 6.5  | Chart Showcase (LayerChart 2.0)     | Complete | layerchart@next + shadcn-svelte chart. 5 chart types: area, bar, line, donut, sparkline. Uses `--chart-1`..`--chart-5` tokens.                                                                        |
+| 7    | Forms Architecture (Superforms)     | Complete | 73 unit tests. Superforms + Formsnap + Zod 4. Geo ref data via geo-client. Mock contact form at `/design/contact-form` with cascading selects, phone formatting, flag icons                           |
+| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | Complete | Sign-in, sign-up, forgot-password, reset-password, verify-email pages. i18n (5 locales). Reusable TextLink component. Auth-aware public nav                                                           |
+| 8.5  | Debug Session Page + Role Audit     | Complete | Dev-only `/debug/session` page, role audit docs in AUTH.md                                                                                                                                            |
+| 8.7  | Device Fingerprinting               | Complete | Cross-cutting: SvelteKit + Node.js + .NET. Client FP generator, `d2-cfp` cookie, `DeviceFingerprint` dimension (always evaluated). See ADR-004 (revised)                                              |
+| 9    | Client Telemetry (Grafana Faro)     | Complete | Faro SDK for errors→Loki, traces→Tempo, Web Vitals→Mimir. Alloy faro.receiver on port 12347. User enrichment via layout. Replaces custom /api/client-error endpoint                                   |
+| 10   | Onboarding Flow                     | Pending  |                                                                                                                                                                                                       |
+| 11   | App Shell (Sidebar, Header, Org)    | Pending  |                                                                                                                                                                                                       |
+| 12   | SignalR Abstraction Layer           | Pending  |                                                                                                                                                                                                       |
 
 ---
 
 ## Architectural Decisions (Pre-Resolved)
 
-| Decision              | Choice                                                                |
-| --------------------- | --------------------------------------------------------------------- |
-| UI Components         | shadcn-svelte (Bits UI headless primitives)                           |
-| Forms                 | sveltekit-superforms + formsnap (Zod, progressive enhancement)        |
-| Toasts                | svelte-sonner                                                         |
-| Icons                 | Lucide (tree-shakeable, shadcn default)                               |
-| Font                  | Gabarito (single family, weight variations)                           |
-| Theme                 | Dark + Light + System (mode-watcher)                                  |
-| Phone Input           | intl-tel-input (Svelte 5 wrapper)                                     |
-| Address Autocomplete  | Radar as Geo service infra — frontend calls gateway, gets LocationDTOs |
-| Real-Time             | SignalR Option A — browser direct to .NET gateway, SvelteKit stateless |
-| Client Telemetry      | Grafana Faro (errors->Loki, traces->Tempo, Web Vitals->Mimir)         |
-| Component Testing     | vitest-browser-svelte (real Chromium)                                 |
-| E2E Testing           | Playwright + axe-core/playwright (a11y)                               |
-| Design Approach       | Design system sprint — kitchen sink page for visual decisions          |
+| Decision             | Choice                                                                 |
+| -------------------- | ---------------------------------------------------------------------- |
+| UI Components        | shadcn-svelte (Bits UI headless primitives)                            |
+| Forms                | sveltekit-superforms + formsnap (Zod, progressive enhancement)         |
+| Toasts               | svelte-sonner                                                          |
+| Icons                | Lucide (tree-shakeable, shadcn default)                                |
+| Font                 | Gabarito (single family, weight variations)                            |
+| Theme                | Dark + Light + System (mode-watcher)                                   |
+| Phone Input          | intl-tel-input (Svelte 5 wrapper)                                      |
+| Address Autocomplete | Radar as Geo service infra — frontend calls gateway, gets LocationDTOs |
+| Real-Time            | SignalR Option A — browser direct to .NET gateway, SvelteKit stateless |
+| Client Telemetry     | Grafana Faro (errors->Loki, traces->Tempo, Web Vitals->Mimir)          |
+| Component Testing    | vitest-browser-svelte (real Chromium)                                  |
+| E2E Testing          | Playwright + axe-core/playwright (a11y)                                |
+| Design Approach      | Design system sprint — kitchen sink page for visual decisions          |
 
 ---
 
@@ -69,14 +69,14 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 
 **Files:**
 
-| File                                       | Purpose                                              |
-| ------------------------------------------ | ---------------------------------------------------- |
-| `src/app.d.ts`                             | `App.Error` (message, traceId), `App.Locals` (stubs) |
-| `src/hooks.client.ts`                      | Client-side `handleError` + POST to `/api/client-error` |
-| `src/routes/+error.svelte`                 | User-facing error page                               |
-| `src/error.html`                           | Catastrophic fallback (static HTML)                  |
-| `src/routes/api/client-error/+server.ts`   | Receives client errors, logs via OTel                |
-| `src/hooks.server.ts`                      | Add `handleError` export                             |
+| File                                     | Purpose                                                 |
+| ---------------------------------------- | ------------------------------------------------------- |
+| `src/app.d.ts`                           | `App.Error` (message, traceId), `App.Locals` (stubs)    |
+| `src/hooks.client.ts`                    | Client-side `handleError` + POST to `/api/client-error` |
+| `src/routes/+error.svelte`               | User-facing error page                                  |
+| `src/error.html`                         | Catastrophic fallback (static HTML)                     |
+| `src/routes/api/client-error/+server.ts` | Receives client errors, logs via OTel                   |
+| `src/hooks.server.ts`                    | Add `handleError` export                                |
 
 **Tests:** Server test for client-error endpoint, component test for error page, E2E for 404.
 
@@ -104,16 +104,16 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 
 **Files:**
 
-| File                                                       | Purpose                                                         |
-| ---------------------------------------------------------- | --------------------------------------------------------------- |
-| `src/lib/server/middleware.server.ts`                      | Lazy singleton composition (Redis, Geo gRPC, all handlers)      |
-| `src/lib/server/hooks/request-enrichment.server.ts`        | SvelteKit Handle wrapper for IP/fingerprint/WhoIs enrichment    |
-| `src/lib/server/hooks/rate-limit.server.ts`                | SvelteKit Handle wrapper for multi-dimension rate limiting      |
-| `src/lib/server/hooks/idempotency.server.ts`               | SvelteKit Handle wrapper for mutation dedup via Idempotency-Key |
-| `src/hooks.server.ts`                                      | Wired via `sequence()` — enrichment → rate-limit → idempotency → paraglide |
-| `src/app.d.ts`                                             | Added `requestInfo` to `App.Locals`                             |
-| `backends/dotnet/orchestration/AppHost/AppHost.cs`         | Added Redis + Geo references to SvelteKit resource              |
-| `.env.local` / `.env.local.example`                        | Added `SVELTEKIT_GEO_CLIENT__APIKEY` + Geo API key mapping      |
+| File                                                | Purpose                                                                    |
+| --------------------------------------------------- | -------------------------------------------------------------------------- |
+| `src/lib/server/middleware.server.ts`               | Lazy singleton composition (Redis, Geo gRPC, all handlers)                 |
+| `src/lib/server/hooks/request-enrichment.server.ts` | SvelteKit Handle wrapper for IP/fingerprint/WhoIs enrichment               |
+| `src/lib/server/hooks/rate-limit.server.ts`         | SvelteKit Handle wrapper for multi-dimension rate limiting                 |
+| `src/lib/server/hooks/idempotency.server.ts`        | SvelteKit Handle wrapper for mutation dedup via Idempotency-Key            |
+| `src/hooks.server.ts`                               | Wired via `sequence()` — enrichment → rate-limit → idempotency → paraglide |
+| `src/app.d.ts`                                      | Added `requestInfo` to `App.Locals`                                        |
+| `backends/dotnet/orchestration/AppHost/AppHost.cs`  | Added Redis + Geo references to SvelteKit resource                         |
+| `.env.local` / `.env.local.example`                 | Added `SVELTEKIT_GEO_CLIENT__APIKEY` + Geo API key mapping                 |
 
 **Graceful degradation:** If Redis/Geo env vars are missing, `getMiddlewareContext()` returns `null` and all hooks skip (no-op). SvelteKit remains usable for frontend-only development.
 
@@ -130,6 +130,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 **shadcn-svelte components added (19):** input, textarea, label, checkbox, radio-group, switch, select, slider, tabs, accordion, dialog, dropdown-menu, popover, sheet, skeleton, avatar, progress, scroll-area, table. Total: 27 component directories in `src/lib/components/ui/`.
 
 **Design system page (`/design`):**
+
 - Client-only (`ssr: false`) — DOM manipulation for live theme preview
 - 10 showcase sections: Colors, Typography, Buttons, Cards, Forms, Overlays, Navigation, Feedback, Data Display, Layout & Patterns
 - Theme Editor side panel (Sheet) with:
@@ -142,6 +143,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 - Theme selector dropdown in header for quick preset switching
 
 **Files created:**
+
 - `src/routes/design/+page.ts` — SSR disabled
 - `src/routes/design/+page.svelte` — Main page with all sections + theme editor
 - `src/lib/components/design/theme-presets.ts` — 5 preset palette definitions
@@ -161,7 +163,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 - `src/lib/components/design/feedback-showcase.svelte` — Progress, skeleton, toasts
 - `src/lib/components/design/data-display-showcase.svelte` — Avatar, badges, alerts, tooltip, toggle, separator, scroll-area, table
 
-**MAJOR PAUSE POINT:** User reviews all components visually and makes color/spacing decisions. *(Done — see Step 3.5)*
+**MAJOR PAUSE POINT:** User reviews all components visually and makes color/spacing decisions. _(Done — see Step 3.5)_
 
 ---
 
@@ -172,6 +174,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 **Status:** Complete
 
 **Fixes applied:**
+
 - Button hover visibility: default/destructive opacity increased for perceptible hover in both modes
 - Ghost vs outline hover differentiation: ghost uses `bg-muted`, outline uses `bg-accent/15`
 - Outline hover text: removed `text-accent-foreground` swap (white text on light tinted bg)
@@ -236,12 +239,12 @@ src/routes/
 
 #### Layout Components
 
-| Component | Location | Description |
-| --------- | -------- | ----------- |
-| `app-sidebar` | `src/lib/components/layout/app-sidebar.svelte` | shadcn-svelte `Sidebar` component — collapsible, responsive, icon+label nav items. Hardcoded placeholder items (Dashboard, Settings, Profile) replaced with org-specific items in Step 11 |
-| `app-header` | `src/lib/components/layout/app-header.svelte` | Sticky top bar — breadcrumb area (left), theme toggle + user avatar placeholder (right). Hamburger trigger for mobile sidebar |
-| `public-nav` | `src/lib/components/layout/public-nav.svelte` | Simple marketing header — D2-WORX logo, minimal nav links, sign-in CTA |
-| `public-footer` | `src/lib/components/layout/public-footer.svelte` | Minimal footer — copyright, links |
+| Component       | Location                                         | Description                                                                                                                                                                               |
+| --------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app-sidebar`   | `src/lib/components/layout/app-sidebar.svelte`   | shadcn-svelte `Sidebar` component — collapsible, responsive, icon+label nav items. Hardcoded placeholder items (Dashboard, Settings, Profile) replaced with org-specific items in Step 11 |
+| `app-header`    | `src/lib/components/layout/app-header.svelte`    | Sticky top bar — breadcrumb area (left), theme toggle + user avatar placeholder (right). Hamburger trigger for mobile sidebar                                                             |
+| `public-nav`    | `src/lib/components/layout/public-nav.svelte`    | Simple marketing header — D2-WORX logo, minimal nav links, sign-in CTA                                                                                                                    |
+| `public-footer` | `src/lib/components/layout/public-footer.svelte` | Minimal footer — copyright, links                                                                                                                                                         |
 
 #### Layout Details Per Group
 
@@ -278,8 +281,8 @@ export async function load({ locals }) {
 
   return {
     // Placeholder data until auth is wired
-    orgType: 'customer' as const,
-    role: 'owner' as const,
+    orgType: "customer" as const,
+    role: "owner" as const,
   };
 }
 ```
@@ -288,8 +291,9 @@ export async function load({ locals }) {
 
 ```typescript
 interface Locals {
-  requestInfo?: RequestEnrichment.IRequestInfo;  // exists
-  session?: {                                     // stub shape
+  requestInfo?: RequestEnrichment.IRequestInfo; // exists
+  session?: {
+    // stub shape
     userId: string;
     activeOrganizationId?: string;
     activeOrganizationType?: string;
@@ -305,28 +309,28 @@ interface Locals {
 
 #### Files to Create
 
-| File | Purpose |
-| ---- | ------- |
-| `src/lib/components/layout/app-sidebar.svelte` | App sidebar shell using shadcn Sidebar |
-| `src/lib/components/layout/app-header.svelte` | Sticky header with mobile trigger |
-| `src/lib/components/layout/public-nav.svelte` | Marketing header |
-| `src/lib/components/layout/public-footer.svelte` | Marketing footer |
-| `src/routes/+layout.server.ts` | Root server layout (session stub) |
-| `src/routes/(public)/+layout.svelte` | Public layout wrapper |
-| `src/routes/(public)/+page.svelte` | Landing page placeholder |
-| `src/routes/(auth)/+layout.svelte` | Auth centered card layout |
-| `src/routes/(auth)/+layout.server.ts` | Redirect if authenticated |
-| `src/routes/(auth)/sign-in/+page.svelte` | Sign-in placeholder |
-| `src/routes/(onboarding)/+layout.svelte` | Onboarding layout |
-| `src/routes/(onboarding)/+layout.server.ts` | Requires auth, no org |
-| `src/routes/(onboarding)/welcome/+page.svelte` | Welcome placeholder |
-| `src/routes/(app)/+layout.svelte` | App shell (sidebar + header) |
-| `src/routes/(app)/+layout.server.ts` | Requires auth + active org |
-| `src/routes/(app)/(customer)/dashboard/+page.svelte` | Customer dashboard placeholder |
-| `src/routes/(app)/(support)/dashboard/+page.svelte` | Support dashboard placeholder |
-| `src/routes/(app)/(admin)/dashboard/+page.svelte` | Admin dashboard placeholder |
-| `src/routes/(app)/(shared)/settings/+page.svelte` | Settings placeholder |
-| `src/routes/(app)/(shared)/profile/+page.svelte` | Profile placeholder |
+| File                                                 | Purpose                                |
+| ---------------------------------------------------- | -------------------------------------- |
+| `src/lib/components/layout/app-sidebar.svelte`       | App sidebar shell using shadcn Sidebar |
+| `src/lib/components/layout/app-header.svelte`        | Sticky header with mobile trigger      |
+| `src/lib/components/layout/public-nav.svelte`        | Marketing header                       |
+| `src/lib/components/layout/public-footer.svelte`     | Marketing footer                       |
+| `src/routes/+layout.server.ts`                       | Root server layout (session stub)      |
+| `src/routes/(public)/+layout.svelte`                 | Public layout wrapper                  |
+| `src/routes/(public)/+page.svelte`                   | Landing page placeholder               |
+| `src/routes/(auth)/+layout.svelte`                   | Auth centered card layout              |
+| `src/routes/(auth)/+layout.server.ts`                | Redirect if authenticated              |
+| `src/routes/(auth)/sign-in/+page.svelte`             | Sign-in placeholder                    |
+| `src/routes/(onboarding)/+layout.svelte`             | Onboarding layout                      |
+| `src/routes/(onboarding)/+layout.server.ts`          | Requires auth, no org                  |
+| `src/routes/(onboarding)/welcome/+page.svelte`       | Welcome placeholder                    |
+| `src/routes/(app)/+layout.svelte`                    | App shell (sidebar + header)           |
+| `src/routes/(app)/+layout.server.ts`                 | Requires auth + active org             |
+| `src/routes/(app)/(customer)/dashboard/+page.svelte` | Customer dashboard placeholder         |
+| `src/routes/(app)/(support)/dashboard/+page.svelte`  | Support dashboard placeholder          |
+| `src/routes/(app)/(admin)/dashboard/+page.svelte`    | Admin dashboard placeholder            |
+| `src/routes/(app)/(shared)/settings/+page.svelte`    | Settings placeholder                   |
+| `src/routes/(app)/(shared)/profile/+page.svelte`     | Profile placeholder                    |
 
 #### What This Step Does NOT Include
 
@@ -356,22 +360,22 @@ interface Locals {
 
 #### Files Created/Modified
 
-| File | Action |
-| ---- | ------ |
-| `backends/node/services/auth/bff-client/` | Created — full package (6 source files, 4 test files) |
-| `clients/web/src/lib/server/auth.server.ts` | Created — lazy singleton auth context |
-| `clients/web/src/lib/server/hooks/auth.server.ts` | Created — auth hook for sequence() |
-| `clients/web/src/routes/api/auth/[...path]/+server.ts` | Created — auth proxy catch-all |
-| `clients/web/src/routes/(public)/+page.server.ts` | Created — auth-aware root redirect |
-| `clients/web/src/lib/stores/auth-client.ts` | Created — browser-side BetterAuth client |
-| `clients/web/src/hooks.server.ts` | Modified — added createAuthHandle to sequence |
-| `clients/web/src/app.d.ts` | Modified — imports AuthSession/AuthUser from bff-client |
-| `clients/web/src/routes/(auth)/+layout.server.ts` | Modified — wired redirectIfAuthenticated |
-| `clients/web/src/routes/(onboarding)/+layout.server.ts` | Modified — wired requireAuth |
-| `clients/web/src/routes/(app)/+layout.server.ts` | Modified — wired requireOrg |
-| `clients/web/package.json` | Modified — added @d2/auth-bff-client + better-auth deps |
-| `AppHost.cs` | Modified — added .WaitFor(authService) + .WithEnvironment() |
-| `.env.local` / `.env.local.example` | Modified — added SVELTEKIT_AUTH__URL |
+| File                                                    | Action                                                      |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| `backends/node/services/auth/bff-client/`               | Created — full package (6 source files, 4 test files)       |
+| `clients/web/src/lib/server/auth.server.ts`             | Created — lazy singleton auth context                       |
+| `clients/web/src/lib/server/hooks/auth.server.ts`       | Created — auth hook for sequence()                          |
+| `clients/web/src/routes/api/auth/[...path]/+server.ts`  | Created — auth proxy catch-all                              |
+| `clients/web/src/routes/(public)/+page.server.ts`       | Created — auth-aware root redirect                          |
+| `clients/web/src/lib/stores/auth-client.ts`             | Created — browser-side BetterAuth client                    |
+| `clients/web/src/hooks.server.ts`                       | Modified — added createAuthHandle to sequence               |
+| `clients/web/src/app.d.ts`                              | Modified — imports AuthSession/AuthUser from bff-client     |
+| `clients/web/src/routes/(auth)/+layout.server.ts`       | Modified — wired redirectIfAuthenticated                    |
+| `clients/web/src/routes/(onboarding)/+layout.server.ts` | Modified — wired requireAuth                                |
+| `clients/web/src/routes/(app)/+layout.server.ts`        | Modified — wired requireOrg                                 |
+| `clients/web/package.json`                              | Modified — added @d2/auth-bff-client + better-auth deps     |
+| `AppHost.cs`                                            | Modified — added .WaitFor(authService) + .WithEnvironment() |
+| `.env.local` / `.env.local.example`                     | Modified — added SVELTEKIT_AUTH\_\_URL                      |
 
 ---
 
@@ -383,20 +387,21 @@ interface Locals {
 
 **Files:**
 
-| File                                         | Purpose                                                      |
-| -------------------------------------------- | ------------------------------------------------------------ |
-| `src/lib/utils/gateway-response.ts`          | Parse gateway Response → D2Result with camelCase normalizer  |
-| `src/lib/utils/idempotency.ts`               | Idempotency-Key UUID generation (isomorphic)                 |
-| `src/lib/server/gateway.server.ts`           | Server-side gateway client (lazy singleton, JWT + service key)|
-| `src/lib/utils/gateway-client.ts`            | Client-side gateway client (JWT + fingerprint, 401 retry)    |
-| `src/routes/+layout.server.ts`               | Modified — pass `clientFingerprint` to browser via layout data|
-| `src/routes/+layout.svelte`                  | Modified — initialize fingerprint on mount                   |
-| `.env.local.example`                         | Modified — add gateway env vars                              |
-| `backends/.../AppHost/AppHost.cs`            | Modified — wire gateway URLs to SvelteKit resource           |
+| File                                | Purpose                                                        |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `src/lib/utils/gateway-response.ts` | Parse gateway Response → D2Result with camelCase normalizer    |
+| `src/lib/utils/idempotency.ts`      | Idempotency-Key UUID generation (isomorphic)                   |
+| `src/lib/server/gateway.server.ts`  | Server-side gateway client (lazy singleton, JWT + service key) |
+| `src/lib/utils/gateway-client.ts`   | Client-side gateway client (JWT + fingerprint, 401 retry)      |
+| `src/routes/+layout.server.ts`      | Modified — pass `clientFingerprint` to browser via layout data |
+| `src/routes/+layout.svelte`         | Modified — initialize fingerprint on mount                     |
+| `.env.local.example`                | Modified — add gateway env vars                                |
+| `backends/.../AppHost/AppHost.cs`   | Modified — wire gateway URLs to SvelteKit resource             |
 
 **Tests:** 66 tests across 5 files (gateway-response: 21, idempotency: 2, gateway.server: 17, gateway-client: 18, layout.server: 5 + 3 existing).
 
 **Key decisions:**
+
 - **Casing normalization**: Gateway sends PascalCase (endpoints) and camelCase (middleware errors). Single recursive `normalizeKeys()` function converts all keys to camelCase in one pass — no per-property `??` fallbacks
 - **HTTP status authority**: `response.status` is the authoritative statusCode, not the body field (avoids int vs string inconsistency)
 - **Dynamic env**: `$env/dynamic/public` for `PUBLIC_GATEWAY_URL` (runtime, not build-time)
@@ -421,25 +426,25 @@ interface Locals {
 
 **Form utilities (`src/lib/forms/`):**
 
-| File              | Purpose                                                        |
-| ----------------- | -------------------------------------------------------------- |
-| `schemas.ts`      | Composable Zod 4 field builders (name, email, phone, postcode) |
-| `form-helpers.ts` | D2Result InputError -> Superforms error mapping bridge         |
-| `input-filters.ts`| Cursor-preserving input masks (digits, alpha, uppercase, etc.) |
-| `phone-format.ts` | libphonenumber-js wrappers (display, as-you-type, prefix)      |
-| `geo-ref-data.ts` | GeoRefData proto -> combobox option array transforms           |
-| `index.ts`        | Barrel export                                                  |
+| File               | Purpose                                                        |
+| ------------------ | -------------------------------------------------------------- |
+| `schemas.ts`       | Composable Zod 4 field builders (name, email, phone, postcode) |
+| `form-helpers.ts`  | D2Result InputError -> Superforms error mapping bridge         |
+| `input-filters.ts` | Cursor-preserving input masks (digits, alpha, uppercase, etc.) |
+| `phone-format.ts`  | libphonenumber-js wrappers (display, as-you-type, prefix)      |
+| `geo-ref-data.ts`  | GeoRefData proto -> combobox option array transforms           |
+| `index.ts`         | Barrel export                                                  |
 
 **Form components (`src/lib/components/forms/`):**
 
-| Component              | Purpose                                              |
-| ---------------------- | ---------------------------------------------------- |
-| `form-input.svelte`    | Text input with label, error, description            |
-| `form-select.svelte`   | Select dropdown with Formsnap integration            |
-| `form-combobox.svelte` | Searchable combobox with flag icons + cascading      |
+| Component                 | Purpose                                                  |
+| ------------------------- | -------------------------------------------------------- |
+| `form-input.svelte`       | Text input with label, error, description                |
+| `form-select.svelte`      | Select dropdown with Formsnap integration                |
+| `form-combobox.svelte`    | Searchable combobox with flag icons + cascading          |
 | `form-phone-input.svelte` | Phone with country prefix selector + flags + as-you-type |
-| `form-checkbox.svelte` | Checkbox with label and description                  |
-| `form-textarea.svelte` | Textarea with label and description                  |
+| `form-checkbox.svelte`    | Checkbox with label and description                      |
+| `form-textarea.svelte`    | Textarea with label and description                      |
 
 **Server-side:** `form-actions.server.ts` — `validateAndSubmit` helper integrating Superforms + Zod 4 + D2Result error mapping.
 
@@ -459,52 +464,53 @@ interface Locals {
 
 **Pages implemented:**
 
-| Route                 | Form Component             | Description                                                     |
-| --------------------- | -------------------------- | --------------------------------------------------------------- |
-| `/sign-in`            | `SignInForm`               | Email + password, show/hide toggle, "Forgot password?" link     |
-| `/sign-up`            | `SignUpForm`               | Name, email (async uniqueness check), password with confirmation |
-| `/forgot-password`    | `ForgotPasswordForm`       | Email-only, swaps to "check your email" confirmation on success |
-| `/reset-password`     | `ResetPasswordForm`        | Token from URL, new password + confirm, 3-state (error/form/success) with countdown redirect |
-| `/verify-email`       | (inline page)              | Token auto-verification, resend link, success/error states      |
+| Route              | Form Component       | Description                                                                                  |
+| ------------------ | -------------------- | -------------------------------------------------------------------------------------------- |
+| `/sign-in`         | `SignInForm`         | Email + password, show/hide toggle, "Forgot password?" link                                  |
+| `/sign-up`         | `SignUpForm`         | Name, email (async uniqueness check), password with confirmation                             |
+| `/forgot-password` | `ForgotPasswordForm` | Email-only, swaps to "check your email" confirmation on success                              |
+| `/reset-password`  | `ResetPasswordForm`  | Token from URL, new password + confirm, 3-state (error/form/success) with countdown redirect |
+| `/verify-email`    | (inline page)        | Token auto-verification, resend link, success/error states                                   |
 
 **Schemas:**
 
-| File                          | Fields                                         |
-| ----------------------------- | ---------------------------------------------- |
-| `sign-in-schema.ts`           | email, password                                |
-| `sign-up-schema.ts`           | firstName, lastName, email, confirmEmail, password, confirmPassword |
-| `forgot-password-schema.ts`   | email                                          |
-| `reset-password-schema.ts`    | newPassword, confirmNewPassword (cross-field match refinement) |
+| File                        | Fields                                                              |
+| --------------------------- | ------------------------------------------------------------------- |
+| `sign-in-schema.ts`         | email, password                                                     |
+| `sign-up-schema.ts`         | firstName, lastName, email, confirmEmail, password, confirmPassword |
+| `forgot-password-schema.ts` | email                                                               |
+| `reset-password-schema.ts`  | newPassword, confirmNewPassword (cross-field match refinement)      |
 
 **Field presets added:** `NEW_PASSWORD`, `CONFIRM_NEW_PASSWORD` in `field-presets.ts`.
 
 **Shared components:**
 
-| Component              | Purpose                                                          |
-| ---------------------- | ---------------------------------------------------------------- |
-| `TextLink`             | Reusable inline text link (`text-primary underline-offset-2 hover:underline`) |
-| `Button` link variant  | Updated `underline-offset-4` → `underline-offset-2` for consistency |
+| Component             | Purpose                                                                       |
+| --------------------- | ----------------------------------------------------------------------------- |
+| `TextLink`            | Reusable inline text link (`text-primary underline-offset-2 hover:underline`) |
+| `Button` link variant | Updated `underline-offset-4` → `underline-offset-2` for consistency           |
 
 **Auth-aware public nav:** When signed in, shows "Dashboard" + "Sign Out" buttons instead of "Sign In" + "Sign Up".
 
 **Backend changes:**
+
 - Auth factory URL rewriting for password reset emails (rewrites BetterAuth API URL → `/reset-password?token=...`)
 - Raw URL fallback text added to verification + password reset emails
 - 18+ i18n keys added across all 5 locales (en, es, de, fr, ja)
 
 **Files created:**
 
-| File | Purpose |
-| ---- | ------- |
-| `src/lib/shared/forms/forgot-password-schema.ts` | Zod schema for forgot password |
-| `src/lib/shared/forms/reset-password-schema.ts` | Zod schema for reset password |
-| `src/lib/client/components/auth/forgot-password-form.svelte` | Forgot password form component |
-| `src/lib/client/components/auth/reset-password-form.svelte` | Reset password form component |
-| `src/lib/client/components/ui/text-link.svelte` | Reusable inline text link |
-| `src/routes/(auth)/forgot-password/+page.svelte` | Forgot password page |
-| `src/routes/(auth)/forgot-password/+page.server.ts` | Server load for forgot password |
-| `src/routes/(auth)/reset-password/+page.svelte` | Reset password page |
-| `src/routes/(auth)/reset-password/+page.server.ts` | Server load for reset password |
+| File                                                         | Purpose                         |
+| ------------------------------------------------------------ | ------------------------------- |
+| `src/lib/shared/forms/forgot-password-schema.ts`             | Zod schema for forgot password  |
+| `src/lib/shared/forms/reset-password-schema.ts`              | Zod schema for reset password   |
+| `src/lib/client/components/auth/forgot-password-form.svelte` | Forgot password form component  |
+| `src/lib/client/components/auth/reset-password-form.svelte`  | Reset password form component   |
+| `src/lib/client/components/ui/text-link.svelte`              | Reusable inline text link       |
+| `src/routes/(auth)/forgot-password/+page.svelte`             | Forgot password page            |
+| `src/routes/(auth)/forgot-password/+page.server.ts`          | Server load for forgot password |
+| `src/routes/(auth)/reset-password/+page.svelte`              | Reset password page             |
+| `src/routes/(auth)/reset-password/+page.server.ts`           | Server load for reset password  |
 
 ---
 
@@ -519,6 +525,7 @@ interface Locals {
 **8.5A: Debug Session Page**
 
 Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
+
 - Full `$page.data.session` object (what SvelteKit server load returns)
 - Full `$page.data.user` object
 - Raw BetterAuth session via `authClient.getSession()` (client-side)
@@ -535,9 +542,9 @@ Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
 
 **Files to create:**
 
-| File | Purpose |
-| ---- | ------- |
-| `src/routes/debug/session/+page.svelte` | Debug session display page |
+| File                                       | Purpose                                                                |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
+| `src/routes/debug/session/+page.svelte`    | Debug session display page                                             |
 | `src/routes/debug/session/+page.server.ts` | Server load — pass full session/user/locals data, guard with dev check |
 
 ---
@@ -586,6 +593,7 @@ Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
 **Requires:** Alloy running with `faro.receiver` on port 12347.
 
 **What was built:**
+
 - `faro.receiver` block in Alloy config (port 12347, CORS, rate limiting 100/s burst 200)
 - Port 12347 exposed in AppHost, `FARO_CORS_ORIGINS` env var passed to Alloy container
 - `$lib/client/telemetry/faro.ts` — browser-only init, SSR-safe, graceful degradation
@@ -648,17 +656,17 @@ Steps 0-3 require no backend services (Step 2.5 middleware degrades gracefully).
 
 Decisions made during implementation (appended as we go):
 
-| Date       | Decision | Rationale |
-| ---------- | -------- | --------- |
-| 2026-03-03 | HTTP proxy over local BetterAuth | Local BetterAuth would bypass Auth service's rate limiting, fingerprint binding, throttle tracking, sign-in event recording |
-| 2026-03-03 | Tests co-located in bff-client (not auth-tests) | Lightweight package with mocked HTTP — no Testcontainers needed, faster feedback loop |
-| 2026-03-03 | better-auth as SvelteKit dep | Client SDK needed for browser-side auth operations (sign-in, sign-out, reactive session). Pinned at 1.5.0 to match auth-infra |
-| 2026-03-01 | Plan created | — |
-| 2026-03-01 | SvelteKit→Geo gRPC for FindWhoIs | Pre-auth middleware needs WhoIs data before requests reach downstream services. Calling REST gateway would be circular (gateway itself does enrichment). Direct gRPC mirrors Auth service pattern |
-| 2026-03-01 | Graceful middleware degradation | SvelteKit must remain usable for local frontend dev without Redis/Geo. `getMiddlewareContext()` returns null when env vars missing, all hooks skip |
-| 2026-03-01 | No DI container for SvelteKit middleware | Simplified composition — module-level lazy singletons instead of full ServiceCollection. SvelteKit only needs pre-auth handlers (no scoped request contexts yet) |
-| 2026-03-02 | 3 built-in presets (WORX, Zinc, Ocean) | Cut Slate/Ember/Forest, refined remaining presets for distinct identity. WORX as default (heritage theme) |
-| 2026-03-02 | Design polish via Playwright QA | Systematic visual review of all 6 theme/mode combos before proceeding to route architecture |
+| Date       | Decision                                        | Rationale                                                                                                                                                                                         |
+| ---------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-03 | HTTP proxy over local BetterAuth                | Local BetterAuth would bypass Auth service's rate limiting, fingerprint binding, throttle tracking, sign-in event recording                                                                       |
+| 2026-03-03 | Tests co-located in bff-client (not auth-tests) | Lightweight package with mocked HTTP — no Testcontainers needed, faster feedback loop                                                                                                             |
+| 2026-03-03 | better-auth as SvelteKit dep                    | Client SDK needed for browser-side auth operations (sign-in, sign-out, reactive session). Pinned at 1.5.0 to match auth-infra                                                                     |
+| 2026-03-01 | Plan created                                    | —                                                                                                                                                                                                 |
+| 2026-03-01 | SvelteKit→Geo gRPC for FindWhoIs                | Pre-auth middleware needs WhoIs data before requests reach downstream services. Calling REST gateway would be circular (gateway itself does enrichment). Direct gRPC mirrors Auth service pattern |
+| 2026-03-01 | Graceful middleware degradation                 | SvelteKit must remain usable for local frontend dev without Redis/Geo. `getMiddlewareContext()` returns null when env vars missing, all hooks skip                                                |
+| 2026-03-01 | No DI container for SvelteKit middleware        | Simplified composition — module-level lazy singletons instead of full ServiceCollection. SvelteKit only needs pre-auth handlers (no scoped request contexts yet)                                  |
+| 2026-03-02 | 3 built-in presets (WORX, Zinc, Ocean)          | Cut Slate/Ember/Forest, refined remaining presets for distinct identity. WORX as default (heritage theme)                                                                                         |
+| 2026-03-02 | Design polish via Playwright QA                 | Systematic visual review of all 6 theme/mode combos before proceeding to route architecture                                                                                                       |
 
 ---
 

@@ -67,11 +67,26 @@
 
 <svelte:head>
   <title>{m.webclient_debug_session_title()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_debug_session_description()} />
-  <meta name="robots" content="noindex, nofollow" />
-  <meta property="og:title" content="{m.webclient_debug_session_title()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.webclient_debug_session_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_debug_session_description()}
+  />
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  />
+  <meta
+    property="og:title"
+    content="{m.webclient_debug_session_title()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_debug_session_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 {#if !dev}
@@ -80,15 +95,22 @@
   <div class="mx-auto flex max-w-4xl flex-col gap-6 p-6">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="flex size-10 items-center justify-center rounded-full bg-muted">
-          <BugIcon class="size-5 text-muted-foreground" />
+        <div class="bg-muted flex size-10 items-center justify-center rounded-full">
+          <BugIcon class="text-muted-foreground size-5" />
         </div>
         <div>
           <h1 class="text-2xl font-bold">Debug Session</h1>
-          <p class="text-muted-foreground text-sm">Dev-only — inspects all auth & request context</p>
+          <p class="text-muted-foreground text-sm">
+            Dev-only — inspects all auth & request context
+          </p>
         </div>
       </div>
-      <Button variant="outline" size="sm" onclick={fetchClientData} disabled={loading}>
+      <Button
+        variant="outline"
+        size="sm"
+        onclick={fetchClientData}
+        disabled={loading}
+      >
         <RefreshCwIcon class="mr-2 size-4" />
         {loading ? "Loading..." : "Fetch Client Data"}
       </Button>
@@ -99,7 +121,9 @@
       <Card.Root>
         <Card.Header>
           <Card.Title class="text-base">Server Session</Card.Title>
-          <Card.Description>From <code>event.locals.session</code> (via SessionResolver)</Card.Description>
+          <Card.Description
+            >From <code>event.locals.session</code> (via SessionResolver)</Card.Description
+          >
         </Card.Header>
         <Card.Content>
           {#if data.debugSession}
@@ -111,7 +135,9 @@
               <Separator />
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">activeOrgId</dt>
-                <dd class="font-mono text-xs">{data.debugSession.activeOrganizationId ?? "null"}</dd>
+                <dd class="font-mono text-xs">
+                  {data.debugSession.activeOrganizationId ?? "null"}
+                </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">activeOrgType</dt>
@@ -143,7 +169,9 @@
       <Card.Root>
         <Card.Header>
           <Card.Title class="text-base">Server User</Card.Title>
-          <Card.Description>From <code>event.locals.user</code> (via SessionResolver)</Card.Description>
+          <Card.Description
+            >From <code>event.locals.user</code> (via SessionResolver)</Card.Description
+          >
         </Card.Header>
         <Card.Content>
           {#if data.debugUser}
@@ -192,13 +220,19 @@
             <dl class="space-y-2 text-sm">
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">traceId</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.traceId}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.traceId}
+                >
                   {data.requestContext.traceId ?? "null"}
                 </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">requestId</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.requestId}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.requestId}
+                >
                   {data.requestContext.requestId ?? "null"}
                 </dd>
               </div>
@@ -283,7 +317,10 @@
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground pl-2">agentOrgId</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.agentOrgId}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.agentOrgId}
+                >
                   {data.requestContext.agentOrgId ?? "null"}
                 </dd>
               </div>
@@ -306,7 +343,10 @@
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground pl-2">targetOrgId</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.targetOrgId}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.targetOrgId}
+                >
                   {data.requestContext.targetOrgId ?? "null"}
                 </dd>
               </div>
@@ -365,26 +405,38 @@
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">serverFingerprint</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.serverFingerprint}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.serverFingerprint}
+                >
                   {data.requestContext.serverFingerprint ?? "null"}
                 </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">clientFingerprint</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.clientFingerprint}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.clientFingerprint}
+                >
                   {data.requestContext.clientFingerprint ?? "null"}
                 </dd>
               </div>
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">deviceFingerprint</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.deviceFingerprint}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.deviceFingerprint}
+                >
                   {data.requestContext.deviceFingerprint ?? "null"}
                 </dd>
               </div>
               <Separator />
               <div class="flex justify-between">
                 <dt class="text-muted-foreground">whoIsHashId</dt>
-                <dd class="max-w-48 truncate font-mono text-xs" title={data.requestContext.whoIsHashId}>
+                <dd
+                  class="max-w-48 truncate font-mono text-xs"
+                  title={data.requestContext.whoIsHashId}
+                >
                   {data.requestContext.whoIsHashId ?? "null"}
                 </dd>
               </div>
@@ -451,8 +503,8 @@
       <Card.Header>
         <Card.Title class="text-base">Client-Side Auth</Card.Title>
         <Card.Description>
-          From <code>authClient.getSession()</code> and <code>/api/auth/token</code> —
-          click "Fetch Client Data" above
+          From <code>authClient.getSession()</code> and <code>/api/auth/token</code> — click "Fetch Client
+          Data" above
         </Card.Description>
       </Card.Header>
       <Card.Content>
@@ -461,9 +513,14 @@
             <div>
               <h4 class="mb-2 text-sm font-medium">Raw BetterAuth Session</h4>
               {#if clientSessionError}
-                <pre class="bg-destructive/10 text-destructive rounded-md p-3 text-xs">{clientSessionError}</pre>
+                <pre
+                  class="bg-destructive/10 text-destructive rounded-md p-3 text-xs">{clientSessionError}</pre>
               {:else if clientSession}
-                <pre class="max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs">{JSON.stringify(clientSession, null, 2)}</pre>
+                <pre class="bg-muted max-h-64 overflow-auto rounded-md p-3 text-xs">{JSON.stringify(
+                    clientSession,
+                    null,
+                    2,
+                  )}</pre>
               {:else}
                 <p class="text-muted-foreground text-sm italic">No session returned</p>
               {/if}
@@ -471,11 +528,18 @@
             <div>
               <h4 class="mb-2 text-sm font-medium">JWT Claims (Decoded)</h4>
               {#if clientTokenError}
-                <pre class="bg-destructive/10 text-destructive rounded-md p-3 text-xs">{clientTokenError}</pre>
+                <pre
+                  class="bg-destructive/10 text-destructive rounded-md p-3 text-xs">{clientTokenError}</pre>
               {:else if decodedJwt}
-                <pre class="max-h-64 overflow-auto rounded-md bg-muted p-3 text-xs">{JSON.stringify(decodedJwt, null, 2)}</pre>
+                <pre class="bg-muted max-h-64 overflow-auto rounded-md p-3 text-xs">{JSON.stringify(
+                    decodedJwt,
+                    null,
+                    2,
+                  )}</pre>
               {:else}
-                <p class="text-muted-foreground text-sm italic">No JWT (token endpoint returned null)</p>
+                <p class="text-muted-foreground text-sm italic">
+                  No JWT (token endpoint returned null)
+                </p>
               {/if}
             </div>
           </div>
@@ -499,19 +563,23 @@
         <dl class="space-y-3">
           <div>
             <dt class="font-medium">
-              User-level role <span class="text-muted-foreground font-normal">(user.role column)</span>
+              User-level role <span class="text-muted-foreground font-normal"
+                >(user.role column)</span
+              >
             </dt>
             <dd class="text-muted-foreground mt-0.5">
               Set by the <code>admin()</code> plugin's <code>defaultRole: "agent"</code>. Stored in
               the <code>user</code> table. <strong>Not exposed</strong> to the frontend — AuthUser type
-              does not include it. Visible only in raw BetterAuth API responses (click "Fetch Client
-              Data" to see it in the session response).
+              does not include it. Visible only in raw BetterAuth API responses (click "Fetch Client Data"
+              to see it in the session response).
             </dd>
           </div>
           <div>
             <dt class="font-medium">
               Org-level role
-              <span class="text-muted-foreground font-normal">(member.role / session.activeOrganizationRole)</span>
+              <span class="text-muted-foreground font-normal"
+                >(member.role / session.activeOrganizationRole)</span
+              >
             </dt>
             <dd class="text-muted-foreground mt-0.5">
               The actual authorization role — set when a user joins an org. Values:

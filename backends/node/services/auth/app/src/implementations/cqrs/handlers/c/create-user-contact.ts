@@ -41,9 +41,7 @@ export class CreateUserContact
     return Commands.CREATE_USER_CONTACT_REDACTION;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -51,8 +49,7 @@ export class CreateUserContact
     const spaceIndex = input.name.indexOf(" ");
     const firstName =
       spaceIndex >= 0 ? input.name.slice(0, spaceIndex).slice(0, 255) : input.name.slice(0, 255);
-    const lastName =
-      spaceIndex >= 0 ? input.name.slice(spaceIndex + 1).slice(0, 255) : "";
+    const lastName = spaceIndex >= 0 ? input.name.slice(spaceIndex + 1).slice(0, 255) : "";
 
     const contactToCreate: ContactToCreateDTO = {
       createdAt: new Date(),
@@ -87,4 +84,7 @@ export class CreateUserContact
   }
 }
 
-export type { CreateUserContactInput, CreateUserContactOutput } from "../../../../interfaces/cqrs/handlers/c/create-user-contact.js";
+export type {
+  CreateUserContactInput,
+  CreateUserContactOutput,
+} from "../../../../interfaces/cqrs/handlers/c/create-user-contact.js";

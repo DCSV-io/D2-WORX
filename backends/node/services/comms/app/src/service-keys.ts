@@ -109,7 +109,8 @@ export const ISetChannelPreferenceKey = createServiceKey<Commands.ISetChannelPre
 export const IGetChannelPreferenceKey = createServiceKey<Queries.IGetChannelPreferenceHandler>(
   "Comms.App.GetChannelPreference",
 );
-export const ICheckHealthKey = createServiceKey<Queries.ICheckHealthHandler>("Comms.App.CheckHealth");
+export const ICheckHealthKey =
+  createServiceKey<Queries.ICheckHealthHandler>("Comms.App.CheckHealth");
 
 // --- Job Handlers (Command) ---
 export const IRunDeletedMessagePurgeKey = createServiceKey<Commands.IRunDeletedMessagePurgeHandler>(

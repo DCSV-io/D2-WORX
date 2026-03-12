@@ -184,9 +184,7 @@ describe("AuthProxy", () => {
   });
 
   it("should forward query parameters", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({}), { status: 200 }),
-    );
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const event = makeEvent("GET", "/api/auth/callback?code=abc&state=xyz", {

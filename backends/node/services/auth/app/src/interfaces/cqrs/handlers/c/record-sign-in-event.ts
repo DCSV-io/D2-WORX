@@ -20,7 +20,9 @@ export const RECORD_SIGN_IN_EVENT_REDACTION: RedactionSpec = {
 };
 
 /** Handler for recording sign-in events. Requires redaction (I/O contains PII). */
-export interface IRecordSignInEventHandler
-  extends IHandler<RecordSignInEventInput, RecordSignInEventOutput> {
+export interface IRecordSignInEventHandler extends IHandler<
+  RecordSignInEventInput,
+  RecordSignInEventOutput
+> {
   readonly redaction: RedactionSpec;
 }

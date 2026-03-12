@@ -34,9 +34,7 @@ export class RunSignInEventPurge
     this.options = options;
   }
 
-  protected async executeAsync(
-    _input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -79,4 +77,7 @@ export class RunSignInEventPurge
   }
 }
 
-export type { RunSignInEventPurgeInput, RunSignInEventPurgeOutput } from "../../../../interfaces/cqrs/handlers/c/run-sign-in-event-purge.js";
+export type {
+  RunSignInEventPurgeInput,
+  RunSignInEventPurgeOutput,
+} from "../../../../interfaces/cqrs/handlers/c/run-sign-in-event-purge.js";

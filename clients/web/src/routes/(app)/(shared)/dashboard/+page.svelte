@@ -5,10 +5,22 @@
 
 <svelte:head>
   <title>{m.common_ui_dashboard()} — {m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_app_dashboard_description()} />
-  <meta property="og:title" content="{m.common_ui_dashboard()} — {m.webclient_nav_brand()}" />
-  <meta property="og:description" content={m.webclient_app_dashboard_description()} />
-  <meta property="og:type" content="website" />
+  <meta
+    name="description"
+    content={m.webclient_app_dashboard_description()}
+  />
+  <meta
+    property="og:title"
+    content="{m.common_ui_dashboard()} — {m.webclient_nav_brand()}"
+  />
+  <meta
+    property="og:description"
+    content={m.webclient_app_dashboard_description()}
+  />
+  <meta
+    property="og:type"
+    content="website"
+  />
 </svelte:head>
 
 <div class="space-y-6">

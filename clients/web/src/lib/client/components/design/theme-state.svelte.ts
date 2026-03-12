@@ -9,12 +9,7 @@
  *      https://svelte.dev/e/derived_invalid_export
  */
 
-import {
-  builtInPresets,
-  presets,
-  loadCustomPresets,
-  type ThemePreset,
-} from "./theme-presets.js";
+import { builtInPresets, presets, loadCustomPresets, type ThemePreset } from "./theme-presets.js";
 import {
   computeLightTokens,
   computeDarkTokens,
@@ -133,9 +128,7 @@ const _darkTokens = $derived.by(() =>
   }),
 );
 
-const _themeCSS = $derived.by(() =>
-  generateThemeCSS(_lightTokens, _darkTokens, theme.radius),
-);
+const _themeCSS = $derived.by(() => generateThemeCSS(_lightTokens, _darkTokens, theme.radius));
 
 const _activePresetName = $derived.by(() => {
   const match = presets.find(

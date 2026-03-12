@@ -9,5 +9,7 @@ export interface RunSignInEventPurgeOutput {
 }
 
 /** Handler for purging old sign-in events (scheduled job). */
-export interface IRunSignInEventPurgeHandler
-  extends IHandler<RunSignInEventPurgeInput, RunSignInEventPurgeOutput> {}
+export interface IRunSignInEventPurgeHandler extends IHandler<
+  RunSignInEventPurgeInput,
+  RunSignInEventPurgeOutput
+> {}

@@ -34,9 +34,7 @@ export class RunInvitationCleanup
     this.options = options;
   }
 
-  protected async executeAsync(
-    _input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -79,4 +77,7 @@ export class RunInvitationCleanup
   }
 }
 
-export type { RunInvitationCleanupInput, RunInvitationCleanupOutput } from "../../../../interfaces/cqrs/handlers/c/run-invitation-cleanup.js";
+export type {
+  RunInvitationCleanupInput,
+  RunInvitationCleanupOutput,
+} from "../../../../interfaces/cqrs/handlers/c/run-invitation-cleanup.js";

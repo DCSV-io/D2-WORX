@@ -18,7 +18,9 @@ export const CREATE_USER_CONTACT_REDACTION: RedactionSpec = {
 };
 
 /** Handler for creating user contacts during sign-up. Requires redaction (I/O contains PII). */
-export interface ICreateUserContactHandler
-  extends IHandler<CreateUserContactInput, CreateUserContactOutput> {
+export interface ICreateUserContactHandler extends IHandler<
+  CreateUserContactInput,
+  CreateUserContactOutput
+> {
   readonly redaction: RedactionSpec;
 }

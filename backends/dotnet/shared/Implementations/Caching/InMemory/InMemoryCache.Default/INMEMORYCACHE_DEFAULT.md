@@ -56,6 +56,7 @@ return D2Result<MyOutput?>.Ok(new MyOutput(data));
 ```
 
 **Key behaviors:**
+
 - `Get<TValue>` returns `NotFound` on cache miss (not null) — use `CheckSuccess` to distinguish
 - `Set<TValue>` is upsert — overwrites existing entries for the same key
 - Each entry has `Size = 1` — total cache size is controlled by `MemoryCacheOptions.SizeLimit`

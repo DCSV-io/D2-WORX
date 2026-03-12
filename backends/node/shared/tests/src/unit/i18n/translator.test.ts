@@ -33,15 +33,13 @@ describe("createTranslator", () => {
   });
 
   it("throws when base locale file is missing", () => {
-    expect(() =>
-      createTranslator({ messagesDir, baseLocale: "xx" as any }),
-    ).toThrow(/Base locale "xx" not found/);
+    expect(() => createTranslator({ messagesDir, baseLocale: "xx" as any })).toThrow(
+      /Base locale "xx" not found/,
+    );
   });
 
   it("throws when messages directory does not exist", () => {
-    expect(() =>
-      createTranslator({ messagesDir: "/nonexistent/path" }),
-    ).toThrow();
+    expect(() => createTranslator({ messagesDir: "/nonexistent/path" })).toThrow();
   });
 
   // ---------------------------------------------------------------------------

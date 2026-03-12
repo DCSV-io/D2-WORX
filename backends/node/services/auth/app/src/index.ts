@@ -4,7 +4,10 @@
 export { AUTH_CACHE_KEYS } from "./cache-keys.js";
 
 // --- CQRS Handler Interfaces (app-layer contracts) ---
-export { Commands as AuthCommands, Queries as AuthQueries } from "./interfaces/cqrs/handlers/index.js";
+export {
+  Commands as AuthCommands,
+  Queries as AuthQueries,
+} from "./interfaces/cqrs/handlers/index.js";
 
 import type { IHandlerContext } from "@d2/handler";
 import type { SignInEvent } from "@d2/auth-domain";

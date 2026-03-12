@@ -8,20 +8,22 @@
     {page.status}
   </h1>
 
-  <p class="mt-4 text-xl text-muted-foreground">
+  <p class="text-muted-foreground mt-4 text-xl">
     {page.error?.message ?? "Something went wrong"}
   </p>
 
   {#if page.error?.traceId}
-    <p class="mt-2 text-sm text-muted-foreground">
-      Reference: <code class="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{page.error.traceId}</code>
+    <p class="text-muted-foreground mt-2 text-sm">
+      Reference: <code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs"
+        >{page.error.traceId}</code
+      >
     </p>
   {/if}
 
   <div class="mt-8">
     <a
       href={resolve("/")}
-      class="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      class="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium"
     >
       Go home
     </a>

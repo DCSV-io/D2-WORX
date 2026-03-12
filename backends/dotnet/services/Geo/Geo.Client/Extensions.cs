@@ -205,16 +205,16 @@ public static class Extensions
             IConfiguration configuration,
             string? servicePrefix)
         {
-            const string baseSectionName = "GEO_CLIENT";
+            const string base_section_name = "GEO_CLIENT";
 
             // Always bind shared defaults.
-            services.Configure<GeoClientOptions>(configuration.GetSection(baseSectionName));
+            services.Configure<GeoClientOptions>(configuration.GetSection(base_section_name));
 
             // Overlay service-specific overrides if prefix provided.
             if (servicePrefix.Truthy())
             {
                 services.Configure<GeoClientOptions>(
-                    configuration.GetSection($"{servicePrefix}_{baseSectionName}"));
+                    configuration.GetSection($"{servicePrefix}_{base_section_name}"));
             }
         }
     }

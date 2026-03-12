@@ -14,11 +14,14 @@
   import CreditCardIcon from "@lucide/svelte/icons/credit-card";
 </script>
 
-<Section id="navigation" title="Navigation">
+<Section
+  id="navigation"
+  title="Navigation"
+>
   <div class="grid gap-6 md:grid-cols-2">
     <!-- Tabs -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Tabs</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Tabs</h3>
       <Card.Root>
         <Card.Content class="pt-6">
           <Tabs.Root value="overview">
@@ -27,20 +30,29 @@
               <Tabs.Trigger value="analytics">Analytics</Tabs.Trigger>
               <Tabs.Trigger value="reports">Reports</Tabs.Trigger>
             </Tabs.List>
-            <Tabs.Content value="overview" class="pt-4">
-              <p class="text-sm text-muted-foreground">
-                Overview content goes here. This panel shows when the Overview tab is selected.
-                Tabs are great for organizing related content into separate views.
+            <Tabs.Content
+              value="overview"
+              class="pt-4"
+            >
+              <p class="text-muted-foreground text-sm">
+                Overview content goes here. This panel shows when the Overview tab is selected. Tabs
+                are great for organizing related content into separate views.
               </p>
             </Tabs.Content>
-            <Tabs.Content value="analytics" class="pt-4">
-              <p class="text-sm text-muted-foreground">
+            <Tabs.Content
+              value="analytics"
+              class="pt-4"
+            >
+              <p class="text-muted-foreground text-sm">
                 Analytics dashboard content. Charts, graphs, and key metrics would be displayed in
                 this panel.
               </p>
             </Tabs.Content>
-            <Tabs.Content value="reports" class="pt-4">
-              <p class="text-sm text-muted-foreground">
+            <Tabs.Content
+              value="reports"
+              class="pt-4"
+            >
+              <p class="text-muted-foreground text-sm">
                 Reports section. Generated reports, export options, and historical data live here.
               </p>
             </Tabs.Content>
@@ -51,22 +63,22 @@
 
     <!-- Accordion -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Accordion</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Accordion</h3>
       <Card.Root>
         <Card.Content class="pt-6">
           <Accordion.Root type="single">
             <Accordion.Item value="item-1">
               <Accordion.Trigger>Is it accessible?</Accordion.Trigger>
               <Accordion.Content>
-                Yes. Accordion follows the WAI-ARIA design pattern for disclosure widgets. It supports
-                keyboard navigation and screen readers.
+                Yes. Accordion follows the WAI-ARIA design pattern for disclosure widgets. It
+                supports keyboard navigation and screen readers.
               </Accordion.Content>
             </Accordion.Item>
             <Accordion.Item value="item-2">
               <Accordion.Trigger>Is it styled?</Accordion.Trigger>
               <Accordion.Content>
-                Yes. It comes with default styling that integrates with the shadcn-svelte theme system
-                and your chosen color palette.
+                Yes. It comes with default styling that integrates with the shadcn-svelte theme
+                system and your chosen color palette.
               </Accordion.Content>
             </Accordion.Item>
             <Accordion.Item value="item-3">
@@ -83,7 +95,7 @@
 
     <!-- Breadcrumb -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Breadcrumb</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Breadcrumb</h3>
       <Card.Root>
         <Card.Content class="pt-6">
           <div class="flex flex-col gap-4">
@@ -133,10 +145,14 @@
 
     <!-- Pagination -->
     <div class="flex flex-col gap-3">
-      <h3 class="text-sm font-medium text-muted-foreground">Pagination</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Pagination</h3>
       <Card.Root>
         <Card.Content class="pt-6">
-          <Pagination.Root count={100} perPage={10} siblingCount={1}>
+          <Pagination.Root
+            count={100}
+            perPage={10}
+            siblingCount={1}
+          >
             {#snippet children({ pages, currentPage })}
               <Pagination.Content>
                 <Pagination.Item>
@@ -149,7 +165,10 @@
                     </Pagination.Item>
                   {:else}
                     <Pagination.Item>
-                      <Pagination.Link {page} isActive={currentPage === page.value}>
+                      <Pagination.Link
+                        {page}
+                        isActive={currentPage === page.value}
+                      >
                         {page.value}
                       </Pagination.Link>
                     </Pagination.Item>
@@ -167,7 +186,7 @@
 
     <!-- Command (search palette) -->
     <div class="flex flex-col gap-3 md:col-span-2">
-      <h3 class="text-sm font-medium text-muted-foreground">Command Palette</h3>
+      <h3 class="text-muted-foreground text-sm font-medium">Command Palette</h3>
       <Card.Root>
         <Card.Content class="pt-6">
           <Command.Root class="rounded-lg border shadow-md">

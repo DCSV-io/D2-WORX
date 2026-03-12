@@ -21,7 +21,10 @@ describe("loadEnv", () => {
 
   beforeEach(() => {
     vi.resetModules();
-    tempDir = resolve(tmpdir(), `d2-load-env-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    tempDir = resolve(
+      tmpdir(),
+      `d2-load-env-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    );
     mkdirSync(tempDir, { recursive: true });
   });
 
@@ -82,13 +85,9 @@ describe("loadEnv", () => {
     const envFile = resolve(tempDir, ".env.local");
     writeFileSync(
       envFile,
-      [
-        "# This is a comment",
-        "",
-        "  # Indented comment",
-        "LOAD_ENV_COMMENT_TEST=works",
-        "",
-      ].join("\n"),
+      ["# This is a comment", "", "  # Indented comment", "LOAD_ENV_COMMENT_TEST=works", ""].join(
+        "\n",
+      ),
     );
     keysSet.push("LOAD_ENV_COMMENT_TEST");
 

@@ -12,5 +12,4 @@ describe("AUTH_ERROR_CODES", () => {
     const values = Object.values(AUTH_ERROR_CODES);
     expect(new Set(values).size).toBe(values.length);
   });
-
 });

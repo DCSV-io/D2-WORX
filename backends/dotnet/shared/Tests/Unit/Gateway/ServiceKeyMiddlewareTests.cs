@@ -23,7 +23,7 @@ public class ServiceKeyMiddlewareTests
     private const string _HEADER = "X-Api-Key";
     private const string _VALID_KEY = "d2.sveltekit.service.key";
 
-    private readonly Mock<ILogger<ServiceKeyMiddleware>> _mockLogger = new();
+    private readonly Mock<ILogger<ServiceKeyMiddleware>> r_mockLogger = new();
 
     /// <summary>
     /// When no X-Api-Key header is present, passes through and IsTrustedService remains false.
@@ -191,7 +191,7 @@ public class ServiceKeyMiddlewareTests
             ValidKeys = [.. keys],
         });
 
-        return new ServiceKeyMiddleware(next, options, _mockLogger.Object);
+        return new ServiceKeyMiddleware(next, options, r_mockLogger.Object);
     }
 
     #endregion

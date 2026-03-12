@@ -121,8 +121,7 @@ export async function parseGatewayResponse<TData = void>(
  * Create a D2Result for a network-level error (fetch threw).
  */
 export function networkErrorResult<TData = void>(error: unknown): D2Result<TData> {
-  const message =
-    error instanceof Error ? error.message : "An unexpected network error occurred.";
+  const message = error instanceof Error ? error.message : "An unexpected network error occurred.";
 
   return D2Result.unhandledException<TData>({ messages: [message] });
 }

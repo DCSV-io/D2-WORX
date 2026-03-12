@@ -50,7 +50,9 @@ export async function enrichRequest(
   }
 
   if (!clientFingerprint) {
-    logger?.warn("Client fingerprint missing (no d2-cfp cookie or X-Client-Fingerprint header). Device rate-limit bucket will be shared.");
+    logger?.warn(
+      "Client fingerprint missing (no d2-cfp cookie or X-Client-Fingerprint header). Device rate-limit bucket will be shared.",
+    );
   }
 
   // 4. Compute combined device fingerprint (always present).

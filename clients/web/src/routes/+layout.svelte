@@ -32,7 +32,10 @@
     href={favicon}
   />
   <title>{m.webclient_nav_brand()}</title>
-  <meta name="description" content={m.webclient_hero_tagline()} />
+  <meta
+    name="description"
+    content={m.webclient_hero_tagline()}
+  />
 </svelte:head>
 
 <ModeWatcher />

@@ -3,9 +3,10 @@ import { load } from "./+layout.server";
 
 describe("(app) +layout.server.ts", () => {
   it("redirects to /sign-in when session is null", async () => {
-    await expect(
-      load({ locals: { session: null, user: null } } as any),
-    ).rejects.toMatchObject({ status: 303, location: "/sign-in" });
+    await expect(load({ locals: { session: null, user: null } } as any)).rejects.toMatchObject({
+      status: 303,
+      location: "/sign-in",
+    });
   });
 
   it("redirects to /welcome when session has no active org", async () => {

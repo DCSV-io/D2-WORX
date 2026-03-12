@@ -34,16 +34,16 @@ How D²-WORX prevents duplicate actions, ensures idempotency, and maintains corr
 
 Each of the 8 daily maintenance jobs uses a **Redis distributed lock** (`SET NX PX`) to ensure only one instance processes a job at any given time:
 
-| Job | Service | Lock TTL | Retention |
-| --- | ------- | -------- | --------- |
-| `purge-stale-whois` | Geo | Configurable | 180 days |
-| `cleanup-orphaned-locations` | Geo | Configurable | Zero references |
-| `purge-sessions` | Auth | Configurable | Expired sessions |
-| `purge-sign-in-events` | Auth | Configurable | 90 days |
-| `cleanup-invitations` | Auth | Configurable | 7 days post-expiry |
-| `cleanup-emulation-consents` | Auth | Configurable | Expired/revoked |
-| `purge-deleted-messages` | Comms | Configurable | 90 days |
-| `purge-delivery-history` | Comms | Configurable | 365 days |
+| Job                          | Service | Lock TTL     | Retention          |
+| ---------------------------- | ------- | ------------ | ------------------ |
+| `purge-stale-whois`          | Geo     | Configurable | 180 days           |
+| `cleanup-orphaned-locations` | Geo     | Configurable | Zero references    |
+| `purge-sessions`             | Auth    | Configurable | Expired sessions   |
+| `purge-sign-in-events`       | Auth    | Configurable | 90 days            |
+| `cleanup-invitations`        | Auth    | Configurable | 7 days post-expiry |
+| `cleanup-emulation-consents` | Auth    | Configurable | Expired/revoked    |
+| `purge-deleted-messages`     | Comms   | Configurable | 90 days            |
+| `purge-delivery-history`     | Comms   | Configurable | 365 days           |
 
 **Execution flow:** Dkron (cron trigger) → HTTP POST to REST Gateway (service key auth) → Gateway forwards via gRPC (API key credentials) → Service handler acquires Redis lock → Batch delete loop → Release lock → Return result
 
@@ -83,11 +83,11 @@ US, CA, GB are exempt from country-level blocking to avoid false positives from 
 
 ### Multi-Instance Safety
 
-| Tier | Storage | Behavior |
-| ---- | ------- | -------- |
-| Cookie cache (5min) | In cookie | Travels with the request — any instance can decode |
-| Redis | Shared | Any instance queries the same Redis — instant revocation |
-| PostgreSQL | Shared | Dual-write ensures durability + audit trail |
+| Tier                | Storage   | Behavior                                                 |
+| ------------------- | --------- | -------------------------------------------------------- |
+| Cookie cache (5min) | In cookie | Travels with the request — any instance can decode       |
+| Redis               | Shared    | Any instance queries the same Redis — instant revocation |
+| PostgreSQL          | Shared    | Dual-write ensures durability + audit trail              |
 
 **No sticky sessions required.** Any instance can handle any request. Session revocation propagates instantly via Redis. The only lag is the cookie cache TTL (~5 minutes max on the device that has the session cached).
 

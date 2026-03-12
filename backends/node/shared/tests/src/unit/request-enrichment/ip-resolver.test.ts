@@ -239,18 +239,12 @@ describe("adversarial inputs", () => {
   });
 
   it("should use CF-Connecting-IP when X-Forwarded-For is empty string", () => {
-    const ip = resolveIp(
-      { "cf-connecting-ip": "203.0.113.1", "x-forwarded-for": "" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "cf-connecting-ip": "203.0.113.1", "x-forwarded-for": "" }, ALL_HEADERS);
     expect(ip).toBe("203.0.113.1");
   });
 
   it("should return first IP from multi-entry X-Forwarded-For", () => {
-    const ip = resolveIp(
-      { "x-forwarded-for": "1.2.3.4, 5.6.7.8, 9.10.11.12" },
-      ALL_HEADERS,
-    );
+    const ip = resolveIp({ "x-forwarded-for": "1.2.3.4, 5.6.7.8, 9.10.11.12" }, ALL_HEADERS);
     expect(ip).toBe("1.2.3.4");
   });
 

@@ -12,14 +12,7 @@ export {
 
 export { mapD2Errors, applyD2Errors } from "./form-helpers.js";
 
-export {
-  digitsOnly,
-  alphaOnly,
-  noSpaces,
-  uppercase,
-  maxLength,
-  compose,
-} from "./input-filters.js";
+export { digitsOnly, alphaOnly, noSpaces, uppercase, maxLength, compose } from "./input-filters.js";
 
 export {
   formatPhoneDisplay,

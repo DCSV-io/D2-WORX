@@ -7,11 +7,14 @@
 </script>
 
 <svelte:head>
-  <meta name="robots" content="noindex, nofollow" />
+  <meta
+    name="robots"
+    content="noindex, nofollow"
+  />
 </svelte:head>
 
 <div class="relative flex min-h-screen items-center justify-center px-4">
-  <div class="absolute right-4 top-4 flex items-center gap-1">
+  <div class="absolute top-4 right-4 flex items-center gap-1">
     <ThemeToggle />
     <ThemeSelector />
     <!-- Step 5: Add sign-out link here -->
@@ -19,7 +22,10 @@
 
   <div class="w-full max-w-2xl">
     <div class="mb-8 flex justify-center">
-      <a href={resolve("/")} class="flex items-center gap-2">
+      <a
+        href={resolve("/")}
+        class="flex items-center gap-2"
+      >
         <div
           class="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg text-sm font-bold"
         >

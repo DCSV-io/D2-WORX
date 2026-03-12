@@ -9,5 +9,7 @@ export interface RunDeletedMessagePurgeOutput {
 }
 
 /** Handler for purging deleted messages (scheduled job). */
-export interface IRunDeletedMessagePurgeHandler
-  extends IHandler<RunDeletedMessagePurgeInput, RunDeletedMessagePurgeOutput> {}
+export interface IRunDeletedMessagePurgeHandler extends IHandler<
+  RunDeletedMessagePurgeInput,
+  RunDeletedMessagePurgeOutput
+> {}

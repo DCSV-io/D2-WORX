@@ -155,7 +155,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Gabarito", system-ui, -apple-system, sans-serif;
+    font-family:
+      "Gabarito",
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 
   button:not(:disabled),

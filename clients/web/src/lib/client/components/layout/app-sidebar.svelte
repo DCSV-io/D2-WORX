@@ -24,7 +24,10 @@
   <Sidebar.SidebarHeader>
     <Sidebar.SidebarMenu>
       <Sidebar.SidebarMenuItem>
-        <Sidebar.SidebarMenuButton size="lg" class="pointer-events-none">
+        <Sidebar.SidebarMenuButton
+          size="lg"
+          class="pointer-events-none"
+        >
           <div
             class="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg text-xs font-bold"
           >
@@ -48,7 +51,10 @@
             <Sidebar.SidebarMenuItem>
               <Sidebar.SidebarMenuButton tooltipContent={item.label}>
                 {#snippet child({ props })}
-                  <a href={resolve(item.href)} {...props}>
+                  <a
+                    href={resolve(item.href)}
+                    {...props}
+                  >
                     <item.icon />
                     <span>{item.label}</span>
                   </a>
@@ -64,7 +70,10 @@
   <Sidebar.SidebarFooter>
     <Sidebar.SidebarMenu>
       <Sidebar.SidebarMenuItem>
-        <Sidebar.SidebarMenuButton size="lg" class="pointer-events-none">
+        <Sidebar.SidebarMenuButton
+          size="lg"
+          class="pointer-events-none"
+        >
           <Avatar.Avatar class="size-8 rounded-lg">
             <Avatar.AvatarFallback class="rounded-lg">U</Avatar.AvatarFallback>
           </Avatar.Avatar>
@@ -100,9 +109,7 @@
     border-inline-end: none;
   }
 
-  :global(
-      [data-slot="sidebar"][data-side="left"] [data-slot="sidebar-inner"]::after
-    ) {
+  :global([data-slot="sidebar"][data-side="left"] [data-slot="sidebar-inner"]::after) {
     content: "";
     position: absolute;
     top: 0;
@@ -118,36 +125,24 @@
   }
 
   /* Expanded — default: flush right */
-  :global(
-      [data-slot="sidebar"][data-state="expanded"]
-        [data-slot="sidebar-inner"]::after
-    ) {
+  :global([data-slot="sidebar"][data-state="expanded"] [data-slot="sidebar-inner"]::after) {
     transform: translateX(0);
   }
 
   /* Expanded — hover: edge recedes (tucks in) */
-  :global(
-      [data-slot="sidebar"][data-state="expanded"]:hover
-        [data-slot="sidebar-inner"]::after
-    ) {
+  :global([data-slot="sidebar"][data-state="expanded"]:hover [data-slot="sidebar-inner"]::after) {
     transform: translateX(calc(var(--peek-offset) * -1));
     background: hsl(var(--primary));
     width: 2px;
   }
 
   /* Collapsed — default: edge receded */
-  :global(
-      [data-slot="sidebar"][data-state="collapsed"]
-        [data-slot="sidebar-inner"]::after
-    ) {
+  :global([data-slot="sidebar"][data-state="collapsed"] [data-slot="sidebar-inner"]::after) {
     transform: translateX(calc(var(--peek-offset) * -1));
   }
 
   /* Collapsed — hover: edge peeks out (extends) */
-  :global(
-      [data-slot="sidebar"][data-state="collapsed"]:hover
-        [data-slot="sidebar-inner"]::after
-    ) {
+  :global([data-slot="sidebar"][data-state="collapsed"]:hover [data-slot="sidebar-inner"]::after) {
     transform: translateX(0);
     background: hsl(var(--primary));
     width: 3px;

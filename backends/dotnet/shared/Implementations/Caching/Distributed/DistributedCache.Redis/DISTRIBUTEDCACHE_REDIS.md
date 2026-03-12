@@ -59,6 +59,7 @@ await r_setInDist.HandleAsync(
 ```
 
 **Key conventions:**
+
 - Cache key format: `EntityName:{id}` (e.g., `WhoIs:a1b2c3...`, `Contact:uuid-here`)
 - Protobuf types auto-detected via `IMessage` — binary serialized for efficiency
 - Non-proto types use `System.Text.Json` with `ReferenceHandler.IgnoreCycles`

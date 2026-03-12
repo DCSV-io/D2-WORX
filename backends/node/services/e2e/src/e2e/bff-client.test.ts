@@ -14,10 +14,7 @@ import {
   stopAuthService,
   type AuthServiceHandle,
 } from "../helpers/auth-service.js";
-import {
-  startAuthHttpServer,
-  type AuthHttpServer,
-} from "../helpers/auth-http-server.js";
+import { startAuthHttpServer, type AuthHttpServer } from "../helpers/auth-http-server.js";
 import { SessionResolver, JwtManager, AuthProxy } from "@d2/auth-bff-client";
 import { createLogger } from "@d2/logging";
 
@@ -124,10 +121,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const email = "bff-session-resolve@example.com";
       const cookie = await signUpAndGetCookie(email, "Session Resolve");
 
-      const resolver = new SessionResolver(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const resolver = new SessionResolver({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const request = new Request(`${httpServer.baseUrl}/`, {
         headers: { cookie },
@@ -148,10 +142,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
     });
 
     it("should return null session for an invalid cookie", async () => {
-      const resolver = new SessionResolver(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const resolver = new SessionResolver({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const request = new Request(`${httpServer.baseUrl}/`, {
         headers: { cookie: "better-auth.session_token=invalid-garbage-value" },
@@ -164,10 +155,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
     });
 
     it("should return null without making a network call when no cookie is present", async () => {
-      const resolver = new SessionResolver(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const resolver = new SessionResolver({ authServiceUrl: httpServer.baseUrl }, logger);
 
       // Request with no cookie header at all
       const request = new Request(`${httpServer.baseUrl}/`);
@@ -186,10 +174,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const email = "bff-proxy-get@example.com";
       const cookie = await signUpAndGetCookie(email, "Proxy Get");
 
-      const proxy = new AuthProxy(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const proxy = new AuthProxy({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const request = new Request(`${httpServer.baseUrl}/api/auth/get-session`, {
         method: "GET",
@@ -215,10 +200,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const email = "bff-proxy-signin@example.com";
       await signUpAndGetCookie(email, "Proxy SignIn");
 
-      const proxy = new AuthProxy(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const proxy = new AuthProxy({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const request = new Request(`${httpServer.baseUrl}/api/auth/sign-in/email`, {
         method: "POST",
@@ -244,10 +226,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const email = "bff-proxy-session@example.com";
       await signUpAndGetCookie(email, "Proxy Session");
 
-      const proxy = new AuthProxy(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const proxy = new AuthProxy({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const request = new Request(`${httpServer.baseUrl}/api/auth/sign-in/email`, {
         method: "POST",
@@ -281,20 +260,14 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const cookie = await signUpAndGetCookie(email, "Proxy Match");
 
       // Direct call to auth service
-      const directResponse = await fetch(
-        `${httpServer.baseUrl}/api/auth/get-session`,
-        {
-          method: "GET",
-          headers: { cookie },
-        },
-      );
+      const directResponse = await fetch(`${httpServer.baseUrl}/api/auth/get-session`, {
+        method: "GET",
+        headers: { cookie },
+      });
       const directData = await directResponse.json();
 
       // Proxied call
-      const proxy = new AuthProxy(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const proxy = new AuthProxy({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const request = new Request(`${httpServer.baseUrl}/api/auth/get-session`, {
         method: "GET",
@@ -324,10 +297,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const email = "bff-jwt-obtain@example.com";
       const cookie = await signUpAndGetCookie(email, "JWT Obtain");
 
-      const manager = new JwtManager(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const manager = new JwtManager({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const token = await manager.getToken(cookie);
 
@@ -339,9 +309,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       expect(segments).toHaveLength(3);
 
       // Decode payload and verify structure
-      const payload = JSON.parse(
-        Buffer.from(segments[1], "base64url").toString("utf-8"),
-      );
+      const payload = JSON.parse(Buffer.from(segments[1], "base64url").toString("utf-8"));
       expect(payload.exp).toBeDefined();
       expect(payload.iss).toBeDefined();
     });
@@ -350,10 +318,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const email = "bff-jwt-cache@example.com";
       const cookie = await signUpAndGetCookie(email, "JWT Cache");
 
-      const manager = new JwtManager(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const manager = new JwtManager({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const token1 = await manager.getToken(cookie);
       const token2 = await manager.getToken(cookie);
@@ -366,10 +331,7 @@ describe("E2E: @d2/auth-bff-client integration", () => {
       const email = "bff-jwt-invalidate@example.com";
       const cookie = await signUpAndGetCookie(email, "JWT Invalidate");
 
-      const manager = new JwtManager(
-        { authServiceUrl: httpServer.baseUrl },
-        logger,
-      );
+      const manager = new JwtManager({ authServiceUrl: httpServer.baseUrl }, logger);
 
       const token1 = await manager.getToken(cookie);
       expect(token1).not.toBeNull();

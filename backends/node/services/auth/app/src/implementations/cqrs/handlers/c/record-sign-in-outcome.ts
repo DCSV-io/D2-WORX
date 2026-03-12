@@ -43,9 +43,7 @@ export class RecordSignInOutcome
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     try {
       if (input.responseStatus === 200) {
         return await this.handleSuccess(input);
@@ -63,9 +61,7 @@ export class RecordSignInOutcome
     }
   }
 
-  private async handleSuccess(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  private async handleSuccess(input: Input): Promise<D2Result<Output | undefined>> {
     await Promise.all([
       this.store.markKnownGood(input.identifierHash, input.identityHash),
       this.store.clearFailureState(input.identifierHash, input.identityHash),
@@ -86,9 +82,7 @@ export class RecordSignInOutcome
     return D2Result.ok({ data: { recorded: true } });
   }
 
-  private async handleFailure(
-    input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  private async handleFailure(input: Input): Promise<D2Result<Output | undefined>> {
     const count = await this.store.incrementFailures(input.identifierHash, input.identityHash);
     const delayMs = computeSignInDelay(count);
 
@@ -101,4 +95,7 @@ export class RecordSignInOutcome
   }
 }
 
-export type { RecordSignInOutcomeInput, RecordSignInOutcomeOutput } from "../../../../interfaces/cqrs/handlers/c/record-sign-in-outcome.js";
+export type {
+  RecordSignInOutcomeInput,
+  RecordSignInOutcomeOutput,
+} from "../../../../interfaces/cqrs/handlers/c/record-sign-in-outcome.js";

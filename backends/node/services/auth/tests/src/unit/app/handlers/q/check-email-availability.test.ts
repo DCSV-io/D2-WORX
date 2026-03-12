@@ -134,9 +134,9 @@ describe("CheckEmailAvailability", () => {
     });
 
     it("bubbles fail when repo fails", async () => {
-      repo.handleAsync = vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["DB error"], statusCode: 500 }),
-      );
+      repo.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.fail({ messages: ["DB error"], statusCode: 500 }));
       const handler = new CheckEmailAvailability(repo, createTestContext());
 
       const result = await handler.handleAsync({ email: "any@example.com" });
@@ -167,9 +167,7 @@ describe("CheckEmailAvailability", () => {
     });
 
     it("returns cached result on cache hit (repo NOT called)", async () => {
-      cache.get.handleAsync = vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { value: true } }));
+      cache.get.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { value: true } }));
       const handler = new CheckEmailAvailability(repo, createTestContext(), cache);
 
       const result = await handler.handleAsync({ email: "cached@example.com" });
@@ -180,9 +178,7 @@ describe("CheckEmailAvailability", () => {
     });
 
     it("returns cached false (taken) from cache without calling repo", async () => {
-      cache.get.handleAsync = vi
-        .fn()
-        .mockResolvedValue(D2Result.ok({ data: { value: false } }));
+      cache.get.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { value: false } }));
       const handler = new CheckEmailAvailability(repo, createTestContext(), cache);
 
       const result = await handler.handleAsync({ email: "taken@example.com" });
@@ -254,9 +250,9 @@ describe("CheckEmailAvailability", () => {
     });
 
     it("does not populate cache when repo fails", async () => {
-      repo.handleAsync = vi.fn().mockResolvedValue(
-        D2Result.fail({ messages: ["DB error"], statusCode: 500 }),
-      );
+      repo.handleAsync = vi
+        .fn()
+        .mockResolvedValue(D2Result.fail({ messages: ["DB error"], statusCode: 500 }));
       const handler = new CheckEmailAvailability(repo, createTestContext(), cache);
 
       await handler.handleAsync({ email: "err@example.com" });

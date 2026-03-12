@@ -81,11 +81,11 @@ Handler implementations organized in TLC hierarchy. All extend `BaseHandler` and
 
 > ### X (Complex)
 >
-> | File                                                                            | Class                     | Description                                                                          |
-> | ------------------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------ |
+> | File                                                                            | Class                     | Description                                                                                                                       |
+> | ------------------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 > | [find-whois.ts](src/handlers/x/find-whois.ts)                                   | `FindWhoIs`               | WhoIs lookup with `MemoryCacheStore` (LRU), negative caching, singleflight deduplication, circuit breaker, and Geo gRPC fallback. |
-> | [get.ts](src/handlers/x/get.ts)                                                 | `Get`                     | Orchestrator: Memory → Redis → Disk → gRPC, populating higher tiers on miss.         |
-> | [update-contacts-by-ext-keys.ts](src/handlers/x/update-contacts-by-ext-keys.ts) | `UpdateContactsByExtKeys` | Replaces contacts at ext keys via gRPC. Evicts ext-key cache. PII redacted.          |
+> | [get.ts](src/handlers/x/get.ts)                                                 | `Get`                     | Orchestrator: Memory → Redis → Disk → gRPC, populating higher tiers on miss.                                                      |
+> | [update-contacts-by-ext-keys.ts](src/handlers/x/update-contacts-by-ext-keys.ts) | `UpdateContactsByExtKeys` | Replaces contacts at ext keys via gRPC. Evicts ext-key cache. PII redacted.                                                       |
 
 ---
 

@@ -29,7 +29,9 @@ export const GET_ORG_CONTACTS_REDACTION: RedactionSpec = {
 };
 
 /** Handler for retrieving org contacts with Geo data. Requires redaction (output contains PII). */
-export interface IGetOrgContactsHandler
-  extends IHandler<GetOrgContactsInput, GetOrgContactsOutput> {
+export interface IGetOrgContactsHandler extends IHandler<
+  GetOrgContactsInput,
+  GetOrgContactsOutput
+> {
   readonly redaction: RedactionSpec;
 }

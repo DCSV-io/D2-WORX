@@ -11,7 +11,8 @@ type Output = Commands.RunDeletedMessagePurgeOutput;
 
 const LOCK_KEY = "lock:job:purge-deleted-messages";
 
-export class RunDeletedMessagePurge extends BaseHandler<Input, Output>
+export class RunDeletedMessagePurge
+  extends BaseHandler<Input, Output>
   implements Commands.IRunDeletedMessagePurgeHandler
 {
   private readonly acquireLock: DistributedCache.IAcquireLockHandler;
@@ -33,9 +34,7 @@ export class RunDeletedMessagePurge extends BaseHandler<Input, Output>
     this.options = options;
   }
 
-  protected async executeAsync(
-    _input: Input,
-  ): Promise<D2Result<Output | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
