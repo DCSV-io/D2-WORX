@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import * as m from "$lib/paraglide/messages.js";
 </script>
@@ -17,6 +18,6 @@
     {m.webclient_hero_tagline()}
   </p>
   <div class="mt-8">
-    <Button href="/sign-up" size="lg">{m.common_ui_get_started()}</Button>
+    <Button href={resolve("/sign-up")} size="lg">{m.common_ui_get_started()}</Button>
   </div>
 </div>

@@ -64,11 +64,12 @@
           // Invalidate all loaders so $page.data.session is fresh before navigation.
           await invalidateAll();
 
+          // returnTo comes from the URL (already locale-prefixed); only the fallback needs resolve().
           const dest =
             returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
               ? returnTo
-              : "/dashboard";
-          // eslint-disable-next-line svelte/no-navigation-without-resolve -- dynamic returnTo from query params
+              : resolve("/dashboard");
+          // eslint-disable-next-line svelte/no-navigation-without-resolve -- dest is pre-resolved above
           await goto(dest);
         } catch {
           serverError = m.common_errors_unknown();

@@ -89,7 +89,7 @@
       </Card.Content>
       <Card.Footer>
         {#if success}
-          <Button href="/dashboard" class="w-full">{m.common_ui_dashboard()}</Button>
+          <Button href={resolve("/dashboard")} class="w-full">{m.common_ui_dashboard()}</Button>
         {:else}
           <Button variant="outline" href={resolve("/")} class="w-full"
             >{m.common_ui_sign_in()}</Button

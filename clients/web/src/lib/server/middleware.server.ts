@@ -6,9 +6,8 @@
  * auth/api/src/composition-root.ts but simplified — no DI container,
  * just module-level singletons.
  *
- * Returns null if required env vars are missing — the back-end infrastructure
- * must be running in production (Redis, Geo service). Hooks and consumers
- * gracefully degrade when the context is unavailable.
+ * Throws if required env vars are missing — infrastructure (Redis, Geo service)
+ * must be running. Matches auth.server.ts and gateway.server.ts behavior.
  *
  * The `.server.ts` suffix ensures this module is never included in
  * client-side bundles (SvelteKit convention).
@@ -58,13 +57,13 @@ export interface MiddlewareContext {
   getGeoRefData: GetGeoRefData;
 }
 
-let cached: MiddlewareContext | null | undefined;
+let cached: MiddlewareContext | undefined;
 
 /**
  * Returns the shared middleware context (lazy singleton).
- * Returns `null` if required env vars are missing (logs a warning once).
+ * Throws if required env vars are missing — infrastructure must be running.
  */
-export function getMiddlewareContext(): MiddlewareContext | null {
+export function getMiddlewareContext(): MiddlewareContext {
   if (cached !== undefined) return cached;
 
   const redisConnectionString = process.env.REDIS_URL;
@@ -77,12 +76,10 @@ export function getMiddlewareContext(): MiddlewareContext | null {
     if (!geoAddress) missing.push("GEO_GRPC_ADDRESS");
     if (!geoApiKey) missing.push("SVELTEKIT_GEO_CLIENT__APIKEY");
 
-    console.warn(
-      `[d2-sveltekit] Missing required env vars: ${missing.join(", ")}. ` +
+    throw new Error(
+      `[d2-sveltekit] FATAL: Missing required env vars: ${missing.join(", ")}. ` +
         "Infrastructure services must be running. Check your .env.local file.",
     );
-    cached = null;
-    return null;
   }
 
   const logger = createLogger({ serviceName: "d2-sveltekit" });

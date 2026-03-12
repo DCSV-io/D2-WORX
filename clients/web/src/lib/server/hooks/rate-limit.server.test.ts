@@ -36,13 +36,13 @@ describe("createRateLimitHandle", () => {
     vi.clearAllMocks();
   });
 
-  it("skips when middleware context is null", async () => {
-    mockGetMiddlewareContext.mockReturnValue(null);
+  it("propagates error when middleware context throws", async () => {
+    mockGetMiddlewareContext.mockImplementation(() => {
+      throw new Error("FATAL: Missing required env vars");
+    });
     const event = makeEvent();
 
-    await handle({ event, resolve: mockResolve });
-
-    expect(mockResolve).toHaveBeenCalledWith(event);
+    await expect(handle({ event, resolve: mockResolve })).rejects.toThrow("FATAL");
   });
 
   it("skips when requestContext is not on locals", async () => {

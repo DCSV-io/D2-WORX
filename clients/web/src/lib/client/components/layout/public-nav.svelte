@@ -7,6 +7,7 @@
   import ThemeSelector from "$lib/client/components/theme-selector.svelte";
   import LanguageSelector from "$lib/client/components/layout/language-selector.svelte";
   import { authClient } from "$lib/client/stores/auth-client.js";
+  import { invalidateToken } from "$lib/client/rest/gateway-client.js";
   import * as m from "$lib/paraglide/messages.js";
 
   let signingOut = $state(false);
@@ -15,6 +16,7 @@
     signingOut = true;
     try {
       await authClient.signOut();
+      invalidateToken();
       await invalidateAll();
     } finally {
       signingOut = false;
@@ -38,13 +40,13 @@
       <ThemeToggle />
       <ThemeSelector />
       {#if $page.data.session}
-        <Button variant="default" size="sm" href="/dashboard">{m.common_ui_dashboard()}</Button>
+        <Button variant="default" size="sm" href={resolve("/dashboard")}>{m.common_ui_dashboard()}</Button>
         <Button variant="outline" size="sm" onclick={handleSignOut} disabled={signingOut}>
           {m.common_ui_sign_out()}
         </Button>
       {:else}
-        <Button variant="outline" size="sm" href="/sign-in">{m.common_ui_sign_in()}</Button>
-        <Button variant="default" size="sm" href="/sign-up">{m.common_ui_sign_up()}</Button>
+        <Button variant="outline" size="sm" href={resolve("/sign-in")}>{m.common_ui_sign_in()}</Button>
+        <Button variant="default" size="sm" href={resolve("/sign-up")}>{m.common_ui_sign_up()}</Button>
       {/if}
     </div>
   </div>

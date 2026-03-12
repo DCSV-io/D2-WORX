@@ -113,34 +113,34 @@ describe("middleware.server", () => {
     Object.keys(ENV_BACKUP).forEach((k) => delete ENV_BACKUP[k]);
   });
 
-  it("returns null when Redis connection string is missing", async () => {
+  it("throws when Redis connection string is missing", async () => {
     setEnv("GEO_GRPC_ADDRESS", "localhost:5138");
     setEnv("SVELTEKIT_GEO_CLIENT__APIKEY", "test-key");
 
     const { getMiddlewareContext } = await import("./middleware.server");
-    const ctx = getMiddlewareContext();
 
-    expect(ctx).toBeNull();
+    expect(() => getMiddlewareContext()).toThrow("FATAL");
+    expect(() => getMiddlewareContext()).toThrow("REDIS_URL");
   });
 
-  it("returns null when GEO_GRPC_ADDRESS is missing", async () => {
+  it("throws when GEO_GRPC_ADDRESS is missing", async () => {
     setEnv("REDIS_URL", "redis://:pass@localhost:6379");
     setEnv("SVELTEKIT_GEO_CLIENT__APIKEY", "test-key");
 
     const { getMiddlewareContext } = await import("./middleware.server");
-    const ctx = getMiddlewareContext();
 
-    expect(ctx).toBeNull();
+    expect(() => getMiddlewareContext()).toThrow("FATAL");
+    expect(() => getMiddlewareContext()).toThrow("GEO_GRPC_ADDRESS");
   });
 
-  it("returns null when SVELTEKIT_GEO_CLIENT__APIKEY is missing", async () => {
+  it("throws when SVELTEKIT_GEO_CLIENT__APIKEY is missing", async () => {
     setEnv("REDIS_URL", "redis://:pass@localhost:6379");
     setEnv("GEO_GRPC_ADDRESS", "localhost:5138");
 
     const { getMiddlewareContext } = await import("./middleware.server");
-    const ctx = getMiddlewareContext();
 
-    expect(ctx).toBeNull();
+    expect(() => getMiddlewareContext()).toThrow("FATAL");
+    expect(() => getMiddlewareContext()).toThrow("SVELTEKIT_GEO_CLIENT__APIKEY");
   });
 
   it("returns context when all env vars are present", async () => {
@@ -149,14 +149,14 @@ describe("middleware.server", () => {
     const { getMiddlewareContext } = await import("./middleware.server");
     const ctx = getMiddlewareContext();
 
-    expect(ctx).not.toBeNull();
-    expect(ctx!.logger).toBeDefined();
-    expect(ctx!.findWhoIs).toBeDefined();
-    expect(ctx!.rateLimitCheck).toBeDefined();
-    expect(ctx!.idempotencyCheck).toBeDefined();
-    expect(ctx!.redisSet).toBeDefined();
-    expect(ctx!.redisRemove).toBeDefined();
-    expect(ctx!.getGeoRefData).toBeDefined();
+    expect(ctx).toBeDefined();
+    expect(ctx.logger).toBeDefined();
+    expect(ctx.findWhoIs).toBeDefined();
+    expect(ctx.rateLimitCheck).toBeDefined();
+    expect(ctx.idempotencyCheck).toBeDefined();
+    expect(ctx.redisSet).toBeDefined();
+    expect(ctx.redisRemove).toBeDefined();
+    expect(ctx.getGeoRefData).toBeDefined();
   });
 
   it("returns cached singleton on subsequent calls", async () => {
@@ -169,16 +169,11 @@ describe("middleware.server", () => {
     expect(ctx1).toBe(ctx2);
   });
 
-  it("only attempts initialization once when env vars are missing", async () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-
+  it("throws every time when env vars are missing (no cached null)", async () => {
     const { getMiddlewareContext } = await import("./middleware.server");
-    getMiddlewareContext();
-    getMiddlewareContext();
-    getMiddlewareContext();
 
-    // Should only log the warning once (first attempt)
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    warnSpy.mockRestore();
+    expect(() => getMiddlewareContext()).toThrow("FATAL");
+    expect(() => getMiddlewareContext()).toThrow("FATAL");
+    expect(() => getMiddlewareContext()).toThrow("FATAL");
   });
 });

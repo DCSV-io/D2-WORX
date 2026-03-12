@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
+  import { resolve } from "$app/paths";
   import * as Card from "$lib/client/components/ui/card/index.js";
   import { Button } from "$lib/client/components/ui/button/index.js";
   import MailIcon from "@lucide/svelte/icons/mail";
@@ -41,6 +42,6 @@
     </p>
   </Card.Content>
   <Card.Footer>
-    <Button variant="outline" href="/sign-in" class="w-full">Back to Sign In</Button>
+    <Button variant="outline" href={resolve("/sign-in")} class="w-full">Back to Sign In</Button>
   </Card.Footer>
 </Card.Root>

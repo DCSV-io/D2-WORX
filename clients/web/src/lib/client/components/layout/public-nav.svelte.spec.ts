@@ -24,6 +24,10 @@ vi.mock("$lib/client/stores/auth-client.js", () => ({
   authClient: { signOut: () => Promise.resolve() },
 }));
 
+vi.mock("$lib/client/rest/gateway-client.js", () => ({
+  invalidateToken: () => {},
+}));
+
 vi.mock("$lib/paraglide/runtime", () => ({
   getLocale: () => "en",
   setLocale: () => {},

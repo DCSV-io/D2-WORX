@@ -11,7 +11,6 @@ import { getMiddlewareContext, enrichRequest } from "../middleware.server";
 export function createRequestEnrichmentHandle(): Handle {
   return async ({ event, resolve }) => {
     const ctx = getMiddlewareContext();
-    if (!ctx) return resolve(event);
 
     const headers: Record<string, string | undefined> = {};
     event.request.headers.forEach((value, key) => {

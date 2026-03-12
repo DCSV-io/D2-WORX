@@ -30,15 +30,15 @@ describe("createRequestEnrichmentHandle", () => {
     vi.clearAllMocks();
   });
 
-  it("skips enrichment when middleware context is null", async () => {
-    mockGetMiddlewareContext.mockReturnValue(null);
+  it("propagates error when middleware context throws", async () => {
+    mockGetMiddlewareContext.mockImplementation(() => {
+      throw new Error("FATAL: Missing required env vars");
+    });
 
     const event = makeEvent();
-    await handle({ event, resolve: mockResolve });
 
-    expect(mockResolve).toHaveBeenCalledWith(event);
+    await expect(handle({ event, resolve: mockResolve })).rejects.toThrow("FATAL");
     expect(mockEnrichRequest).not.toHaveBeenCalled();
-    expect(event.locals.requestContext).toBeUndefined();
   });
 
   it("calls enrichRequest and stores result on event.locals", async () => {
