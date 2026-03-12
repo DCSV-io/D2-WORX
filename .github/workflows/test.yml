@@ -423,7 +423,6 @@ jobs:
   e2e-prebuild:
     name: D2 E2E - .NET Prebuild (v2)
     runs-on: ubuntu-latest
-    needs: [node-auth-unit, node-auth-integration, node-comms-unit, node-comms-integration]
 
     steps:
       - name: Checkout code
