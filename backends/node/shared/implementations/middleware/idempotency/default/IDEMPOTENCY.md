@@ -6,17 +6,17 @@ Idempotency-Key header middleware using Redis-backed SET NX + cached response re
 
 | File Name                                            | Description                                                                                                |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [handlers/check.ts](src/handlers/check.ts)           | `Check` handler — SET NX sentinel, detect in-flight/cached state. Fail-open.                               |
+| [handlers/check.ts](src/handlers/check.ts)           | `CheckIdempotency` handler — SET NX sentinel, detect in-flight/cached state. Fail-open.                    |
 | [check-idempotency.ts](src/check-idempotency.ts)     | Framework-agnostic orchestrator returning `IdempotencyResult` with `storeResponse`/`removeLock` callbacks. |
 | [idempotency-options.ts](src/idempotency-options.ts) | `IdempotencyOptions` + `DEFAULT_IDEMPOTENCY_OPTIONS` (24h cache, 30s lock, 1MB max body).                  |
 | [cache-keys.ts](src/cache-keys.ts)                   | Idempotency cache key generation.                                                                          |
-| [index.ts](src/index.ts)                             | Barrel re-export of Check, checkIdempotency, IdempotencyOptions.                                           |
+| [index.ts](src/index.ts)                             | Barrel re-export of CheckIdempotency, checkIdempotency, IdempotencyOptions.                                |
 
 ## Flow
 
 ```
 1. Client sends request with `Idempotency-Key` header
-2. Check handler: SET NX "{sentinel}" with inFlightTtlMs
+2. CheckIdempotency handler: SET NX "{sentinel}" with inFlightTtlMs
    ├── Key acquired → proceed with request
    ├── Key exists, value = sentinel → return "in_flight" (409)
    └── Key exists, value = JSON → return "cached" (replay response)

@@ -18,7 +18,7 @@ using Xunit;
 public class BatchD2ResultExtensionsTests : IDisposable
 {
     private const string _TRACE_ID = "test-trace-id-123";
-    private readonly TestDbContext _db;
+    private readonly TestDbContext r_db;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchD2ResultExtensionsTests"/> class.
@@ -29,7 +29,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _db = new TestDbContext(options);
+        r_db = new TestDbContext(options);
     }
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -45,7 +45,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToD2ResultAsync_EmptyInput_ReturnsOkWithEmptyList()
     {
         // Arrange
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             Array.Empty<int>(),
             e => e.Id);
 
@@ -72,13 +72,13 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToD2ResultAsync_AllFound_ReturnsOk()
     {
         // Arrange
-        _db.TestEntities.AddRange(
+        r_db.TestEntities.AddRange(
             new TestEntity { Id = 1, Name = "One" },
             new TestEntity { Id = 2, Name = "Two" },
             new TestEntity { Id = 3, Name = "Three" });
-        await _db.SaveChangesAsync(Ct);
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 2, 3 },
             e => e.Id);
 
@@ -104,7 +104,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToD2ResultAsync_NoneFound_ReturnsNotFound()
     {
         // Arrange — no data in DB
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 99, 100 },
             e => e.Id);
 
@@ -131,10 +131,10 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToD2ResultAsync_SomeFound_ReturnsSomeFoundWithData()
     {
         // Arrange — only 1 of 3 requested entities exists
-        _db.TestEntities.Add(new TestEntity { Id = 1, Name = "One" });
-        await _db.SaveChangesAsync(Ct);
+        r_db.TestEntities.Add(new TestEntity { Id = 1, Name = "One" });
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 2, 3 },
             e => e.Id);
 
@@ -163,7 +163,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToD2ResultAsync_NullTraceId_IsAccepted()
     {
         // Arrange
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             Array.Empty<int>(),
             e => e.Id);
 
@@ -188,7 +188,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToDictionaryD2ResultAsync_EmptyInput_ReturnsOkWithEmptyDictionary()
     {
         // Arrange
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             Array.Empty<int>(),
             e => e.Id);
 
@@ -215,12 +215,12 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToDictionaryD2ResultAsync_AllFound_ReturnsOkWithDictionary()
     {
         // Arrange
-        _db.TestEntities.AddRange(
+        r_db.TestEntities.AddRange(
             new TestEntity { Id = 1, Name = "One" },
             new TestEntity { Id = 2, Name = "Two" });
-        await _db.SaveChangesAsync(Ct);
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 2 },
             e => e.Id);
 
@@ -248,7 +248,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToDictionaryD2ResultAsync_NoneFound_ReturnsNotFound()
     {
         // Arrange — no data in DB
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 99, 100 },
             e => e.Id);
 
@@ -275,12 +275,12 @@ public class BatchD2ResultExtensionsTests : IDisposable
     public async Task ToDictionaryD2ResultAsync_SomeFound_ReturnsSomeFoundWithData()
     {
         // Arrange — only 2 of 3 requested entities exist
-        _db.TestEntities.AddRange(
+        r_db.TestEntities.AddRange(
             new TestEntity { Id = 1, Name = "One" },
             new TestEntity { Id = 3, Name = "Three" });
-        await _db.SaveChangesAsync(Ct);
+        await r_db.SaveChangesAsync(Ct);
 
-        var query = _db.TestEntities.BatchGetByIds(
+        var query = r_db.TestEntities.BatchGetByIds(
             new[] { 1, 2, 3 },
             e => e.Id);
 
@@ -303,7 +303,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        _db.Dispose();
+        r_db.Dispose();
         GC.SuppressFinalize(this);
     }
 

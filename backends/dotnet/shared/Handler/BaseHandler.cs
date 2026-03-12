@@ -70,6 +70,11 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         CancellationToken ct = default,
         HandlerOptions? options = null)
     {
+        // Enrich the parent span (e.g., gRPC server span, HTTP span) with context
+        // attributes so they appear on the top-level span in Tempo — not just on
+        // this handler's child span. Harmless if the Gateway middleware already set them.
+        EnrichActivity(Activity.Current, Context.Request);
+
         // Create a new activity for tracing.
         using var activity = BHASW.SR_ActivitySource.StartActivity(typeof(THandler).Name);
 
@@ -77,20 +82,16 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         activity?.SetTag("handler.type", typeof(THandler).FullName ?? typeof(THandler).Name);
         activity?.SetTag("trace.id", Context.Request.TraceId);
 
-        if (Context.Request.UserId is not null)
-        {
-            activity?.SetTag("user.id", Context.Request.UserId);
-        }
+        SetTagIfNotNull(activity, "user.id", Context.Request.UserId);
+        SetTagIfNotNull(activity, "agent.org.id", Context.Request.AgentOrgId);
+        SetTagIfNotNull(activity, "target.org.id", Context.Request.TargetOrgId);
 
-        if (Context.Request.AgentOrgId is not null)
-        {
-            activity?.SetTag("agent.org.id", Context.Request.AgentOrgId);
-        }
-
-        if (Context.Request.TargetOrgId is not null)
-        {
-            activity?.SetTag("target.org.id", Context.Request.TargetOrgId);
-        }
+        // Push request context fields into MEL scope so they appear on ALL log entries
+        // within this handler — including on gRPC services that don't run the Gateway's
+        // RequestContextLoggingMiddleware. Uses ILogger.BeginScope so both OTel OTLP
+        // exporter (IncludeScopes) and Serilog (maps to LogContext) see the properties.
+        var logScope = BuildLogScope();
+        using var scope = logScope.Count > 0 ? Context.Logger.BeginScope(logScope) : null;
 
         // Start the stopwatch to measure elapsed time.
         var sw = Stopwatch.StartNew();
@@ -277,6 +278,92 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         // Return validation failed result with errors.
         return D2Result.ValidationFailed(
             inputErrors: errors);
+    }
+
+    /// <summary>
+    /// Enriches an activity with standard request context span attributes.
+    /// Uses the same attribute names as the Gateway's RequestContextLoggingMiddleware.
+    /// </summary>
+    private static void EnrichActivity(Activity? activity, IRequestContext req)
+    {
+        if (activity is null)
+        {
+            return;
+        }
+
+        SetTagIfNotNull(activity, "userId", req.UserId);
+        SetTagIfNotNull(activity, "username", req.Username);
+        SetTagIfNotNull(activity, "agentOrgId", req.AgentOrgId);
+        SetTagIfNotNull(activity, "agentOrgType", req.AgentOrgType);
+        SetTagIfNotNull(activity, "agentOrgRole", req.AgentOrgRole);
+        SetTagIfNotNull(activity, "targetOrgId", req.TargetOrgId);
+        SetTagIfNotNull(activity, "targetOrgType", req.TargetOrgType);
+
+        // Auth/trust flags — skip when null (unknown in pre-auth handlers).
+        if (req.IsAuthenticated.HasValue)
+        {
+            activity.SetTag("isAuthenticated", req.IsAuthenticated.Value);
+        }
+
+        if (req.IsTrustedService.HasValue)
+        {
+            activity.SetTag("isTrustedService", req.IsTrustedService.Value);
+        }
+
+        if (req.IsAuthenticated == true)
+        {
+            activity.SetTag("isOrgEmulating", req.IsOrgEmulating ?? false);
+        }
+    }
+
+    /// <summary>
+    /// Sets a tag on an activity only if the value is non-null.
+    /// </summary>
+    private static void SetTagIfNotNull(Activity? activity, string key, object? value)
+    {
+        if (value is not null)
+        {
+            activity?.SetTag(key, value.ToString());
+        }
+    }
+
+    /// <summary>
+    /// Adds a key-value pair to a dictionary only if the value is non-null.
+    /// </summary>
+    private static void AddIfNotNull(Dictionary<string, object?> dict, string key, object? value)
+    {
+        if (value is not null)
+        {
+            dict[key] = value.ToString();
+        }
+    }
+
+    /// <summary>
+    /// Builds a dictionary of non-PII request context fields for log scope enrichment.
+    /// </summary>
+    private Dictionary<string, object?> BuildLogScope()
+    {
+        var req = Context.Request;
+        var scope = new Dictionary<string, object?>();
+
+        AddIfNotNull(scope, "userId", req.UserId);
+        AddIfNotNull(scope, "username", req.Username);
+        AddIfNotNull(scope, "agentOrgId", req.AgentOrgId);
+        AddIfNotNull(scope, "agentOrgType", req.AgentOrgType);
+        AddIfNotNull(scope, "agentOrgRole", req.AgentOrgRole);
+        AddIfNotNull(scope, "targetOrgId", req.TargetOrgId);
+        AddIfNotNull(scope, "targetOrgType", req.TargetOrgType);
+        if (req.IsAuthenticated.HasValue)
+        {
+            scope["isAuthenticated"] = req.IsAuthenticated.Value;
+        }
+
+        if (req.IsAuthenticated == true)
+        {
+            scope["isOrgEmulating"] = req.IsOrgEmulating ?? false;
+        }
+
+        return scope;
     }
 
     /// <summary>

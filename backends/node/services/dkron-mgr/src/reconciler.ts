@@ -49,10 +49,7 @@ function toUpsertPayload(desired: JobFields): DkronJob {
  * Each individual operation is wrapped in try/catch so one failure does not
  * block others. Failures are accumulated in the result's `errors` array.
  */
-export async function reconcile(
-  config: DkronMgrConfig,
-  logger: ILogger,
-): Promise<ReconcileResult> {
+export async function reconcile(config: DkronMgrConfig, logger: ILogger): Promise<ReconcileResult> {
   const created: string[] = [];
   const updated: string[] = [];
   const deleted: string[] = [];
@@ -65,9 +62,7 @@ export async function reconcile(
 
   // 2. Fetch actual state from Dkron and filter to managed jobs only.
   const allJobs = await listJobs(config.dkronUrl, logger);
-  const managedJobs = allJobs.filter(
-    (j) => j.metadata?.[MANAGED_BY_KEY] === MANAGED_BY_VALUE,
-  );
+  const managedJobs = allJobs.filter((j) => j.metadata?.[MANAGED_BY_KEY] === MANAGED_BY_VALUE);
   const actualByName = new Map(managedJobs.map((j) => [j.name, j]));
 
   // 3. Create or update desired jobs.

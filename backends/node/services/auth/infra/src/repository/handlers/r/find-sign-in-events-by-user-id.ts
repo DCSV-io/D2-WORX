@@ -1,6 +1,6 @@
 import { eq, desc } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { SignInEvent } from "@d2/auth-domain";
 import type {
@@ -19,6 +19,10 @@ export class FindSignInEventsByUserId
   constructor(db: NodePgDatabase, context: IHandlerContext) {
     super(context);
     this.db = db;
+  }
+
+  get redaction(): RedactionSpec {
+    return { suppressOutput: true };
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
@@ -42,6 +46,7 @@ function toSignInEvent(row: typeof signInEvent.$inferSelect): SignInEvent {
     ipAddress: row.ipAddress,
     userAgent: row.userAgent,
     whoIsId: row.whoIsId,
+    deviceFingerprint: row.deviceFingerprint,
     failureReason: row.failureReason,
     createdAt: row.createdAt,
   };

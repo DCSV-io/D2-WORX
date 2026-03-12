@@ -12,9 +12,10 @@ namespace D2.Shared.RateLimit.Default;
 public enum RateLimitDimension
 {
     /// <summary>
-    /// Rate limit by client-provided fingerprint (from X-Client-Fingerprint header).
+    /// Rate limit by combined device fingerprint: SHA-256(clientFP + serverFP + clientIp).
+    /// Always evaluated (device fingerprint is always present).
     /// </summary>
-    ClientFingerprint,
+    DeviceFingerprint,
 
     /// <summary>
     /// Rate limit by client IP address.

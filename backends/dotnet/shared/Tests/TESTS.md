@@ -27,3 +27,57 @@ Integration and unit tests for shared infrastructure including cache implementat
 | [D2RetryHelperTests.cs](Unit/Retry/D2RetryHelperTests.cs)                                         | Unit tests for D2RetryHelper: exponential backoff, transient error detection, max retries, abort on non-transient.                                                                                                      |
 | [CheckHandlerTests.cs](Unit/Middleware/Idempotency/CheckHandlerTests.cs)                          | Unit tests for idempotency Check handler: SET NX, sentinel detection, cached response replay, fail-open.                                                                                                                |
 | [IdempotencyMiddlewareTests.cs](Unit/Middleware/Idempotency/IdempotencyMiddlewareTests.cs)        | Unit tests for idempotency middleware: end-to-end flow, 409 on in-flight, response caching, header extraction.                                                                                                          |
+
+---
+
+## Testing Philosophy & Best Practices
+
+High line coverage with only happy-path tests is insufficient. Every feature must be tested adversarially — code coverage AND case coverage are both required.
+
+### Case Coverage Checklist
+
+Apply to ALL test layers (xUnit, Vitest, Playwright):
+
+| Category                     | What to Test                                                                                                     |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **Happy path**               | Valid inputs produce expected outputs                                                                            |
+| **Invalid/garbage inputs**   | Nulls, empty strings, whitespace-only, wrong types, negative numbers, zero-length arrays                         |
+| **Boundary values**          | Max length strings, exactly-at-limit, one-over-limit, empty collections                                          |
+| **Format violations**        | Malformed emails, invalid UUIDs, bad date formats, non-UTF8                                                      |
+| **Cross-field dependencies** | Field A valid alone but invalid given field B's value                                                            |
+| **Error propagation**        | Upstream failures (gRPC down, Redis timeout, DB constraint violation) handled gracefully, not swallowed or 500'd |
+| **Idempotency**              | Same operation twice produces same result (especially for handlers with side effects)                            |
+| **Concurrency**              | Concurrent identical requests don't corrupt state (singleflight, circuit breaker, cache races)                   |
+
+### Test Naming
+
+Use descriptive names that explain the scenario — class/method under test, condition, expected outcome:
+
+```csharp
+GetHandler_WhenMemoryCacheHit_ReturnsDataWithoutCallingRedis
+Create_WithValidCoordinates_GeneratesConsistentHashId
+SetHandler_WhenRedisUnavailable_ReturnsServiceUnavailable
+Validate_WithWhitespaceOnlyEmail_ReturnsValidationError
+```
+
+### Form / Endpoint Testing
+
+For API endpoints and Playwright E2E tests:
+
+- Submit with all fields empty — validation fires, no server round-trip
+- Submit with one invalid field — only that field shows error, others preserved
+- Fix error, re-blur/re-submit — error clears
+- Whitespace-only inputs rejected (not silently accepted)
+- Max-length enforcement (paste 10,000 chars — truncated or rejected)
+
+### Principle
+
+If code accepts user input or external data, try to **break it**. If it doesn't break, the tests prove it. If it does break, the test catches it before production does.
+
+### Frameworks
+
+| Platform  | Frameworks                                                          |
+| --------- | ------------------------------------------------------------------- |
+| .NET      | xUnit, FluentAssertions, Moq, Testcontainers (PostgreSQL 18, Redis) |
+| Node.js   | Vitest 4.x, Testcontainers (PostgreSQL + Redis modules)             |
+| SvelteKit | vitest-browser-svelte (components), Playwright (E2E)                |

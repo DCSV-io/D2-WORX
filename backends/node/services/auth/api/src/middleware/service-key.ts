@@ -1,24 +1,49 @@
 import { createMiddleware } from "hono/factory";
 import { D2Result } from "@d2/result";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { REQUEST_INFO_KEY } from "../context-keys.js";
+import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
+
+export interface ServiceKeyMiddlewareOptions {
+  /**
+   * When true, requests without an `X-Api-Key` header are rejected with 401.
+   * When false (default), missing keys are treated as browser requests.
+   */
+  require?: boolean;
+}
 
 /**
  * Creates Hono middleware that validates the `X-Api-Key` header for S2S calls.
  *
  * Mirrors .NET `ServiceKeyMiddleware` behavior:
- * - No header → pass through (browser request)
+ * - No header → pass through (browser request) OR 401 if `require` is set
  * - Invalid key → 401 immediately with D2Result JSON
- * - Valid key → set `isTrustedService = true` on requestInfo, continue
+ * - Valid key → set `isTrustedService = true` on requestContext, continue
  *
- * Must run AFTER request enrichment middleware (needs requestInfo on context).
+ * Must run AFTER request enrichment middleware (needs requestContext on context).
  */
-export function createServiceKeyMiddleware(validKeys: Set<string>) {
+export function createServiceKeyMiddleware(
+  validKeys: Set<string>,
+  options?: ServiceKeyMiddlewareOptions,
+) {
+  const requireKey = options?.require ?? false;
+
   return createMiddleware(async (c, next) => {
     const apiKey = c.req.header("X-Api-Key");
 
-    // No key → treat as browser request, continue normally
+    // No key → pass through or reject based on require option
     if (!apiKey) {
+      if (requireKey) {
+        return c.json(
+          D2Result.unauthorized({ messages: ["API key required."] }),
+          401 as ContentfulStatusCode,
+        );
+      }
+
+      // Explicitly mark as not-trusted (transitions from null → false).
+      const requestContext = c.get(REQUEST_CONTEXT_KEY);
+      if (requestContext) {
+        requestContext.isTrustedService = false;
+      }
       await next();
       return;
     }
@@ -26,18 +51,15 @@ export function createServiceKeyMiddleware(validKeys: Set<string>) {
     // Invalid key → 401 immediately
     if (!validKeys.has(apiKey)) {
       return c.json(
-        D2Result.fail({
-          messages: ["Invalid API key."],
-          errorCode: "UNAUTHORIZED",
-        }),
+        D2Result.unauthorized({ messages: ["Invalid API key."] }),
         401 as ContentfulStatusCode,
       );
     }
 
-    // Valid key → set trust flag on requestInfo
-    const requestInfo = c.get(REQUEST_INFO_KEY);
-    if (requestInfo) {
-      requestInfo.isTrustedService = true;
+    // Valid key → set trust flag on requestContext
+    const requestContext = c.get(REQUEST_CONTEXT_KEY);
+    if (requestContext) {
+      requestContext.isTrustedService = true;
     }
 
     await next();

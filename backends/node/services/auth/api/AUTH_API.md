@@ -8,19 +8,20 @@ Serves as the entry point and composition root for the Auth service. Creates the
 
 ## Design Decisions
 
-| Decision                            | Rationale                                                                          |
-| ----------------------------------- | ---------------------------------------------------------------------------------- |
-| Composition root in `createApp()`   | Mirrors .NET `Program.cs` — single function wires all dependencies                 |
-| DI scope per protected request      | `createScopeMiddleware(provider)` builds `IRequestContext` + `IHandlerContext`     |
-| Pre-auth handlers as singletons     | FindWhoIs, RateLimit, Throttle run before authentication — not in DI scope         |
-| AsyncLocalStorage for fingerprint   | JWT `definePayload` runs in BetterAuth context — needs per-request fingerprint     |
-| Thin route handlers                 | Routes extract input from request, resolve handler from DI scope, return result    |
-| Auth middleware visible at route    | `requireOrg()`, `requireRole()`, `requireStaff()` declared inline for auditability |
-| AppOverrides for testability        | Tests inject stub password functions to skip HIBP API calls                        |
-| Separate Hono apps for route groups | Auth routes, protected routes, and health mounted as sub-apps                      |
-| gRPC server for jobs                | Scheduled job RPCs on a separate port — keeps HTTP and gRPC concerns isolated      |
-| Lock handlers as singletons         | AcquireLock/ReleaseLock share the Redis connection — registered once in DI         |
-| withApiKeyAuth on gRPC              | Service key validation on gRPC RPCs mirrors HTTP service key middleware            |
+| Decision                              | Rationale                                                                          |
+| ------------------------------------- | ---------------------------------------------------------------------------------- |
+| Composition root in `createApp()`     | Mirrors .NET `Program.cs` — single function wires all dependencies                 |
+| DI scope per protected request        | `createScopeMiddleware(provider)` builds `IRequestContext` + `IHandlerContext`     |
+| Pre-auth handlers as singletons       | FindWhoIs, RateLimit, Throttle run before authentication — not in DI scope         |
+| Ambient context via AsyncLocalStorage | All handlers (including pre-auth singletons) see per-request context automatically |
+| API key required on all endpoints     | `require: true` on service-key middleware — no unauthenticated external access     |
+| Thin route handlers                   | Routes extract input from request, resolve handler from DI scope, return result    |
+| Auth middleware visible at route      | `requireOrg()`, `requireRole()`, `requireStaff()` declared inline for auditability |
+| AppOverrides for testability          | Tests inject stub password functions to skip HIBP API calls                        |
+| Separate Hono apps for route groups   | Auth routes, protected routes, and health mounted as sub-apps                      |
+| gRPC server for jobs                  | Scheduled job RPCs on a separate port — keeps HTTP and gRPC concerns isolated      |
+| Lock handlers as singletons           | AcquireLock/ReleaseLock share the Redis connection — registered once in DI         |
+| withApiKeyAuth on gRPC                | Service key validation on gRPC RPCs mirrors HTTP service key middleware            |
 
 ## Package Structure
 
@@ -36,8 +37,11 @@ src/
     csrf.ts                 CSRF protection (Origin header validation)
     distributed-rate-limit.ts  Rate limiting middleware (Redis sliding window)
     error-handler.ts        Global error handler (D2Result formatting)
+    ambient-scope.ts        AsyncLocalStorage.run() wrapper for per-request ambient context
     request-enrichment.ts   IP resolution, fingerprinting, WhoIs lookup
-    scope.ts                Per-request DI scope (IRequestContext, IHandlerContext)
+    request-context-logging.ts  Per-request child logger with network/auth bindings
+    scope.ts                Per-request DI scope (IRequestContext, IHandlerContext, enterWith upgrade)
+    service-key.ts          X-Api-Key validation with optional require mode
     session.ts              BetterAuth session extraction (user + session on context)
     session-fingerprint.ts  Session-to-fingerprint binding (stolen token detection)
   routes/
@@ -54,19 +58,19 @@ src/
 
 `createApp(config, publisher?, overrides?, messageBus?)` performs startup in order:
 
-| Step | Action                                                                               |
-| ---- | ------------------------------------------------------------------------------------ |
-| 1    | Create singletons: `pg.Pool`, `ioredis`, Pino logger                                 |
-| 2    | Run Drizzle migrations, create Drizzle instance                                      |
-| 3    | Build `ServiceCollection` — register logger, handler context, cache, geo, infra, app |
-| 3a   | Register `AcquireLock` / `ReleaseLock` singleton instances for job locking           |
-| 4    | Build `ServiceProvider`                                                              |
-| 5    | Create pre-auth singletons (FindWhoIs, RateLimitCheck, Throttle handlers)            |
-| 6    | Create password functions (domain validation + HIBP k-anonymity cache)               |
-| 7    | Create BetterAuth instance with scoped callback hooks                                |
-| 8    | Configure session fingerprint middleware (Redis-backed, 7-day TTL)                   |
-| 9    | Build Hono app with global + route-specific middleware                               |
-| 10   | Start gRPC server on `grpcPort` (if configured) with `withApiKeyAuth` wrapper        |
+| Step | Action                                                                                                |
+| ---- | ----------------------------------------------------------------------------------------------------- |
+| 1    | Create singletons: `pg.Pool`, `ioredis`, Pino logger                                                  |
+| 2    | Run Drizzle migrations, create Drizzle instance                                                       |
+| 3    | Build `ServiceCollection` — register logger, handler context, cache, geo, infra, app                  |
+| 3a   | Register `AcquireLock` / `ReleaseLock` singleton instances for job locking                            |
+| 4    | Build `ServiceProvider`                                                                               |
+| 5    | Create pre-auth singletons (FindWhoIs, RateLimitCheck, Throttle handlers) — see ambient context below |
+| 6    | Create password functions (domain validation + HIBP k-anonymity cache)                                |
+| 7    | Create BetterAuth instance with scoped callback hooks                                                 |
+| 8    | Configure session fingerprint middleware (Redis-backed, 7-day TTL)                                    |
+| 9    | Build Hono app with global + route-specific middleware                                                |
+| 10   | Start gRPC server on `grpcPort` (if configured) with `withApiKeyAuth` wrapper                         |
 
 Returns `{ app, auth, grpcServer, shutdown }`.
 
@@ -74,13 +78,16 @@ Returns `{ app, auth, grpcServer, shutdown }`.
 
 ### Global (all requests)
 
-| Order | Middleware             | Purpose                                         |
-| ----- | ---------------------- | ----------------------------------------------- |
-| 1     | CORS                   | Allows configured SvelteKit origin              |
-| 2     | Body limit             | 256 KB max (auth payloads are small JSON)       |
-| 3     | Request enrichment     | IP resolution, server fingerprint, WhoIs lookup |
-| 4     | Distributed rate limit | Multi-dimensional sliding window (Redis)        |
-| 5     | Error handler          | Catches unhandled errors, returns D2Result      |
+| Order | Middleware              | Purpose                                                                 |
+| ----- | ----------------------- | ----------------------------------------------------------------------- |
+| 1     | CORS                    | Allows configured SvelteKit origin                                      |
+| 2     | Body limit              | 256 KB max (auth payloads are small JSON)                               |
+| 3     | Service key detection   | `X-Api-Key` → sets `IsTrustedService`. `require: true` → 401 if missing |
+| 4     | Request enrichment      | IP resolution, server fingerprint, WhoIs lookup                         |
+| 5     | Request context logging | Per-request child logger with network/auth bindings                     |
+| 6     | Ambient scope           | `AsyncLocalStorage.run()` — seeds per-request context for all handlers  |
+| 7     | Distributed rate limit  | Multi-dimensional sliding window (Redis, skipped for trusted services)  |
+| 8     | Error handler           | Catches unhandled errors, returns D2Result                              |
 
 ### Auth routes (`/api/auth/*`)
 
@@ -92,12 +99,16 @@ Returns `{ app, auth, grpcServer, shutdown }`.
 
 ### Protected routes (emulation, contacts, invitations)
 
-| Order | Middleware          | Purpose                                               |
-| ----- | ------------------- | ----------------------------------------------------- |
-| 1     | Session             | Extracts user + session from BetterAuth (401 if none) |
-| 2     | Session fingerprint | Validates fingerprint continuity                      |
-| 3     | DI scope            | Creates per-request scope with IRequestContext        |
-| 4     | CSRF                | Origin header validation                              |
+| Order | Middleware          | Purpose                                                                                    |
+| ----- | ------------------- | ------------------------------------------------------------------------------------------ |
+| 1     | Session             | Extracts user + session from BetterAuth (401 if none)                                      |
+| 2     | Session fingerprint | Validates fingerprint continuity                                                           |
+| 3     | DI scope            | Creates per-request scope with IRequestContext, upgrades ambient context via `enterWith()` |
+| 4     | CSRF                | Origin header validation                                                                   |
+
+### Ambient Context Flow
+
+Pre-auth singletons (FindWhoIs, RateLimit, Throttle) are constructed once with static service-level defaults. The `ambient-scope` middleware wraps the entire request pipeline in `AsyncLocalStorage.run()`, seeded with the enrichment-populated `IRequestContext`. `HandlerContext` checks this storage first — so pre-auth handlers automatically see per-request fields (IP, fingerprints, `isTrustedService`). After auth, the scope middleware upgrades the ambient context via `.enterWith()` to include identity/org fields. This mirrors .NET's DI scoping behavior.
 
 ## Routes
 
@@ -241,8 +252,8 @@ All tests are in `@d2/auth-tests` (`backends/node/services/auth/tests/`):
 src/unit/api/
   middleware/
     authorization.test.ts, csrf.test.ts, error-handler.test.ts,
-    jwt-fingerprint.test.ts, scope.test.ts, session.test.ts,
-    session-fingerprint.test.ts
+    jwt-fingerprint.test.ts, scope.test.ts, service-key.test.ts,
+    session.test.ts, session-fingerprint.test.ts
   routes/
     auth-routes.test.ts, emulation-routes.test.ts,
     invitation-routes.test.ts, org-contact-routes.test.ts

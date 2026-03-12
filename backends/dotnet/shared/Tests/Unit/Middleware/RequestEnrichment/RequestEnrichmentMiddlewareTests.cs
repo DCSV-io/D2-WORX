@@ -46,7 +46,7 @@ public class RequestEnrichmentMiddlewareTests
     #region Basic Enrichment Tests
 
     /// <summary>
-    /// Tests that middleware sets IRequestInfo on HttpContext.Features.
+    /// Tests that middleware sets IRequestContext on HttpContext.Features.
     /// </summary>
     ///
     /// <returns>
@@ -65,8 +65,8 @@ public class RequestEnrichmentMiddlewareTests
         await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
 
         // Assert
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo.Should().NotBeNull();
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext.Should().NotBeNull();
         _nextWasCalled.Should().BeTrue();
     }
 
@@ -91,8 +91,8 @@ public class RequestEnrichmentMiddlewareTests
         await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
 
         // Assert
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo!.ClientIp.Should().Be("198.51.100.50");
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext!.ClientIp.Should().Be("198.51.100.50");
     }
 
     /// <summary>
@@ -115,20 +115,20 @@ public class RequestEnrichmentMiddlewareTests
         await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
 
         // Assert
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo!.ServerFingerprint.Should().NotBeNullOrEmpty();
-        requestInfo.ServerFingerprint.Should().HaveLength(64); // SHA-256 hex
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext!.ServerFingerprint.Should().NotBeNullOrEmpty();
+        requestContext.ServerFingerprint.Should().HaveLength(64); // SHA-256 hex
     }
 
     /// <summary>
-    /// Tests that middleware reads client fingerprint header.
+    /// Tests that middleware reads client fingerprint from header (fallback when no cookie).
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task InvokeAsync_ReadsClientFingerprintHeader()
+    public async Task InvokeAsync_ReadsClientFingerprintFromHeader()
     {
         // Arrange
         var context = CreateHttpContext("127.0.0.1");
@@ -140,19 +140,22 @@ public class RequestEnrichmentMiddlewareTests
         await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
 
         // Assert
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo!.ClientFingerprint.Should().Be("client-device-fingerprint-abc123");
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext!.ClientFingerprint.Should().Be("client-device-fingerprint-abc123");
+        requestContext.DeviceFingerprint.Should().NotBeNullOrEmpty();
+        requestContext.DeviceFingerprint.Should().HaveLength(64); // SHA-256 hex
     }
 
     /// <summary>
-    /// Tests that middleware handles missing client fingerprint header gracefully.
+    /// Tests that middleware sets ClientFingerprint to null when neither cookie nor header is present,
+    /// but DeviceFingerprint is still computed.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task InvokeAsync_WhenNoClientFingerprintHeader_SetsNull()
+    public async Task InvokeAsync_WhenNoClientFingerprint_SetsNullButDeviceFingerprintPresent()
     {
         // Arrange
         var context = CreateHttpContext("127.0.0.1");
@@ -163,8 +166,10 @@ public class RequestEnrichmentMiddlewareTests
         await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
 
         // Assert
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo!.ClientFingerprint.Should().BeNull();
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext!.ClientFingerprint.Should().BeNull();
+        requestContext.DeviceFingerprint.Should().NotBeNullOrEmpty();
+        requestContext.DeviceFingerprint.Should().HaveLength(64); // SHA-256 hex (degraded: "" + serverFP + clientIp)
     }
 
     #endregion
@@ -192,12 +197,12 @@ public class RequestEnrichmentMiddlewareTests
         await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
 
         // Assert
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo!.City.Should().Be("Los Angeles");
-        requestInfo.CountryCode.Should().Be("US");
-        requestInfo.SubdivisionCode.Should().Be("US-CA");
-        requestInfo.IsVpn.Should().BeFalse();
-        requestInfo.WhoIsHashId.Should().NotBeNullOrEmpty();
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext!.City.Should().Be("Los Angeles");
+        requestContext.CountryCode.Should().Be("US");
+        requestContext.SubdivisionCode.Should().Be("US-CA");
+        requestContext.IsVpn.Should().BeFalse();
+        requestContext.WhoIsHashId.Should().NotBeNullOrEmpty();
     }
 
     /// <summary>
@@ -226,9 +231,9 @@ public class RequestEnrichmentMiddlewareTests
                 It.IsAny<HandlerOptions?>()),
             Times.Never);
 
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo!.ClientIp.Should().Be("127.0.0.1");
-        requestInfo.City.Should().BeNull();
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext!.ClientIp.Should().Be("127.0.0.1");
+        requestContext.City.Should().BeNull();
     }
 
     /// <summary>
@@ -286,12 +291,12 @@ public class RequestEnrichmentMiddlewareTests
         // Assert - Middleware MUST continue, NOT throw
         _nextWasCalled.Should().BeTrue("middleware must call next even when WhoIs is null");
 
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo.Should().NotBeNull("IRequestInfo must be set even without WhoIs");
-        requestInfo.ClientIp.Should().Be("203.0.113.1");
-        requestInfo.City.Should().BeNull();
-        requestInfo.CountryCode.Should().BeNull();
-        requestInfo.WhoIsHashId.Should().BeNull();
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext.Should().NotBeNull("IRequestContext must be set even without WhoIs");
+        requestContext.ClientIp.Should().Be("203.0.113.1");
+        requestContext.City.Should().BeNull();
+        requestContext.CountryCode.Should().BeNull();
+        requestContext.WhoIsHashId.Should().BeNull();
     }
 
     /// <summary>
@@ -316,10 +321,10 @@ public class RequestEnrichmentMiddlewareTests
         // Assert
         _nextWasCalled.Should().BeTrue("middleware must call next even when WhoIs fails");
 
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo.Should().NotBeNull();
-        requestInfo.ClientIp.Should().Be("198.51.100.1");
-        requestInfo.City.Should().BeNull();
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext.Should().NotBeNull();
+        requestContext.ClientIp.Should().Be("198.51.100.1");
+        requestContext.City.Should().BeNull();
     }
 
     /// <summary>
@@ -366,10 +371,10 @@ public class RequestEnrichmentMiddlewareTests
         await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
 
         // Assert
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        requestInfo!.IsVpn.Should().BeTrue();
-        requestInfo.IsProxy.Should().BeTrue();
-        requestInfo.IsTor.Should().BeFalse();
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext!.IsVpn.Should().BeTrue();
+        requestContext.IsProxy.Should().BeTrue();
+        requestContext.IsTor.Should().BeFalse();
     }
 
     #endregion
@@ -397,6 +402,46 @@ public class RequestEnrichmentMiddlewareTests
 
         // Assert
         _nextWasCalled.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region Infrastructure Endpoint Skip Tests
+
+    /// <summary>
+    /// Tests that middleware skips enrichment entirely for infrastructure endpoints.
+    /// </summary>
+    /// <param name="path">The infrastructure endpoint path to test.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Theory]
+    [InlineData("/health")]
+    [InlineData("/alive")]
+    [InlineData("/metrics")]
+    [InlineData("/api/health")]
+    public async Task InvokeAsync_WhenInfrastructureEndpoint_SkipsEnrichmentAndCallsNext(string path)
+    {
+        // Arrange
+        var context = CreateHttpContext("203.0.113.1");
+        context.Request.Path = path;
+
+        var middleware = CreateMiddleware();
+
+        // Act
+        await middleware.InvokeAsync(context, r_whoIsHandlerMock.Object);
+
+        // Assert — next was called but no enrichment was performed
+        _nextWasCalled.Should().BeTrue("middleware must still call next for infrastructure endpoints");
+
+        var requestContext = context.Features.Get<IRequestContext>();
+        requestContext.Should().BeNull("enrichment should be skipped for infrastructure endpoints");
+
+        r_whoIsHandlerMock.Verify(
+            x => x.HandleAsync(
+                It.IsAny<IComplex.FindWhoIsInput>(),
+                It.IsAny<CancellationToken>(),
+                It.IsAny<HandlerOptions?>()),
+            Times.Never,
+            "WhoIs lookup should not run for infrastructure endpoints");
     }
 
     #endregion

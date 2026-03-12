@@ -21,6 +21,9 @@ function createTestContext(logger?: ILogger): IHandlerContext {
   const request: IRequestContext = {
     traceId: "test-trace-id",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,

@@ -7,6 +7,7 @@
 namespace D2.Geo.Infra.WhoIs;
 
 using D2.Geo.App.Interfaces.WhoIs;
+using D2.Shared.Utilities.Extensions;
 using IPinfo;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -33,7 +34,7 @@ public class IpInfoClientWrapper : IIpInfoClient
         IOptions<GeoInfraOptions> options,
         ILogger<IpInfoClientWrapper> logger)
     {
-        if (string.IsNullOrEmpty(options.Value.IpInfoAccessToken))
+        if (options.Value.IpInfoAccessToken.Falsey())
         {
             logger.LogCritical(
                 "IpInfoAccessToken is not configured — IPinfo requests will use unauthenticated (rate-limited) access. " +

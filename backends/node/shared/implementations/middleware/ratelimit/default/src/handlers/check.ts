@@ -19,7 +19,10 @@ type CheckOutput = RateLimit.CheckOutput;
  *
  * Fail-open on all cache errors.
  */
-export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateLimit.ICheckHandler {
+export class CheckRateLimit
+  extends BaseHandler<CheckInput, CheckOutput>
+  implements RateLimit.ICheckHandler
+{
   override get redaction() {
     return RateLimit.CHECK_REDACTION;
   }
@@ -44,10 +47,10 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
   }
 
   private static readonly checkSchema = z.object({
-    requestInfo: z
+    requestContext: z
       .object({
-        clientIp: validators.zodIpAddress,
-        clientFingerprint: z.string().min(1).optional(),
+        clientIp: validators.zodIpAddress.optional(),
+        deviceFingerprint: z.string().length(64).optional(),
         countryCode: z.string().length(2).optional(),
       })
       .passthrough(),
@@ -55,19 +58,20 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
     // Trusted services bypass all rate limiting (mirrors .NET Check handler).
-    if (input.requestInfo.isTrustedService) {
+    if (input.requestContext.isTrustedService) {
+      this.context.logger.info(`Rate limit bypassed for trusted service. TraceId: ${this.traceId}`);
       return D2Result.ok({
         data: { isBlocked: false, blockedDimension: undefined, retryAfterMs: undefined },
       });
     }
 
     // Validate input.
-    const validation = this.validateInput(Check.checkSchema, input);
+    const validation = this.validateInput(CheckRateLimit.checkSchema, input);
     if (validation.failed) {
       return D2Result.bubbleFail(validation);
     }
 
-    const { requestInfo } = input;
+    const { requestContext } = input;
 
     // Build the list of applicable dimension checks, then fire them all concurrently.
     // Each dimension's internal Redis operations (GetTtl + 2x Increment) also run
@@ -75,44 +79,45 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
     // to a single round-trip time (~5-8ms regardless of dimension count).
     const checks: Promise<CheckOutput>[] = [];
 
-    if (requestInfo.clientFingerprint) {
+    // Device fingerprint is always present when request enrichment runs.
+    if (requestContext.deviceFingerprint) {
       checks.push(
         this.checkDimension(
-          RateLimit.RateLimitDimension.ClientFingerprint,
-          requestInfo.clientFingerprint,
-          this.options.clientFingerprintThreshold,
+          RateLimit.RateLimitDimension.DeviceFingerprint,
+          requestContext.deviceFingerprint,
+          this.options.deviceFingerprintThreshold,
         ),
       );
     }
 
-    if (!isLocalhost(requestInfo.clientIp)) {
+    if (requestContext.clientIp && !isLocalhost(requestContext.clientIp)) {
       checks.push(
         this.checkDimension(
           RateLimit.RateLimitDimension.Ip,
-          requestInfo.clientIp,
+          requestContext.clientIp,
           this.options.ipThreshold,
         ),
       );
     }
 
-    if (requestInfo.city) {
+    if (requestContext.city) {
       checks.push(
         this.checkDimension(
           RateLimit.RateLimitDimension.City,
-          requestInfo.city,
+          requestContext.city,
           this.options.cityThreshold,
         ),
       );
     }
 
     if (
-      requestInfo.countryCode &&
-      !this.options.whitelistedCountryCodes.includes(requestInfo.countryCode)
+      requestContext.countryCode &&
+      !this.options.whitelistedCountryCodes.includes(requestContext.countryCode)
     ) {
       checks.push(
         this.checkDimension(
           RateLimit.RateLimitDimension.Country,
-          requestInfo.countryCode,
+          requestContext.countryCode,
           this.options.countryThreshold,
         ),
       );
@@ -156,9 +161,9 @@ export class Check extends BaseHandler<CheckInput, CheckOutput> implements RateL
       // Compute window keys upfront so all Redis operations can fire concurrently.
       const now = new Date();
       const windowSeconds = this.options.windowMs / 1000;
-      const currentWindowId = Check.getWindowId(now);
+      const currentWindowId = CheckRateLimit.getWindowId(now);
       const previousTime = new Date(now.getTime() - this.options.windowMs);
-      const previousWindowId = Check.getWindowId(previousTime);
+      const previousWindowId = CheckRateLimit.getWindowId(previousTime);
 
       const currentKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, currentWindowId);
       const previousKey = RATELIMIT_CACHE_KEYS.counter(dimensionKey, value, previousWindowId);

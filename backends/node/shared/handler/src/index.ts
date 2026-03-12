@@ -24,3 +24,4 @@ export {
 } from "./validators.js";
 export { IRequestContextKey, IHandlerContextKey } from "./service-keys.js";
 export { createServiceScope } from "./create-service-scope.js";
+export { requestContextStorage, requestLoggerStorage } from "./ambient-context.js";

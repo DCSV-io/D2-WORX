@@ -279,9 +279,8 @@ public class Get : BaseHandler<Get, I, O>, H
         Context.Logger.LogError(
             "Failed to set data in distributed cache (provider). TraceId: {TraceId}",
             TraceId);
-        return D2Result.Fail(
-            ["Failed to set data in distributed cache."],
-            System.Net.HttpStatusCode.InternalServerError);
+        return D2Result.UnhandledException(
+            ["Failed to set data in distributed cache."]);
     }
 
     /// <summary>

@@ -5,15 +5,8 @@ import net from "node:net";
 let gatewayProcess: ChildProcess | undefined;
 let gatewayPort: number | undefined;
 
-/**
- * Converts a Redis URI to StackExchange.Redis format for .NET.
- * Input:  redis://localhost:32780
- * Output: localhost:32780
- */
-function redisUriToStackExchange(uri: string): string {
-  const url = new URL(uri);
-  return `${url.hostname}:${url.port}`;
-}
+// No URI→.NET format conversion helpers needed — ConnectionStringHelper.cs
+// on the .NET side handles parsing standard URIs to StackExchange/ADO.NET format.
 
 /**
  * Finds a random available port by binding to port 0.
@@ -79,15 +72,15 @@ export async function startGateway(opts: {
     ASPNETCORE_ENVIRONMENT: "Development",
     // Single HTTP endpoint (Gateway doesn't need separate gRPC port)
     ASPNETCORE_URLS: `http://+:${httpPort}`,
-    // Redis connection
-    "ConnectionStrings__d2-redis": redisUriToStackExchange(opts.redisUrl),
+    // Infrastructure URL — ConnectionStringHelper.cs parses URI to StackExchange format.
+    REDIS_URL: opts.redisUrl,
     // Geo gRPC address (the only service we actually call)
-    "services__d2-geo__http__0": `http://${opts.geoGrpcAddress}`,
+    GEO_GRPC_ADDRESS: opts.geoGrpcAddress,
     // Auth + Comms gRPC addresses (required by config validation, but not called in Geo-only tests)
-    "services__d2-auth__auth-grpc__0": "http://localhost:1",
-    "services__d2-comms__comms-grpc__0": "http://localhost:1",
+    AUTH_GRPC_ADDRESS: "localhost:1",
+    COMMS_GRPC_ADDRESS: "localhost:1",
     // Service key config: allow Dkron's X-Api-Key to pass
-    "GATEWAY_SERVICEKEY__ValidKeys__0": opts.serviceKey,
+    GATEWAY_SERVICEKEY__ValidKeys__0: opts.serviceKey,
     // gRPC API keys (sent as call credentials to downstream services)
     GATEWAY_GEO_GRPC_API_KEY: opts.geoApiKey,
     // Auth + Comms keys required by startup validation but not called in Geo-only tests

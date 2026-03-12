@@ -49,9 +49,7 @@ await runReconciliation();
 // ── Reconciliation loop ──────────────────────────────────────────────────
 // Use a sequential loop (not setInterval) to prevent overlapping runs
 // if a reconciliation cycle takes longer than the interval.
-logger.info(
-  `Starting reconciliation loop (interval: ${config.reconcileIntervalMs}ms)`,
-);
+logger.info(`Starting reconciliation loop (interval: ${config.reconcileIntervalMs}ms)`);
 
 while (!shutdownRequested) {
   await sleep(config.reconcileIntervalMs);
@@ -70,7 +68,9 @@ async function waitForHealth(): Promise<void> {
     const healthy = await checkHealth(config.dkronUrl, logger);
     if (healthy) return;
 
-    logger.warn(`Dkron not ready at ${config.dkronUrl} (waiting for Raft leader), retrying in ${delay}ms`);
+    logger.warn(
+      `Dkron not ready at ${config.dkronUrl} (waiting for Raft leader), retrying in ${delay}ms`,
+    );
     await sleep(delay);
     delay = Math.min(delay * 2, MAX_BACKOFF_MS);
   }

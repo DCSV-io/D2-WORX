@@ -5,40 +5,8 @@ import net from "node:net";
 let geoProcess: ChildProcess | undefined;
 let geoPort: number | undefined;
 
-/**
- * Converts a PostgreSQL URI to ADO.NET key-value format for .NET Npgsql.
- * Input:  postgresql://test:test@localhost:32779/test
- * Output: Host=localhost;Port=32779;Database=test;Username=test;Password=test
- */
-function pgUriToAdoNet(uri: string): string {
-  const url = new URL(uri);
-  return [
-    `Host=${url.hostname}`,
-    `Port=${url.port}`,
-    `Database=${url.pathname.slice(1)}`,
-    `Username=${decodeURIComponent(url.username)}`,
-    `Password=${decodeURIComponent(url.password)}`,
-  ].join(";");
-}
-
-/**
- * Converts a Redis URI to StackExchange.Redis format for .NET.
- * Input:  redis://localhost:32780
- * Output: localhost:32780
- */
-function redisUriToStackExchange(uri: string): string {
-  const url = new URL(uri);
-  return `${url.hostname}:${url.port}`;
-}
-
-/**
- * Converts an AMQP URI to .NET RabbitMQ client format.
- * AMQP URIs are generally supported by the .NET RabbitMQ.Client library,
- * so this is a pass-through.
- */
-function formatRabbitUrl(uri: string): string {
-  return uri;
-}
+// No URI→.NET format conversion helpers needed — ConnectionStringHelper.cs
+// on the .NET side handles parsing standard URIs to StackExchange/ADO.NET format.
 
 /**
  * Finds a random available port by binding to port 0.
@@ -110,13 +78,10 @@ export async function startGeoService(opts: {
     Kestrel__Endpoints__Http1__Protocols: "Http1",
     Kestrel__Endpoints__Grpc__Url: `http://+:${grpcPort}`,
     Kestrel__Endpoints__Grpc__Protocols: "Http2",
-    // Connection strings (Aspire naming with hyphens)
-    // .NET Npgsql requires ADO.NET format (Host=...;Port=...;Database=...)
-    // not URI format (postgresql://...) that Node.js pg uses.
-    "ConnectionStrings__d2-services-geo": pgUriToAdoNet(opts.pgUrl),
-    // .NET StackExchange.Redis expects host:port, not redis://host:port
-    "ConnectionStrings__d2-redis": redisUriToStackExchange(opts.redisUrl),
-    "ConnectionStrings__d2-rabbitmq": formatRabbitUrl(opts.rabbitUrl),
+    // Infrastructure URLs — ConnectionStringHelper.cs parses URIs to .NET formats.
+    GEO_DATABASE_URL: opts.pgUrl,
+    REDIS_URL: opts.redisUrl,
+    RABBITMQ_URL: opts.rabbitUrl,
     // API key mapping: allow auth context keys for contacts.
     // Config section is "GEO_APP" (see Geo.App/Extensions.cs).
     "GEO_APP__ApiKeyMappings__e2e-test-key__0": "auth_user",

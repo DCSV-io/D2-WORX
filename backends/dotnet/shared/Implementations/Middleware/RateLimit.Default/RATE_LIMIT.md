@@ -20,7 +20,7 @@ Rate limiting operates on four dimensions in hierarchy order:
 
 | Dimension          | Default Threshold | Skip Condition                   | Rationale                 |
 | ------------------ | ----------------- | -------------------------------- | ------------------------- |
-| Client Fingerprint | 100/min           | Header not present               | Single device — strictest |
+| Device Fingerprint | 100/min           | Never (always evaluated)         | Single device — strictest |
 | IP                 | 5,000/min         | Localhost/loopback               | ~50 devices × 100         |
 | City               | 25,000/min        | WhoIs data unavailable           | ~250 devices × 100        |
 | Country            | 100,000/min       | Whitelisted or WhoIs unavailable | ~1000 devices × 100       |
@@ -58,7 +58,7 @@ public class RateLimitOptions
     public TimeSpan Window { get; set; } = TimeSpan.FromMinutes(1);
     public TimeSpan BlockDuration { get; set; } = TimeSpan.FromMinutes(5);
 
-    public int ClientFingerprintThreshold { get; set; } = 100;
+    public int DeviceFingerprintThreshold { get; set; } = 100;
     public int IpThreshold { get; set; } = 5_000;
     public int CityThreshold { get; set; } = 25_000;
     public int CountryThreshold { get; set; } = 100_000;
@@ -91,7 +91,7 @@ When rate limited, the middleware returns:
 
 - **Redis down**: Log warning, allow request through.
 - **WhoIs unavailable**: City + Country dimensions skipped.
-- **No client fingerprint header**: Fingerprint dimension skipped.
+- **No client fingerprint**: Device fingerprint still evaluated (degrades to `SHA-256("" + serverFP + clientIp)`).
 - **Localhost**: IP dimension skipped.
 
 ## Dependencies
@@ -102,7 +102,15 @@ Uses project-defined distributed cache abstractions (no direct Redis dependency)
 - `IUpdate.IIncrementHandler` — Atomic counter increment with TTL.
 - `IUpdate.ISetHandler<string>` — Set block key with TTL.
 
-Requires `RequestEnrichment.Default` for `IRequestInfo` on `HttpContext.Features`.
+Requires `RequestEnrichment.Default` for `IRequestContext` on `HttpContext.Features`.
+
+## Infrastructure Path Skipping
+
+The middleware skips rate limiting entirely for infrastructure endpoints using `InfrastructurePaths.IsInfrastructure()` (shared helper in `RequestEnrichment.Default`). Skipped paths: `/health`, `/alive`, `/metrics`, `/api/health`. This prevents health probes and Prometheus scrapes from consuming rate limit budget.
+
+## Trusted Service Bypass
+
+When `IRequestContext.IsTrustedService` is `true` (set by `ServiceKeyMiddleware` via valid `X-Api-Key`), all rate limit dimensions are skipped entirely — the `Check` handler returns `Allowed` immediately. This is intentional: service-to-service calls are pre-authorized and should not be subject to per-device/IP/geo throttling.
 
 ## Data Redaction
 
@@ -112,4 +120,4 @@ The `Check` handler overrides `DefaultOptions` to suppress input logging:
 protected override HandlerOptions DefaultOptions => new(LogInput: false);
 ```
 
-**Rationale:** `IRequestInfo` (the input) contains client IP, fingerprint, user ID, and city — all PII fields. Since `IRequestInfo` is a framework interface (not a domain record), it cannot be annotated with `[RedactData]`. Suppressing input logging is the appropriate coarse control.
+**Rationale:** `CheckInput` wraps `IRequestContext` which contains client IP, fingerprint, user ID, and city — all PII fields. Since `IRequestContext` is a framework interface (not a domain record), it cannot be annotated with `[RedactData]`. Suppressing input logging is the appropriate coarse control.

@@ -22,7 +22,7 @@ export class TwilioSmsProvider
   }
 
   get redaction() {
-    return { inputFields: ["body"] as const };
+    return { inputFields: ["body", "to"] as const };
   }
 
   protected async executeAsync(input: SendSmsInput): Promise<D2Result<SendSmsOutput | undefined>> {
@@ -39,9 +39,8 @@ export class TwilioSmsProvider
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "Unknown Twilio error";
 
-      return D2Result.fail({
+      return D2Result.serviceUnavailable({
         messages: [errorMessage],
-        statusCode: 503,
       });
     }
   }

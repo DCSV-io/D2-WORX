@@ -1,5 +1,6 @@
 import { BaseHandler, type IHandlerContext, validators } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import { type CircuitBreaker, CircuitState, type Singleflight } from "@d2/utilities";
 import type { WhoIsDTO, FindWhoIsRequest, FindWhoIsResponse, GeoServiceClient } from "@d2/protos";
 import type { MemoryCacheStore } from "@d2/cache-memory";
 import { Metadata } from "@grpc/grpc-js";
@@ -14,6 +15,7 @@ type Output = Complex.FindWhoIsOutput;
 /**
  * Handler for finding WhoIs data by IP address and fingerprint.
  * Checks local LRU memory cache first, falls back to Geo service gRPC.
+ * Singleflight deduplicates concurrent gRPC calls for the same cache key.
  * Fail-open: never returns error results, always Ok with nullable WhoIsDTO.
  *
  * Mirrors D2.Geo.Client.CQRS.Handlers.X.FindWhoIs in .NET.
@@ -26,17 +28,23 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
   private readonly store: MemoryCacheStore;
   private readonly geoClient: GeoServiceClient;
   private readonly options: GeoClientOptions;
+  private readonly circuitBreaker: CircuitBreaker;
+  private readonly singleflight: Singleflight;
 
   constructor(
     store: MemoryCacheStore,
     geoClient: GeoServiceClient,
     options: GeoClientOptions,
+    circuitBreaker: CircuitBreaker,
+    singleflight: Singleflight,
     context: IHandlerContext,
   ) {
     super(context);
     this.store = store;
     this.geoClient = geoClient;
     this.options = options;
+    this.circuitBreaker = circuitBreaker;
+    this.singleflight = singleflight;
   }
 
   private static readonly findWhoIsSchema = z.object({
@@ -59,27 +67,37 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
       return D2Result.ok({ data: { whoIs: cached ?? undefined } });
     }
 
-    // Cache miss — call Geo service
+    // Cache miss — call Geo service.
+    // Singleflight deduplicates concurrent requests for the same cache key.
+    // Circuit breaker protects against sustained downstream failures.
     let response: FindWhoIsResponse;
     try {
       const request: FindWhoIsRequest = {
         requests: [{ ipAddress: input.ipAddress, fingerprint: input.fingerprint }],
       };
-      response = await new Promise<FindWhoIsResponse>((resolve, reject) => {
-        this.geoClient.findWhoIs(
-          request,
-          new Metadata(),
-          { deadline: Date.now() + this.options.grpcTimeoutMs },
-          (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          },
-        );
-      });
+      response = await this.singleflight.execute(cacheKey, () =>
+        this.circuitBreaker.execute(
+          () =>
+            new Promise<FindWhoIsResponse>((resolve, reject) => {
+              this.geoClient.findWhoIs(
+                request,
+                new Metadata(),
+                { deadline: Date.now() + this.options.grpcTimeoutMs },
+                (err, res) => {
+                  if (err) reject(err);
+                  else resolve(res);
+                },
+              );
+            }),
+        ),
+      );
     } catch {
-      // Fail-open: log warning and return undefined.
+      // Fail-open: handles gRPC errors AND circuit-open rejections identically.
+      // When the circuit is open this returns instantly (no timeout wait).
       // Do not log input.ipAddress directly — it bypasses BaseHandler's redaction.
-      this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`);
+      if (this.circuitBreaker.state !== CircuitState.OPEN) {
+        this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`);
+      }
       return D2Result.ok({ data: { whoIs: undefined } });
     }
 

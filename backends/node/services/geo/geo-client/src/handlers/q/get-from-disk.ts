@@ -37,9 +37,8 @@ export class GetFromDisk extends BaseHandler<Input, Output> implements Queries.I
       this.context.logger.error(
         `IOException occurred while reading georeference data from disk. TraceId: ${this.traceId}`,
       );
-      return D2Result.fail({
+      return D2Result.unhandledException({
         messages: ["Unable to read from disk."],
-        statusCode: HttpStatusCode.InternalServerError,
       });
     }
 

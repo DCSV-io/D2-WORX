@@ -9,31 +9,17 @@ using D2.Geo.Client;
 using D2.Geo.Infra;
 using D2.Shared.Handler.Extensions;
 using D2.Shared.ServiceDefaults;
-using D2.Shared.Utilities.Extensions;
+using D2.Shared.Utilities.Configuration;
 using Geo.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Get required connection strings from configuration.
-var dbConnectionString =
-    builder.Configuration.GetConnectionString("d2-services-geo");
-var distributedCacheConnectionString =
-    builder.Configuration.GetConnectionString("d2-redis");
-var messageQueueConnectionString =
-    builder.Configuration.GetConnectionString("d2-rabbitmq");
-string?[] reqConnStrings =
-[
-    dbConnectionString,
-    distributedCacheConnectionString,
-    messageQueueConnectionString
-];
-if (reqConnStrings.Any(x => x.Falsey()))
-{
-    throw new InvalidOperationException(
-        "One or more required connection strings are missing.");
-}
+// Get required connection strings from env vars (set via .env.local or Aspire).
+var dbConnectionString = ConnectionStringHelper.GetPostgres("GEO_DATABASE_URL");
+var distributedCacheConnectionString = ConnectionStringHelper.GetRedis();
+var messageQueueConnectionString = ConnectionStringHelper.GetRabbitMq();
 
 // Add services to the container.
 builder.AddServiceDefaults();
@@ -45,9 +31,9 @@ builder.Services.AddGrpc(options =>
 builder.Services.AddHandlerContext();
 builder.Services.AddGeoInfra(
     builder.Configuration,
-    dbConnectionString!,
-    distributedCacheConnectionString!,
-    messageQueueConnectionString!);
+    dbConnectionString,
+    distributedCacheConnectionString,
+    messageQueueConnectionString);
 builder.Services.AddGeoRefDataProvider();
 builder.Services.AddGeoApp(builder.Configuration);
 

@@ -33,6 +33,7 @@ import { Deliver } from "./implementations/cqrs/handlers/x/deliver.js";
 import {
   EmailDispatcher,
   SmsDispatcher,
+  loadEmailWrapper,
 } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 import type { IChannelDispatcher } from "./implementations/cqrs/handlers/x/channel-dispatchers.js";
 import { RecipientResolver } from "./implementations/cqrs/handlers/q/resolve-recipient.js";
@@ -68,6 +69,8 @@ export const ICommsReleaseLockKey: ServiceKey<DistributedCache.IReleaseLockHandl
 export function addCommsApp(
   services: ServiceCollection,
   jobOptions: CommsJobOptions = DEFAULT_COMMS_JOB_OPTIONS,
+  emailFooterText?: string,
+  emailTemplatePath?: string,
 ): void {
   // --- Complex Handlers ---
 
@@ -77,7 +80,13 @@ export function addCommsApp(
   );
 
   services.addTransient(IDeliverKey, (sp) => {
-    const dispatchers: IChannelDispatcher[] = [new EmailDispatcher(sp.resolve(IEmailProviderKey))];
+    const emailWrapper =
+      emailFooterText || emailTemplatePath
+        ? loadEmailWrapper(emailFooterText ?? "D2-WORX", emailTemplatePath)
+        : undefined;
+    const dispatchers: IChannelDispatcher[] = [
+      new EmailDispatcher(sp.resolve(IEmailProviderKey), emailWrapper),
+    ];
     const smsProvider = sp.tryResolve(ISmsProviderKey);
     if (smsProvider) {
       dispatchers.push(new SmsDispatcher(smsProvider));

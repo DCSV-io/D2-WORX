@@ -7,6 +7,7 @@
 namespace Geo.API.Interceptors;
 
 using D2.Geo.App;
+using D2.Shared.Utilities.Extensions;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Microsoft.AspNetCore.Http;
@@ -76,7 +77,7 @@ public class ApiKeyInterceptor : Interceptor
 
         // Extract API key from metadata.
         var apiKey = context.RequestHeaders.GetValue("x-api-key");
-        if (string.IsNullOrEmpty(apiKey))
+        if (apiKey.Falsey())
         {
             r_logger.LogWarning(
                 "Missing x-api-key header on RPC {Method}", methodName);
@@ -85,7 +86,7 @@ public class ApiKeyInterceptor : Interceptor
         }
 
         // Validate API key exists in mappings.
-        if (!r_options.ApiKeyMappings.TryGetValue(apiKey, out var allowedContextKeys))
+        if (!r_options.ApiKeyMappings.TryGetValue(apiKey!, out var allowedContextKeys))
         {
             r_logger.LogWarning(
                 "Invalid API key on RPC {Method}", methodName);

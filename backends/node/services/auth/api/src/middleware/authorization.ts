@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { D2Result, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
 import {
   SESSION_FIELDS,
   ROLE_HIERARCHY,
@@ -30,9 +30,8 @@ export function requireOrg() {
 
     if (!orgId || !isValidOrgType(orgType) || !isValidRole(role)) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: ["No active organization. Join or create an organization first."],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );
@@ -58,9 +57,8 @@ export function requireOrgType(...allowed: OrgType[]) {
     const orgType = session[SESSION_FIELDS.ACTIVE_ORG_TYPE] as string | undefined;
     if (!orgType || !allowedSet.has(orgType)) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: [`Organization type not authorized. Allowed: ${allowed.join(", ")}.`],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );
@@ -86,9 +84,8 @@ export function requireRole(minRole: Role) {
     const role = session[SESSION_FIELDS.ACTIVE_ORG_ROLE] as string | undefined;
     if (!isValidRole(role) || ROLE_HIERARCHY[role] < minLevel) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: [`Insufficient role. Minimum required: ${minRole}.`],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );

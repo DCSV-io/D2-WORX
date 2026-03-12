@@ -33,7 +33,12 @@ import * as betterAuthSchema from "../../repository/schema/better-auth-tables.js
  */
 export interface AuthHooks {
   /** Called after a successful sign-in to record audit events. */
-  onSignIn?: (data: { userId: string; ipAddress: string; userAgent: string }) => Promise<void>;
+  onSignIn?: (data: {
+    userId: string;
+    ipAddress: string;
+    userAgent: string;
+    deviceFingerprint?: string;
+  }) => Promise<void>;
   /**
    * Returns the client fingerprint for the current request.
    * Used by `definePayload` to embed an `fp` claim in JWTs, enabling
@@ -41,6 +46,11 @@ export interface AuthHooks {
    * Typically backed by `AsyncLocalStorage` in the composition root.
    */
   getFingerprintForCurrentRequest?: () => string | undefined;
+  /**
+   * Returns the device fingerprint for the current request (from enrichment middleware).
+   * Typically backed by `AsyncLocalStorage` in the composition root.
+   */
+  getDeviceFingerprintForCurrentRequest?: () => string | undefined;
   /**
    * Custom password hash/verify functions with domain validation + HIBP checks.
    * Created by `createPasswordFunctions()` in the composition root.
@@ -102,6 +112,18 @@ export function createAuth(
   const cookieCacheMaxAge = config.cookieCacheMaxAge ?? AUTH_CONFIG_DEFAULTS.cookieCacheMaxAge;
   const jwtExpirationSeconds =
     config.jwtExpirationSeconds ?? AUTH_CONFIG_DEFAULTS.jwtExpirationSeconds;
+
+  /** Rewrites a BetterAuth-generated URL to use emailBaseUrl (if configured). */
+  function rewriteEmailUrl(url: string): URL {
+    const parsed = new URL(url);
+    if (config.emailBaseUrl) {
+      const publicBase = new URL(config.emailBaseUrl);
+      parsed.protocol = publicBase.protocol;
+      parsed.hostname = publicBase.hostname;
+      parsed.port = publicBase.port;
+    }
+    return parsed;
+  }
   const jwksRotationDays = config.jwksRotationDays ?? AUTH_CONFIG_DEFAULTS.jwksRotationDays;
 
   const auth = betterAuth({
@@ -124,11 +146,15 @@ export function createAuth(
       password: hooks?.passwordFunctions,
       sendResetPassword: hooks?.publishPasswordReset
         ? async ({ user, url, token }) => {
+            const rewritten = rewriteEmailUrl(url);
+            rewritten.pathname = "/reset-password";
+            rewritten.search = "";
+            rewritten.searchParams.set("token", token);
             await hooks.publishPasswordReset!({
               userId: user.id,
               email: user.email,
               name: user.name ?? "User",
-              resetUrl: url,
+              resetUrl: rewritten.toString(),
               token,
             });
           }
@@ -142,11 +168,13 @@ export function createAuth(
       sendVerificationEmail: hooks?.publishVerificationEmail
         ? async ({ user, url, token }) => {
             try {
+              const rewritten = rewriteEmailUrl(url);
+              rewritten.searchParams.set("callbackURL", "/auth/email-verified");
               await hooks.publishVerificationEmail!({
                 userId: user.id,
                 email: user.email,
                 name: user.name ?? "User",
-                verificationUrl: url,
+                verificationUrl: rewritten.toString(),
                 token,
               });
             } catch {
@@ -288,9 +316,16 @@ export function createAuth(
 
               if (userId) {
                 // Fire-and-forget — don't block session creation
-                hooks.onSignIn({ userId, ipAddress, userAgent }).catch(() => {
-                  // Swallow errors — sign-in audit is non-critical
-                });
+                hooks
+                  .onSignIn({
+                    userId,
+                    ipAddress,
+                    userAgent,
+                    deviceFingerprint: hooks.getDeviceFingerprintForCurrentRequest?.(),
+                  })
+                  .catch(() => {
+                    // Swallow errors — sign-in audit is non-critical
+                  });
               }
             }
           },
@@ -298,7 +333,18 @@ export function createAuth(
       },
     },
 
-    trustedOrigins: [config.corsOrigin],
+    trustedOrigins: config.corsOrigins,
+
+    user: {
+      additionalFields: {
+        locale: {
+          type: "string",
+          required: false,
+          defaultValue: "en",
+          input: false,
+        },
+      },
+    },
 
     plugins: [
       bearer(),

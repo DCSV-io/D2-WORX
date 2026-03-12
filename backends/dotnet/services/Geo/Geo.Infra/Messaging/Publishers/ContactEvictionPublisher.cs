@@ -6,7 +6,6 @@
 
 namespace D2.Geo.Infra.Messaging.Publishers;
 
-using System.Net;
 using D2.Events.Protos.V1;
 using D2.Shared.Messaging.RabbitMQ;
 using D2.Shared.Messaging.RabbitMQ.Conventions;
@@ -78,9 +77,8 @@ public class ContactEvictionPublisher
                 "Failed to publish ContactsEvicted event for {Count} contact(s)",
                 message.Contacts.Count);
 
-            return D2Result.Fail(
-                ["Failed to publish contact eviction event to RabbitMQ."],
-                HttpStatusCode.ServiceUnavailable);
+            return D2Result.ServiceUnavailable(
+                ["Failed to publish contact eviction event to RabbitMQ."]);
         }
     }
 }

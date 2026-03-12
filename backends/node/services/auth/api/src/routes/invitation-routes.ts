@@ -27,10 +27,10 @@ const INVITATION_HIERARCHY: Readonly<Partial<Record<Role, readonly Role[]>>> = {
   officer: ["agent", "auditor"],
 };
 
-/** Max lengths for string input fields (security: prevent unbounded strings). */
-const MAX_FIRST_NAME = 200;
-const MAX_LAST_NAME = 200;
-const MAX_PHONE = 30;
+/** Max lengths for string input fields — derived from Geo DB schema (ContactConfig.cs). */
+const MAX_FIRST_NAME = 255;
+const MAX_LAST_NAME = 255;
+const MAX_PHONE = 20;
 
 /**
  * Custom invitation route that replaces BetterAuth's `sendInvitationEmail` callback.
@@ -81,9 +81,8 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     const allowedRoles = INVITATION_HIERARCHY[inviterRole];
     if (!allowedRoles || !allowedRoles.includes(role as Role)) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: [`Role "${inviterRole}" cannot invite role "${role}".`],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );

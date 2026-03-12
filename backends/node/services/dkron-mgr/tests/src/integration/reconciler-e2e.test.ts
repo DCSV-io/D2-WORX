@@ -137,9 +137,7 @@ describe("Dkron Integration (real container)", () => {
 
   it("should handle delete of non-existent job gracefully", async () => {
     // Should not throw — 404 is treated as success
-    await expect(
-      deleteJob(dkronUrl, "does-not-exist", logger),
-    ).resolves.toBeUndefined();
+    await expect(deleteJob(dkronUrl, "does-not-exist", logger)).resolves.toBeUndefined();
   });
 
   // ── Full Reconciliation Cycle ────────────────────────────────────

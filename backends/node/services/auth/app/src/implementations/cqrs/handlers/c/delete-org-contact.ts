@@ -1,19 +1,16 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
-import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { D2Result } from "@d2/result";
 import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
-import type { Commands } from "@d2/geo-client";
+import type { Commands as GeoCommands } from "@d2/geo-client";
 import type {
   IFindOrgContactByIdHandler,
   IDeleteOrgContactRecordHandler,
 } from "../../../../interfaces/repository/handlers/index.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface DeleteOrgContactInput {
-  readonly id: string;
-  readonly organizationId: string;
-}
-
-export type DeleteOrgContactOutput = Record<string, never>;
+type Input = Commands.DeleteOrgContactInput;
+type Output = Commands.DeleteOrgContactOutput;
 
 const schema = z.object({
   id: zodGuid,
@@ -26,16 +23,19 @@ const schema = z.object({
  * Validates input, checks existence, verifies IDOR (contact belongs to org),
  * deletes the Geo contact by ext key (best-effort), then deletes the junction.
  */
-export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteOrgContactOutput> {
+export class DeleteOrgContact
+  extends BaseHandler<Input, Output>
+  implements Commands.IDeleteOrgContactHandler
+{
   private readonly findById: IFindOrgContactByIdHandler;
   private readonly deleteRecord: IDeleteOrgContactRecordHandler;
-  private readonly deleteContactsByExtKeys: Commands.IDeleteContactsByExtKeysHandler;
+  private readonly deleteContactsByExtKeys: GeoCommands.IDeleteContactsByExtKeysHandler;
 
   constructor(
     findById: IFindOrgContactByIdHandler,
     deleteRecord: IDeleteOrgContactRecordHandler,
     context: IHandlerContext,
-    deleteContactsByExtKeys: Commands.IDeleteContactsByExtKeysHandler,
+    deleteContactsByExtKeys: GeoCommands.IDeleteContactsByExtKeysHandler,
   ) {
     super(context);
     this.findById = findById;
@@ -43,9 +43,7 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
     this.deleteContactsByExtKeys = deleteContactsByExtKeys;
   }
 
-  protected async executeAsync(
-    input: DeleteOrgContactInput,
-  ): Promise<D2Result<DeleteOrgContactOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -58,10 +56,8 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
 
     // IDOR check: contact must belong to the caller's active org
     if (existing.organizationId !== input.organizationId) {
-      return D2Result.fail({
+      return D2Result.forbidden({
         messages: ["Not authorized to delete this contact."],
-        statusCode: HttpStatusCode.Forbidden,
-        errorCode: ErrorCodes.FORBIDDEN,
       });
     }
 
@@ -82,3 +78,8 @@ export class DeleteOrgContact extends BaseHandler<DeleteOrgContactInput, DeleteO
     return D2Result.ok({ data: {} });
   }
 }
+
+export type {
+  DeleteOrgContactInput,
+  DeleteOrgContactOutput,
+} from "../../../../interfaces/cqrs/handlers/c/delete-org-contact.js";

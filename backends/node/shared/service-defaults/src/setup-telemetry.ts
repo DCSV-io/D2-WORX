@@ -1,3 +1,4 @@
+import { IncomingMessage } from "node:http";
 import { NodeSDK } from "@opentelemetry/sdk-node";
 import type { NodeSDKConfiguration } from "@opentelemetry/sdk-node";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -8,7 +9,30 @@ import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http";
 import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
 import { SimpleLogRecordProcessor, BatchLogRecordProcessor } from "@opentelemetry/sdk-logs";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import {
+  CompositePropagator,
+  W3CTraceContextPropagator,
+  W3CBaggagePropagator,
+} from "@opentelemetry/core";
+import type { Span } from "@opentelemetry/api";
 import type { TelemetryConfig } from "./telemetry-config.js";
+
+/**
+ * Property key used to store the OTel HTTP server span on Node.js IncomingMessage.
+ *
+ * @hono/node-server doesn't propagate the OTel async context into Hono's
+ * middleware chain, so `trace.getActiveSpan()` returns null there. As a
+ * workaround, the HTTP instrumentation's `requestHook` stashes the span on the
+ * raw request object, and Hono middleware retrieves it via `c.env.incoming`.
+ *
+ * @see getServerSpan in hono-otel.ts
+ */
+export const OTEL_SPAN_KEY = Symbol.for("d2.otel.incomingSpan");
+
+/** Augmented IncomingMessage with optional stored OTel span. */
+export interface OTelIncomingMessage extends IncomingMessage {
+  [OTEL_SPAN_KEY]?: Span | undefined;
+}
 
 /**
  * One-call OpenTelemetry SDK bootstrap — mirrors .NET's `builder.AddServiceDefaults()`.
@@ -65,14 +89,32 @@ export function setupTelemetry(config: TelemetryConfig): void {
       ]
     : [];
 
-  // Instrumentations: auto-instrumentations always included, plus any extras
-  const autoInstrumentations = getNodeAutoInstrumentations();
+  // Instrumentations: auto-instrumentations always included, plus any extras.
+  // The HTTP requestHook stores the server span on IncomingMessage so that
+  // frameworks that break async context (e.g. @hono/node-server) can still
+  // access the span via the raw request object.
+  const autoInstrumentations = getNodeAutoInstrumentations({
+    "@opentelemetry/instrumentation-http": {
+      requestHook: (span: Span, request: unknown) => {
+        if (request instanceof IncomingMessage) {
+          (request as OTelIncomingMessage)[OTEL_SPAN_KEY] = span;
+        }
+      },
+    },
+  });
 
   const sdk = new NodeSDK({
     resource,
     traceExporter,
     metricReaders,
     logRecordProcessors,
+    // Propagate both W3C trace context (traceparent/tracestate) AND baggage
+    // headers on outgoing HTTP/gRPC calls. The default SDK only registers
+    // W3CTraceContextPropagator — without the baggage propagator, any
+    // baggage set via propagation.setBaggage() stays in-memory only.
+    textMapPropagator: new CompositePropagator({
+      propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+    }),
     instrumentations: [
       ...autoInstrumentations,
       ...(config.additionalInstrumentations ?? []),

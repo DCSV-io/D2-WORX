@@ -1,27 +1,23 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
 import type { ChannelPreference } from "@d2/comms-domain";
 import type { ChannelPreferenceRepoHandlers } from "../../../../interfaces/repository/handlers/index.js";
 import type { InMemoryCache } from "@d2/interfaces";
 import { COMMS_CACHE_KEYS } from "../../../../cache-keys.js";
 
+type Input = Queries.GetChannelPreferenceInput;
+type Output = Queries.GetChannelPreferenceOutput;
+
 const getChannelPreferenceSchema = z.object({
   contactId: zodGuid,
 });
 
-export interface GetChannelPreferenceInput {
-  readonly contactId: string;
-}
-
-export interface GetChannelPreferenceOutput {
-  readonly pref: ChannelPreference | null;
-}
-
-export class GetChannelPreference extends BaseHandler<
-  GetChannelPreferenceInput,
-  GetChannelPreferenceOutput
-> {
+export class GetChannelPreference
+  extends BaseHandler<Input, Output>
+  implements Queries.IGetChannelPreferenceHandler
+{
   private readonly repo: ChannelPreferenceRepoHandlers;
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<ChannelPreference>;
@@ -41,9 +37,7 @@ export class GetChannelPreference extends BaseHandler<
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: GetChannelPreferenceInput,
-  ): Promise<D2Result<GetChannelPreferenceOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(getChannelPreferenceSchema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -76,3 +70,8 @@ export class GetChannelPreference extends BaseHandler<
     return D2Result.ok({ data: { pref } });
   }
 }
+
+export type {
+  GetChannelPreferenceInput,
+  GetChannelPreferenceOutput,
+} from "../../../../interfaces/cqrs/handlers/q/get-channel-preference.js";

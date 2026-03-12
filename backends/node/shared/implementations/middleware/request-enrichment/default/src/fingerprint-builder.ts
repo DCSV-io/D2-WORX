@@ -13,6 +13,26 @@ function getHeaderValue(
 }
 
 /**
+ * Builds a combined device fingerprint from all available signals.
+ * Formula: SHA-256(clientFingerprint + serverFingerprint + clientIp)
+ *
+ * Always produces a value — if clientFingerprint is missing, uses empty string
+ * (degraded but still unique per server-fingerprint + IP combination).
+ *
+ * @param clientFingerprint - Client-provided fingerprint (from d2-cfp cookie or header). May be undefined.
+ * @param serverFingerprint - Server-computed fingerprint (64-char hex).
+ * @param clientIp - Resolved client IP address.
+ */
+export function buildDeviceFingerprint(
+  clientFingerprint: string | undefined,
+  serverFingerprint: string,
+  clientIp: string,
+): string {
+  const input = `${clientFingerprint ?? ""}${serverFingerprint}${clientIp}`;
+  return createHash("sha256").update(input, "utf8").digest("hex");
+}
+
+/**
  * Builds a server-side fingerprint from request headers.
  * Mirrors D2.Shared.RequestEnrichment.Default.FingerprintBuilder.Build in .NET.
  *

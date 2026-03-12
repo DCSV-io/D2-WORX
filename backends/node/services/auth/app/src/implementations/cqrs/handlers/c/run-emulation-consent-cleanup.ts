@@ -4,21 +4,17 @@ import { D2Result } from "@d2/result";
 import type { DistributedCache } from "@d2/interfaces";
 import type { IPurgeExpiredEmulationConsentsHandler } from "../../../../interfaces/repository/handlers/d/purge-expired-emulation-consents.js";
 import type { AuthJobOptions } from "../../../../auth-job-options.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
+
+type Input = Commands.RunEmulationConsentCleanupInput;
+type Output = Commands.RunEmulationConsentCleanupOutput;
 
 const LOCK_KEY = "lock:job:cleanup-expired-emulation-consents";
 
-export interface RunEmulationConsentCleanupInput {}
-
-export interface RunEmulationConsentCleanupOutput {
-  readonly rowsAffected: number;
-  readonly lockAcquired: boolean;
-  readonly durationMs: number;
-}
-
-export class RunEmulationConsentCleanup extends BaseHandler<
-  RunEmulationConsentCleanupInput,
-  RunEmulationConsentCleanupOutput
-> {
+export class RunEmulationConsentCleanup
+  extends BaseHandler<Input, Output>
+  implements Commands.IRunEmulationConsentCleanupHandler
+{
   private readonly acquireLock: DistributedCache.IAcquireLockHandler;
   private readonly releaseLock: DistributedCache.IReleaseLockHandler;
   private readonly purge: IPurgeExpiredEmulationConsentsHandler;
@@ -38,9 +34,7 @@ export class RunEmulationConsentCleanup extends BaseHandler<
     this.options = options;
   }
 
-  protected async executeAsync(
-    _input: RunEmulationConsentCleanupInput,
-  ): Promise<D2Result<RunEmulationConsentCleanupOutput | undefined>> {
+  protected async executeAsync(_input: Input): Promise<D2Result<Output | undefined>> {
     const start = performance.now();
     const lockId = randomUUID();
 
@@ -79,3 +73,8 @@ export class RunEmulationConsentCleanup extends BaseHandler<
     }
   }
 }
+
+export type {
+  RunEmulationConsentCleanupInput,
+  RunEmulationConsentCleanupOutput,
+} from "../../../../interfaces/cqrs/handlers/c/run-emulation-consent-cleanup.js";

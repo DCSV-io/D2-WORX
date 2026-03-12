@@ -7,9 +7,11 @@
 namespace D2.Gateways.REST.Auth;
 
 using System.Net;
+using D2.Shared.Handler;
 using D2.Shared.Handler.Auth;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using D2.Shared.Utilities.Serialization;
 
 /// <summary>
@@ -22,7 +24,7 @@ using D2.Shared.Utilities.Serialization;
 /// Behavior:
 /// <list type="bullet">
 ///   <item>No authenticated user → pass through (auth middleware handles this).</item>
-///   <item>Trusted service (<see cref="IRequestInfo.IsTrustedService"/>) → skip fingerprint validation entirely.</item>
+///   <item>Trusted service (<see cref="IRequestContext.IsTrustedService"/>) → skip fingerprint validation entirely.</item>
 ///   <item>No <c>fp</c> claim (non-trusted) → 401 Unauthorized (fingerprint is required).</item>
 ///   <item><c>fp</c> claim matches computed fingerprint → pass through.</item>
 ///   <item><c>fp</c> claim does NOT match → 401 Unauthorized with D2Result error.</item>
@@ -63,9 +65,10 @@ public class JwtFingerprintMiddleware
         }
 
         // Trusted services skip fingerprint validation entirely.
-        var requestInfo = context.Features.Get<IRequestInfo>();
-        if (requestInfo?.IsTrustedService == true)
+        var mutableCtx = context.Features.Get<IRequestContext>() as MutableRequestContext;
+        if (mutableCtx?.IsTrustedService == true)
         {
+            SetAuthState(mutableCtx, context);
             await r_next(context);
             return;
         }
@@ -74,7 +77,7 @@ public class JwtFingerprintMiddleware
         var fpClaim = context.User.FindFirst(JwtClaimTypes.FINGERPRINT)?.Value;
 
         // For non-trusted requests, fp claim is REQUIRED.
-        if (string.IsNullOrEmpty(fpClaim))
+        if (fpClaim.Falsey())
         {
             r_logger.LogWarning(
                 "JWT missing required fingerprint claim for {Path}",
@@ -86,9 +89,8 @@ public class JwtFingerprintMiddleware
             var missingFpResponse = D2Result.Fail(
                 ["JWT fingerprint claim is required."],
                 HttpStatusCode.Unauthorized,
-                inputErrors: null,
-                "MISSING_FINGERPRINT",
-                context.TraceIdentifier);
+                errorCode: "MISSING_FINGERPRINT",
+                traceId: context.TraceIdentifier);
 
             await context.Response.WriteAsJsonAsync(missingFpResponse, SerializerOptions.SR_Web, context.RequestAborted);
             return;
@@ -100,6 +102,7 @@ public class JwtFingerprintMiddleware
         // Compare (case-insensitive hex comparison).
         if (string.Equals(fpClaim, computed, StringComparison.OrdinalIgnoreCase))
         {
+            SetAuthState(mutableCtx, context);
             await r_next(context);
             return;
         }
@@ -108,13 +111,12 @@ public class JwtFingerprintMiddleware
         r_logger.LogWarning(
             "JWT fingerprint mismatch for {Path}. Expected: {Expected}, Got: {Got}",
             context.Request.Path,
-            Truncate(fpClaim),
+            Truncate(fpClaim ?? string.Empty),
             Truncate(computed));
 
         var response = D2Result.Fail(
-            messages: ["JWT fingerprint mismatch. Token cannot be used from this client."],
-            statusCode: HttpStatusCode.Unauthorized,
-            inputErrors: null,
+            ["JWT fingerprint mismatch. Token cannot be used from this client."],
+            HttpStatusCode.Unauthorized,
             errorCode: "JWT_FINGERPRINT_MISMATCH",
             traceId: context.TraceIdentifier);
 
@@ -124,13 +126,113 @@ public class JwtFingerprintMiddleware
     }
 
     /// <summary>
+    /// Populates authentication, identity, and organization fields on the
+    /// <see cref="MutableRequestContext"/> from JWT claims. Called after successful
+    /// fingerprint validation or for trusted services.
+    /// </summary>
+    private static void SetAuthState(MutableRequestContext? mutableCtx, HttpContext context)
+    {
+        if (mutableCtx is null)
+        {
+            return;
+        }
+
+        mutableCtx.IsAuthenticated = true;
+        mutableCtx.UserIdRaw = context.User.FindFirst(JwtClaimTypes.SUB)?.Value;
+        mutableCtx.Email = GetStringClaim(context, JwtClaimTypes.EMAIL);
+        mutableCtx.Username = GetStringClaim(context, JwtClaimTypes.USERNAME);
+
+        // Agent Organization.
+        mutableCtx.AgentOrgId = GetGuidClaim(context, JwtClaimTypes.ORG_ID);
+        mutableCtx.AgentOrgName = GetStringClaim(context, JwtClaimTypes.ORG_NAME);
+        mutableCtx.AgentOrgType = GetOrgTypeClaim(context, JwtClaimTypes.ORG_TYPE);
+        mutableCtx.AgentOrgRole = GetStringClaim(context, JwtClaimTypes.ROLE);
+
+        // Org Emulation.
+        mutableCtx.IsOrgEmulating = string.Equals(
+            GetStringClaim(context, JwtClaimTypes.IS_EMULATING),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+
+        // Target Organization — emulated org if emulating, otherwise agent org.
+        if (mutableCtx.IsOrgEmulating == true)
+        {
+            mutableCtx.TargetOrgId = GetGuidClaim(context, JwtClaimTypes.EMULATED_ORG_ID) ?? mutableCtx.AgentOrgId;
+            mutableCtx.TargetOrgName = GetStringClaim(context, JwtClaimTypes.EMULATED_ORG_NAME) ?? mutableCtx.AgentOrgName;
+            mutableCtx.TargetOrgType = GetOrgTypeClaim(context, JwtClaimTypes.EMULATED_ORG_TYPE) ?? mutableCtx.AgentOrgType;
+            mutableCtx.TargetOrgRole = "auditor";
+        }
+        else
+        {
+            mutableCtx.TargetOrgId = mutableCtx.AgentOrgId;
+            mutableCtx.TargetOrgName = mutableCtx.AgentOrgName;
+            mutableCtx.TargetOrgType = mutableCtx.AgentOrgType;
+            mutableCtx.TargetOrgRole = mutableCtx.AgentOrgRole;
+        }
+
+        // User Impersonation.
+        mutableCtx.ImpersonatedBy = GetGuidClaim(context, JwtClaimTypes.IMPERSONATED_BY);
+        mutableCtx.ImpersonatingEmail = GetStringClaim(context, JwtClaimTypes.IMPERSONATING_EMAIL);
+        mutableCtx.ImpersonatingUsername = GetStringClaim(context, JwtClaimTypes.IMPERSONATING_USERNAME);
+        mutableCtx.IsUserImpersonating = string.Equals(
+            GetStringClaim(context, JwtClaimTypes.IS_IMPERSONATING),
+            "true",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Extracts a string claim value from the authenticated user principal.
+    /// </summary>
+    private static string? GetStringClaim(HttpContext ctx, string claimType)
+    {
+        var value = ctx.User.FindFirst(claimType)?.Value;
+        return value.Falsey() ? null : value;
+    }
+
+    /// <summary>
+    /// Extracts a Guid claim value from the authenticated user principal.
+    /// </summary>
+    private static Guid? GetGuidClaim(HttpContext ctx, string claimType)
+    {
+        var value = ctx.User.FindFirst(claimType)?.Value;
+        if (value.Falsey())
+        {
+            return null;
+        }
+
+        return Guid.TryParse(value, out var guid) ? guid : null;
+    }
+
+    /// <summary>
+    /// Extracts an OrgType claim value from the authenticated user principal.
+    /// </summary>
+    private static OrgType? GetOrgTypeClaim(HttpContext ctx, string claimType)
+    {
+        var value = ctx.User.FindFirst(claimType)?.Value;
+        if (value.Falsey())
+        {
+            return null;
+        }
+
+        return value!.ToLowerInvariant() switch
+        {
+            OrgTypeValues.ADMIN => OrgType.Admin,
+            OrgTypeValues.SUPPORT => OrgType.Support,
+            OrgTypeValues.AFFILIATE => OrgType.Affiliate,
+            OrgTypeValues.CUSTOMER => OrgType.Customer,
+            OrgTypeValues.THIRD_PARTY => OrgType.ThirdParty,
+            _ => Enum.TryParse<OrgType>(value, ignoreCase: true, out var parsed) ? parsed : null,
+        };
+    }
+
+    /// <summary>
     /// Safely truncates a fingerprint hash for logging (avoids IndexOutOfRangeException on short values).
     /// </summary>
     private static string Truncate(string value)
     {
-        const int _PREFIX_LENGTH = 8;
-        return value.Length > _PREFIX_LENGTH
-            ? value[.._PREFIX_LENGTH] + "..."
+        const int prefix_length = 8;
+        return value.Length > prefix_length
+            ? value[..prefix_length] + "..."
             : value + "...";
     }
 }

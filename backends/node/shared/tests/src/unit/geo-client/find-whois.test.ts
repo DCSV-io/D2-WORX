@@ -2,21 +2,35 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
-import { FindWhoIs, DEFAULT_GEO_CLIENT_OPTIONS, GEO_CACHE_KEYS } from "@d2/geo-client";
+import {
+  FindWhoIs,
+  DEFAULT_GEO_CLIENT_OPTIONS,
+  GEO_CACHE_KEYS,
+  createGeoCircuitBreaker,
+} from "@d2/geo-client";
+import { Singleflight } from "@d2/utilities";
 import { ErrorCodes } from "@d2/result";
 import type { GeoServiceClient, WhoIsDTO } from "@d2/protos";
+
+const silentLogger = createLogger({ level: "silent" as never });
 
 function createTestContext(): IHandlerContext {
   const request: IRequestContext = {
     traceId: "test-trace-id",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,
     isTargetingAdmin: false,
   };
-  return new HandlerContext(request, createLogger({ level: "silent" as never }));
+  return new HandlerContext(request, silentLogger);
 }
+
+const testCircuitBreaker = createGeoCircuitBreaker(DEFAULT_GEO_CLIENT_OPTIONS, silentLogger);
+const testSingleflight = new Singleflight();
 
 function createMockWhoIs(): WhoIsDTO {
   return {
@@ -72,6 +86,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({
@@ -104,6 +120,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
@@ -133,6 +151,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
@@ -149,6 +169,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
@@ -176,6 +198,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
@@ -203,6 +227,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
@@ -231,6 +257,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     await handler.handleAsync({ ipAddress: "10.0.0.1", fingerprint: "abc123" });
@@ -249,6 +277,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({
@@ -267,6 +297,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({
@@ -285,6 +317,8 @@ describe("FindWhoIs handler", () => {
       store,
       mockGeoClient,
       DEFAULT_GEO_CLIENT_OPTIONS,
+      testCircuitBreaker,
+      testSingleflight,
       createTestContext(),
     );
     const result = await handler.handleAsync({

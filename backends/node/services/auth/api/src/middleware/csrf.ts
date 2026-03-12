@@ -1,6 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { D2Result, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
 
 /** HTTP methods that modify state and require CSRF protection. */
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -22,11 +22,11 @@ const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  *
  * BetterAuth handles its own CSRF protection — this is for custom routes only.
  *
- * @param allowedOrigin - The trusted origin (e.g., SvelteKit URL)
+ * @param allowedOrigins - The trusted origins (e.g., SvelteKit URLs)
  */
-export function createCsrfMiddleware(allowedOrigin: string) {
-  // Normalize: strip trailing slash for consistent comparison
-  const normalizedOrigin = allowedOrigin.replace(/\/+$/, "");
+export function createCsrfMiddleware(allowedOrigins: string[]) {
+  // Normalize: strip trailing slashes for consistent comparison
+  const normalizedOrigins = new Set(allowedOrigins.map((o) => o.replace(/\/+$/, "")));
 
   return createMiddleware(async (c, next) => {
     if (!UNSAFE_METHODS.has(c.req.method)) {
@@ -39,9 +39,8 @@ export function createCsrfMiddleware(allowedOrigin: string) {
 
     if (!contentType.includes("application/json") && !xRequestedWith) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: ["Invalid request. Content-Type: application/json is required."],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );
@@ -49,11 +48,10 @@ export function createCsrfMiddleware(allowedOrigin: string) {
 
     // Check 2: Validate Origin header when present
     const origin = c.req.header("origin");
-    if (origin && origin.replace(/\/+$/, "") !== normalizedOrigin) {
+    if (origin && !normalizedOrigins.has(origin.replace(/\/+$/, ""))) {
       return c.json(
-        D2Result.fail({
+        D2Result.forbidden({
           messages: ["Invalid request origin."],
-          statusCode: HttpStatusCode.Forbidden,
         }),
         403 as ContentfulStatusCode,
       );

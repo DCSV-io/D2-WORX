@@ -1,6 +1,6 @@
 import { RateLimit } from "@d2/interfaces";
 
-export { Check } from "./handlers/check.js";
+export { CheckRateLimit } from "./handlers/check.js";
 export { RATELIMIT_CACHE_KEYS } from "./cache-keys.js";
 
 /** @deprecated Import from @d2/interfaces instead: `import { RateLimit } from "@d2/interfaces"` */

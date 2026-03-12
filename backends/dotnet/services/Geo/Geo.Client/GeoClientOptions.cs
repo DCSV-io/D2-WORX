@@ -31,4 +31,15 @@ public class GeoClientOptions
     /// Gets or sets the API key sent via gRPC metadata (x-api-key header) for Geo service authentication.
     /// </summary>
     public string ApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the number of consecutive gRPC failures before the circuit breaker opens.
+    /// Default: 5.
+    /// </summary>
+    public int CircuitBreakerFailureThreshold { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets the duration the circuit breaker stays open before probing. Default: 30 seconds.
+    /// </summary>
+    public TimeSpan CircuitBreakerCooldownDuration { get; set; } = TimeSpan.FromSeconds(30);
 }

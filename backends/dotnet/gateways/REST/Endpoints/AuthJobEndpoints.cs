@@ -28,36 +28,31 @@ public static class AuthJobEndpoints
     {
         /// <summary>
         /// Adds a gRPC client for the Auth job service to the service collection.
-        /// Uses the auth-grpc Aspire endpoint with API key call credentials.
+        /// Reads <c>AUTH_GRPC_ADDRESS</c> (bare <c>host:port</c>) and <c>GATEWAY_AUTH_GRPC_API_KEY</c>.
         /// </summary>
-        ///
-        /// <param name="configuration">
-        /// The application configuration.
-        /// </param>
         ///
         /// <returns>
         /// The updated service collection.
         /// </returns>
-        public IServiceCollection AddAuthJobsGrpcClient(IConfiguration configuration)
+        public IServiceCollection AddAuthJobsGrpcClient()
         {
-            const string config_key = "services:d2-auth:auth-grpc:0";
-            var authGrpcAddress = configuration[config_key];
+            var authGrpcAddress = Environment.GetEnvironmentVariable("AUTH_GRPC_ADDRESS");
             if (authGrpcAddress.Falsey())
             {
                 throw new ArgumentException(
-                    $"Auth gRPC service address not configured. Missing '{config_key}' configuration.");
+                    "Auth gRPC service address not configured. Missing 'AUTH_GRPC_ADDRESS' environment variable.");
             }
 
-            var apiKey = configuration["GATEWAY_AUTH_GRPC_API_KEY"];
+            var apiKey = Environment.GetEnvironmentVariable("GATEWAY_AUTH_GRPC_API_KEY");
             if (apiKey.Falsey())
             {
                 throw new ArgumentException(
-                    "Auth gRPC API key not configured. Missing 'GATEWAY_AUTH_GRPC_API_KEY' configuration.");
+                    "Auth gRPC API key not configured. Missing 'GATEWAY_AUTH_GRPC_API_KEY' environment variable.");
             }
 
             services.AddGrpcClient<AuthJobService.AuthJobServiceClient>(o =>
             {
-                o.Address = new Uri(authGrpcAddress!);
+                o.Address = new Uri($"http://{authGrpcAddress}");
             })
             .AddCallCredentials((context, metadata) =>
             {

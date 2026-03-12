@@ -16,8 +16,13 @@ using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
 using D2.Geo.Client.Messaging.Handlers.Sub;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.InMemoryCache.Default;
+using D2.Shared.Utilities.CircuitBreaker;
+using D2.Shared.Utilities.Extensions;
+using D2.Shared.Utilities.Singleflight;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Extension methods for adding GeoRefDataService handlers.
@@ -114,9 +119,46 @@ public static class Extensions
         {
             services.ConfigureGeoClientOptions(configuration, servicePrefix);
             services.AddDefaultMemoryCaching();
+            services.AddGeoCircuitBreaker();
+            services.AddSingleton<Singleflight>();
             services.AddTransient<IComplex.IFindWhoIsHandler, FindWhoIs>();
 
             return services;
+        }
+
+        /// <summary>
+        /// Registers the Geo gRPC circuit breaker as a singleton.
+        /// </summary>
+        private void AddGeoCircuitBreaker()
+        {
+            services.AddSingleton(sp =>
+            {
+                var opts = sp.GetRequiredService<IOptions<GeoClientOptions>>().Value;
+                var logger = sp.GetRequiredService<ILogger<FindWhoIs>>();
+
+                return new CircuitBreaker<FindWhoIsResponse>(
+                    _ => false,
+                    new CircuitBreakerOptions
+                    {
+                        FailureThreshold = opts.CircuitBreakerFailureThreshold,
+                        CooldownDuration = opts.CircuitBreakerCooldownDuration,
+                    },
+                    (from, to) =>
+                    {
+                        if (to == CircuitState.Open)
+                        {
+                            logger.LogWarning(
+                                "Geo gRPC circuit breaker opened after {Threshold} consecutive failures. " +
+                                "Will probe in {Cooldown}.",
+                                opts.CircuitBreakerFailureThreshold,
+                                opts.CircuitBreakerCooldownDuration);
+                        }
+                        else if (to == CircuitState.Closed && from == CircuitState.HalfOpen)
+                        {
+                            logger.LogInformation("Geo gRPC circuit breaker closed — service recovered.");
+                        }
+                    });
+            });
         }
 
         /// <summary>
@@ -163,16 +205,16 @@ public static class Extensions
             IConfiguration configuration,
             string? servicePrefix)
         {
-            const string baseSectionName = "GEO_CLIENT";
+            const string base_section_name = "GEO_CLIENT";
 
             // Always bind shared defaults.
-            services.Configure<GeoClientOptions>(configuration.GetSection(baseSectionName));
+            services.Configure<GeoClientOptions>(configuration.GetSection(base_section_name));
 
             // Overlay service-specific overrides if prefix provided.
-            if (!string.IsNullOrEmpty(servicePrefix))
+            if (servicePrefix.Truthy())
             {
                 services.Configure<GeoClientOptions>(
-                    configuration.GetSection($"{servicePrefix}_{baseSectionName}"));
+                    configuration.GetSection($"{servicePrefix}_{base_section_name}"));
             }
         }
     }

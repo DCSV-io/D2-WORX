@@ -6,7 +6,10 @@
 
 namespace D2.Shared.RequestEnrichment.Default;
 
+using System.Diagnostics;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
+using D2.Shared.Handler;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -17,7 +20,7 @@ using Microsoft.Extensions.Options;
 /// <remarks>
 /// Resolves client IP, computes fingerprints, and optionally performs WhoIs lookups.
 /// The enriched information is stored in <see cref="HttpContext.Features"/> as
-/// <see cref="IRequestInfo"/>.
+/// <see cref="IRequestContext"/>.
 /// </remarks>
 public class RequestEnrichmentMiddleware
 {
@@ -66,36 +69,62 @@ public class RequestEnrichmentMiddleware
         HttpContext context,
         IComplex.IFindWhoIsHandler whoIsHandler)
     {
+        // Skip enrichment entirely for infrastructure endpoints (health checks, metrics).
+        if (InfrastructurePaths.IsInfrastructure(context))
+        {
+            await r_next(context);
+            return;
+        }
+
         // 1. Resolve client IP (only trusting configured proxy headers).
         var clientIp = IpResolver.Resolve(context, r_options.TrustedProxyHeaders, r_options.MaxForwardedForLength);
 
         // 2. Compute server fingerprint (for logging).
         var serverFingerprint = FingerprintBuilder.Build(context);
 
-        // 3. Read client fingerprint header (for rate limiting). Truncate oversized values.
+        // 3. Read client fingerprint: cookie (primary) → header (fallback).
         string? clientFingerprint = null;
-        if (context.Request.Headers.TryGetValue(
-                r_options.ClientFingerprintHeader,
-                out var fingerprintHeader))
+        if (context.Request.Cookies.TryGetValue(r_options.ClientFingerprintCookie, out var cookieFp)
+            && cookieFp.Truthy())
         {
-            var fp = fingerprintHeader.FirstOrDefault();
-            if (fp is not null && fp.Length > r_options.MaxFingerprintLength)
-            {
-                fp = fp[..r_options.MaxFingerprintLength];
-            }
-
-            clientFingerprint = fp;
+            clientFingerprint = cookieFp;
+        }
+        else if (context.Request.Headers.TryGetValue(
+                     r_options.ClientFingerprintHeader,
+                     out var fingerprintHeader))
+        {
+            clientFingerprint = fingerprintHeader.FirstOrDefault();
         }
 
-        // 4. Build initial request info (without WhoIs data).
-        var requestInfo = new RequestInfo
+        if (clientFingerprint is not null && clientFingerprint.Length > r_options.MaxFingerprintLength)
         {
+            clientFingerprint = clientFingerprint[..r_options.MaxFingerprintLength];
+        }
+
+        if (clientFingerprint.Falsey())
+        {
+            clientFingerprint = null;
+            r_logger.LogWarning(
+                "Client fingerprint missing (no d2-cfp cookie or X-Client-Fingerprint header). Device rate-limit bucket will be shared.");
+        }
+
+        // 4. Compute combined device fingerprint (always present).
+        var deviceFingerprint = FingerprintBuilder.BuildDeviceFingerprint(
+            clientFingerprint, serverFingerprint, clientIp);
+
+        // 5. Build initial request context (without WhoIs data).
+        var requestContext = new MutableRequestContext
+        {
+            TraceId = Activity.Current?.TraceId.ToString(),
+            RequestId = context.TraceIdentifier,
+            RequestPath = context.Request.Path.Value,
             ClientIp = clientIp,
             ServerFingerprint = serverFingerprint,
             ClientFingerprint = clientFingerprint,
+            DeviceFingerprint = deviceFingerprint,
         };
 
-        // 5. Perform WhoIs lookup if enabled and not localhost.
+        // 6. Perform WhoIs lookup if enabled and not localhost.
         if (r_options.EnableWhoIsLookup && !IpResolver.IsLocalhost(clientIp))
         {
             try
@@ -108,11 +137,15 @@ public class RequestEnrichmentMiddleware
 
                 if (whoIsResult.CheckSuccess(out var output) && output?.WhoIs is { } whoIs)
                 {
-                    requestInfo = new RequestInfo
+                    requestContext = new MutableRequestContext
                     {
+                        TraceId = requestContext.TraceId,
+                        RequestId = requestContext.RequestId,
+                        RequestPath = requestContext.RequestPath,
                         ClientIp = clientIp,
                         ServerFingerprint = serverFingerprint,
                         ClientFingerprint = clientFingerprint,
+                        DeviceFingerprint = deviceFingerprint,
                         WhoIsHashId = whoIs.HashId,
                         City = whoIs.Location?.City,
                         CountryCode = whoIs.Location?.CountryIso31661Alpha2Code,
@@ -145,10 +178,10 @@ public class RequestEnrichmentMiddleware
             }
         }
 
-        // 6. Store in HttpContext.Features for downstream middleware and handlers.
-        context.Features.Set<IRequestInfo>(requestInfo);
+        // 7. Store in HttpContext.Features for downstream middleware and handlers.
+        context.Features.Set<IRequestContext>(requestContext);
 
-        // 7. Continue pipeline.
+        // 8. Continue pipeline.
         await r_next(context);
     }
 }

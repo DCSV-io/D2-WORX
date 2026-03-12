@@ -6,12 +6,26 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import { loadEnv } from "vite";
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd());
+  // Load env from monorepo root so .env.local vars (REDIS_URL, etc.) are
+  // available in process.env during SSR and server-side hooks.
+  const envDir = "../../";
+  const env = loadEnv(mode, envDir);
   const allowedHosts = safeParseArray(env.VITE_ALLOWED_HOSTS || "");
 
   return {
+    envDir,
     server: {
       allowedHosts: allowedHosts,
+    },
+    optimizeDeps: {
+      include: [
+        "bits-ui",
+        "mode-watcher",
+        "svelte-sonner",
+        "tailwind-variants",
+        "tailwind-merge",
+        "clsx",
+      ],
     },
     plugins: [
       tailwindcss(),
@@ -28,7 +42,6 @@ export default defineConfig(({ mode }) => {
           extends: "./vite.config.ts",
           test: {
             name: "client",
-            environment: "browser",
             browser: {
               enabled: true,
               provider: playwright(),
@@ -46,6 +59,11 @@ export default defineConfig(({ mode }) => {
             environment: "node",
             include: ["src/**/*.{test,spec}.{js,ts}"],
             exclude: ["src/**/*.svelte.{test,spec}.{js,ts}"],
+            server: {
+              deps: {
+                inline: [/sveltekit-superforms/],
+              },
+            },
           },
         },
       ],

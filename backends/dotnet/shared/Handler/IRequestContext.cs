@@ -50,8 +50,9 @@ public interface IRequestContext
 
     /// <summary>
     /// Gets a value indicating whether the user is authenticated.
+    /// <c>null</c> means auth hasn't run yet (pre-auth handlers).
     /// </summary>
-    bool IsAuthenticated { get; }
+    bool? IsAuthenticated { get; }
 
     /// <summary>
     /// Gets the unique identifier of the user.
@@ -89,6 +90,11 @@ public interface IRequestContext
     /// </summary>
     OrgType? AgentOrgType { get; }
 
+    /// <summary>
+    /// Gets the role of the user in the agent organization (e.g., "owner", "admin", "member").
+    /// </summary>
+    string? AgentOrgRole { get; }
+
     #endregion
 
     #region Target Organization
@@ -110,6 +116,12 @@ public interface IRequestContext
     /// </summary>
     OrgType? TargetOrgType { get; }
 
+    /// <summary>
+    /// Gets the role of the user in the target organization.
+    /// During org emulation, this is always "auditor".
+    /// </summary>
+    string? TargetOrgRole { get; }
+
     #endregion
 
     #region Org Emulation
@@ -118,8 +130,9 @@ public interface IRequestContext
     /// Gets a value indicating whether org emulation is active.
     /// When true, a staff user is viewing another org as read-only.
     /// All CUD operations should be blocked during org emulation.
+    /// <c>null</c> means auth hasn't run yet (pre-auth handlers).
     /// </summary>
-    bool IsOrgEmulating { get; }
+    bool? IsOrgEmulating { get; }
 
     #endregion
 
@@ -146,8 +159,83 @@ public interface IRequestContext
     /// When true, <see cref="UserId"/> is the impersonated user and
     /// <see cref="ImpersonatedBy"/> is the admin who initiated it.
     /// Sensitive operations (payments, etc.) should be blocked during user impersonation.
+    /// <c>null</c> means auth hasn't run yet (pre-auth handlers).
     /// </summary>
-    bool IsUserImpersonating { get; }
+    bool? IsUserImpersonating { get; }
+
+    #endregion
+
+    #region Network / Enrichment
+
+    /// <summary>
+    /// Gets the resolved client IP address.
+    /// </summary>
+    string? ClientIp { get; }
+
+    /// <summary>
+    /// Gets the server-computed fingerprint based on request headers.
+    /// </summary>
+    string? ServerFingerprint { get; }
+
+    /// <summary>
+    /// Gets the client-provided fingerprint from the d2-cfp cookie or X-Client-Fingerprint header.
+    /// </summary>
+    string? ClientFingerprint { get; }
+
+    /// <summary>
+    /// Gets the combined device fingerprint: SHA-256(clientFP + serverFP + clientIp).
+    /// </summary>
+    string? DeviceFingerprint { get; }
+
+    /// <summary>
+    /// Gets the WhoIs hash ID for downstream lookups.
+    /// </summary>
+    string? WhoIsHashId { get; }
+
+    /// <summary>
+    /// Gets the city name from WhoIs data.
+    /// </summary>
+    string? City { get; }
+
+    /// <summary>
+    /// Gets the ISO 3166-1 alpha-2 country code from WhoIs data.
+    /// </summary>
+    string? CountryCode { get; }
+
+    /// <summary>
+    /// Gets the ISO 3166-2 subdivision code from WhoIs data.
+    /// </summary>
+    string? SubdivisionCode { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a VPN.
+    /// </summary>
+    bool? IsVpn { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a proxy.
+    /// </summary>
+    bool? IsProxy { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a Tor exit node.
+    /// </summary>
+    bool? IsTor { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether the IP is from a hosting provider.
+    /// </summary>
+    bool? IsHosting { get; }
+
+    #endregion
+
+    #region Trust
+
+    /// <summary>
+    /// Gets a value indicating whether the request is from a trusted service.
+    /// <c>null</c> means service-key middleware hasn't run yet.
+    /// </summary>
+    bool? IsTrustedService { get; }
 
     #endregion
 

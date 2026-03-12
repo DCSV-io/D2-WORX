@@ -422,7 +422,7 @@ public class EnumerableExtensionsTests
         string? Cleaner(string s)
         {
             var trimmed = s.Trim();
-            return string.IsNullOrEmpty(trimmed) ? null : trimmed;
+            return trimmed.Falsey() ? null : trimmed;
         }
 
         // Act

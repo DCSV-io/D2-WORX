@@ -34,44 +34,39 @@ public static class HealthEndpoints
     {
         /// <summary>
         /// Registers gRPC clients needed for the health endpoint.
-        /// All services (Geo, Comms, Auth) use gRPC.
+        /// Reads <c>COMMS_GRPC_ADDRESS</c> and <c>AUTH_GRPC_ADDRESS</c> (bare <c>host:port</c>).
+        /// Geo client is already registered via <see cref="GeoEndpoints.AddGeoGrpcClient"/>.
         /// </summary>
-        ///
-        /// <param name="configuration">
-        /// The application configuration.
-        /// </param>
         ///
         /// <returns>
         /// The updated service collection.
         /// </returns>
-        public IServiceCollection AddHealthEndpointDependencies(IConfiguration configuration)
+        public IServiceCollection AddHealthEndpointDependencies()
         {
             // Comms gRPC client (Geo client is already registered via AddGeoGrpcClient).
-            const string comms_config_key = "services:d2-comms:comms-grpc:0";
-            var commsAddress = configuration[comms_config_key];
+            var commsAddress = Environment.GetEnvironmentVariable("COMMS_GRPC_ADDRESS");
             if (commsAddress.Falsey())
             {
                 throw new ArgumentException(
-                    $"Comms gRPC service address not configured. Missing '{comms_config_key}' configuration.");
+                    "Comms gRPC service address not configured. Missing 'COMMS_GRPC_ADDRESS' environment variable.");
             }
 
             services.AddGrpcClient<CommsService.CommsServiceClient>(o =>
             {
-                o.Address = new Uri(commsAddress!);
+                o.Address = new Uri($"http://{commsAddress}");
             });
 
             // Auth gRPC client (checkHealth is exempt from API key auth).
-            const string auth_config_key = "services:d2-auth:auth-grpc:0";
-            var authGrpcAddress = configuration[auth_config_key];
+            var authGrpcAddress = Environment.GetEnvironmentVariable("AUTH_GRPC_ADDRESS");
             if (authGrpcAddress.Falsey())
             {
                 throw new ArgumentException(
-                    $"Auth gRPC service address not configured. Missing '{auth_config_key}' configuration.");
+                    "Auth gRPC service address not configured. Missing 'AUTH_GRPC_ADDRESS' environment variable.");
             }
 
             services.AddGrpcClient<AuthService.AuthServiceClient>(o =>
             {
-                o.Address = new Uri(authGrpcAddress!);
+                o.Address = new Uri($"http://{authGrpcAddress}");
             });
 
             return services;
@@ -337,7 +332,7 @@ public static class HealthEndpoints
             {
                 status = comp.Status,
                 latencyMs = comp.LatencyMs,
-                error = string.IsNullOrEmpty(comp.Error) ? null : comp.Error,
+                error = comp.Error.Falsey() ? null : comp.Error,
             };
         }
 

@@ -68,22 +68,18 @@ describe("dkron-mgr main.ts (real process)", () => {
 
     // Spawn the real entry point using node + tsx loader (mirrors "dev" script).
     // cwd must be the service directory so `--import tsx` resolves from its node_modules.
-    mgrProcess = spawn(
-      process.execPath,
-      ["--import", "tsx", mainTs],
-      {
-        cwd: serviceDir,
-        env: {
-          ...process.env,
-          DKRON_MGR__DKRON_URL: dkronUrl,
-          DKRON_MGR__GATEWAY_URL: "http://host.docker.internal:5461",
-          DKRON_MGR__SERVICE_KEY: "e2e-test-service-key",
-          DKRON_MGR__RECONCILE_INTERVAL_MS: "600000", // 10 min — we won't wait for a second cycle
-          OTEL_SDK_DISABLED: "true",
-        },
-        stdio: ["ignore", "pipe", "pipe"],
+    mgrProcess = spawn(process.execPath, ["--import", "tsx", mainTs], {
+      cwd: serviceDir,
+      env: {
+        ...process.env,
+        DKRON_MGR__DKRON_URL: dkronUrl,
+        DKRON_MGR__GATEWAY_URL: "http://host.docker.internal:5461",
+        DKRON_MGR__SERVICE_KEY: "e2e-test-service-key",
+        DKRON_MGR__RECONCILE_INTERVAL_MS: "600000", // 10 min — we won't wait for a second cycle
+        OTEL_SDK_DISABLED: "true",
       },
-    );
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 
     let earlyExitCode: number | null = null;
     mgrProcess.on("exit", (code) => {
@@ -109,7 +105,10 @@ describe("dkron-mgr main.ts (real process)", () => {
     await waitForOutput(stdout, "Reconciliation complete", 30_000);
 
     // If the process exited early (crash), fail with captured output.
-    expect(earlyExitCode, `Process crashed before reconciliation.\n${stdout.join("\n")}`).toBeNull();
+    expect(
+      earlyExitCode,
+      `Process crashed before reconciliation.\n${stdout.join("\n")}`,
+    ).toBeNull();
 
     // Verify all 8 jobs were actually created in Dkron.
     const jobs = await listJobs(dkronUrl, logger);

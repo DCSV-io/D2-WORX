@@ -20,7 +20,6 @@ src/
 │           ├── d/         # Remove, ReleaseLock
 │           └── q/         # Ping
 └── middleware/
-    ├── request-enrichment/  # IRequestInfo contract
     ├── ratelimit/           # ICheckHandler + RateLimitDimension + CHECK_REDACTION
     │   └── handlers/
     └── idempotency/         # ICheckHandler + IdempotencyState + CachedResponse
@@ -54,12 +53,6 @@ src/
 | `handlers/d/remove.ts`       | `IRemoveHandler`      | Delete key from distributed cache.                      |
 | `handlers/d/release-lock.ts` | `IReleaseLockHandler` | Release distributed lock (safe compare-and-delete).     |
 
-## Middleware — Request Enrichment
-
-| File                | Export         | Description                                                        |
-| ------------------- | -------------- | ------------------------------------------------------------------ |
-| `i-request-info.ts` | `IRequestInfo` | Interface for enriched request data (clientIp, fingerprints, geo). |
-
 ## Middleware — Rate Limit
 
 | File                      | Export               | Description                                                    |
@@ -83,7 +76,6 @@ Consumers import by namespace:
 
 ```typescript
 import { InMemoryCache, DistributedCache, RateLimit, Idempotency } from "@d2/interfaces";
-import type { RequestEnrichment } from "@d2/interfaces";
 
 // Use as:
 const handler: InMemoryCache.IGetHandler = ...;
@@ -91,6 +83,8 @@ const input: DistributedCache.SetInput<string> = ...;
 const check: RateLimit.ICheckHandler = ...;
 const idemCheck: Idempotency.ICheckHandler = ...;
 ```
+
+> **Note:** `RequestEnrichment` is no longer exported. Use `IRequestContext` from `@d2/handler` instead.
 
 ## .NET Equivalent
 

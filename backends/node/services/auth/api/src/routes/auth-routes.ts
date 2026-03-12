@@ -6,7 +6,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { ILogger } from "@d2/logging";
 import type { Auth } from "@d2/auth-infra";
 import type { CheckSignInThrottle, RecordSignInOutcome } from "@d2/auth-app";
-import { REQUEST_INFO_KEY } from "../middleware/request-enrichment.js";
+import { REQUEST_CONTEXT_KEY } from "../middleware/request-enrichment.js";
 
 /**
  * Clones response headers and sets a single header (overwrites if exists).
@@ -66,12 +66,12 @@ export function createAuthRoutes(
 
       if (identifier) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const requestInfo = (c as any).get(REQUEST_INFO_KEY) as
+        const requestContext = (c as any).get(REQUEST_CONTEXT_KEY) as
           | { clientIp?: string; serverFingerprint?: string }
           | undefined;
         const identifierHash = sha256(identifier);
         const identityHash = sha256(
-          `${requestInfo?.clientIp ?? "unknown"}:${requestInfo?.serverFingerprint ?? "unknown"}`,
+          `${requestContext?.clientIp ?? "unknown"}:${requestContext?.serverFingerprint ?? "unknown"}`,
         );
 
         // Check throttle

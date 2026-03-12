@@ -6,6 +6,7 @@ export default defineConfig({
       "backends/node/shared/tests/vitest.config.ts",
       "backends/node/services/*/vitest.config.ts",
       "backends/node/services/*/tests/vitest.config.ts",
+      "backends/node/services/*/*/vitest.config.ts",
     ],
     coverage: {
       provider: "v8",

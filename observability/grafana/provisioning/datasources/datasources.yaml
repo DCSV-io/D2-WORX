@@ -7,7 +7,7 @@ datasources:
   - name: Mimir
     type: prometheus
     access: proxy
-    url: http://d2-mimir:9009/prometheus
+    url: http://${MIMIR_NAME}:9009/prometheus
     uid: mimir
     isDefault: true
     editable: true
@@ -28,7 +28,7 @@ datasources:
   - name: Loki
     type: loki
     access: proxy
-    url: http://d2-loki:3100
+    url: http://${LOKI_NAME}:3100
     uid: loki
     isDefault: false
     editable: true
@@ -66,7 +66,7 @@ datasources:
   - name: Tempo
     type: tempo
     access: proxy
-    url: http://d2-tempo:3200
+    url: http://${TEMPO_NAME}:3200
     uid: tempo
     isDefault: false
     editable: true

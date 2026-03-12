@@ -13,6 +13,8 @@ export default mergeConfig(
       // Run test files sequentially to avoid .NET build lock contention
       // (each test file starts its own Geo.API child process)
       fileParallelism: false,
+      // Exclude Playwright Test browser specs — they use @playwright/test, not Vitest
+      exclude: ["src/browser/**", "node_modules/**"],
     },
   }),
 );

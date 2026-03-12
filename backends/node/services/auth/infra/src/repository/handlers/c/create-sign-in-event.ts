@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type {
   CreateSignInEventInput as I,
@@ -16,6 +16,10 @@ export class CreateSignInEvent extends BaseHandler<I, O> implements ICreateSignI
     this.db = db;
   }
 
+  get redaction(): RedactionSpec {
+    return { suppressInput: true };
+  }
+
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
     await this.db.insert(signInEvent).values({
       id: input.event.id,
@@ -24,6 +28,7 @@ export class CreateSignInEvent extends BaseHandler<I, O> implements ICreateSignI
       ipAddress: input.event.ipAddress,
       userAgent: input.event.userAgent,
       whoIsId: input.event.whoIsId,
+      deviceFingerprint: input.event.deviceFingerprint,
       failureReason: input.event.failureReason,
       createdAt: input.event.createdAt,
     });

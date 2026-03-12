@@ -6,6 +6,7 @@
 
 namespace D2.Shared.Handler.Extensions;
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
@@ -30,10 +31,33 @@ public static class Extensions
         /// <returns>
         /// The updated service collection.
         /// </returns>
+        /// <remarks>
+        /// <para>
+        /// On the gateway, <see cref="IRequestContext"/> is populated by
+        /// <c>RequestEnrichmentMiddleware</c> and set on <c>HttpContext.Features</c>.
+        /// The factory checks for an existing instance before falling back to
+        /// claim-based construction (used by non-gateway gRPC services).
+        /// </para>
+        /// </remarks>
         public IServiceCollection AddHandlerContext()
         {
             services.AddHttpContextAccessor();
-            services.AddScoped<IRequestContext, RequestContext>();
+
+            services.AddScoped<IRequestContext>(sp =>
+            {
+                var httpCtx = sp.GetService<IHttpContextAccessor>()?.HttpContext;
+
+                // Gateway: MutableRequestContext already on Features (populated by middleware).
+                var existing = httpCtx?.Features.Get<IRequestContext>();
+                if (existing is not null)
+                {
+                    return existing;
+                }
+
+                // Non-gateway (e.g. Geo gRPC): build from JWT claims.
+                return new RequestContext(sp.GetRequiredService<IHttpContextAccessor>());
+            });
+
             services.AddScoped<IHandlerContext, HandlerContext>();
 
             return services;

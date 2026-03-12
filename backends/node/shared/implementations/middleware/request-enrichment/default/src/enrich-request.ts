@@ -1,13 +1,13 @@
 import type { ILogger } from "@d2/logging";
+import type { IRequestContext } from "@d2/handler";
 import type { FindWhoIs } from "@d2/geo-client";
 import { resolveIp, isLocalhost } from "./ip-resolver.js";
-import { buildServerFingerprint } from "./fingerprint-builder.js";
-import { RequestInfo } from "./request-info.js";
+import { buildServerFingerprint, buildDeviceFingerprint } from "./fingerprint-builder.js";
+import { MutableRequestContext } from "./request-info.js";
 import {
   DEFAULT_REQUEST_ENRICHMENT_OPTIONS,
   type RequestEnrichmentOptions,
 } from "./request-enrichment-options.js";
-import type { RequestEnrichment } from "@d2/interfaces";
 
 /**
  * Enriches an HTTP request with client information.
@@ -26,7 +26,7 @@ export async function enrichRequest(
   findWhoIs: FindWhoIs,
   options?: Partial<RequestEnrichmentOptions>,
   logger?: ILogger,
-): Promise<RequestEnrichment.IRequestInfo> {
+): Promise<IRequestContext> {
   const opts = { ...DEFAULT_REQUEST_ENRICHMENT_OPTIONS, ...options };
 
   // 1. Resolve client IP (only trusting configured proxy headers).
@@ -35,22 +35,35 @@ export async function enrichRequest(
   // 2. Compute server fingerprint.
   const serverFingerprint = buildServerFingerprint(headers);
 
-  // 3. Read client fingerprint from configured header (truncate oversized values).
-  const clientFingerprintRaw = headers[opts.clientFingerprintHeader];
-  let clientFingerprint = clientFingerprintRaw
-    ? Array.isArray(clientFingerprintRaw)
-      ? clientFingerprintRaw[0]
-      : clientFingerprintRaw
-    : undefined;
+  // 3. Read client fingerprint: cookie (primary) → header (fallback).
+  let clientFingerprint = parseCookieValue(headers, opts.clientFingerprintCookie);
+  if (!clientFingerprint) {
+    const clientFingerprintRaw = headers[opts.clientFingerprintHeader];
+    clientFingerprint = clientFingerprintRaw
+      ? Array.isArray(clientFingerprintRaw)
+        ? clientFingerprintRaw[0]
+        : clientFingerprintRaw
+      : undefined;
+  }
   if (clientFingerprint && clientFingerprint.length > opts.maxFingerprintLength) {
     clientFingerprint = clientFingerprint.slice(0, opts.maxFingerprintLength);
   }
 
-  // 4. Build initial request info (without WhoIs data).
-  let requestInfo: RequestEnrichment.IRequestInfo = new RequestInfo({
+  if (!clientFingerprint) {
+    logger?.warn(
+      "Client fingerprint missing (no d2-cfp cookie or X-Client-Fingerprint header). Device rate-limit bucket will be shared.",
+    );
+  }
+
+  // 4. Compute combined device fingerprint (always present).
+  const deviceFingerprint = buildDeviceFingerprint(clientFingerprint, serverFingerprint, clientIp);
+
+  // 5. Build initial request context (without WhoIs data).
+  let requestContext: IRequestContext = new MutableRequestContext({
     clientIp,
     serverFingerprint,
     clientFingerprint,
+    deviceFingerprint,
   });
 
   // 5. Perform WhoIs lookup if enabled and not localhost.
@@ -67,10 +80,11 @@ export async function enrichRequest(
       const output = whoIsResult.checkSuccess();
       if (output?.whoIs) {
         const whoIs = output.whoIs;
-        requestInfo = new RequestInfo({
+        requestContext = new MutableRequestContext({
           clientIp,
           serverFingerprint,
           clientFingerprint,
+          deviceFingerprint,
           whoIsHashId: whoIs.hashId || undefined,
           city: whoIs.location?.city || undefined,
           countryCode: whoIs.location?.countryIso31661Alpha2Code || undefined,
@@ -93,5 +107,29 @@ export async function enrichRequest(
     }
   }
 
-  return requestInfo;
+  return requestContext;
+}
+
+/**
+ * Parses a cookie value from the raw `cookie` header.
+ * Returns undefined if the cookie is not found.
+ */
+function parseCookieValue(
+  headers: Record<string, string | string[] | undefined>,
+  cookieName: string,
+): string | undefined {
+  const cookieHeader = headers["cookie"];
+  if (!cookieHeader) return undefined;
+  const raw = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
+  if (!raw) return undefined;
+
+  for (const pair of raw.split(";")) {
+    const eqIndex = pair.indexOf("=");
+    if (eqIndex === -1) continue;
+    const name = pair.slice(0, eqIndex).trim();
+    if (name === cookieName) {
+      return pair.slice(eqIndex + 1).trim() || undefined;
+    }
+  }
+  return undefined;
 }

@@ -10,6 +10,7 @@ using D2.Events.Protos.V1;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Logging;
 using ClientCacheKeys = D2.Geo.Client.CacheKeys;
 using DeleteRepo = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
@@ -79,7 +80,7 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
         {
             var (contextKey, relatedEntityId) = input.Keys[i];
 
-            if (string.IsNullOrWhiteSpace(contextKey))
+            if (contextKey.Falsey())
             {
                 allErrors.Add([$"keys[{i}].contextKey", "Context key must not be empty."]);
             }

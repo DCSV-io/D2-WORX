@@ -36,6 +36,8 @@ import {
   IGetActiveConsentsKey,
   IGetOrgContactsKey,
   ICheckSignInThrottleKey,
+  ICheckEmailAvailabilityKey,
+  ICheckEmailAvailabilityRepoKey,
   IPingDbKey,
   ICheckHealthKey,
 } from "./service-keys.js";
@@ -52,6 +54,7 @@ import { GetActiveConsents } from "./implementations/cqrs/handlers/q/get-active-
 import { GetOrgContacts } from "./implementations/cqrs/handlers/q/get-org-contacts.js";
 import { CheckSignInThrottle } from "./implementations/cqrs/handlers/q/check-sign-in-throttle.js";
 import { CheckHealth } from "./implementations/cqrs/handlers/q/check-health.js";
+import { CheckEmailAvailability } from "./implementations/cqrs/handlers/q/check-email-availability.js";
 import {
   ICachePingKey,
   createRedisAcquireLockKey,
@@ -208,6 +211,15 @@ export function addAuthApp(
     ICheckSignInThrottleKey,
     (sp) =>
       new CheckSignInThrottle(sp.resolve(ISignInThrottleStoreKey), sp.resolve(IHandlerContextKey)),
+  );
+
+  services.addTransient(
+    ICheckEmailAvailabilityKey,
+    (sp) =>
+      new CheckEmailAvailability(
+        sp.resolve(ICheckEmailAvailabilityRepoKey),
+        sp.resolve(IHandlerContextKey),
+      ),
   );
 
   services.addTransient(

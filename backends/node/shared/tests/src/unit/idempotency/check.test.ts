@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Check } from "@d2/idempotency";
+import { CheckIdempotency } from "@d2/idempotency";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { D2Result, ErrorCodes } from "@d2/result";
@@ -9,6 +9,9 @@ function createTestContext(traceId?: string): IHandlerContext {
   const request: IRequestContext = {
     traceId: traceId ?? "test-trace-id",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,
@@ -45,7 +48,7 @@ function createMockHandlers(): MockHandlers {
 }
 
 function createCheck(mocks: MockHandlers, options?: Record<string, unknown>): Check {
-  return new Check(mocks.setNx, mocks.get, options ?? {}, createTestContext());
+  return new CheckIdempotency(mocks.setNx, mocks.get, options ?? {}, createTestContext());
 }
 
 describe("Idempotency Check handler", () => {

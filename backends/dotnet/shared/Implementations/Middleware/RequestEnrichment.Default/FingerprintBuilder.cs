@@ -46,6 +46,33 @@ public static class FingerprintBuilder
     }
 
     /// <summary>
+    /// Builds a combined device fingerprint from all available signals.
+    /// Formula: SHA-256(clientFingerprint + serverFingerprint + clientIp).
+    /// </summary>
+    ///
+    /// <param name="clientFingerprint">
+    /// Client-provided fingerprint (from d2-cfp cookie or header). May be null.
+    /// </param>
+    /// <param name="serverFingerprint">
+    /// Server-computed fingerprint (64-char hex).
+    /// </param>
+    /// <param name="clientIp">
+    /// Resolved client IP address.
+    /// </param>
+    ///
+    /// <returns>
+    /// A 64-character lowercase hex string (SHA-256 hash). Always present.
+    /// </returns>
+    public static string BuildDeviceFingerprint(
+        string? clientFingerprint,
+        string serverFingerprint,
+        string clientIp)
+    {
+        var input = $"{clientFingerprint ?? string.Empty}{serverFingerprint}{clientIp}";
+        return ComputeSha256Hash(input);
+    }
+
+    /// <summary>
     /// Computes a SHA-256 hash of the input string.
     /// </summary>
     ///

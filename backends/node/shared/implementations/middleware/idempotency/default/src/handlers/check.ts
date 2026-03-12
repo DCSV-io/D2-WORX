@@ -19,7 +19,7 @@ const SENTINEL = "__processing__";
  *
  * Fail-open on all cache errors.
  */
-export class Check
+export class CheckIdempotency
   extends BaseHandler<CheckInput, CheckOutput>
   implements Idempotency.ICheckHandler
 {
@@ -45,7 +45,7 @@ export class Check
 
   protected async executeAsync(input: CheckInput): Promise<D2Result<CheckOutput | undefined>> {
     // Validate input.
-    const validation = this.validateInput(Check.checkSchema, input);
+    const validation = this.validateInput(CheckIdempotency.checkSchema, input);
     if (validation.failed) {
       return D2Result.bubbleFail(validation);
     }

@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:browser": "playwright test --config playwright.config.ts"
   },
   "devDependencies": {
     "@d2/auth-api": "workspace:*",
     "@d2/auth-app": "workspace:*",
+    "@d2/auth-bff-client": "workspace:*",
     "@d2/auth-infra": "workspace:*",
     "@d2/cache-memory": "workspace:*",
     "@d2/cache-redis": "workspace:*",
@@ -27,15 +29,18 @@
     "@d2/result": "workspace:*",
     "@d2/testing": "workspace:*",
     "@d2/utilities": "workspace:*",
+    "@hono/node-server": "1.19.9",
     "@testcontainers/postgresql": "11.12.0",
     "@testcontainers/rabbitmq": "11.12.0",
     "@testcontainers/redis": "11.12.0",
     "@types/pg": "8.16.0",
+    "hono": "4.12.3",
     "testcontainers": "11.12.0",
     "drizzle-orm": "0.45.1",
     "ioredis": "5.8.0",
     "pg": "8.18.0",
     "rabbitmq-client": "5.0.8",
+    "@playwright/test": "1.58.0",
     "vitest": "4.0.18"
   }
 }

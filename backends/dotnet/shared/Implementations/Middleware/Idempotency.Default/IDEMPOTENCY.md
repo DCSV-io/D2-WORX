@@ -76,12 +76,12 @@ app.UseIdempotency();
 
 ## Node.js Usage
 
-### Check Handler (DI composition)
+### CheckIdempotency Handler (DI composition)
 
 ```typescript
-import { Check } from "@d2/idempotency";
+import { CheckIdempotency } from "@d2/idempotency";
 
-const checkHandler = new Check(setNxHandler, getHandler, options, context);
+const checkHandler = new CheckIdempotency(setNxHandler, getHandler, options, context);
 ```
 
 ### Framework-Agnostic Orchestrator

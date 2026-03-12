@@ -21,7 +21,7 @@ export class ResendEmailProvider
   }
 
   get redaction() {
-    return { inputFields: ["html", "plainText"] as const };
+    return { inputFields: ["html", "plainText", "to", "replyTo"] as const };
   }
 
   protected async executeAsync(
@@ -37,9 +37,8 @@ export class ResendEmailProvider
     });
 
     if (error) {
-      return D2Result.fail({
+      return D2Result.serviceUnavailable({
         messages: [error.message],
-        statusCode: 503,
       });
     }
 

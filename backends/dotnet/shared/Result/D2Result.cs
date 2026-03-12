@@ -181,6 +181,114 @@ public class D2Result
     }
 
     /// <summary>
+    /// Factory method to create a service unavailable <see cref="D2Result"/> instance.
+    /// </summary>
+    ///
+    /// <param name="messages">
+    /// A list of messages related to the service unavailability. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A new service unavailable <see cref="D2Result"/> instance.
+    /// </returns>
+    public static D2Result ServiceUnavailable(
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        messages ??= ["The service is temporarily unavailable."];
+        return new(
+            false,
+            messages,
+            statusCode: HttpStatusCode.ServiceUnavailable,
+            errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
+            traceId: traceId);
+    }
+
+    /// <summary>
+    /// Factory method to create an unauthorized <see cref="D2Result"/> instance.
+    /// </summary>
+    ///
+    /// <param name="messages">
+    /// A list of messages related to the unauthorized access. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A new unauthorized <see cref="D2Result"/> instance.
+    /// </returns>
+    public static D2Result Unauthorized(
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        messages ??= ["You must be signed in to perform this action."];
+        return new(
+            false,
+            messages,
+            statusCode: HttpStatusCode.Unauthorized,
+            errorCode: ErrorCodes.UNAUTHORIZED,
+            traceId: traceId);
+    }
+
+    /// <summary>
+    /// Factory method to create an unhandled exception <see cref="D2Result"/> instance.
+    /// </summary>
+    ///
+    /// <param name="messages">
+    /// A list of messages related to the unhandled exception. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A new unhandled exception <see cref="D2Result"/> instance.
+    /// </returns>
+    public static D2Result UnhandledException(
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        messages ??= ["An unhandled exception occurred while processing the request."];
+        return new(
+            false,
+            messages,
+            statusCode: HttpStatusCode.InternalServerError,
+            errorCode: ErrorCodes.UNHANDLED_EXCEPTION,
+            traceId: traceId);
+    }
+
+    /// <summary>
+    /// Factory method to create a payload too large <see cref="D2Result"/> instance.
+    /// </summary>
+    ///
+    /// <param name="messages">
+    /// A list of messages related to the operation. Optional.
+    /// </param>
+    /// <param name="traceId">
+    /// The trace identifier to correlate logs and diagnostics for the operation. Optional.
+    /// </param>
+    ///
+    /// <returns>
+    /// A new payload too large <see cref="D2Result"/> instance.
+    /// </returns>
+    public static D2Result PayloadTooLarge(
+        List<string>? messages = null,
+        string? traceId = null)
+    {
+        messages ??= ["Request payload too large."];
+        return new(
+            false,
+            messages,
+            statusCode: HttpStatusCode.RequestEntityTooLarge,
+            errorCode: ErrorCodes.PAYLOAD_TOO_LARGE,
+            traceId: traceId);
+    }
+
+    /// <summary>
     /// Factory method to create a cancelled <see cref="D2Result"/> instance.
     /// </summary>
     ///

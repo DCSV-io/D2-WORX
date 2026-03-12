@@ -24,9 +24,10 @@ Tracks which shared infrastructure packages exist on both .NET and Node.js platf
 | PG batch queries          | `Batch.Pg`                           | `@d2/batch-pg`           | Parity    |
 | PG transactions           | `Transactions.Pg`                    | —                        | .NET-only |
 | PG error helpers          | `Errors.Pg`                          | `@d2/errors-pg`          | Parity    |
-| Messaging                 | MassTransit / RabbitMQ               | `@d2/messaging`          | Parity    |
+| Messaging                 | `Messaging.RabbitMQ`                 | `@d2/messaging`          | Parity    |
 | Geo client                | `Geo.Client`                         | `@d2/geo-client`         | Parity    |
 | Comms client              | —                                    | `@d2/comms-client`       | Node-only |
+| Auth BFF client           | —                                    | `@d2/auth-bff-client`    | Node-only |
 
 ## API-Level Differences
 
@@ -52,3 +53,4 @@ Where parity exists, the APIs are adapted to each platform's idioms:
 
 - **@d2/comms-client** — Thin RabbitMQ publisher for the Comms delivery engine. Not needed in .NET because .NET services don't publish to the Comms notification exchange (Comms is a Node.js-only service).
 - **@d2/di** — Custom DI container mirroring `IServiceCollection`/`IServiceProvider`. .NET uses the built-in `Microsoft.Extensions.DependencyInjection`.
+- **@d2/auth-bff-client** — BFF auth client for SvelteKit: session resolution, JWT management, auth proxy, route guards. HTTP-only (no BetterAuth dependency). No .NET equivalent — .NET gateway validates JWTs directly via JWKS.

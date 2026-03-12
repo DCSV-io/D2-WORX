@@ -9,6 +9,7 @@ namespace D2.Shared.Handler.Extensions;
 using System.Diagnostics;
 using System.Security.Claims;
 using D2.Shared.Handler.Auth;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.AspNetCore.Http;
 
 /// <summary>
@@ -49,6 +50,7 @@ public class RequestContext : IRequestContext
         AgentOrgId = GetGuidClaim(ctx, JwtClaimTypes.ORG_ID);
         AgentOrgName = GetStringClaim(ctx, JwtClaimTypes.ORG_NAME);
         AgentOrgType = GetOrgTypeClaim(ctx, JwtClaimTypes.ORG_TYPE);
+        AgentOrgRole = GetStringClaim(ctx, JwtClaimTypes.ROLE);
 
         // Org Emulation — staff viewing another org as read-only.
         IsOrgEmulating = string.Equals(
@@ -58,17 +60,19 @@ public class RequestContext : IRequestContext
 
         // Target Organization — the org all operations execute against.
         // Emulated org during org emulation, otherwise agent org.
-        if (IsOrgEmulating)
+        if (IsOrgEmulating == true)
         {
             TargetOrgId = GetGuidClaim(ctx, JwtClaimTypes.EMULATED_ORG_ID) ?? AgentOrgId;
             TargetOrgName = GetStringClaim(ctx, JwtClaimTypes.EMULATED_ORG_NAME) ?? AgentOrgName;
             TargetOrgType = GetOrgTypeClaim(ctx, JwtClaimTypes.EMULATED_ORG_TYPE) ?? AgentOrgType;
+            TargetOrgRole = "auditor";
         }
         else
         {
             TargetOrgId = AgentOrgId;
             TargetOrgName = AgentOrgName;
             TargetOrgType = AgentOrgType;
+            TargetOrgRole = AgentOrgRole;
         }
 
         // User Impersonation — admin acting as another user.
@@ -97,7 +101,7 @@ public class RequestContext : IRequestContext
     #region User / Identity
 
     /// <inheritdoc/>
-    public bool IsAuthenticated { get; }
+    public bool? IsAuthenticated { get; }
 
     /// <inheritdoc/>
     public Guid? UserId { get; }
@@ -121,6 +125,9 @@ public class RequestContext : IRequestContext
     /// <inheritdoc/>
     public OrgType? AgentOrgType { get; }
 
+    /// <inheritdoc/>
+    public string? AgentOrgRole { get; }
+
     #endregion
 
     #region Target Organization
@@ -134,12 +141,15 @@ public class RequestContext : IRequestContext
     /// <inheritdoc/>
     public OrgType? TargetOrgType { get; }
 
+    /// <inheritdoc/>
+    public string? TargetOrgRole { get; }
+
     #endregion
 
     #region Org Emulation
 
     /// <inheritdoc/>
-    public bool IsOrgEmulating { get; }
+    public bool? IsOrgEmulating { get; }
 
     #endregion
 
@@ -155,7 +165,7 @@ public class RequestContext : IRequestContext
     public string? ImpersonatingUsername { get; }
 
     /// <inheritdoc/>
-    public bool IsUserImpersonating { get; }
+    public bool? IsUserImpersonating { get; }
 
     #endregion
 
@@ -179,6 +189,59 @@ public class RequestContext : IRequestContext
 
     #endregion
 
+    #region Network / Enrichment
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Not available in non-gateway services (gRPC). Always null.
+    /// </remarks>
+    public string? ClientIp => null;
+
+    /// <inheritdoc/>
+    public string? ServerFingerprint => null;
+
+    /// <inheritdoc/>
+    public string? ClientFingerprint => null;
+
+    /// <inheritdoc/>
+    public string? DeviceFingerprint => null;
+
+    /// <inheritdoc/>
+    public string? WhoIsHashId => null;
+
+    /// <inheritdoc/>
+    public string? City => null;
+
+    /// <inheritdoc/>
+    public string? CountryCode => null;
+
+    /// <inheritdoc/>
+    public string? SubdivisionCode => null;
+
+    /// <inheritdoc/>
+    public bool? IsVpn => null;
+
+    /// <inheritdoc/>
+    public bool? IsProxy => null;
+
+    /// <inheritdoc/>
+    public bool? IsTor => null;
+
+    /// <inheritdoc/>
+    public bool? IsHosting => null;
+
+    #endregion
+
+    #region Trust
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Not available in non-gateway services. Always false.
+    /// </remarks>
+    public bool? IsTrustedService => false;
+
+    #endregion
+
     #region Claim Extraction Helpers
 
     /// <summary>
@@ -187,7 +250,7 @@ public class RequestContext : IRequestContext
     private static string? GetStringClaim(HttpContext? ctx, string claimType)
     {
         var value = ctx?.User.FindFirst(claimType)?.Value;
-        return string.IsNullOrEmpty(value) ? null : value;
+        return value.Falsey() ? null : value;
     }
 
     /// <summary>
@@ -196,7 +259,7 @@ public class RequestContext : IRequestContext
     private static Guid? GetGuidClaim(HttpContext? ctx, string claimType)
     {
         var value = ctx?.User.FindFirst(claimType)?.Value;
-        if (string.IsNullOrEmpty(value))
+        if (value.Falsey())
         {
             return null;
         }
@@ -211,14 +274,14 @@ public class RequestContext : IRequestContext
     private static OrgType? GetOrgTypeClaim(HttpContext? ctx, string claimType)
     {
         var value = ctx?.User.FindFirst(claimType)?.Value;
-        if (string.IsNullOrEmpty(value))
+        if (value.Falsey())
         {
             return null;
         }
 
         // Node.js auth service uses lowercase string values: admin, support, affiliate, customer, third_party.
         // Map to .NET OrgType enum.
-        return value.ToLowerInvariant() switch
+        return value!.ToLowerInvariant() switch
         {
             OrgTypeValues.ADMIN => OrgType.Admin,
             OrgTypeValues.SUPPORT => OrgType.Support,

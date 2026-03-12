@@ -180,6 +180,13 @@ export class ServiceScope implements ServiceResolver {
    */
   resolve<T>(key: ServiceKey<T>): T {
     this._ensureNotDisposed();
+
+    // Check scoped cache first — setInstance() values may not have a descriptor.
+    if (this._scopedCache.has(key.id)) {
+      debugLog(`Scope cache hit (setInstance): ${key.id}`);
+      return this._scopedCache.get(key.id) as T;
+    }
+
     const desc = this._root._descriptors.get(key.id);
     if (!desc) {
       throw new Error(`Service not registered: ${key.id}`);
@@ -194,6 +201,13 @@ export class ServiceScope implements ServiceResolver {
    */
   tryResolve<T>(key: ServiceKey<T>): T | undefined {
     this._ensureNotDisposed();
+
+    // Check scoped cache first — setInstance() values may not have a descriptor.
+    if (this._scopedCache.has(key.id)) {
+      debugLog(`Scope cache hit (setInstance): ${key.id}`);
+      return this._scopedCache.get(key.id) as T;
+    }
+
     const desc = this._root._descriptors.get(key.id);
     if (!desc) return undefined;
     return this._resolveDescriptor(desc) as T;

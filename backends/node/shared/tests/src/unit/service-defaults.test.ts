@@ -425,6 +425,7 @@ describe("@d2/service-defaults/grpc", () => {
       const customRequestContext = {
         traceId: "custom-trace-123",
         isAuthenticated: true,
+        isTrustedService: false,
         userId: "user-abc",
         isAgentStaff: false,
         isAgentAdmin: false,

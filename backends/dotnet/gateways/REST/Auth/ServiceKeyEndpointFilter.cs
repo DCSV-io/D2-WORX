@@ -6,7 +6,7 @@
 
 namespace D2.Gateways.REST.Auth;
 
-using D2.Shared.RequestEnrichment.Default;
+using D2.Shared.Handler;
 
 /// <summary>
 /// Endpoint filter that verifies the request has been identified as a trusted
@@ -16,7 +16,7 @@ using D2.Shared.RequestEnrichment.Default;
 /// <remarks>
 /// This filter no longer validates the key itself — the <see cref="ServiceKeyMiddleware"/>
 /// handles that earlier in the pipeline. This filter simply checks the
-/// <see cref="IRequestInfo.IsTrustedService"/> flag.
+/// <see cref="IRequestContext.IsTrustedService"/> flag.
 /// </remarks>
 public class ServiceKeyEndpointFilter : IEndpointFilter
 {
@@ -25,9 +25,9 @@ public class ServiceKeyEndpointFilter : IEndpointFilter
         EndpointFilterInvocationContext context,
         EndpointFilterDelegate next)
     {
-        var requestInfo = context.HttpContext.Features.Get<IRequestInfo>();
+        var requestContext = context.HttpContext.Features.Get<IRequestContext>();
 
-        if (requestInfo?.IsTrustedService != true)
+        if (requestContext?.IsTrustedService != true)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status401Unauthorized,

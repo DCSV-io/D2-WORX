@@ -19,9 +19,14 @@
  *   - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
  *   - OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
  */
+import { loadEnv } from "./config/load-env.js";
 import { createAddHookMessageChannel } from "import-in-the-middle";
 import { register } from "node:module";
 import { setupTelemetry } from "./setup-telemetry.js";
+
+// Load .env.local BEFORE anything else — mirrors .NET D2Env.Load().
+// Aspire-injected vars are already in process.env and won't be overwritten.
+loadEnv();
 
 // Register ESM loader hooks BEFORE the SDK starts.
 // This enables auto-instrumentations to intercept ESM module loading and apply

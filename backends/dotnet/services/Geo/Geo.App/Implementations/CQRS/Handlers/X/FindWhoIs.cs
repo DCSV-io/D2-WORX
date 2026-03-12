@@ -12,6 +12,7 @@ using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Logging;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex.IFindWhoIsHandler;
@@ -95,7 +96,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         for (var i = 0; i < input.Request.Requests.Count; i++)
         {
             var key = input.Request.Requests[i];
-            if (string.IsNullOrWhiteSpace(key.IpAddress)
+            if (key.IpAddress.Falsey()
                 || !IPAddress.TryParse(key.IpAddress, out _))
             {
                 allErrors.Add([$"requests[{i}].ipAddress", "Must be a valid IPv4 or IPv6 address."]);

@@ -4,12 +4,12 @@ Multi-dimensional sliding-window rate limiting. Mirrors `RateLimit.Default` in .
 
 ## Files
 
-| File Name                                          | Description                                                               |
-| -------------------------------------------------- | ------------------------------------------------------------------------- |
-| [handlers/check.ts](src/handlers/check.ts)         | `Check` handler — sliding window approximation across 4 dimensions.       |
-| [rate-limit-options.ts](src/rate-limit-options.ts) | `RateLimitOptions` + `DEFAULT_RATE_LIMIT_OPTIONS`.                        |
-| [cache-keys.ts](src/cache-keys.ts)                 | Rate limit cache key generation.                                          |
-| [index.ts](src/index.ts)                           | Barrel re-export of `Check` handler + options (with deprecation notices). |
+| File Name                                          | Description                                                                        |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| [handlers/check.ts](src/handlers/check.ts)         | `CheckRateLimit` handler — sliding window approximation across 4 dimensions.       |
+| [rate-limit-options.ts](src/rate-limit-options.ts) | `RateLimitOptions` + `DEFAULT_RATE_LIMIT_OPTIONS`.                                 |
+| [cache-keys.ts](src/cache-keys.ts)                 | Rate limit cache key generation.                                                   |
+| [index.ts](src/index.ts)                           | Barrel re-export of `CheckRateLimit` handler + options (with deprecation notices). |
 
 ## Dimensions
 
@@ -17,7 +17,7 @@ Rate limiting operates on four dimensions in hierarchy order:
 
 | Dimension          | Default Threshold | Skip Condition                   | Rationale                 |
 | ------------------ | ----------------- | -------------------------------- | ------------------------- |
-| Client Fingerprint | 100/min           | Header not present               | Single device — strictest |
+| Device Fingerprint | 100/min           | Never (always evaluated)         | Single device — strictest |
 | IP                 | 5,000/min         | Localhost/loopback               | ~50 devices x 100         |
 | City               | 25,000/min        | WhoIs data unavailable           | ~250 devices x 100        |
 | Country            | 100,000/min       | Whitelisted or WhoIs unavailable | ~1000 devices x 100       |
@@ -45,15 +45,15 @@ Contract types (`ICheckHandler`, `CheckInput/Output`, `RateLimitDimension`) are 
 
 ## Data Redaction
 
-The `Check` handler declares `CHECK_REDACTION` (from `@d2/interfaces`) which suppresses input logging because `IRequestInfo` contains PII (client IP, fingerprint, user ID, city).
+The `CheckRateLimit` handler declares `CHECK_REDACTION` (from `@d2/interfaces`) which suppresses input logging because `IRequestContext` contains PII (client IP, fingerprint, user ID, city).
 
 ## Fail-Open Behavior
 
 - **Redis down**: Log warning, allow request through
 - **WhoIs unavailable**: City + Country dimensions skipped
-- **No client fingerprint**: Fingerprint dimension skipped
+- **No client fingerprint**: Device fingerprint still evaluated (degrades to `SHA-256("" + serverFP + clientIp)`)
 - **Localhost**: IP dimension skipped
 
 ## .NET Equivalent
 
-`RateLimit.Default` — same sliding window algorithm, same 4 dimensions, same fail-open behavior. Uses `DefaultOptions` for input logging suppression instead of `RedactionSpec`.
+`RateLimit.Default` — same sliding window algorithm, same 4 dimensions (DeviceFingerprint, IP, City, Country), same fail-open behavior. Uses `DefaultOptions` for input logging suppression instead of `RedactionSpec`.

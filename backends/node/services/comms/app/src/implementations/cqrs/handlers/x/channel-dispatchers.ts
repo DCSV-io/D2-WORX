@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { marked } from "marked";
 import DOMPurify from "isomorphic-dompurify";
 import type { Channel } from "@d2/comms-domain";
@@ -29,15 +30,63 @@ export interface IChannelDispatcher {
   dispatch(input: DispatchInput): Promise<DispatchResult>;
 }
 
-/** Default email HTML wrapper. */
-const DEFAULT_EMAIL_WRAPPER = `<!DOCTYPE html>
-<html><body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h2>{{title}}</h2>
-  <div>{{body}}</div>
-  <hr style="margin-top: 30px; border: none; border-top: 1px solid #eee;" />
-  <p style="color: #999; font-size: 12px;">This is an automated message from D2-WORX.
-  {{unsubscribeUrl}}</p>
+const DEFAULT_FOOTER_TEXT = "D2-WORX";
+
+/** Creates an email HTML wrapper with the given footer brand text. */
+export function createEmailWrapper(footerText: string): string {
+  const year = new Date().getFullYear();
+  return `<!DOCTYPE html>
+<html><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 0; background-color: #f4f5f7;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <tr>
+      <td style="padding: 24px 24px 16px; border-bottom: 3px solid #3a5a82;">
+        <table cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="background-color: #3a5a82; color: #fafafa; font-size: 13px; font-weight: bold; width: 30px; height: 30px; text-align: center; vertical-align: middle; border-radius: 6px; line-height: 30px;">DW</td>
+            <td style="padding-left: 10px; font-size: 17px; font-weight: 600; color: #3a5a82; letter-spacing: 0.5px;">${footerText}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 32px 24px;">
+        <h2 style="margin: 0 0 16px; font-size: 20px; color: #3a5a82;">{{title}}</h2>
+        <div style="font-size: 15px; line-height: 1.6; color: #374151;">{{body}}</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 0 24px;">
+        <hr style="border: none; border-top: 1px solid #e2e5ea; margin: 0;" />
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px 24px 24px; text-align: center;">
+        <p style="margin: 0 0 4px; color: #7b7f92; font-size: 12px;">This is an automated message from ${footerText}.</p>
+        <p style="margin: 0; color: #7b7f92; font-size: 11px;">\u00A9 ${year} DCSV</p>
+        {{unsubscribeUrl}}
+      </td>
+    </tr>
+  </table>
 </body></html>`;
+}
+
+/**
+ * Loads an email template from a file path, or falls back to the built-in default.
+ * The file must contain `{{title}}`, `{{body}}`, and `{{unsubscribeUrl}}` placeholders.
+ */
+export function loadEmailWrapper(footerText: string, templatePath?: string): string {
+  if (templatePath) {
+    try {
+      return readFileSync(templatePath, "utf-8");
+    } catch {
+      // File missing or unreadable — fall through to built-in default
+    }
+  }
+  return createEmailWrapper(footerText);
+}
+
+/** Default email HTML wrapper. */
+const DEFAULT_EMAIL_WRAPPER = createEmailWrapper(DEFAULT_FOOTER_TEXT);
 
 /**
  * Email channel dispatcher.

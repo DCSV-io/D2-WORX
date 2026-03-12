@@ -11,6 +11,8 @@ using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
+using D2.Shared.Utilities.CircuitBreaker;
+using D2.Shared.Utilities.Singleflight;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,6 +33,8 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
     private readonly IUpdate.ISetHandler<WhoIsDTO> r_cacheSet;
     private readonly GeoService.GeoServiceClient r_geoClient;
     private readonly GeoClientOptions r_options;
+    private readonly CircuitBreaker<FindWhoIsResponse> r_circuitBreaker;
+    private readonly Singleflight r_singleflight;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FindWhoIs"/> class.
@@ -45,6 +49,12 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
     /// <param name="geoClient">
     /// The Geo service gRPC client.
     /// </param>
+    /// <param name="circuitBreaker">
+    /// The circuit breaker protecting gRPC calls to the Geo service.
+    /// </param>
+    /// <param name="singleflight">
+    /// Deduplicates concurrent gRPC calls for the same cache key.
+    /// </param>
     /// <param name="options">
     /// The Geo client options.
     /// </param>
@@ -55,6 +65,8 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         IRead.IGetHandler<WhoIsDTO> cacheGet,
         IUpdate.ISetHandler<WhoIsDTO> cacheSet,
         GeoService.GeoServiceClient geoClient,
+        CircuitBreaker<FindWhoIsResponse> circuitBreaker,
+        Singleflight singleflight,
         IOptions<GeoClientOptions> options,
         IHandlerContext context)
         : base(context)
@@ -62,6 +74,8 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         r_cacheGet = cacheGet;
         r_cacheSet = cacheSet;
         r_geoClient = geoClient;
+        r_circuitBreaker = circuitBreaker;
+        r_singleflight = singleflight;
         r_options = options.Value;
     }
 
@@ -97,33 +111,44 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         }
 
         // Cache miss — call Geo service.
+        // Singleflight deduplicates concurrent requests for the same cache key.
+        // Circuit breaker protects against sustained downstream failures.
         FindWhoIsResponse response;
         try
         {
-            response = await r_geoClient.FindWhoIsAsync(
-                new FindWhoIsRequest
-                {
-                    Requests =
-                    {
-                        new FindWhoIsKeys
+            response = await r_singleflight.ExecuteAsync(
+                cacheKey,
+                async ct2 => await r_circuitBreaker.ExecuteAsync(
+                    async ct3 => await r_geoClient.FindWhoIsAsync(
+                        new FindWhoIsRequest
                         {
-                            IpAddress = input.IpAddress,
-                            Fingerprint = input.UserAgent,
+                            Requests =
+                            {
+                                new FindWhoIsKeys
+                                {
+                                    IpAddress = input.IpAddress,
+                                    Fingerprint = input.UserAgent,
+                                },
+                            },
                         },
-                    },
-                },
-                cancellationToken: ct);
+                        cancellationToken: ct3),
+                    ct: ct2),
+                ct);
         }
-        catch (RpcException ex)
+        catch (Exception ex) when (ex is RpcException or CircuitOpenException)
         {
-            // Fail-open: log warning and return null, not error.
+            // Fail-open: handles gRPC errors AND circuit-open rejections identically.
+            // When the circuit is open this returns instantly (no timeout wait).
             // Note: Do not log input.IpAddress as a scalar — it bypasses [RedactData]
             // destructuring. Use {@Input} for structured logging or omit PII entirely.
-            Context.Logger.LogWarning(
-                ex,
-                "gRPC call to Geo service failed for {@Input}. TraceId: {TraceId}",
-                input,
-                TraceId);
+            if (r_circuitBreaker.State != CircuitState.Open)
+            {
+                Context.Logger.LogWarning(
+                    ex,
+                    "gRPC call to Geo service failed for {@Input}. TraceId: {TraceId}",
+                    input,
+                    TraceId);
+            }
 
             return D2Result<O?>.Ok(new O(null));
         }

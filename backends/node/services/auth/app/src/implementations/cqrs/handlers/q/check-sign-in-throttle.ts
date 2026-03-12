@@ -4,16 +4,10 @@ import { SIGN_IN_THROTTLE } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
 import { AUTH_CACHE_KEYS } from "../../../../cache-keys.js";
 import type { ISignInThrottleStore } from "../../../../interfaces/repository/sign-in-throttle-store.js";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface CheckSignInThrottleInput {
-  readonly identifierHash: string;
-  readonly identityHash: string;
-}
-
-export interface CheckSignInThrottleOutput {
-  readonly blocked: boolean;
-  readonly retryAfterSec?: number;
-}
+type Input = Queries.CheckSignInThrottleInput;
+type Output = Queries.CheckSignInThrottleOutput;
 
 /**
  * Checks whether a sign-in attempt should be throttled.
@@ -26,10 +20,10 @@ export interface CheckSignInThrottleOutput {
  *
  * **Fail-open:** Any store error → `{ blocked: false }`.
  */
-export class CheckSignInThrottle extends BaseHandler<
-  CheckSignInThrottleInput,
-  CheckSignInThrottleOutput
-> {
+export class CheckSignInThrottle
+  extends BaseHandler<Input, Output>
+  implements Queries.ICheckSignInThrottleHandler
+{
   private readonly store: ISignInThrottleStore;
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<boolean>;
@@ -49,9 +43,7 @@ export class CheckSignInThrottle extends BaseHandler<
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: CheckSignInThrottleInput,
-  ): Promise<D2Result<CheckSignInThrottleOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     try {
       const cacheKey = AUTH_CACHE_KEYS.signInThrottle(input.identifierHash, input.identityHash);
 
@@ -98,3 +90,8 @@ export class CheckSignInThrottle extends BaseHandler<
     }
   }
 }
+
+export type {
+  CheckSignInThrottleInput,
+  CheckSignInThrottleOutput,
+} from "../../../../interfaces/cqrs/handlers/q/check-sign-in-throttle.js";

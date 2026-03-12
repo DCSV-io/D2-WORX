@@ -1,11 +1,13 @@
 import {
   trace,
+  context as otelContext,
   metrics,
   SpanStatusCode,
   type Tracer,
   type Meter,
   type Counter,
   type Histogram,
+  type Span,
 } from "@opentelemetry/api";
 import { D2Result, type InputError } from "@d2/result";
 import type { ZodType, ZodError } from "zod";
@@ -37,7 +39,9 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
   protected readonly context: IHandlerContext;
 
   protected get traceId(): string | undefined {
-    return this.context.request.traceId;
+    return (
+      this.context.request.traceId ?? trace.getSpan(otelContext.active())?.spanContext().traceId
+    );
   }
 
   /** Override to declare this handler's redaction posture. */
@@ -81,27 +85,29 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
     // Record invocation
     BaseHandler.instruments!.invocations.add(1, attrs);
 
+    // Enrich the parent span (e.g., gRPC server span, HTTP span) with context
+    // attributes so they appear on the top-level span in Tempo — not just on
+    // this handler's child span. Harmless if middleware already set them.
+    // For Hono services, trace.getActiveSpan() may return null due to the
+    // async context issue — the Hono middleware handles enrichment instead.
+    // NOTE: this.context.request checks ambient AsyncLocalStorage first, so
+    // even pre-auth singletons get per-request context automatically.
+    const req = this.context.request;
+    BaseHandler.enrichRequestSpan(trace.getActiveSpan(), req);
+
     return BaseHandler.tracer.startActiveSpan(handlerName, async (span) => {
-      // Set span tags (mirrors .NET activity tags exactly).
-      // Note: user.id, agent.org.id, target.org.id are PII — only set when
-      // present to avoid leaking empty-string placeholders to external
-      // observability backends. Production deployments should configure
-      // OTel exporters to redact or filter these attributes as needed.
+      // Set handler metadata + request context on child span.
       span.setAttribute("handler.type", handlerName);
-      span.setAttribute("trace.id", this.context.request.traceId ?? "");
-      if (this.context.request.userId) span.setAttribute("user.id", this.context.request.userId);
-      if (this.context.request.agentOrgId)
-        span.setAttribute("agent.org.id", this.context.request.agentOrgId);
-      if (this.context.request.targetOrgId)
-        span.setAttribute("target.org.id", this.context.request.targetOrgId);
+      span.setAttribute("trace.id", this.traceId ?? "");
+      BaseHandler.setIfPresent(span, "user.id", req.userId);
+      BaseHandler.setIfPresent(span, "agent.org.id", req.agentOrgId);
+      BaseHandler.setIfPresent(span, "target.org.id", req.targetOrgId);
 
       const startTime = performance.now();
 
       try {
         // Log execution start
-        this.context.logger.info(
-          `Executing handler ${handlerName}. TraceId: ${this.context.request.traceId}.`,
-        );
+        this.context.logger.info(`Executing handler ${handlerName}. TraceId: ${this.traceId}.`);
 
         // Log input as debug if enabled (respecting redaction)
         if (opts.logInput && !this.redaction?.suppressInput) {
@@ -109,7 +115,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
             ? this.redactForLogging(input, this.redaction.inputFields)
             : input;
           this.context.logger.debug(
-            `Handler ${handlerName} received input: ${BaseHandler.safeStringify(inputToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} received input: ${BaseHandler.safeStringify(inputToLog)}. TraceId: ${this.traceId}.`,
           );
         }
 
@@ -130,7 +136,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
               ? { ...result, data: this.redactForLogging(result.data, this.redaction.outputFields) }
               : result;
           this.context.logger.debug(
-            `Handler ${handlerName} produced result: ${BaseHandler.safeStringify(resultToLog)}. TraceId: ${this.context.request.traceId}.`,
+            `Handler ${handlerName} produced result: ${BaseHandler.safeStringify(resultToLog)}. TraceId: ${this.traceId}.`,
           );
         }
 
@@ -153,7 +159,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
 
         // Determine log level based on success and elapsed time
         const status = result.success ? "successfully" : "unsuccessfully";
-        const completionMsg = `Executed handler ${handlerName} ${status} in ${elapsedMs.toFixed(0)}ms. TraceId: ${this.context.request.traceId}.`;
+        const completionMsg = `Executed handler ${handlerName} ${status} in ${elapsedMs.toFixed(0)}ms. TraceId: ${this.traceId}.`;
 
         if (opts.suppressTimeWarnings) {
           if (result.success) {
@@ -177,7 +183,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
 
         // Create unhandled exception result
         const errorResult = D2Result.unhandledException<TOutput | undefined>({
-          traceId: this.context.request.traceId,
+          traceId: this.traceId,
         });
 
         // Set exception metadata on span
@@ -196,7 +202,7 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
 
         // Log the unhandled exception
         this.context.logger.error(
-          `Handler ${handlerName} encountered an unhandled exception after ${elapsedMs.toFixed(0)}ms. TraceId: ${this.context.request.traceId}.`,
+          `Handler ${handlerName} encountered an unhandled exception after ${elapsedMs.toFixed(0)}ms. TraceId: ${this.traceId}.`,
         );
 
         span.end();
@@ -270,5 +276,39 @@ export abstract class BaseHandler<TInput, TOutput> implements IHandler<TInput, T
       }
     }
     return clone;
+  }
+
+  /** Sets a span attribute only if the value is non-null/undefined. */
+  private static setIfPresent(span: Span, key: string, value: string | undefined): void {
+    if (value != null) span.setAttribute(key, value);
+  }
+
+  /**
+   * Enriches a span with standard request context attributes.
+   * Used on both parent spans (top-level HTTP/gRPC) and child handler spans.
+   */
+  private static enrichRequestSpan(
+    span: Span | undefined,
+    req: import("./i-request-context.js").IRequestContext,
+  ): void {
+    if (!span) return;
+    // String attributes — only set if present.
+    for (const [key, value] of Object.entries({
+      userId: req.userId,
+      username: req.username,
+      agentOrgId: req.agentOrgId,
+      agentOrgType: req.agentOrgType != null ? String(req.agentOrgType) : undefined,
+      agentOrgRole: req.agentOrgRole,
+      targetOrgId: req.targetOrgId,
+      targetOrgType: req.targetOrgType != null ? String(req.targetOrgType) : undefined,
+    })) {
+      if (value != null) span.setAttribute(key, value);
+    }
+    // Boolean flags — skip when null (auth state unknown in pre-auth handlers).
+    if (req.isAuthenticated != null) span.setAttribute("isAuthenticated", req.isAuthenticated);
+    if (req.isTrustedService != null) span.setAttribute("isTrustedService", req.isTrustedService);
+    if (req.isAuthenticated === true) {
+      span.setAttribute("isOrgEmulating", req.isOrgEmulating ?? false);
+    }
   }
 }

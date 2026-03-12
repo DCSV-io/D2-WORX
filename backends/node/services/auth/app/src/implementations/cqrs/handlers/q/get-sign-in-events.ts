@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
+import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { SignInEvent } from "@d2/auth-domain";
 import type { InMemoryCache } from "@d2/interfaces";
@@ -8,17 +8,10 @@ import type {
   ICountSignInEventsByUserIdHandler,
   IGetLatestSignInEventDateHandler,
 } from "../../../../interfaces/repository/handlers/index.js";
+import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 
-export interface GetSignInEventsInput {
-  readonly userId: string;
-  readonly limit?: number;
-  readonly offset?: number;
-}
-
-export interface GetSignInEventsOutput {
-  events: SignInEvent[];
-  total: number;
-}
+type Input = Queries.GetSignInEventsInput;
+type Output = Queries.GetSignInEventsOutput;
 
 /** Cache value shape for sign-in event queries. */
 interface CachedEvents {
@@ -38,13 +31,16 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
  * result is still valid (sign-in events are append-only, so older pages
  * are stable as long as no new events exist).
  */
-export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignInEventsOutput> {
+export class GetSignInEvents
+  extends BaseHandler<Input, Output>
+  implements Queries.IGetSignInEventsHandler
+{
   private readonly findByUserId: IFindSignInEventsByUserIdHandler;
   private readonly countByUserId: ICountSignInEventsByUserIdHandler;
   private readonly getLatestEventDate: IGetLatestSignInEventDateHandler;
 
-  get redaction(): RedactionSpec {
-    return { suppressOutput: true };
+  override get redaction() {
+    return Queries.GET_SIGN_IN_EVENTS_REDACTION;
   }
   private readonly cache?: {
     get: InMemoryCache.IGetHandler<CachedEvents>;
@@ -68,9 +64,7 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
     this.cache = cache;
   }
 
-  protected async executeAsync(
-    input: GetSignInEventsInput,
-  ): Promise<D2Result<GetSignInEventsOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const limit = Math.min(input.limit ?? 50, 100);
     const offset = Math.max(input.offset ?? 0, 0);
 
@@ -128,3 +122,8 @@ export class GetSignInEvents extends BaseHandler<GetSignInEventsInput, GetSignIn
     return D2Result.ok({ data: { events, total } });
   }
 }
+
+export type {
+  GetSignInEventsInput,
+  GetSignInEventsOutput,
+} from "../../../../interfaces/cqrs/handlers/q/get-sign-in-events.js";

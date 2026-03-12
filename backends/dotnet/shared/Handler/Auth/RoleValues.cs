@@ -27,7 +27,7 @@ public static class RoleValues
     /// <summary>
     /// Role hierarchy — higher index = more privileges.
     /// </summary>
-    public static readonly string[] HIERARCHY = [AUDITOR, AGENT, OFFICER, OWNER];
+    public static readonly string[] SR_Hierarchy = [AUDITOR, AGENT, OFFICER, OWNER];
 
     /// <summary>
     /// Returns all roles at or above the given minimum role in the hierarchy.
@@ -36,7 +36,7 @@ public static class RoleValues
     /// <returns>Array of roles at or above the minimum, or empty if the role is not recognized.</returns>
     public static string[] AtOrAbove(string minRole)
     {
-        var idx = Array.IndexOf(HIERARCHY, minRole);
-        return idx < 0 ? [] : HIERARCHY[idx..];
+        var idx = Array.IndexOf(SR_Hierarchy, minRole);
+        return idx < 0 ? [] : SR_Hierarchy[idx..];
     }
 }

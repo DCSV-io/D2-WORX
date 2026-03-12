@@ -24,11 +24,11 @@ using RepoDelete = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
 /// </summary>
 public class CleanupOrphanedLocationsTests
 {
-    private readonly Mock<CacheLock.IAcquireLockHandler> _acquireLock = new();
-    private readonly Mock<CacheUnlock.IReleaseLockHandler> _releaseLock = new();
-    private readonly Mock<RepoDelete.IDeleteOrphanedLocationsHandler> _deleteOrphaned = new();
-    private readonly GeoAppOptions _options = new() { JobLockTtlSeconds = 300 };
-    private readonly IHandlerContext _context;
+    private readonly Mock<CacheLock.IAcquireLockHandler> r_acquireLock = new();
+    private readonly Mock<CacheUnlock.IReleaseLockHandler> r_releaseLock = new();
+    private readonly Mock<RepoDelete.IDeleteOrphanedLocationsHandler> r_deleteOrphaned = new();
+    private readonly GeoAppOptions r_options = new() { JobLockTtlSeconds = 300 };
+    private readonly IHandlerContext r_context;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CleanupOrphanedLocationsTests"/> class.
@@ -36,22 +36,22 @@ public class CleanupOrphanedLocationsTests
     /// </summary>
     public CleanupOrphanedLocationsTests()
     {
-        _context = CreateHandlerContext();
+        r_context = CreateHandlerContext();
 
         // Default: lock acquired successfully
-        _acquireLock.Setup(x => x.HandleAsync(
+        r_acquireLock.Setup(x => x.HandleAsync(
                 It.IsAny<CacheLock.AcquireLockInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<CacheLock.AcquireLockOutput?>.Ok(
                 new CacheLock.AcquireLockOutput(true)));
 
         // Default: lock released successfully
-        _releaseLock.Setup(x => x.HandleAsync(
+        r_releaseLock.Setup(x => x.HandleAsync(
                 It.IsAny<CacheUnlock.ReleaseLockInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<CacheUnlock.ReleaseLockOutput?>.Ok(
                 new CacheUnlock.ReleaseLockOutput(true)));
 
         // Default: delete returns 0
-        _deleteOrphaned.Setup(x => x.HandleAsync(
+        r_deleteOrphaned.Setup(x => x.HandleAsync(
                 It.IsAny<RepoDelete.DeleteOrphanedLocationsInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<RepoDelete.DeleteOrphanedLocationsOutput?>.Ok(
                 new RepoDelete.DeleteOrphanedLocationsOutput(0)));
@@ -73,7 +73,7 @@ public class CleanupOrphanedLocationsTests
     public async Task HandleAsync_WhenLockNotAcquired_ReturnsOkWithLockAcquiredFalse()
     {
         // Arrange
-        _acquireLock.Setup(x => x.HandleAsync(
+        r_acquireLock.Setup(x => x.HandleAsync(
                 It.IsAny<CacheLock.AcquireLockInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<CacheLock.AcquireLockOutput?>.Ok(
                 new CacheLock.AcquireLockOutput(false)));
@@ -89,7 +89,7 @@ public class CleanupOrphanedLocationsTests
         result.Success.Should().BeTrue();
         result.Data!.LockAcquired.Should().BeFalse();
         result.Data.RowsAffected.Should().Be(0);
-        _deleteOrphaned.Verify(
+        r_deleteOrphaned.Verify(
             x => x.HandleAsync(It.IsAny<RepoDelete.DeleteOrphanedLocationsInput>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -109,7 +109,7 @@ public class CleanupOrphanedLocationsTests
     public async Task HandleAsync_WhenLockAcquireFails_ReturnsOkWithLockAcquiredFalse()
     {
         // Arrange
-        _acquireLock.Setup(x => x.HandleAsync(
+        r_acquireLock.Setup(x => x.HandleAsync(
                 It.IsAny<CacheLock.AcquireLockInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<CacheLock.AcquireLockOutput?>.Fail(["Redis connection failed"]));
 
@@ -162,7 +162,7 @@ public class CleanupOrphanedLocationsTests
     public async Task HandleAsync_WhenLockAcquiredAndOrphansExist_ReturnsRowCount()
     {
         // Arrange
-        _deleteOrphaned.Setup(x => x.HandleAsync(
+        r_deleteOrphaned.Setup(x => x.HandleAsync(
                 It.IsAny<RepoDelete.DeleteOrphanedLocationsInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<RepoDelete.DeleteOrphanedLocationsOutput?>.Ok(
                 new RepoDelete.DeleteOrphanedLocationsOutput(42)));
@@ -195,7 +195,7 @@ public class CleanupOrphanedLocationsTests
     public async Task HandleAsync_WhenDeleteFails_PropagatesFailure()
     {
         // Arrange
-        _deleteOrphaned.Setup(x => x.HandleAsync(
+        r_deleteOrphaned.Setup(x => x.HandleAsync(
                 It.IsAny<RepoDelete.DeleteOrphanedLocationsInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<RepoDelete.DeleteOrphanedLocationsOutput?>.Fail(["DB error"]));
 
@@ -230,7 +230,7 @@ public class CleanupOrphanedLocationsTests
             new D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.CleanupOrphanedLocationsInput(),
             Ct);
 
-        _releaseLock.Verify(
+        r_releaseLock.Verify(
             x => x.HandleAsync(It.IsAny<CacheUnlock.ReleaseLockInput>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -246,7 +246,7 @@ public class CleanupOrphanedLocationsTests
     public async Task HandleAsync_WhenDeleteThrows_StillReleasesLock()
     {
         // Arrange
-        _deleteOrphaned.Setup(x => x.HandleAsync(
+        r_deleteOrphaned.Setup(x => x.HandleAsync(
                 It.IsAny<RepoDelete.DeleteOrphanedLocationsInput>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Unexpected"));
 
@@ -259,7 +259,7 @@ public class CleanupOrphanedLocationsTests
 
         // Assert
         result.Success.Should().BeFalse();
-        _releaseLock.Verify(
+        r_releaseLock.Verify(
             x => x.HandleAsync(It.IsAny<CacheUnlock.ReleaseLockInput>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -275,7 +275,7 @@ public class CleanupOrphanedLocationsTests
     public async Task HandleAsync_WhenLockNotAcquired_DoesNotReleaseLock()
     {
         // Arrange
-        _acquireLock.Setup(x => x.HandleAsync(
+        r_acquireLock.Setup(x => x.HandleAsync(
                 It.IsAny<CacheLock.AcquireLockInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<CacheLock.AcquireLockOutput?>.Ok(
                 new CacheLock.AcquireLockOutput(false)));
@@ -288,7 +288,7 @@ public class CleanupOrphanedLocationsTests
             Ct);
 
         // Assert
-        _releaseLock.Verify(
+        r_releaseLock.Verify(
             x => x.HandleAsync(It.IsAny<CacheUnlock.ReleaseLockInput>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -313,7 +313,7 @@ public class CleanupOrphanedLocationsTests
             new D2.Geo.App.Interfaces.CQRS.Handlers.C.ICommands.CleanupOrphanedLocationsInput(),
             Ct);
 
-        _acquireLock.Verify(
+        r_acquireLock.Verify(
             x => x.HandleAsync(
                 It.Is<CacheLock.AcquireLockInput>(i => i.Expiration == TimeSpan.FromSeconds(300)),
                 It.IsAny<CancellationToken>()),
@@ -372,10 +372,10 @@ public class CleanupOrphanedLocationsTests
     private CleanupOrphanedLocations CreateHandler()
     {
         return new CleanupOrphanedLocations(
-            _acquireLock.Object,
-            _releaseLock.Object,
-            _deleteOrphaned.Object,
-            Options.Create(_options),
-            _context);
+            r_acquireLock.Object,
+            r_releaseLock.Object,
+            r_deleteOrphaned.Object,
+            Options.Create(r_options),
+            r_context);
     }
 }

@@ -1,29 +1,88 @@
-import type { RequestEnrichment } from "@d2/interfaces";
+import type { IRequestContext, OrgType } from "@d2/handler";
 
 /**
- * Concrete implementation of IRequestInfo.
- * Mirrors D2.Shared.RequestEnrichment.Default.RequestInfo in .NET.
+ * Mutable implementation of IRequestContext.
+ * Progressively populated by middleware pipeline:
+ * 1. Request enrichment → network/fingerprint/WhoIs fields
+ * 2. Service key → isTrustedService
+ * 3. Auth/scope → identity/org/emulation fields
+ *
+ * Mirrors D2.Shared.RequestEnrichment.Default.MutableRequestContext in .NET.
  */
-export class RequestInfo implements RequestEnrichment.IRequestInfo {
-  readonly clientIp: string;
-  readonly serverFingerprint: string;
-  readonly clientFingerprint: string | undefined;
-  readonly whoIsHashId: string | undefined;
-  readonly city: string | undefined;
-  readonly countryCode: string | undefined;
-  readonly subdivisionCode: string | undefined;
-  readonly isVpn: boolean | undefined;
-  readonly isProxy: boolean | undefined;
-  readonly isTor: boolean | undefined;
-  readonly isHosting: boolean | undefined;
-  userId: string | undefined;
-  isAuthenticated: boolean;
-  isTrustedService: boolean;
+export class MutableRequestContext implements IRequestContext {
+  // Tracing
+  traceId?: string;
+  requestId?: string;
+  requestPath?: string;
+
+  // User / Identity
+  isAuthenticated: boolean | null;
+  userId?: string;
+  email?: string;
+  username?: string;
+
+  // Agent Organization
+  agentOrgId?: string;
+  agentOrgName?: string;
+  agentOrgType?: OrgType;
+  agentOrgRole?: string;
+
+  // Target Organization
+  targetOrgId?: string;
+  targetOrgName?: string;
+  targetOrgType?: OrgType;
+  targetOrgRole?: string;
+
+  // Org Emulation
+  isOrgEmulating: boolean | null;
+
+  // User Impersonation
+  impersonatedBy?: string;
+  impersonatingEmail?: string;
+  impersonatingUsername?: string;
+  isUserImpersonating: boolean | null;
+
+  // Network / Enrichment
+  readonly clientIp?: string;
+  readonly serverFingerprint?: string;
+  readonly clientFingerprint?: string;
+  readonly deviceFingerprint?: string;
+  readonly whoIsHashId?: string;
+  readonly city?: string;
+  readonly countryCode?: string;
+  readonly subdivisionCode?: string;
+  readonly isVpn?: boolean;
+  readonly isProxy?: boolean;
+  readonly isTor?: boolean;
+  readonly isHosting?: boolean;
+
+  // Trust
+  isTrustedService: boolean | null;
+
+  // Computed helpers
+  get isAgentStaff(): boolean {
+    const t = this.agentOrgType;
+    return t === "Admin" || t === "Support";
+  }
+
+  get isAgentAdmin(): boolean {
+    return this.agentOrgType === "Admin";
+  }
+
+  get isTargetingStaff(): boolean {
+    const t = this.targetOrgType;
+    return t === "Admin" || t === "Support";
+  }
+
+  get isTargetingAdmin(): boolean {
+    return this.targetOrgType === "Admin";
+  }
 
   constructor(params: {
     clientIp: string;
     serverFingerprint: string;
     clientFingerprint?: string;
+    deviceFingerprint: string;
     whoIsHashId?: string;
     city?: string;
     countryCode?: string;
@@ -32,13 +91,11 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
     isProxy?: boolean;
     isTor?: boolean;
     isHosting?: boolean;
-    userId?: string;
-    isAuthenticated?: boolean;
-    isTrustedService?: boolean;
   }) {
     this.clientIp = params.clientIp;
     this.serverFingerprint = params.serverFingerprint;
     this.clientFingerprint = params.clientFingerprint;
+    this.deviceFingerprint = params.deviceFingerprint;
     this.whoIsHashId = params.whoIsHashId;
     this.city = params.city;
     this.countryCode = params.countryCode;
@@ -47,8 +104,10 @@ export class RequestInfo implements RequestEnrichment.IRequestInfo {
     this.isProxy = params.isProxy;
     this.isTor = params.isTor;
     this.isHosting = params.isHosting;
-    this.userId = params.userId;
-    this.isAuthenticated = params.isAuthenticated ?? false;
-    this.isTrustedService = params.isTrustedService ?? false;
+    this.isAuthenticated = null;
+    this.isTrustedService = null;
+    this.isOrgEmulating = null;
+    this.isUserImpersonating = null;
+    this.traceId = crypto.randomUUID();
   }
 }

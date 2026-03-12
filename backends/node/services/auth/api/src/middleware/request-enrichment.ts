@@ -2,13 +2,13 @@ import { createMiddleware } from "hono/factory";
 import { enrichRequest, type RequestEnrichmentOptions } from "@d2/request-enrichment";
 import type { FindWhoIs } from "@d2/geo-client";
 import type { ILogger } from "@d2/logging";
-import { REQUEST_INFO_KEY } from "../context-keys.js";
+import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
 
-export { REQUEST_INFO_KEY };
+export { REQUEST_CONTEXT_KEY };
 
 /**
  * Creates Hono middleware that enriches every request with client info.
- * Sets `c.set("requestInfo", info)` for downstream middleware/routes.
+ * Sets `c.set("requestContext", ctx)` for downstream middleware/routes.
  */
 export function createRequestEnrichmentMiddleware(
   findWhoIs: FindWhoIs,
@@ -21,8 +21,8 @@ export function createRequestEnrichmentMiddleware(
       headers[key] = value;
     });
 
-    const requestInfo = await enrichRequest(headers, findWhoIs, options, logger);
-    c.set(REQUEST_INFO_KEY, requestInfo);
+    const requestContext = await enrichRequest(headers, findWhoIs, options, logger);
+    c.set(REQUEST_CONTEXT_KEY, requestContext);
     await next();
   });
 }

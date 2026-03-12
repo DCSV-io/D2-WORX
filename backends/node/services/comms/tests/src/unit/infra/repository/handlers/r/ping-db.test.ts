@@ -7,6 +7,9 @@ function createTestContext(): HandlerContext {
   const request: IRequestContext = {
     traceId: "trace-ping-db-test",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,

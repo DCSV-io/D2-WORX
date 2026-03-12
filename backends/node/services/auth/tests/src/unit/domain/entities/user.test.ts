@@ -67,6 +67,21 @@ describe("User", () => {
       expect(user.image).toBe("https://example.com/photo.jpg");
     });
 
+    it("should default locale to 'en'", () => {
+      const user = createUser(validInput);
+      expect(user.locale).toBe("en");
+    });
+
+    it("should accept an explicit locale", () => {
+      const user = createUser({ ...validInput, locale: "es" });
+      expect(user.locale).toBe("es");
+    });
+
+    it("should accept any string as locale (validation is at higher layers)", () => {
+      const user = createUser({ ...validInput, locale: "ja" });
+      expect(user.locale).toBe("ja");
+    });
+
     it("should throw AuthValidationError for missing username", () => {
       expect(() => createUser({ ...validInput, username: "" } as any)).toThrow(AuthValidationError);
     });
@@ -127,6 +142,18 @@ describe("User", () => {
       const withImage = createUser({ ...validInput, image: "https://example.com/photo.jpg" });
       const updated = updateUser(withImage, { image: null });
       expect(updated.image).toBeNull();
+    });
+
+    it("should update the locale", () => {
+      const updated = updateUser(baseUser, { locale: "fr" });
+      expect(updated.locale).toBe("fr");
+      expect(updated.name).toBe(baseUser.name);
+    });
+
+    it("should preserve locale when not updating it", () => {
+      const withLocale = createUser({ ...validInput, locale: "de" });
+      const updated = updateUser(withLocale, { name: "Updated Name" });
+      expect(updated.locale).toBe("de");
     });
   });
 });

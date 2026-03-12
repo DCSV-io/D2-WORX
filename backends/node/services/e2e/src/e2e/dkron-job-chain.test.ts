@@ -7,7 +7,13 @@ import crypto from "node:crypto";
 import { listJobs, upsertJob, type DkronJob } from "@d2/dkron-mgr";
 import type { ILogger } from "@d2/logging";
 import { vi } from "vitest";
-import { startContainers, stopContainers, getGeoPgUrl, getRedisUrl, getRabbitUrl } from "../helpers/containers.js";
+import {
+  startContainers,
+  stopContainers,
+  getGeoPgUrl,
+  getRedisUrl,
+  getRabbitUrl,
+} from "../helpers/containers.js";
 import { startGeoService, stopGeoService, getGeoAddress } from "../helpers/geo-dotnet-service.js";
 import { startGateway, stopGateway, getGatewayUrl } from "../helpers/gateway-service.js";
 
@@ -98,22 +104,18 @@ describe("E2E: Dkron -> Gateway -> Geo full job chain", () => {
     );
     const mainTs = resolve(dkronMgrDir, "src", "main.ts");
 
-    mgrProcess = spawn(
-      process.execPath,
-      ["--import", "tsx", mainTs],
-      {
-        cwd: dkronMgrDir,
-        env: {
-          ...process.env,
-          DKRON_MGR__DKRON_URL: dkronUrl,
-          DKRON_MGR__GATEWAY_URL: `http://host.docker.internal:${gatewayPort}`,
-          DKRON_MGR__SERVICE_KEY: serviceKey,
-          DKRON_MGR__RECONCILE_INTERVAL_MS: "600000",
-          OTEL_SDK_DISABLED: "true",
-        },
-        stdio: ["ignore", "pipe", "pipe"],
+    mgrProcess = spawn(process.execPath, ["--import", "tsx", mainTs], {
+      cwd: dkronMgrDir,
+      env: {
+        ...process.env,
+        DKRON_MGR__DKRON_URL: dkronUrl,
+        DKRON_MGR__GATEWAY_URL: `http://host.docker.internal:${gatewayPort}`,
+        DKRON_MGR__SERVICE_KEY: serviceKey,
+        DKRON_MGR__RECONCILE_INTERVAL_MS: "600000",
+        OTEL_SDK_DISABLED: "true",
       },
-    );
+      stdio: ["ignore", "pipe", "pipe"],
+    });
 
     mgrProcess.stdout!.on("data", (data: Buffer) => {
       for (const line of data.toString().split("\n")) {
@@ -137,11 +139,7 @@ describe("E2E: Dkron -> Gateway -> Geo full job chain", () => {
     const purgeJob = jobs.find((j) => j.name === "geo-purge-stale-whois");
     expect(purgeJob, "geo-purge-stale-whois should exist after reconciliation").toBeDefined();
 
-    await upsertJob(
-      dkronUrl,
-      { ...purgeJob!, schedule: "@every 5s" } as DkronJob,
-      logger,
-    );
+    await upsertJob(dkronUrl, { ...purgeJob!, schedule: "@every 5s" } as DkronJob, logger);
 
     // 6. Seed test data directly in PG.
     geoPool = new pg.Pool({ connectionString: getGeoPgUrl() });
@@ -152,11 +150,23 @@ describe("E2E: Dkron -> Gateway -> Geo full job chain", () => {
        ON CONFLICT (hash_id) DO NOTHING`,
       [
         // Stale record 1: Year 2024, Month 1 — well before any cutoff
-        staleHash1, "10.0.0.1", 2024, 1, "fp-stale-1",
+        staleHash1,
+        "10.0.0.1",
+        2024,
+        1,
+        "fp-stale-1",
         // Stale record 2: Year 2024, Month 6
-        staleHash2, "10.0.0.2", 2024, 6, "fp-stale-2",
+        staleHash2,
+        "10.0.0.2",
+        2024,
+        6,
+        "fp-stale-2",
         // Fresh record: Year 2099, Month 1 — always newer than cutoff
-        freshHash, "10.0.0.3", 2099, 1, "fp-fresh-1",
+        freshHash,
+        "10.0.0.3",
+        2099,
+        1,
+        "fp-fresh-1",
       ],
     );
   }, 180_000);
@@ -193,10 +203,9 @@ describe("E2E: Dkron -> Gateway -> Geo full job chain", () => {
     expect(staleResult.rows).toHaveLength(0);
 
     // Verify fresh record preserved
-    const freshResult = await geoPool.query(
-      "SELECT hash_id FROM who_is WHERE hash_id = $1",
-      [freshHash],
-    );
+    const freshResult = await geoPool.query("SELECT hash_id FROM who_is WHERE hash_id = $1", [
+      freshHash,
+    ]);
     expect(freshResult.rows).toHaveLength(1);
 
     // Verify Dkron reports no errors for this job

@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
-import { D2Result, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
 import { GeoRefData as GeoRefDataCodec } from "@d2/protos";
 import { GEO_REF_DATA_FILE_NAME } from "@d2/utilities";
 import type { GeoClientOptions } from "../../geo-client-options.js";
@@ -36,9 +36,8 @@ export class SetOnDisk extends BaseHandler<Input, Output> implements Commands.IS
       this.context.logger.error(
         `IOException occurred while writing georeference data to disk. TraceId: ${this.traceId}`,
       );
-      return D2Result.fail({
+      return D2Result.unhandledException({
         messages: ["Unable to write to disk."],
-        statusCode: HttpStatusCode.InternalServerError,
       });
     }
   }

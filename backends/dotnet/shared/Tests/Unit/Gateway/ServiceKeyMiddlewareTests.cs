@@ -7,6 +7,7 @@
 namespace D2.Shared.Tests.Unit.Gateway;
 
 using D2.Gateways.REST.Auth;
+using D2.Shared.Handler;
 using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -22,7 +23,7 @@ public class ServiceKeyMiddlewareTests
     private const string _HEADER = "X-Api-Key";
     private const string _VALID_KEY = "d2.sveltekit.service.key";
 
-    private readonly Mock<ILogger<ServiceKeyMiddleware>> _mockLogger = new();
+    private readonly Mock<ILogger<ServiceKeyMiddleware>> r_mockLogger = new();
 
     /// <summary>
     /// When no X-Api-Key header is present, passes through and IsTrustedService remains false.
@@ -32,7 +33,7 @@ public class ServiceKeyMiddlewareTests
     public async Task InvokeAsync_WithNoKey_PassesThroughAndRemainsUntrusted()
     {
         var context = CreateContext(apiKey: null);
-        var requestInfo = SetupRequestInfo(context);
+        var requestContext = SetupRequestInfo(context);
         var nextCalled = false;
         var middleware = CreateMiddleware(_ =>
         {
@@ -43,7 +44,7 @@ public class ServiceKeyMiddlewareTests
         await middleware.InvokeAsync(context);
 
         nextCalled.Should().BeTrue();
-        requestInfo.IsTrustedService.Should().BeFalse();
+        requestContext.IsTrustedService.Should().BeFalse();
     }
 
     /// <summary>
@@ -54,7 +55,7 @@ public class ServiceKeyMiddlewareTests
     public async Task InvokeAsync_WithValidKey_SetsTrustedAndContinues()
     {
         var context = CreateContext(_VALID_KEY);
-        var requestInfo = SetupRequestInfo(context);
+        var requestContext = SetupRequestInfo(context);
         var nextCalled = false;
         var middleware = CreateMiddleware(_ =>
         {
@@ -65,7 +66,7 @@ public class ServiceKeyMiddlewareTests
         await middleware.InvokeAsync(context);
 
         nextCalled.Should().BeTrue();
-        requestInfo.IsTrustedService.Should().BeTrue();
+        requestContext.IsTrustedService.Should().BeTrue();
     }
 
     /// <summary>
@@ -92,13 +93,13 @@ public class ServiceKeyMiddlewareTests
     }
 
     /// <summary>
-    /// When IRequestInfo is not in features, still continues pipeline without throwing.
+    /// When IRequestContext is not in features, still continues pipeline without throwing.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
     public async Task InvokeAsync_WithValidKeyButNoRequestInfo_ContinuesWithoutThrowing()
     {
-        // Do NOT set up IRequestInfo in features.
+        // Do NOT set up IRequestContext in features.
         var context = CreateContext(_VALID_KEY);
         var nextCalled = false;
         var middleware = CreateMiddleware(_ =>
@@ -120,7 +121,7 @@ public class ServiceKeyMiddlewareTests
     public async Task InvokeAsync_WithEmptyKey_PassesThroughAsNoKey()
     {
         var context = CreateContext(string.Empty);
-        var requestInfo = SetupRequestInfo(context);
+        var requestContext = SetupRequestInfo(context);
         var nextCalled = false;
         var middleware = CreateMiddleware(_ =>
         {
@@ -131,7 +132,7 @@ public class ServiceKeyMiddlewareTests
         await middleware.InvokeAsync(context);
 
         nextCalled.Should().BeTrue();
-        requestInfo.IsTrustedService.Should().BeFalse();
+        requestContext.IsTrustedService.Should().BeFalse();
     }
 
     /// <summary>
@@ -168,15 +169,16 @@ public class ServiceKeyMiddlewareTests
         return context;
     }
 
-    private static RequestInfo SetupRequestInfo(DefaultHttpContext context)
+    private static MutableRequestContext SetupRequestInfo(DefaultHttpContext context)
     {
-        var requestInfo = new RequestInfo
+        var requestContext = new MutableRequestContext
         {
             ClientIp = "192.0.2.1",
             ServerFingerprint = "abc123",
+            DeviceFingerprint = "device-fp-test",
         };
-        context.Features.Set<IRequestInfo>(requestInfo);
-        return requestInfo;
+        context.Features.Set<IRequestContext>(requestContext);
+        return requestContext;
     }
 
     private ServiceKeyMiddleware CreateMiddleware(
@@ -189,7 +191,7 @@ public class ServiceKeyMiddlewareTests
             ValidKeys = [.. keys],
         });
 
-        return new ServiceKeyMiddleware(next, options, _mockLogger.Object);
+        return new ServiceKeyMiddleware(next, options, r_mockLogger.Object);
     }
 
     #endregion

@@ -7,4 +7,4 @@
 export const USER_KEY = "user" as const;
 export const SESSION_KEY = "session" as const;
 export const SCOPE_KEY = "scope" as const;
-export const REQUEST_INFO_KEY = "requestInfo" as const;
+export const REQUEST_CONTEXT_KEY = "requestContext" as const;

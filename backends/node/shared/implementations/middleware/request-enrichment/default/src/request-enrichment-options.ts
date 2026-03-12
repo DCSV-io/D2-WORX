@@ -8,8 +8,10 @@ export type TrustedProxyHeader = "cf-connecting-ip" | "x-real-ip" | "x-forwarded
 export interface RequestEnrichmentOptions {
   /** Whether to perform WhoIs lookups for non-localhost IPs. Default: true. */
   enableWhoIsLookup: boolean;
-  /** Header name for client-provided fingerprint. Default: "x-client-fingerprint". */
+  /** Header name for client-provided fingerprint (fallback). Default: "x-client-fingerprint". */
   clientFingerprintHeader: string;
+  /** Cookie name for client-provided fingerprint (primary). Default: "d2-cfp". */
+  clientFingerprintCookie: string;
   /**
    * Which proxy headers to trust for IP resolution.
    * Only headers in this list will be checked — others are ignored.
@@ -29,6 +31,7 @@ export interface RequestEnrichmentOptions {
 export const DEFAULT_REQUEST_ENRICHMENT_OPTIONS: RequestEnrichmentOptions = {
   enableWhoIsLookup: true,
   clientFingerprintHeader: "x-client-fingerprint",
+  clientFingerprintCookie: "d2-cfp",
   trustedProxyHeaders: ["cf-connecting-ip"],
   maxFingerprintLength: 256,
   maxForwardedForLength: 2048,

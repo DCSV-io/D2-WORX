@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { SetNx, Set, Get, Remove } from "@d2/cache-redis";
-import { Check } from "@d2/idempotency";
+import { CheckIdempotency } from "@d2/idempotency";
 import {
   startRedis,
   stopRedis,
@@ -61,7 +61,7 @@ describe("Idempotency integration (Redis)", () => {
       const get = new Get<string>(redis, ctx);
       const set = new Set<string>(redis, ctx);
 
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       // First request: should acquire lock
       const result1 = await handler.handleAsync({ idempotencyKey: "key-1" });
@@ -94,7 +94,7 @@ describe("Idempotency integration (Redis)", () => {
       const setNx = new SetNx<string>(redis, ctx);
       const get = new Get<string>(redis, ctx);
 
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       // First request: acquires lock
       const result1 = await handler.handleAsync({ idempotencyKey: "key-2" });
@@ -113,7 +113,7 @@ describe("Idempotency integration (Redis)", () => {
       const get = new Get<string>(redis, ctx);
 
       // Use very short TTL for test
-      const handler = new Check(setNx, get, { inFlightTtlMs: 100 }, ctx);
+      const handler = new CheckIdempotency(setNx, get, { inFlightTtlMs: 100 }, ctx);
 
       // First request: acquires lock
       const result1 = await handler.handleAsync({ idempotencyKey: "key-3" });
@@ -135,7 +135,7 @@ describe("Idempotency integration (Redis)", () => {
       const get = new Get<string>(redis, ctx);
       const remove = new Remove(redis, ctx);
 
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       // Acquire lock
       await handler.handleAsync({ idempotencyKey: "key-4" });
@@ -157,7 +157,7 @@ describe("Idempotency integration (Redis)", () => {
       const setNx = new SetNx<string>(redis, ctx);
       const get = new Get<string>(redis, ctx);
       const set = new Set<string>(redis, ctx);
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       // Acquire lock
       const result1 = await handler.handleAsync({ idempotencyKey: "unicode-1" });
@@ -192,7 +192,7 @@ describe("Idempotency integration (Redis)", () => {
       const setNx = new SetNx<string>(redis, ctx);
       const get = new Get<string>(redis, ctx);
       const set = new Set<string>(redis, ctx);
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       await handler.handleAsync({ idempotencyKey: "nested-1" });
 
@@ -218,7 +218,7 @@ describe("Idempotency integration (Redis)", () => {
       const setNx = new SetNx<string>(redis, ctx);
       const get = new Get<string>(redis, ctx);
       const set = new Set<string>(redis, ctx);
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       await handler.handleAsync({ idempotencyKey: "no-content-1" });
 
@@ -244,7 +244,7 @@ describe("Idempotency integration (Redis)", () => {
       const ctx = createTestContext();
       const setNx = new SetNx<string>(redis, ctx);
       const get = new Get<string>(redis, ctx);
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       // First: acquire lock (SetNx stores "__processing__" as a JSON-serialized string)
       const result1 = await handler.handleAsync({ idempotencyKey: "double-ser-1" });
@@ -268,7 +268,7 @@ describe("Idempotency integration (Redis)", () => {
       const ctx = createTestContext();
       const setNx = new SetNx<string>(redis, ctx);
       const get = new Get<string>(redis, ctx);
-      const handler = new Check(setNx, get, {}, ctx);
+      const handler = new CheckIdempotency(setNx, get, {}, ctx);
 
       // Fire two concurrent requests with same key
       const [result1, result2] = await Promise.all([

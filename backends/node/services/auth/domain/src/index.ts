@@ -11,6 +11,8 @@ export {
   GEO_CONTEXT_KEYS,
 } from "./constants/auth-constants.js";
 export { AUTH_MESSAGING } from "./constants/messaging.js";
+export { AUTH_ERROR_CODES } from "./constants/error-codes.js";
+export type { AuthErrorCode } from "./constants/error-codes.js";
 
 // --- Enums ---
 export { ORG_TYPES, isValidOrgType } from "./enums/org-type.js";

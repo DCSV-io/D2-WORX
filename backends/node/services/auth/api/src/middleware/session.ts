@@ -8,7 +8,7 @@ import { USER_KEY, SESSION_KEY } from "../context-keys.js";
  * Hono Variables set by the session middleware.
  */
 export interface SessionVariables {
-  user: { id: string; email: string; name: string } | null;
+  user: { id: string; email: string; name: string; username?: string } | null;
   session: Record<string, unknown> | null;
 }
 
@@ -32,9 +32,8 @@ export function createSessionMiddleware(auth: Auth) {
     } catch {
       // Infrastructure failure — do NOT silently degrade to unauthenticated
       return c.json(
-        D2Result.fail({
+        D2Result.serviceUnavailable({
           messages: ["Service temporarily unavailable. Please try again."],
-          statusCode: 503,
         }),
         503 as ContentfulStatusCode,
       );

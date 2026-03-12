@@ -43,25 +43,26 @@ Compares `displayname`, `schedule`, `timezone`, `executor`, `executor_config`, `
 
 ## Files
 
-| File                  | Purpose                                        |
-| --------------------- | ---------------------------------------------- |
-| `src/main.ts`         | Entry point — env parsing, health wait, loop   |
-| `src/config.ts`       | Typed config from env vars + validation        |
-| `src/types.ts`        | DkronJob, DesiredJob, ReconcileResult types     |
-| `src/dkron-client.ts` | Thin `fetch` wrapper for Dkron REST API        |
-| `src/job-definitions.ts` | Desired job state (single source of truth)  |
-| `src/reconciler.ts`   | Core diff + sync logic                         |
+| File                     | Purpose                                      |
+| ------------------------ | -------------------------------------------- |
+| `src/main.ts`            | Entry point — env parsing, health wait, loop |
+| `src/config.ts`          | Typed config from env vars + validation      |
+| `src/types.ts`           | DkronJob, DesiredJob, ReconcileResult types  |
+| `src/dkron-client.ts`    | Thin `fetch` wrapper for Dkron REST API      |
+| `src/job-definitions.ts` | Desired job state (single source of truth)   |
+| `src/reconciler.ts`      | Core diff + sync logic                       |
 
 ## Configuration
 
-| Env Var                            | Required | Default    | Purpose                                  |
-| ---------------------------------- | -------- | ---------- | ---------------------------------------- |
-| `DKRON_MGR__DKRON_URL`             | Yes      | —          | Dkron REST API base URL                  |
-| `DKRON_MGR__GATEWAY_URL`           | Yes      | —          | Gateway URL (as seen from Dkron container) |
-| `DKRON_MGR__SERVICE_KEY`           | Yes      | —          | X-Api-Key for Dkron → Gateway auth       |
-| `DKRON_MGR__RECONCILE_INTERVAL_MS` | No       | `300000`   | Reconciliation loop interval (5 min)     |
+| Env Var                            | Required | Default  | Purpose                                    |
+| ---------------------------------- | -------- | -------- | ------------------------------------------ |
+| `DKRON_MGR__DKRON_URL`             | Yes      | —        | Dkron REST API base URL                    |
+| `DKRON_MGR__GATEWAY_URL`           | Yes      | —        | Gateway URL (as seen from Dkron container) |
+| `DKRON_MGR__SERVICE_KEY`           | Yes      | —        | X-Api-Key for Dkron → Gateway auth         |
+| `DKRON_MGR__RECONCILE_INTERVAL_MS` | No       | `300000` | Reconciliation loop interval (5 min)       |
 
 **URL notes:**
+
 - `DKRON_URL` is the host-side port (`http://localhost:8888`) since dkron-mgr runs on the host via tsx.
 - `GATEWAY_URL` must be `http://host.docker.internal:5461` because Dkron runs inside Docker and needs to reach the gateway on the host.
 
@@ -82,15 +83,15 @@ Edit `src/job-definitions.ts` — the `getDesiredJobs()` function is the single 
 
 ## Managed Jobs
 
-| Job Name                            | Schedule         | Endpoint                                              |
-| ----------------------------------- | ---------------- | ----------------------------------------------------- |
-| `geo-purge-stale-whois`             | `0 0 2 * * *`   | `POST /api/v1/geo/jobs/purge-stale-whois`             |
-| `geo-cleanup-orphaned-locations`    | `0 15 2 * * *`  | `POST /api/v1/geo/jobs/cleanup-orphaned-locations`    |
-| `auth-purge-sessions`               | `0 30 2 * * *`  | `POST /api/v1/auth/jobs/purge-sessions`               |
-| `auth-purge-sign-in-events`         | `0 45 2 * * *`  | `POST /api/v1/auth/jobs/purge-sign-in-events`         |
-| `auth-cleanup-invitations`          | `0 0 3 * * *`   | `POST /api/v1/auth/jobs/cleanup-invitations`          |
-| `auth-cleanup-emulation-consents`   | `0 15 3 * * *`  | `POST /api/v1/auth/jobs/cleanup-emulation-consents`   |
-| `comms-purge-deleted-messages`      | `0 30 3 * * *`  | `POST /api/v1/comms/jobs/purge-deleted-messages`      |
-| `comms-purge-delivery-history`      | `0 45 3 * * *`  | `POST /api/v1/comms/jobs/purge-delivery-history`      |
+| Job Name                          | Schedule       | Endpoint                                            |
+| --------------------------------- | -------------- | --------------------------------------------------- |
+| `geo-purge-stale-whois`           | `0 0 2 * * *`  | `POST /api/v1/geo/jobs/purge-stale-whois`           |
+| `geo-cleanup-orphaned-locations`  | `0 15 2 * * *` | `POST /api/v1/geo/jobs/cleanup-orphaned-locations`  |
+| `auth-purge-sessions`             | `0 30 2 * * *` | `POST /api/v1/auth/jobs/purge-sessions`             |
+| `auth-purge-sign-in-events`       | `0 45 2 * * *` | `POST /api/v1/auth/jobs/purge-sign-in-events`       |
+| `auth-cleanup-invitations`        | `0 0 3 * * *`  | `POST /api/v1/auth/jobs/cleanup-invitations`        |
+| `auth-cleanup-emulation-consents` | `0 15 3 * * *` | `POST /api/v1/auth/jobs/cleanup-emulation-consents` |
+| `comms-purge-deleted-messages`    | `0 30 3 * * *` | `POST /api/v1/comms/jobs/purge-deleted-messages`    |
+| `comms-purge-delivery-history`    | `0 45 3 * * *` | `POST /api/v1/comms/jobs/purge-delivery-history`    |
 
 All daily, staggered by 15 minutes, UTC timezone. Geo WhoIs purge runs before orphaned location cleanup (deleting WhoIs may orphan locations).

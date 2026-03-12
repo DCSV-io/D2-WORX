@@ -10,6 +10,9 @@ function createTestContext() {
   const request: IRequestContext = {
     traceId: "trace-test",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,
@@ -223,6 +226,9 @@ describe("Cross-handler cache coherence: RecordSignInOutcome → CheckSignInThro
     const request: IRequestContext = {
       traceId: "trace-cross-handler",
       isAuthenticated: false,
+      isTrustedService: false,
+      isOrgEmulating: false,
+      isUserImpersonating: false,
       isAgentStaff: false,
       isAgentAdmin: false,
       isTargetingStaff: false,

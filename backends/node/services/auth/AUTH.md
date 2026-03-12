@@ -8,7 +8,7 @@ This document describes the complete authentication and authorization infrastruc
 
 1. [Architecture Overview](#architecture-overview)
 2. [Layer Responsibilities](#layer-responsibilities)
-3. [Domain Model](#domain-model)
+3. [Domain Model](#domain-model) (includes [Business Rules](#business-rules), [BetterAuth Gap Analysis](#betterauth-org-plugin--gap-analysis), [Known Upstream Bugs](#betterauth--known-upstream-bugs))
 4. [Session Management (3-Tier)](#session-management-3-tier)
 5. [JWT Architecture](#jwt-architecture)
 6. [Fingerprint Binding (Stolen Token Detection)](#fingerprint-binding-stolen-token-detection)
@@ -173,7 +173,9 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 | All CQRS handlers, repo handlers     | Transient | New instance per resolve — receive scoped `IHandlerContext` via factory |
 | Sign-in throttle store               | Singleton | Redis-backed state — shared across all requests                         |
 
-**Pre-auth singletons** (FindWhoIs, RateLimit.Check, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and therefore have no per-request user context. They use a service-level `HandlerContext` with a static anonymous `IRequestContext` and are NOT registered in the DI container. This is intentional — they need to function independently of the per-request scope.
+**Pre-auth singletons** (FindWhoIs, CheckRateLimit, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and are NOT registered in the DI container. They are constructed once at startup with a service-level `HandlerContext` containing static anonymous defaults. However, they **automatically see per-request context** via ambient `AsyncLocalStorage` — `HandlerContext` checks `requestContextStorage` / `requestLoggerStorage` first, falling back to constructor args only when no ambient storage is active. This mirrors .NET's DI scoping behavior where all handlers get per-request `IRequestContext` from `HttpContext.Features`.
+
+**Ambient context pipeline**: The `createAmbientScopeMiddleware()` wraps the request pipeline in `AsyncLocalStorage.run()`, seeded with the enrichment-populated `IRequestContext` and per-request logger. After auth, `createScopeMiddleware()` upgrades the ambient context via `.enterWith()` to include identity/org fields. Pre-auth singletons see enrichment data (IP, fingerprints, trust flag); post-auth handlers see the full auth-enriched context.
 
 **Scoping patterns:**
 
@@ -247,6 +249,15 @@ BetterAuth sessions carry 4 custom fields (configured via `session.additionalFie
 
 ### Role Hierarchy
 
+> **Two separate "role" concepts exist — don't confuse them:**
+>
+> | Concept             | Where                                            | Purpose                                                                                                                              | Default                                           |
+> | ------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+> | **User-level role** | `user.role` column                               | BetterAuth admin plugin internal field. **Not exposed to frontend** — `AuthUser` type excludes it, `SessionResolver` doesn't map it. | `"agent"` (via `admin({ defaultRole: "agent" })`) |
+> | **Org-level role**  | `member.role` / `session.activeOrganizationRole` | Actual authorization role used by the app for access control. Set when user joins an org.                                            | Set per membership                                |
+>
+> The user-level `role` appears in raw BetterAuth API responses (e.g., `authClient.getSession()`) but is **never** consumed by D2-WORX application code. It exists solely because the `admin()` plugin requires a `defaultRole` for impersonation features.
+
 Roles are hierarchical — higher index = more privileges:
 
 ```
@@ -265,6 +276,106 @@ auditor (0) < agent (1) < officer (2) < owner (3)
 Example: `AtOrAbove("officer")` → `["officer", "owner"]`
 
 **Verified by**: `auth/tests/src/unit/domain/enums/role.test.ts`, `.NET: AuthPolicyTests.cs`
+
+### Business Rules
+
+#### Onboarding Flow
+
+1. User signs up (email/password or Google/LinkedIn)
+2. Email verification required (`requireEmailVerification: true`)
+3. Post-verification screen: accept pending invitation(s) OR create a `customer` org
+4. No app access until at least one org membership exists
+5. SvelteKit redirects unauthenticated users to `(auth)/`, no-org users to `(onboarding)/`
+
+#### No-Org State
+
+- Freshly signed-up users have no `activeOrganizationId`
+- SvelteKit redirects to onboarding flow: accept pending invites or create an org
+- No access to any app features until at least one org membership exists
+
+#### Member Removal Cascading
+
+- When a user is removed from an org, all their sessions with that org as `activeOrganizationId` are **immediately terminated**
+- SignalR gateway signs them out in real-time (WebSocket disconnect)
+- If removed from their only org, user returns to onboarding state (join/create)
+- **Last-owner protection**: The last `owner` is blocked from leaving or downgrading. Two options presented:
+  1. **Transfer ownership** — select another member → email confirmation → ownership transferred → original owner can then leave
+  2. **Delete the org** — email confirmation required → org and all associated data deleted
+
+#### Invitation Lifecycle
+
+- Invitations expire after **7 days**
+- Org owners can revoke pending invitations
+- Users can **accept** or **reject** invitations
+- Expired invitations are cleaned up by scheduled Dkron job (daily, 7-day grace period)
+
+#### Account Linking
+
+- One account per provider per user (no duplicate Google accounts, etc.)
+- BetterAuth's `accountLinking.trustedProviders` controls which OAuth providers auto-link on matching email
+
+#### Sign-In Event Retention
+
+- 90-day retention (matches WhoIs retention pattern)
+- Purge via scheduled Dkron job (`auth-purge-sign-in-events`, daily at 02:45 UTC)
+
+### BetterAuth Org Plugin — Gap Analysis
+
+75% OOTB fit. Gaps are bridgeable with hooks and custom fields:
+
+| Requirement                     | OOTB? | Gap                                    | Effort |
+| ------------------------------- | ----- | -------------------------------------- | ------ |
+| Users belong to 0+ orgs         | Yes   | None                                   | —      |
+| Sign up, join/create orgs later | Yes   | None                                   | —      |
+| 5 organization types            | No    | Add custom field + validation hook     | Low    |
+| Custom roles (4 levels)         | Yes   | No hierarchy syntax, compose manually  | Low    |
+| Org-specific session switching  | Yes   | Known bugs (#4708, #3233)              | Low    |
+| Org type in session             | No    | Custom session fields                  | Low    |
+| Org emulation                   | No    | Custom session fields + middleware     | Medium |
+| User impersonation              | Yes   | Built-in `impersonation` plugin        | —      |
+| Org context in JWT              | No    | `definePayload` needs session lookup   | Medium |
+| Invitation per org type         | No    | Branch logic in hooks                  | Low    |
+| Admin cross-org visibility      | No    | Query DB directly                      | Medium |
+| Member list privacy per role    | No    | Security issue #6038, need hook filter | Medium |
+
+### BetterAuth — Known Upstream Bugs
+
+Tracked BetterAuth issues that may affect our implementation. Monitor for fixes in new releases.
+
+**HIGH — Session + Secondary Storage:**
+
+| Issue                                                           | Description                                                                    | Mitigation                                                            |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| [#6987](https://github.com/better-auth/better-auth/issues/6987) | `updateSession` doesn't sync back to Redis (stale data)                        | Monitor; may need to manually invalidate Redis on profile update      |
+| [#6993](https://github.com/better-auth/better-auth/issues/6993) | Session in Redis missing `id` field with `storeSessionInDatabase: true`        | Test early; may be fixed in newer versions                            |
+| [#5144](https://github.com/better-auth/better-auth/issues/5144) | `revokeSession` removes from Redis but not PG with `preserveSessionInDatabase` | Don't use `preserveSessionInDatabase` initially; test revocation flow |
+| [#4203](https://github.com/better-auth/better-auth/issues/4203) | Redis TTL expiry doesn't fall back to DB (premature invalidation)              | Set Redis TTL >= session `expiresIn` to avoid premature expiry        |
+| [#3819](https://github.com/better-auth/better-auth/issues/3819) | `active-sessions` list not cleaned on sign-out                                 | Test `listSessions()` after sign-out; may need workaround             |
+
+**MODERATE — Schema/Casing:**
+
+| Issue                                                           | Description                                                  | Mitigation                                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------- |
+| [#5649](https://github.com/better-auth/better-auth/issues/5649) | SSO/OIDC plugins bypass `casing: "snake_case"` field mapping | We don't use SSO/OIDC initially; test if added later          |
+| [#3774](https://github.com/better-auth/better-auth/issues/3774) | `modelName` hardcoded in some internal paths                 | Test custom table names with our plugin combination           |
+| [#3954](https://github.com/better-auth/better-auth/issues/3954) | JWKS table queried on every `getSession()` (not cached)      | Performance concern; monitor and potentially cache externally |
+
+**MODERATE — Organization Plugin:**
+
+| Issue                                                           | Description                                                   | Mitigation                                         |
+| --------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------- |
+| [#4708](https://github.com/better-auth/better-auth/issues/4708) | `set-active` endpoint sometimes has null session context      | Use `getSessionFromCtx` workaround                 |
+| [#6038](https://github.com/better-auth/better-auth/issues/6038) | `/get-full-organization` exposes member list to all roles     | Hook-based filter or endpoint wrapper              |
+| [#6081](https://github.com/better-auth/better-auth/issues/6081) | `hasPermission` silently returns false for unknown roles      | Fix in progress (PR #6097); add defensive logging  |
+| [#2100](https://github.com/better-auth/better-auth/issues/2100) | `updateMemberRole` fails on members with existing multi-roles | Avoid multi-role per member initially; monitor fix |
+
+**LOW — Design Considerations:**
+
+- `customSession` plugin data is NOT cached in Redis or cookie cache (function runs every `getSession()`)
+- BetterAuth's built-in rate limiter is per-path only — we use our own `@d2/ratelimit` instead
+- Cookie cache invalidation is version-based (`cookieCache.version`), not per-user
+- No built-in role hierarchy — must compose permissions manually (spread pattern)
+- `definePayload` receives user, not session — need session lookup for org context in JWT
 
 ---
 
@@ -296,6 +407,40 @@ BetterAuth is session-based at its core. Sessions use 3-tier storage for perform
 1. **Org switch**: Session updated with new org context fields → Redis + PG
 1. **Revocation**: `revokeSession` deletes from Redis + PG. Cookie cache expires naturally in ≤5min
 1. **Expiry**: Session TTL enforced at all 3 tiers
+
+### Cookie Signing & Token Types
+
+BetterAuth distinguishes between **raw session tokens** and **signed cookie values**. This is critical for understanding how different auth paths work.
+
+#### Two cookies are set on sign-in
+
+| Cookie                      | Format                     | TTL    | Purpose                                         |
+| --------------------------- | -------------------------- | ------ | ----------------------------------------------- |
+| `better-auth.session_token` | `TOKEN.SIGNATURE`          | 7 days | Signed session token — used for DB/Redis lookup |
+| `better-auth.session_data`  | Base64(JSON session + sig) | 5 min  | Cookie cache — skips DB/Redis when fresh        |
+
+#### Raw token vs signed cookie value
+
+| Source                                 | Format              | Use with                                            |
+| -------------------------------------- | ------------------- | --------------------------------------------------- |
+| `auth.api.signInEmail()` → `res.token` | Raw token (`TOKEN`) | `Authorization: Bearer TOKEN`                       |
+| HTTP sign-in `set-cookie` header       | `TOKEN.SIGNATURE`   | `Cookie: better-auth.session_token=TOKEN.SIGNATURE` |
+| Database `session.token` column        | Raw token (`TOKEN`) | Internal lookups only                               |
+
+The **raw token** from the in-process API is the same value stored in the `session` table. It works with the **Bearer plugin** (`Authorization: Bearer TOKEN`), which looks up the session by the raw token.
+
+The **signed cookie value** includes a signature appended after a `.` delimiter. BetterAuth validates this signature when parsing cookies. If the signature is missing or invalid, BetterAuth **silently returns `null`** (200 status with null body) — it does NOT return 401 or an error.
+
+#### Silent null on invalid cookies
+
+When `GET /api/auth/get-session` receives a cookie with an unsigned or tampered value, BetterAuth returns `200` with `null` body. This is indistinguishable from "no session" at the HTTP level. The `SessionResolver` in `@d2/auth-bff-client` detects this case (session cookie present but null response) and logs a warning for monitoring visibility.
+
+**Implications:**
+
+- Legitimate clients always have signed cookies (set by BetterAuth via `set-cookie` headers)
+- Attackers sending unsigned/tampered cookies are correctly rejected (treated as unauthenticated)
+- The `signInEmail` response shape is `{ redirect, token, url, user }` — there is no `session` property
+- E2E tests that need cookie-based auth must sign in via HTTP and extract cookies from the `set-cookie` response header — they CANNOT construct cookies from raw tokens
 
 ### Secondary Storage Adapter
 
@@ -523,20 +668,28 @@ app.use("/api/emulation/*", requireOrg(), requireStaff(), requireRole("officer")
 The composition root builds the pipeline in this exact order:
 
 ```
-1. CORS (Hono built-in)
-2. Body limit (256KB)
-3. Error handler (catch-all → D2Result)
-4. CSRF protection (Content-Type + Origin)
-5. Rate limiting (per-IP, in-memory)
-  --- BetterAuth routes: /api/auth/* ---
-6. Session fingerprint middleware (for auth routes)
-7. BetterAuth handler
-  --- Protected routes: /api/emulation/*, /api/org-contacts/* ---
-8. Session middleware (extracts user + session, fail-closed)
-9. Authorization middleware (requireOrg, requireStaff, requireRole — visible at route declaration)
-10. Thin route handlers (extract input → call handler → return result)
-11. App-layer handlers (Zod validation → business logic → repository)
+1.  CORS (Hono built-in)
+2.  Body limit (256KB)
+3.  Service key detection (X-Api-Key → sets IsTrustedService; require: true → 401 if missing)
+4.  Request enrichment (IP resolution, fingerprinting, WhoIs lookup)
+5.  Request context logging (per-request child logger with network bindings)
+6.  Ambient scope (AsyncLocalStorage.run() — seeds per-request context for all handlers)
+7.  Rate limiting (multi-dimensional sliding window, Redis — skipped for trusted services)
+8.  Error handler (catch-all → D2Result)
+    --- BetterAuth routes: /api/auth/* ---
+9.  Session fingerprint middleware (for auth routes)
+10. BetterAuth handler (with throttle on sign-in)
+    --- Protected routes: /api/emulation/*, /api/org-contacts/*, /api/invitations/* ---
+11. Session middleware (extracts user + session, fail-closed)
+12. Session fingerprint validation (continuity check)
+13. DI scope (creates per-request scope, merges auth into IRequestContext, upgrades ambient via enterWith)
+14. CSRF protection (Origin header validation)
+15. Authorization middleware (requireOrg, requireStaff, requireRole — visible at route declaration)
+16. Thin route handlers (extract input → call handler → return result)
+17. App-layer handlers (Zod validation → business logic → repository)
 ```
+
+**API key requirement**: All auth endpoints require a valid `X-Api-Key` header (`require: true` on service-key middleware). Missing key → 401. Invalid key → 401. Valid key → `IRequestContext.isTrustedService = true`, continues to next middleware.
 
 ### .NET Gateway Middleware Order
 
@@ -565,6 +718,7 @@ The composition root builds the pipeline in this exact order:
 | **Session fingerprint** (Node.js) | FAIL-OPEN                    | N/A             | N/A                                                          | Fingerprint check skipped, logs warning                                     | 200 (pass-through)       |
 | **JWT fingerprint** (.NET)        | N/A                          | N/A             | N/A                                                          | No fp claim (non-trusted) → **FAIL-CLOSED** (401). Trusted services → skip. | 401 (non-trusted, no fp) |
 | **Service key detection** (.NET)  | N/A                          | N/A             | N/A                                                          | Invalid key → 401. No key → pass-through (browser request).                 | 401 (invalid key)        |
+| **Service key detection** (Node)  | N/A                          | N/A             | N/A                                                          | `require: true` on auth: no key → 401. Invalid key → 401.                   | 401 (missing/invalid)    |
 | **Sign-in throttle** (Node.js)    | FAIL-OPEN                    | N/A             | N/A                                                          | Throttle check skipped, sign-in proceeds normally                           | 200 (pass-through)       |
 | **Rate limiting** (Node.js)       | FAIL-OPEN                    | N/A             | N/A                                                          | Requests pass through                                                       | 200 (pass-through)       |
 | **Rate limiting** (.NET)          | FAIL-OPEN                    | N/A             | N/A                                                          | Requests pass through                                                       | 200 (pass-through)       |

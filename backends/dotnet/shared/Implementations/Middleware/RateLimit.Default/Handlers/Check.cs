@@ -11,6 +11,7 @@ using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
+using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using H = D2.Shared.RateLimit.Default.Interfaces.IRateLimit.ICheckHandler;
@@ -85,11 +86,14 @@ public class Check : BaseHandler<Check, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        var requestInfo = input.RequestInfo;
+        var requestContext = input.RequestContext;
 
         // Trusted services bypass all rate limiting.
-        if (requestInfo.IsTrustedService)
+        if (requestContext.IsTrustedService == true)
         {
+            Context.Logger.LogInformation(
+                "Rate limit bypassed for trusted service. TraceId: {TraceId}",
+                TraceId);
             return D2Result<O?>.Ok(new O(false, null, null));
         }
 
@@ -99,39 +103,41 @@ public class Check : BaseHandler<Check, I, O>, H
         // to a single round-trip time (~5-8ms regardless of dimension count).
         var checks = new List<Task<O>>(4);
 
-        if (!string.IsNullOrWhiteSpace(requestInfo.ClientFingerprint))
+        // Device fingerprint is always present (combined from client FP + server FP + IP).
+        if (requestContext.DeviceFingerprint.Truthy())
         {
             checks.Add(CheckDimensionAsync(
-                RateLimitDimension.ClientFingerprint,
-                requestInfo.ClientFingerprint,
-                r_options.ClientFingerprintThreshold,
+                RateLimitDimension.DeviceFingerprint,
+                requestContext.DeviceFingerprint!,
+                r_options.DeviceFingerprintThreshold,
                 ct));
         }
 
-        if (!IpResolver.IsLocalhost(requestInfo.ClientIp))
+        if (requestContext.ClientIp.Truthy() &&
+            !IpResolver.IsLocalhost(requestContext.ClientIp!))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Ip,
-                requestInfo.ClientIp,
+                requestContext.ClientIp!,
                 r_options.IpThreshold,
                 ct));
         }
 
-        if (!string.IsNullOrWhiteSpace(requestInfo.City))
+        if (requestContext.City.Truthy())
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.City,
-                requestInfo.City,
+                requestContext.City!,
                 r_options.CityThreshold,
                 ct));
         }
 
-        if (!string.IsNullOrWhiteSpace(requestInfo.CountryCode) &&
-            !r_options.WhitelistedCountryCodes.Contains(requestInfo.CountryCode))
+        if (requestContext.CountryCode.Truthy() &&
+            !r_options.WhitelistedCountryCodes.Contains(requestContext.CountryCode!))
         {
             checks.Add(CheckDimensionAsync(
                 RateLimitDimension.Country,
-                requestInfo.CountryCode,
+                requestContext.CountryCode!,
                 r_options.CountryThreshold,
                 ct));
         }

@@ -22,6 +22,7 @@ import {
   IPurgeSignInEventsKey,
   IPurgeExpiredInvitationsKey,
   IPurgeExpiredEmulationConsentsKey,
+  ICheckEmailAvailabilityRepoKey,
 } from "@d2/auth-app";
 import { CreateSignInEvent } from "./repository/handlers/c/create-sign-in-event.js";
 import { FindSignInEventsByUserId } from "./repository/handlers/r/find-sign-in-events-by-user-id.js";
@@ -43,6 +44,7 @@ import { PurgeSignInEvents } from "./repository/handlers/d/purge-sign-in-events.
 import { PurgeExpiredInvitations } from "./repository/handlers/d/purge-expired-invitations.js";
 import { PurgeExpiredEmulationConsents } from "./repository/handlers/d/purge-expired-emulation-consents.js";
 import { PingDb } from "./repository/handlers/r/ping-db.js";
+import { CheckEmailAvailability } from "./repository/handlers/r/check-email-availability.js";
 
 /**
  * Registers auth infrastructure services (repository handlers) with the DI container.
@@ -53,6 +55,12 @@ import { PingDb } from "./repository/handlers/r/ping-db.js";
 export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void {
   // Health check handler
   services.addTransient(IPingDbKey, (sp) => new PingDb(db, sp.resolve(IHandlerContextKey)));
+
+  // Email availability check (public, pre-auth)
+  services.addTransient(
+    ICheckEmailAvailabilityRepoKey,
+    (sp) => new CheckEmailAvailability(db, sp.resolve(IHandlerContextKey)),
+  );
 
   // Sign-in event repo handlers
   services.addTransient(

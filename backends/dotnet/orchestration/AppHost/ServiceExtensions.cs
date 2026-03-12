@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="ServiceExtensions.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -41,21 +41,15 @@ internal static class ServiceExtensions
         /// Adds observability environment variables for traces, logs, and metrics.
         /// Uses standard OTel env var names so both .NET and Node.js SDKs pick them up.
         /// All signals route through Alloy (OTLP HTTP on 4318) → Tempo / Loki / Mimir.
+        /// Base URLs are read from <c>OTLP_HTTP_ENDPOINT</c> and <c>LOKI_PUSH_ENDPOINT</c> env vars.
         /// </summary>
         ///
-        /// <param name="otlpBase">
-        /// Base URL for the OTLP HTTP receiver (default <c>http://localhost:4318</c>).
-        /// </param>
-        ///
-        /// <param name="lokiBase">
-        /// Base URL for the Loki push API (default <c>http://localhost:3100</c>).
-        /// </param>
-        ///
         /// <returns>A reference to the <see cref="IResourceBuilder{T}"/>.</returns>
-        public IResourceBuilder<TProject> WithOtelRefs(
-            string otlpBase = "http://localhost:4318",
-            string lokiBase = "http://localhost:3100")
+        public IResourceBuilder<TProject> WithOtelRefs()
         {
+            var otlpBase = Env("OTLP_HTTP_ENDPOINT");
+            var lokiBase = Env("LOKI_PUSH_ENDPOINT");
+
             builder.WithEnvironment("OTEL_SERVICE_NAME", builder.Resource.Name);
             builder.WithEnvironment("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", $"{otlpBase}/v1/traces");
             builder.WithEnvironment("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT", $"{otlpBase}/v1/logs");
@@ -63,7 +57,41 @@ internal static class ServiceExtensions
 
             // Serilog Loki sink (direct push, not OTLP) — .NET services only.
             builder.WithEnvironment("LOGS_URI", $"{lokiBase}/loki/api/v1/push");
+
+            // Enable debug-level logging for handler I/O telemetry.
+            // .NET services ignore this (they use appsettings.json + Serilog overrides).
+            // Node.js services read it via createLogger() fallback in @d2/logging.
+            builder.WithEnvironment("LOG_LEVEL", "debug");
             return builder;
         }
+    }
+
+    /// <summary>
+    /// Reads a required environment variable. Throws if absent or empty.
+    /// All values must be defined in <c>.env.local</c> — the single source of truth.
+    /// </summary>
+    /// <param name="key">The environment variable name.</param>
+    /// <returns>The environment variable value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the variable is missing or empty.</exception>
+    internal static string Env(string key) =>
+        Environment.GetEnvironmentVariable(key) is { Length: > 0 } v
+            ? v
+            : throw new InvalidOperationException(
+                $"Required environment variable '{key}' is not set. Add it to .env.local.");
+
+    /// <summary>
+    /// Reads a required integer environment variable. Throws if absent, empty, or not a valid integer.
+    /// All values must be defined in <c>.env.local</c> — the single source of truth.
+    /// </summary>
+    /// <param name="key">The environment variable name.</param>
+    /// <returns>The parsed integer value.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the variable is missing, empty, or not parseable.</exception>
+    internal static int EnvInt(string key)
+    {
+        var raw = Env(key);
+        return int.TryParse(raw, out var v)
+            ? v
+            : throw new InvalidOperationException(
+                $"Environment variable '{key}' value '{raw}' is not a valid integer. Check .env.local.");
     }
 }

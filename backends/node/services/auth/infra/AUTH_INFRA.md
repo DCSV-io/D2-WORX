@@ -132,14 +132,15 @@ Custom `definePayload` emits: `sub`, `email`, `username`, `orgId`, `orgType`, `r
 
 The composition root provides these callbacks to avoid circular dependencies between infra and app layers:
 
-| Callback                          | Purpose                                                    |
-| --------------------------------- | ---------------------------------------------------------- |
-| `onSignIn`                        | Records audit event after successful sign-in               |
-| `getFingerprintForCurrentRequest` | Returns client fingerprint for JWT `fp` claim              |
-| `passwordFunctions`               | Custom hash/verify with domain validation + HIBP check     |
-| `publishVerificationEmail`        | Publishes verification email event to RabbitMQ             |
-| `publishPasswordReset`            | Publishes password reset email event to RabbitMQ           |
-| `createUserContact`               | Creates Geo contact before user record (fail-fast pattern) |
+| Callback                                | Purpose                                                    |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `onSignIn`                              | Records audit event after successful sign-in               |
+| `getFingerprintForCurrentRequest`       | Returns client fingerprint for JWT `fp` claim              |
+| `getDeviceFingerprintForCurrentRequest` | Returns device fingerprint for sign-in event audit         |
+| `passwordFunctions`                     | Custom hash/verify with domain validation + HIBP check     |
+| `publishVerificationEmail`              | Publishes verification email event to RabbitMQ             |
+| `publishPasswordReset`                  | Publishes password reset email event to RabbitMQ           |
+| `createUserContact`                     | Creates Geo contact before user record (fail-fast pattern) |
 
 ## RBAC Access Control
 
@@ -187,11 +188,11 @@ Hierarchical role permissions (each level inherits from below):
 
 ### Custom Tables (3)
 
-| Table               | Columns                                                                | Indexes                                                                                    |
-| ------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `sign_in_event`     | id, user_id, successful, ip_address, user_agent, who_is_id, created_at | idx_sign_in_event_user_id                                                                  |
-| `emulation_consent` | id, user_id, granted_to_org_id, expires_at, revoked_at, created_at     | idx_emulation_consent_user_id, unique(user_id, granted_to_org_id) WHERE revoked_at IS NULL |
-| `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at         | idx_org_contact_organization_id                                                            |
+| Table               | Columns                                                                                    | Indexes                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| `sign_in_event`     | id, user_id, successful, ip_address, user_agent, who_is_id, device_fingerprint, created_at | idx_sign_in_event_user_id                                                                  |
+| `emulation_consent` | id, user_id, granted_to_org_id, expires_at, revoked_at, created_at                         | idx_emulation_consent_user_id, unique(user_id, granted_to_org_id) WHERE revoked_at IS NULL |
+| `org_contact`       | id, organization_id, label, is_primary, created_at, updated_at                             | idx_org_contact_organization_id                                                            |
 
 ## Purge Repository Handlers
 
@@ -203,6 +204,76 @@ Four batch-delete handlers for scheduled job cleanup. All use `batchDelete` from
 | `PurgeSignInEvents`             | `sign_in_event`     | `createdAt < cutoffDate`                     | Cutoff computed by job handler   |
 | `PurgeExpiredInvitations`       | `invitation`        | `expiresAt < cutoffDate`                     | BetterAuth-managed table         |
 | `PurgeExpiredEmulationConsents` | `emulation_consent` | `expiresAt < now() OR revokedAt IS NOT NULL` | Removes both expired and revoked |
+
+## Repository Handler Patterns
+
+Concrete examples of the most commonly missed repository patterns.
+
+### Drizzle UPDATE with `.returning()` + notFound
+
+From `RevokeEmulationConsentRecord` — **always** chain `.returning()` and check the result array:
+
+```typescript
+protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
+  const rows = await this.db
+    .update(emulationConsent)
+    .set({ revokedAt: new Date() })
+    .where(eq(emulationConsent.id, input.id))
+    .returning({ id: emulationConsent.id });
+
+  if (rows.length === 0) return D2Result.notFound();
+
+  return D2Result.ok({ data: {} });
+}
+```
+
+Without `.returning()`, the query succeeds silently even if the row doesn't exist, and you'd return `ok()` for a no-op — a bug.
+
+### Drizzle DELETE with `.returning()` + notFound
+
+From `DeleteOrgContactRecord` — identical pattern to UPDATE:
+
+```typescript
+protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
+  const rows = await this.db
+    .delete(orgContact)
+    .where(eq(orgContact.id, input.id))
+    .returning({ id: orgContact.id });
+
+  if (rows.length === 0) return D2Result.notFound();
+
+  return D2Result.ok({ data: {} });
+}
+```
+
+### DI Registration Pattern
+
+From `registration.ts` — each handler is registered as transient with its DB + context dependencies:
+
+```typescript
+export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void {
+  services.addTransient(
+    ICreateSignInEventKey,
+    (sp) => new CreateSignInEvent(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IRevokeEmulationConsentRecordKey,
+    (sp) => new RevokeEmulationConsentRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IDeleteOrgContactRecordKey,
+    (sp) => new DeleteOrgContactRecord(db, sp.resolve(IHandlerContextKey)),
+  );
+  // ... more handlers ...
+}
+```
+
+**Checklist when adding a new handler:**
+
+1. Create the interface in `@d2/auth-app` interfaces
+2. Create the implementation in `@d2/auth-infra` repository handlers
+3. Add `ServiceKey` in `service-keys.ts`
+4. Add `services.addTransient()` in `registration.ts` — **missing this is a silent runtime crash**
 
 ## DI Registration
 

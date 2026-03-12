@@ -354,9 +354,9 @@ describe("optionalSection", () => {
 
   it("throws when an env var in the section has an invalid value", () => {
     setEnv("TEST_SEC_BAD__RETENTIONDAYS", "abc");
-    expect(() =>
-      defineConfig("test", { opts: optionalSection("TEST_SEC_BAD", DEFAULTS) }),
-    ).toThrow("must be a positive integer");
+    expect(() => defineConfig("test", { opts: optionalSection("TEST_SEC_BAD", DEFAULTS) })).toThrow(
+      "must be a positive integer",
+    );
   });
 
   it("ignores empty string values (treats as not set)", () => {

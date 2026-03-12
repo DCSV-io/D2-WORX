@@ -20,8 +20,8 @@ public class ProtoPublisher : IAsyncDisposable
 {
     private readonly IConnection r_connection;
     private readonly ILogger<ProtoPublisher> r_logger;
-    private readonly HashSet<string> _declaredExchanges = new();
-    private readonly SemaphoreSlim _channelLock = new(1, 1);
+    private readonly HashSet<string> r_declaredExchanges = new();
+    private readonly SemaphoreSlim r_channelLock = new(1, 1);
     private IChannel? _channel;
 
     /// <summary>
@@ -112,7 +112,7 @@ public class ProtoPublisher : IAsyncDisposable
             _channel.Dispose();
         }
 
-        _channelLock.Dispose();
+        r_channelLock.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -123,7 +123,7 @@ public class ProtoPublisher : IAsyncDisposable
             return _channel;
         }
 
-        await _channelLock.WaitAsync(ct);
+        await r_channelLock.WaitAsync(ct);
         try
         {
             // Double-check after acquiring lock.
@@ -134,12 +134,12 @@ public class ProtoPublisher : IAsyncDisposable
 
             _channel?.Dispose();
             _channel = await r_connection.CreateChannelAsync(cancellationToken: ct);
-            _declaredExchanges.Clear();
+            r_declaredExchanges.Clear();
             return _channel;
         }
         finally
         {
-            _channelLock.Release();
+            r_channelLock.Release();
         }
     }
 
@@ -148,7 +148,7 @@ public class ProtoPublisher : IAsyncDisposable
         string exchange,
         CancellationToken ct)
     {
-        if (_declaredExchanges.Contains(exchange))
+        if (r_declaredExchanges.Contains(exchange))
         {
             return;
         }
@@ -160,6 +160,6 @@ public class ProtoPublisher : IAsyncDisposable
             autoDelete: false,
             cancellationToken: ct);
 
-        _declaredExchanges.Add(exchange);
+        r_declaredExchanges.Add(exchange);
     }
 }

@@ -4,15 +4,16 @@ HTTP middleware that enriches requests with client information including IP reso
 
 ## Files
 
-| File Name                                                        | Description                                                               |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| [IRequestInfo.cs](IRequestInfo.cs)                               | Interface defining enriched request context properties.                   |
-| [RequestInfo.cs](RequestInfo.cs)                                 | Concrete implementation of IRequestInfo.                                  |
-| [IpResolver.cs](IpResolver.cs)                                   | Static helper for resolving client IP from various headers.               |
-| [FingerprintBuilder.cs](FingerprintBuilder.cs)                   | Static helper for computing server-side fingerprint from request headers. |
-| [RequestEnrichmentOptions.cs](RequestEnrichmentOptions.cs)       | Configuration options for the middleware.                                 |
-| [RequestEnrichmentMiddleware.cs](RequestEnrichmentMiddleware.cs) | The middleware implementation that performs enrichment.                   |
-| [Extensions.cs](Extensions.cs)                                   | DI registration and app builder extension methods.                        |
+| File Name                                                                | Description                                                                                 |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [MutableRequestContext.cs](MutableRequestContext.cs)                     | Mutable implementation of `IRequestContext` progressively populated by gateway middleware.  |
+| [IpResolver.cs](IpResolver.cs)                                           | Static helper for resolving client IP from various headers.                                 |
+| [FingerprintBuilder.cs](FingerprintBuilder.cs)                           | Static helpers for server + device fingerprint computation.                                 |
+| [InfrastructurePaths.cs](InfrastructurePaths.cs)                         | Helper for detecting infrastructure endpoints (health, metrics) to skip enrichment/logging. |
+| [RequestEnrichmentOptions.cs](RequestEnrichmentOptions.cs)               | Configuration options for the middleware.                                                   |
+| [RequestEnrichmentMiddleware.cs](RequestEnrichmentMiddleware.cs)         | The middleware implementation that performs enrichment.                                     |
+| [RequestContextLoggingMiddleware.cs](RequestContextLoggingMiddleware.cs) | Middleware pushing non-PII context fields into Serilog LogContext + OTel trace span tags.   |
+| [Extensions.cs](Extensions.cs)                                           | DI registration and app builder extension methods.                                          |
 
 ## Overview
 
@@ -27,30 +28,52 @@ The middleware performs the following enrichment steps:
 2. **Server Fingerprint** — Computes SHA-256 hash of request headers for logging/analytics:
    - `User-Agent + "|" + Accept-Language + "|" + Accept-Encoding + "|" + Accept`
 
-3. **Client Fingerprint** — Reads `X-Client-Fingerprint` header (if present) for rate limiting.
+3. **Client Fingerprint** — Reads from `d2-cfp` cookie (primary) or `X-Client-Fingerprint` header (fallback). May be absent.
 
-4. **WhoIs Lookup** — Calls Geo.Client's WhoIs cache handler to enrich with geolocation data:
+4. **Device Fingerprint** — Computes `SHA-256(clientFingerprint + serverFingerprint + clientIp)`. Always present — if client fingerprint is missing, degrades to `SHA-256("" + serverFP + clientIp)`.
+
+5. **WhoIs Lookup** — Calls Geo.Client's WhoIs cache handler to enrich with geolocation data:
    - City, country code, subdivision code
    - VPN/proxy/Tor/hosting flags
    - Content-addressable hash ID for downstream lookups
 
-## IRequestInfo Properties
+## MutableRequestContext
 
-| Property            | Type      | Description                                               |
-| ------------------- | --------- | --------------------------------------------------------- |
-| `ClientIp`          | `string`  | Resolved client IP address (always present).              |
-| `ServerFingerprint` | `string`  | Server-computed fingerprint for logging (always present). |
-| `ClientFingerprint` | `string?` | Client-provided fingerprint header (nullable).            |
-| `UserId`            | `string?` | User ID set by auth middleware (nullable, mutable).       |
-| `IsAuthenticated`   | `bool`    | Authentication status set by auth middleware (mutable).   |
-| `WhoIsHashId`       | `string?` | Content-addressable hash for WhoIs lookups.               |
-| `City`              | `string?` | City from WhoIs data.                                     |
-| `CountryCode`       | `string?` | ISO 3166-1 alpha-2 country code.                          |
-| `SubdivisionCode`   | `string?` | ISO 3166-2 subdivision code.                              |
-| `IsVpn`             | `bool?`   | Whether IP is from a VPN.                                 |
-| `IsProxy`           | `bool?`   | Whether IP is from a proxy.                               |
-| `IsTor`             | `bool?`   | Whether IP is from a Tor exit node.                       |
-| `IsHosting`         | `bool?`   | Whether IP is from a hosting provider.                    |
+`MutableRequestContext` implements `IRequestContext` (from `D2.Shared.Handler`) and is progressively populated by gateway middleware. Downstream consumers see the read-only `IRequestContext` interface.
+
+The enrichment middleware creates the instance with network fields, then subsequent middleware mutates it:
+
+- **RequestEnrichmentMiddleware** — creates with network/geo fields (clientIp, fingerprints, WhoIs data)
+- **ServiceKeyMiddleware** — sets `IsTrustedService` flag
+- **JwtAuth + JwtFingerprintMiddleware** — sets identity/org fields (userId, agentOrg, targetOrg, etc.)
+
+### Network / Enrichment Fields (set by RequestEnrichmentMiddleware)
+
+| Property            | Type      | Description                                                |
+| ------------------- | --------- | ---------------------------------------------------------- |
+| `ClientIp`          | `string?` | Resolved client IP address.                                |
+| `ServerFingerprint` | `string?` | Server-computed fingerprint for logging.                   |
+| `ClientFingerprint` | `string?` | Client-provided fingerprint from cookie/header (nullable). |
+| `DeviceFingerprint` | `string?` | Combined fingerprint: SHA-256(clientFP + serverFP + IP).   |
+| `WhoIsHashId`       | `string?` | Content-addressable hash for WhoIs lookups.                |
+| `City`              | `string?` | City from WhoIs data.                                      |
+| `CountryCode`       | `string?` | ISO 3166-1 alpha-2 country code.                           |
+| `SubdivisionCode`   | `string?` | ISO 3166-2 subdivision code.                               |
+| `IsVpn`             | `bool?`   | Whether IP is from a VPN.                                  |
+| `IsProxy`           | `bool?`   | Whether IP is from a proxy.                                |
+| `IsTor`             | `bool?`   | Whether IP is from a Tor exit node.                        |
+| `IsHosting`         | `bool?`   | Whether IP is from a hosting provider.                     |
+
+See `HANDLER.md` for the full `IRequestContext` interface (including identity, org, trust, and helper fields).
+
+## RequestContextLoggingMiddleware
+
+Runs after authentication middleware. Pushes non-PII `IRequestContext` fields into:
+
+- **Serilog LogContext** — every log entry within the request scope includes these fields automatically
+- **OTel span tags** — for Tempo trace queries (userId, agentOrgId, agentOrgType, targetOrgId)
+
+Skips infrastructure endpoints (health, metrics) to reduce noise. If no `IRequestContext` is found on `HttpContext.Features`, the middleware is a no-op.
 
 ## Configuration
 
@@ -60,8 +83,11 @@ public class RequestEnrichmentOptions
     // Enable/disable WhoIs lookup (default: true).
     public bool EnableWhoIsLookup { get; set; } = true;
 
-    // Header name for client fingerprint (default: "X-Client-Fingerprint").
+    // Header name for client fingerprint fallback (default: "X-Client-Fingerprint").
     public string ClientFingerprintHeader { get; set; } = "X-Client-Fingerprint";
+
+    // Cookie name for client fingerprint (default: "d2-cfp").
+    public string ClientFingerprintCookie { get; set; } = "d2-cfp";
 }
 ```
 
@@ -75,12 +101,38 @@ builder.Services.AddRequestEnrichment(builder.Configuration);
 
 // Add middleware (after exception handler, before rate limiting).
 app.UseRequestEnrichment();
+
+// Add request context logging (after authentication middleware).
+app.UseRequestContextLogging();
 ```
 
 ## Fail-Open Behavior
 
 - **WhoIs lookup fails**: Log warning, continue with IP/fingerprint only.
 - **Localhost detected**: Skip WhoIs lookup entirely.
+
+## Infrastructure Path Bypass
+
+`InfrastructurePaths.IsInfrastructure()` detects infrastructure endpoints that should skip business middleware:
+
+```csharp
+public static bool IsInfrastructure(HttpContext context)
+{
+    return context.Request.Path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase) ||
+           context.Request.Path.StartsWithSegments("/alive", StringComparison.OrdinalIgnoreCase) ||
+           context.Request.Path.StartsWithSegments("/metrics", StringComparison.OrdinalIgnoreCase) ||
+           context.Request.Path.StartsWithSegments("/api/health", StringComparison.OrdinalIgnoreCase);
+}
+```
+
+**Critical rule:** ALL business middleware must check `InfrastructurePaths.IsInfrastructure()` and skip processing for infrastructure paths. This includes:
+
+- Request enrichment (WhoIs lookups)
+- Rate limiting
+- Request context logging
+- Idempotency
+
+When adding a new infrastructure path, add it to `InfrastructurePaths` — never add path bypass logic to individual middleware. When adding new business middleware, check `IsInfrastructure()` at the top and call `next(context)` immediately if true.
 
 ## Dependencies
 

@@ -13,8 +13,8 @@ common:
   storage:
     backend: s3
     s3:
-      endpoint: d2-minio:9000
-      bucket_name: mimir-blocks
+      endpoint: ${MINIO_NAME}:9000
+      bucket_name: ${MINIO_BUCKET_MIMIR_BLOCKS}
       access_key_id: ${MINIO_ROOT_USER}
       secret_access_key: ${MINIO_ROOT_PASSWORD}
       insecure: true
@@ -26,8 +26,8 @@ common:
 blocks_storage:
   backend: s3
   s3:
-    endpoint: d2-minio:9000
-    bucket_name: mimir-blocks
+    endpoint: ${MINIO_NAME}:9000
+    bucket_name: ${MINIO_BUCKET_MIMIR_BLOCKS}
     access_key_id: ${MINIO_ROOT_USER}
     secret_access_key: ${MINIO_ROOT_PASSWORD}
     insecure: true
@@ -65,8 +65,8 @@ store_gateway:
 ruler_storage:
   backend: s3
   s3:
-    endpoint: d2-minio:9000
-    bucket_name: mimir-ruler
+    endpoint: ${MINIO_NAME}:9000
+    bucket_name: ${MINIO_BUCKET_MIMIR_RULER}
     access_key_id: ${MINIO_ROOT_USER}
     secret_access_key: ${MINIO_ROOT_PASSWORD}
     insecure: true

@@ -54,6 +54,7 @@ public static partial class Extensions
                     "Microsoft.Extensions.Http",
                     Serilog.Events.LogEventLevel.Warning)
                 .MinimumLevel.Override("System.Net.Http", Serilog.Events.LogEventLevel.Warning)
+                .MinimumLevel.Override("D2", Serilog.Events.LogEventLevel.Debug)
                 .Destructure.With<RedactDataDestructuringPolicy>()
                 .Enrich.FromLogContext()
                 .Enrich.WithProperty("service_name", serviceName)

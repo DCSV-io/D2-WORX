@@ -327,10 +327,140 @@ jobs:
       - name: Run integration and E2E tests
         run: pnpm vitest run --project dkron-mgr-tests integration e2e
 
-  node-e2e:
-    name: D2 Node.js E2E - Cross-Service Tests (v1)
+  node-bff-client-unit:
+    name: D2 Node.js Auth BFF Client - Unit Tests (v1)
     runs-on: ubuntu-latest
-    needs: [node-auth-unit, node-auth-integration, node-comms-unit, node-comms-integration]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Run unit tests
+        run: pnpm --filter @d2/auth-bff-client exec vitest run
+
+  web-vitest:
+    name: D2 Web Client - Vitest (v1)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install Playwright browsers (for vitest-browser-svelte)
+        run: npx playwright install chromium
+        working-directory: clients/web
+
+      - name: Run Vitest
+        run: npx vitest run
+        working-directory: clients/web
+
+  web-playwright-mocked:
+    name: D2 Web Client - Playwright Mocked (v2)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+        working-directory: clients/web
+
+      - name: Run mocked Playwright tests
+        run: npx playwright test
+        working-directory: clients/web
+        env:
+          D2_MOCK_INFRA: "true"
+
+  e2e-prebuild:
+    name: D2 E2E - .NET Prebuild (v2)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore and build Geo.API
+        run: |
+          dotnet restore backends/dotnet/services/Geo/Geo.API
+          dotnet build backends/dotnet/services/Geo/Geo.API --no-restore
+
+      - name: Restore and build REST Gateway
+        run: |
+          dotnet restore backends/dotnet/gateways/REST
+          dotnet build backends/dotnet/gateways/REST --no-restore
+
+      - name: Upload Geo.API build
+        uses: actions/upload-artifact@v4
+        with:
+          name: geo-api-build
+          path: backends/dotnet/services/Geo/Geo.API/bin/Debug/
+          retention-days: 1
+
+      - name: Upload Gateway build
+        uses: actions/upload-artifact@v4
+        with:
+          name: gateway-build
+          path: backends/dotnet/gateways/REST/bin/Debug/
+          retention-days: 1
+
+  e2e-vitest:
+    name: D2 E2E - Vitest API Tests (v2)
+    runs-on: ubuntu-latest
+    needs: [e2e-prebuild]
 
     steps:
       - name: Checkout code
@@ -357,15 +487,73 @@ jobs:
       - name: Build Node.js packages
         run: pnpm build
 
-      - name: Restore .NET packages
-        run: |
-          dotnet restore backends/dotnet/services/Geo/Geo.API
-          dotnet restore backends/dotnet/gateways/REST
+      - name: Download .NET builds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-build"
+          merge-multiple: false
 
-      - name: Build .NET projects
+      - name: Restore .NET build artifacts
         run: |
-          dotnet build backends/dotnet/services/Geo/Geo.API -c Release --no-restore
-          dotnet build backends/dotnet/gateways/REST -c Release --no-restore
+          mkdir -p backends/dotnet/services/Geo/Geo.API/bin/Debug
+          mkdir -p backends/dotnet/gateways/REST/bin/Debug
+          cp -r geo-api-build/* backends/dotnet/services/Geo/Geo.API/bin/Debug/ || true
+          cp -r gateway-build/* backends/dotnet/gateways/REST/bin/Debug/ || true
+          chmod +x backends/dotnet/services/Geo/Geo.API/bin/Debug/net10.0/Geo.API || true
+          chmod +x backends/dotnet/gateways/REST/bin/Debug/net10.0/REST || true
 
       - name: Run E2E tests
         run: pnpm vitest run --project e2e-tests
+
+  e2e-browser:
+    name: D2 E2E - Browser Auth Flows (v2)
+    runs-on: ubuntu-latest
+    needs: [e2e-prebuild]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Node.js dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Node.js packages
+        run: pnpm build
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+        working-directory: backends/node/services/e2e
+
+      - name: Download .NET builds
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-build"
+          merge-multiple: false
+
+      - name: Restore .NET build artifacts
+        run: |
+          mkdir -p backends/dotnet/services/Geo/Geo.API/bin/Debug
+          mkdir -p backends/dotnet/gateways/REST/bin/Debug
+          cp -r geo-api-build/* backends/dotnet/services/Geo/Geo.API/bin/Debug/ || true
+          cp -r gateway-build/* backends/dotnet/gateways/REST/bin/Debug/ || true
+          chmod +x backends/dotnet/services/Geo/Geo.API/bin/Debug/net10.0/Geo.API || true
+          chmod +x backends/dotnet/gateways/REST/bin/Debug/net10.0/REST || true
+
+      - name: Run browser E2E tests
+        run: npx playwright test --config playwright.config.ts
+        working-directory: backends/node/services/e2e

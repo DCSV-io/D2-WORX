@@ -7,6 +7,7 @@
 namespace D2.Shared.Tests.Unit.Gateway;
 
 using D2.Gateways.REST.Auth;
+using D2.Shared.Handler;
 using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -55,7 +56,7 @@ public class ServiceKeyEndpointFilterTests
     }
 
     /// <summary>
-    /// When IRequestInfo is not present in features, returns 401.
+    /// When IRequestContext is not present in features, returns 401.
     /// </summary>
     /// <returns>A <see cref="Task"/> representing the asynchronous test.</returns>
     [Fact]
@@ -77,13 +78,14 @@ public class ServiceKeyEndpointFilterTests
     private static EndpointFilterInvocationContext CreateContext(bool isTrusted)
     {
         var httpContext = new DefaultHttpContext();
-        var requestInfo = new RequestInfo
+        var requestContext = new MutableRequestContext
         {
             ClientIp = "192.0.2.1",
             ServerFingerprint = "abc123",
+            DeviceFingerprint = "device-fp-test",
             IsTrustedService = isTrusted,
         };
-        httpContext.Features.Set<IRequestInfo>(requestInfo);
+        httpContext.Features.Set<IRequestContext>(requestContext);
 
         return new DefaultEndpointFilterInvocationContext(httpContext);
     }

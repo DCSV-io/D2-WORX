@@ -6,12 +6,15 @@ import { ErrorCodes } from "@d2/result";
 import { HandlerContext, type IHandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { createSecondaryStorage } from "@d2/auth-infra";
-import { Check as RateLimitCheck } from "@d2/ratelimit";
+import { CheckRateLimit } from "@d2/ratelimit";
 
 function createTestContext(): IHandlerContext {
   const request: IRequestContext = {
     traceId: "redis-failover-test",
     isAuthenticated: false,
+    isTrustedService: false,
+    isOrgEmulating: false,
+    isUserImpersonating: false,
     isAgentStaff: false,
     isAgentAdmin: false,
     isTargetingStaff: false,
@@ -87,13 +90,13 @@ describe("Redis failover — auth service consumers", () => {
       const getTtl = new CacheRedis.GetTtl(freshRedis, ctx);
       const increment = new CacheRedis.Increment(freshRedis, ctx);
       const set = new CacheRedis.Set<string>(freshRedis, ctx);
-      const rateLimitCheck = new RateLimitCheck(getTtl, increment, set, {}, ctx);
+      const rateLimitCheck = new CheckRateLimit(getTtl, increment, set, {}, ctx);
 
       // 1. Normal check — should pass
       const normalResult = await rateLimitCheck.handleAsync({
-        requestInfo: {
+        requestContext: {
           clientIp: "203.0.113.1",
-          clientFingerprint: "fp-test",
+          deviceFingerprint: "a".repeat(64),
         },
       });
       expect(normalResult).toBeSuccess();
@@ -104,9 +107,9 @@ describe("Redis failover — auth service consumers", () => {
 
       // 3. Rate limiter should fail-open (not blocked, not throwing)
       const failoverResult = await rateLimitCheck.handleAsync({
-        requestInfo: {
+        requestContext: {
           clientIp: "203.0.113.1",
-          clientFingerprint: "fp-test",
+          deviceFingerprint: "a".repeat(64),
         },
       });
       expect(failoverResult).toBeSuccess();

@@ -1,11 +1,6 @@
-import type { RequestEnrichment } from "@d2/interfaces";
-
-/** @deprecated Import from @d2/interfaces instead: `import type { RequestEnrichment } from "@d2/interfaces"` */
-export type IRequestInfo = RequestEnrichment.IRequestInfo;
-
-export { RequestInfo } from "./request-info.js";
+export { MutableRequestContext } from "./request-info.js";
 export { resolveIp, isLocalhost } from "./ip-resolver.js";
-export { buildServerFingerprint } from "./fingerprint-builder.js";
+export { buildServerFingerprint, buildDeviceFingerprint } from "./fingerprint-builder.js";
 export {
   type TrustedProxyHeader,
   type RequestEnrichmentOptions,

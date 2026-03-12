@@ -1,6 +1,6 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
-import { D2Result, HttpStatusCode, ErrorCodes } from "@d2/result";
+import { D2Result } from "@d2/result";
 import type {
   CreateOrgContactRecordInput as I,
   CreateOrgContactRecordOutput as O,
@@ -34,10 +34,8 @@ export class CreateOrgContactRecord
       return D2Result.ok({ data: {} });
     } catch (err) {
       if (isPgUniqueViolation(err)) {
-        return D2Result.fail({
+        return D2Result.conflict({
           messages: ["Record already exists."],
-          statusCode: HttpStatusCode.Conflict,
-          errorCode: ErrorCodes.CONFLICT,
         });
       }
       throw err;

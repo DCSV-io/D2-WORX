@@ -1,7 +1,13 @@
 import type * as grpc from "@grpc/grpc-js";
 import { trace } from "@opentelemetry/api";
 import type { ServiceProvider, ServiceScope } from "@d2/di";
-import { HandlerContext, IHandlerContextKey, IRequestContextKey } from "@d2/handler";
+import {
+  HandlerContext,
+  IHandlerContextKey,
+  IRequestContextKey,
+  requestContextStorage,
+  requestLoggerStorage,
+} from "@d2/handler";
 import type { IRequestContext } from "@d2/handler";
 import { ILoggerKey } from "@d2/logging";
 import { extractGrpcTraceContext } from "./extract-trace-context.js";
@@ -41,6 +47,7 @@ export function createRpcScope(
     : {
         traceId,
         isAuthenticated: false,
+        isTrustedService: null,
         isAgentStaff: false,
         isAgentAdmin: false,
         isTargetingStaff: false,
@@ -50,9 +57,13 @@ export function createRpcScope(
       };
 
   scope.setInstance(IRequestContextKey, requestContext);
-  scope.setInstance(
-    IHandlerContextKey,
-    new HandlerContext(requestContext, provider.resolve(ILoggerKey)),
-  );
+  const logger = provider.resolve(ILoggerKey);
+  scope.setInstance(IHandlerContextKey, new HandlerContext(requestContext, logger));
+
+  // Set ambient storage so handlers see per-request context regardless of
+  // how they were constructed (singleton vs scoped).
+  requestContextStorage.enterWith(requestContext);
+  requestLoggerStorage.enterWith(logger);
+
   return scope;
 }

@@ -59,6 +59,7 @@ describe("Deliver handler (integration)", () => {
       {
         traceId: "trace-deliver-integration",
         isAuthenticated: false,
+        isTrustedService: null,
         isAgentStaff: false,
         isAgentAdmin: false,
         isTargetingStaff: false,

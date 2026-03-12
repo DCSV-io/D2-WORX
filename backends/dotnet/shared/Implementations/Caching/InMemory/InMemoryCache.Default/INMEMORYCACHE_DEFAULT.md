@@ -33,3 +33,32 @@ No create handlers - MemoryCache Set operation is upsert (create or update).
 | ----------------------------------- | ------------------------------------------------------------------------------------------------- |
 | [Set.cs](Handlers/U/Set.cs)         | Handler for storing (upsert) generic typed data in memory cache with optional TTL and size limit. |
 | [SetMany.cs](Handlers/U/SetMany.cs) | Handler for batch storing multiple items in memory cache with shared TTL configuration.           |
+
+## Usage Pattern
+
+Typical Get → miss → Set flow. All operations go through handler abstractions (never raw `IMemoryCache`):
+
+```csharp
+// Try memory cache first
+var memResult = await r_getFromMem.HandleAsync(new GetInput(cacheKey), ct);
+if (memResult.CheckSuccess(out var cached))
+{
+    return D2Result<MyOutput?>.Ok(new MyOutput(cached!.Value));
+}
+
+// Memory miss — fetch from downstream source
+var data = await FetchFromDownstream(input, ct);
+
+// Populate memory cache for next request (fire-and-forget OK for cache writes)
+await r_setInMem.HandleAsync(new SetInput<MyType>(cacheKey, data, TimeSpan.FromMinutes(5)), ct);
+
+return D2Result<MyOutput?>.Ok(new MyOutput(data));
+```
+
+**Key behaviors:**
+
+- `Get<TValue>` returns `NotFound` on cache miss (not null) — use `CheckSuccess` to distinguish
+- `Set<TValue>` is upsert — overwrites existing entries for the same key
+- Each entry has `Size = 1` — total cache size is controlled by `MemoryCacheOptions.SizeLimit`
+- TTL is optional — entries without TTL persist until evicted by LRU
+- All operations are synchronous (`ValueTask`-wrapped) since `IMemoryCache` is in-process

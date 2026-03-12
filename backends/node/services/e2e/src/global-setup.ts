@@ -32,10 +32,7 @@ export async function setup() {
     "../../../../../backends/dotnet/services/Geo/Geo.API",
   );
 
-  const gatewayDir = resolve(
-    import.meta.dirname,
-    "../../../../../backends/dotnet/gateways/REST",
-  );
+  const gatewayDir = resolve(import.meta.dirname, "../../../../../backends/dotnet/gateways/REST");
 
   buildDotnetProject("Geo.API", geoApiDir);
   buildDotnetProject("REST Gateway", gatewayDir);

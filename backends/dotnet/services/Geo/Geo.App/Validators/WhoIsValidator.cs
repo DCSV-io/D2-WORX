@@ -8,6 +8,7 @@ namespace D2.Geo.App.Validators;
 
 using D2.Geo.Domain.Entities;
 using D2.Shared.Handler;
+using D2.Shared.Utilities.Extensions;
 using FluentValidation;
 
 /// <summary>
@@ -61,7 +62,7 @@ public class WhoIsValidator : AbstractValidator<WhoIs>
         // HashId: 64-char hex (if already computed).
         RuleFor(w => w.HashId)
             .IsValidHashId()
-            .When(w => !string.IsNullOrEmpty(w.HashId))
+            .When(w => w.HashId.Truthy())
             .OverridePropertyName($"{indexPrefix}hashId");
     }
 }

@@ -29,6 +29,20 @@
       "when": 1772179200000,
       "tag": "0003_add_sign_in_event_failure_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1772956800000,
+      "tag": "0004_add_user_locale",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773360000000,
+      "tag": "0005_add_sign_in_event_device_fingerprint",
+      "breakpoints": true
     }
   ]
 }

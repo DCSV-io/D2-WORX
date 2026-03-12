@@ -1,62 +1,18 @@
 import { z } from "zod";
-import {
-  BaseHandler,
-  type IHandlerContext,
-  type RedactionSpec,
-  zodGuid,
-  zodNonEmptyString,
-} from "@d2/handler";
+import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { generateUuidV7 } from "@d2/utilities";
-import { createOrgContact, GEO_CONTEXT_KEYS, type OrgContact } from "@d2/auth-domain";
-import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
-import { contactInputSchema, type Commands } from "@d2/geo-client";
+import { createOrgContact, GEO_CONTEXT_KEYS } from "@d2/auth-domain";
+import type { ContactToCreateDTO } from "@d2/protos";
+import { contactInputSchema, type Commands as GeoCommands } from "@d2/geo-client";
 import type {
   ICreateOrgContactRecordHandler,
   IDeleteOrgContactRecordHandler,
 } from "../../../../interfaces/repository/handlers/index.js";
+import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
-/** Contact details input shape (mirrors proto ContactToCreateDTO with optional nested fields). */
-export interface ContactInput {
-  readonly contactMethods?: {
-    readonly emails?: { readonly value: string; readonly labels?: string[] }[];
-    readonly phoneNumbers?: { readonly value: string; readonly labels?: string[] }[];
-  };
-  readonly personalDetails?: {
-    readonly title?: string;
-    readonly firstName?: string;
-    readonly preferredName?: string;
-    readonly middleName?: string;
-    readonly lastName?: string;
-    readonly generationalSuffix?: string;
-    readonly professionalCredentials?: string[];
-    readonly dateOfBirth?: string;
-    readonly biologicalSex?: string;
-  };
-  readonly professionalDetails?: {
-    readonly companyName?: string;
-    readonly jobTitle?: string;
-    readonly department?: string;
-    readonly companyWebsite?: string;
-  };
-  readonly location?: {
-    readonly coordinates?: { latitude: number; longitude: number };
-    readonly address?: { line1?: string; line2?: string; line3?: string };
-    readonly city?: string;
-    readonly postalCode?: string;
-    readonly subdivisionIso31662Code?: string;
-    readonly countryIso31661Alpha2Code?: string;
-  };
-}
-
-export interface CreateOrgContactInput {
-  readonly organizationId: string;
-  readonly label: string;
-  readonly isPrimary?: boolean;
-  readonly contact: ContactInput;
-}
-
-export type CreateOrgContactOutput = { contact: OrgContact; geoContact: ContactDTO };
+type Input = Commands.CreateOrgContactInput;
+type Output = Commands.CreateOrgContactOutput;
 
 const schema = z.object({
   organizationId: zodGuid,
@@ -74,20 +30,23 @@ const schema = z.object({
  * Geo contact with contextKey="auth_org_contact" and relatedEntityId=orgContact.id.
  * If Geo creation fails, the junction is rolled back (deleted).
  */
-export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateOrgContactOutput> {
+export class CreateOrgContact
+  extends BaseHandler<Input, Output>
+  implements Commands.ICreateOrgContactHandler
+{
   private readonly createRecord: ICreateOrgContactRecordHandler;
   private readonly deleteRecord: IDeleteOrgContactRecordHandler;
-  private readonly createContacts: Commands.ICreateContactsHandler;
+  private readonly createContacts: GeoCommands.ICreateContactsHandler;
 
-  get redaction(): RedactionSpec {
-    return { suppressInput: true, suppressOutput: true };
+  override get redaction() {
+    return Commands.CREATE_ORG_CONTACT_REDACTION;
   }
 
   constructor(
     createRecord: ICreateOrgContactRecordHandler,
     deleteRecord: IDeleteOrgContactRecordHandler,
     context: IHandlerContext,
-    createContacts: Commands.ICreateContactsHandler,
+    createContacts: GeoCommands.ICreateContactsHandler,
   ) {
     super(context);
     this.createRecord = createRecord;
@@ -95,9 +54,7 @@ export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateO
     this.createContacts = createContacts;
   }
 
-  protected async executeAsync(
-    input: CreateOrgContactInput,
-  ): Promise<D2Result<CreateOrgContactOutput | undefined>> {
+  protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
     const validation = this.validateInput(schema, input);
     if (!validation.success) return D2Result.bubbleFail(validation);
 
@@ -150,3 +107,9 @@ export class CreateOrgContact extends BaseHandler<CreateOrgContactInput, CreateO
     return D2Result.ok({ data: { contact, geoContact } });
   }
 }
+
+export type {
+  ContactInput,
+  CreateOrgContactInput,
+  CreateOrgContactOutput,
+} from "../../../../interfaces/cqrs/handlers/c/create-org-contact.js";

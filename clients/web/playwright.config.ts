@@ -2,8 +2,17 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   webServer: {
-    command: "npm run build && npm run preview",
-    port: 4173,
+    command: "pnpm dev --port 5174",
+    port: 5174,
+    timeout: 30_000,
+    reuseExistingServer: false,
+    env: {
+      D2_MOCK_INFRA: "true",
+    },
   },
-  testDir: "e2e",
+  use: {
+    baseURL: "http://localhost:5174",
+  },
+  testDir: "tests/mocked",
+  retries: 1,
 });

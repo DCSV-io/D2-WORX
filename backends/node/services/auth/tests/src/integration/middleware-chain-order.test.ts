@@ -8,14 +8,15 @@ import { HandlerContext, type IRequestContext } from "@d2/handler";
 import { createLogger } from "@d2/logging";
 import { MemoryCacheStore } from "@d2/cache-memory";
 import { enrichRequest } from "@d2/request-enrichment";
-import { FindWhoIs, type GeoClientOptions } from "@d2/geo-client";
-import { Check as RateLimitCheck } from "@d2/ratelimit";
+import { FindWhoIs, createGeoCircuitBreaker, type GeoClientOptions } from "@d2/geo-client";
+import { Singleflight } from "@d2/utilities";
+import { CheckRateLimit } from "@d2/ratelimit";
 import type { RateLimit } from "@d2/interfaces";
 import * as CacheRedis from "@d2/cache-redis";
 import { RedisContainer, type StartedRedisContainer } from "@testcontainers/redis";
 import Redis from "ioredis";
 
-const REQUEST_INFO_KEY = "requestInfo" as const;
+const REQUEST_CONTEXT_KEY = "requestContext" as const;
 
 /**
  * Tests that auth API middleware runs in the correct order and each layer
@@ -36,6 +37,9 @@ describe("Middleware chain order", () => {
     const request: IRequestContext = {
       traceId: "middleware-test",
       isAuthenticated: false,
+      isTrustedService: false,
+      isOrgEmulating: false,
+      isUserImpersonating: false,
       isAgentStaff: false,
       isAgentAdmin: false,
       isTargetingStaff: false,
@@ -58,12 +62,12 @@ describe("Middleware chain order", () => {
     const getTtl = new CacheRedis.GetTtl(redis, ctx);
     const increment = new CacheRedis.Increment(redis, ctx);
     const set = new CacheRedis.Set<string>(redis, ctx);
-    const rateLimitCheck = new RateLimitCheck(
+    const rateLimitCheck = new CheckRateLimit(
       getTtl,
       increment,
       set,
       {
-        clientFingerprintThreshold: 3,
+        deviceFingerprintThreshold: 3,
         ipThreshold: 3,
       },
       ctx,
@@ -80,6 +84,8 @@ describe("Middleware chain order", () => {
       apiKey: "",
       grpcTimeoutMs: 30_000,
       whoIsNegativeCacheExpirationMs: 3_600_000,
+      circuitBreakerFailureThreshold: 5,
+      circuitBreakerCooldownMs: 30_000,
     };
     const stubGeoClient = {
       findWhoIs: (
@@ -91,7 +97,16 @@ describe("Middleware chain order", () => {
         cb(null, { result: { success: true }, data: [] });
       },
     } as unknown as Parameters<typeof FindWhoIs>[1];
-    const findWhoIs = new FindWhoIs(whoIsCacheStore, stubGeoClient, geoOptions, ctx);
+    const geoCircuitBreaker = createGeoCircuitBreaker(geoOptions, logger);
+    const geoSingleflight = new Singleflight();
+    const findWhoIs = new FindWhoIs(
+      whoIsCacheStore,
+      stubGeoClient,
+      geoOptions,
+      geoCircuitBreaker,
+      geoSingleflight,
+      ctx,
+    );
 
     // Build Hono app with same middleware order as composition-root.ts
     app = new Hono();
@@ -123,8 +138,8 @@ describe("Middleware chain order", () => {
         c.req.raw.headers.forEach((value, key) => {
           headers[key] = value;
         });
-        const requestInfo = await enrichRequest(headers, findWhoIs, undefined, logger);
-        c.set(REQUEST_INFO_KEY, requestInfo);
+        const requestContext = await enrichRequest(headers, findWhoIs, undefined, logger);
+        c.set(REQUEST_CONTEXT_KEY, requestContext);
         await next();
       }),
     );
@@ -133,12 +148,12 @@ describe("Middleware chain order", () => {
     app.use(
       "*",
       createMiddleware(async (c, next) => {
-        const requestInfo = c.get(REQUEST_INFO_KEY) as RateLimit.CheckInput["requestInfo"];
-        if (!requestInfo) {
+        const requestContext = c.get(REQUEST_CONTEXT_KEY) as RateLimit.CheckInput["requestContext"];
+        if (!requestContext) {
           await next();
           return;
         }
-        const result = await rateLimitCheck.handleAsync({ requestInfo });
+        const result = await rateLimitCheck.handleAsync({ requestContext });
         if (result.success && result.data?.isBlocked) {
           const retryAfterSec = result.data.retryAfterMs
             ? Math.ceil(result.data.retryAfterMs / 1000)
@@ -189,9 +204,9 @@ describe("Middleware chain order", () => {
     expect(res.headers.get("X-Frame-Options")).toBe("DENY");
   });
 
-  it("should enrich request before rate limiting (rate limiter depends on requestInfo)", async () => {
+  it("should enrich request before rate limiting (rate limiter depends on requestContext)", async () => {
     // If enrichment didn't run before rate limiting, the rate limiter would
-    // skip (no requestInfo) and never block. Verify the ordering works by
+    // skip (no requestContext) and never block. Verify the ordering works by
     // flooding requests until we get a 429.
     // Must provide CF-Connecting-IP (the only trusted proxy header by default)
     // so clientIp != "unknown" (which is treated as localhost and skips the

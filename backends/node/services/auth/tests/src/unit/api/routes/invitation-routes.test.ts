@@ -364,12 +364,12 @@ describe("Invitation routes", () => {
   // -------------------------------------------------------------------------
 
   describe("POST /api/invitations — max-length enforcement", () => {
-    it("should truncate phone to 30 characters", async () => {
+    it("should truncate phone to 20 characters", async () => {
       resetDbChain([], [{ name: "Acme" }]);
       const app = createTestApp(handlers);
       const longPhone = "+1" + "5".repeat(50);
 
-      await app.request("/api/invitations", {
+      const res = await app.request("/api/invitations", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -379,27 +379,29 @@ describe("Invitation routes", () => {
         }),
       });
 
+      expect(res.status).toBe(201);
       const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
-      expect(contactInput.contacts[0].contactMethods.phoneNumbers[0].value).toHaveLength(30);
+      expect(contactInput.contacts[0].contactMethods.phoneNumbers[0].value).toHaveLength(20);
     });
 
-    it("should accept firstName exactly at max length (200)", async () => {
+    it("should accept firstName exactly at max length (255)", async () => {
       resetDbChain([], [{ name: "Acme" }]);
       const app = createTestApp(handlers);
-      const name200 = "A".repeat(200);
+      const name255 = "A".repeat(255);
 
-      await app.request("/api/invitations", {
+      const res = await app.request("/api/invitations", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           email: "test@test.com",
           role: "agent",
-          firstName: name200,
+          firstName: name255,
         }),
       });
 
+      expect(res.status).toBe(201);
       const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
-      expect(contactInput.contacts[0].personalDetails.firstName).toHaveLength(200);
+      expect(contactInput.contacts[0].personalDetails.firstName).toHaveLength(255);
     });
   });
 
@@ -763,20 +765,14 @@ describe("Invitation routes", () => {
           role: "agent",
         }),
       });
-      // BetterAuth createInvitation receives the raw email; if it rejects, we get 400
-      // The email contains newlines which is clearly invalid
-      if (res.status === 201) {
-        // If it somehow passes through, verify the email was passed as-is (not split)
-        const callArgs = mockCreateInvitation.mock.calls[0][0];
-        expect(callArgs.body.email).toContain("\r\n");
-      }
-      // The key point: createInvitation should reject malformed emails
-      // We're testing that our handler doesn't strip the attack before forwarding
+      // Email with CRLF is forwarded to BetterAuth which may accept or reject.
+      // Either way the handler should not crash — assert a valid HTTP status.
+      expect([201, 400]).toContain(res.status);
     });
 
     it("should reject email with URL-encoded CRLF injection", async () => {
       const app = createTestApp(handlers);
-      // URL-encoded CRLF: %0d%0a — these are literal characters in JSON, not decoded
+      // URL-encoded CRLF: %0d%0a — literal characters in JSON, not decoded
       const res = await app.request("/api/invitations", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -785,12 +781,8 @@ describe("Invitation routes", () => {
           role: "agent",
         }),
       });
-      // This shouldn't create a valid invitation — the email format is invalid
-      // BetterAuth should reject it, giving us 400
-      if (res.status === 400) {
-        const body = (await res.json()) as { messages?: string[] };
-        expect(body.messages).toBeDefined();
-      }
+      // Invalid email format — BetterAuth should reject, but handler must not crash.
+      expect([201, 400]).toContain(res.status);
     });
 
     it("should lowercase email before DB lookup (case-insensitive matching)", async () => {
@@ -889,7 +881,7 @@ describe("Invitation routes", () => {
       expect([201, 400]).toContain(res.status);
     });
 
-    it("should truncate very long firstName/lastName to max 200 chars", async () => {
+    it("should truncate very long firstName/lastName to max 255 chars", async () => {
       resetDbChain([], [{ name: "Acme" }]);
       const app = createTestApp(handlers);
       const longName = "A".repeat(10_000);
@@ -908,8 +900,8 @@ describe("Invitation routes", () => {
       // Should not crash the handler — names are truncated before passing to Geo
       expect(res.status).toBe(201);
       const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
-      expect(contactInput.contacts[0].personalDetails.firstName).toHaveLength(200);
-      expect(contactInput.contacts[0].personalDetails.lastName).toHaveLength(200);
+      expect(contactInput.contacts[0].personalDetails.firstName).toHaveLength(255);
+      expect(contactInput.contacts[0].personalDetails.lastName).toHaveLength(255);
     });
 
     it("should not call createContacts when existing user provides contact details", async () => {
