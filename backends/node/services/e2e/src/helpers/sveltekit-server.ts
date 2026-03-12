@@ -75,6 +75,12 @@ export async function startSvelteKitServer(opts: {
     REDIS_URL: opts.redisUrl,
     // Disable OTel in tests
     OTEL_SDK_DISABLED: "true",
+    // Override CI/mock flags so SvelteKit uses real infrastructure.
+    // GitHub Actions sets CI=true by default, which triggers mock mode
+    // in auth.server.ts and middleware.server.ts — but browser E2E tests
+    // have real infrastructure running via Testcontainers.
+    CI: "",
+    D2_MOCK_INFRA: "false",
   } as Record<string, string>;
 
   svelteKitProcess = spawn("pnpm", ["dev", "--port", String(port)], {

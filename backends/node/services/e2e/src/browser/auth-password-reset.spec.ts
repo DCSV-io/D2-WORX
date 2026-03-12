@@ -8,6 +8,7 @@
  * to extract the token from the stub email provider).
  */
 import { test, expect } from "@playwright/test";
+import { verifyUserEmail } from "./helpers.js";
 
 test.describe("password reset request (full stack)", () => {
   const TEST_EMAIL = `reset-${Date.now()}@e2e-test.com`;
@@ -25,6 +26,9 @@ test.describe("password reset request (full stack)", () => {
         password: TEST_PASSWORD,
       },
     });
+
+    // Mark email as verified (realistic password-reset scenario: user already verified)
+    await verifyUserEmail(TEST_EMAIL);
   });
 
   test("forgot password form submits and shows confirmation", async ({ page }) => {
@@ -34,9 +38,9 @@ test.describe("password reset request (full stack)", () => {
     await page.getByRole("textbox", { name: "Email", exact: true }).fill(TEST_EMAIL);
     await page.getByRole("button", { name: "Send Reset Link" }).click();
 
-    // Should show a success/confirmation message or redirect
+    // Should transition to the "sent" confirmation view
     // BetterAuth's forgetPassword returns success even for unknown emails (no enumeration)
-    await expect(page.getByText(/sent|check your email|reset link/i)).toBeVisible({
+    await expect(page.getByText("Check Your Email")).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -51,7 +55,7 @@ test.describe("password reset request (full stack)", () => {
     await page.getByRole("button", { name: "Send Reset Link" }).click();
 
     // Should still show confirmation (don't reveal whether email exists)
-    await expect(page.getByText(/sent|check your email|reset link/i)).toBeVisible({
+    await expect(page.getByText("Check Your Email")).toBeVisible({
       timeout: 10_000,
     });
   });

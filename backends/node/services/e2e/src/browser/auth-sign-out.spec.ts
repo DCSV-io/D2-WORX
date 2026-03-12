@@ -4,6 +4,7 @@
  * Verifies that signing out clears auth state and redirects to sign-in.
  */
 import { test, expect } from "@playwright/test";
+import { verifyUserEmail } from "./helpers.js";
 
 test.describe("sign-out flow (full stack)", () => {
   const TEST_EMAIL = `signout-${Date.now()}@e2e-test.com`;
@@ -21,6 +22,9 @@ test.describe("sign-out flow (full stack)", () => {
         password: TEST_PASSWORD,
       },
     });
+
+    // Mark email as verified so sign-in succeeds (BetterAuth requires verification)
+    await verifyUserEmail(TEST_EMAIL);
   });
 
   test("sign out after sign in clears session and redirects to sign-in", async ({ page }) => {

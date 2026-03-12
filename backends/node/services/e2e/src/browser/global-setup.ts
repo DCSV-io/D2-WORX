@@ -76,6 +76,8 @@ export default async function globalSetup() {
   // Export URLs so Playwright config and tests can use them
   process.env.SVELTEKIT_BASE_URL = svelteKitUrl;
   process.env.AUTH_BASE_URL = authHttp.baseUrl;
+  // Export DB URL so browser tests can verify users' emails directly
+  process.env.AUTH_DB_URL = getAuthPgUrl();
 }
 
 export { authHandle, authHttp, commsHandle };

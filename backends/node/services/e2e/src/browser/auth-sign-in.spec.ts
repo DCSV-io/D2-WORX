@@ -6,6 +6,7 @@
  * Requires a user to exist first (created via the Auth API directly, not via browser).
  */
 import { test, expect } from "@playwright/test";
+import { verifyUserEmail } from "./helpers.js";
 
 test.describe("sign-in flow (full stack)", () => {
   const TEST_EMAIL = `signin-${Date.now()}@e2e-test.com`;
@@ -24,6 +25,9 @@ test.describe("sign-in flow (full stack)", () => {
         password: TEST_PASSWORD,
       },
     });
+
+    // Mark email as verified so sign-in succeeds (BetterAuth requires verification)
+    await verifyUserEmail(TEST_EMAIL);
   });
 
   test.beforeEach(async ({ page }) => {
