@@ -2,7 +2,7 @@
   import type { SuperValidated } from "sveltekit-superforms";
   import { superForm } from "sveltekit-superforms";
   import { zod4Client as zodClient } from "sveltekit-superforms/adapters";
-  import { goto } from "$app/navigation";
+  import { goto, invalidateAll } from "$app/navigation";
   import { resolve } from "$app/paths";
   import { createSignInSchema, type SignInFormData } from "$lib/shared/forms/sign-in-schema.js";
   import { FormInput } from "$lib/client/components/forms/index.js";
@@ -60,6 +60,9 @@
             serverError = result.error.message ?? m.auth_sign_in_invalid_credentials();
             return;
           }
+
+          // Invalidate all loaders so $page.data.session is fresh before navigation.
+          await invalidateAll();
 
           const dest =
             returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")

@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { load } from "./+layout.server";
 
+const fakeUrl = { pathname: "/" } as URL;
+
 describe("root +layout.server.ts", () => {
   it("should return null session and user when locals are empty", async () => {
     const result = await load({
       locals: {},
+      url: fakeUrl,
     } as any);
 
     expect(result).toEqual({
@@ -23,6 +26,7 @@ describe("root +layout.server.ts", () => {
 
     const result = await load({
       locals: { session },
+      url: fakeUrl,
     } as any);
 
     expect(result).toEqual({
@@ -40,6 +44,7 @@ describe("root +layout.server.ts", () => {
 
     const result = await load({
       locals: { user },
+      url: fakeUrl,
     } as any);
 
     expect(result).toEqual({
