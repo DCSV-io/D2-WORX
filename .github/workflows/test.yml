@@ -499,6 +499,8 @@ jobs:
           mkdir -p backends/dotnet/gateways/REST/bin/Debug
           cp -r geo-api-build/* backends/dotnet/services/Geo/Geo.API/bin/Debug/ || true
           cp -r gateway-build/* backends/dotnet/gateways/REST/bin/Debug/ || true
+          chmod +x backends/dotnet/services/Geo/Geo.API/bin/Debug/net10.0/Geo.API || true
+          chmod +x backends/dotnet/gateways/REST/bin/Debug/net10.0/REST || true
 
       - name: Run E2E tests
         run: pnpm vitest run --project e2e-tests
@@ -549,6 +551,8 @@ jobs:
           mkdir -p backends/dotnet/gateways/REST/bin/Debug
           cp -r geo-api-build/* backends/dotnet/services/Geo/Geo.API/bin/Debug/ || true
           cp -r gateway-build/* backends/dotnet/gateways/REST/bin/Debug/ || true
+          chmod +x backends/dotnet/services/Geo/Geo.API/bin/Debug/net10.0/Geo.API || true
+          chmod +x backends/dotnet/gateways/REST/bin/Debug/net10.0/REST || true
 
       - name: Run browser E2E tests
         run: npx playwright test --config playwright.config.ts
