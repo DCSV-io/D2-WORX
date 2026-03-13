@@ -116,9 +116,9 @@ US, CA, GB are exempt from country-level blocking to avoid false positives from 
 
 ### Delivery Deduplication (Comms)
 
-- Each notification gets a unique `correlationId` for cross-service tracking
-- Delivery attempts are recorded in the database with a unique `correlationId` per request
-- **Gap:** A unique constraint on `(delivery_request_id, channel, attempt_number)` is documented here but not yet implemented in the Drizzle schema — see PLANNING.md issue #42
+- Each `delivery_request` gets a unique `correlationId` (unique index) for cross-service tracking
+- `delivery_attempt` rows are linked to their parent request via `delivery_request_id` — deduplication is at the request level
+- **Gap:** A unique constraint on `(delivery_request_id, channel, attempt_number)` for attempt-level deduplication is not yet implemented in the Drizzle schema — see PLANNING.md issue #42
 
 ---
 

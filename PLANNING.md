@@ -292,7 +292,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | --------- | -------- | ---------- | ------------- | ------------------------------------------------------------------------------ |
 | Geo       | .NET     | ✅ Done    | 798 passing   | Geographic reference data, locations, contacts, WHOIS, multi-tier caching      |
 | Auth      | Node.js  | 🚧 Stage C | 969 passing   | Hono + BetterAuth + Drizzle. Stages A-B done, BFF client done, E2E tested     |
-| Comms     | Node.js  | 🚧 Stage A | 575 passing   | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs       |
+| Comms     | Node.js  | 🚧 Stage B | 575 passing   | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)   |
 | dkron-mgr | Node.js  | ✅ Done    | 64 passing    | Declarative Dkron job reconciler — drift detection, orphan cleanup             |
 
 ### Gateways

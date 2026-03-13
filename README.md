@@ -43,7 +43,7 @@ WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and
 | Geo service (.NET)            | ✅ Done        | 798 passing   |
 | .NET REST gateway             | ✅ Done        | —             |
 | Auth service (Node.js)        | 🚧 Stage C    | 969 passing   |
-| Comms service (Node.js)       | 🚧 Stage A    | 575 passing   |
+| Comms service (Node.js)       | 🚧 Stage B    | 575 passing   |
 | Scheduled jobs (Dkron)        | ✅ Done        | 64 passing    |
 | E2E cross-service tests       | ✅ Done        | 31 passing    |
 | SvelteKit web client          | 🚧 Stage B    | 706 passing   |
@@ -272,7 +272,7 @@ _Shared abstractions used across all services on both platforms._
 | Proto Contracts  | [Protos.DotNet](backends/dotnet/shared/protos/_gen/Protos.DotNet/PROTOS_DOTNET.md)    | [@d2/protos](backends/node/shared/protos/PROTOS.md)                                                              | Generated gRPC types from `contracts/protos/`   |
 | Testing          | [Tests](backends/dotnet/shared/Tests/TESTS.md)                                        | [@d2/testing](backends/node/shared/testing/TESTING.md) / [@d2/shared-tests](backends/node/shared/tests/TESTS.md) | Test infrastructure and suites                  |
 
-> **Platform-exclusive packages:** Handler Ext. is .NET-only (JWT claim extraction — Node.js uses BetterAuth directly). DI Container is Node-only (.NET has built-in `Microsoft.Extensions.DI`). Logging is Node-only (.NET has built-in `ILogger<T>`). i18n is Node-only (.NET i18n not yet built — Geo has hardcoded English in D2Result messages/inputErrors, tracked in PLANNING.md).
+> **Platform-exclusive packages:** Handler Ext. is .NET-only (JWT claim extraction — Node.js uses BetterAuth directly). DI Container is Node-only (no dedicated .NET package — .NET has built-in `Microsoft.Extensions.DI`). Logging is Node-only (no dedicated .NET package — .NET has built-in `ILogger<T>`). i18n is Node-only (.NET i18n not yet built — Geo has hardcoded English in D2Result messages/inputErrors, tracked in PLANNING.md).
 
 ### Shared Implementations
 
@@ -318,7 +318,7 @@ _Domain-specific microservices. Each service owns its data and communicates via 
 | ---------------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------- |
 | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)         | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
 | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — Stages A-B done, BFF client done        |
-| [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Stage A | Delivery engine — email/SMS, RabbitMQ consumer, gRPC API, scheduled jobs         |
+| [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Stage B | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)     |
 | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md) | Node.js  | ✅ Done    | Declarative Dkron job reconciler — drift detection, orphan cleanup                |
 
 _Service internals (DDD layers):_
