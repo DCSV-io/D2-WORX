@@ -679,10 +679,10 @@ backends/node/services/comms/
 
 ## Phasing
 
-### Phase 1: Delivery Engine (unblocks Auth sign-up flow)
+### Stage A: Delivery Engine (unblocks Auth sign-up flow) ✅
 
 - [x] Domain entities: Message, DeliveryRequest, DeliveryAttempt, ChannelPreference
-- [x] Domain entities (Phase 2-3): Thread, ThreadParticipant, MessageAttachment, MessageReaction, MessageReceipt (fully implemented, not stubs)
+- [x] Domain entities (Stage C): Thread, ThreadParticipant, MessageAttachment, MessageReaction, MessageReceipt (fully implemented, not stubs)
 - [x] Domain rules: channel resolution (sensitive -> email only, urgent -> bypass prefs, normal -> follow prefs), retry policy, recipient validation, message validation
 - [x] App layer: Deliver handler (orchestrator), RecipientResolver, SetChannelPreference, GetChannelPreference
 - [x] Infra: Drizzle schema + migrations (message, delivery_request, delivery_attempt, channel_preference)
@@ -690,26 +690,26 @@ backends/node/services/comms/
 - [x] Infra: Email provider (Resend API), SMS provider (Twilio API)
 - [x] Infra: RabbitMQ notification-consumer (subscribes to `comms.notifications` fanout exchange)
 - [x] Infra: DLX-based retry topology (5 tier queues with escalating TTLs)
-- [x] Proto: `contracts/protos/comms/v1/comms.proto` -- full Phase 1-3 gRPC service surface
-- [x] API: gRPC server (`@d2/comms-api`) -- composition root, mappers, Phase 1 handlers wired, Phase 2-3 stubs return UNIMPLEMENTED
+- [x] Proto: `contracts/protos/comms/v1/comms.proto` -- full Stage A-C gRPC service surface
+- [x] API: gRPC server (`@d2/comms-api`) -- composition root, mappers, Stage A handlers wired, Stage B-C stubs return UNIMPLEMENTED
 - [x] API: `main.ts` entrypoint (gRPC server + RabbitMQ consumer)
 - [x] Aspire: Auth + Comms services wired via `AddJavaScriptApp` + `.WithPnpm()`
 - [x] CI: GitHub Actions jobs for comms unit + integration tests
-- [x] Tests: 592 unit + integration tests passing (46 test files)
+- [x] Tests: 575 unit + integration tests passing
 - [x] RecipientResolver: contactId via `GetContactsByIds` (contacts-only resolution)
 - [x] Client: `@d2/comms-client` -- `Notify` handler publishes to `comms.notifications` fanout exchange via RabbitMQ
 - [x] Markdown rendering: `marked` (17.0.3) + `isomorphic-dompurify` (2.36.0) for XSS-safe HTML email
 - [x] Auth integration: verification email, password reset, invitation email -- Auth uses `@d2/comms-client`
 - [x] E2E tests: 5 cross-service tests (verification, password reset, invitation for new + existing users)
 
-### Phase 2: In-App Notifications + Push
+### Stage B: In-App Notifications + Push
 
 - [ ] Notification entity + CRUD handlers
 - [ ] Push via gRPC to SignalR gateway (requires gateway to exist)
 - [ ] Notification history query API
 - [ ] Mark as read / bulk mark as read
 
-### Phase 3: Conversational Messaging
+### Stage C: Conversational Messaging
 
 - [ ] Thread, ThreadParticipant, Message, MessageAttachment, MessageReaction entities
 - [ ] Thread CRUD + participant management
@@ -718,7 +718,7 @@ backends/node/services/comms/
 - [ ] Real-time thread updates via SignalR gateway
 - [ ] File upload integration (MinIO)
 
-### Phase 4: Advanced
+### Stage D: Advanced
 
 - [ ] SMS provider integration
 - [ ] Delivery analytics / dashboards

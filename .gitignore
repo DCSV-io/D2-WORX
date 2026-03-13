@@ -172,3 +172,5 @@ nul
 /screenshots/
 **/screenshots/
 .playwright-mcp/
+/playwright-report/
+**/playwright-report/

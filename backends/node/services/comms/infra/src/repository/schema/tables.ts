@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
-// message — standalone transactional messages only (threadId always null in Phase 1)
+// message — standalone transactional messages only (threadId always null in Stage A)
 // ---------------------------------------------------------------------------
 export const message = pgTable(
   "message",

@@ -17,7 +17,7 @@ How D²-WORX prevents duplicate actions, ensures idempotency, and maintains corr
 ### Content-Addressable Entities (Geo)
 
 - `Location` and `WhoIs` entities use SHA-256 content-addressable hash IDs (64-char hex)
-- Identical input always produces the same ID — `INSERT ... ON CONFLICT DO NOTHING` makes creation inherently idempotent
+- Identical input always produces the same ID — app-level deduplication (query existing by hash IDs, insert only new ones) makes creation inherently idempotent
 - No duplicate data regardless of how many times the same entity is created
 
 ### Contacts (Auth → Geo)
@@ -117,8 +117,8 @@ US, CA, GB are exempt from country-level blocking to avoid false positives from 
 ### Delivery Deduplication (Comms)
 
 - Each notification gets a unique `correlationId` for cross-service tracking
-- Delivery attempts are recorded in the database — duplicate delivery detection uses unique constraints on `(delivery_request_id, channel, attempt_number)`
-- DB constraint violations (PG error `23505`) are caught and treated as no-ops, not errors
+- Delivery attempts are recorded in the database with a unique `correlationId` per request
+- **Gap:** A unique constraint on `(delivery_request_id, channel, attempt_number)` is documented here but not yet implemented in the Drizzle schema — see PLANNING.md issue #42
 
 ---
 

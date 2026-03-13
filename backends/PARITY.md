@@ -4,30 +4,31 @@ Tracks which shared infrastructure packages exist on both .NET and Node.js platf
 
 ## Shared Infrastructure
 
-| Concern                   | .NET Project                         | Node.js Package          | Status    |
-| ------------------------- | ------------------------------------ | ------------------------ | --------- |
-| D2Result                  | `D2.Shared.Result`                   | `@d2/result`             | Parity    |
-| D2Result ↔ Proto          | `D2.Shared.Result.Extensions`        | `@d2/result-extensions`  | Parity    |
-| Handler pattern           | `D2.Shared.Handler`                  | `@d2/handler`            | Parity    |
-| Handler JWT extensions    | `D2.Shared.Handler.Extensions`       | —                        | .NET-only |
-| DI                        | `Microsoft.Extensions.DI` (built-in) | `@d2/di`                 | Parity    |
-| Logging                   | `ILogger<T>` (MEDI)                  | `@d2/logging`            | Parity    |
-| Interfaces / contracts    | `D2.Shared.Interfaces`               | `@d2/interfaces`         | Parity    |
-| Utilities                 | `D2.Shared.Utilities`                | `@d2/utilities`          | Parity    |
-| Service defaults (OTel)   | `D2.Shared.ServiceDefaults`          | `@d2/service-defaults`   | Parity    |
-| Proto types               | `D2.Shared.Protos`                   | `@d2/protos`             | Parity    |
-| In-memory cache           | `InMemoryCache.Default`              | `@d2/cache-memory`       | Parity    |
-| Distributed cache (Redis) | `DistributedCache.Redis`             | `@d2/cache-redis`        | Parity    |
-| Request enrichment        | `RequestEnrichment.Default`          | `@d2/request-enrichment` | Parity    |
-| Rate limiting             | `RateLimit.Default`                  | `@d2/ratelimit`          | Parity    |
-| Idempotency               | `Idempotency.Default`                | `@d2/idempotency`        | Parity    |
-| PG batch queries          | `Batch.Pg`                           | `@d2/batch-pg`           | Parity    |
-| PG transactions           | `Transactions.Pg`                    | —                        | .NET-only |
-| PG error helpers          | `Errors.Pg`                          | `@d2/errors-pg`          | Parity    |
-| Messaging                 | `Messaging.RabbitMQ`                 | `@d2/messaging`          | Parity    |
-| Geo client                | `Geo.Client`                         | `@d2/geo-client`         | Parity    |
-| Comms client              | —                                    | `@d2/comms-client`       | Node-only |
-| Auth BFF client           | —                                    | `@d2/auth-bff-client`    | Node-only |
+| Concern                   | .NET Project                         | Node.js Package          | Status    | Why exclusive?                                                          |
+| ------------------------- | ------------------------------------ | ------------------------ | --------- | ----------------------------------------------------------------------- |
+| D2Result                  | `D2.Shared.Result`                   | `@d2/result`             | Parity    |                                                                         |
+| D2Result ↔ Proto          | `D2.Shared.Result.Extensions`        | `@d2/result-extensions`  | Parity    |                                                                         |
+| Handler pattern           | `D2.Shared.Handler`                  | `@d2/handler`            | Parity    |                                                                         |
+| Handler JWT extensions    | `D2.Shared.Handler.Extensions`       | —                        | .NET-only | Node.js uses BetterAuth directly — no JWT validation middleware needed  |
+| DI                        | `Microsoft.Extensions.DI` (built-in) | `@d2/di`                 | Parity    |                                                                         |
+| Logging                   | `ILogger<T>` (built-in)              | `@d2/logging`            | Parity    |                                                                         |
+| Interfaces / contracts    | `D2.Shared.Interfaces`               | `@d2/interfaces`         | Parity    |                                                                         |
+| Utilities                 | `D2.Shared.Utilities`                | `@d2/utilities`          | Parity    |                                                                         |
+| Service defaults (OTel)   | `D2.Shared.ServiceDefaults`          | `@d2/service-defaults`   | Parity    |                                                                         |
+| Proto types               | `D2.Shared.Protos`                   | `@d2/protos`             | Parity    |                                                                         |
+| In-memory cache           | `InMemoryCache.Default`              | `@d2/cache-memory`       | Parity    |                                                                         |
+| Distributed cache (Redis) | `DistributedCache.Redis`             | `@d2/cache-redis`        | Parity    |                                                                         |
+| Request enrichment        | `RequestEnrichment.Default`          | `@d2/request-enrichment` | Parity    |                                                                         |
+| Rate limiting             | `RateLimit.Default`                  | `@d2/ratelimit`          | Parity    |                                                                         |
+| Idempotency               | `Idempotency.Default`                | `@d2/idempotency`        | Parity    |                                                                         |
+| PG batch queries          | `Batch.Pg`                           | `@d2/batch-pg`           | Parity    |                                                                         |
+| PG transactions           | `Transactions.Pg`                    | —                        | .NET-only | Drizzle lacks ambient/scoped transactions across handler calls          |
+| PG error helpers          | `Errors.Pg`                          | `@d2/errors-pg`          | Parity    |                                                                         |
+| Messaging                 | `Messaging.RabbitMQ`                 | `@d2/messaging`          | Parity    |                                                                         |
+| Geo client                | `Geo.Client`                         | `@d2/geo-client`         | Parity    |                                                                         |
+| Comms client              | —                                    | `@d2/comms-client`       | Node-only | .NET services don't publish to Comms exchange (Comms is Node.js-only)   |
+| Auth BFF client           | —                                    | `@d2/auth-bff-client`    | Node-only | .NET gateway validates JWTs directly via JWKS, no BFF proxy needed     |
+| i18n                      | —                                    | `@d2/i18n`               | Node-only | .NET i18n not yet built — Geo has hardcoded English in D2Result messages |
 
 ## API-Level Differences
 
@@ -54,3 +55,4 @@ Where parity exists, the APIs are adapted to each platform's idioms:
 - **@d2/comms-client** — Thin RabbitMQ publisher for the Comms delivery engine. Not needed in .NET because .NET services don't publish to the Comms notification exchange (Comms is a Node.js-only service).
 - **@d2/di** — Custom DI container mirroring `IServiceCollection`/`IServiceProvider`. .NET uses the built-in `Microsoft.Extensions.DependencyInjection`.
 - **@d2/auth-bff-client** — BFF auth client for SvelteKit: session resolution, JWT management, auth proxy, route guards. HTTP-only (no BetterAuth dependency). No .NET equivalent — .NET gateway validates JWTs directly via JWKS.
+- **@d2/i18n** — Shared i18n utilities (supported locales, translator). .NET equivalent not yet built — Geo service has hardcoded English strings in D2Result messages and FluentValidation inputErrors. Tracked as an open issue in PLANNING.md.
