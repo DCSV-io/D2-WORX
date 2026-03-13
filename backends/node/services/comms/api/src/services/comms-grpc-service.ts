@@ -58,7 +58,7 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
       });
     },
 
-    // ---- Phase 1: Delivery Engine ----
+    // ---- Stage A: Delivery Engine ----
 
     getChannelPreference: (call, callback) => {
       return withTraceContext(call, async () => {
@@ -176,7 +176,7 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
       });
     },
 
-    // ---- Phase 2: In-App Notifications (stubs) ----
+    // ---- Stage B: In-App Notifications (stubs) ----
     getNotifications: (_call, cb) => {
       cb({ code: grpc.status.UNIMPLEMENTED, message: "Not implemented" });
     },
@@ -184,7 +184,7 @@ export function createCommsGrpcService(provider: ServiceProvider): CommsServiceS
       cb({ code: grpc.status.UNIMPLEMENTED, message: "Not implemented" });
     },
 
-    // ---- Phase 3: Conversational Messaging (stubs) ----
+    // ---- Stage C: Conversational Messaging (stubs) ----
     createThread: (_call, cb) => {
       cb({ code: grpc.status.UNIMPLEMENTED, message: "Not implemented" });
     },

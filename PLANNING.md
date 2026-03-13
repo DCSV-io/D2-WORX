@@ -22,7 +22,7 @@
    - [Shared Packages (Node.js)](#shared-packages-nodejs)
    - [Services](#services)
    - [Gateways](#gateways)
-   - [Frontend](#frontend)
+   - [Frontends](#frontends)
 5. [Architecture Decisions](#architecture-decisions)
    - [ADR-001: Authentication Architecture](#adr-001-authentication-architecture)
    - [ADR-002: Rate Limiting Strategy](#adr-002-rate-limiting-strategy)
@@ -42,6 +42,10 @@
    - [ADR-016: Environment Variable Architecture](#adr-016-environment-variable-architecture)
    - [ADR-017: Auth BFF Client Pattern](#adr-017-auth-bff-client-pattern)
    - [ADR-018: Dependency Update Policy](#adr-018-dependency-update-policy)
+   - [ADR-019: Three-Tier Playwright Test Architecture](#adr-019-three-tier-playwright-test-architecture)
+   - [ADR-020: D2_MOCK_INFRA Infrastructure Stubbing](#adr-020-d2_mock_infra-infrastructure-stubbing)
+   - [ADR-021: Grafana Faro Client Telemetry](#adr-021-grafana-faro-client-telemetry)
+   - [ADR-022: Design System-First Development](#adr-022-design-system-first-development)
 
 ---
 
@@ -51,15 +55,16 @@
 
 - **Phase 1: TypeScript Shared Infrastructure** ✅ — 19 shared `@d2/*` packages mirroring .NET (result, handler, DI, caching, messaging, middleware, batch-pg, errors-pg)
 - **Phase 2 Stage A: Cross-cutting foundations** ✅ — Retry utility, idempotency middleware, UUIDv7
-- **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (922 tests, 71 test files)
-- **Comms Service Phase 1** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (592 tests, 46 test files)
-- **E2E Cross-Service Tests** ✅ — 15 tests (Auth → Geo → Comms delivery pipeline + Dkron job chain + BFF client integration)
+- **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (969 tests)
+- **Comms Service Stage A** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (575 tests)
+- **E2E Cross-Service Tests** ✅ — 31 tests (22 API-level + 9 browser E2E: Auth → Geo → Comms delivery pipeline + Dkron job chain + BFF client integration)
 - **Cross-platform Parity** ✅ — `@d2/batch-pg`, `@d2/errors-pg`, .NET `Errors.Pg`, documented in `backends/PARITY.md`
 - **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware
-- **Geo Service** ✅ — Complete (.NET), 759 tests
+- **Geo Service** ✅ — Complete (.NET), 798 tests
 - **Production-readiness Sweep** ✅ — 40 items triaged, all high/medium fixed, polish items done
-- **Scheduled Jobs (Dkron)** ✅ — 8 daily maintenance jobs (Auth 4, Geo 2, Comms 2), `@d2/dkron-mgr` reconciler (64 tests), full-chain E2E tested (12 E2E tests)
-- **Shared tests** — 857 passing (67 test files)
+- **Scheduled Jobs (Dkron)** ✅ — 8 daily maintenance jobs (Auth 4, Geo 2, Comms 2), `@d2/dkron-mgr` reconciler (64 tests), full-chain E2E tested
+- **SvelteKit Web Client Steps 0–9** ✅ — Design system, routing, auth BFF, gateway client, forms, auth pages, fingerprinting, Faro telemetry, three-tier Playwright tests (706 tests: 551 Vitest + 146 mocked Playwright + 9 browser E2E)
+- **Shared tests** — 1,127 passing
 
 ### Phase 2: Auth Service + SvelteKit Integration
 
@@ -85,7 +90,7 @@
 - **Session management** — Org switching, active session list, sign-out
 - **App shell finalization** — Org-type nav, org switcher, emulation banner, breadcrumbs
 - **SignalR integration** — Browser → .NET gateway direct (`@microsoft/signalr`)
-- **Comms Phase 2** — In-app notifications, push via SignalR
+- **Comms Stage B** — In-app notifications, push via SignalR
 
 Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/AUTH.md).
 
@@ -96,7 +101,7 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 3. **User impersonation** (escalated support — act as a specific user, audit-logged, time-limited)
 4. **Admin control panel** (cross-org visibility, user/org management, system diagnostics)
 5. **Admin alerting** (rate limit threshold alerts via Comms service)
-6. **Comms expansion** — In-app notifications, push via SignalR, conversational messaging (Comms Phases 2-4)
+6. **Comms expansion** — In-app notifications, push via SignalR, conversational messaging (Comms Stages B-D)
 
 ---
 
@@ -104,9 +109,11 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 ### Open — Can Fix Now
 
-| #   | Item                | Owner | Effort | Notes                                                                                                                                                                                                                                                                                                                                   |
-| --- | ------------------- | ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 40  | OTel alerting rules | All   | Medium | Grafana is running — no longer blocked. Define Grafana alert rules + alerting channel config. Targets: error rate >5% 5xx over 5min, latency P99 >2s, rate limit blocks per dimension, delivery failures, gRPC failure rate, service unavailability (RabbitMQ down, Redis down). Requires alert rule YAML + notification channel setup. |
+| #   | Item                          | Owner | Effort | Notes                                                                                                                                                                                                                                                                                                                                   |
+| --- | ----------------------------- | ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 40  | OTel alerting rules           | All   | Medium | Grafana is running — no longer blocked. Define Grafana alert rules + alerting channel config. Targets: error rate >5% 5xx over 5min, latency P99 >2s, rate limit blocks per dimension, delivery failures, gRPC failure rate, service unavailability (RabbitMQ down, Redis down). Requires alert rule YAML + notification channel setup. |
+| 41  | .NET i18n for D2Result output | Geo   | Medium | Geo.App has hardcoded English in FluentValidation messages and D2Result `inputErrors`/`messages`. End users see these. Domain-layer validation (entities, value objects) is exempt — domain stays pure, no i18n dependency. But app-layer and above must translate. Need a .NET i18n solution (resource files or shared translation keys from `contracts/messages/`) so handler output respects the caller's locale. `@d2/i18n` exists for Node.js but has no .NET equivalent. |
+| 42  | Comms delivery_attempt unique constraint | Comms | Low | OPERATIONAL-GUARANTEES.md documents a unique constraint on `(delivery_request_id, channel, attempt_number)` in the `delivery_attempt` table, but it doesn't exist in the Drizzle schema (`comms/infra/src/repository/schema/tables.ts`). Add a composite unique index to prevent duplicate delivery attempts for the same request+channel+attempt. |
 
 ### Open Questions
 
@@ -147,18 +154,18 @@ From Q1 2026 audit:
 | --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
 | 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
-| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Phase 2/3)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
+| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Stage B/C)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
 | 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
 | 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
 | 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
 | 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
-| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Phase 2/3)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
+| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Stage B/C)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
 
 ---
 
 ## Work in Progress
 
-Current focus: **Phase 2 Stage C — SvelteKit Web Client** (`feat/client-web` branch)
+Current focus: **Phase 2 Stage D — Onboarding + App Shell**
 
 Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMPLEMENTATION_PLAN.md)
 
@@ -193,6 +200,8 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Recently Completed
 
+- **SvelteKit web client merged to main** (PR #44): Steps 0–9 complete — design system (27 shadcn components, 3 OKLCH presets), routing (auth/onboarding/app groups), auth BFF proxy + JWT manager, API gateway client, forms (Superforms + Zod 4), auth pages (5 locales), device fingerprinting, Grafana Faro telemetry, three-tier Playwright tests. 706 SvelteKit tests total (551 Vitest + 146 mocked Playwright + 9 browser E2E)
+- Browser E2E tests (Tier 2): 9 full-stack tests — sign-up, sign-in, sign-out, password reset. Self-contained via Testcontainers (PG, Redis, RabbitMQ) + .NET Geo child process + in-process Auth + SvelteKit dev server
 - Playwright test restructure: Mocked tests moved from `e2e/` to `tests/mocked/` with `D2_MOCK_INFRA` mock injection. 146 mocked tests passing (5 skipped pending authenticated sessions). Three-tier test architecture: mocked CI, local E2E (`tests/e2e/`), true browser E2E (`backends/node/services/e2e/`)
 - PR review fixes (#42–#53): CI job for bff-client tests, 72 new tests (reset-password, forgot-password, form-actions, auth-gateway-client, auth.server, middleware.server), shared `executeFetch()` extraction, schema dedup, .NET CORS multi-origin, empty-message fallback bug fix, CLAUDE.md path fix
 - Singleflight deduplication (#32): `Singleflight` utility on both .NET and Node.js, wired into FindWhoIs to coalesce concurrent gRPC calls for the same cache key
@@ -279,18 +288,12 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Services
 
-| Service           | Status         | Notes                                                                                                            |
-| ----------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Geo.Domain        | ✅ Done        | Entities, value objects                                                                                          |
-| Geo.App           | ✅ Done        | CQRS handlers, mappers                                                                                           |
-| Geo.Infra         | ✅ Done        | Repository, messaging                                                                                            |
-| Geo.API           | ✅ Done        | gRPC service                                                                                                     |
-| Geo.Client        | ✅ Done        | Service-owned client library (messages, interfaces, handlers)                                                    |
-| Geo.Tests         | ✅ Done        | 798 tests passing (626 unit + 172 integration)                                                                   |
-| **Auth Service**  | 🚧 In Progress | Node.js + Hono + BetterAuth (`backends/node/services/auth/`). Stage B done + invitation email delivery + E2E     |
-| **Auth.Tests**    | 🚧 In Progress | Auth service tests (`backends/node/services/auth/tests/`) — 972 tests passing                                    |
-| **Comms Service** | 🚧 In Progress | Node.js delivery engine (`backends/node/services/comms/`). Phase 1 done (email + SMS + gRPC + RabbitMQ consumer) |
-| **Comms.Tests**   | 🚧 In Progress | Comms service tests (`backends/node/services/comms/tests/`) — 597 tests passing                                  |
+| Service   | Platform | Status     | Tests         | Notes                                                                          |
+| --------- | -------- | ---------- | ------------- | ------------------------------------------------------------------------------ |
+| Geo       | .NET     | ✅ Done    | 798 passing   | Geographic reference data, locations, contacts, WHOIS, multi-tier caching      |
+| Auth      | Node.js  | 🚧 Stage C | 969 passing   | Hono + BetterAuth + Drizzle. Stages A-B done, BFF client done, E2E tested     |
+| Comms     | Node.js  | 🚧 Stage B | 575 passing   | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)   |
+| dkron-mgr | Node.js  | ✅ Done    | 64 passing    | Declarative Dkron job reconciler — drift detection, orphan cleanup             |
 
 ### Gateways
 
@@ -299,15 +302,15 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | REST Gateway    | ✅ Done    | HTTP/REST → gRPC with request enrichment + rate limiting |
 | SignalR Gateway | 📋 Planned | WebSocket → gRPC                                         |
 
-### Frontend
+### Frontends
 
 | Component            | Status         | Notes                                                                                                  |
 | -------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
-| SvelteKit App        | 🚧 In Progress | Steps 0–9 done (design, routing, auth BFF, gateway, forms, auth pages, fingerprinting, Faro telemetry) |
+| SvelteKit App        | 🚧 Stage B     | Stage A (Steps 0–9) merged to main. Stage B (Steps 10–12: onboarding, app shell, SignalR) pending |
 | Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)                                           |
 | API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)                                              |
 | Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit                                            |
-| Playwright Tests     | ✅ Done        | Three-tier: mocked CI (`tests/mocked/`, 146 passing, 5 skipped), local E2E, true browser E2E          |
+| Playwright Tests     | ✅ Done        | Three-tier architecture (ADR-019): mocked CI (`tests/mocked/`, 146 passing, 5 skipped), local E2E (`tests/e2e/`), true browser E2E (`backends/node/services/e2e/`, 9 passing) |
 | OpenTelemetry        | ✅ Done        | Server instrumentation via OTLP/HTTP. Client telemetry via Grafana Faro (Step 9)                       |
 
 ---
@@ -991,7 +994,7 @@ All notifications use a single `NotifyInput` shape — no per-event templates, n
 | ------- | ---------- | ------------------------------------------------------- |
 | Email   | Resend     | Markdown → HTML via `marked` + `isomorphic-dompurify`   |
 | SMS     | Twilio     | Plain text content, trial mode until 10DLC registration |
-| Push    | SignalR GW | gRPC client → SignalR gateway (future, Phase 2)         |
+| Push    | SignalR GW | gRPC client → SignalR gateway (future, Stage B)         |
 
 **RabbitMQ topology:**
 
@@ -1237,4 +1240,174 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 
 ---
 
-_Last updated: 2026-03-04_
+### ADR-019: Three-Tier Playwright Test Architecture
+
+**Status**: Implemented (2026-03)
+
+**Context**: The initial Playwright E2E tests (`clients/web/e2e/`, 11 spec files) required a live SvelteKit server + all backends (Auth, Geo, Redis) but didn't spin up their own infrastructure. A CI bypass (`D2_MOCK_INFRA`) nulled out middleware/auth so the app rendered without backends, but this made form submission tests meaningless — they silently failed or hung. Tests weren't categorized by what infrastructure they actually needed.
+
+**Decision**: Three tiers with clear boundaries, each with its own config, runner, and CI strategy.
+
+| Tier | Location                            | Infrastructure                                                                       | CI?     | Purpose                                   |
+| ---- | ----------------------------------- | ------------------------------------------------------------------------------------ | ------- | ----------------------------------------- |
+| 1    | `clients/web/tests/mocked/`        | SvelteKit dev server only (`D2_MOCK_INFRA=true`), `page.route()` API mocks          | Yes     | UI rendering, client validation, nav      |
+| 2    | `backends/node/services/e2e/`      | Full stack: Testcontainers (PG, Redis, RabbitMQ) + .NET Geo + in-process Auth/Comms  | Yes     | High-value end-to-end user flows          |
+| 3    | `clients/web/tests/e2e/`           | Expects all services running externally (Aspire or manual)                           | No      | Comprehensive local-only coverage         |
+
+**Tier 1 — Mocked Playwright** (146 tests, 5 skipped):
+- Config: `clients/web/playwright.config.ts` → `testDir: "tests/mocked"`
+- Mocking: `page.route()` intercepts for auth API, email availability, Geo validation
+- Shared fixtures: `tests/mocked/fixtures.ts` — `mockAuthApi()`, `mockGeoApi()`
+- CI job: `web-playwright-mocked` — runs on every PR/push, no backends needed
+
+**Tier 2 — True Browser E2E** (9 tests):
+- Config: `backends/node/services/e2e/playwright.config.ts`
+- Global setup/teardown: starts all infra + services + SvelteKit dev server, exports URLs via env
+- Helper: `startSvelteKitServer()` — same pattern as `startGeoService()` (spawn, poll health, return URL)
+- Shares infrastructure helpers with existing Vitest E2E tests (Testcontainers, .NET child processes)
+- CI job: `e2e-browser` — runs alongside API-level E2E jobs
+
+**Tier 3 — Wide Local E2E** (local only):
+- Config: `clients/web/playwright.local.config.ts`
+- Script: `pnpm test:e2e:local`
+- Not in CI — requires manually running all services
+
+**Key design decision**: Playwright Test runner (not Playwright-as-library-in-Vitest) for Tier 2 because auto per-test page/context isolation, trace viewer, HTML reporter, `--ui` mode, and `globalSetup`/`globalTeardown` are purpose-built for browser E2E.
+
+**Rationale**:
+
+- Clear separation: each tier has one job and no ambiguity about what infrastructure it needs
+- CI-friendly: Tier 1 and 2 run in CI with zero external dependencies (mocked or self-contained)
+- Mocked tests are fast (~30s) and catch UI regressions without backend complexity
+- True E2E tests catch integration bugs that mocks miss (cookie signing, session flow, Geo contact creation)
+- Local-only tier allows comprehensive coverage without CI cost
+
+---
+
+### ADR-020: D2_MOCK_INFRA Infrastructure Stubbing
+
+**Status**: Implemented (2026-03)
+
+**Context**: SvelteKit's `hooks.server.ts` middleware chain (session resolution, request enrichment, rate limiting, idempotency) requires live backends (Auth service, Redis, Geo gRPC). This blocks Tier 1 Playwright tests and makes local frontend development harder when backends aren't running.
+
+**Decision**: Single environment variable `D2_MOCK_INFRA=true` that toggles ALL infrastructure middleware to stub mode. Set once, stubs everything — no per-middleware flags.
+
+**What gets stubbed:**
+
+| Middleware           | Normal Mode                                        | Mock Mode                                          |
+| -------------------- | -------------------------------------------------- | -------------------------------------------------- |
+| Session resolution   | `SessionResolver.resolve(cookies)` → Auth service  | Returns `null` session (unauthenticated)            |
+| Request enrichment   | IP resolution, fingerprinting, WhoIs lookup         | Sets empty/default `IRequestContext` fields         |
+| Rate limiting        | Redis-backed sliding window counters                | Always passes (no Redis)                            |
+| Idempotency          | Redis-backed key dedup                              | Always passes (no Redis)                            |
+| Geo ref data         | gRPC call to Geo service for country/locale data    | Returns hardcoded reference data                    |
+
+**Implementation**: Single `if` check at the top of `hooks.server.ts`:
+
+```typescript
+if (process.env.D2_MOCK_INFRA === "true") {
+  // Skip all infra middleware, set default locals
+  event.locals.session = null;
+  event.locals.user = null;
+  // ... resolve handler
+}
+```
+
+**Where set:**
+- Playwright config: `webServer.env.D2_MOCK_INFRA = "true"` (Tier 1 mocked tests)
+- Manual dev: `D2_MOCK_INFRA=true pnpm dev` (frontend-only development)
+- NOT set in Tier 2/3 tests (they use real infrastructure)
+- NOT set in production (obviously)
+
+**Rationale**:
+
+- Single toggle is simpler and less error-prone than per-middleware flags
+- Frontend developers can work on UI without running the full backend stack
+- Mocked Playwright tests run in ~30s with zero infrastructure dependencies
+- Clear semantic: `D2_MOCK_INFRA=true` = "I know there are no backends, skip everything"
+- No runtime cost in production — the env var check only runs once at startup
+
+---
+
+### ADR-021: Grafana Faro Client Telemetry
+
+**Status**: Implemented (2026-03)
+
+**Context**: Server-side observability was established (OTel → Grafana LGTM stack), but client-side errors, performance, and user experience metrics were invisible. Needed browser-side telemetry that integrates with the existing Grafana stack without adding a separate vendor (Sentry, DataDog, etc.).
+
+**Decision**: **Grafana Faro** SDK for client-side observability, ingested via **Grafana Alloy** `faro.receiver`, distributed to the existing LGTM stack.
+
+**Pipeline:**
+
+```
+Browser (Faro SDK) ──HTTP POST──► Alloy (faro.receiver :12347)
+  ├─ Errors/Logs ──► Loki (error context, stack traces, component source maps)
+  ├─ Traces ──► Tempo (client-initiated spans, fetch instrumentation)
+  └─ Web Vitals ──► Mimir (LCP, FID, CLS, TTFB, INP as histograms)
+```
+
+**Faro SDK configuration:**
+
+| Concern              | Setting                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| Instrumentations     | `errors`, `console` (warn+error), `web-vitals`, `fetch`          |
+| Session tracking     | `SessionInstrumentation` — generates session ID for RUM grouping  |
+| User identity        | `userId` + `username` only — **never** email, real name, or PII  |
+| Batching             | `BatchTransport` — debounce sends, reduce request count           |
+| Source maps          | Uploaded at build time for stack trace symbolication              |
+| Dev toggle           | Disabled when `PUBLIC_FARO_URL` is not set                        |
+
+**Web Vitals as OTel histograms:**
+
+Faro SDK captures Web Vitals (LCP, FID, CLS, TTFB, INP) and sends them as measurements. Alloy's `faro.receiver` converts these to Prometheus histograms (`browser_web_vital_*`) and forwards to Mimir. A pre-built Grafana RUM dashboard visualizes P50/P75/P95 per page, per session, over time.
+
+**Security constraint**: Client telemetry must never include PII. Faro user identity is limited to `userId` + `username` (display name). No email, phone, IP, or contact details in client-side spans or logs. Server-side enrichment (via trace correlation) can add context that stays server-side.
+
+**Rationale**:
+
+- Native integration with existing Grafana LGTM stack — no new vendor, no new UI
+- Alloy `faro.receiver` handles parsing, batching, and routing — Faro SDK just sends JSON
+- Web Vitals histograms enable data-driven performance budgets
+- Session tracking enables RUM (Real User Monitoring) grouping without PII
+- Trace correlation links client-initiated fetches to server-side spans in Tempo
+- Open-source stack — no per-event pricing or vendor lock-in
+
+---
+
+### ADR-022: Design System-First Development
+
+**Status**: Decided (2026-03)
+
+**Context**: The old DeCAF frontend had no design system — UI was built ad-hoc, component styles were inconsistent, and theme/mode changes required touching dozens of files. Starting SvelteKit development directly with feature pages would repeat this pattern.
+
+**Decision**: Build a comprehensive design system (kitchen sink page) BEFORE any feature pages. All visual decisions are made in the browser against real components, not in Figma mockups or abstract discussions.
+
+**Process:**
+
+1. **Component library setup** — shadcn-svelte components installed, themed with OKLCH color tokens
+2. **Theme system** — 3 OKLCH color presets (Zinc, Rose, Blue), dark/light/system toggle, CSS custom properties
+3. **Kitchen sink page** (`/design`) — every component rendered in all states, all themes, all modes
+4. **Visual QA** — Playwright screenshots across 6 combinations (3 presets × 2 modes), identify and fix inconsistencies
+5. **Design polish** — iterate until all components look correct in all combinations
+6. **THEN build feature pages** — referencing the design system as the visual source of truth
+
+**Design system deliverables (Step 3):**
+
+- 27 shadcn-svelte components showcased
+- 3 OKLCH color presets with live theme editor
+- Typography scale (Gabarito font, weight hierarchy)
+- Spacing/sizing tokens
+- 5 chart types (LayerChart 2.0 — area, bar, line, donut, sparkline)
+- Responsive layout patterns
+
+**Rationale**:
+
+- Visual decisions in the browser are faster and more accurate than abstract design specs
+- Kitchen sink page serves as living documentation — new developers see all available components
+- Theme/mode consistency is verified upfront, not discovered as bugs during feature development
+- Design system sprint (Steps 2–3.5) took ~3 days but prevented weeks of per-page styling inconsistencies
+- OKLCH color space enables perceptually uniform theme generation — one preset definition generates the full palette
+
+---
+
+_Last updated: 2026-03-12_

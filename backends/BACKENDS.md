@@ -224,17 +224,31 @@ Implementations/ -> Common reusable implementations
 |       |
 |       |__ InMemoryCache.Default/ -> Memory implementation
 |
+|__ Messaging/ -> AMQP messaging implementations
+|   |
+|   |__ Messaging.RabbitMQ/ -> RabbitMQ publisher/consumer (ProtoPublisher, ProtoConsumer, BackgroundService)
+|
 |__ Middleware/ -> HTTP middleware implementations
 |   |
 |   |__ RequestEnrichment.Default/ -> Request context enrichment (IP resolution, fingerprinting, WhoIs)
 |   |
 |   |__ RateLimit.Default/ -> Multi-dimensional sliding-window rate limiting
+|   |
+|   |__ Idempotency.Default/ -> Idempotency-Key header middleware (Redis SET NX, response caching)
 |
 |__ Repository/ -> Common repository implementations
-    |
-    |__ Transactions/ -> Transaction management implementations
-        |
-        |__ Transactions.Pg/ -> PostgreSQL transactions
+|   |
+|   |__ Batch/ -> Batch query utilities
+|   |   |
+|   |   |__ Batch.Pg/ -> PostgreSQL batched queries (chunked IN clauses)
+|   |
+|   |__ Errors/ -> Database error helpers
+|   |   |
+|   |   |__ Errors.Pg/ -> PostgreSQL constraint error detection (unique violation, FK, etc.)
+|   |
+|   |__ Transactions/ -> Transaction management implementations
+|       |
+|       |__ Transactions.Pg/ -> PostgreSQL transactions
 ```
 
 ### Service Projects (Domain-Specific)

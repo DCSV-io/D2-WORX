@@ -24,7 +24,7 @@ Consumed directly by Aspire orchestration (`AddJavaScriptApp`) and integration t
 | Mappers in api layer          | Domain-to-proto conversion lives here, not in domain (keeps domain proto-free)                                                                                                 |
 | Conditional infra wiring      | Missing geo/resend/twilio/rabbitmq config logs warnings but does not crash                                                                                                     |
 | OTel bootstrap via `--import` | `@d2/service-defaults/register` loaded via Node.js `--import` flag in package.json scripts, not in main.ts — ESM loader hooks must be installed before any application imports |
-| Stubs for Phase 2/3 RPCs      | Thread/notification RPCs return UNIMPLEMENTED -- schema ready, handlers pending                                                                                                |
+| Stubs for Stage B/C RPCs      | Thread/notification RPCs return UNIMPLEMENTED -- schema ready, handlers pending                                                                                                |
 
 ## Package Structure
 
@@ -84,7 +84,7 @@ Job options are only parsed when `COMMS_APP__DELETEDMESSAGERETENTIONDAYS` is set
 
 `createCommsGrpcService(provider)` returns a `CommsServiceServer` implementation. Each RPC creates a DI scope via `createRpcScope`, resolves the appropriate handler, and disposes the scope when done.
 
-### Implemented RPCs (Phase 1 -- Delivery Engine)
+### Implemented RPCs (Stage A -- Delivery Engine)
 
 | RPC                    | Handler                                                   | Description                      |
 | ---------------------- | --------------------------------------------------------- | -------------------------------- |
