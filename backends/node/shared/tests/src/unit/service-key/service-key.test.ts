@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateServiceKey } from "@d2/service-key";
+import { TK } from "@d2/i18n";
 
 // ---------------------------------------------------------------------------
 // validateServiceKey
@@ -98,13 +99,13 @@ describe("validateServiceKey", () => {
     const result = validateServiceKey("key", []);
 
     expect(result).not.toBeNull();
-    expect(result!.messages).toContain("Service key validation not configured.");
+    expect(result!.messages).toContain(TK.common.errors.UNAUTHORIZED);
   });
 
   it("returns the correct error message for invalid key", () => {
     const result = validateServiceKey("wrong", ["correct"]);
 
     expect(result).not.toBeNull();
-    expect(result!.messages).toContain("Invalid API key.");
+    expect(result!.messages).toContain(TK.common.errors.UNAUTHORIZED);
   });
 });

@@ -58,17 +58,21 @@ describe("locale-options", () => {
       expect(result[0]!.code).toBe("en-US");
     });
 
-    it("skips enabled locales not in ref data", () => {
+    it("emits code-only fallback for enabled locales not in ref data", () => {
       const result = localesToOptions(mockLocales, ["en-US", "de-DE"]);
 
-      expect(result).toHaveLength(1);
+      expect(result).toHaveLength(2);
       expect(result[0]!.code).toBe("en-US");
+      expect(result[0]!.endonym).toBe("English (United States)");
+      expect(result[1]).toEqual({ code: "de-DE", endonym: "de-DE", flag: "/flags/4x3/de.svg" });
     });
 
-    it("returns empty array when no enabled locales match ref data", () => {
+    it("returns code-only fallbacks when no enabled locales match ref data", () => {
       const result = localesToOptions(mockLocales, ["de-DE", "it-IT"]);
 
-      expect(result).toHaveLength(0);
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ code: "de-DE", endonym: "de-DE", flag: "/flags/4x3/de.svg" });
+      expect(result[1]).toEqual({ code: "it-IT", endonym: "it-IT", flag: "/flags/4x3/it.svg" });
     });
 
     it("preserves order of enabled locales", () => {

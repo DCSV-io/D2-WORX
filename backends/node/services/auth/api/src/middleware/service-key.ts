@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { TK } from "@d2/i18n";
 import { D2Result } from "@d2/result";
 import { validateServiceKey } from "@d2/service-key";
 import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
@@ -29,7 +30,7 @@ export function createServiceKeyMiddleware(
     if (!apiKey) {
       if (requireKey) {
         return c.json(
-          D2Result.unauthorized({ messages: ["API key required."] }),
+          D2Result.unauthorized({ messages: [TK.common.errors.UNAUTHORIZED] }),
           401 as ContentfulStatusCode,
         );
       }

@@ -222,7 +222,8 @@ public record Contact
 
             // Domain stays dependency-free — runtime default is SupportedLocales.BASE at app layer.
             // EF Core ContactConfig also has HasDefaultValue("en-US") for DB-level default.
-            IETFBCP47Tag = ietfBcp47Tag ?? "en-US",
+            // Falsey() catches null, empty, and whitespace — all would violate the locales FK.
+            IETFBCP47Tag = ietfBcp47Tag.Falsey() ? "en-US" : ietfBcp47Tag!,
             LocationHashId = locationHashId,
         };
     }

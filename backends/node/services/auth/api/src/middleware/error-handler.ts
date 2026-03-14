@@ -26,9 +26,8 @@ export function handleError(err: Error, c: Context): Response {
 
   // For validation errors, provide structured error details
   if (err instanceof AuthValidationError) {
-    const result = D2Result.fail({
+    const result = D2Result.validationFailed({
       messages: [TK.common.errors.VALIDATION_FAILED],
-      statusCode: HttpStatusCode.BadRequest,
     });
     return c.json(result, 400 as ContentfulStatusCode);
   }

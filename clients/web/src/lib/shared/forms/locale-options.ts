@@ -24,14 +24,17 @@ export function localesToOptions(
   locales: Record<string, LocaleDTO>,
   enabledLocales: string[],
 ): LocaleOption[] {
-  return enabledLocales
-    .filter((code) => locales[code])
-    .map((code) => {
-      const locale = locales[code]!;
+  return enabledLocales.map((code) => {
+    const locale = locales[code];
+    if (locale) {
       return {
         code: locale.ietfBcp47Tag,
         endonym: locale.endonym,
         flag: `/flags/4x3/${locale.countryIso31661Alpha2Code.toLowerCase()}.svg`,
       };
-    });
+    }
+    // Fallback: derive flag from region subtag, show code as endonym.
+    const region = code.split("-")[1]?.toLowerCase() ?? "";
+    return { code, endonym: code, flag: region ? `/flags/4x3/${region}.svg` : "" };
+  });
 }

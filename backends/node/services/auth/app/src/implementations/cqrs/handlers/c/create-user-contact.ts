@@ -3,6 +3,7 @@ import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@
 import { D2Result } from "@d2/result";
 import type { ContactToCreateDTO } from "@d2/protos";
 import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
+import { BASE_LOCALE } from "@d2/i18n";
 import type { Commands as GeoCommands } from "@d2/geo-client";
 import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
@@ -73,7 +74,9 @@ export class CreateUserContact
       },
       professionalDetails: undefined,
       location: undefined,
-      ietfBcp47Tag: input.locale,
+      // Resolve bare language codes (e.g., "en" from pre-BCP47 users) to full tags.
+      // Passes through full tags as-is to preserve case matching with Geo locales FK.
+      ietfBcp47Tag: input.locale.includes("-") ? input.locale : BASE_LOCALE,
     };
 
     const result = await this.createContacts.handleAsync({ contacts: [contactToCreate] });

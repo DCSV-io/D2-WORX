@@ -98,6 +98,7 @@ message FindWhoIsRequest {
 message FindWhoIsKeys {
   string ip_address = 1;
   reserved 2;  // Removed: fingerprint (no longer part of WhoIs identity).
+  reserved "fingerprint";
 }
 
 message FindWhoIsResponse {

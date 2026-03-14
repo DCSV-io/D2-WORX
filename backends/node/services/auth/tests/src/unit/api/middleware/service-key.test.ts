@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
 import { createServiceKeyMiddleware, REQUEST_CONTEXT_KEY } from "@d2/auth-api";
 import type { IRequestContext } from "@d2/handler";
+import { TK } from "@d2/i18n";
 
 /** Stub requestContext for testing — pre-seeds context before service-key runs. */
 function createStubRequestContext(overrides?: Partial<IRequestContext>): IRequestContext {
@@ -82,7 +83,7 @@ describe("Service key middleware", () => {
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.success).toBe(false);
-    expect(body.messages).toContain("Invalid API key.");
+    expect(body.messages).toContain(TK.common.errors.UNAUTHORIZED);
   });
 
   it("does not modify requestContext when key is invalid (short-circuits)", async () => {
@@ -115,7 +116,7 @@ describe("Service key middleware (require: true)", () => {
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.success).toBe(false);
-    expect(body.messages).toContain("API key required.");
+    expect(body.messages).toContain(TK.common.errors.UNAUTHORIZED);
   });
 
   it("sets isTrustedService=true for a valid API key", async () => {
@@ -138,6 +139,6 @@ describe("Service key middleware (require: true)", () => {
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.success).toBe(false);
-    expect(body.messages).toContain("Invalid API key.");
+    expect(body.messages).toContain(TK.common.errors.UNAUTHORIZED);
   });
 });

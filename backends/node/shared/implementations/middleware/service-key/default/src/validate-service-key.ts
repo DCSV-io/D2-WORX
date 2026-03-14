@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 
 /**
  * Validates an API key against a set of valid keys using constant-time comparison.
@@ -10,7 +11,7 @@ import { D2Result } from "@d2/result";
  */
 export function validateServiceKey(apiKey: string, validKeys: string[]): D2Result | null {
   if (validKeys.length === 0) {
-    return D2Result.unauthorized({ messages: ["Service key validation not configured."] });
+    return D2Result.unauthorized({ messages: [TK.common.errors.UNAUTHORIZED] });
   }
 
   const apiKeyBuffer = Buffer.from(apiKey, "utf8");
@@ -29,7 +30,7 @@ export function validateServiceKey(apiKey: string, validKeys: string[]): D2Resul
   }
 
   if (!matched) {
-    return D2Result.unauthorized({ messages: ["Invalid API key."] });
+    return D2Result.unauthorized({ messages: [TK.common.errors.UNAUTHORIZED] });
   }
 
   return null;
