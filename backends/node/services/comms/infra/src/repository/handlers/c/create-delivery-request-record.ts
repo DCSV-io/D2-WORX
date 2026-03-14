@@ -36,9 +36,7 @@ export class CreateDeliveryRequestRecord
       return D2Result.ok({ data: {} });
     } catch (err) {
       if (isPgUniqueViolation(err)) {
-        return D2Result.conflict({
-          messages: ["Delivery request already exists."],
-        });
+        return D2Result.conflict();
       }
       throw err;
     }

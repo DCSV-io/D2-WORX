@@ -8,6 +8,7 @@ namespace D2.Shared.RateLimit.Default;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.RateLimit.Default.Interfaces;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
@@ -113,7 +114,7 @@ public class RateLimitMiddleware
             context.Response.ContentType = "application/json";
 
             var response = D2Result.Fail(
-                [$"Rate limit exceeded on {output.BlockedDimension} dimension."],
+                [TK.Common.Errors.TOO_MANY_REQUESTS],
                 HttpStatusCode.TooManyRequests,
                 inputErrors: null,
                 ErrorCodes.RATE_LIMITED,

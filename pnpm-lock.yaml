@@ -1249,6 +1249,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../backends/node/shared/handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/i18n
       '@d2/idempotency':
         specifier: workspace:*
         version: link:../../backends/node/shared/implementations/middleware/idempotency/default

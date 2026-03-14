@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result, HttpStatusCode } from "@d2/result";
+import { TK } from "@d2/i18n";
 import type { RateLimit } from "@d2/interfaces";
 import { REQUEST_CONTEXT_KEY } from "./request-enrichment.js";
 
@@ -26,7 +27,7 @@ export function createDistributedRateLimitMiddleware(checkHandler: RateLimit.ICh
       c.header("Retry-After", String(retryAfterSec));
       return c.json(
         D2Result.fail({
-          messages: ["Too many requests. Please slow down."],
+          messages: [TK.common.errors.TOO_MANY_REQUESTS],
           statusCode: HttpStatusCode.TooManyRequests,
           errorCode: "RATE_LIMITED",
         }),

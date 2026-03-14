@@ -26,9 +26,7 @@ export function handleError(err: Error, c: Context): Response {
 
   // For validation errors, provide structured error details
   if (err instanceof AuthValidationError) {
-    const result = D2Result.validationFailed({
-      messages: [TK.common.errors.VALIDATION_FAILED],
-    });
+    const result = D2Result.validationFailed();
     return c.json(result, 400 as ContentfulStatusCode);
   }
 
@@ -42,9 +40,7 @@ export function handleError(err: Error, c: Context): Response {
   }
 
   // For 5xx server errors, NEVER leak err.message — use generic message
-  const result = D2Result.unhandledException({
-    messages: [TK.common.errors.UNKNOWN],
-  });
+  const result = D2Result.unhandledException();
   return c.json(result, 500 as ContentfulStatusCode);
 }
 

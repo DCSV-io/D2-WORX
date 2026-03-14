@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 import { updateOrgContact, GEO_CONTEXT_KEYS, type UpdateOrgContactInput } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Complex } from "@d2/geo-client";
@@ -75,7 +76,7 @@ export class UpdateOrgContactHandler
     // IDOR check: contact must belong to the caller's active org
     if (existing.organizationId !== input.organizationId) {
       return D2Result.forbidden({
-        messages: ["Not authorized to modify this contact."],
+        messages: [TK.auth.errors.ORG_CONTACT_ORG_MISMATCH],
       });
     }
 

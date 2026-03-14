@@ -8,6 +8,7 @@ namespace D2.Geo.Client.CQRS.Handlers.C;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Constants;
 using Google.Protobuf;
@@ -80,7 +81,7 @@ public class SetOnDisk : BaseHandler<SetOnDisk, I, O>, H
                 TraceId);
 
             return D2Result<O?>.Fail(
-                ["Unable to write to disk."],
+                [TK.Geo.Errors.DISK_WRITE_FAILED],
                 HttpStatusCode.InternalServerError);
         }
 

@@ -10,6 +10,7 @@ using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
@@ -88,7 +89,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
         {
             if (!Guid.TryParse(input.Request.Ids[i], out var guid) || guid == Guid.Empty)
             {
-                allErrors.Add([$"ids[{i}]", "Must be a valid, non-empty GUID."]);
+                allErrors.Add([$"ids[{i}]", TK.Geo.Validation.ID_INVALID]);
             }
             else
             {

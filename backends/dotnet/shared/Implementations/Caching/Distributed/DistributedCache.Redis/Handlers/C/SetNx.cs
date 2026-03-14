@@ -9,6 +9,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.C;
 using System.Net;
 using System.Text.Json;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Serialization;
 using Google.Protobuf;
@@ -82,7 +83,7 @@ public class SetNx<TValue> : BaseHandler<
                 TraceId);
 
             return D2Result<C.SetNxOutput?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
@@ -94,11 +95,10 @@ public class SetNx<TValue> : BaseHandler<
                 input.Key,
                 TraceId);
 
-            const string err_msg = "Value could not be serialized.";
             return D2Result<C.SetNxOutput?>.Fail(
-                [err_msg],
+                [TK.Common.Errors.REQUEST_FAILED],
                 HttpStatusCode.InternalServerError,
-                [[nameof(C.SetNxInput<TValue>.Value), err_msg]],
+                [[nameof(C.SetNxInput<TValue>.Value), TK.Common.Errors.REQUEST_FAILED]],
                 ErrorCodes.COULD_NOT_BE_SERIALIZED);
         }
 

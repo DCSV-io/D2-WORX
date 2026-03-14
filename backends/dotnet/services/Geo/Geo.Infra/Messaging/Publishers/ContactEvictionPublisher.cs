@@ -77,8 +77,7 @@ public class ContactEvictionPublisher
                 "Failed to publish ContactsEvicted event for {Count} contact(s)",
                 message.Contacts.Count);
 
-            return D2Result.ServiceUnavailable(
-                ["Failed to publish contact eviction event to RabbitMQ."]);
+            return D2Result.ServiceUnavailable();
         }
     }
 }

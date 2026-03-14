@@ -1,4 +1,4 @@
-import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
+import { D2Result } from "@d2/result";
 import type { D2ResultProto } from "@d2/protos";
 import type { ServiceError } from "@grpc/grpc-js";
 import { d2ResultFromProto } from "./d2-result-from-proto.js";
@@ -31,11 +31,7 @@ export async function handleGrpcCall<TResponse, TData>(
     return d2ResultFromProto<TData>(proto, data);
   } catch (err: unknown) {
     if (isServiceError(err)) {
-      return D2Result.fail<TData>({
-        messages: ["Service is unavailable."],
-        statusCode: HttpStatusCode.ServiceUnavailable,
-        errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-      });
+      return D2Result.serviceUnavailable<TData>();
     }
     return D2Result.unhandledException<TData>();
   }

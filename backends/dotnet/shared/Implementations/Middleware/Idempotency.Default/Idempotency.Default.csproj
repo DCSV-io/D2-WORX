@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\Handler\Handler.csproj" />
+        <ProjectReference Include="..\..\..\I18n\I18n.csproj" />
         <ProjectReference Include="..\..\..\Result\Result.csproj" />
         <ProjectReference Include="..\..\..\Interfaces\Interfaces.csproj" />
     </ItemGroup>

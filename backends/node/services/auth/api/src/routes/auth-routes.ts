@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { D2Result, HttpStatusCode } from "@d2/result";
+import { TK } from "@d2/i18n";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { ILogger } from "@d2/logging";
 import type { Auth } from "@d2/auth-infra";
@@ -81,7 +82,7 @@ export function createAuthRoutes(
           c.header("Retry-After", String(retryAfterSec));
           return c.json(
             D2Result.fail({
-              messages: ["Too many sign-in attempts. Please try again later."],
+              messages: [TK.auth.errors.SIGN_IN_THROTTLED],
               statusCode: HttpStatusCode.TooManyRequests,
               errorCode: "SIGN_IN_THROTTLED",
             }),

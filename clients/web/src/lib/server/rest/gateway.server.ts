@@ -118,16 +118,12 @@ export async function gatewayFetch<TData = void>(
   const authCtx = getAuthContext();
 
   if (!authCtx) {
-    return D2Result.serviceUnavailable<TData>({
-      messages: ["Auth context not available — cannot obtain JWT for gateway call."],
-    });
+    return D2Result.serviceUnavailable<TData>();
   }
 
   const jwt = await authCtx.jwtManager.getToken(cookies);
   if (!jwt) {
-    return D2Result.unauthorized<TData>({
-      messages: ["Failed to obtain JWT for gateway call."],
-    });
+    return D2Result.unauthorized<TData>();
   }
 
   const headers = buildHeaders(options);

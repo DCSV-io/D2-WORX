@@ -157,7 +157,7 @@ public class FindWhoIsValidationTests
         result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
         result.InputErrors.Should().HaveCount(1);
         result.InputErrors[0][0].Should().Be("requests[0].ipAddress");
-        result.InputErrors[0][1].Should().Be("Must be a valid IPv4 or IPv6 address.");
+        result.InputErrors[0][1].Should().Be("geo_validation_ip_invalid");
     }
 
     /// <summary>
@@ -182,7 +182,7 @@ public class FindWhoIsValidationTests
         result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
         result.InputErrors.Should().HaveCount(1);
         result.InputErrors[0][0].Should().Be("requests[0].ipAddress");
-        result.InputErrors[0][1].Should().Be("Must be a valid IPv4 or IPv6 address.");
+        result.InputErrors[0][1].Should().Be("geo_validation_ip_invalid");
     }
 
     /// <summary>
@@ -207,7 +207,7 @@ public class FindWhoIsValidationTests
         result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
         result.InputErrors.Should().HaveCount(1);
         result.InputErrors[0][0].Should().Be("requests[0].ipAddress");
-        result.InputErrors[0][1].Should().Be("Must be a valid IPv4 or IPv6 address.");
+        result.InputErrors[0][1].Should().Be("geo_validation_ip_invalid");
     }
 
     #endregion

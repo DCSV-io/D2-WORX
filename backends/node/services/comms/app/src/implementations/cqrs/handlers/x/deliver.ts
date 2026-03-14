@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
+import { TK } from "@d2/i18n";
 import { Complex, type Queries } from "../../../../interfaces/cqrs/handlers/index.js";
 import { D2Result } from "@d2/result";
 import {
@@ -175,12 +176,8 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
     }
 
     if (deliverableChannels.length === 0) {
-      const detail =
-        skippedReasons.length > 0
-          ? `No deliverable channels. Attempted: ${channelsResult.channels.join(", ")}. Skipped: ${skippedReasons.join("; ")}.`
-          : "No deliverable address found for any resolved channel.";
       return D2Result.notFound({
-        messages: [detail],
+        messages: [TK.comms.errors.NO_DELIVERABLE_CHANNELS],
       });
     }
 
@@ -263,7 +260,7 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
     );
     if (retryableFailures.length > 0) {
       return D2Result.fail({
-        messages: [`Delivery failed for ${retryableFailures.length} channel(s), retry scheduled.`],
+        messages: [TK.comms.errors.DELIVERY_RETRY_SCHEDULED],
         statusCode: 503,
         errorCode: COMMS_RETRY.DELIVERY_FAILED,
       });

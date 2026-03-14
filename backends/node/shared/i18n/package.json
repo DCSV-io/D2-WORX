@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./keys": {
+      "types": "./dist/translation-keys.d.ts",
+      "default": "./dist/translation-keys.js"
     }
   },
   "scripts": {

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 import { createEmulationConsent, canEmulate, ORG_TYPES } from "@d2/auth-domain";
 import type {
   ICreateEmulationConsentRecordHandler,
@@ -59,16 +60,14 @@ export class CreateEmulationConsent
 
     if (!canEmulate(input.activeOrgType)) {
       return D2Result.forbidden({
-        messages: [`Organization type "${input.activeOrgType}" is not allowed to emulate.`],
+        messages: [TK.auth.errors.EMULATION_ORG_TYPE_NOT_ALLOWED],
       });
     }
 
     // Verify target org exists
     const orgExists = await this.checkOrgExists(input.grantedToOrgId);
     if (!orgExists) {
-      return D2Result.notFound({
-        messages: ["Target organization not found."],
-      });
+      return D2Result.notFound();
     }
 
     // Prevent duplicate active consents for same user+org
@@ -78,7 +77,7 @@ export class CreateEmulationConsent
     });
     if (findResult.success && findResult.data?.consent) {
       return D2Result.conflict({
-        messages: ["An active consent already exists for this organization."],
+        messages: [TK.auth.errors.EMULATION_CONSENT_ALREADY_EXISTS],
       });
     }
 

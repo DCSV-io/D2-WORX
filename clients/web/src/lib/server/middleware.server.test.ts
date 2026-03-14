@@ -34,6 +34,7 @@ vi.mock("@d2/handler", () => ({
 
 vi.mock("@d2/service-defaults/config", () => ({
   parseRedisUrl: vi.fn().mockReturnValue("redis://:pass@localhost:6379"),
+  parseEnvArray: vi.fn().mockReturnValue([]),
 }));
 
 vi.mock("@d2/cache-redis", () => ({

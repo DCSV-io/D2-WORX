@@ -24,9 +24,7 @@ export class FindMessageById extends BaseHandler<I, O> implements IFindMessageBy
 
     const row = rows[0];
     if (!row) {
-      return D2Result.notFound({
-        messages: [`Message '${input.id}' not found.`],
-      });
+      return D2Result.notFound();
     }
 
     return D2Result.ok({ data: { message: toMessage(row) } });

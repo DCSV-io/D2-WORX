@@ -9,6 +9,7 @@ namespace D2.Geo.Client.CQRS.Handlers.Q;
 using System.Net;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Constants;
 using Microsoft.Extensions.Configuration;
@@ -87,7 +88,7 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
                 TraceId);
 
             return D2Result<O?>.Fail(
-                ["Corrupted data on disk."],
+                [TK.Geo.Errors.CORRUPTED_DATA_ON_DISK],
                 HttpStatusCode.InternalServerError,
                 errorCode: ErrorCodes.COULD_NOT_BE_DESERIALIZED);
         }
@@ -99,7 +100,7 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
                 TraceId);
 
             return D2Result<O?>.Fail(
-                ["Unable to read from disk."],
+                [TK.Geo.Errors.DISK_READ_FAILED],
                 HttpStatusCode.InternalServerError);
         }
 

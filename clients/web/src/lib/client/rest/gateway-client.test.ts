@@ -375,7 +375,7 @@ describe("gateway-client", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(408);
-      expect(result.messages[0]).toContain("aborted");
+      expect(result.messages[0]).toContain("common_errors_CANCELLED");
     });
 
     it("returns 408 on TimeoutError", async () => {
@@ -387,7 +387,7 @@ describe("gateway-client", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(408);
-      expect(result.messages[0]).toContain("timed out");
+      expect(result.messages[0]).toContain("common_errors_REQUEST_FAILED");
     });
   });
 

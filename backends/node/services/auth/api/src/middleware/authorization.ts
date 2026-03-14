@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 import {
   SESSION_FIELDS,
   ROLE_HIERARCHY,
@@ -31,7 +32,7 @@ export function requireOrg() {
     if (!orgId || !isValidOrgType(orgType) || !isValidRole(role)) {
       return c.json(
         D2Result.forbidden({
-          messages: ["No active organization. Join or create an organization first."],
+          messages: [TK.middleware.errors.NO_ACTIVE_ORGANIZATION],
         }),
         403 as ContentfulStatusCode,
       );
@@ -58,7 +59,7 @@ export function requireOrgType(...allowed: OrgType[]) {
     if (!orgType || !allowedSet.has(orgType)) {
       return c.json(
         D2Result.forbidden({
-          messages: [`Organization type not authorized. Allowed: ${allowed.join(", ")}.`],
+          messages: [TK.middleware.errors.ORG_TYPE_NOT_AUTHORIZED],
         }),
         403 as ContentfulStatusCode,
       );
@@ -85,7 +86,7 @@ export function requireRole(minRole: Role) {
     if (!isValidRole(role) || ROLE_HIERARCHY[role] < minLevel) {
       return c.json(
         D2Result.forbidden({
-          messages: [`Insufficient role. Minimum required: ${minRole}.`],
+          messages: [TK.middleware.errors.INSUFFICIENT_ROLE],
         }),
         403 as ContentfulStatusCode,
       );

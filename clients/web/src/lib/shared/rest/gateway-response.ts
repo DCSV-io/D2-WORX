@@ -11,6 +11,7 @@
  *
  * Isomorphic — works in both server (Node.js) and browser environments.
  */
+import { TK } from "@d2/i18n/keys";
 import { D2Result, type HttpStatusCode, type InputError } from "@d2/result";
 
 /**
@@ -82,7 +83,7 @@ export async function parseGatewayResponse<TData = void>(
     return new D2Result<TData>({
       success: response.ok,
       statusCode,
-      messages: [response.statusText || "Failed to read response body"],
+      messages: [response.statusText || TK.common.errors.REQUEST_FAILED],
     });
   }
 
@@ -121,7 +122,7 @@ export async function parseGatewayResponse<TData = void>(
  * Create a D2Result for a network-level error (fetch threw).
  */
 export function networkErrorResult<TData = void>(error: unknown): D2Result<TData> {
-  const message = error instanceof Error ? error.message : "An unexpected network error occurred.";
+  const message = error instanceof Error ? error.message : TK.common.errors.REQUEST_FAILED;
 
   return D2Result.unhandledException<TData>({ messages: [message] });
 }
@@ -168,14 +169,14 @@ export async function executeFetch<TData>(
   } catch (error: unknown) {
     if (error instanceof DOMException && error.name === "AbortError") {
       return D2Result.fail<TData>({
-        messages: ["Request was aborted."],
+        messages: [TK.common.errors.CANCELLED],
         statusCode: 408 as HttpStatusCode,
       });
     }
 
     if (error instanceof DOMException && error.name === "TimeoutError") {
       return D2Result.fail<TData>({
-        messages: [`Request timed out after ${timeoutMs}ms.`],
+        messages: [TK.common.errors.REQUEST_FAILED],
         statusCode: 408 as HttpStatusCode,
       });
     }

@@ -11,6 +11,7 @@ using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Logging;
@@ -99,7 +100,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
             if (key.IpAddress.Falsey()
                 || !IPAddress.TryParse(key.IpAddress, out _))
             {
-                allErrors.Add([$"requests[{i}].ipAddress", "Must be a valid IPv4 or IPv6 address."]);
+                allErrors.Add([$"requests[{i}].ipAddress", TK.Geo.Validation.IP_INVALID]);
             }
         }
 

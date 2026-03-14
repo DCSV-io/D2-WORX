@@ -76,8 +76,7 @@ public class UpdatePublisher
                 "Failed to publish GeoRefDataUpdated event for version {Version}",
                 message.Version);
 
-            return D2Result.ServiceUnavailable(
-                ["Failed to publish message to RabbitMQ."]);
+            return D2Result.ServiceUnavailable();
         }
     }
 }

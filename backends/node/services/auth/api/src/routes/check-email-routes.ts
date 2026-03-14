@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 import type { IHandler } from "@d2/handler";
 import type { CheckEmailAvailabilityInput, CheckEmailAvailabilityOutput } from "@d2/auth-app";
 
@@ -19,7 +20,7 @@ export function createCheckEmailRoutes(
     const email = c.req.query("email");
     if (!email) {
       return c.json(
-        D2Result.validationFailed({ messages: ["Email query parameter is required."] }),
+        D2Result.validationFailed({ messages: [TK.auth.errors.EMAIL_QUERY_REQUIRED] }),
         400 as ContentfulStatusCode,
       );
     }

@@ -10,6 +10,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.R;
 using System.Net;
 using System.Text.Json;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Serialization;
 using Microsoft.Extensions.Logging;
@@ -90,7 +91,7 @@ public class Get<TValue> : BaseHandler<
                 TraceId);
 
             return D2Result<S.GetOutput<TValue>?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
@@ -102,11 +103,10 @@ public class Get<TValue> : BaseHandler<
                 input.Key,
                 TraceId);
 
-            const string err_msg = "Value could not be deserialized.";
             return D2Result<S.GetOutput<TValue>?>.Fail(
-                [err_msg],
+                [TK.Common.Errors.REQUEST_FAILED],
                 HttpStatusCode.InternalServerError,
-                [[nameof(S.GetInput.Key), err_msg]],
+                [[nameof(S.GetInput.Key), TK.Common.Errors.REQUEST_FAILED]],
                 ErrorCodes.COULD_NOT_BE_DESERIALIZED);
         }
 

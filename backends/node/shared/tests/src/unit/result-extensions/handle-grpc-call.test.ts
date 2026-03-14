@@ -118,7 +118,7 @@ describe("handleGrpcCall — transport errors", () => {
     expect(result).toBeFailure();
     expect(result).toHaveStatusCode(HttpStatusCode.ServiceUnavailable);
     expect(result).toHaveErrorCode(ErrorCodes.SERVICE_UNAVAILABLE);
-    expect(result).toHaveMessages(["Service is unavailable."]);
+    expect(result).toHaveMessages(["common_errors_SERVICE_UNAVAILABLE"]);
   });
 
   it("returns unhandledException for generic Error", async () => {

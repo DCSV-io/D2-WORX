@@ -10,6 +10,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Extensions;
@@ -112,7 +113,7 @@ public class ServiceKeyMiddleware
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsJsonAsync(
                 D2Result.Fail(
-                    ["Invalid service API key."],
+                    [TK.Common.Errors.UNAUTHORIZED],
                     HttpStatusCode.Unauthorized,
                     errorCode: "INVALID_SERVICE_KEY",
                     traceId: context.TraceIdentifier),

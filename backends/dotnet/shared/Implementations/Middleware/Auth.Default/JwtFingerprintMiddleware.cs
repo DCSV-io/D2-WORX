@@ -9,6 +9,7 @@ namespace D2.Shared.Auth.Default;
 using System.Net;
 using D2.Shared.Handler;
 using D2.Shared.Handler.Auth;
+using D2.Shared.I18n;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Extensions;
@@ -95,7 +96,7 @@ public class JwtFingerprintMiddleware
             context.Response.ContentType = "application/json";
 
             var missingFpResponse = D2Result.Fail(
-                ["JWT fingerprint claim is required."],
+                [TK.Common.Errors.UNAUTHORIZED],
                 HttpStatusCode.Unauthorized,
                 errorCode: "MISSING_FINGERPRINT",
                 traceId: context.TraceIdentifier);
@@ -123,7 +124,7 @@ public class JwtFingerprintMiddleware
             Truncate(computed));
 
         var response = D2Result.Fail(
-            ["JWT fingerprint mismatch. Token cannot be used from this client."],
+            [TK.Common.Errors.UNAUTHORIZED],
             HttpStatusCode.Unauthorized,
             errorCode: "JWT_FINGERPRINT_MISMATCH",
             traceId: context.TraceIdentifier);

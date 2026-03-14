@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { TK } from "@d2/i18n";
 import { D2Result } from "@d2/result";
 import type { IEmailProvider, SendEmailInput, SendEmailOutput } from "@d2/comms-app";
 
@@ -38,7 +39,7 @@ export class ResendEmailProvider
 
     if (error) {
       return D2Result.serviceUnavailable({
-        messages: [error.message],
+        messages: [error.message || TK.comms.errors.PROVIDER_UNKNOWN],
       });
     }
 

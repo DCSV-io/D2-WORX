@@ -31,12 +31,7 @@ export function createSessionMiddleware(auth: Auth) {
       });
     } catch {
       // Infrastructure failure — do NOT silently degrade to unauthenticated
-      return c.json(
-        D2Result.serviceUnavailable({
-          messages: ["Service temporarily unavailable. Please try again."],
-        }),
-        503 as ContentfulStatusCode,
-      );
+      return c.json(D2Result.serviceUnavailable(), 503 as ContentfulStatusCode);
     }
 
     if (!session) {

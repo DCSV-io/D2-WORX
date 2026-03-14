@@ -88,13 +88,7 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
     "*",
     bodyLimit({
       maxSize: 256 * 1024, // 256 KB — auth payloads are small JSON
-      onError: (c) =>
-        c.json(
-          D2Result.payloadTooLarge({
-            messages: ["Request body too large."],
-          }),
-          413 as ContentfulStatusCode,
-        ),
+      onError: (c) => c.json(D2Result.payloadTooLarge(), 413 as ContentfulStatusCode),
     }),
   );
   app.use("*", createRequestEnrichmentMiddleware(findWhoIs, undefined, logger));

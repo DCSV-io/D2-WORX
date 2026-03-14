@@ -1,5 +1,4 @@
 import { D2Result } from "@d2/result";
-import { TK } from "@d2/i18n";
 
 /** HTTP methods that modify state and require CSRF protection. */
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -31,16 +30,12 @@ export function validateCsrf(
 
   // Check 1: Require JSON content type or custom header
   if (!contentType?.includes("application/json") && !xRequestedWith) {
-    return D2Result.forbidden({
-      messages: [TK.common.errors.FORBIDDEN],
-    });
+    return D2Result.forbidden();
   }
 
   // Check 2: Validate Origin header when present
   if (origin && !allowedOrigins.has(origin.replace(/\/+$/, ""))) {
-    return D2Result.forbidden({
-      messages: [TK.common.errors.FORBIDDEN],
-    });
+    return D2Result.forbidden();
   }
 
   return null;

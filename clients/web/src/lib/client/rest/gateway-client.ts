@@ -167,9 +167,7 @@ export async function apiCall<TData = void>(
 ): Promise<D2Result<TData>> {
   const token = await getToken();
   if (!token) {
-    return D2Result.unauthorized<TData>({
-      messages: ["Not authenticated."],
-    });
+    return D2Result.unauthorized<TData>();
   }
 
   const headers = buildHeaders(options);

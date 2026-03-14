@@ -112,7 +112,7 @@ describe("gateway.server", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(401);
-      expect(result.messages[0]).toContain("Failed to obtain JWT");
+      expect(result.messages[0]).toContain("common_errors_UNAUTHORIZED");
     });
 
     it("sends Authorization and X-Api-Key headers", async () => {
@@ -232,7 +232,7 @@ describe("gateway.server", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(408);
-      expect(result.messages[0]).toContain("aborted");
+      expect(result.messages[0]).toContain("common_errors_CANCELLED");
 
       fetchSpy.mockRestore();
     });
@@ -249,7 +249,7 @@ describe("gateway.server", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(408);
-      expect(result.messages[0]).toContain("timed out");
+      expect(result.messages[0]).toContain("common_errors_REQUEST_FAILED");
 
       fetchSpy.mockRestore();
     });

@@ -8,6 +8,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.D;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -77,7 +78,7 @@ public class ReleaseLock : BaseHandler<H, I, O>, H
                 TraceId);
 
             return D2Result<O?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }

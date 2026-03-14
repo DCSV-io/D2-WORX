@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result, HttpStatusCode } from "@d2/result";
+import { TK } from "@d2/i18n";
 import { ILoggerKey } from "@d2/logging";
 import { SESSION_FIELDS, GEO_CONTEXT_KEYS, ROLES, type Role } from "@d2/auth-domain";
 import { INotifyKey } from "@d2/comms-client";
@@ -58,14 +59,14 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
 
     if (!email || !role) {
       const inputErrors: [string, ...string[]][] = [];
-      if (!email) inputErrors.push(["email", "Email is required."]);
-      if (!role) inputErrors.push(["role", "Role is required."]);
+      if (!email) inputErrors.push(["email", TK.auth.errors.EMAIL_REQUIRED]);
+      if (!role) inputErrors.push(["role", TK.auth.errors.ROLE_REQUIRED]);
       return c.json(D2Result.validationFailed({ inputErrors }), 400 as ContentfulStatusCode);
     }
     if (!INVITABLE_ROLES.has(role as Role)) {
       return c.json(
         D2Result.validationFailed({
-          inputErrors: [["role", `Invalid role. Allowed: ${ROLES.join(", ")}.`]],
+          inputErrors: [["role", TK.auth.errors.INVALID_ROLE]],
         }),
         400 as ContentfulStatusCode,
       );
@@ -82,7 +83,7 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     if (!allowedRoles || !allowedRoles.includes(role as Role)) {
       return c.json(
         D2Result.forbidden({
-          messages: [`Role "${inviterRole}" cannot invite role "${role}".`],
+          messages: [TK.auth.errors.INVITATION_ROLE_HIERARCHY],
         }),
         403 as ContentfulStatusCode,
       );
@@ -121,7 +122,7 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
       }
       return c.json(
         D2Result.fail({
-          messages: ["Failed to create invitation."],
+          messages: [TK.auth.errors.INVITATION_CREATION_FAILED],
           statusCode: HttpStatusCode.BadRequest,
         }),
         400 as ContentfulStatusCode,

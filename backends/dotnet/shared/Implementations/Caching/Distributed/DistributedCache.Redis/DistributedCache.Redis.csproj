@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\..\I18n\I18n.csproj" />
       <ProjectReference Include="..\..\..\..\Interfaces\Interfaces.csproj" />
       <ProjectReference Include="..\..\..\..\Utilities\Utilities.csproj" />
     </ItemGroup>

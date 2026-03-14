@@ -8,6 +8,7 @@ namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Events.Protos.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Extensions;
@@ -82,12 +83,12 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
 
             if (contextKey.Falsey())
             {
-                allErrors.Add([$"keys[{i}].contextKey", "Context key must not be empty."]);
+                allErrors.Add([$"keys[{i}].contextKey", TK.Geo.Validation.CONTEXT_KEY_REQUIRED]);
             }
 
             if (relatedEntityId == Guid.Empty)
             {
-                allErrors.Add([$"keys[{i}].relatedEntityId", "Related entity ID must not be an empty GUID."]);
+                allErrors.Add([$"keys[{i}].relatedEntityId", TK.Geo.Validation.RELATED_ENTITY_ID_REQUIRED]);
             }
         }
 

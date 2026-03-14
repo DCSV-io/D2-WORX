@@ -1,6 +1,7 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 import type {
   CreateEmulationConsentRecordInput as I,
   CreateEmulationConsentRecordOutput as O,
@@ -35,7 +36,7 @@ export class CreateEmulationConsentRecord
     } catch (err) {
       if (isPgUniqueViolation(err)) {
         return D2Result.conflict({
-          messages: ["An active consent already exists for this user and organization."],
+          messages: [TK.auth.errors.EMULATION_CONSENT_ALREADY_EXISTS],
         });
       }
       throw err;

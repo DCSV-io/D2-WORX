@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 import { revokeEmulationConsent, isConsentActive } from "@d2/auth-domain";
 import type {
   IFindEmulationConsentByIdHandler,
@@ -51,14 +52,12 @@ export class RevokeEmulationConsent
 
     // Ownership check: consent must belong to the authenticated user
     if (existing.userId !== input.userId) {
-      return D2Result.forbidden({
-        messages: ["Not authorized to revoke this consent."],
-      });
+      return D2Result.forbidden();
     }
 
     if (!isConsentActive(existing)) {
       return D2Result.conflict({
-        messages: ["Consent is already revoked or expired."],
+        messages: [TK.auth.errors.EMULATION_CONSENT_ALREADY_REVOKED],
       });
     }
 

@@ -8,6 +8,7 @@
  */
 import type { RequestEvent } from "@sveltejs/kit";
 import type { ILogger } from "@d2/logging";
+import { TK } from "@d2/i18n";
 import type { AuthBffConfig } from "./types.js";
 
 /** Headers to forward from the incoming request to the Auth service. */
@@ -106,7 +107,7 @@ export class AuthProxy {
       return new Response(
         JSON.stringify({
           success: false,
-          messages: ["Auth service unavailable. Please try again."],
+          messages: [TK.common.errors.SERVICE_UNAVAILABLE],
           statusCode: 503,
           errorCode: "AUTH_UNAVAILABLE",
         }),

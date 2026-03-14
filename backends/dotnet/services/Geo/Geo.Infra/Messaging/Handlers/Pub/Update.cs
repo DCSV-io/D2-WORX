@@ -10,6 +10,7 @@ using System.Net;
 using D2.Events.Protos.V1;
 using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using H = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler;
@@ -72,7 +73,7 @@ public class Update : BaseHandler<Update, I, O>, H
                 TraceId);
 
             return D2Result<O?>.Fail(
-                ["Failed to publish update notification."],
+                [TK.Common.Errors.REQUEST_FAILED],
                 HttpStatusCode.InternalServerError);
         }
 

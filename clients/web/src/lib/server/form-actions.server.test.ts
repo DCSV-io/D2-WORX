@@ -205,7 +205,7 @@ describe("validateAndSubmit", () => {
       submit,
     });
 
-    expect(result).toHaveProperty("message", "An unexpected error occurred.");
+    expect(result).toHaveProperty("message", "common_errors_unknown");
   });
 
   it("uses D2Result statusCode for inputError failures", async () => {

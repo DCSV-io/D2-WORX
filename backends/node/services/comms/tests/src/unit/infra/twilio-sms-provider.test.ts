@@ -94,6 +94,6 @@ describe("TwilioSmsProvider", () => {
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(503);
-    expect(result.messages).toContain("Unknown Twilio error");
+    expect(result.messages).toContain("comms_errors_PROVIDER_UNKNOWN");
   });
 });

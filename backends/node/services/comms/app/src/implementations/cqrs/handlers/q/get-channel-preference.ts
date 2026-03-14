@@ -62,9 +62,7 @@ export class GetChannelPreference
     }
 
     if (!pref) {
-      return D2Result.notFound({
-        messages: [`No channel preferences found for contact ${input.contactId}.`],
-      });
+      return D2Result.notFound();
     }
 
     return D2Result.ok({ data: { pref } });

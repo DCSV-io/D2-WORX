@@ -8,6 +8,7 @@ namespace D2.Shared.Idempotency.Default;
 
 using System.Net;
 using System.Text.Json;
+using D2.Shared.I18n;
 using D2.Shared.Idempotency.Default.Interfaces;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
@@ -107,7 +108,7 @@ public class IdempotencyMiddleware
             context.Response.ContentType = "application/json";
 
             var badRequestResponse = D2Result.ValidationFailed(
-                inputErrors: [[_IDEMPOTENCY_KEY_HEADER, "Idempotency-Key must be a valid UUID."]],
+                inputErrors: [[_IDEMPOTENCY_KEY_HEADER, TK.Common.Errors.VALIDATION_FAILED]],
                 traceId: context.TraceIdentifier);
 
             await context.Response.WriteAsJsonAsync(badRequestResponse, SerializerOptions.SR_Web, context.RequestAborted);
@@ -158,7 +159,7 @@ public class IdempotencyMiddleware
             context.Response.ContentType = "application/json";
 
             var conflictResponse = D2Result.Fail(
-                ["A request with this idempotency key is already being processed."],
+                [TK.Common.Errors.CONFLICT],
                 HttpStatusCode.Conflict,
                 inputErrors: null,
                 ErrorCodes.IDEMPOTENCY_IN_FLIGHT,

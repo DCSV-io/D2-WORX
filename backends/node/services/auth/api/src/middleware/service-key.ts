@@ -1,6 +1,5 @@
 import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { TK } from "@d2/i18n";
 import { D2Result } from "@d2/result";
 import { validateServiceKey } from "@d2/service-key";
 import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
@@ -29,10 +28,7 @@ export function createServiceKeyMiddleware(
     // No key -> pass through or reject based on require option
     if (!apiKey) {
       if (requireKey) {
-        return c.json(
-          D2Result.unauthorized({ messages: [TK.common.errors.UNAUTHORIZED] }),
-          401 as ContentfulStatusCode,
-        );
+        return c.json(D2Result.unauthorized(), 401 as ContentfulStatusCode);
       }
 
       // Explicitly mark as not-trusted (transitions from null -> false).

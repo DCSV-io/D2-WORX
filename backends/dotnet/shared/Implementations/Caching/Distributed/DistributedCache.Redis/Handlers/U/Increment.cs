@@ -8,6 +8,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.U;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -69,7 +70,7 @@ public class Increment : BaseHandler<S.IIncrementHandler, S.IncrementInput, S.In
                 TraceId);
 
             return D2Result<S.IncrementOutput?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }

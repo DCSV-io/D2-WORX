@@ -8,6 +8,7 @@ namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Events.Protos.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
@@ -79,7 +80,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         {
             if (input.ContactIds[i] == Guid.Empty)
             {
-                allErrors.Add([$"items[{i}]", "Contact ID must not be an empty GUID."]);
+                allErrors.Add([$"items[{i}]", TK.Geo.Validation.ID_INVALID]);
             }
         }
 
