@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Infra.Messaging.Handlers.Pub;
 
+using System.Net;
 using D2.Events.Protos.V1;
 using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Handler;
@@ -72,7 +73,7 @@ public class Update : BaseHandler<Update, I, O>, H
 
             return D2Result<O?>.Fail(
                 ["Failed to publish update notification."],
-                System.Net.HttpStatusCode.InternalServerError);
+                HttpStatusCode.InternalServerError);
         }
 
         Context.Logger.LogInformation(

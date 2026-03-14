@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="ICreate.CreateContacts.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -7,6 +7,7 @@
 namespace D2.Geo.App.Interfaces.Repository.Handlers.C;
 
 using D2.Geo.Domain.Entities;
+using D2.Shared.Handler;
 
 public partial interface ICreate
 {
@@ -14,7 +15,7 @@ public partial interface ICreate
     /// Handler for creating Contacts.
     /// </summary>
     public interface ICreateContactsHandler
-        : D2.Shared.Handler.IHandler<CreateContactsInput, CreateContactsOutput>;
+        : IHandler<CreateContactsInput, CreateContactsOutput>;
 
     /// <summary>
     /// Input for creating Contacts.

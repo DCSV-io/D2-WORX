@@ -42,8 +42,7 @@ public class WhoIsValidatorTests
         var whoIs = WhoIs.Create(
             "2001:db8::1",
             year: 2025,
-            month: 6,
-            fingerprint: "Mozilla/5.0");
+            month: 6);
         var validator = new WhoIsValidator();
         var result = validator.Validate(whoIs);
         result.IsValid.Should().BeTrue();
@@ -161,52 +160,6 @@ public class WhoIsValidatorTests
         var result = validator.Validate(whoIs);
         result.IsValid.Should().BeTrue();
         whoIs.HashId.Should().HaveLength(64);
-    }
-
-    #endregion
-
-    #region Fingerprint Max Length
-
-    /// <summary>
-    /// Tests that fingerprint within max length passes.
-    /// </summary>
-    [Fact]
-    public void Validate_FingerprintWithinMaxLength_Passes()
-    {
-        var whoIs = WhoIs.Create("192.168.1.1", fingerprint: new string('A', 2048));
-        var validator = new WhoIsValidator();
-        var result = validator.Validate(whoIs);
-        result.IsValid.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Tests that fingerprint exceeding max length fails.
-    /// </summary>
-    [Fact]
-    public void Validate_FingerprintTooLong_Fails()
-    {
-        var whoIs = WhoIs.Create("192.168.1.1", fingerprint: new string('A', 2049));
-        var validator = new WhoIsValidator();
-        var result = validator.Validate(whoIs);
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == "fingerprint");
-    }
-
-    #endregion
-
-    #region Index Prefix
-
-    /// <summary>
-    /// Tests that indexed error paths use the provided prefix.
-    /// </summary>
-    [Fact]
-    public void Validate_WithIndexPrefix_ErrorPathsIncludePrefix()
-    {
-        var whoIs = WhoIs.Create("192.168.1.1", fingerprint: new string('A', 2049));
-        var validator = new WhoIsValidator("items[3].");
-        var result = validator.Validate(whoIs);
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName.StartsWith("items[3]."));
     }
 
     #endregion

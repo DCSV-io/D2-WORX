@@ -7,6 +7,7 @@
 namespace D2.Geo.App.Validators;
 
 using D2.Geo.Domain.Entities;
+using D2.Shared.I18n;
 using D2.Shared.Utilities.Extensions;
 using FluentValidation;
 
@@ -45,12 +46,12 @@ public class LocationValidator : AbstractValidator<Location>
             RuleFor(l => l.Coordinates!.Latitude)
                 .InclusiveBetween(-90, 90)
                 .OverridePropertyName($"{indexPrefix}latitude")
-                .WithMessage("Must be between -90 and 90.");
+                .WithMessage(TK.Geo.Validation.LATITUDE_RANGE);
 
             RuleFor(l => l.Coordinates!.Longitude)
                 .InclusiveBetween(-180, 180)
                 .OverridePropertyName($"{indexPrefix}longitude")
-                .WithMessage("Must be between -180 and 180.");
+                .WithMessage(TK.Geo.Validation.LONGITUDE_RANGE);
         });
 
         // Address (if present).
@@ -59,7 +60,7 @@ public class LocationValidator : AbstractValidator<Location>
             RuleFor(l => l.Address!.Line1)
                 .NotEmpty()
                 .OverridePropertyName($"{indexPrefix}address.line1")
-                .WithMessage("Line1 is required when address is provided.")
+                .WithMessage(TK.Geo.Validation.ADDRESS_LINE1_REQUIRED)
                 .MaximumLength(255)
                 .OverridePropertyName($"{indexPrefix}address.line1");
 
@@ -76,7 +77,7 @@ public class LocationValidator : AbstractValidator<Location>
                 .NotEmpty()
                 .When(l => l.Address!.Line3.Truthy())
                 .OverridePropertyName($"{indexPrefix}address.line2")
-                .WithMessage("Line2 is required when Line3 is provided.");
+                .WithMessage(TK.Geo.Validation.ADDRESS_LINE2_REQUIRED);
         });
 
         // City (DB max 255).

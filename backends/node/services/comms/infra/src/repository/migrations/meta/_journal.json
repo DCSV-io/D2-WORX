@@ -22,6 +22,13 @@
       "when": 1772087377537,
       "tag": "0002_red_rhino",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1773376490777,
+      "tag": "0003_familiar_miracleman",
+      "breakpoints": true
     }
   ]
 }

@@ -60,6 +60,7 @@ describe("CreateUserContact", () => {
       userId: "not-a-uuid",
       email: "test@example.com",
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);
@@ -74,6 +75,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "",
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);
@@ -88,6 +90,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: longEmail,
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);
@@ -101,6 +104,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "x".repeat(512),
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);
@@ -118,6 +122,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(true);
@@ -131,6 +136,7 @@ describe("CreateUserContact", () => {
     expect(call.contacts[0].contactMethods?.emails[0].value).toBe("test@example.com");
     expect(call.contacts[0].personalDetails?.firstName).toBe("Test");
     expect(call.contacts[0].personalDetails?.lastName).toBe("User");
+    expect(call.contacts[0].ietfBcp47Tag).toBe("en-US");
   });
 
   it("should handle single-word name (no space) — all goes to firstName", async () => {
@@ -138,6 +144,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "Madonna",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(true);
@@ -151,6 +158,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "Mary Jane Watson",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(true);
@@ -167,6 +175,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: `${longFirst} ${longLast}`,
+      locale: "en-US",
     });
 
     expect(result.success).toBe(true);
@@ -180,6 +189,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(true);
@@ -191,6 +201,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);
@@ -215,6 +226,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);
@@ -228,6 +240,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);
@@ -240,6 +253,7 @@ describe("CreateUserContact", () => {
       userId: VALID_USER_ID,
       email: "test@example.com",
       name: "Test User",
+      locale: "en-US",
     });
 
     expect(result.success).toBe(false);

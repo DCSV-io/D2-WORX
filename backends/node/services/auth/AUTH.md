@@ -82,10 +82,11 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | GetSignInEvents        | Query   | Paginated sign-in history (with local memory cache + staleness check)                |
 | GetActiveConsents      | Query   | User's active emulation consents                                                     |
 | GetOrgContacts         | Query   | Org's contacts hydrated with full Geo contact data                                   |
+| CheckEmailAvailability | Query   | Check if an email is available for registration (in-memory cache + DB, fail-open)    |
 | RecordSignInOutcome    | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
 | CreateUserContact      | Command | Create Geo contact via gRPC (`contextKey: auth_user`) during sign-up hook            |
 
-**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 12 CQRS handlers (8 command + 4 query) as transient services, `addAuthInfra(services, db)` registers all 14 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. Notification publishing uses `@d2/comms-client` (configured in `@d2/auth-api` composition root via `addCommsClient(services, { publisher })`), not app-layer handlers. See ADR-011 in `PLANNING.md`.
+**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 13 CQRS handlers (8 command + 5 query) as transient services, `addAuthInfra(services, db)` registers all 14 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. Notification publishing uses `@d2/comms-client` (configured in `@d2/auth-api` composition root via `addCommsClient(services, { publisher })`), not app-layer handlers. See ADR-011 in `PLANNING.md`.
 
 **Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["auth_org_contact", "auth_user", "auth_org_invitation"]` (from `GEO_CONTEXT_KEYS`) and an `apiKey` for gRPC authentication.
 
@@ -141,12 +142,16 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 
 **Who owns what**: HTTP layer — Hono app, middleware pipeline, route handlers, composition root, DI scoping.
 
-| Component        | Location                      | Purpose                                                                          |
-| ---------------- | ----------------------------- | -------------------------------------------------------------------------------- |
-| Composition root | `api/src/composition-root.ts` | DI assembly via `ServiceCollection` + `ServiceProvider`                          |
-| Scope middleware | `api/src/middleware/scope.ts` | Per-request DI scope on protected routes                                         |
-| Middleware       | `api/src/middleware/`         | CSRF, request-enrichment, rate-limit, session, fingerprint, auth, error handling |
-| Routes           | `api/src/routes/`             | Thin routes with visible authorization (5-8 lines each)                          |
+| Component        | Location                          | Purpose                                                                                                                                                     |
+| ---------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Composition root | `api/src/composition-root.ts`     | DI assembly via `ServiceCollection` + `ServiceProvider`                                                                                                     |
+| App setup        | `api/src/setup/hono-app-setup.ts` | Hono app builder with full middleware pipeline and route composition                                                                                        |
+| Scope middleware | `api/src/middleware/scope.ts`     | Per-request DI scope on protected routes                                                                                                                    |
+| Middleware       | `api/src/middleware/`             | Thin Hono adapters delegating to shared packages (@d2/csrf, @d2/service-key, @d2/session-fingerprint), plus session, enrichment, rate-limit, error handling |
+| Routes           | `api/src/routes/`                 | Thin routes with visible authorization (5-8 lines each)                                                                                                     |
+| gRPC services    | `api/src/services/`               | AuthServiceServer (health) + auth-jobs gRPC service                                                                                                         |
+
+**Shared middleware delegation**: CSRF (`@d2/csrf`), session fingerprint (`@d2/session-fingerprint`), service key (`@d2/service-key`), and translation (`@d2/translation`) middleware delegate to shared packages under `backends/node/shared/implementations/middleware/` for framework-agnostic core logic. Auth API middleware files are thin Hono adapters around these shared packages. The error handler uses `TK` translation key constants (from `@d2/i18n`) instead of hardcoded English strings. The auth service also uses `@d2/i18n` (`BASE_LOCALE`, `createTranslator`) for locale resolution — `BASE_LOCALE` defaults to `"en-US"` (BCP 47 tag, configurable via `PUBLIC_DEFAULT_LOCALE` env var).
 
 **Thin routes pattern**: Route handlers are intentionally thin — they extract input from the request (body, session, query params), call the handler, and return the result. All validation, business logic, and IDOR checks live in app-layer handlers. Authorization is declared via middleware at route registration (`requireOrg()`, `requireStaff()`, `requireRole("officer")`), making security requirements visible at a glance.
 
@@ -160,9 +165,12 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 2. Run Drizzle migrations + create Drizzle instance
 3. Register all services in `ServiceCollection` via `addAuthInfra(services, db)`, `addAuthApp(services, options)`, and `addCommsClient(services, { publisher })`
 4. Build immutable `ServiceProvider`
-5. Create pre-auth singletons (FindWhoIs, RateLimit, Throttle) — these remain outside DI with service-level context
-6. Create BetterAuth with scoped callbacks
-7. Build Hono app with scope middleware on protected routes
+5. Create pre-auth singletons (FindWhoIs, RateLimit, Throttle, CheckEmailAvailability) — these remain outside DI with service-level context
+6. Create pre-auth password functions (HIBP + blocklist)
+7. Create i18n translator (`@d2/i18n` — loads `contracts/messages/*.json` at startup)
+8. Create BetterAuth with scoped callbacks (including `createUserContact` with locale)
+9. Build Hono app with scope middleware on protected routes
+10. Build gRPC server (AuthServiceServer for health checks, auth-jobs service)
 
 **Service lifetimes:**
 
@@ -173,7 +181,7 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 | All CQRS handlers, repo handlers     | Transient | New instance per resolve — receive scoped `IHandlerContext` via factory |
 | Sign-in throttle store               | Singleton | Redis-backed state — shared across all requests                         |
 
-**Pre-auth singletons** (FindWhoIs, CheckRateLimit, CheckSignInThrottle, RecordSignInOutcome): These handlers execute before authentication and are NOT registered in the DI container. They are constructed once at startup with a service-level `HandlerContext` containing static anonymous defaults. However, they **automatically see per-request context** via ambient `AsyncLocalStorage` — `HandlerContext` checks `requestContextStorage` / `requestLoggerStorage` first, falling back to constructor args only when no ambient storage is active. This mirrors .NET's DI scoping behavior where all handlers get per-request `IRequestContext` from `HttpContext.Features`.
+**Pre-auth singletons** (FindWhoIs, CheckRateLimit, CheckSignInThrottle, RecordSignInOutcome, CheckEmailAvailability): These handlers execute before authentication and are NOT registered in the DI container. They are constructed once at startup with a service-level `HandlerContext` containing static anonymous defaults. However, they **automatically see per-request context** via ambient `AsyncLocalStorage` — `HandlerContext` checks `requestContextStorage` / `requestLoggerStorage` first, falling back to constructor args only when no ambient storage is active. This mirrors .NET's DI scoping behavior where all handlers get per-request `IRequestContext` from `HttpContext.Features`.
 
 **Ambient context pipeline**: The `createAmbientScopeMiddleware()` wraps the request pipeline in `AsyncLocalStorage.run()`, seeded with the enrichment-populated `IRequestContext` and per-request logger. After auth, `createScopeMiddleware()` upgrades the ambient context via `.enterWith()` to include identity/org fields. Pre-auth singletons see enrichment data (IP, fingerprints, trust flag); post-auth handlers see the full auth-enriched context.
 
@@ -192,16 +200,16 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 
 These tables are owned and managed by BetterAuth via the Drizzle adapter. Their schema is declared in `infra/src/repository/schema/better-auth-tables.ts` and included in the Drizzle migration alongside custom tables. BetterAuth reads/writes through the Drizzle adapter — we do NOT use BetterAuth's internal Kysely adapter.
 
-| Table          | Key Fields                                                       | Notes                                                        |
-| -------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| `user`         | id, email, name, username, displayUsername, image, emailVerified | UUIDv7 IDs, username auto-generated by `ensureUsername` hook |
-| `account`      | id, userId, providerId, accountId                                | 1:N user:account (credential, Google, GitHub, etc.)          |
-| `session`      | id, userId, expiresAt, ipAddress, userAgent + 4 custom fields    | 3-tier storage                                               |
-| `verification` | id, identifier, value, expiresAt                                 | Email verification/password reset tokens                     |
-| `jwks`         | id, publicKey, privateKey, createdAt                             | RS256 key pairs for JWT signing                              |
-| `organization` | id, name, slug, logo, metadata + orgType                         | Custom `orgType` field                                       |
-| `member`       | id, organizationId, userId, role                                 | Standard BetterAuth membership                               |
-| `invitation`   | id, organizationId, email, role, status, expiresAt               | With state machine transitions                               |
+| Table          | Key Fields                                                               | Notes                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `user`         | id, email, name, username, displayUsername, image, emailVerified, locale | UUIDv7 IDs, username auto-generated by `ensureUsername` hook. `locale` custom field defaults to `BASE_LOCALE` (`"en-US"`, BCP 47 tag) |
+| `account`      | id, userId, providerId, accountId                                        | 1:N user:account (credential, Google, GitHub, etc.)                                                                                   |
+| `session`      | id, userId, expiresAt, ipAddress, userAgent + 4 custom fields            | 3-tier storage                                                                                                                        |
+| `verification` | id, identifier, value, expiresAt                                         | Email verification/password reset tokens                                                                                              |
+| `jwks`         | id, publicKey, privateKey, createdAt                                     | RS256 key pairs for JWT signing                                                                                                       |
+| `organization` | id, name, slug, logo, metadata + orgType                                 | Custom `orgType` field                                                                                                                |
+| `member`       | id, organizationId, userId, role                                         | Standard BetterAuth membership                                                                                                        |
+| `invitation`   | id, organizationId, email, role, status, expiresAt                       | With state machine transitions                                                                                                        |
 
 ### Custom Tables (Drizzle Migrations)
 
@@ -501,18 +509,17 @@ The `definePayload` function in `auth-factory.ts` constructs the JWT payload fro
 | `email`                 | `JWT_CLAIM_TYPES.EMAIL`                  | `user.email`                              | string          |
 | `username`              | `JWT_CLAIM_TYPES.USERNAME`               | `user.username` (auto-generated)          | string          |
 | `orgId`                 | `JWT_CLAIM_TYPES.ORG_ID`                 | `session[ACTIVE_ORG_ID]`                  | string?         |
-| `orgName`               | `JWT_CLAIM_TYPES.ORG_NAME`               | `organization.name`                       | string?         |
 | `orgType`               | `JWT_CLAIM_TYPES.ORG_TYPE`               | `session[ACTIVE_ORG_TYPE]`                | string?         |
 | `role`                  | `JWT_CLAIM_TYPES.ROLE`                   | `session[ACTIVE_ORG_ROLE]`                | string?         |
 | `emulatedOrgId`         | `JWT_CLAIM_TYPES.EMULATED_ORG_ID`        | `session[EMULATED_ORG_ID]`                | string?         |
-| `emulatedOrgName`       | `JWT_CLAIM_TYPES.EMULATED_ORG_NAME`      | Emulated organization name                | string?         |
-| `emulatedOrgType`       | `JWT_CLAIM_TYPES.EMULATED_ORG_TYPE`      | `session[EMULATED_ORG_TYPE]`              | string?         |
 | `isEmulating`           | `JWT_CLAIM_TYPES.IS_EMULATING`           | Derived from emulatedOrgId                | boolean         |
 | `impersonatedBy`        | `JWT_CLAIM_TYPES.IMPERSONATED_BY`        | `session["impersonatedBy"]`               | string?         |
 | `isImpersonating`       | `JWT_CLAIM_TYPES.IS_IMPERSONATING`       | Derived from impersonatedBy               | boolean         |
 | `impersonatingEmail`    | `JWT_CLAIM_TYPES.IMPERSONATING_EMAIL`    | DB lookup on impersonator user            | string?         |
 | `impersonatingUsername` | `JWT_CLAIM_TYPES.IMPERSONATING_USERNAME` | DB lookup on impersonator user            | string?         |
 | `fp`                    | `JWT_CLAIM_TYPES.FINGERPRINT`            | `hooks.getFingerprintForCurrentRequest()` | string?         |
+
+> **Note**: The constants `JWT_CLAIM_TYPES.ORG_NAME`, `EMULATED_ORG_NAME`, and `EMULATED_ORG_TYPE` are defined in `auth-constants.ts` but are NOT currently emitted by `definePayload`. They exist for future use when org name/emulated org context is added to JWT claims.
 
 ### .NET Gateway JWT Validation
 
@@ -559,9 +566,9 @@ Two distinct security concepts with different JWT shapes:
 
 Two independent fingerprint checks prevent token theft:
 
-### 1. Session Fingerprint (Node.js — @d2/auth-api)
+### 1. Session Fingerprint (Node.js — @d2/session-fingerprint)
 
-**Where**: `middleware/session-fingerprint.ts`
+**Where**: Core logic in `@d2/session-fingerprint` shared package (`backends/node/shared/implementations/middleware/session-fingerprint/default/`). Auth API's `middleware/session-fingerprint.ts` is a thin Hono adapter.
 
 **Formula**: `SHA-256(User-Agent + "|" + Accept)`
 
@@ -578,7 +585,7 @@ Two independent fingerprint checks prevent token theft:
 
 ### 2. JWT Fingerprint (.NET Gateway)
 
-**Where**: `JwtFingerprintMiddleware.cs` + `JwtFingerprintValidator.cs`
+**Where**: `Auth.Default/JwtFingerprintMiddleware.cs` + `Auth.Default/JwtFingerprintValidator.cs` (in `backends/dotnet/shared/Implementations/Middleware/Auth.Default/`)
 
 **Formula**: `SHA-256(User-Agent + "|" + Accept)` (identical to Node.js)
 
@@ -669,40 +676,48 @@ The composition root builds the pipeline in this exact order:
 
 ```
 1.  CORS (Hono built-in)
-2.  Body limit (256KB)
-3.  Service key detection (X-Api-Key → sets IsTrustedService; require: true → 401 if missing)
+2.  Security headers (X-Content-Type-Options: nosniff, X-Frame-Options: DENY)
+3.  Body limit (256KB)
 4.  Request enrichment (IP resolution, fingerprinting, WhoIs lookup)
-5.  Request context logging (per-request child logger with network bindings)
-6.  Ambient scope (AsyncLocalStorage.run() — seeds per-request context for all handlers)
-7.  Rate limiting (multi-dimensional sliding window, Redis — skipped for trusted services)
-8.  Error handler (catch-all → D2Result)
+5.  Service key detection (@d2/service-key — X-Api-Key → sets IsTrustedService; require: true → 401 if missing)
+6.  Request context logging (per-request child logger with network bindings)
+7.  Ambient scope (AsyncLocalStorage.run() — seeds per-request context for all handlers)
+8.  Rate limiting (multi-dimensional sliding window, Redis — skipped for trusted services)
+9.  Error handler (catch-all → D2Result, uses TK.* constants from @d2/i18n)
+    --- Public routes: /api/auth/check-email ---
+10. Email availability check (public, pre-auth — rate limited but no session/CSRF)
     --- BetterAuth routes: /api/auth/* ---
-9.  Session fingerprint middleware (for auth routes)
-10. BetterAuth handler (with throttle on sign-in)
+11. Fingerprint AsyncLocalStorage (stores fp for JWT definePayload)
+12. BetterAuth handler (with throttle on sign-in)
     --- Protected routes: /api/emulation/*, /api/org-contacts/*, /api/invitations/* ---
-11. Session middleware (extracts user + session, fail-closed)
-12. Session fingerprint validation (continuity check)
-13. DI scope (creates per-request scope, merges auth into IRequestContext, upgrades ambient via enterWith)
-14. CSRF protection (Origin header validation)
-15. Authorization middleware (requireOrg, requireStaff, requireRole — visible at route declaration)
-16. Thin route handlers (extract input → call handler → return result)
-17. App-layer handlers (Zod validation → business logic → repository)
+13. Session middleware (extracts user + session, fail-closed)
+14. Session fingerprint validation (@d2/session-fingerprint — continuity check)
+15. DI scope (creates per-request scope, merges auth into IRequestContext, upgrades ambient via enterWith)
+16. CSRF protection (@d2/csrf — Origin header validation)
+17. Authorization middleware (requireOrg, requireStaff, requireRole — visible at route declaration)
+18. Thin route handlers (extract input → call handler → return result)
+19. App-layer handlers (Zod validation → business logic → repository)
 ```
 
 **API key requirement**: All auth endpoints require a valid `X-Api-Key` header (`require: true` on service-key middleware). Missing key → 401. Invalid key → 401. Valid key → `IRequestContext.isTrustedService = true`, continues to next middleware.
 
 ### .NET Gateway Middleware Order
 
+Auth middleware has moved from gateway-local (`REST/Auth/`) to shared packages at `backends/dotnet/shared/Implementations/Middleware/Auth.Default/` and `Translation.Default/`.
+
 ```
-1. Request enrichment (IP resolution, fingerprint, WhoIs)
-2. Service key detection (X-Api-Key → sets IsTrustedService flag)
-3. Rate limiting (multi-dimensional sliding window — skipped for trusted services)
-4. CORS
-5. Authentication (JWT Bearer via JWKS)
-6. Fingerprint validation (fp claim vs computed — skipped for trusted services, required for non-trusted)
-7. Authorization (policy evaluation)
-8. Idempotency (for POST/PUT/PATCH)
-9. Endpoint routing
+1.  Security headers (X-Content-Type-Options: nosniff, X-Frame-Options: DENY)
+2.  CORS
+3.  Request enrichment (IP resolution, fingerprint, WhoIs)
+4.  Service key detection (Auth.Default — X-Api-Key → sets IsTrustedService flag)
+5.  Rate limiting (multi-dimensional sliding window — skipped for trusted services)
+6.  Authentication (Auth.Default — JWT Bearer via JWKS)
+7.  Fingerprint validation (Auth.Default — fp claim vs computed — skipped for trusted services)
+8.  Request context logging
+9.  Authorization (policy evaluation)
+10. Idempotency (for POST/PUT/PATCH)
+11. Translation (Translation.Default — resolves TK.* keys in D2Result responses)
+12. Endpoint routing
 ```
 
 ---
@@ -756,7 +771,7 @@ These handlers operate on custom tables via Drizzle repositories. They follow th
 | CreateOrgContact       | organizationId, label, isPrimary?, contact         | Creates `org_contact` junction → Geo contact via gRPC (ext key = junction ID) | zodGuid, zodNonEmptyString, contact sub-fields           | Junction created first; Geo contact uses ext key `(org_contact, junction.id)`. Rollback junction on Geo failure                                                                                            |
 | UpdateOrgContact       | id, organizationId, updates                        | Updates metadata or replaces contact via `updateContactsByExtKeys`            | zodGuid × 2, at-least-one-field refine, optional contact | IDOR check; if contact provided: atomic replace via Geo ext-key update                                                                                                                                     |
 | DeleteOrgContact       | id, organizationId                                 | Deletes junction + best-effort Geo contact cleanup via ext key                | zodGuid × 2                                              | IDOR check; Geo delete failure tolerated (orphan cleanup by Geo job)                                                                                                                                       |
-| CreateUserContact      | userId, firstName, lastName, email                 | Creates Geo contact via gRPC (`contextKey: auth_user`)                        | — (called from BetterAuth hook)                          | Pre-generates UUIDv7; Geo failure aborts sign-up entirely                                                                                                                                                  |
+| CreateUserContact      | userId, email, name, locale                        | Creates Geo contact via gRPC (`contextKey: auth_user`)                        | zodGuid, zodNonEmptyString(254/511/35)                   | Splits `name` into firstName/lastName; maps `locale` to `ietfBcp47Tag` on the Geo contact; Geo failure aborts sign-up entirely                                                                             |
 
 #### Notification Publishing
 
@@ -766,29 +781,30 @@ Notifications are published from BetterAuth callbacks (`sendVerificationEmail`, 
 
 #### Queries (Q/)
 
-| Handler             | Input                           | Returns                       | Pagination                                                                                                                                                     |
-| ------------------- | ------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CheckSignInThrottle | identifierHash, identityHash    | `{ blocked, retryAfterSec? }` | N/A. Local memory cache for known-good (5min TTL, 0 Redis calls). Cache miss → concurrent `Promise.all(isKnownGood, getLockedTtlSeconds)`. Fail-open on errors |
-| GetSignInEvents     | userId, limit?, offset?         | SignInEvent[] + total         | Default 50, max 100. Local memory cache with staleness check (latest event date)                                                                               |
-| GetActiveConsents   | userId, limit?, offset?         | EmulationConsent[]            | Default 20, max 100                                                                                                                                            |
-| GetOrgContacts      | organizationId, limit?, offset? | HydratedOrgContact[]          | Default 20, max 100. Batch-fetches Geo contact data via ext keys (`getContactsByExtKeys`), joins with junction metadata                                        |
+| Handler                | Input                           | Returns                       | Pagination / Caching                                                                                                                                           |
+| ---------------------- | ------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CheckSignInThrottle    | identifierHash, identityHash    | `{ blocked, retryAfterSec? }` | N/A. Local memory cache for known-good (5min TTL, 0 Redis calls). Cache miss → concurrent `Promise.all(isKnownGood, getLockedTtlSeconds)`. Fail-open on errors |
+| GetSignInEvents        | userId, limit?, offset?         | SignInEvent[] + total         | Default 50, max 100. Local memory cache with staleness check (latest event date)                                                                               |
+| GetActiveConsents      | userId, limit?, offset?         | EmulationConsent[]            | Default 20, max 100                                                                                                                                            |
+| GetOrgContacts         | organizationId, limit?, offset? | HydratedOrgContact[]          | Default 20, max 100. Batch-fetches Geo contact data via ext keys (`getContactsByExtKeys`), joins with junction metadata                                        |
+| CheckEmailAvailability | email                           | `{ available: boolean }`      | In-memory cache: "taken" 1h TTL, "available" 30s TTL. Cache miss → repo query. Fail-open on cache errors                                                       |
 
 ### BetterAuth-Managed Operations
 
 These are handled by BetterAuth directly (not custom handlers):
 
-| Operation          | BetterAuth Method               | Notes                                                                                                                                                                   |
-| ------------------ | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first (`CreateUserContact` hook). No auto-sign-in — user must verify email. Verification email via `@d2/comms-client` → Comms |
-| Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                                                          |
-| Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                                                            |
-| Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                                                        |
-| Get session        | `getSession`                    | 3-tier lookup                                                                                                                                                           |
-| Create org         | `organization.create`           | Validates orgType via `beforeCreateOrganization`                                                                                                                        |
-| Create invitation  | `auth.api.createInvitation`     | Called by custom `/api/invitations` route (NOT exposed via BetterAuth HTTP). `sendInvitationEmail` callback disabled — our route handles publishing                     |
-| Accept invitation  | `organization.acceptInvitation` | State machine transition                                                                                                                                                |
-| JWKS               | `/.well-known/jwks.json`        | Auto-rotated key pairs                                                                                                                                                  |
-| Impersonation      | `admin.impersonateUser`         | 1-hour session, requires admin                                                                                                                                          |
+| Operation          | BetterAuth Method               | Notes                                                                                                                                                                                                                 |
+| ------------------ | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign up            | `emailPassword.signUp`          | Pre-generates UUIDv7, creates Geo contact first (`CreateUserContact` hook with locale from `user.locale ?? BASE_LOCALE`). No auto-sign-in — user must verify email. Verification email via `@d2/comms-client` → Comms |
+| Sign in (email)    | `emailPassword.signIn`          | Triggers `onSignIn` hook → RecordSignInEvent. Throttle-guarded                                                                                                                                                        |
+| Sign in (username) | `username.signIn`               | Same hooks + throttle guard as email sign-in                                                                                                                                                                          |
+| Sign out           | `signOut`                       | Revokes session from all 3 tiers                                                                                                                                                                                      |
+| Get session        | `getSession`                    | 3-tier lookup                                                                                                                                                                                                         |
+| Create org         | `organization.create`           | Validates orgType via `beforeCreateOrganization`                                                                                                                                                                      |
+| Create invitation  | `auth.api.createInvitation`     | Called by custom `/api/invitations` route (NOT exposed via BetterAuth HTTP). `sendInvitationEmail` callback disabled — our route handles publishing                                                                   |
+| Accept invitation  | `organization.acceptInvitation` | State machine transition                                                                                                                                                                                              |
+| JWKS               | `/.well-known/jwks.json`        | Auto-rotated key pairs                                                                                                                                                                                                |
+| Impersonation      | `admin.impersonateUser`         | 1-hour session, requires admin                                                                                                                                                                                        |
 
 ---
 
@@ -1071,45 +1087,46 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 
 ### Node.js Tests (Auth Service)
 
-| Test File                                       | Tests   | Coverage                                                                                                                                                                             |
-| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **API Layer**                                   |         |                                                                                                                                                                                      |
-| `middleware/authorization.test.ts`              | 42      | requireOrg, requireOrgType, requireRole, requireStaff, requireAdmin, composition, defensive edge cases (empty/case/numeric/null/whitespace)                                          |
-| `middleware/session.test.ts`                    | 10      | Success, 401 unauthenticated, 503 fail-closed, header forwarding, undefined return, non-Error throws, error detail leakage                                                           |
-| `middleware/session-fingerprint.test.ts`        | 16      | SHA-256 computation, mismatch revocation, Redis storage, fail-open, Bearer, empty tokens, session isolation, best-effort revocation                                                  |
-| `middleware/csrf.test.ts`                       | 21      | Content-Type + Origin validation, form attacks (text/plain, multipart, x-www-form-urlencoded), null origin, port/scheme mismatch                                                     |
-| `middleware/scope.test.ts`                      | 18      | IRequestContext mapping (all 5 org types), emulation, traceId, disposal, unknown/PascalCase org types, empty emulatedOrgId, no-org session                                           |
-| `middleware/error-handler.test.ts`              | 8       | D2Result-shaped error responses                                                                                                                                                      |
-| `middleware/jwt-fingerprint.test.ts`            | 9       | JWT fp claim computation                                                                                                                                                             |
-| `routes/auth-routes.test.ts`                    | 27      | Cache-Control on .well-known, throttle guard (429/Retry-After/blocked/allowed), fire-and-forget record, edge cases, case-insensitive hashing, username path, requestInfo propagation |
-| `routes/emulation-routes.test.ts`               | 26      | Middleware auth (role + staff), input mapping, status codes, pagination                                                                                                              |
-| `routes/org-contact-routes.test.ts`             | 25      | Middleware auth (role), input mapping, status codes, pagination, no-org, contact details                                                                                             |
-| `routes/invitation-routes.test.ts`              | 33      | Role checks, input validation, happy paths, defensive security (CRLF injection, IDOR, long inputs, concurrent requests)                                                              |
-| **Domain Layer**                                |         |                                                                                                                                                                                      |
-| `domain/enums/*.test.ts`                        | 15      | OrgType, Role, InvitationStatus validation + guards                                                                                                                                  |
-| `domain/entities/*.test.ts`                     | 80      | Factory functions, immutability, validation                                                                                                                                          |
-| `domain/rules/*.test.ts`                        | 87      | Emulation (self-emulation, forced auditor), membership, org-creation, invitation state machine, sign-in throttle, username, password                                                 |
-| `domain/exceptions/*.test.ts`                   | 12      | Error structures                                                                                                                                                                     |
-| **Infra Layer**                                 |         |                                                                                                                                                                                      |
-| `infra/access-control.test.ts`                  | 5       | RBAC permission definitions                                                                                                                                                          |
-| `infra/mappers/*.test.ts`                       | 15      | BetterAuth → domain mapping (5 mappers)                                                                                                                                              |
-| `infra/secondary-storage.test.ts`               | 6       | Redis adapter contract                                                                                                                                                               |
-| `infra/username-hooks.test.ts`                  | 7       | Username generation hooks                                                                                                                                                            |
-| `infra/sign-in-throttle-store.test.ts`          | 11      | Redis key prefixes, handler delegation, TTL conversion, failure fallbacks                                                                                                            |
-| **App Layer**                                   |         |                                                                                                                                                                                      |
-| `app/handlers/c/*.test.ts`                      | 80      | All command handlers (create-emulation-consent, create-org-contact, delete-org-contact, update-org-contact, record-sign-in-event, record-sign-in-outcome)                            |
-| `app/handlers/q/*.test.ts`                      | 49      | All query handlers (check-sign-in-throttle, get-active-consents, get-org-contacts, get-sign-in-events)                                                                               |
-| **Integration Tests**                           |         |                                                                                                                                                                                      |
-| `integration/migration.test.ts`                 | 16      | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index                                                                                             |
-| `integration/custom-table-repositories.test.ts` | 26      | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints)                                                                                                    |
-| `integration/auth-factory.test.ts`              | 21      | Email verification, full E2E flow, UUIDv7, session hooks, user row completeness, JWT claims, org+orgType, password validation, session fields, createUserContact hook                |
-| `integration/better-auth-tables.test.ts`        | 8       | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance                                                                                                                 |
-| `integration/secondary-storage.test.ts`         | 6       | Redis adapter integration (set/get/delete, TTL expiration)                                                                                                                           |
-| `integration/session-fingerprint.test.ts`       | 7       | Redis-backed fingerprint storage + revocation                                                                                                                                        |
-| `integration/sign-in-throttle-store.test.ts`    | 11      | Redis sign-in throttle store integration                                                                                                                                             |
-| `integration/app-handlers.test.ts`              | 9       | App handler integration with DB (repositories + domain)                                                                                                                              |
-| `integration/better-auth-behavior.test.ts`      | 31      | RS256 JWT structure, session lifecycle, additionalFields auto-enrichment (`session.update.before` hook), definePayload org context, snake_case columns, pre-generated UUIDv7 IDs     |
-| **Total auth-tests**                            | **825** | 690 unit + 135 integration (Testcontainers PostgreSQL 18 + Redis)                                                                                                                    |
+| Test File                                       | Tests    | Coverage                                                                                                                                                                             |
+| ----------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **API Layer**                                   |          |                                                                                                                                                                                      |
+| `middleware/authorization.test.ts`              | 42       | requireOrg, requireOrgType, requireRole, requireStaff, requireAdmin, composition, defensive edge cases (empty/case/numeric/null/whitespace)                                          |
+| `middleware/session.test.ts`                    | 10       | Success, 401 unauthenticated, 503 fail-closed, header forwarding, undefined return, non-Error throws, error detail leakage                                                           |
+| `middleware/session-fingerprint.test.ts`        | 16       | SHA-256 computation, mismatch revocation, Redis storage, fail-open, Bearer, empty tokens, session isolation, best-effort revocation                                                  |
+| `middleware/csrf.test.ts`                       | 21       | Content-Type + Origin validation, form attacks (text/plain, multipart, x-www-form-urlencoded), null origin, port/scheme mismatch                                                     |
+| `middleware/scope.test.ts`                      | 18       | IRequestContext mapping (all 5 org types), emulation, traceId, disposal, unknown/PascalCase org types, empty emulatedOrgId, no-org session                                           |
+| `middleware/error-handler.test.ts`              | 8        | D2Result-shaped error responses                                                                                                                                                      |
+| `middleware/jwt-fingerprint.test.ts`            | 9        | JWT fp claim computation                                                                                                                                                             |
+| `routes/auth-routes.test.ts`                    | 27       | Cache-Control on .well-known, throttle guard (429/Retry-After/blocked/allowed), fire-and-forget record, edge cases, case-insensitive hashing, username path, requestInfo propagation |
+| `routes/check-email-routes.test.ts`             | 8        | Public email availability endpoint, missing param, success/error responses                                                                                                           |
+| `routes/emulation-routes.test.ts`               | 26       | Middleware auth (role + staff), input mapping, status codes, pagination                                                                                                              |
+| `routes/org-contact-routes.test.ts`             | 25       | Middleware auth (role), input mapping, status codes, pagination, no-org, contact details                                                                                             |
+| `routes/invitation-routes.test.ts`              | 33       | Role checks, input validation, happy paths, defensive security (CRLF injection, IDOR, long inputs, concurrent requests)                                                              |
+| **Domain Layer**                                |          |                                                                                                                                                                                      |
+| `domain/enums/*.test.ts`                        | 15       | OrgType, Role, InvitationStatus validation + guards                                                                                                                                  |
+| `domain/entities/*.test.ts`                     | 80       | Factory functions, immutability, validation                                                                                                                                          |
+| `domain/rules/*.test.ts`                        | 87       | Emulation (self-emulation, forced auditor), membership, org-creation, invitation state machine, sign-in throttle, username, password                                                 |
+| `domain/exceptions/*.test.ts`                   | 12       | Error structures                                                                                                                                                                     |
+| **Infra Layer**                                 |          |                                                                                                                                                                                      |
+| `infra/access-control.test.ts`                  | 5        | RBAC permission definitions                                                                                                                                                          |
+| `infra/mappers/*.test.ts`                       | 15       | BetterAuth → domain mapping (5 mappers)                                                                                                                                              |
+| `infra/secondary-storage.test.ts`               | 6        | Redis adapter contract                                                                                                                                                               |
+| `infra/username-hooks.test.ts`                  | 7        | Username generation hooks                                                                                                                                                            |
+| `infra/sign-in-throttle-store.test.ts`          | 11       | Redis key prefixes, handler delegation, TTL conversion, failure fallbacks                                                                                                            |
+| **App Layer**                                   |          |                                                                                                                                                                                      |
+| `app/handlers/c/*.test.ts`                      | 80       | All command handlers (create-emulation-consent, create-org-contact, delete-org-contact, update-org-contact, record-sign-in-event, record-sign-in-outcome)                            |
+| `app/handlers/q/*.test.ts`                      | 70       | All query handlers (check-sign-in-throttle, get-active-consents, get-org-contacts, get-sign-in-events, check-email-availability)                                                     |
+| **Integration Tests**                           |          |                                                                                                                                                                                      |
+| `integration/migration.test.ts`                 | 16       | All 11 tables exist, columns correct, indexes verified, idempotent, partial unique index                                                                                             |
+| `integration/custom-table-repositories.test.ts` | 26       | All 3 repos (CRUD, pagination, ordering, cross-contamination, unique constraints)                                                                                                    |
+| `integration/auth-factory.test.ts`              | 21       | Email verification, full E2E flow, UUIDv7, session hooks, user row completeness, JWT claims, org+orgType, password validation, session fields, createUserContact hook                |
+| `integration/better-auth-tables.test.ts`        | 8        | Sign-up, email uniqueness, sessions, orgs+members, JWKS/JWT issuance                                                                                                                 |
+| `integration/secondary-storage.test.ts`         | 6        | Redis adapter integration (set/get/delete, TTL expiration)                                                                                                                           |
+| `integration/session-fingerprint.test.ts`       | 7        | Redis-backed fingerprint storage + revocation                                                                                                                                        |
+| `integration/sign-in-throttle-store.test.ts`    | 11       | Redis sign-in throttle store integration                                                                                                                                             |
+| `integration/app-handlers.test.ts`              | 9        | App handler integration with DB (repositories + domain)                                                                                                                              |
+| `integration/better-auth-behavior.test.ts`      | 31       | RS256 JWT structure, session lifecycle, additionalFields auto-enrichment (`session.update.before` hook), definePayload org context, snake_case columns, pre-generated UUIDv7 IDs     |
+| **Total auth-tests**                            | **~865** | ~720 unit + ~135 integration (Testcontainers PostgreSQL 18 + Redis)                                                                                                                  |
 
 ### Key Security Behaviors Verified by Tests
 
@@ -1122,7 +1139,7 @@ When adding new routes/handlers, follow this checklist. Rules apply to **both No
 | Session middleware fails closed (503, not 401) on infra errors                              | `session.test.ts`                                                                           |
 | JWT fingerprint mismatch returns 401                                                        | `JwtFingerprintMiddlewareTests.cs`                                                          |
 | Short fingerprint claims don't crash middleware                                             | `JwtFingerprintMiddlewareTests.cs`                                                          |
-| No fp claim → backwards-compatible pass-through                                             | `JwtFingerprintMiddlewareTests.cs`                                                          |
+| No fp claim (non-trusted) → 401 MISSING_FINGERPRINT                                         | `JwtFingerprintMiddlewareTests.cs`                                                          |
 | Only RS256 algorithm accepted                                                               | `JwtAuthExtensions.cs` configuration, `better-auth-behavior.test.ts`                        |
 | Signed tokens required                                                                      | `JwtAuthExtensions.cs` configuration                                                        |
 | Authorization policies require authenticated user                                           | `AuthPolicyTests.cs`                                                                        |
@@ -1203,21 +1220,30 @@ backends/node/services/auth/
 │       ├── middleware/
 │       │   ├── authorization.ts         # requireOrg, requireOrgType, requireRole, requireStaff, requireAdmin
 │       │   ├── session.ts               # Session extraction (fail-closed)
-│       │   ├── session-fingerprint.ts   # Stolen token detection
+│       │   ├── session-fingerprint.ts   # Thin Hono adapter around @d2/session-fingerprint
 │       │   ├── scope.ts                 # Per-request DI scope (createScopeMiddleware)
-│       │   ├── csrf.ts                  # Content-Type + Origin validation
+│       │   ├── ambient-scope.ts         # AsyncLocalStorage-based ambient context (createAmbientScopeMiddleware)
+│       │   ├── csrf.ts                  # Thin Hono adapter around @d2/csrf (Content-Type + Origin)
 │       │   ├── cors.ts                  # CORS middleware factory
+│       │   ├── service-key.ts           # Thin Hono adapter around @d2/service-key
 │       │   ├── request-enrichment.ts    # @d2/request-enrichment middleware
+│       │   ├── request-context-logging.ts # Per-request child logger with network bindings
 │       │   ├── distributed-rate-limit.ts # @d2/ratelimit middleware
-│       │   └── error-handler.ts         # D2Result error responses
+│       │   └── error-handler.ts         # D2Result error responses (uses TK.* from @d2/i18n)
 │       ├── routes/
 │       │   ├── auth-routes.ts           # BetterAuth routes + sign-in throttle guard
+│       │   ├── check-email-routes.ts    # Public email availability check (pre-auth)
 │       │   ├── emulation-routes.ts      # Thin routes: visible auth middleware, handler delegation
 │       │   ├── org-contact-routes.ts    # Thin routes: visible auth middleware, handler delegation
 │       │   ├── invitation-routes.ts     # Custom invitation route (requireOrg + requireRole(officer))
 │       │   └── health.ts               # Health check
+│       ├── services/
+│       │   ├── auth-grpc-service.ts     # AuthServiceServer gRPC implementation (health checks)
+│       │   └── auth-jobs-grpc-service.ts # Auth job gRPC service
+│       ├── setup/
+│       │   └── hono-app-setup.ts        # Hono app builder with full middleware pipeline
 │       └── index.ts
-├── tests/                               # @d2/auth-tests (825 tests)
+├── tests/                               # @d2/auth-tests (~865 tests)
 │   └── src/
 │       ├── unit/
 │       │   ├── api/
@@ -1237,12 +1263,23 @@ backends/node/services/auth/
 
 ### .NET Gateway Auth
 
+Auth middleware has moved from gateway-local (`REST/Auth/`) to the shared middleware package `Auth.Default`.
+
 ```
-backends/dotnet/gateways/REST/Auth/
+backends/dotnet/shared/Implementations/Middleware/Auth.Default/
 ├── JwtAuthExtensions.cs                 # AddJwtAuth + UseJwtAuth (JWKS, policies)
 ├── JwtAuthOptions.cs                    # Config: BaseUrl, Issuer, Audience, ClockSkew
-├── JwtFingerprintMiddleware.cs          # fp claim validation (fail-open, backwards-compatible)
-└── JwtFingerprintValidator.cs           # SHA-256(UA|Accept) computation
+├── JwtFingerprintMiddleware.cs          # fp claim validation (fail-closed for non-trusted, skip for trusted)
+├── JwtFingerprintValidator.cs           # SHA-256(UA|Accept) computation
+├── ServiceKeyExtensions.cs              # AddServiceKeyAuth + UseServiceKeyDetection
+├── ServiceKeyMiddleware.cs              # X-Api-Key middleware (constant-time comparison)
+├── ServiceKeyEndpointFilter.cs          # RequireServiceKey() endpoint filter
+└── ServiceKeyOptions.cs                 # Service key config + key name mapping
+
+backends/dotnet/shared/Implementations/Middleware/Translation.Default/
+├── TranslationMiddleware.cs             # TK.* key resolution in D2Result responses
+├── LocaleResolver.cs                    # Locale resolution from D2-Locale header / Accept-Language
+└── Extensions.cs                        # AddTranslation + UseTranslation
 
 backends/dotnet/shared/Handler/Auth/
 ├── JwtClaimTypes.cs                     # JWT claim type constants

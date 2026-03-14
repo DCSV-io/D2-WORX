@@ -6,7 +6,6 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Events.Protos.V1;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Domain.Entities;
@@ -29,7 +28,7 @@ using GetContactsByExtKeysRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsB
 using IPubs = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs;
 
 /// <summary>
-/// Integration tests for the <see cref="DeleteContactsByExtKeys"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.C.DeleteContactsByExtKeys"/> CQRS handler.
 /// Uses a real PostgreSQL database to verify deletion + eviction event content.
 /// </summary>
 [Collection("SharedPostgres")]
@@ -705,7 +704,7 @@ public class DeleteContactsByExtKeysTests : IAsyncLifetime
     {
         var getByExtKeysRepo = new GetContactsByExtKeysRepo(_db, _options, _context);
         var deleteByExtKeysRepo = new DeleteByExtKeysRepo(_db, _options, _context);
-        return new D2.Geo.App.Implementations.CQRS.Handlers.C.DeleteContactsByExtKeys(
+        return new DeleteContactsByExtKeys(
             getByExtKeysRepo, deleteByExtKeysRepo, _mockCacheRemove.Object, _mockEviction.Object, _context);
     }
 

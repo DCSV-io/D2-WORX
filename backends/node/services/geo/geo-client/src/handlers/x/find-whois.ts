@@ -13,7 +13,7 @@ type Input = Complex.FindWhoIsInput;
 type Output = Complex.FindWhoIsOutput;
 
 /**
- * Handler for finding WhoIs data by IP address and fingerprint.
+ * Handler for finding WhoIs data by IP address.
  * Checks local LRU memory cache first, falls back to Geo service gRPC.
  * Singleflight deduplicates concurrent gRPC calls for the same cache key.
  * Fail-open: never returns error results, always Ok with nullable WhoIsDTO.
@@ -49,7 +49,6 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
 
   private static readonly findWhoIsSchema = z.object({
     ipAddress: validators.zodIpAddress,
-    fingerprint: z.string().min(1, "Fingerprint must not be empty"),
   }) as z.ZodType<Input>;
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {
@@ -59,7 +58,7 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
       return D2Result.bubbleFail(validation);
     }
 
-    const cacheKey = GEO_CACHE_KEYS.whois(input.ipAddress, input.fingerprint);
+    const cacheKey = GEO_CACHE_KEYS.whois(input.ipAddress);
 
     // Try cache first (null = negative cache sentinel, undefined = miss)
     const cached = this.store.get<WhoIsDTO | null>(cacheKey);
@@ -73,7 +72,7 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
     let response: FindWhoIsResponse;
     try {
       const request: FindWhoIsRequest = {
-        requests: [{ ipAddress: input.ipAddress, fingerprint: input.fingerprint }],
+        requests: [{ ipAddress: input.ipAddress }],
       };
       response = await this.singleflight.execute(cacheKey, () =>
         this.circuitBreaker.execute(

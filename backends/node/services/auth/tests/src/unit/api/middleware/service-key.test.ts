@@ -31,7 +31,7 @@ function createStubRequestContext(overrides?: Partial<IRequestContext>): IReques
 }
 
 const VALID_KEY = "test-api-key-1";
-const VALID_KEYS = new Set([VALID_KEY, "test-api-key-2"]);
+const VALID_KEYS = [VALID_KEY, "test-api-key-2"];
 
 function createApp(options?: { require?: boolean }) {
   const app = new Hono();

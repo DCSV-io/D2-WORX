@@ -6,12 +6,10 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Events.Protos.V1;
 using D2.Geo.App;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Implementations.CQRS.Handlers.Q;
 using D2.Geo.App.Implementations.CQRS.Handlers.X;
-using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Interfaces.CQRS.Handlers.X;
 using D2.Geo.Domain.Entities;
@@ -181,6 +179,9 @@ public class UpdateContactsByExtKeysTests : IAsyncLifetime
         dbNew!.ContextKey.Should().Be(contextKey);
         dbNew.RelatedEntityId.Should().Be(relatedEntityId);
         dbNew.PersonalDetails!.FirstName.Should().Be("New", "DB record must have the new first name");
+
+        // Assert — IETF BCP 47 tag defaults to "en-US" when not explicitly set
+        dbNew.IETFBCP47Tag.Should().Be("en-US", "contact should default to base locale");
     }
 
     #endregion

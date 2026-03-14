@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
 import { handleError } from "@d2/auth-api";
 import { AuthValidationError } from "@d2/auth-domain";
+import { TK } from "@d2/i18n";
 
 function createApp() {
   const app = new Hono();
@@ -10,7 +11,7 @@ function createApp() {
 }
 
 describe("Error handler", () => {
-  it("should return 400 with safe message for AuthValidationError", async () => {
+  it("should return 400 with TK key for AuthValidationError", async () => {
     const app = createApp();
     app.get("/test", () => {
       throw new AuthValidationError("User", "email", "bad@", "invalid format");
@@ -21,13 +22,13 @@ describe("Error handler", () => {
 
     const body = await res.json();
     expect(body.success).toBe(false);
-    // Should contain property name
-    expect(body.messages[0]).toContain("email");
+    // Should contain the TK validation key — translation happens in middleware
+    expect(body.messages[0]).toBe(TK.common.errors.VALIDATION_FAILED);
     // Should NOT contain the raw invalid value or full error message
     expect(body.messages[0]).not.toContain("bad@");
   });
 
-  it("should return 500 with generic message for unknown errors", async () => {
+  it("should return 500 with TK key for unknown errors", async () => {
     const app = createApp();
     app.get("/test", () => {
       throw new Error("SQL injection attempt SELECT * FROM users");
@@ -41,7 +42,8 @@ describe("Error handler", () => {
     // Must NOT leak the actual error message
     expect(body.messages[0]).not.toContain("SQL");
     expect(body.messages[0]).not.toContain("SELECT");
-    expect(body.messages[0]).toContain("unexpected error");
+    // Should contain the TK key — translation happens in middleware
+    expect(body.messages[0]).toBe(TK.common.errors.UNKNOWN);
   });
 
   it("should not leak file paths in 5xx errors", async () => {
@@ -85,7 +87,7 @@ describe("Error handler", () => {
     expect(res.status).toBe(403);
 
     const body = await res.json();
-    expect(body.messages[0]).toBe("Access denied.");
+    expect(body.messages[0]).toBe(TK.common.errors.FORBIDDEN);
     expect(JSON.stringify(body)).not.toContain("admin@corp.com");
     expect(JSON.stringify(body)).not.toContain("delete-all");
   });
@@ -102,7 +104,7 @@ describe("Error handler", () => {
     expect(res.status).toBe(404);
 
     const body = await res.json();
-    expect(body.messages[0]).toBe("Resource not found.");
+    expect(body.messages[0]).toBe(TK.common.errors.NOT_FOUND);
     expect(JSON.stringify(body)).not.toContain("secret-uuid-123");
   });
 
@@ -118,7 +120,7 @@ describe("Error handler", () => {
     expect(res.status).toBe(429);
 
     const body = await res.json();
-    expect(body.messages[0]).toContain("Too many requests");
+    expect(body.messages[0]).toBe(TK.common.errors.TOO_MANY_REQUESTS);
     expect(JSON.stringify(body)).not.toContain("1.2.3.4");
   });
 

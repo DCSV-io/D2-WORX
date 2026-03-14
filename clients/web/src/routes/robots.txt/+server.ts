@@ -4,7 +4,6 @@ export const GET: RequestHandler = ({ url }) => {
   const body = [
     "User-agent: *",
     "Disallow: /debug/",
-    "Disallow: /demo/",
     "Disallow: /api/",
     "",
     `Sitemap: ${url.origin}/sitemap.xml`,

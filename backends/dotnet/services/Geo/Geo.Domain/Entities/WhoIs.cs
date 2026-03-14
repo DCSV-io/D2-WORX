@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="WhoIs.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -19,7 +19,7 @@ using D2.Shared.Utilities.Extensions;
 /// </summary>
 /// <remarks>
 /// Is an aggregate root of the Geography "Geo" Domain. Relates to the <see cref="Location"/>
-/// entity via a  foreign key to describe the geographic information related to this IP address.
+/// entity via a foreign key to describe the geographic information related to this IP address.
 ///
 /// Its primary key is a content-addressable SHA-256 hash of the IP address, year and month of
 /// the record.
@@ -33,8 +33,8 @@ public record WhoIs
     #region Identity
 
     /// <summary>
-    /// Gets a content-addressable SHA-256 hash (hex string) of the IP address, year, month and
-    /// browser or device fingerprint of the record.
+    /// Gets a content-addressable SHA-256 hash (hex string) of the IP address, year and month of
+    /// the record.
     /// </summary>
     /// <example>
     /// A1B2C3D4E5F6...
@@ -69,18 +69,6 @@ public record WhoIs
     /// 6.
     /// </example>
     public required int Month { get; init; }
-
-    /// <summary>
-    /// Gets a fingerprint of the browser or device associated with the IP address.
-    /// </summary>
-    /// <example>
-    /// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3.
-    /// </example>
-    /// <remarks>
-    /// While optional, this will be used in the content-addressable hash if provided.
-    /// </remarks>
-    [RedactData(Reason = RedactReason.PersonalInformation)]
-    public string? Fingerprint { get; init; }
 
     #endregion
 
@@ -284,9 +272,6 @@ public record WhoIs
     /// <param name="month">
     /// The month for the record. Defaults to current month.
     /// </param>
-    /// <param name="fingerprint">
-    /// The fingerprint of the browser or device associated with the IP address. Optional.
-    /// </param>
     /// <param name="asn">
     /// The ASN associated with the IP address. Optional.
     /// </param>
@@ -363,7 +348,6 @@ public record WhoIs
         string ipAddress,
         int? year = null,
         int? month = null,
-        string? fingerprint = null,
         int? asn = null,
         string? asName = null,
         string? asDomain = null,
@@ -391,8 +375,7 @@ public record WhoIs
         var (hashId, normalizedIp) = ComputeHashAndNormalizeIp(
             ipAddress,
             yearNotNull,
-            monthNotNull,
-            fingerprint);
+            monthNotNull);
 
         var whois = new WhoIs
         {
@@ -400,7 +383,6 @@ public record WhoIs
             IPAddress = normalizedIp,
             Year = yearNotNull,
             Month = monthNotNull,
-            Fingerprint = fingerprint.CleanStr(),
             ASN = asn,
             ASName = asName.CleanStr(),
             ASDomain = asDomain.CleanStr(),
@@ -452,7 +434,6 @@ public record WhoIs
             whois.IPAddress,
             whois.Year,
             whois.Month,
-            whois.Fingerprint,
             whois.ASN,
             whois.ASName,
             whois.ASDomain,
@@ -475,7 +456,7 @@ public record WhoIs
             whois.LocationHashId);
 
     /// <summary>
-    /// Computes the SHA-256 hash of the normalized IP address, year, month and fingerprint and
+    /// Computes the SHA-256 hash of the normalized IP address, year and month, and
     /// returns the normalized and validated IP address.
     /// </summary>
     ///
@@ -487,9 +468,6 @@ public record WhoIs
     /// </param>
     /// <param name="month">
     /// The month.
-    /// </param>
-    /// <param name="fingerprint">
-    /// The fingerprint of the browser or device associated with the IP address. Optional.
     /// </param>
     ///
     /// <returns>
@@ -506,8 +484,7 @@ public record WhoIs
     public static (string Hash, string NormalizedIp) ComputeHashAndNormalizeIp(
         string ipAddress,
         int year,
-        int month,
-        string? fingerprint = null)
+        int month)
     {
         var normalizedIp = NormalizeAndValidateIPAddress(ipAddress);
 
@@ -529,7 +506,7 @@ public record WhoIs
                 "must be between 1 and 9999.");
         }
 
-        var inputBytes = Encoding.UTF8.GetBytes($"{normalizedIp}|{year}|{month}|{fingerprint.CleanStr()}");
+        var inputBytes = Encoding.UTF8.GetBytes($"{normalizedIp}|{year}|{month}");
         var hashId = Convert.ToHexString(SHA256.HashData(inputBytes));
 
         return (hashId, normalizedIp);

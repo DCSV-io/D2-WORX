@@ -15,6 +15,7 @@
  * client-side bundles (SvelteKit convention).
  */
 import { D2Result } from "@d2/result";
+import { getLocale } from "$lib/paraglide/runtime.js";
 import { getAuthContext } from "../auth.server.js";
 import { executeFetch } from "$lib/shared/rest/gateway-response.js";
 
@@ -59,9 +60,16 @@ export function getGatewayContext(): GatewayContext {
 
 /**
  * Build common headers for gateway requests.
+ *
+ * Always includes `D2-Locale` so the gateway's TranslationMiddleware can
+ * translate D2Result messages into the user's language. The locale is
+ * resolved by Paraglide's AsyncLocalStorage context (set by the
+ * paraglideMiddleware in hooks.server.ts).
  */
 function buildHeaders(options?: GatewayRequestOptions): Headers {
   const headers = new Headers();
+
+  headers.set("D2-Locale", getLocale());
 
   if (options?.body !== undefined) {
     headers.set("Content-Type", "application/json");

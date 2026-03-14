@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="ContactMapper.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -48,6 +48,7 @@ public static class ContactMapper
                 PersonalDetails = contact.PersonalDetails?.ToDTO(),
                 ProfessionalDetails = contact.ProfessionalDetails?.ToDTO(),
                 Location = location?.ToDTO(),
+                IetfBcp47Tag = contact.IETFBCP47Tag,
             };
         }
     }
@@ -77,7 +78,8 @@ public static class ContactMapper
                 contactDTO.ContactMethods?.ToDomain(),
                 contactDTO.PersonalDetails?.ToDomain(),
                 contactDTO.ProfessionalDetails?.ToDomain(),
-                locationHashId.Falsey() ? null : locationHashId);
+                locationHashId.Falsey() ? null : locationHashId,
+                contactDTO.IetfBcp47Tag.Falsey() ? null : contactDTO.IetfBcp47Tag);
         }
     }
 
@@ -109,7 +111,8 @@ public static class ContactMapper
                 contactToCreateDTO.ContactMethods?.ToDomain(),
                 contactToCreateDTO.PersonalDetails?.ToDomain(),
                 contactToCreateDTO.ProfessionalDetails?.ToDomain(),
-                locationHashId);
+                locationHashId,
+                contactToCreateDTO.IetfBcp47Tag.Falsey() ? null : contactToCreateDTO.IetfBcp47Tag);
         }
 
         /// <summary>

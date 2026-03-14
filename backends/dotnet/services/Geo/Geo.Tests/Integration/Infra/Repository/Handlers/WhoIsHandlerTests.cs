@@ -103,12 +103,12 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange
         var handler = new CreateWhoIs(_db, _options, _context);
-        var suffix = Guid.NewGuid().ToString("N");
+        Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
-            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fp-1-{suffix}"),
-            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fp-2-{suffix}"),
-            WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2, $"fp-3-{suffix}"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1),
+            WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2),
         };
         var input = new ICreate.CreateWhoIsInput(whoIsRecords);
 
@@ -139,11 +139,10 @@ public class WhoIsHandlerTests : IAsyncLifetime
         // Arrange
         var handler = new CreateWhoIs(_db, _options, _context);
         var uniqueIp = $"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}";
-        var uniqueFp = Guid.NewGuid().ToString("N");
 
         // Create same WhoIs twice (content-addressable = same hash)
-        var whoIs1 = WhoIs.Create(uniqueIp, 2025, 1, uniqueFp);
-        var whoIs2 = WhoIs.Create(uniqueIp, 2025, 1, uniqueFp);
+        var whoIs1 = WhoIs.Create(uniqueIp, 2025, 1);
+        var whoIs2 = WhoIs.Create(uniqueIp, 2025, 1);
 
         whoIs1.HashId.Should().Be(whoIs2.HashId); // Same content = same hash
 
@@ -173,16 +172,16 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        var suffix = Guid.NewGuid().ToString("N");
+        Guid.NewGuid().ToString("N");
 
-        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"existing-{suffix}");
+        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1);
 
         // Insert first
         var firstInput = new ICreate.CreateWhoIsInput([existingWhoIs]);
         await createHandler.HandleAsync(firstInput, Ct);
 
         // Now try to insert same + new
-        var newWhoIs = WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2, $"new-{suffix}");
+        var newWhoIs = WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2);
 
         var secondInput = new ICreate.CreateWhoIsInput([existingWhoIs, newWhoIs]);
 
@@ -240,11 +239,11 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create WhoIs records first
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        var suffix = Guid.NewGuid().ToString("N");
+        Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
-            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fp-1-{suffix}"),
-            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fp-2-{suffix}"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1),
         };
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput(whoIsRecords), Ct);
 
@@ -275,7 +274,7 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create one WhoIs
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1, Guid.NewGuid().ToString("N"));
+        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1);
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput([existingWhoIs]), Ct);
 
         var getHandler = new GetWhoIsByIds(_db, _options, _context);
@@ -333,9 +332,9 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create 150 WhoIs records (more than batch size of 100)
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        var suffix = Guid.NewGuid().ToString("N");
+        Guid.NewGuid().ToString("N");
         var whoIsRecords = Enumerable.Range(0, 150)
-            .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1, $"fp-{i}-{suffix}"))
+            .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1))
             .ToList();
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput(whoIsRecords), Ct);
 
@@ -365,7 +364,7 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create one WhoIs
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        var whoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1, Guid.NewGuid().ToString("N"));
+        var whoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1);
         await createHandler.HandleAsync(new ICreate.CreateWhoIsInput([whoIs]), Ct);
 
         var getHandler = new GetWhoIsByIds(_db, _options, _context);

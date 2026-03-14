@@ -8,15 +8,15 @@ Validates the Dkron Manager's reconciliation pipeline end-to-end: environment co
 
 ## Design Decisions
 
-| Decision                     | Rationale                                                                  |
-| ---------------------------- | -------------------------------------------------------------------------- |
-| Separate test package        | Source package stays lean -- no test deps in production builds              |
-| Unit + integration + E2E     | Unit tests mock `globalThis.fetch`, integration + E2E use Testcontainers   |
-| `globalThis.fetch` mocking   | Service uses native `fetch` -- mocking at global level avoids module stubs |
-| Testcontainers Dkron 4.0.9   | Real Dkron container for integration and E2E tests                         |
-| Child process spawn for E2E  | Catches TDZ bugs, top-level await failures, env parsing, graceful shutdown |
-| Sequential test execution    | `fileParallelism: false` -- container tests must not race                  |
-| Shared setup file            | `src/setup.ts` registers custom D2Result matchers from `@d2/testing`       |
+| Decision                    | Rationale                                                                  |
+| --------------------------- | -------------------------------------------------------------------------- |
+| Separate test package       | Source package stays lean -- no test deps in production builds             |
+| Unit + integration + E2E    | Unit tests mock `globalThis.fetch`, integration + E2E use Testcontainers   |
+| `globalThis.fetch` mocking  | Service uses native `fetch` -- mocking at global level avoids module stubs |
+| Testcontainers Dkron 4.0.9  | Real Dkron container for integration and E2E tests                         |
+| Child process spawn for E2E | Catches TDZ bugs, top-level await failures, env parsing, graceful shutdown |
+| Sequential test execution   | `fileParallelism: false` -- container tests must not race                  |
+| Shared setup file           | `src/setup.ts` registers custom D2Result matchers from `@d2/testing`       |
 
 ## Test Organization
 
@@ -39,12 +39,12 @@ src/
 
 ## Test Counts
 
-| Category        | Files | Description                                               |
-| --------------- | ----- | --------------------------------------------------------- |
-| Unit            | 4     | Config, Dkron client, job definitions, reconciler         |
-| Integration     | 1     | Reconciliation cycle against real Dkron (Testcontainers)  |
-| E2E             | 1     | Full process lifecycle (spawn, reconcile, shutdown)        |
-| **Total**       | **6** | **64 tests**                                              |
+| Category    | Files | Description                                              |
+| ----------- | ----- | -------------------------------------------------------- |
+| Unit        | 4     | Config, Dkron client, job definitions, reconciler        |
+| Integration | 1     | Reconciliation cycle against real Dkron (Testcontainers) |
+| E2E         | 1     | Full process lifecycle (spawn, reconcile, shutdown)      |
+| **Total**   | **6** | **64 tests**                                             |
 
 ## Test Categories
 
@@ -62,19 +62,19 @@ src/
 
 **reconciler-e2e.test.ts** (11 tests) -- Runs against a real Dkron 4.0.9 Testcontainer. Tests the full client-to-reconciler pipeline:
 
-| Test                          | What It Validates                                           |
-| ----------------------------- | ----------------------------------------------------------- |
-| Health check                  | `checkHealth` returns true on live container                |
-| Empty job list                | Fresh container has no jobs                                 |
-| Create via upsert             | Job created and retrievable with correct fields             |
-| Update via upsert             | Existing job updated (schedule, retries, displayname)       |
-| Delete                        | Job removed and no longer in list                           |
-| Delete non-existent           | 404 handled gracefully (no throw)                           |
-| First reconciliation          | All 8 managed jobs created in Dkron                         |
-| Second reconciliation         | All 8 reported as unchanged (idempotent)                    |
-| Schedule drift detection      | Tampered schedule detected and corrected                    |
-| Orphan cleanup                | Extra managed job deleted, desired jobs untouched           |
-| Unmanaged job preservation    | Jobs without `managed_by` metadata left untouched           |
+| Test                       | What It Validates                                     |
+| -------------------------- | ----------------------------------------------------- |
+| Health check               | `checkHealth` returns true on live container          |
+| Empty job list             | Fresh container has no jobs                           |
+| Create via upsert          | Job created and retrievable with correct fields       |
+| Update via upsert          | Existing job updated (schedule, retries, displayname) |
+| Delete                     | Job removed and no longer in list                     |
+| Delete non-existent        | 404 handled gracefully (no throw)                     |
+| First reconciliation       | All 8 managed jobs created in Dkron                   |
+| Second reconciliation      | All 8 reported as unchanged (idempotent)              |
+| Schedule drift detection   | Tampered schedule detected and corrected              |
+| Orphan cleanup             | Extra managed job deleted, desired jobs untouched     |
+| Unmanaged job preservation | Jobs without `managed_by` metadata left untouched     |
 
 ### E2E Tests (1 file)
 
@@ -101,12 +101,12 @@ pnpm vitest run --project dkron-mgr-tests src/e2e/
 
 ## Infrastructure Requirements
 
-| Requirement      | Details                                                                   |
-| ---------------- | ------------------------------------------------------------------------- |
-| Docker           | Required for integration and E2E tests (Testcontainers)                   |
-| Dkron 4.0.9      | Container image `dkron/dkron:4.0.9` pulled automatically by Testcontainers |
-| Container startup | ~10-30s for Dkron agent (waits for `/health` 200 + `/v1/leader` 200)      |
-| No external deps  | Unit tests run without Docker -- only `globalThis.fetch` mocking          |
+| Requirement       | Details                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| Docker            | Required for integration and E2E tests (Testcontainers)                    |
+| Dkron 4.0.9       | Container image `dkron/dkron:4.0.9` pulled automatically by Testcontainers |
+| Container startup | ~10-30s for Dkron agent (waits for `/health` 200 + `/v1/leader` 200)       |
+| No external deps  | Unit tests run without Docker -- only `globalThis.fetch` mocking           |
 
 ## Configuration
 
@@ -119,10 +119,10 @@ Vitest config at `dkron-mgr/tests/vitest.config.ts`:
 
 ## Dependencies
 
-| Package              | Purpose                                                |
-| -------------------- | ------------------------------------------------------ |
-| `@d2/dkron-mgr`     | Source package under test (config, client, reconciler)  |
-| `@d2/logging`        | `ILogger` type for silent logger construction           |
-| `@d2/testing`        | Custom Vitest matchers for D2Result                     |
-| `testcontainers`     | Dkron container lifecycle for integration and E2E tests |
-| `vitest`             | Test runner                                             |
+| Package          | Purpose                                                 |
+| ---------------- | ------------------------------------------------------- |
+| `@d2/dkron-mgr`  | Source package under test (config, client, reconciler)  |
+| `@d2/logging`    | `ILogger` type for silent logger construction           |
+| `@d2/testing`    | Custom Vitest matchers for D2Result                     |
+| `testcontainers` | Dkron container lifecycle for integration and E2E tests |
+| `vitest`         | Test runner                                             |

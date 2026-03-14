@@ -67,9 +67,9 @@ describe("User", () => {
       expect(user.image).toBe("https://example.com/photo.jpg");
     });
 
-    it("should default locale to 'en'", () => {
+    it("should default locale to 'en-US'", () => {
       const user = createUser(validInput);
-      expect(user.locale).toBe("en");
+      expect(user.locale).toBe("en-US");
     });
 
     it("should accept an explicit locale", () => {

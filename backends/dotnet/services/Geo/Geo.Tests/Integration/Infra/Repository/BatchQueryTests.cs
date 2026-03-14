@@ -115,7 +115,7 @@ public class BatchQueryTests : IAsyncLifetime
 
         // Assert
         result.Should().HaveCount(3);
-        result.Select(l => l.City).Should().BeEquivalentTo([$"Los Angeles {suffix}", $"New York {suffix}", $"London {suffix}"]);
+        result.Select(l => l.City).Should().BeEquivalentTo($"Los Angeles {suffix}", $"New York {suffix}", $"London {suffix}");
     }
 
     /// <summary>

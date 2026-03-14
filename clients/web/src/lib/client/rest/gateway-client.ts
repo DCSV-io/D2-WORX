@@ -13,6 +13,7 @@
  */
 import { env } from "$env/dynamic/public";
 import { D2Result } from "@d2/result";
+import { getLocale } from "$lib/paraglide/runtime.js";
 import { executeFetch } from "$lib/shared/rest/gateway-response.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -98,9 +99,15 @@ export function invalidateToken(): void {
 
 /**
  * Build common headers for gateway requests.
+ *
+ * Always includes `D2-Locale` so the gateway's TranslationMiddleware can
+ * translate D2Result messages into the user's language. The locale is
+ * resolved by Paraglide from the cookie / global variable.
  */
 function buildHeaders(options?: ApiCallOptions): Headers {
   const headers = new Headers();
+
+  headers.set("D2-Locale", getLocale());
 
   if (options?.body !== undefined) {
     headers.set("Content-Type", "application/json");

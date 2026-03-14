@@ -5,12 +5,20 @@ vi.mock("$env/dynamic/public", () => ({
   env: { PUBLIC_GATEWAY_URL: "http://localhost:5461" },
 }));
 
+// Mock Paraglide runtime — default locale "en-US", overridable per-test
+const mockGetLocale = vi.fn(() => "en-US");
+
+vi.mock("$lib/paraglide/runtime.js", () => ({
+  getLocale: () => mockGetLocale(),
+}));
+
 describe("gateway-client", () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     vi.resetModules();
     fetchSpy = vi.spyOn(globalThis, "fetch");
+    mockGetLocale.mockReturnValue("en-US");
   });
 
   afterEach(() => {
@@ -380,6 +388,57 @@ describe("gateway-client", () => {
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(408);
       expect(result.messages[0]).toContain("timed out");
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // D2-Locale header
+  // -------------------------------------------------------------------------
+  describe("D2-Locale header", () => {
+    it("sends D2-Locale header with default locale on anonymous calls", async () => {
+      fetchSpy.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      const { apiCallAnon } = await import("./gateway-client");
+      await apiCallAnon("/api/v1/test");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Headers;
+      expect(headers.get("D2-Locale")).toBe("en-US");
+    });
+
+    it("sends D2-Locale header with non-default locale", async () => {
+      mockGetLocale.mockReturnValue("ja-JP");
+      fetchSpy.mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      const { apiCallAnon } = await import("./gateway-client");
+      await apiCallAnon("/api/v1/test");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Headers;
+      expect(headers.get("D2-Locale")).toBe("ja-JP");
+    });
+
+    it("sends D2-Locale header on authenticated calls", async () => {
+      mockGetLocale.mockReturnValue("es-ES");
+
+      fetchSpy.mockImplementation(async (input: string | URL | Request) => {
+        const url =
+          typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+        if (url === "/api/auth/token") {
+          const exp = Math.floor(Date.now() / 1000) + 900;
+          const payload = btoa(JSON.stringify({ exp }));
+          return new Response(JSON.stringify({ token: `header.${payload}.signature` }), {
+            status: 200,
+          });
+        }
+        return new Response(JSON.stringify({ success: true }), { status: 200 });
+      });
+
+      const { apiCall, invalidateToken } = await import("./gateway-client");
+      invalidateToken();
+      await apiCall("/api/v1/test");
+
+      // Second call is the gateway call (first is /api/auth/token)
+      const headers = fetchSpy.mock.calls[1][1]!.headers as Headers;
+      expect(headers.get("D2-Locale")).toBe("es-ES");
     });
   });
 

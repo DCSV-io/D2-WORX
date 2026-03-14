@@ -9,6 +9,7 @@ import type { SecondaryStorage } from "better-auth";
 import { eq, and } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { JWT_CLAIM_TYPES, SESSION_FIELDS } from "@d2/auth-domain";
+import { BASE_LOCALE } from "@d2/i18n";
 import type { AuthServiceConfig } from "./auth-config.js";
 import { AUTH_CONFIG_DEFAULTS } from "./auth-config.js";
 import { generateId } from "./hooks/id-hooks.js";
@@ -86,7 +87,12 @@ export interface AuthHooks {
    * Called in databaseHooks.user.create.before (Contact BEFORE User pattern).
    * If this throws, sign-up fails entirely (fail-fast — no stale users).
    */
-  createUserContact?: (data: { userId: string; email: string; name: string }) => Promise<void>;
+  createUserContact?: (data: {
+    userId: string;
+    email: string;
+    name: string;
+    locale: string;
+  }) => Promise<void>;
 }
 
 /**
@@ -246,6 +252,7 @@ export function createAuth(
                 userId,
                 email: user.email as string,
                 name: (user.name as string) ?? "",
+                locale: (user.locale as string) ?? BASE_LOCALE,
               });
             }
 
@@ -340,7 +347,7 @@ export function createAuth(
         locale: {
           type: "string",
           required: false,
-          defaultValue: "en",
+          defaultValue: BASE_LOCALE,
           input: false,
         },
       },

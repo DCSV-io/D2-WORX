@@ -60,6 +60,7 @@ public class ContactMapperTests
         dto.PersonalDetails.LastName.Should().Be("Doe");
         dto.ProfessionalDetails.Should().NotBeNull();
         dto.ProfessionalDetails!.CompanyName.Should().Be("ACME Corp");
+        dto.IetfBcp47Tag.Should().Be("en-US");
     }
 
     /// <summary>
@@ -83,6 +84,7 @@ public class ContactMapperTests
         dto.PersonalDetails.Should().BeNull();
         dto.ProfessionalDetails.Should().BeNull();
         dto.Location.Should().BeNull();
+        dto.IetfBcp47Tag.Should().Be("en-US");
     }
 
     #endregion
@@ -122,6 +124,7 @@ public class ContactMapperTests
             {
                 HashId = "location456",
             },
+            IetfBcp47Tag = "fr",
         };
 
         // Act
@@ -139,6 +142,7 @@ public class ContactMapperTests
         domain.ProfessionalDetails.Should().NotBeNull();
         domain.ProfessionalDetails!.CompanyName.Should().Be("Tech Inc");
         domain.LocationHashId.Should().Be("location456");
+        domain.IETFBCP47Tag.Should().Be("fr");
     }
 
     /// <summary>
@@ -269,6 +273,7 @@ public class ContactMapperTests
         roundTripped.RelatedEntityId.Should().Be(original.RelatedEntityId);
         roundTripped.ContactMethods!.Emails[0].Value.Should().Be(original.ContactMethods!.Emails[0].Value);
         roundTripped.PersonalDetails!.FirstName.Should().Be(original.PersonalDetails!.FirstName);
+        roundTripped.IETFBCP47Tag.Should().Be(original.IETFBCP47Tag);
     }
 
     /// <summary>
@@ -298,6 +303,71 @@ public class ContactMapperTests
         roundTripped.ContactMethods.Emails[0].Value.Should().Be("primary@example.com");
         roundTripped.ContactMethods.Emails[1].Value.Should().Be("secondary@example.com");
         roundTripped.ContactMethods.Emails[2].Value.Should().Be("tertiary@example.com");
+    }
+
+    #endregion
+
+    #region IETF BCP 47 Tag Mapping
+
+    /// <summary>
+    /// Tests that ToDTO includes the IetfBcp47Tag property from the domain Contact.
+    /// </summary>
+    [Fact]
+    public void ToDTO_IncludesIetfBcp47Tag()
+    {
+        // Arrange
+        var contact = Contact.Create(
+            contextKey: "locale-test",
+            relatedEntityId: Guid.NewGuid(),
+            ietfBcp47Tag: "fr");
+
+        // Act
+        var dto = contact.ToDTO();
+
+        // Assert
+        dto.IetfBcp47Tag.Should().Be("fr");
+    }
+
+    /// <summary>
+    /// Tests that ToDomain from ContactDTO includes the IETFBCP47Tag property.
+    /// </summary>
+    [Fact]
+    public void ToDomain_FromDTO_IncludesIetfBcp47Tag()
+    {
+        // Arrange
+        var dto = new ContactDTO
+        {
+            ContextKey = "locale-test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            IetfBcp47Tag = "ja",
+        };
+
+        // Act
+        var domain = dto.ToDomain();
+
+        // Assert
+        domain.IETFBCP47Tag.Should().Be("ja");
+    }
+
+    /// <summary>
+    /// Tests that ToDomain from ContactToCreateDTO includes the IETFBCP47Tag property.
+    /// </summary>
+    [Fact]
+    public void ToDomain_FromCreateDTO_IncludesIetfBcp47Tag()
+    {
+        // Arrange
+        var createDto = new ContactToCreateDTO
+        {
+            ContextKey = "locale-test",
+            RelatedEntityId = Guid.NewGuid().ToString(),
+            IetfBcp47Tag = "de",
+        };
+
+        // Act
+        var domain = createDto.ToDomain(locationHashId: null);
+
+        // Assert
+        domain.IETFBCP47Tag.Should().Be("de");
     }
 
     #endregion

@@ -6,12 +6,14 @@
 
 namespace D2.Geo.Tests.Unit.Infra.Messaging;
 
+using System.Net;
 using D2.Events.Protos.V1;
 using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Messaging.RabbitMQ;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using RabbitMQ.Client;
 using Xunit;
 
 /// <summary>
@@ -28,7 +30,7 @@ public class UpdatePublisherTests
     public UpdatePublisherTests()
     {
         r_protoPublisherMock = new Mock<ProtoPublisher>(
-            Mock.Of<RabbitMQ.Client.IConnection>(),
+            Mock.Of<IConnection>(),
             Mock.Of<ILogger<ProtoPublisher>>());
         var loggerMock = new Mock<ILogger<UpdatePublisher>>();
         r_publisher = new UpdatePublisher(r_protoPublisherMock.Object, loggerMock.Object);
@@ -95,7 +97,7 @@ public class UpdatePublisherTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.StatusCode.Should().Be(System.Net.HttpStatusCode.ServiceUnavailable);
+        result.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
     }
 
     /// <summary>

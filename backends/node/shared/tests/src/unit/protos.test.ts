@@ -184,13 +184,12 @@ describe("GeoServiceService", () => {
 
   it("FindWhoIs roundtrips through serialization", () => {
     const request = {
-      requests: [{ ipAddress: "192.168.1.1", fingerprint: "test-fp" }],
+      requests: [{ ipAddress: "192.168.1.1" }],
     };
     const serialized = GeoServiceService.findWhoIs.requestSerialize(request);
     const deserialized = GeoServiceService.findWhoIs.requestDeserialize(serialized);
     expect(deserialized.requests).toHaveLength(1);
     expect(deserialized.requests[0]!.ipAddress).toBe("192.168.1.1");
-    expect(deserialized.requests[0]!.fingerprint).toBe("test-fp");
   });
 });
 

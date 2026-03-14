@@ -32,7 +32,7 @@ using CreateLocationsRepo = D2.Geo.Infra.Repository.Handlers.C.CreateLocations;
 using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 
 /// <summary>
-/// Integration tests for the <see cref="CreateContacts"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.C.CreateContacts"/> CQRS handler.
 /// </summary>
 [Collection("SharedPostgres")]
 [MustDisposeResource(value: false)]

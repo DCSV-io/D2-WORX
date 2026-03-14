@@ -6,9 +6,9 @@
 
 namespace D2.Gateways.REST.Endpoints;
 
-using D2.Gateways.REST.Auth;
 using D2.Services.Protos.Common.V1;
 using D2.Services.Protos.Comms.V1;
+using D2.Shared.Auth.Default;
 using D2.Shared.Utilities.Extensions;
 
 /// <summary>
@@ -54,7 +54,7 @@ public static class CommsJobEndpoints
             {
                 o.Address = new Uri($"http://{commsGrpcAddress}");
             })
-            .AddCallCredentials((context, metadata) =>
+            .AddCallCredentials((_, metadata) =>
             {
                 metadata.Add("x-api-key", apiKey!);
                 return Task.CompletedTask;

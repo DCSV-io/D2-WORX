@@ -96,9 +96,8 @@ public class DeleteStaleWhoIsTests : IAsyncLifetime
     public async Task HandleAsync_WhenAllRecordsNewer_DeletesNone()
     {
         // Arrange — seed records from 2025-10 and 2025-12
-        var suffix = Guid.NewGuid().ToString("N");
-        var newer1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.1.1", 2025, 10, $"fp-new1-{suffix}");
-        var newer2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.1.2", 2025, 12, $"fp-new2-{suffix}");
+        var newer1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.1.1", 2025, 10);
+        var newer2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.1.2", 2025, 12);
 
         _db.WhoIsRecords.AddRange(newer1, newer2);
         await _db.SaveChangesAsync(Ct);
@@ -141,10 +140,9 @@ public class DeleteStaleWhoIsTests : IAsyncLifetime
     public async Task HandleAsync_WhenAllRecordsStale_DeletesAll()
     {
         // Arrange — seed records from 2024 and early 2025
-        var suffix = Guid.NewGuid().ToString("N");
-        var stale1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.2.1", 2024, 6, $"fp-stale1-{suffix}");
-        var stale2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.2.2", 2024, 12, $"fp-stale2-{suffix}");
-        var stale3 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.2.3", 2025, 3, $"fp-stale3-{suffix}");
+        var stale1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.2.1", 2024, 6);
+        var stale2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.2.2", 2024, 12);
+        var stale3 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.2.3", 2025, 3);
 
         _db.WhoIsRecords.AddRange(stale1, stale2, stale3);
         await _db.SaveChangesAsync(Ct);
@@ -182,16 +180,14 @@ public class DeleteStaleWhoIsTests : IAsyncLifetime
     public async Task HandleAsync_WithMixedRecords_OnlyDeletesStale()
     {
         // Arrange
-        var suffix = Guid.NewGuid().ToString("N");
-
         // Stale: before 2025-06
-        var stale1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.1", 2024, 11, $"fp-s1-{suffix}");
-        var stale2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.2", 2025, 5, $"fp-s2-{suffix}");
+        var stale1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.1", 2024, 11);
+        var stale2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.2", 2025, 5);
 
         // Fresh: 2025-06 and later
-        var fresh1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.3", 2025, 6, $"fp-f1-{suffix}");
-        var fresh2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.4", 2025, 7, $"fp-f2-{suffix}");
-        var fresh3 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.5", 2026, 1, $"fp-f3-{suffix}");
+        var fresh1 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.3", 2025, 6);
+        var fresh2 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.4", 2025, 7);
+        var fresh3 = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.3.5", 2026, 1);
 
         _db.WhoIsRecords.AddRange(stale1, stale2, fresh1, fresh2, fresh3);
         await _db.SaveChangesAsync(Ct);
@@ -242,9 +238,8 @@ public class DeleteStaleWhoIsTests : IAsyncLifetime
     public async Task HandleAsync_WhenRecordExactlyAtCutoff_PreservesIt()
     {
         // Arrange
-        var suffix = Guid.NewGuid().ToString("N");
-        var atCutoff = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.4.1", 2025, 6, $"fp-exact-{suffix}");
-        var justBefore = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.4.2", 2025, 5, $"fp-before-{suffix}");
+        var atCutoff = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.4.1", 2025, 6);
+        var justBefore = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.4.2", 2025, 5);
 
         _db.WhoIsRecords.AddRange(atCutoff, justBefore);
         await _db.SaveChangesAsync(Ct);
@@ -283,10 +278,8 @@ public class DeleteStaleWhoIsTests : IAsyncLifetime
     public async Task HandleAsync_WhenRecordFromPreviousYear_AlwaysDeletes()
     {
         // Arrange
-        var suffix = Guid.NewGuid().ToString("N");
-
         // December of previous year — even month=12 should be deleted since year < cutoffYear
-        var prevYear = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.5.1", 2024, 12, $"fp-py-{suffix}");
+        var prevYear = WhoIs.Create($"10.{Random.Shared.Next(1, 255)}.5.1", 2024, 12);
 
         _db.WhoIsRecords.Add(prevYear);
         await _db.SaveChangesAsync(Ct);
@@ -323,14 +316,12 @@ public class DeleteStaleWhoIsTests : IAsyncLifetime
         // Arrange — small batch size, more stale records than batch
         const int batch_size = 3;
         const int stale_count = 8;
-        var suffix = Guid.NewGuid().ToString("N");
 
         var staleRecords = Enumerable.Range(0, stale_count)
             .Select(i => WhoIs.Create(
                 $"10.{i / 256}.{i % 256}.1",
                 2024,
-                (i % 12) + 1,
-                $"fp-batch-{i}-{suffix}"))
+                (i % 12) + 1))
             .ToList();
 
         _db.WhoIsRecords.AddRange(staleRecords);

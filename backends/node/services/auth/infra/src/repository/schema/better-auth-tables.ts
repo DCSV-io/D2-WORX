@@ -32,7 +32,7 @@ export const user = pgTable(
     username: text("username").notNull().unique(),
     displayUsername: text("display_username").notNull().unique(),
     // i18n
-    locale: text("locale").default("en"),
+    locale: text("locale").default("en-US"),
     // Admin plugin
     role: text("role"),
     banned: boolean("banned").default(false),

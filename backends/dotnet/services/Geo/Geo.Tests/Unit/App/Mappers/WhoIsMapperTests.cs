@@ -30,7 +30,6 @@ public class WhoIsMapperTests
             ipAddress: "192.168.1.1",
             year: 2025,
             month: 6,
-            fingerprint: "Mozilla/5.0",
             asn: 852,
             asName: "TELUS Communications",
             asDomain: "telus.com",
@@ -60,7 +59,6 @@ public class WhoIsMapperTests
         dto.IpAddress.Should().Be("192.168.1.1");
         dto.Year.Should().Be(2025);
         dto.Month.Should().Be(6);
-        dto.Fingerprint.Should().Be("Mozilla/5.0");
         dto.Asn.Should().Be(852);
         dto.AsName.Should().Be("TELUS Communications");
         dto.AsDomain.Should().Be("telus.com");
@@ -92,7 +90,6 @@ public class WhoIsMapperTests
         dto.IpAddress.Should().Be("10.0.0.1");
         dto.Year.Should().Be(2025);
         dto.Month.Should().Be(1);
-        dto.Fingerprint.Should().BeEmpty();
         dto.Asn.Should().Be(0);
         dto.AsName.Should().BeEmpty();
         dto.IsAnonymous.Should().BeFalse(); // null defaults to false in proto
@@ -116,7 +113,6 @@ public class WhoIsMapperTests
             IpAddress = "192.168.1.100",
             Year = 2025,
             Month = 7,
-            Fingerprint = "Chrome/120.0",
             Asn = 12345,
             AsName = "Test ISP",
             AsDomain = "test.com",
@@ -147,7 +143,6 @@ public class WhoIsMapperTests
         domain.IPAddress.Should().Be("192.168.1.100");
         domain.Year.Should().Be(2025);
         domain.Month.Should().Be(7);
-        domain.Fingerprint.Should().Be("Chrome/120.0");
         domain.ASN.Should().Be(12345);
         domain.ASName.Should().Be("Test ISP");
         domain.ASDomain.Should().Be("test.com");
@@ -177,7 +172,6 @@ public class WhoIsMapperTests
             IpAddress = "10.0.0.1",
             Year = 2025,
             Month = 1,
-            Fingerprint = string.Empty,
             Asn = 0,
             AsName = string.Empty,
             AsDomain = string.Empty,
@@ -188,7 +182,6 @@ public class WhoIsMapperTests
         var domain = dto.ToDomain();
 
         // Assert
-        domain.Fingerprint.Should().BeNull();
         domain.ASN.Should().BeNull();
         domain.ASName.Should().BeNull();
         domain.ASDomain.Should().BeNull();
@@ -235,7 +228,6 @@ public class WhoIsMapperTests
             ipAddress: "203.0.113.50",
             year: 2025,
             month: 8,
-            fingerprint: "Safari/605.1.15",
             asn: 99999,
             asName: "Example ISP");
 
@@ -248,7 +240,6 @@ public class WhoIsMapperTests
         roundTripped.IPAddress.Should().Be(original.IPAddress);
         roundTripped.Year.Should().Be(original.Year);
         roundTripped.Month.Should().Be(original.Month);
-        roundTripped.Fingerprint.Should().Be(original.Fingerprint);
     }
 
     /// <summary>
@@ -288,7 +279,6 @@ public class WhoIsMapperTests
             IpAddress = "192.168.1.1",
             Year = 2025,
             Month = 6,
-            Fingerprint = "Mozilla/5.0",
         };
 
         var dto2 = new WhoIsDTO
@@ -296,7 +286,6 @@ public class WhoIsMapperTests
             IpAddress = "192.168.1.1",
             Year = 2025,
             Month = 6,
-            Fingerprint = "Mozilla/5.0",
         };
 
         // Act
@@ -305,37 +294,6 @@ public class WhoIsMapperTests
 
         // Assert
         domain1.HashId.Should().Be(domain2.HashId);
-    }
-
-    /// <summary>
-    /// Tests that different fingerprint produces different hash.
-    /// </summary>
-    [Fact]
-    public void Hash_DifferentFingerprint_ProducesDifferentHash()
-    {
-        // Arrange
-        var dto1 = new WhoIsDTO
-        {
-            IpAddress = "192.168.1.1",
-            Year = 2025,
-            Month = 6,
-            Fingerprint = "Mozilla/5.0",
-        };
-
-        var dto2 = new WhoIsDTO
-        {
-            IpAddress = "192.168.1.1",
-            Year = 2025,
-            Month = 6,
-            Fingerprint = "Chrome/120.0",
-        };
-
-        // Act
-        var domain1 = dto1.ToDomain();
-        var domain2 = dto2.ToDomain();
-
-        // Assert
-        domain1.HashId.Should().NotBe(domain2.HashId);
     }
 
     #endregion

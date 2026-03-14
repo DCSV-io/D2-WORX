@@ -129,10 +129,8 @@ public class RequestEnrichmentMiddleware
         {
             try
             {
-                var userAgent = context.Request.Headers.UserAgent.FirstOrDefault() ?? string.Empty;
-
                 var whoIsResult = await whoIsHandler.HandleAsync(
-                    new IComplex.FindWhoIsInput(clientIp, userAgent),
+                    new IComplex.FindWhoIsInput(clientIp),
                     context.RequestAborted);
 
                 if (whoIsResult.CheckSuccess(out var output) && output?.WhoIs is { } whoIs)

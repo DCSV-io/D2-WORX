@@ -75,11 +75,11 @@ export function createWhoIsResolutionConsumer(deps: WhoIsResolutionConsumerDeps)
         logger.warn("Invalid WhoIs resolution message — dropping", { body: msg.body });
         return ConsumerResult.ACK;
       }
-      const { signInEventId, ipAddress, userAgent } = parsed;
+      const { signInEventId, ipAddress } = parsed;
 
       try {
         // Resolve WhoIs via geo-client (singleton, not scoped)
-        const whoIsResult = await findWhoIs.handleAsync({ ipAddress, fingerprint: userAgent });
+        const whoIsResult = await findWhoIs.handleAsync({ ipAddress });
         const whoIsId = whoIsResult.data?.whoIs?.hashId;
 
         if (!whoIsId) {

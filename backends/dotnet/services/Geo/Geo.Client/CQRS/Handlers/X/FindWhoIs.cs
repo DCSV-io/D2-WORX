@@ -21,7 +21,7 @@ using I = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.FindWhoIsInput;
 using O = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.FindWhoIsOutput;
 
 /// <summary>
-/// Handler for finding WhoIs data by IP address and user agent.
+/// Handler for finding WhoIs data by IP address.
 /// </summary>
 /// <remarks>
 /// This implementation checks the local memory cache first, then falls back to
@@ -83,11 +83,11 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
     protected override HandlerOptions DefaultOptions => new(LogOutput: false);
 
     /// <summary>
-    /// Finds WhoIs data for the given IP address and user agent.
+    /// Finds WhoIs data for the given IP address.
     /// </summary>
     ///
     /// <param name="input">
-    /// The input containing IP address and user agent.
+    /// The input containing IP address.
     /// </param>
     /// <param name="ct">
     /// The cancellation token.
@@ -101,7 +101,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         I input,
         CancellationToken ct = default)
     {
-        var cacheKey = CacheKeys.WhoIs(input.IpAddress, input.UserAgent);
+        var cacheKey = CacheKeys.WhoIs(input.IpAddress);
 
         // Try cache first.
         var getR = await r_cacheGet.HandleAsync(new(cacheKey), ct);
@@ -127,7 +127,6 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
                                 new FindWhoIsKeys
                                 {
                                     IpAddress = input.IpAddress,
-                                    Fingerprint = input.UserAgent,
                                 },
                             },
                         },

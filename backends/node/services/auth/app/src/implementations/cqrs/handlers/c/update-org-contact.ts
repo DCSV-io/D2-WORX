@@ -20,6 +20,7 @@ const schema = z.object({
     .object({
       label: z.string().max(100).optional(),
       isPrimary: z.boolean().optional(),
+      ietfBcp47Tag: z.string().max(35).optional(),
       contact: contactInputSchema.optional(),
     })
     .refine(
@@ -86,6 +87,7 @@ export class UpdateOrgContactHandler
         createdAt: new Date(),
         contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT,
         relatedEntityId: existing.id,
+        ietfBcp47Tag: input.updates.ietfBcp47Tag ?? undefined,
         contactMethods: input.updates.contact.contactMethods ?? undefined,
         personalDetails: input.updates.contact.personalDetails ?? undefined,
         professionalDetails: input.updates.contact.professionalDetails ?? undefined,

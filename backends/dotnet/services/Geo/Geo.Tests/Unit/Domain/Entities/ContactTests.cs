@@ -43,6 +43,7 @@ public class ContactTests
         contact.PersonalDetails.Should().BeNull();
         contact.ProfessionalDetails.Should().BeNull();
         contact.LocationHashId.Should().BeNull();
+        contact.IETFBCP47Tag.Should().Be("en-US");
     }
 
     #endregion
@@ -190,6 +191,7 @@ public class ContactTests
         contact.ProfessionalDetails.Should().NotBeNull();
         contact.LocationHashId.Should().NotBeNull();
         contact.LocationHashId.Should().Be(location_hash_id);
+        contact.IETFBCP47Tag.Should().Be("en-US");
     }
 
     #endregion
@@ -443,6 +445,61 @@ public class ContactTests
         copy.RelatedEntityId.Should().Be(original.RelatedEntityId);
         copy.ContactMethods.Should().NotBeNull();
         copy.PersonalDetails.Should().NotBeNull();
+    }
+
+    #endregion
+
+    #region IETF BCP 47 Tag
+
+    /// <summary>
+    /// Tests that creating a Contact with an explicit IETF BCP 47 tag sets the IETFBCP47Tag property.
+    /// </summary>
+    [Fact]
+    public void Create_WithIetfBcp47Tag_SetsTag()
+    {
+        // Arrange
+        const string context_key = "auth-user";
+        var relatedEntityId = Guid.CreateVersion7();
+
+        // Act
+        var contact = Contact.Create(context_key, relatedEntityId, ietfBcp47Tag: "es");
+
+        // Assert
+        contact.IETFBCP47Tag.Should().Be("es");
+    }
+
+    /// <summary>
+    /// Tests that creating a Contact without an IETF BCP 47 tag defaults to "en-US".
+    /// </summary>
+    [Fact]
+    public void Create_WithoutIetfBcp47Tag_DefaultsToEnUS()
+    {
+        // Arrange
+        const string context_key = "auth-user";
+        var relatedEntityId = Guid.CreateVersion7();
+
+        // Act
+        var contact = Contact.Create(context_key, relatedEntityId);
+
+        // Assert
+        contact.IETFBCP47Tag.Should().Be("en-US");
+    }
+
+    /// <summary>
+    /// Tests that creating a Contact with null IETF BCP 47 tag defaults to "en-US".
+    /// </summary>
+    [Fact]
+    public void Create_WithNullIetfBcp47Tag_DefaultsToEnUS()
+    {
+        // Arrange
+        const string context_key = "auth-user";
+        var relatedEntityId = Guid.CreateVersion7();
+
+        // Act
+        var contact = Contact.Create(context_key, relatedEntityId, ietfBcp47Tag: null);
+
+        // Assert
+        contact.IETFBCP47Tag.Should().Be("en-US");
     }
 
     #endregion

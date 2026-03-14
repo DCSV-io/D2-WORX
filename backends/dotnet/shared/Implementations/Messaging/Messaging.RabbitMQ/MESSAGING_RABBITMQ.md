@@ -4,14 +4,14 @@ RabbitMQ implementation of the `IMessageBus` messaging abstraction. Provides pro
 
 ## Files
 
-| File                                              | Description                                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| [MessageBus.cs](MessageBus.cs)                    | `IMessageBus` implementation — unified publish/subscribe facade with managed subscriptions.      |
-| [ProtoPublisher.cs](ProtoPublisher.cs)            | Singleton publisher — serializes protobuf to JSON, lazily creates a cached channel, tracks declared exchanges. |
-| [ProtoConsumer.cs](ProtoConsumer.cs)              | Standalone broadcast consumer factory — creates exclusive auto-delete queues per instance.        |
-| [Conventions/AmqpConventions.cs](Conventions/AmqpConventions.cs) | Static naming helpers for exchange names (`events.{service}`, `commands.{service}`).  |
-| [Handlers/Q/Ping.cs](Handlers/Q/Ping.cs)         | Health check handler — verifies the RabbitMQ connection is open and reports latency.             |
-| [Extensions.cs](Extensions.cs)                    | DI registration (`AddRabbitMqMessaging`) for connection, publisher, message bus, and ping handler. |
+| File                                                             | Description                                                                                                    |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [MessageBus.cs](MessageBus.cs)                                   | `IMessageBus` implementation — unified publish/subscribe facade with managed subscriptions.                    |
+| [ProtoPublisher.cs](ProtoPublisher.cs)                           | Singleton publisher — serializes protobuf to JSON, lazily creates a cached channel, tracks declared exchanges. |
+| [ProtoConsumer.cs](ProtoConsumer.cs)                             | Standalone broadcast consumer factory — creates exclusive auto-delete queues per instance.                     |
+| [Conventions/AmqpConventions.cs](Conventions/AmqpConventions.cs) | Static naming helpers for exchange names (`events.{service}`, `commands.{service}`).                           |
+| [Handlers/Q/Ping.cs](Handlers/Q/Ping.cs)                         | Health check handler — verifies the RabbitMQ connection is open and reports latency.                           |
+| [Extensions.cs](Extensions.cs)                                   | DI registration (`AddRabbitMqMessaging`) for connection, publisher, message bus, and ping handler.             |
 
 ## Overview
 
@@ -52,10 +52,10 @@ Implements `IMessageBus` with three capabilities:
 
 Queue behavior is controlled by `ConsumerConfig.Broadcast`:
 
-| Mode                   | `Broadcast` | Queue Name                   | Durable | Exclusive | Auto-Delete | Use Case                                 |
-| ---------------------- | ----------- | ---------------------------- | ------- | --------- | ----------- | ---------------------------------------- |
-| Broadcast              | `true`      | `{exchange}.{instanceId}`    | No      | Yes       | Yes         | Cache invalidation (all instances)       |
-| Competing consumer     | `false`     | `{exchange}.shared`          | Yes     | No        | No          | Work queue (one instance processes each) |
+| Mode               | `Broadcast` | Queue Name                | Durable | Exclusive | Auto-Delete | Use Case                                 |
+| ------------------ | ----------- | ------------------------- | ------- | --------- | ----------- | ---------------------------------------- |
+| Broadcast          | `true`      | `{exchange}.{instanceId}` | No      | Yes       | Yes         | Cache invalidation (all instances)       |
+| Competing consumer | `false`     | `{exchange}.shared`       | Yes     | No        | No          | Work queue (one instance processes each) |
 
 Error handling: exceptions in the handler callback result in **NACK without requeue** (`ConsumerResult.Drop`). There is no requeue option — requeuing causes poison message tight loops. If a message needs retry, it should be re-published with a delay (e.g., DLX tiered retry as used by Comms).
 
@@ -102,12 +102,12 @@ services.AddRabbitMqMessaging(connectionString);
 
 This registers:
 
-| Registration                  | Lifetime  | Description                                          |
-| ----------------------------- | --------- | ---------------------------------------------------- |
+| Registration                  | Lifetime  | Description                                           |
+| ----------------------------- | --------- | ----------------------------------------------------- |
 | `IConnection`                 | Singleton | Shared RabbitMQ connection (async create via factory) |
-| `ProtoPublisher`              | Singleton | Cached-channel publisher                             |
-| `IMessageBus` → `MessageBus` | Singleton | Unified publish/subscribe facade                     |
-| `IRead.IPingHandler` → `Ping`| Transient | Health check handler                                 |
+| `ProtoPublisher`              | Singleton | Cached-channel publisher                              |
+| `IMessageBus` → `MessageBus`  | Singleton | Unified publish/subscribe facade                      |
+| `IRead.IPingHandler` → `Ping` | Transient | Health check handler                                  |
 
 Service-specific publishers and consumers are registered separately in each service's `Extensions.cs`:
 
@@ -204,12 +204,12 @@ This ensures cross-language compatibility. Contract tests in `contracts/fixtures
 
 ## Dependencies
 
-| Package                                              | Purpose                                      |
-| ---------------------------------------------------- | -------------------------------------------- |
-| `RabbitMQ.Client` 7.x                               | Async AMQP client                            |
-| `Google.Protobuf`                                    | Proto JSON serialization (`JsonFormatter`/`JsonParser`) |
-| `D2.Shared.Handler` (project ref)                   | `BaseHandler`, `IHandlerContext`             |
-| `D2.Shared.Interfaces` (project ref)                | `IMessageBus`, `ConsumerConfig`, `ConsumerResult`, `IncomingMessage<T>` |
-| `Microsoft.Extensions.DependencyInjection.Abstractions` | `IServiceCollection` for DI registration  |
-| `Microsoft.Extensions.Hosting.Abstractions`          | `BackgroundService` base (used by consumers) |
-| `Microsoft.Extensions.Logging.Abstractions`          | `ILogger<T>`                                 |
+| Package                                                 | Purpose                                                                 |
+| ------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `RabbitMQ.Client` 7.x                                   | Async AMQP client                                                       |
+| `Google.Protobuf`                                       | Proto JSON serialization (`JsonFormatter`/`JsonParser`)                 |
+| `D2.Shared.Handler` (project ref)                       | `BaseHandler`, `IHandlerContext`                                        |
+| `D2.Shared.Interfaces` (project ref)                    | `IMessageBus`, `ConsumerConfig`, `ConsumerResult`, `IncomingMessage<T>` |
+| `Microsoft.Extensions.DependencyInjection.Abstractions` | `IServiceCollection` for DI registration                                |
+| `Microsoft.Extensions.Hosting.Abstractions`             | `BackgroundService` base (used by consumers)                            |
+| `Microsoft.Extensions.Logging.Abstractions`             | `ILogger<T>`                                                            |

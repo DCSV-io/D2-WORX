@@ -16,24 +16,29 @@ describe("createTranslator", () => {
   // Construction
   // ---------------------------------------------------------------------------
 
-  it("loads all supported locales", () => {
-    expect(translator.locales).toContain("en");
-    expect(translator.locales).toContain("es");
-    expect(translator.locales).toContain("de");
-    expect(translator.locales).toContain("fr");
-    expect(translator.locales).toContain("ja");
+  it("loads all supported locales in canonical BCP 47 casing", () => {
+    expect(translator.locales).toContain("en-US");
+    expect(translator.locales).toContain("es-ES");
+    expect(translator.locales).toContain("de-DE");
+    expect(translator.locales).toContain("fr-FR");
+    expect(translator.locales).toContain("ja-JP");
+    expect(translator.locales).toContain("en-CA");
+    expect(translator.locales).toContain("en-GB");
+    expect(translator.locales).toContain("es-MX");
+    expect(translator.locales).toContain("fr-CA");
+    expect(translator.locales).toContain("it-IT");
   });
 
   it("locales list is frozen", () => {
     expect(Object.isFrozen(translator.locales)).toBe(true);
   });
 
-  it("has 'en' as base locale by default", () => {
-    expect(translator.baseLocale).toBe("en");
+  it("has 'en-US' as base locale by default", () => {
+    expect(translator.baseLocale).toBe("en-US");
   });
 
   it("throws when base locale file is missing", () => {
-    expect(() => createTranslator({ messagesDir, baseLocale: "xx" as any })).toThrow(
+    expect(() => createTranslator({ messagesDir, baseLocale: "xx" })).toThrow(
       /Base locale "xx" not found/,
     );
   });
@@ -47,25 +52,25 @@ describe("createTranslator", () => {
   // ---------------------------------------------------------------------------
 
   it("translates a known key in the base locale", () => {
-    const result = translator.t("en", "common_ui_save");
+    const result = translator.t("en-US", "common_ui_save");
     expect(result).toBe("Save");
   });
 
   it("translates a known key in a non-base locale", () => {
-    const result = translator.t("es", "common_ui_save");
+    const result = translator.t("es-ES", "common_ui_save");
     expect(result).toBe("Guardar");
   });
 
   it("translates into German", () => {
-    expect(translator.t("de", "common_ui_cancel")).toBe("Abbrechen");
+    expect(translator.t("de-DE", "common_ui_cancel")).toBe("Abbrechen");
   });
 
   it("translates into French", () => {
-    expect(translator.t("fr", "common_ui_cancel")).toBe("Annuler");
+    expect(translator.t("fr-FR", "common_ui_cancel")).toBe("Annuler");
   });
 
   it("translates into Japanese", () => {
-    expect(translator.t("ja", "common_ui_cancel")).toBe("キャンセル");
+    expect(translator.t("ja-JP", "common_ui_cancel")).toBe("キャンセル");
   });
 
   // ---------------------------------------------------------------------------
@@ -73,10 +78,7 @@ describe("createTranslator", () => {
   // ---------------------------------------------------------------------------
 
   it("falls back to base locale when key is missing in requested locale", () => {
-    // The en.json has this key; if the non-en locale happens to be missing it,
-    // we'd get the English fallback. We test by using a key that we know
-    // exists in en but might not exist in a stub locale.
-    const result = translator.t("en", "common_ui_save");
+    const result = translator.t("en-US", "common_ui_save");
     expect(result).toBe("Save");
   });
 
@@ -86,7 +88,7 @@ describe("createTranslator", () => {
   });
 
   it("returns the key itself when key is unknown in all locales", () => {
-    const result = translator.t("en", "this_key_does_not_exist");
+    const result = translator.t("en-US", "this_key_does_not_exist");
     expect(result).toBe("this_key_does_not_exist");
   });
 
@@ -100,14 +102,14 @@ describe("createTranslator", () => {
   // ---------------------------------------------------------------------------
 
   it("interpolates a single parameter", () => {
-    const result = translator.t("en", "auth_email_verification_greeting", {
+    const result = translator.t("en-US", "auth_email_verification_greeting", {
       name: "Alice",
     });
     expect(result).toBe("Hi Alice,");
   });
 
   it("interpolates multiple parameters", () => {
-    const result = translator.t("en", "auth_email_verification_plaintext", {
+    const result = translator.t("en-US", "auth_email_verification_plaintext", {
       name: "Bob",
       url: "https://example.com/verify",
     });
@@ -116,31 +118,31 @@ describe("createTranslator", () => {
   });
 
   it("interpolates parameters in non-English locale", () => {
-    const result = translator.t("de", "auth_email_verification_greeting", {
+    const result = translator.t("de-DE", "auth_email_verification_greeting", {
       name: "Hans",
     });
     expect(result).toBe("Hallo Hans,");
   });
 
   it("interpolates in Japanese locale", () => {
-    const result = translator.t("ja", "auth_email_verification_greeting", {
+    const result = translator.t("ja-JP", "auth_email_verification_greeting", {
       name: "太郎",
     });
     expect(result).toContain("太郎");
   });
 
   it("leaves placeholder intact when param is not provided", () => {
-    const result = translator.t("en", "auth_email_verification_greeting", {});
+    const result = translator.t("en-US", "auth_email_verification_greeting", {});
     expect(result).toBe("Hi {name},");
   });
 
   it("returns message unchanged when no params are needed and none provided", () => {
-    const result = translator.t("en", "common_ui_save");
+    const result = translator.t("en-US", "common_ui_save");
     expect(result).toBe("Save");
   });
 
   it("ignores extra params that are not in the message", () => {
-    const result = translator.t("en", "common_ui_save", { extra: "ignored" });
+    const result = translator.t("en-US", "common_ui_save", { extra: "ignored" });
     expect(result).toBe("Save");
   });
 
@@ -154,13 +156,13 @@ describe("createTranslator", () => {
   });
 
   it("handles empty string key (returns empty string — no match)", () => {
-    const result = translator.t("en", "");
+    const result = translator.t("en-US", "");
     expect(result).toBe("");
   });
 
   it("does not strip $schema key from catalog", () => {
     // $schema is stripped during loading — verify it's not accessible as a message
-    const result = translator.t("en", "$schema");
+    const result = translator.t("en-US", "$schema");
     expect(result).toBe("$schema");
   });
 });

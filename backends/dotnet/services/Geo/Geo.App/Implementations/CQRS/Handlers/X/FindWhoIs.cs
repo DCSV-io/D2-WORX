@@ -27,10 +27,10 @@ using WhoIsProvider = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead;
 ///
 /// <remarks>
 /// <para>
-/// This handler resolves WhoIs records for IP + fingerprint pairs:
+/// This handler resolves WhoIs records for IP addresses:
 /// </para>
 /// <list type="number">
-/// <item>Computes WhoIs hash IDs from IP + current year/month + fingerprint.</item>
+/// <item>Computes WhoIs hash IDs from IP + current year/month.</item>
 /// <item>Checks for existing records in cache/database.</item>
 /// <item>For misses: builds partial WhoIs and calls PopulateWhoIs to fetch external data.</item>
 /// <item>Persists newly populated WhoIs records.</item>
@@ -124,8 +124,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
             var partialWhoIs = WhoIs.Create(
                 ipAddress: key.IpAddress,
                 year: year,
-                month: month,
-                fingerprint: key.Fingerprint);
+                month: month);
 
             keyToPartialWhoIs[key] = partialWhoIs;
             hashIdToKey[partialWhoIs.HashId] = key;

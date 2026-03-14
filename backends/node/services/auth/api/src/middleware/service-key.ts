@@ -1,6 +1,7 @@
 import { createMiddleware } from "hono/factory";
-import { D2Result } from "@d2/result";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { D2Result } from "@d2/result";
+import { validateServiceKey } from "@d2/service-key";
 import { REQUEST_CONTEXT_KEY } from "../context-keys.js";
 
 export interface ServiceKeyMiddlewareOptions {
@@ -13,16 +14,10 @@ export interface ServiceKeyMiddlewareOptions {
 
 /**
  * Creates Hono middleware that validates the `X-Api-Key` header for S2S calls.
- *
- * Mirrors .NET `ServiceKeyMiddleware` behavior:
- * - No header → pass through (browser request) OR 401 if `require` is set
- * - Invalid key → 401 immediately with D2Result JSON
- * - Valid key → set `isTrustedService = true` on requestContext, continue
- *
- * Must run AFTER request enrichment middleware (needs requestContext on context).
+ * Delegates to @d2/service-key for constant-time key validation.
  */
 export function createServiceKeyMiddleware(
-  validKeys: Set<string>,
+  validKeys: string[],
   options?: ServiceKeyMiddlewareOptions,
 ) {
   const requireKey = options?.require ?? false;
@@ -30,7 +25,7 @@ export function createServiceKeyMiddleware(
   return createMiddleware(async (c, next) => {
     const apiKey = c.req.header("X-Api-Key");
 
-    // No key → pass through or reject based on require option
+    // No key -> pass through or reject based on require option
     if (!apiKey) {
       if (requireKey) {
         return c.json(
@@ -39,7 +34,7 @@ export function createServiceKeyMiddleware(
         );
       }
 
-      // Explicitly mark as not-trusted (transitions from null → false).
+      // Explicitly mark as not-trusted (transitions from null -> false).
       const requestContext = c.get(REQUEST_CONTEXT_KEY);
       if (requestContext) {
         requestContext.isTrustedService = false;
@@ -48,15 +43,13 @@ export function createServiceKeyMiddleware(
       return;
     }
 
-    // Invalid key → 401 immediately
-    if (!validKeys.has(apiKey)) {
-      return c.json(
-        D2Result.unauthorized({ messages: ["Invalid API key."] }),
-        401 as ContentfulStatusCode,
-      );
+    // Validate key using constant-time comparison
+    const result = validateServiceKey(apiKey, validKeys);
+    if (result) {
+      return c.json(result, result.statusCode as ContentfulStatusCode);
     }
 
-    // Valid key → set trust flag on requestContext
+    // Valid key -> set trust flag on requestContext
     const requestContext = c.get(REQUEST_CONTEXT_KEY);
     if (requestContext) {
       requestContext.isTrustedService = true;

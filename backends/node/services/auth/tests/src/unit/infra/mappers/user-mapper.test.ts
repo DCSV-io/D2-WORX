@@ -96,6 +96,6 @@ describe("toDomainUser", () => {
     };
 
     const user = toDomainUser(raw);
-    expect(user.locale).toBe("en");
+    expect(user.locale).toBe("en-US");
   });
 });

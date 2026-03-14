@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Infra.Messaging.Handlers.Pub;
 
+using System.Net;
 using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Handler;
 using D2.Shared.Result;
@@ -54,7 +55,7 @@ public class ContactEviction : BaseHandler<ContactEviction, I, O>, H
 
             return D2Result<O?>.Fail(
                 ["Failed to publish contact eviction notification."],
-                System.Net.HttpStatusCode.InternalServerError);
+                HttpStatusCode.InternalServerError);
         }
 
         Context.Logger.LogInformation(

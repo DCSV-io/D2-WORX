@@ -192,6 +192,8 @@ Contracts/
 |
 |__ Handler/ -> Base handler abstractions
 |
+|__ I18n/ -> Translation infrastructure (Translator + TK constants, loads contracts/messages/*.json — 10 BCP 47 locales)
+|
 |__ Interfaces/ -> All interface definitions following TLC hierarchy
 |
 |__ Result/ -> D2Result pattern
@@ -235,6 +237,11 @@ Implementations/ -> Common reusable implementations
 |   |__ RateLimit.Default/ -> Multi-dimensional sliding-window rate limiting
 |   |
 |   |__ Idempotency.Default/ -> Idempotency-Key header middleware (Redis SET NX, response caching)
+|   |
+|   |__ Auth.Default/ -> JWT auth, service key validation, session fingerprint binding (.NET)
+|   |                     Node.js splits into @d2/service-key + @d2/session-fingerprint (+ @d2/csrf, Node-only)
+|   |
+|   |__ Translation.Default/ -> Gateway-edge D2Result message/inputError translation (resolves TK.* keys)
 |
 |__ Repository/ -> Common repository implementations
 |   |

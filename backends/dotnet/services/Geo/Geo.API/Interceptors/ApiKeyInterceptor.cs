@@ -7,10 +7,10 @@
 namespace Geo.API.Interceptors;
 
 using D2.Geo.App;
+using D2.Services.Protos.Geo.V1;
 using D2.Shared.Utilities.Extensions;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 /// <summary>
@@ -139,28 +139,28 @@ public class ApiKeyInterceptor : Interceptor
     {
         var keys = new HashSet<string>();
 
-        if (request is D2.Services.Protos.Geo.V1.CreateContactsRequest createReq)
+        if (request is CreateContactsRequest createReq)
         {
             foreach (var contact in createReq.ContactsToCreate)
             {
                 keys.Add(contact.ContextKey);
             }
         }
-        else if (request is D2.Services.Protos.Geo.V1.GetContactsByExtKeysRequest getExtReq)
+        else if (request is GetContactsByExtKeysRequest getExtReq)
         {
             foreach (var key in getExtReq.Keys)
             {
                 keys.Add(key.ContextKey);
             }
         }
-        else if (request is D2.Services.Protos.Geo.V1.DeleteContactsByExtKeysRequest deleteExtReq)
+        else if (request is DeleteContactsByExtKeysRequest deleteExtReq)
         {
             foreach (var key in deleteExtReq.Keys)
             {
                 keys.Add(key.ContextKey);
             }
         }
-        else if (request is D2.Services.Protos.Geo.V1.UpdateContactsByExtKeysRequest updateExtReq)
+        else if (request is UpdateContactsByExtKeysRequest updateExtReq)
         {
             foreach (var contact in updateExtReq.Contacts)
             {

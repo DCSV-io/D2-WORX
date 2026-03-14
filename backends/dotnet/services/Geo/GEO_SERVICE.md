@@ -6,7 +6,7 @@ The **Geo** (Geography) microservice is a critical infrastructure service within
 
 - **Locations** - Physical addresses with coordinates and geopolitical context
 - **Contacts** - Contact information for individuals and organizations
-- **WHOIS** - IP address geolocation and network metadata with device fingerprinting
+- **WHOIS** - IP address geolocation and network metadata
 - **Reference Data** - Countries, subdivisions, currencies, languages, locales
 - **Geopolitical Entities** - Supra-national organizations (NATO, EU, etc.)
 
@@ -58,7 +58,7 @@ Location and WHOIS entities use **SHA-256 hash as primary key** instead of seque
 Normalized string from: coordinates, street address, city, postal code, subdivision code, country code
 
 **Hash Input (WHOIS):**
-Normalized string from: IP address + year + month + device fingerprint (differentiates devices on same IP and provides temporal versioning)
+Normalized string from: IP address + year + month (provides temporal versioning — same IP, new month = new record)
 
 ### 3. Loose Coupling via Context Keys
 
@@ -115,6 +115,7 @@ graph TB
 
 %% Contact relationships
     Contact -->|optional FK| Location
+    Contact -->|FK| Locale
     Contact -.->|contains| ContactMethods
     Contact -.->|contains| Personal
     Contact -.->|contains| Professional
@@ -168,14 +169,16 @@ Individual or organizational contact information with optional location referenc
 - Version 7 GUID for time-ordered IDs
 - ContextKey for categorization/caching
 - RelatedEntityId for loose coupling to external entities
+- IETFBCP47Tag (BCP 47 string, max 35 chars, defaults to `"en-US"`) - FK to Locale reference entity. Navigation property provides access to associated Locale. Synced from User.locale for async notification language resolution by Comms service
 - Optional nested value objects: ContactMethods, Personal, Professional
-- Optional FK to Location (byte[] hash)
+- Optional FK to Location (hex string hash)
 
 **Design Decisions:**
 
 - ContactMethods, Personal, Professional are nullable (contacts vary widely)
 - CreatedAt always UTC (display timezone conversion in UI)
-- LocationHashId is byte[] to match Location primary key type
+- LocationHashId is a hex string to match Location primary key type
+- IETFBCP47Tag enables the Comms service to deliver notifications in the recipient's preferred language. The FK to Locale enforces referential integrity against valid BCP 47 tags in the reference data
 
 #### Location
 
@@ -183,7 +186,7 @@ Physical location with content-addressable hash ID.
 
 **Key Properties:**
 
-- SHA-256 hash (byte[]) as primary key
+- SHA-256 hash (hex string) as primary key
 - Optional coordinates, street address, city, postal code
 - References to subdivision and country (ISO codes)
 
@@ -195,29 +198,28 @@ Physical location with content-addressable hash ID.
 
 #### WHOIS
 
-IP address geolocation and network metadata with device fingerprinting.
+IP address geolocation and network metadata.
 
 **Key Properties:**
 
-- SHA-256 hash (byte[]) as primary key (computed from IP + year + month + fingerprint)
+- SHA-256 hash (hex string) as primary key (computed from `SHA256(ip|year|month)`)
 - IP address (string)
 - Year and month (int) - temporal components of the hash
-- Device fingerprint (string) - differentiates devices sharing same IP
 - ASN information (number, name, domain, type)
 - Geographic information (city, country, coordinates)
 - Network flags (isAnonymous, isVPN, isTor, isProxy, etc.)
 
 **Design Decisions:**
 
-- Content-addressable by IP + year + month + fingerprint (enables both device and temporal differentiation)
-- Year/month provide automatic monthly versioning (same device, new month = new record)
-- Fingerprint critical for home/corporate networks (multiple devices, one public IP)
+- Content-addressable by IP + year + month (provides temporal differentiation)
+- Year/month provide automatic monthly versioning (same IP, new month = new record)
 - All geo fields optional (external API may not return all data)
 - Immutable - updates create new records with new hash
+- Old records age out naturally via 180-day retention (`PurgeStaleWhoIs` job)
 
 **Use Cases:**
 
-- Track user sessions by geographic location and device over time
+- Track user sessions by geographic location over time
 - Detect suspicious login attempts from unusual locations
 - Monthly refresh of WHOIS data (automatic via hash key)
 - Enrich analytics with geographic data
@@ -225,7 +227,7 @@ IP address geolocation and network metadata with device fingerprinting.
 
 **Lifecycle & Purge:**
 
-WhoIs records accumulate over time (new hash per IP+fingerprint+month). The `PurgeStaleWhoIs` scheduled job deletes records older than `WhoIsRetentionDays` (default 180 days) by comparing their Year/Month fields against a cutoff date. This job runs **before** `CleanupOrphanedLocations` because deleting WhoIs records may orphan their referenced Locations.
+WhoIs records accumulate over time (new hash per IP+month). The `PurgeStaleWhoIs` scheduled job deletes records older than `WhoIsRetentionDays` (default 180 days) by comparing their Year/Month fields against a cutoff date. This job runs **before** `CleanupOrphanedLocations` because deleting WhoIs records may orphan their referenced Locations.
 
 #### Country
 
@@ -668,6 +670,7 @@ Domain objects enforce invariants strictly. Invalid state throws exceptions.
 - Create() methods validate inputs
 - Throw domain exceptions (GeoValidationException)
 - No "try" or "isValid" methods in domain
+- App-layer validators use `TK.*` translation key constants (from `D2.Shared.I18n`) instead of hardcoded English strings, enabling gateway-edge translation via `TranslationMiddleware`
 
 **Example Validations:**
 
@@ -863,7 +866,7 @@ Specialized endpoints for cache warming:
 
 **Step-by-step process:**
 
-1. Compute hash from IP address + fingerprint
+1. Compute hash from IP address + year + month
 2. Check local memory cache (hot items only)
    - If found → return immediately (sub-microsecond)
 3. Check Redis directly
@@ -1077,7 +1080,7 @@ Specialized endpoints for cache warming:
 - LRU eviction works as expected (memory bounded)
 - Graceful degradation when Redis unavailable
 - Graceful degradation when Geo service unavailable
-- WHOIS fingerprint differentiation (same IP, different devices)
+- WHOIS temporal versioning (same IP, different months)
 
 **Infrastructure:**
 
@@ -1270,7 +1273,7 @@ The Geo microservice provides critical geographic and contact infrastructure for
 
 **Content-addressable hashing** - Natural deduplication for Locations and WHOIS records
 
-**WHOIS with fingerprinting** - Differentiates devices sharing same IP for accurate tracking
+**WHOIS with temporal versioning** - Monthly hash rotation provides fresh geolocation data per IP
 
 **Loose coupling** - ContextKey + RelatedEntityId avoids foreign key constraints
 

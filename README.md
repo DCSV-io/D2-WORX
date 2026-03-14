@@ -36,17 +36,17 @@ WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and
 
 **Phase:** Pre-Alpha (Core Infrastructure + Auth + SvelteKit)
 
-| Area                          | Status         | Tests         |
-| ----------------------------- | -------------- | ------------- |
-| .NET shared infrastructure    | ✅ Done        | 1,585 passing |
-| Node.js shared infrastructure | ✅ Done        | 1,127 passing |
-| Geo service (.NET)            | ✅ Done        | 798 passing   |
-| .NET REST gateway             | ✅ Done        | —             |
-| Auth service (Node.js)        | 🚧 Stage C    | 969 passing   |
-| Comms service (Node.js)       | 🚧 Stage B    | 575 passing   |
-| Scheduled jobs (Dkron)        | ✅ Done        | 64 passing    |
-| E2E cross-service tests       | ✅ Done        | 31 passing    |
-| SvelteKit web client          | 🚧 Stage B    | 706 passing   |
+| Area                          | Status     | Tests         |
+| ----------------------------- | ---------- | ------------- |
+| .NET shared infrastructure    | ✅ Done    | 1,585 passing |
+| Node.js shared infrastructure | ✅ Done    | 1,127 passing |
+| Geo service (.NET)            | ✅ Done    | 798 passing   |
+| .NET REST gateway             | ✅ Done    | —             |
+| Auth service (Node.js)        | 🚧 Stage C | 969 passing   |
+| Comms service (Node.js)       | 🚧 Stage B | 575 passing   |
+| Scheduled jobs (Dkron)        | ✅ Done    | 64 passing    |
+| E2E cross-service tests       | ✅ Done    | 31 passing    |
+| SvelteKit web client          | 🚧 Stage B | 706 passing   |
 
 **Current focus:** SvelteKit web client — design system, routing, auth BFF proxy, API gateway client, forms, auth pages, device fingerprinting, client telemetry (Grafana Faro), and three-tier Playwright test architecture done. Onboarding flow next. See [PLANNING.md](PLANNING.md) for architecture decisions, detailed status, and roadmap.
 
@@ -238,41 +238,41 @@ D² was designed from the ground up to maximize developer experience while provi
 
 ### Project-Level
 
-| Document                                          | Description                                                       |
-| ------------------------------------------------- | ----------------------------------------------------------------- |
-| [PLANNING.md](PLANNING.md)                        | Roadmap, ADRs, implementation status, issues, work in progress    |
-| [CLAUDE.md](CLAUDE.md)                            | Development guide — workflow, commands, patterns, code conventions |
-| [CONTRIBUTING.md](CONTRIBUTING.md)                 | Branch naming, conventional commits, PR process                   |
-| [OPERATIONAL-GUARANTEES.md](OPERATIONAL-GUARANTEES.md) | SLA and operational guarantees                                |
+| Document                                               | Description                                                        |
+| ------------------------------------------------------ | ------------------------------------------------------------------ |
+| [PLANNING.md](PLANNING.md)                             | Roadmap, ADRs, implementation status, issues, work in progress     |
+| [CLAUDE.md](CLAUDE.md)                                 | Development guide — workflow, commands, patterns, code conventions |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                     | Branch naming, conventional commits, PR process                    |
+| [OPERATIONAL-GUARANTEES.md](OPERATIONAL-GUARANTEES.md) | SLA and operational guarantees                                     |
 
 ### Backend Architecture
 
-| Document                              | Description                                                              |
-| ------------------------------------- | ------------------------------------------------------------------------ |
-| [BACKENDS.md](backends/BACKENDS.md)   | TLC/2LC/3LC folder convention, handler categories, DI, package graph     |
-| [MESSAGING.md](backends/MESSAGING.md) | Cross-service messaging patterns (RabbitMQ exchanges, event contracts)   |
-| [PARITY.md](backends/PARITY.md)       | .NET ↔ Node.js cross-platform parity tracking                           |
+| Document                              | Description                                                            |
+| ------------------------------------- | ---------------------------------------------------------------------- |
+| [BACKENDS.md](backends/BACKENDS.md)   | TLC/2LC/3LC folder convention, handler categories, DI, package graph   |
+| [MESSAGING.md](backends/MESSAGING.md) | Cross-service messaging patterns (RabbitMQ exchanges, event contracts) |
+| [PARITY.md](backends/PARITY.md)       | .NET ↔ Node.js cross-platform parity tracking                          |
 
 ### Core Patterns & Contracts
 
 _Shared abstractions used across all services on both platforms._
 
-| Concern          | .NET                                                                                  | Node.js                                                                                                          | Description                                     |
-| ---------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Result           | [Result](backends/dotnet/shared/Result/RESULT.md)                                     | [@d2/result](backends/node/shared/result/RESULT.md)                                                              | Errors-as-values pattern (D2Result)             |
-| Handler          | [Handler](backends/dotnet/shared/Handler/HANDLER.md)                                  | [@d2/handler](backends/node/shared/handler/HANDLER.md)                                                           | BaseHandler with OTel spans, metrics, redaction |
-| Handler Ext.     | [Handler.Extensions](backends/dotnet/shared/Handler.Extensions/HANDLER_EXTENSIONS.md) | —                                                                                                                | DI registration for handler context             |
-| Interfaces       | [Interfaces](backends/dotnet/shared/Interfaces/INTERFACES.md)                         | [@d2/interfaces](backends/node/shared/interfaces/INTERFACES.md)                                                  | Cache + middleware contract interfaces          |
-| Result Ext.      | [Result.Extensions](backends/dotnet/shared/Result.Extensions/RESULT_EXTENSIONS.md)    | [@d2/result-extensions](backends/node/shared/result-extensions/RESULT_EXTENSIONS.md)                             | D2Result ↔ Proto conversions + gRPC wrapper     |
-| Utilities        | [Utilities](backends/dotnet/shared/Utilities/UTILITIES.md)                            | [@d2/utilities](backends/node/shared/utilities/UTILITIES.md)                                                     | Extension methods and helpers                   |
-| Service Defaults | [ServiceDefaults](backends/dotnet/shared/ServiceDefaults/SERVICE_DEFAULT.md)          | [@d2/service-defaults](backends/node/shared/service-defaults/SERVICE_DEFAULTS.md)                                | Telemetry and shared configuration              |
-| DI Container     | —                                                                                     | [@d2/di](backends/node/shared/di/DI.md)                                                                         | Lightweight DI (mirrors .NET IServiceCollection)|
-| Logging          | —                                                                                     | [@d2/logging](backends/node/shared/logging/LOGGING.md)                                                           | ILogger interface with Pino (OTel-instrumented) |
-| i18n             | —                                                                                     | [@d2/i18n](backends/node/shared/i18n/I18N.md)                                                                   | Shared i18n utilities                           |
-| Proto Contracts  | [Protos.DotNet](backends/dotnet/shared/protos/_gen/Protos.DotNet/PROTOS_DOTNET.md)    | [@d2/protos](backends/node/shared/protos/PROTOS.md)                                                              | Generated gRPC types from `contracts/protos/`   |
-| Testing          | [Tests](backends/dotnet/shared/Tests/TESTS.md)                                        | [@d2/testing](backends/node/shared/testing/TESTING.md) / [@d2/shared-tests](backends/node/shared/tests/TESTS.md) | Test infrastructure and suites                  |
+| Concern          | .NET                                                                                  | Node.js                                                                                                          | Description                                      |
+| ---------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Result           | [Result](backends/dotnet/shared/Result/RESULT.md)                                     | [@d2/result](backends/node/shared/result/RESULT.md)                                                              | Errors-as-values pattern (D2Result)              |
+| Handler          | [Handler](backends/dotnet/shared/Handler/HANDLER.md)                                  | [@d2/handler](backends/node/shared/handler/HANDLER.md)                                                           | BaseHandler with OTel spans, metrics, redaction  |
+| Handler Ext.     | [Handler.Extensions](backends/dotnet/shared/Handler.Extensions/HANDLER_EXTENSIONS.md) | —                                                                                                                | DI registration for handler context              |
+| Interfaces       | [Interfaces](backends/dotnet/shared/Interfaces/INTERFACES.md)                         | [@d2/interfaces](backends/node/shared/interfaces/INTERFACES.md)                                                  | Cache + middleware contract interfaces           |
+| Result Ext.      | [Result.Extensions](backends/dotnet/shared/Result.Extensions/RESULT_EXTENSIONS.md)    | [@d2/result-extensions](backends/node/shared/result-extensions/RESULT_EXTENSIONS.md)                             | D2Result ↔ Proto conversions + gRPC wrapper      |
+| Utilities        | [Utilities](backends/dotnet/shared/Utilities/UTILITIES.md)                            | [@d2/utilities](backends/node/shared/utilities/UTILITIES.md)                                                     | Extension methods and helpers                    |
+| Service Defaults | [ServiceDefaults](backends/dotnet/shared/ServiceDefaults/SERVICE_DEFAULT.md)          | [@d2/service-defaults](backends/node/shared/service-defaults/SERVICE_DEFAULTS.md)                                | Telemetry and shared configuration               |
+| DI Container     | —                                                                                     | [@d2/di](backends/node/shared/di/DI.md)                                                                          | Lightweight DI (mirrors .NET IServiceCollection) |
+| Logging          | —                                                                                     | [@d2/logging](backends/node/shared/logging/LOGGING.md)                                                           | ILogger interface with Pino (OTel-instrumented)  |
+| i18n             | [I18n](backends/dotnet/shared/I18n/)                                                  | [@d2/i18n](backends/node/shared/i18n/I18N.md)                                                                    | Translator + TK constants (contracts/messages/)  |
+| Proto Contracts  | [Protos.DotNet](backends/dotnet/shared/protos/_gen/Protos.DotNet/PROTOS_DOTNET.md)    | [@d2/protos](backends/node/shared/protos/PROTOS.md)                                                              | Generated gRPC types from `contracts/protos/`    |
+| Testing          | [Tests](backends/dotnet/shared/Tests/TESTS.md)                                        | [@d2/testing](backends/node/shared/testing/TESTING.md) / [@d2/shared-tests](backends/node/shared/tests/TESTS.md) | Test infrastructure and suites                   |
 
-> **Platform-exclusive packages:** Handler Ext. is .NET-only (JWT claim extraction — Node.js uses BetterAuth directly). DI Container is Node-only (no dedicated .NET package — .NET has built-in `Microsoft.Extensions.DI`). Logging is Node-only (no dedicated .NET package — .NET has built-in `ILogger<T>`). i18n is Node-only (.NET i18n not yet built — Geo has hardcoded English in D2Result messages/inputErrors, tracked in PLANNING.md).
+> **Platform-exclusive packages:** Handler Ext. is .NET-only (JWT claim extraction — Node.js uses BetterAuth directly). DI Container is Node-only (no dedicated .NET package — .NET has built-in `Microsoft.Extensions.DI`). Logging is Node-only (no dedicated .NET package — .NET has built-in `ILogger<T>`). CSRF is Node-only (.NET uses CORS for CSRF protection).
 
 ### Shared Implementations
 
@@ -297,38 +297,41 @@ _Repository:_
 
 _Middleware:_
 
-| Concern            | .NET                                                                                                                           | Node.js                                                                                                                    | Description                                          |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| Request Enrichment | [RequestEnrichment.Default](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | [@d2/request-enrichment](backends/node/shared/implementations/middleware/request-enrichment/default/REQUEST_ENRICHMENT.md) | IP resolution, fingerprinting, and WhoIs geolocation |
-| Rate Limiting      | [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | [@d2/ratelimit](backends/node/shared/implementations/middleware/ratelimit/default/RATELIMIT.md)                            | Multi-dimensional sliding-window rate limiting       |
-| Idempotency        | [Idempotency.Default](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                    | [@d2/idempotency](backends/node/shared/implementations/middleware/idempotency/default/IDEMPOTENCY.md)                      | Idempotency-Key header middleware (Redis-backed)     |
+| Concern            | .NET                                                                                                                           | Node.js                                                                                                                                                                                           | Description                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Request Enrichment | [RequestEnrichment.Default](backends/dotnet/shared/Implementations/Middleware/RequestEnrichment.Default/REQUEST_ENRICHMENT.md) | [@d2/request-enrichment](backends/node/shared/implementations/middleware/request-enrichment/default/REQUEST_ENRICHMENT.md)                                                                        | IP resolution, fingerprinting, and WhoIs geolocation  |
+| Rate Limiting      | [RateLimit.Default](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md)                         | [@d2/ratelimit](backends/node/shared/implementations/middleware/ratelimit/default/RATELIMIT.md)                                                                                                   | Multi-dimensional sliding-window rate limiting        |
+| Idempotency        | [Idempotency.Default](backends/dotnet/shared/Implementations/Middleware/Idempotency.Default/IDEMPOTENCY.md)                    | [@d2/idempotency](backends/node/shared/implementations/middleware/idempotency/default/IDEMPOTENCY.md)                                                                                             | Idempotency-Key header middleware (Redis-backed)      |
+| Auth               | [Auth.Default](backends/dotnet/shared/Implementations/Middleware/Auth.Default/)                                                | [@d2/service-key](backends/node/shared/implementations/middleware/service-key/default/) + [@d2/session-fingerprint](backends/node/shared/implementations/middleware/session-fingerprint/default/) | JWT auth, service key validation, fingerprint binding |
+| Translation        | [Translation.Default](backends/dotnet/shared/Implementations/Middleware/Translation.Default/)                                  | [@d2/translation](backends/node/shared/implementations/middleware/translation/default/)                                                                                                           | Gateway-edge D2Result message/inputError translation  |
+| CSRF               | —                                                                                                                              | [@d2/csrf](backends/node/shared/implementations/middleware/csrf/default/)                                                                                                                         | CSRF protection (Origin + Content-Type validation)    |
 
 _Messaging:_
 
-| Component                                                                                | Description                                            |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [Messaging.RabbitMQ](backends/dotnet/shared/Implementations/Messaging/Messaging.RabbitMQ/MESSAGING_RABBITMQ.md) | .NET RabbitMQ integration                |
-| [@d2/messaging](backends/node/shared/messaging/MESSAGING.md)                             | RabbitMQ pub/sub (thin wrapper around rabbitmq-client) |
+| Component                                                                                                       | Description                                            |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| [Messaging.RabbitMQ](backends/dotnet/shared/Implementations/Messaging/Messaging.RabbitMQ/MESSAGING_RABBITMQ.md) | .NET RabbitMQ integration                              |
+| [@d2/messaging](backends/node/shared/messaging/MESSAGING.md)                                                    | RabbitMQ pub/sub (thin wrapper around rabbitmq-client) |
 
 ### Services
 
 _Domain-specific microservices. Each service owns its data and communicates via gRPC (sync) or RabbitMQ (async)._
 
-| Service                                                    | Platform | Status     | Description                                                                      |
-| ---------------------------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------- |
+| Service                                                    | Platform | Status     | Description                                                                       |
+| ---------------------------------------------------------- | -------- | ---------- | --------------------------------------------------------------------------------- |
 | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)         | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
-| [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — Stages A-B done, BFF client done        |
-| [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Stage B | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)     |
+| [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — Stages A-B done, BFF client done         |
+| [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Stage B | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)      |
 | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md) | Node.js  | ✅ Done    | Declarative Dkron job reconciler — drift detection, orphan cleanup                |
 
 _Service internals (DDD layers):_
 
-| Service | Domain | App | Infra | API | Tests |
-| ------- | ------ | --- | ----- | --- | ----- |
-| Geo     | [Domain](backends/dotnet/services/Geo/Geo.Domain/GEO_DOMAIN.md) | [App](backends/dotnet/services/Geo/Geo.App/GEO_APP.md) | [Infra](backends/dotnet/services/Geo/Geo.Infra/GEO_INFRA.md) | [API](backends/dotnet/services/Geo/Geo.API/GEO_API.md) | [Tests](backends/dotnet/services/Geo/Geo.Tests/GEO_TESTS.md) |
-| Auth    | [Domain](backends/node/services/auth/domain/AUTH_DOMAIN.md)      | [App](backends/node/services/auth/app/AUTH_APP.md)       | [Infra](backends/node/services/auth/infra/AUTH_INFRA.md)       | [API](backends/node/services/auth/api/AUTH_API.md)       | [Tests](backends/node/services/auth/tests/AUTH_TESTS.md)       |
-| Comms   | [Domain](backends/node/services/comms/domain/COMMS_DOMAIN.md)    | [App](backends/node/services/comms/app/COMMS_APP.md)     | [Infra](backends/node/services/comms/infra/COMMS_INFRA.md)     | [API](backends/node/services/comms/api/COMMS_API.md)     | [Tests](backends/node/services/comms/tests/COMMS_TESTS.md)     |
-| dkron-mgr | — | — | — | — | [Tests](backends/node/services/dkron-mgr/tests/DKRON_MGR_TESTS.md) |
+| Service   | Domain                                                          | App                                                    | Infra                                                        | API                                                    | Tests                                                              |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------ |
+| Geo       | [Domain](backends/dotnet/services/Geo/Geo.Domain/GEO_DOMAIN.md) | [App](backends/dotnet/services/Geo/Geo.App/GEO_APP.md) | [Infra](backends/dotnet/services/Geo/Geo.Infra/GEO_INFRA.md) | [API](backends/dotnet/services/Geo/Geo.API/GEO_API.md) | [Tests](backends/dotnet/services/Geo/Geo.Tests/GEO_TESTS.md)       |
+| Auth      | [Domain](backends/node/services/auth/domain/AUTH_DOMAIN.md)     | [App](backends/node/services/auth/app/AUTH_APP.md)     | [Infra](backends/node/services/auth/infra/AUTH_INFRA.md)     | [API](backends/node/services/auth/api/AUTH_API.md)     | [Tests](backends/node/services/auth/tests/AUTH_TESTS.md)           |
+| Comms     | [Domain](backends/node/services/comms/domain/COMMS_DOMAIN.md)   | [App](backends/node/services/comms/app/COMMS_APP.md)   | [Infra](backends/node/services/comms/infra/COMMS_INFRA.md)   | [API](backends/node/services/comms/api/COMMS_API.md)   | [Tests](backends/node/services/comms/tests/COMMS_TESTS.md)         |
+| dkron-mgr | —                                                               | —                                                      | —                                                            | —                                                      | [Tests](backends/node/services/dkron-mgr/tests/DKRON_MGR_TESTS.md) |
 
 ### Client Libraries
 
@@ -357,15 +360,15 @@ _Service-owned client libraries for consumers._
 
 ### Frontends
 
-| Client                                    | Status     | Documents                                                                                                        | Description                                                            |
-| ----------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [SvelteKit Web](clients/web/README.md)    | 🚧 Stage B | [README](clients/web/README.md), [Strategy](clients/web/SVELTEKIT_STRATEGY.md), [Plan](clients/web/IMPLEMENTATION_PLAN.md) | Architecture, routing, auth BFF, middleware, testing, implementation plan |
+| Client                                 | Status     | Documents                                                                                                                  | Description                                                               |
+| -------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [SvelteKit Web](clients/web/README.md) | 🚧 Stage B | [README](clients/web/README.md), [Strategy](clients/web/SVELTEKIT_STRATEGY.md), [Plan](clients/web/IMPLEMENTATION_PLAN.md) | Architecture, routing, auth BFF, middleware, testing, implementation plan |
 
 ### Cross-Service Testing
 
-| Document                                                     | Description                                                              |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------ |
-| [E2E Tests](backends/node/services/e2e/E2E_TESTS.md)         | Cross-service E2E tests — Testcontainers, .NET child processes, browser  |
+| Document                                             | Description                                                             |
+| ---------------------------------------------------- | ----------------------------------------------------------------------- |
+| [E2E Tests](backends/node/services/e2e/E2E_TESTS.md) | Cross-service E2E tests — Testcontainers, .NET child processes, browser |
 
 ## Story & Background 🌙
 

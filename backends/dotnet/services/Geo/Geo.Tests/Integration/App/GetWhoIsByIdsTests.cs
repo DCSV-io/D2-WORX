@@ -201,7 +201,6 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
             ipAddress: "192.168.1.1",
             year: 2025,
             month: 6,
-            fingerprint: "Mozilla/5.0",
             asn: 12345,
             asName: "Test AS",
             asDomain: "test.com",
@@ -224,7 +223,6 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         dto.IpAddress.Should().Be("192.168.1.1");
         dto.Year.Should().Be(2025);
         dto.Month.Should().Be(6);
-        dto.Fingerprint.Should().Be("Mozilla/5.0");
         dto.Asn.Should().Be(12345);
         dto.AsName.Should().Be("Test AS");
         dto.AsDomain.Should().Be("test.com");
@@ -263,7 +261,6 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
             ipAddress: $"10.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}",
             year: 2025,
             month: 7,
-            fingerprint: $"test-fp-{suffix}",
             asn: 99999,
             asName: "Location Test AS",
             locationHashId: location.HashId);
@@ -320,15 +317,13 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
             ipAddress: $"172.{Random.Shared.Next(16, 31)}.{Random.Shared.Next(1, 255)}.1",
             year: 2025,
             month: 8,
-            fingerprint: $"with-loc-{suffix}",
             locationHashId: location.HashId);
 
         // Create WhoIs WITHOUT location
         var whoIsWithoutLocation = WhoIs.Create(
             ipAddress: $"172.{Random.Shared.Next(16, 31)}.{Random.Shared.Next(1, 255)}.2",
             year: 2025,
-            month: 8,
-            fingerprint: $"no-loc-{suffix}");
+            month: 8);
 
         _db.WhoIsRecords.AddRange(whoIsWithLocation, whoIsWithoutLocation);
         await _db.SaveChangesAsync(Ct);
@@ -369,7 +364,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     {
         // Arrange
         var suffix = Guid.NewGuid().ToString("N");
-        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1, $"fingerprint-{suffix}");
+        var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1);
         _db.WhoIsRecords.Add(existingWhoIs);
         await _db.SaveChangesAsync(Ct);
 
@@ -428,10 +423,10 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetWhoIsByIds_WithPartialCache_FetchesMissingFromDb()
     {
-        // Arrange - Create two WhoIs records with unique IPs/fingerprints
+        // Arrange - Create two WhoIs records with unique IPs
         var suffix = Guid.NewGuid().ToString("N");
-        var whoIs1 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fingerprint-1-{suffix}");
-        var whoIs2 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fingerprint-2-{suffix}");
+        var whoIs1 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1);
+        var whoIs2 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1);
         _db.WhoIsRecords.AddRange(whoIs1, whoIs2);
         await _db.SaveChangesAsync(Ct);
 
@@ -461,10 +456,10 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     [Fact]
     public async Task GetWhoIsByIds_WithLargeBatch_HandlesCorrectly()
     {
-        // Arrange - Create 150 WhoIs records with unique fingerprints
+        // Arrange - Create 150 WhoIs records
         var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = Enumerable.Range(0, 150)
-            .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1, $"fingerprint-{i}-{suffix}"))
+            .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1))
             .ToList();
         _db.WhoIsRecords.AddRange(whoIsRecords);
         await _db.SaveChangesAsync(Ct);
@@ -501,9 +496,9 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
-            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1, $"fingerprint-1-{suffix}"),
-            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1, $"fingerprint-2-{suffix}"),
-            WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2, $"fingerprint-3-{suffix}"),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1),
+            WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1),
+            WhoIs.Create($"10.0.{Random.Shared.Next(1, 255)}.1", 2025, 2),
         };
         _db.WhoIsRecords.AddRange(whoIsRecords);
         await _db.SaveChangesAsync(Ct);

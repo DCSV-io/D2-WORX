@@ -19,6 +19,7 @@
 
 # Paraglide generated
 clients/web/src/lib/paraglide/
+clients/web/src/paraglide/
 
 # Lock files
 pnpm-lock.yaml

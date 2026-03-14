@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="ICommands.CreateContacts.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -7,6 +7,7 @@
 namespace D2.Geo.App.Interfaces.CQRS.Handlers.C;
 
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Handler;
 
 public partial interface ICommands
 {
@@ -14,7 +15,7 @@ public partial interface ICommands
     /// Handler for creating Contacts.
     /// </summary>
     public interface ICreateContactsHandler
-        : D2.Shared.Handler.IHandler<CreateContactsInput, CreateContactsOutput>;
+        : IHandler<CreateContactsInput, CreateContactsOutput>;
 
     /// <summary>
     /// Input for creating Contacts.

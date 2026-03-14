@@ -68,7 +68,7 @@ public class FindWhoIsHandlerTests
         SetupCacheHit(cachedWhoIs);
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("192.168.1.1", "Mozilla/5.0");
+        var input = new IComplex.FindWhoIsInput("192.168.1.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -105,7 +105,7 @@ public class FindWhoIsHandlerTests
         SetupCacheSetSuccess();
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("192.168.1.1", "Mozilla/5.0");
+        var input = new IComplex.FindWhoIsInput("192.168.1.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -136,7 +136,7 @@ public class FindWhoIsHandlerTests
         SetupCacheSetSuccess();
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("8.8.8.8", "Chrome/120");
+        var input = new IComplex.FindWhoIsInput("8.8.8.8");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -172,7 +172,7 @@ public class FindWhoIsHandlerTests
         SetupCacheSetFailure();
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("1.1.1.1", "Safari/16");
+        var input = new IComplex.FindWhoIsInput("1.1.1.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -203,7 +203,7 @@ public class FindWhoIsHandlerTests
         SetupGrpcThrows(new RpcException(new Status(StatusCode.Unavailable, "Geo service unavailable")));
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("192.168.1.1", "Mozilla/5.0");
+        var input = new IComplex.FindWhoIsInput("192.168.1.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -229,7 +229,7 @@ public class FindWhoIsHandlerTests
         SetupGrpcThrows(new RpcException(new Status(StatusCode.DeadlineExceeded, "Request timed out")));
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("10.0.0.1", "Edge/120");
+        var input = new IComplex.FindWhoIsInput("10.0.0.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -254,7 +254,7 @@ public class FindWhoIsHandlerTests
         SetupGrpcThrows(new RpcException(new Status(StatusCode.Internal, "Internal server error")));
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("172.16.0.1", "Firefox/120");
+        var input = new IComplex.FindWhoIsInput("172.16.0.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -279,7 +279,7 @@ public class FindWhoIsHandlerTests
         SetupGrpcThrows(new RpcException(new Status(StatusCode.Unavailable, "failed to connect to all addresses")));
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("203.0.113.1", "Chrome/121");
+        var input = new IComplex.FindWhoIsInput("203.0.113.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -304,7 +304,7 @@ public class FindWhoIsHandlerTests
         SetupGrpcReturnsEmpty();
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("192.0.2.1", "Safari/17");
+        var input = new IComplex.FindWhoIsInput("192.0.2.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -329,7 +329,7 @@ public class FindWhoIsHandlerTests
         SetupGrpcReturnsFailure();
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("198.51.100.1", "Opera/90");
+        var input = new IComplex.FindWhoIsInput("198.51.100.1");
 
         // Act
         var result = await handler.HandleAsync(input, Ct);
@@ -344,14 +344,14 @@ public class FindWhoIsHandlerTests
     #region Cache Key Tests
 
     /// <summary>
-    /// Tests that cache key includes both IP and user agent.
+    /// Tests that cache key includes IP address.
     /// </summary>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Fact]
-    public async Task HandleAsync_CacheKey_IncludesIpAndUserAgent()
+    public async Task HandleAsync_CacheKey_IncludesIp()
     {
         // Arrange
         SetupCacheMiss();
@@ -359,13 +359,13 @@ public class FindWhoIsHandlerTests
         SetupCacheSetSuccess();
 
         var handler = CreateHandler();
-        var input = new IComplex.FindWhoIsInput("1.2.3.4", "CustomUA/1.0");
+        var input = new IComplex.FindWhoIsInput("1.2.3.4");
 
         // Act
         await handler.HandleAsync(input, Ct);
 
-        // Assert - Verify cache key format (UA hashed to SHA-256 fingerprint)
-        var expectedKey = CacheKeys.WhoIs("1.2.3.4", "CustomUA/1.0");
+        // Assert - Verify cache key format
+        var expectedKey = CacheKeys.WhoIs("1.2.3.4");
         r_cacheGetMock.Verify(
             x => x.HandleAsync(
                 It.Is<IRead.GetInput>(i => i.Key == expectedKey),
@@ -400,14 +400,14 @@ public class FindWhoIsHandlerTests
         var handler = CreateHandler(cb);
 
         // Act — trigger 2 failures to open the circuit
-        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.1", "UA"), Ct);
-        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.2", "UA"), Ct);
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.1"), Ct);
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.2"), Ct);
 
         // Reset gRPC mock invocations to verify no further calls
         r_geoClientMock.Invocations.Clear();
 
         // Act — third call should hit circuit breaker, not gRPC
-        var result = await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.3", "UA"), Ct);
+        var result = await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.3"), Ct);
 
         // Assert
         result.Success.Should().BeTrue("circuit-open should fail-open");
@@ -445,12 +445,12 @@ public class FindWhoIsHandlerTests
         // First call fails
         SetupGrpcThrows(new RpcException(new Status(StatusCode.Unavailable, "down")));
         var handler = CreateHandler(cb);
-        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.1", "UA"), Ct);
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("1.1.1.1"), Ct);
         cb.FailureCount.Should().Be(1);
 
         // Second call succeeds — resets failure count
         SetupGrpcSuccess("2.2.2.2", "City", "US");
-        await handler.HandleAsync(new IComplex.FindWhoIsInput("2.2.2.2", "UA"), Ct);
+        await handler.HandleAsync(new IComplex.FindWhoIsInput("2.2.2.2"), Ct);
 
         // Assert
         cb.FailureCount.Should().Be(0);

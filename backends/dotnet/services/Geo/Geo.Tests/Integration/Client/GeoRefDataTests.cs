@@ -14,8 +14,6 @@ using D2.Geo.Client.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
 using D2.Services.Protos.Geo.V1;
-
-// ReSharper disable AccessToStaticMemberViaDerivedType
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.Handler;
 using D2.Shared.InMemoryCache.Default;
@@ -25,8 +23,11 @@ using D2.Shared.Utilities.Constants;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 using Testcontainers.Redis;
 using Xunit;
+
+// ReSharper disable AccessToStaticMemberViaDerivedType
 
 /// <summary>
 /// Integration tests for GeoRefDataService using Redis as the distributed cache and Default as the
@@ -96,8 +97,7 @@ public class GeoRefDataTests : IAsyncLifetime
     public async ValueTask Get_WithDataInRedis_SucceedsAndCachesInMemoryAndOnDisk()
     {
         // Arrange - put data only in Redis
-        var setInDistHandler = _services.GetRequiredService<
-        IUpdate.ISetHandler<GeoRefData>>();
+        var setInDistHandler = _services.GetRequiredService<IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
             new(CacheKeys.REFDATA, ClientTestHelpers.TestGeoRefData),
             Ct);
@@ -192,8 +192,7 @@ public class GeoRefDataTests : IAsyncLifetime
     public async ValueTask Get_CalledTwice_SecondCallHitsMemoryCache()
     {
         // Arrange
-        var setInDistHandler = _services.GetRequiredService<
-            IUpdate.ISetHandler<GeoRefData>>();
+        var setInDistHandler = _services.GetRequiredService<IUpdate.ISetHandler<GeoRefData>>();
         await setInDistHandler.HandleAsync(
             new(CacheKeys.REFDATA, ClientTestHelpers.TestGeoRefData),
             Ct);
@@ -204,7 +203,7 @@ public class GeoRefDataTests : IAsyncLifetime
         await getHandler.HandleAsync(new(), Ct);
 
         // Clear Redis to verify second call uses memory
-        var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
+        var redis = _services.GetRequiredService<IConnectionMultiplexer>();
         await redis.GetDatabase().KeyDeleteAsync(CacheKeys.REFDATA);
 
         // Act - second call
@@ -284,7 +283,7 @@ public class GeoRefDataTests : IAsyncLifetime
         }
 
         // Clear Redis
-        var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
+        var redis = _services.GetRequiredService<IConnectionMultiplexer>();
         await redis.GetDatabase().KeyDeleteAsync(CacheKeys.REFDATA);
 
         var handler = _services.GetRequiredService<ISubs.IUpdatedHandler>();

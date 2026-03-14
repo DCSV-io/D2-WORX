@@ -5,6 +5,7 @@ export interface CreateUserContactInput {
   readonly userId: string;
   readonly email: string;
   readonly name: string;
+  readonly locale: string;
 }
 
 export interface CreateUserContactOutput {

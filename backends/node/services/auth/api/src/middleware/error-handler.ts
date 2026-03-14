@@ -4,6 +4,7 @@ import { SpanStatusCode } from "@opentelemetry/api";
 import { getServerSpan } from "@d2/service-defaults";
 import { D2Result, HttpStatusCode } from "@d2/result";
 import { AuthValidationError } from "@d2/auth-domain";
+import { TK } from "@d2/i18n";
 
 /**
  * Global error handler that catches unhandled exceptions and returns
@@ -26,7 +27,7 @@ export function handleError(err: Error, c: Context): Response {
   // For validation errors, provide structured error details
   if (err instanceof AuthValidationError) {
     const result = D2Result.fail({
-      messages: [`Validation failed: ${err.propertyName} is invalid.`],
+      messages: [TK.common.errors.VALIDATION_FAILED],
       statusCode: HttpStatusCode.BadRequest,
     });
     return c.json(result, 400 as ContentfulStatusCode);
@@ -43,7 +44,7 @@ export function handleError(err: Error, c: Context): Response {
 
   // For 5xx server errors, NEVER leak err.message — use generic message
   const result = D2Result.unhandledException({
-    messages: ["An unexpected error occurred. Please try again later."],
+    messages: [TK.common.errors.UNKNOWN],
   });
   return c.json(result, 500 as ContentfulStatusCode);
 }
@@ -51,18 +52,18 @@ export function handleError(err: Error, c: Context): Response {
 function safeClientMessage(status: number): string {
   switch (status) {
     case 400:
-      return "Bad request.";
+      return TK.common.errors.BAD_REQUEST;
     case 401:
-      return "Authentication required.";
+      return TK.common.errors.UNAUTHORIZED;
     case 403:
-      return "Access denied.";
+      return TK.common.errors.FORBIDDEN;
     case 404:
-      return "Resource not found.";
+      return TK.common.errors.NOT_FOUND;
     case 409:
-      return "Conflict.";
+      return TK.common.errors.CONFLICT;
     case 429:
-      return "Too many requests. Please slow down.";
+      return TK.common.errors.TOO_MANY_REQUESTS;
     default:
-      return "Request failed.";
+      return TK.common.errors.REQUEST_FAILED;
   }
 }

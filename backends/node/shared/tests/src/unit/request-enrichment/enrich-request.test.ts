@@ -43,7 +43,6 @@ function createWhoIsDTO(overrides?: Partial<WhoIsDTO>): WhoIsDTO {
     ipAddress: "1.2.3.4",
     year: 2025,
     month: 6,
-    fingerprint: "Mozilla/5.0",
     asn: 15169,
     asName: "GOOGLE",
     asDomain: "google.com",
@@ -295,35 +294,6 @@ describe("enrichRequest", () => {
     expect(info.deviceFingerprint).toMatch(/^[0-9a-f]{64}$/);
   });
 
-  it("should use empty string fingerprint when user-agent header is missing", async () => {
-    const whoIs = createWhoIsDTO();
-    const handler = createMockFindWhoIs(
-      D2Result.ok<FindWhoIsOutput | undefined>({ data: { whoIs } }),
-    );
-
-    await enrichRequest({ "cf-connecting-ip": "1.2.3.4" }, handler, undefined, mockLogger);
-
-    // user-agent is undefined → fingerprint should be ""
-    expect(handler.handleAsync).toHaveBeenCalledWith(expect.objectContaining({ fingerprint: "" }));
-  });
-
-  it("should use empty string fingerprint when user-agent is empty array", async () => {
-    const whoIs = createWhoIsDTO();
-    const handler = createMockFindWhoIs(
-      D2Result.ok<FindWhoIsOutput | undefined>({ data: { whoIs } }),
-    );
-
-    await enrichRequest(
-      { "cf-connecting-ip": "1.2.3.4", "user-agent": [] },
-      handler,
-      undefined,
-      mockLogger,
-    );
-
-    // user-agent is [] → userAgent[0] is undefined → fingerprint should be ""
-    expect(handler.handleAsync).toHaveBeenCalledWith(expect.objectContaining({ fingerprint: "" }));
-  });
-
   it("should convert empty WhoIs fields to undefined", async () => {
     const whoIs = createWhoIsDTO({
       hashId: "",
@@ -353,25 +323,6 @@ describe("enrichRequest", () => {
     expect(info.city).toBeUndefined();
     expect(info.countryCode).toBeUndefined();
     expect(info.subdivisionCode).toBeUndefined();
-  });
-
-  it("should handle array-valued user-agent header for WhoIs fingerprint", async () => {
-    const whoIs = createWhoIsDTO();
-    const handler = createMockFindWhoIs(
-      D2Result.ok<FindWhoIsOutput | undefined>({ data: { whoIs } }),
-    );
-
-    await enrichRequest(
-      { "cf-connecting-ip": "1.2.3.4", "user-agent": ["Agent/1.0", "Agent/2.0"] },
-      handler,
-      undefined,
-      mockLogger,
-    );
-
-    // Verify FindWhoIs was called with first array element as fingerprint
-    expect(handler.handleAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ fingerprint: "Agent/1.0" }),
-    );
   });
 
   describe("adversarial inputs", () => {

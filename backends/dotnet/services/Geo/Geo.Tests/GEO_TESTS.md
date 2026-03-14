@@ -20,18 +20,20 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 
 #### CQRS
 
-| File Name                                                                    | Description                                                                                                                                                                      |
-| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [GetTests.cs](Integration/App/GetTests.cs)                                   | Integration tests for publisher-side Get handler verifying multi-tier cache cascade, DB fetch with notification, SetInDist failure handling.                                     |
-| [GetLocationsByIdsTests.cs](Integration/App/GetLocationsByIdsTests.cs)       | Integration tests for GetLocationsByIds CQRS handler verifying memory cache → repository fallback, SOME_FOUND/NOT_FOUND propagation.                                             |
-| [GetWhoIsByIdsTests.cs](Integration/App/GetWhoIsByIdsTests.cs)               | Integration tests for GetWhoIsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, nested Location enrichment, and SOME_FOUND/NOT_FOUND propagation.    |
-| [GetContactsByIdsTests.cs](Integration/App/GetContactsByIdsTests.cs)         | Integration tests for GetContactsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, nested Location enrichment, and SOME_FOUND/NOT_FOUND propagation. |
-| [GetContactsByExtKeysTests.cs](Integration/App/GetContactsByExtKeysTests.cs) | Integration tests for GetContactsByExtKeys CQRS handler verifying lookup by ContextKey/RelatedEntityId with nested Location enrichment and SOME_FOUND/NOT_FOUND propagation.     |
-| [CreateLocationsTests.cs](Integration/App/CreateLocationsTests.cs)           | Integration tests for CreateLocations CQRS handler verifying batch creation with deduplication and cache population.                                                             |
-| [CreateWhoIsTests.cs](Integration/App/CreateWhoIsTests.cs)                   | Integration tests for CreateWhoIs CQRS handler verifying batch creation with deduplication and cache population.                                                                 |
-| [CreateContactsTests.cs](Integration/App/CreateContactsTests.cs)             | Integration tests for CreateContacts CQRS handler verifying batch creation with embedded locations, nested Location in response, and cache population.                           |
-| [DeleteContactsTests.cs](Integration/App/DeleteContactsTests.cs)             | Integration tests for DeleteContacts CQRS handler verifying batch deletion with cache invalidation and idempotency.                                                              |
-| [FindWhoIsTests.cs](Integration/App/FindWhoIsTests.cs)                       | Integration tests for FindWhoIs complex handler verifying cache check → external API → create flow with nested Location enrichment and partial success handling.                 |
+| File Name                                                                          | Description                                                                                                                                                                      |
+| ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [GetTests.cs](Integration/App/GetTests.cs)                                         | Integration tests for publisher-side Get handler verifying multi-tier cache cascade, DB fetch with notification, SetInDist failure handling.                                     |
+| [GetLocationsByIdsTests.cs](Integration/App/GetLocationsByIdsTests.cs)             | Integration tests for GetLocationsByIds CQRS handler verifying memory cache → repository fallback, SOME_FOUND/NOT_FOUND propagation.                                             |
+| [GetWhoIsByIdsTests.cs](Integration/App/GetWhoIsByIdsTests.cs)                     | Integration tests for GetWhoIsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, nested Location enrichment, and SOME_FOUND/NOT_FOUND propagation.    |
+| [GetContactsByIdsTests.cs](Integration/App/GetContactsByIdsTests.cs)               | Integration tests for GetContactsByIds CQRS handler verifying memory cache → repository fallback, DTO mapping, nested Location enrichment, and SOME_FOUND/NOT_FOUND propagation. |
+| [GetContactsByExtKeysTests.cs](Integration/App/GetContactsByExtKeysTests.cs)       | Integration tests for GetContactsByExtKeys CQRS handler verifying lookup by ContextKey/RelatedEntityId with nested Location enrichment and SOME_FOUND/NOT_FOUND propagation.     |
+| [CreateLocationsTests.cs](Integration/App/CreateLocationsTests.cs)                 | Integration tests for CreateLocations CQRS handler verifying batch creation with deduplication and cache population.                                                             |
+| [CreateWhoIsTests.cs](Integration/App/CreateWhoIsTests.cs)                         | Integration tests for CreateWhoIs CQRS handler verifying batch creation with deduplication and cache population.                                                                 |
+| [CreateContactsTests.cs](Integration/App/CreateContactsTests.cs)                   | Integration tests for CreateContacts CQRS handler verifying batch creation with embedded locations, nested Location in response, and cache population.                           |
+| [DeleteContactsTests.cs](Integration/App/DeleteContactsTests.cs)                   | Integration tests for DeleteContacts CQRS handler verifying batch deletion with cache invalidation and idempotency.                                                              |
+| [DeleteContactsByExtKeysTests.cs](Integration/App/DeleteContactsByExtKeysTests.cs) | Integration tests for DeleteContactsByExtKeys CQRS handler verifying deletion by ContextKey/RelatedEntityId with cache invalidation.                                             |
+| [UpdateContactsByExtKeysTests.cs](Integration/App/UpdateContactsByExtKeysTests.cs) | Integration tests for UpdateContactsByExtKeys CQRS handler verifying contact replacement via ext-key lookup.                                                                     |
+| [FindWhoIsTests.cs](Integration/App/FindWhoIsTests.cs)                             | Integration tests for FindWhoIs complex handler verifying cache check → external API → create flow with nested Location enrichment and partial success handling.                 |
 
 ### Client
 
@@ -50,16 +52,36 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 
 #### Repository
 
-| File Name                                                                                  | Description                                                                                                                                 |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [GetReferenceDataTests.cs](Integration/Infra/Repository/Handlers/GetReferenceDataTests.cs) | Integration tests using Testcontainers.PostgreSql to verify GetReferenceData handler returns all seeded reference data with correct counts. |
-| [LocationHandlerTests.cs](Integration/Infra/Repository/Handlers/LocationHandlerTests.cs)   | Integration tests for GetLocationsByIds and CreateLocations repository handlers with OK/SOME_FOUND/NOT_FOUND status verification.           |
-| [WhoIsHandlerTests.cs](Integration/Infra/Repository/Handlers/WhoIsHandlerTests.cs)         | Integration tests for GetWhoIsByIds and CreateWhoIs repository handlers with batching, deduplication, and status code verification.         |
-| [BatchQueryTests.cs](Integration/Infra/Repository/BatchQueryTests.cs)                      | Integration tests for BatchQuery<TEntity,TKey> verifying ToListAsync batching, GetMissingIdsAsync, and BatchCount configuration.            |
+| File Name                                                                                                | Description                                                                                                                                 |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [GetReferenceDataTests.cs](Integration/Infra/Repository/Handlers/GetReferenceDataTests.cs)               | Integration tests using Testcontainers.PostgreSql to verify GetReferenceData handler returns all seeded reference data with correct counts. |
+| [LocationHandlerTests.cs](Integration/Infra/Repository/Handlers/LocationHandlerTests.cs)                 | Integration tests for GetLocationsByIds and CreateLocations repository handlers with OK/SOME_FOUND/NOT_FOUND status verification.           |
+| [WhoIsHandlerTests.cs](Integration/Infra/Repository/Handlers/WhoIsHandlerTests.cs)                       | Integration tests for GetWhoIsByIds and CreateWhoIs repository handlers with batching, deduplication, and status code verification.         |
+| [DeleteOrphanedLocationsTests.cs](Integration/Infra/Repository/Handlers/DeleteOrphanedLocationsTests.cs) | Integration tests for DeleteOrphanedLocations repository handler verifying cleanup of locations with zero references.                       |
+| [DeleteStaleWhoIsTests.cs](Integration/Infra/Repository/Handlers/DeleteStaleWhoIsTests.cs)               | Integration tests for DeleteStaleWhoIs repository handler verifying cleanup of WhoIs records older than retention cutoff.                   |
+| [BatchQueryTests.cs](Integration/Infra/Repository/BatchQueryTests.cs)                                    | Integration tests for BatchQuery<TEntity,TKey> verifying ToListAsync batching, GetMissingIdsAsync, and BatchCount configuration.            |
 
 ## Unit Tests
 
 ### App
+
+#### CQRS Handlers
+
+| File Name                                                                                  | Description                                                                                                                         |
+| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [CreateContactsValidationTests.cs](Unit/App/Handlers/C/CreateContactsValidationTests.cs)   | Unit tests for CreateContacts handler validation: empty input, per-item validation, indexed error paths.                            |
+| [CreateLocationsValidationTests.cs](Unit/App/Handlers/C/CreateLocationsValidationTests.cs) | Unit tests for CreateLocations handler validation: empty input, per-item validation, indexed error paths.                           |
+| [CreateWhoIsValidationTests.cs](Unit/App/Handlers/C/CreateWhoIsValidationTests.cs)         | Unit tests for CreateWhoIs handler validation: empty input, per-item IP validation, indexed error paths.                            |
+| [DeleteContactsValidationTests.cs](Unit/App/Handlers/C/DeleteContactsValidationTests.cs)   | Unit tests for DeleteContacts handler validation: empty input, invalid ID format, batch size limits.                                |
+| [FindWhoIsValidationTests.cs](Unit/App/Handlers/X/FindWhoIsValidationTests.cs)             | Unit tests for FindWhoIs handler validation: empty request, per-item IP validation, indexed errors, no dependency calls on failure. |
+
+#### Validators
+
+| File Name                                                                                | Description                                                                                                                          |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [ContactToCreateValidatorTests.cs](Unit/App/Validators/ContactToCreateValidatorTests.cs) | Unit tests for ContactToCreateValidator: valid input, missing required fields, domain parity tests for contact creation constraints. |
+| [LocationValidatorTests.cs](Unit/App/Validators/LocationValidatorTests.cs)               | Unit tests for LocationValidator: coordinate bounds, country code format, string length limits.                                      |
+| [WhoIsValidatorTests.cs](Unit/App/Validators/WhoIsValidatorTests.cs)                     | Unit tests for WhoIsValidator: valid WhoIs, IP format, domain parity with WhoIs factory constraints.                                 |
 
 #### Mappers
 
@@ -73,11 +95,11 @@ Shared test fixtures using xUnit's `ICollectionFixture<T>` pattern to reduce Pos
 
 #### Entities
 
-| File Name                                                 | Description                                                                                                             |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| [ContactTests.cs](Unit/Domain/Entities/ContactTests.cs)   | Tests validating Contact creation, ContextKey/RelatedEntityId patterns, value object nesting, and LocationHashId FK.    |
-| [LocationTests.cs](Unit/Domain/Entities/LocationTests.cs) | Tests verifying Location SHA-256 hash generation, content-addressable deduplication, and hash consistency.              |
-| [WhoIsTests.cs](Unit/Domain/Entities/WhoIsTests.cs)       | Tests confirming WhoIs hash generation from IP+year+month+fingerprint, temporal versioning, and device differentiation. |
+| File Name                                                 | Description                                                                                                            |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [ContactTests.cs](Unit/Domain/Entities/ContactTests.cs)   | Tests validating Contact creation, ContextKey/RelatedEntityId patterns, value object nesting, and LocationHashId FK.   |
+| [LocationTests.cs](Unit/Domain/Entities/LocationTests.cs) | Tests verifying Location SHA-256 hash generation, content-addressable deduplication, and hash consistency.             |
+| [WhoIsTests.cs](Unit/Domain/Entities/WhoIsTests.cs)       | Tests confirming WhoIs hash generation from IP+year+month, temporal versioning, and content-addressable deduplication. |
 
 #### Exceptions
 

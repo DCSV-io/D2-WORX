@@ -66,7 +66,6 @@ public class LocationValidatorTests
     public void Validate_LatitudeOutOfRange_Fails(double lat)
     {
         // Domain throws for out-of-range; Fluent must also catch it.
-        var validator = new LocationValidator();
 
         // Verify domain factory also rejects this.
         var domainAct = () => Coordinates.Create(lat, 0);
@@ -83,7 +82,6 @@ public class LocationValidatorTests
     public void Validate_LongitudeOutOfRange_Fails(double lon)
     {
         // Domain throws for out-of-range; Fluent must also catch it.
-        var validator = new LocationValidator();
 
         // Verify domain factory also rejects this.
         var domainAct = () => Coordinates.Create(0, lon);

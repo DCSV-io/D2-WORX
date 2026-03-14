@@ -1,11 +1,11 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { BASE_LOCALE, isValidLocale, type SupportedLocale } from "./supported-locales.js";
+import { BASE_LOCALE, toBcp47 } from "./supported-locales.js";
 
 export interface Translator {
   /** Translate a message key to the given locale, with optional interpolation. */
   t(locale: string, key: string, params?: Record<string, string>): string;
-  /** All supported locales loaded at startup. */
+  /** All supported locales loaded at startup (canonical BCP 47 casing). */
   readonly locales: readonly string[];
   /** The base/fallback locale. */
   readonly baseLocale: string;
@@ -20,12 +20,13 @@ type MessageCatalog = Record<string, Record<string, string>>;
  * - Loads all `{locale}.json` files synchronously (they're small)
  * - Supports `{paramName}` interpolation
  * - Falls back to base locale for unknown keys/locales
+ * - All catalog keys and locale references use canonical BCP 47 casing
  */
 export function createTranslator(options: {
   /** Absolute path to the directory containing `{locale}.json` files. */
   messagesDir: string;
-  /** Base/fallback locale. Defaults to "en". */
-  baseLocale?: SupportedLocale;
+  /** Base/fallback locale. Defaults to "en-US". */
+  baseLocale?: string;
 }): Translator {
   const baseLocale = options.baseLocale ?? BASE_LOCALE;
   const catalogs: MessageCatalog = {};
@@ -37,25 +38,28 @@ export function createTranslator(options: {
     .sort();
   for (const file of files) {
     const locale = file.replace(".json", "");
-    if (!isValidLocale(locale)) continue;
-
     const filePath = join(options.messagesDir, file);
     const content = readFileSync(filePath, "utf-8");
     const messages = JSON.parse(content) as Record<string, string>;
 
     // Strip $schema key if present
     const { $schema: _, ...rest } = messages;
-    catalogs[locale] = rest;
-    loadedLocales.push(locale);
+
+    // Canonical BCP 47 casing for both catalog key and locale list.
+    const canonical = toBcp47(locale);
+    catalogs[canonical] = rest;
+    loadedLocales.push(canonical);
   }
 
-  if (!catalogs[baseLocale]) {
+  const baseKey = toBcp47(baseLocale);
+  if (!catalogs[baseKey]) {
     throw new Error(`Base locale "${baseLocale}" not found in ${options.messagesDir}`);
   }
 
   function t(locale: string, key: string, params?: Record<string, string>): string {
-    // Try requested locale, fall back to base
-    const message = catalogs[locale]?.[key] ?? catalogs[baseLocale]?.[key] ?? key;
+    // Normalise input to canonical BCP 47 for lookup
+    const canonical = toBcp47(locale);
+    const message = catalogs[canonical]?.[key] ?? catalogs[baseKey]?.[key] ?? key;
 
     if (!params) return message;
 

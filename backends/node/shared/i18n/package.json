@@ -16,6 +16,9 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "@d2/service-defaults": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "22.18.8"
   }

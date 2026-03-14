@@ -4,9 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable RedundantCapturedContext
 namespace D2.Geo.Tests.Integration.App;
 
+// ReSharper disable RedundantCapturedContext
+using System.Net;
 using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
 using D2.Geo.App.Interfaces.Repository.Handlers.R;
 using D2.Geo.Client;
@@ -29,6 +30,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using StackExchange.Redis;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
 using Xunit;
@@ -148,7 +150,7 @@ public class GetTests : IAsyncLifetime
         firstResult.Success.Should().BeTrue();
 
         // Clear Redis and reset updater mock to verify memory hit
-        var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
+        var redis = _services.GetRequiredService<IConnectionMultiplexer>();
         await redis.GetDatabase().KeyDeleteAsync(CacheKeys.REFDATA);
         _updaterMock.Invocations.Clear();
 
@@ -345,7 +347,7 @@ public class GetTests : IAsyncLifetime
             .Setup(x => x.HandleAsync(It.IsAny<ICommands.SetInDistInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<ICommands.SetInDistOutput?>.Fail(
                 ["Redis unavailable"],
-                System.Net.HttpStatusCode.ServiceUnavailable));
+                HttpStatusCode.ServiceUnavailable));
 
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(config);

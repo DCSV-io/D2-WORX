@@ -160,7 +160,6 @@ public class FindWhoIsTests : IAsyncLifetime
             ipAddress: "192.168.1.100",
             year: now.Year,
             month: now.Month,
-            fingerprint: "Mozilla/5.0",
             asn: 12345,
             asName: "Test ISP");
         _db.WhoIsRecords.Add(whoIs);
@@ -171,7 +170,7 @@ public class FindWhoIsTests : IAsyncLifetime
         {
             Requests =
             {
-                new FindWhoIsKeys { IpAddress = "192.168.1.100", Fingerprint = "Mozilla/5.0" },
+                new FindWhoIsKeys { IpAddress = "192.168.1.100" },
             },
         };
         var input = new IComplex.FindWhoIsInput(request);
@@ -206,9 +205,9 @@ public class FindWhoIsTests : IAsyncLifetime
     {
         // Arrange
         var now = DateTime.UtcNow;
-        var whoIs1 = WhoIs.Create("10.0.0.1", now.Year, now.Month, "fingerprint-1");
-        var whoIs2 = WhoIs.Create("10.0.0.2", now.Year, now.Month, "fingerprint-2");
-        var whoIs3 = WhoIs.Create("10.0.0.3", now.Year, now.Month, "fingerprint-3");
+        var whoIs1 = WhoIs.Create("10.0.0.1", now.Year, now.Month);
+        var whoIs2 = WhoIs.Create("10.0.0.2", now.Year, now.Month);
+        var whoIs3 = WhoIs.Create("10.0.0.3", now.Year, now.Month);
         _db.WhoIsRecords.AddRange(whoIs1, whoIs2, whoIs3);
         await _db.SaveChangesAsync(Ct);
 
@@ -217,9 +216,9 @@ public class FindWhoIsTests : IAsyncLifetime
         {
             Requests =
             {
-                new FindWhoIsKeys { IpAddress = "10.0.0.1", Fingerprint = "fingerprint-1" },
-                new FindWhoIsKeys { IpAddress = "10.0.0.2", Fingerprint = "fingerprint-2" },
-                new FindWhoIsKeys { IpAddress = "10.0.0.3", Fingerprint = "fingerprint-3" },
+                new FindWhoIsKeys { IpAddress = "10.0.0.1" },
+                new FindWhoIsKeys { IpAddress = "10.0.0.2" },
+                new FindWhoIsKeys { IpAddress = "10.0.0.3" },
             },
         };
         var input = new IComplex.FindWhoIsInput(request);
@@ -248,7 +247,6 @@ public class FindWhoIsTests : IAsyncLifetime
     {
         // Arrange
         const string ip_address = "8.8.8.8";
-        const string fingerprint = "Chrome/120";
 
         // Setup mock to return populated WhoIs
         _mockPopulateHandler
@@ -262,7 +260,6 @@ public class FindWhoIsTests : IAsyncLifetime
                         ipAddress: partialWhoIs.IPAddress,
                         year: partialWhoIs.Year,
                         month: partialWhoIs.Month,
-                        fingerprint: partialWhoIs.Fingerprint,
                         asn: 15169,
                         asName: "Google LLC");
                     populatedRecords[hashId] = populated;
@@ -276,7 +273,7 @@ public class FindWhoIsTests : IAsyncLifetime
         {
             Requests =
             {
-                new FindWhoIsKeys { IpAddress = ip_address, Fingerprint = fingerprint },
+                new FindWhoIsKeys { IpAddress = ip_address },
             },
         };
         var input = new IComplex.FindWhoIsInput(request);
@@ -318,7 +315,7 @@ public class FindWhoIsTests : IAsyncLifetime
         var now = DateTime.UtcNow;
 
         // Create one existing record
-        var existingWhoIs = WhoIs.Create("192.168.1.1", now.Year, now.Month, "existing-fingerprint");
+        var existingWhoIs = WhoIs.Create("192.168.1.1", now.Year, now.Month);
         _db.WhoIsRecords.Add(existingWhoIs);
         await _db.SaveChangesAsync(Ct);
 
@@ -334,7 +331,6 @@ public class FindWhoIsTests : IAsyncLifetime
                         ipAddress: partialWhoIs.IPAddress,
                         year: partialWhoIs.Year,
                         month: partialWhoIs.Month,
-                        fingerprint: partialWhoIs.Fingerprint,
                         asn: 99999,
                         asName: "New ISP");
                     populatedRecords[hashId] = populated;
@@ -348,8 +344,8 @@ public class FindWhoIsTests : IAsyncLifetime
         {
             Requests =
             {
-                new FindWhoIsKeys { IpAddress = "192.168.1.1", Fingerprint = "existing-fingerprint" },
-                new FindWhoIsKeys { IpAddress = "192.168.1.2", Fingerprint = "new-fingerprint" },
+                new FindWhoIsKeys { IpAddress = "192.168.1.1" },
+                new FindWhoIsKeys { IpAddress = "192.168.1.2" },
             },
         };
         var input = new IComplex.FindWhoIsInput(request);
@@ -396,7 +392,7 @@ public class FindWhoIsTests : IAsyncLifetime
         var now = DateTime.UtcNow;
 
         // Create one existing record
-        var existingWhoIs = WhoIs.Create("192.168.1.1", now.Year, now.Month, "existing-fingerprint");
+        var existingWhoIs = WhoIs.Create("192.168.1.1", now.Year, now.Month);
         _db.WhoIsRecords.Add(existingWhoIs);
         await _db.SaveChangesAsync(Ct);
 
@@ -410,8 +406,8 @@ public class FindWhoIsTests : IAsyncLifetime
         {
             Requests =
             {
-                new FindWhoIsKeys { IpAddress = "192.168.1.1", Fingerprint = "existing-fingerprint" },
-                new FindWhoIsKeys { IpAddress = "192.168.1.2", Fingerprint = "missing-fingerprint" },
+                new FindWhoIsKeys { IpAddress = "192.168.1.1" },
+                new FindWhoIsKeys { IpAddress = "192.168.1.2" },
             },
         };
         var input = new IComplex.FindWhoIsInput(request);
@@ -446,7 +442,7 @@ public class FindWhoIsTests : IAsyncLifetime
         {
             Requests =
             {
-                new FindWhoIsKeys { IpAddress = "1.2.3.4", Fingerprint = "unknown" },
+                new FindWhoIsKeys { IpAddress = "1.2.3.4" },
             },
         };
         var input = new IComplex.FindWhoIsInput(request);
@@ -483,7 +479,6 @@ public class FindWhoIsTests : IAsyncLifetime
                     ipAddress: first.Value.IPAddress,
                     year: first.Value.Year,
                     month: first.Value.Month,
-                    fingerprint: first.Value.Fingerprint,
                     asn: 12345,
                     asName: "Partial ISP");
 
@@ -496,8 +491,8 @@ public class FindWhoIsTests : IAsyncLifetime
         {
             Requests =
             {
-                new FindWhoIsKeys { IpAddress = "1.1.1.1", Fingerprint = "fp-1" },
-                new FindWhoIsKeys { IpAddress = "2.2.2.2", Fingerprint = "fp-2" },
+                new FindWhoIsKeys { IpAddress = "1.1.1.1" },
+                new FindWhoIsKeys { IpAddress = "2.2.2.2" },
             },
         };
         var input = new IComplex.FindWhoIsInput(request);

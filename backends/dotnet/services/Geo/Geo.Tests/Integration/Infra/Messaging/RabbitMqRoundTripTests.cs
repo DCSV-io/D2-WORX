@@ -12,6 +12,7 @@ using D2.Shared.Messaging.RabbitMQ.Conventions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Moq;
+using RabbitMQ.Client;
 using Testcontainers.RabbitMq;
 using Xunit;
 
@@ -23,7 +24,7 @@ using Xunit;
 public class RabbitMqRoundTripTests : IAsyncLifetime
 {
     private RabbitMqContainer _container = null!;
-    private RabbitMQ.Client.IConnection _connection = null!;
+    private IConnection _connection = null!;
     private ProtoPublisher _publisher = null!;
 
     private CancellationToken Ct => TestContext.Current.CancellationToken;
@@ -35,7 +36,7 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
             .Build();
         await _container.StartAsync(Ct);
 
-        var factory = new RabbitMQ.Client.ConnectionFactory
+        var factory = new ConnectionFactory
         {
             Uri = new Uri(_container.GetConnectionString()),
         };

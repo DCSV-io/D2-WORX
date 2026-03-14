@@ -13,6 +13,7 @@ const schema = z.object({
   userId: zodGuid,
   email: zodNonEmptyString(254), // Geo contact-schemas max
   name: zodNonEmptyString(511), // firstName(255) + " " + lastName(255)
+  locale: zodNonEmptyString(35), // BCP 47 tag (e.g. "en", "fr-CA")
 });
 
 /**
@@ -72,6 +73,7 @@ export class CreateUserContact
       },
       professionalDetails: undefined,
       location: undefined,
+      ietfBcp47Tag: input.locale,
     };
 
     const result = await this.createContacts.handleAsync({ contacts: [contactToCreate] });

@@ -40,11 +40,10 @@ describe("robots.txt", () => {
     expect(body).toContain("User-agent: *");
   });
 
-  it("disallows /debug/, /demo/, and /api/", async () => {
+  it("disallows /debug/ and /api/", async () => {
     const body = await callRobotsTxt().text();
 
     expect(body).toContain("Disallow: /debug/");
-    expect(body).toContain("Disallow: /demo/");
     expect(body).toContain("Disallow: /api/");
   });
 
@@ -134,7 +133,18 @@ describe("sitemap.xml", () => {
 
   it("each URL has hreflang alternates for all locales", async () => {
     const body = await callSitemapXml().text();
-    const expectedLocales = ["en", "es", "de", "fr", "ja"];
+    const expectedLocales = [
+      "en-US",
+      "en-CA",
+      "en-GB",
+      "fr-FR",
+      "fr-CA",
+      "es-ES",
+      "es-MX",
+      "de-DE",
+      "it-IT",
+      "ja-JP",
+    ];
 
     for (const locale of expectedLocales) {
       expect(body).toContain(`hreflang="${locale}"`);
@@ -153,14 +163,14 @@ describe("sitemap.xml", () => {
   it("base locale paths are unprefixed, non-base locales are prefixed", async () => {
     const body = await callSitemapXml().text();
 
-    // Base locale (en) — root path should be unprefixed
-    expect(body).toContain('hreflang="en" href="https://example.com/"');
+    // Base locale (en-US) — root path should be unprefixed
+    expect(body).toContain('hreflang="en-US" href="https://example.com/"');
 
-    // Non-base locale (es) — root path should be prefixed with /es
-    expect(body).toContain('hreflang="es" href="https://example.com/es/"');
+    // Non-base locale (es-ES) — root path should be prefixed with /es-ES
+    expect(body).toContain('hreflang="es-ES" href="https://example.com/es-ES/"');
 
-    // Non-base locale (ja) — /sign-in should be /ja/sign-in
-    expect(body).toContain('hreflang="ja" href="https://example.com/ja/sign-in"');
+    // Non-base locale (ja-JP) — /sign-in should be /ja-JP/sign-in
+    expect(body).toContain('hreflang="ja-JP" href="https://example.com/ja-JP/sign-in"');
 
     // x-default uses the unprefixed path (same as base locale)
     expect(body).toContain('hreflang="x-default" href="https://example.com/"');
@@ -172,7 +182,6 @@ describe("sitemap.xml", () => {
     const body = await callSitemapXml().text();
 
     expect(body).not.toContain("/debug/");
-    expect(body).not.toContain("/demo/");
     expect(body).not.toContain("/api/");
     expect(body).not.toContain("/dashboard");
     expect(body).not.toContain("/settings");
@@ -185,7 +194,7 @@ describe("sitemap.xml", () => {
     expect(body).toContain("<loc>https://d2-worx.dev/</loc>");
     expect(body).toContain("<loc>https://d2-worx.dev/sign-in</loc>");
     expect(body).toContain("<loc>https://d2-worx.dev/sign-up</loc>");
-    expect(body).toContain('href="https://d2-worx.dev/es/"');
+    expect(body).toContain('href="https://d2-worx.dev/es-ES/"');
     expect(body).not.toContain("example.com");
   });
 

@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="GeoEndpoints.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -6,9 +6,8 @@
 
 namespace D2.Gateways.REST.Endpoints;
 
-using D2.Gateways.REST.Auth;
 using D2.Services.Protos.Geo.V1;
-using D2.Shared.Handler.Auth;
+using D2.Shared.Auth.Default;
 using D2.Shared.Utilities.Extensions;
 
 /// <summary>

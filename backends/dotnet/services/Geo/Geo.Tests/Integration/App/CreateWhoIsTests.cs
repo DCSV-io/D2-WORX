@@ -23,7 +23,7 @@ using Xunit;
 using CreateWhoIsRepo = D2.Geo.Infra.Repository.Handlers.C.CreateWhoIs;
 
 /// <summary>
-/// Integration tests for the <see cref="CreateWhoIs"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.C.CreateWhoIs"/> CQRS handler.
 /// </summary>
 [Collection("SharedPostgres")]
 [MustDisposeResource(value: false)]
@@ -105,12 +105,10 @@ public class CreateWhoIsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var uniqueIp = $"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}";
-        var uniqueFp = Guid.NewGuid().ToString("N");
         var whoIs = WhoIs.Create(
             ipAddress: uniqueIp,
             year: 2025,
             month: 6,
-            fingerprint: uniqueFp,
             asn: 12345,
             asName: "Test ISP",
             asDomain: "test-host.example.com");
@@ -150,9 +148,9 @@ public class CreateWhoIsTests : IAsyncLifetime
         var baseIp = Random.Shared.Next(1, 255);
         var records = new List<WhoIs>
         {
-            WhoIs.Create($"10.{baseIp}.0.1", 2025, 6, Guid.NewGuid().ToString("N"), 111, "AS111"),
-            WhoIs.Create($"10.{baseIp}.0.2", 2025, 6, Guid.NewGuid().ToString("N"), 222, "AS222"),
-            WhoIs.Create($"10.{baseIp}.0.3", 2025, 6, Guid.NewGuid().ToString("N"), 333, "AS333"),
+            WhoIs.Create($"10.{baseIp}.0.1", 2025, 6, asn: 111, asName: "AS111"),
+            WhoIs.Create($"10.{baseIp}.0.2", 2025, 6, asn: 222, asName: "AS222"),
+            WhoIs.Create($"10.{baseIp}.0.3", 2025, 6, asn: 333, asName: "AS333"),
         };
 
         var input = new ICommands.CreateWhoIsInput(records);
@@ -182,12 +180,11 @@ public class CreateWhoIsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var uniqueIp = $"192.168.{Random.Shared.Next(1, 255)}.100";
-        var uniqueFp = Guid.NewGuid().ToString("N");
 
-        // Same IP, year, month, fingerprint = same hash
-        var record1 = WhoIs.Create(uniqueIp, 2025, 7, uniqueFp, 100, "ASName");
-        var record2 = WhoIs.Create(uniqueIp, 2025, 7, uniqueFp, 100, "ASName");
-        var record3 = WhoIs.Create(uniqueIp, 2025, 7, uniqueFp, 100, "ASName");
+        // Same IP, year, month = same hash
+        var record1 = WhoIs.Create(uniqueIp, 2025, 7, asn: 100, asName: "ASName");
+        var record2 = WhoIs.Create(uniqueIp, 2025, 7, asn: 100, asName: "ASName");
+        var record3 = WhoIs.Create(uniqueIp, 2025, 7, asn: 100, asName: "ASName");
 
         var input = new ICommands.CreateWhoIsInput([record1, record2, record3]);
 
@@ -211,17 +208,16 @@ public class CreateWhoIsTests : IAsyncLifetime
     {
         // Arrange - Create a record first
         var uniqueIp = $"8.8.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}";
-        var uniqueFp = Guid.NewGuid().ToString("N");
-        var existingRecord = WhoIs.Create(uniqueIp, 2025, 1, uniqueFp, 15169, "GOOGLE");
+        var existingRecord = WhoIs.Create(uniqueIp, 2025, 1, asn: 15169, asName: "GOOGLE");
         _db.WhoIsRecords.Add(existingRecord);
         await _db.SaveChangesAsync(Ct);
 
         var handler = CreateHandler();
 
         // Try to create the same record again plus a new one
-        var sameRecord = WhoIs.Create(uniqueIp, 2025, 1, uniqueFp, 15169, "GOOGLE");
+        var sameRecord = WhoIs.Create(uniqueIp, 2025, 1, asn: 15169, asName: "GOOGLE");
         var newIp = $"1.1.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}";
-        var newRecord = WhoIs.Create(newIp, 2025, 1, Guid.NewGuid().ToString("N"), 13335, "CLOUDFLARENET");
+        var newRecord = WhoIs.Create(newIp, 2025, 1, asn: 13335, asName: "CLOUDFLARENET");
 
         var input = new ICommands.CreateWhoIsInput([sameRecord, newRecord]);
 
@@ -246,8 +242,7 @@ public class CreateWhoIsTests : IAsyncLifetime
         // Arrange
         var handler = CreateHandler();
         var uniqueIp = $"172.16.{Random.Shared.Next(1, 255)}.1";
-        var uniqueFp = Guid.NewGuid().ToString("N");
-        var record = WhoIs.Create(uniqueIp, 2025, 3, uniqueFp);
+        var record = WhoIs.Create(uniqueIp, 2025, 3);
 
         var input = new ICommands.CreateWhoIsInput([record]);
 
@@ -295,7 +290,6 @@ public class CreateWhoIsTests : IAsyncLifetime
             ipAddress: uniqueIp,
             year: 2025,
             month: 8,
-            fingerprint: Guid.NewGuid().ToString("N"),
             asn: 64512,
             asName: "Example Org",
             locationHashId: location.HashId);

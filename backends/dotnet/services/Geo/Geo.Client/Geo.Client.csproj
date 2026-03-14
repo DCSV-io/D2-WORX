@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\..\shared\Handler\Handler.csproj" />
+        <ProjectReference Include="..\..\..\shared\I18n\I18n.csproj" />
         <ProjectReference Include="..\..\..\shared\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
         <ProjectReference Include="..\..\..\shared\Implementations\Messaging\Messaging.RabbitMQ\Messaging.RabbitMQ.csproj" />
         <ProjectReference Include="..\..\..\shared\Interfaces\Interfaces.csproj" />

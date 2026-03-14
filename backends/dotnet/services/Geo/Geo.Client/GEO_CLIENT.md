@@ -4,17 +4,17 @@ Service-owned client library for the Geo microservice. Contains messages, handle
 
 ## Files
 
-| File Name                                  | Description                                                                                                                          |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| [Extensions.cs](Extensions.cs)             | DI extension methods: `AddGeoRefDataConsumer`, `AddGeoRefDataProvider`, `AddWhoIsCache`, `AddContactHandlers`.                       |
-| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, `ApiKey`, and circuit breaker settings.                  |
-| [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, Interfaces, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and Messaging.RabbitMQ. |
+| File Name                                  | Description                                                                                                                                                                                                                               |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Extensions.cs](Extensions.cs)             | DI extension methods: `AddGeoRefDataConsumer`, `AddGeoRefDataProvider`, `AddWhoIsCache`, `AddContactHandlers`.                                                                                                                            |
+| [GeoClientOptions.cs](GeoClientOptions.cs) | Configuration options for WhoIs cache, contact cache, `AllowedContextKeys`, `ApiKey`, and circuit breaker settings.                                                                                                                       |
+| [Geo.Client.csproj](Geo.Client.csproj)     | Project file with dependencies on Handler, I18n, InMemoryCache.Default, Interfaces, Messaging.RabbitMQ, Protos.DotNet, Result.Extensions, Utilities, Grpc.Net.ClientFactory, and Microsoft.Extensions.Configuration/Hosting.Abstractions. |
 
 ---
 
 ## Data Redaction
 
-Geo.Client handlers deal with sensitive data (IP addresses, user agents, geographic coordinates) and proto-generated DTOs that cannot be annotated with `[RedactData]`. Two complementary mechanisms protect against PII leaks in logs:
+Geo.Client handlers deal with sensitive data (IP addresses, geographic coordinates) and proto-generated DTOs that cannot be annotated with `[RedactData]`. Two complementary mechanisms protect against PII leaks in logs:
 
 ### DefaultOptions Overrides
 
@@ -42,8 +42,7 @@ Most handlers suppress I/O logging entirely via `DefaultOptions` because their i
 
 ```csharp
 public record FindWhoIsInput(
-    [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress,
-    [property: RedactData(Reason = RedactReason.PersonalInformation)] string UserAgent);
+    [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress);
 ```
 
 This allows input logging to remain enabled (useful for debugging) while ensuring PII is masked in log output.
@@ -170,9 +169,9 @@ Contacts are only accessible externally via ext keys (`contextKey` + `relatedEnt
 
 ### Cache Key Conventions
 
-| Cache Key Pattern                            | Value          | Populated By         | Evicted By                                       |
-| -------------------------------------------- | -------------- | -------------------- | ------------------------------------------------ |
-| `contact-ext:{contextKey}:{relatedEntityId}` | `ContactDTO[]` | GetContactsByExtKeys | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
+| Cache Key Pattern                                       | Value          | Populated By         | Evicted By                                       |
+| ------------------------------------------------------- | -------------- | -------------------- | ------------------------------------------------ |
+| `geo:contacts-by-extkey:{contextKey}:{relatedEntityId}` | `ContactDTO[]` | GetContactsByExtKeys | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
 
 Single `IMemoryCache` instance. No TTL — contacts are immutable.
 
@@ -182,9 +181,9 @@ Single `IMemoryCache` instance. No TTL — contacts are immutable.
 
 Reusable FluentValidation validators for proto-generated DTOs, exported as single source of truth. Any service creating contacts via Geo should compose these via `.SetValidator()` instead of duplicating rules.
 
-| File Name                                                             | Description                                                                                                                                                                                       |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [ContactToCreateValidator.cs](Validators/ContactToCreateValidator.cs) | Aggregate validator for `ContactToCreateDTO`. Mirrors Geo domain factory constraints (names 255, company 255, website 2048, emails, phones). Supports indexed property names for bulk validation. |
+| File Name                                                             | Description                                                                                                                                                                                                                |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ContactToCreateValidator.cs](Validators/ContactToCreateValidator.cs) | Aggregate validator for `ContactToCreateDTO`. Mirrors Geo domain factory constraints (names 255, company 255, website 2048, `ietf_bcp47_tag` max 35, emails, phones). Supports indexed property names for bulk validation. |
 
 ---
 
@@ -294,10 +293,9 @@ public async Task InvokeAsync(
     IComplex.IFindWhoIsHandler whoIsHandler)
 {
     var clientIp = IpResolver.Resolve(context, ...);
-    var userAgent = context.Request.Headers.UserAgent.FirstOrDefault() ?? string.Empty;
 
     var result = await whoIsHandler.HandleAsync(
-        new IComplex.FindWhoIsInput(clientIp, userAgent),
+        new IComplex.FindWhoIsInput(clientIp),
         context.RequestAborted);
 
     if (result.CheckSuccess(out var output) && output?.WhoIs is { } whoIs)
@@ -319,7 +317,6 @@ const requestContext = await enrichRequest(headers, findWhoIs, options, logger);
 // Or call FindWhoIs directly:
 const result = await findWhoIs.handleAsync({
   ipAddress: clientIp,
-  fingerprint: userAgent,
 });
 const output = result.checkSuccess();
 if (output?.whoIs) {
@@ -337,15 +334,21 @@ Contact creation goes through the Geo.Client `CreateContacts` handler, which cal
 // Build the gRPC request with one or more contacts to create.
 var request = new CreateContactsRequest
 {
-    Contacts =
+    ContactsToCreate =
     {
         new ContactToCreateDTO
         {
             ContextKey = "auth_org_contact",
             RelatedEntityId = orgId,
-            FirstName = "Jane",
-            LastName = "Doe",
-            Emails = { new EmailDTO { Email = "jane@example.com", Label = "Work", IsPrimary = true } },
+            PersonalDetails = new PersonalDTO
+            {
+                FirstName = "Jane",
+                LastName = "Doe",
+            },
+            ContactMethods = new ContactMethodsDTO
+            {
+                Emails = { new EmailAddressDTO { Value = "jane@example.com", Labels = { "Work" } } },
+            },
         },
     },
 };
@@ -367,9 +370,15 @@ const result = await createContacts.handleAsync({
     {
       contextKey: "auth_org_contact",
       relatedEntityId: orgId,
-      firstName: "Jane",
-      lastName: "Doe",
-      emails: [{ email: "jane@example.com", label: "Work", isPrimary: true }],
+      personalDetails: {
+        firstName: "Jane",
+        lastName: "Doe",
+      },
+      contactMethods: {
+        emails: [{ value: "jane@example.com", labels: ["Work"] }],
+        phoneNumbers: [],
+      },
+      ietfBcp47Tag: "en-US",
     },
   ],
 });
@@ -384,12 +393,12 @@ if (output) {
 
 Contact caches use the ext-key pattern. WhoIs uses content-addressable hash IDs.
 
-| Entity  | Cache Key Pattern                            | TTL     | Eviction                                         |
-| ------- | -------------------------------------------- | ------- | ------------------------------------------------ |
-| WhoIs   | `whois:{hashId}`                             | 8 hours | LRU (10,000 entries)                             |
-| Contact | `contact-ext:{contextKey}:{relatedEntityId}` | No TTL  | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
+| Entity  | Cache Key Pattern                                       | TTL     | Eviction                                         |
+| ------- | ------------------------------------------------------- | ------- | ------------------------------------------------ |
+| WhoIs   | `geo:whois:{ip}`                                        | 8 hours | LRU (10,000 entries)                             |
+| Contact | `geo:contacts-by-extkey:{contextKey}:{relatedEntityId}` | No TTL  | DeleteContactsByExtKeys, UpdateContactsByExtKeys |
 
-WhoIs cache keys are computed from the content-addressable SHA-256 hash of IP + fingerprint. Contact cache keys are computed from the ext-key pair (contextKey + relatedEntityId) — contacts are immutable, so no TTL is needed.
+WhoIs cache keys use the format `geo:whois:{ip}` — the content-addressable SHA-256 hash is computed from `SHA256(ip|year|month)` on the server side. Contact cache keys are computed from the ext-key pair (contextKey + relatedEntityId) — contacts are immutable, so no TTL is needed.
 
 ---
 

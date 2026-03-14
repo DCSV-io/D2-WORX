@@ -120,7 +120,7 @@ src/
 | `CreateOrgContact`        | orgId, label, contact details  | `{ contact, geoContact }`  | Creates junction then Geo contact; rollback on Geo failure           |
 | `UpdateOrgContactHandler` | id, orgId, updates             | `{ contact, geoContact? }` | Metadata-only or contact replacement via UpdateContactsByExtKeys     |
 | `DeleteOrgContact`        | id, orgId                      | `{}`                       | IDOR check, best-effort Geo delete, then junction delete             |
-| `CreateUserContact`       | userId, email, name            | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast       |
+| `CreateUserContact`       | userId, email, name, locale    | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast       |
 
 ### Job Handlers (4)
 

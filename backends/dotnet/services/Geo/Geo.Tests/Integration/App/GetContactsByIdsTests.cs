@@ -30,7 +30,7 @@ using GetContactsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByIds
 using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 
 /// <summary>
-/// Integration tests for the <see cref="GetContactsByIds"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.Q.GetContactsByIds"/> CQRS handler.
 /// </summary>
 [Collection("SharedPostgres")]
 [MustDisposeResource(value: false)]

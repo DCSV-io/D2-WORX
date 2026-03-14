@@ -23,7 +23,7 @@ using Xunit;
 using CreateLocationsRepo = D2.Geo.Infra.Repository.Handlers.C.CreateLocations;
 
 /// <summary>
-/// Integration tests for the <see cref="CreateLocations"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.C.CreateLocations"/> CQRS handler.
 /// </summary>
 [Collection("SharedPostgres")]
 [MustDisposeResource(value: false)]

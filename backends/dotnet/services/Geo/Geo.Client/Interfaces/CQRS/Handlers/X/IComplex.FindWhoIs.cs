@@ -14,7 +14,7 @@ using D2.Shared.Utilities.Enums;
 public partial interface IComplex
 {
     /// <summary>
-    /// Handler for finding WhoIs data by IP address and user agent.
+    /// Handler for finding WhoIs data by IP address.
     /// </summary>
     /// <remarks>
     /// This is a Complex handler because it may fetch from external source (gRPC)
@@ -29,12 +29,8 @@ public partial interface IComplex
     /// <param name="IpAddress">
     /// The IP address to look up.
     /// </param>
-    /// <param name="UserAgent">
-    /// The user agent string used as fingerprint.
-    /// </param>
     public record FindWhoIsInput(
-        [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress,
-        [property: RedactData(Reason = RedactReason.PersonalInformation)] string UserAgent);
+        [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress);
 
     /// <summary>
     /// Output for finding WhoIs data.

@@ -15,7 +15,6 @@ using D2.Shared.Interfaces.Caching.Distributed.Handlers.C;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Result;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 

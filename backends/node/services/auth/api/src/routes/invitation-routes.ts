@@ -157,6 +157,7 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
             },
             professionalDetails: undefined,
             location: undefined,
+            ietfBcp47Tag: "",
           },
         ],
       });

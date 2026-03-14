@@ -238,7 +238,6 @@ public class Populate : BaseHandler<Populate, I, O>, H
             ipAddress: partialWhoIs.IPAddress,
             year: partialWhoIs.Year,
             month: partialWhoIs.Month,
-            fingerprint: partialWhoIs.Fingerprint,
             asn: asn,
             asName: asName,
             asDomain: null,

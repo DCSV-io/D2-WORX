@@ -4,9 +4,9 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable SuspiciousElementAccess
 namespace D2.Geo.Tests.Integration.App;
 
+// ReSharper disable SuspiciousElementAccess
 using D2.Geo.App;
 using D2.Geo.App.Implementations.CQRS.Handlers.Q;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
@@ -22,6 +22,7 @@ using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
 using FluentAssertions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -30,7 +31,7 @@ using GetContactsByExtKeysRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsB
 using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 
 /// <summary>
-/// Integration tests for the <see cref="GetContactsByExtKeys"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.Q.GetContactsByExtKeys"/> CQRS handler.
 /// </summary>
 [Collection("SharedPostgres")]
 [MustDisposeResource(value: false)]
@@ -178,7 +179,7 @@ public class GetContactsByExtKeysTests : IAsyncLifetime
         var act = () => _db.SaveChangesAsync(Ct);
 
         // Assert - Should fail with unique constraint violation
-        await act.Should().ThrowAsync<Microsoft.EntityFrameworkCore.DbUpdateException>();
+        await act.Should().ThrowAsync<DbUpdateException>();
     }
 
     #endregion

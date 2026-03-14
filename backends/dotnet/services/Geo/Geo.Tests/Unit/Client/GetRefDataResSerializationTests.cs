@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Tests.Unit.Client;
 
+using System.Reflection;
 using System.Text.Json;
 using D2.Services.Protos.Geo.V1;
 using Google.Protobuf;
@@ -55,7 +56,7 @@ public class GetRefDataResSerializationTests
     {
         var parser = typeof(TValue).GetProperty(
                 "Parser",
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)!
+                BindingFlags.Public | BindingFlags.Static)!
             .GetValue(null)!;
 
         return (TValue)parser.GetType()

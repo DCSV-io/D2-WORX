@@ -4,15 +4,14 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable RedundantCapturedContext
 namespace D2.Geo.Tests.Unit.Client;
 
+// ReSharper disable RedundantCapturedContext
 using System.Net;
 using D2.Events.Protos.V1;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.X;
-using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
 using D2.Geo.Client.Messaging.Handlers.Sub;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;

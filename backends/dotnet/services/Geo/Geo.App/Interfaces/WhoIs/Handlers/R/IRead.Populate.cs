@@ -15,7 +15,7 @@ public partial interface IRead
     /// Handler for populating WhoIs records with data from external sources.
     /// </summary>
     /// <remarks>
-    /// Takes partial WhoIs records (with identity fields: IP, year, month, fingerprint)
+    /// Takes partial WhoIs records (with identity fields: IP, year, month)
     /// and returns fully populated records with ASN, location, privacy flags, etc.
     /// Also creates any required Location records.
     /// </remarks>
