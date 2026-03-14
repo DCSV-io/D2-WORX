@@ -173,7 +173,7 @@ public class D2ResultGenericTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Contains("Resource not found.", result.Messages);
+        Assert.Contains("common_errors_NOT_FOUND", result.Messages);
     }
 
     /// <summary>
@@ -204,7 +204,7 @@ public class D2ResultGenericTests
         var result = D2Result<string>.Forbidden();
 
         // Assert
-        Assert.Contains("Insufficient permissions.", result.Messages);
+        Assert.Contains("common_errors_FORBIDDEN", result.Messages);
     }
 
     /// <summary>
@@ -220,7 +220,7 @@ public class D2ResultGenericTests
         Assert.False(result.Success);
         Assert.Equal(HttpStatusCode.Unauthorized, result.StatusCode);
         Assert.Equal(ErrorCodes.UNAUTHORIZED, result.ErrorCode);
-        Assert.Contains("You must be signed in to perform this action.", result.Messages);
+        Assert.Contains("common_errors_UNAUTHORIZED", result.Messages);
     }
 
     /// <summary>
@@ -244,7 +244,7 @@ public class D2ResultGenericTests
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
         Assert.Equal(ErrorCodes.VALIDATION_FAILED, result.ErrorCode);
         Assert.Equal(inputErrors, result.InputErrors);
-        Assert.Contains("One or more validation errors occurred.", result.Messages);
+        Assert.Contains("common_errors_VALIDATION_FAILED", result.Messages);
     }
 
     /// <summary>
@@ -295,7 +295,7 @@ public class D2ResultGenericTests
         var result = D2Result<int>.Conflict();
 
         // Assert
-        Assert.Contains("Conflict occurred while processing the request.", result.Messages);
+        Assert.Contains("common_errors_CONFLICT", result.Messages);
     }
 
     /// <summary>

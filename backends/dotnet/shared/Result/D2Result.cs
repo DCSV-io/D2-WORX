@@ -12,6 +12,13 @@ using System.Net;
 /// Represents the result of an operation, including success status, messages, errors, and related
 /// metadata.
 /// </summary>
+/// <remarks>
+/// Default messages in failure factories are TK translation key strings (e.g.
+/// "common_errors_NOT_FOUND") rather than English prose. The translation middleware
+/// resolves these keys to locale-appropriate text before they reach the client.
+/// Keys are hardcoded here instead of referencing <c>TK</c> to keep
+/// <c>D2.Shared.Result</c> free of an <c>I18n</c> dependency.
+/// </remarks>
 public class D2Result
 {
     /// <summary>
@@ -170,7 +177,7 @@ public class D2Result
         List<List<string>>? inputErrors = null,
         string? traceId = null)
     {
-        messages ??= ["One or more validation errors occurred."];
+        messages ??= ["common_errors_VALIDATION_FAILED"];
         return new(
             false,
             messages,
@@ -198,7 +205,7 @@ public class D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["The service is temporarily unavailable."];
+        messages ??= ["common_errors_SERVICE_UNAVAILABLE"];
         return new(
             false,
             messages,
@@ -225,7 +232,7 @@ public class D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["You must be signed in to perform this action."];
+        messages ??= ["common_errors_UNAUTHORIZED"];
         return new(
             false,
             messages,
@@ -252,7 +259,7 @@ public class D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["An unhandled exception occurred while processing the request."];
+        messages ??= ["common_errors_unknown"];
         return new(
             false,
             messages,
@@ -279,7 +286,7 @@ public class D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["Request payload too large."];
+        messages ??= ["common_errors_PAYLOAD_TOO_LARGE"];
         return new(
             false,
             messages,
@@ -306,7 +313,7 @@ public class D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["The operation was cancelled."];
+        messages ??= ["common_errors_CANCELLED"];
         return new(
             false,
             messages,

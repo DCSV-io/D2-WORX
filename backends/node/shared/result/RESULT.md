@@ -220,7 +220,7 @@ Override with `isTransientResult` option for custom logic.
 
 ## Best Practices
 
-1. **Always use semantic factories** instead of raw `fail()`. If the outcome is "not found", use `notFound()` — not `fail({ statusCode: 404, errorCode: "NOT_FOUND" })`. The factory sets status code, error code, and default message automatically.
+1. **Always use semantic factories** instead of raw `fail()`. If the outcome is "not found", use `notFound()` — not `fail({ statusCode: 404, errorCode: "NOT_FOUND" })`. The factory sets status code, error code, and default message automatically. Default messages are TK translation key strings (e.g. `"common_errors_NOT_FOUND"`) — the translation middleware resolves them to locale-appropriate text before reaching the client.
 
 2. **Raw `fail()` is only appropriate** when no semantic factory matches (e.g., re-mapping arbitrary upstream status codes, or a code like `429` that has no dedicated factory).
 

@@ -46,6 +46,15 @@ public static class TK
             /// <summary>Input validation failed.</summary>
             public const string VALIDATION_FAILED = "common_errors_VALIDATION_FAILED";
 
+            /// <summary>The service is temporarily unavailable.</summary>
+            public const string SERVICE_UNAVAILABLE = "common_errors_SERVICE_UNAVAILABLE";
+
+            /// <summary>The request payload is too large.</summary>
+            public const string PAYLOAD_TOO_LARGE = "common_errors_PAYLOAD_TOO_LARGE";
+
+            /// <summary>The operation was cancelled.</summary>
+            public const string CANCELLED = "common_errors_CANCELLED";
+
             /// <summary>An unknown or unhandled error occurred.</summary>
             public const string UNKNOWN = "common_errors_unknown";
         }

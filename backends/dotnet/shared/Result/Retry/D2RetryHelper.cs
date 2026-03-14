@@ -155,8 +155,7 @@ public static class D2RetryHelper
         CancellationToken ct = default)
     {
         options ??= new D2RetryExternalOptions();
-        var mapError = options.MapError ?? (_ => D2Result.UnhandledException(
-            ["An unhandled exception occurred while processing the request."]));
+        var mapError = options.MapError ?? (_ => D2Result.UnhandledException());
         var checkTransient = options.IsTransientResult ?? IsTransientResult;
         var delayFunc = options.DelayFunc ?? Task.Delay;
 

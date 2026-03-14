@@ -25,6 +25,12 @@ export interface D2ResultOptions<TData = void> {
  * Mirrors D2.Shared.Result.D2Result in .NET.
  *
  * Use static factory methods (ok, fail, notFound, etc.) instead of the constructor.
+ *
+ * Default messages in failure factories are TK translation key strings (e.g.
+ * "common_errors_NOT_FOUND") rather than English prose. The translation middleware
+ * resolves these keys to locale-appropriate text before they reach the client.
+ * Keys are hardcoded here instead of imported from @d2/i18n to keep @d2/result
+ * a zero-dependency foundational package.
  */
 export class D2Result<TData = void> {
   readonly success: boolean;
@@ -118,7 +124,7 @@ export class D2Result<TData = void> {
   static notFound<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["Resource not found."],
+      messages: options?.messages ?? ["common_errors_NOT_FOUND"],
       statusCode: HttpStatusCode.NotFound,
       errorCode: ErrorCodes.NOT_FOUND,
       traceId: options?.traceId,
@@ -129,7 +135,7 @@ export class D2Result<TData = void> {
   static unauthorized<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["You must be signed in to perform this action."],
+      messages: options?.messages ?? ["common_errors_UNAUTHORIZED"],
       statusCode: HttpStatusCode.Unauthorized,
       errorCode: ErrorCodes.UNAUTHORIZED,
       traceId: options?.traceId,
@@ -140,7 +146,7 @@ export class D2Result<TData = void> {
   static forbidden<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["Insufficient permissions."],
+      messages: options?.messages ?? ["common_errors_FORBIDDEN"],
       statusCode: HttpStatusCode.Forbidden,
       errorCode: ErrorCodes.FORBIDDEN,
       traceId: options?.traceId,
@@ -155,7 +161,7 @@ export class D2Result<TData = void> {
   }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["One or more validation errors occurred."],
+      messages: options?.messages ?? ["common_errors_VALIDATION_FAILED"],
       inputErrors: options?.inputErrors,
       statusCode: HttpStatusCode.BadRequest,
       errorCode: ErrorCodes.VALIDATION_FAILED,
@@ -167,7 +173,7 @@ export class D2Result<TData = void> {
   static conflict<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["Conflict occurred while processing the request."],
+      messages: options?.messages ?? ["common_errors_CONFLICT"],
       statusCode: HttpStatusCode.Conflict,
       errorCode: ErrorCodes.CONFLICT,
       traceId: options?.traceId,
@@ -181,7 +187,7 @@ export class D2Result<TData = void> {
   }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["The service is temporarily unavailable."],
+      messages: options?.messages ?? ["common_errors_SERVICE_UNAVAILABLE"],
       statusCode: HttpStatusCode.ServiceUnavailable,
       errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
       traceId: options?.traceId,
@@ -195,9 +201,7 @@ export class D2Result<TData = void> {
   }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? [
-        "An unhandled exception occurred while processing the request.",
-      ],
+      messages: options?.messages ?? ["common_errors_unknown"],
       statusCode: HttpStatusCode.InternalServerError,
       errorCode: ErrorCodes.UNHANDLED_EXCEPTION,
       traceId: options?.traceId,
@@ -211,7 +215,7 @@ export class D2Result<TData = void> {
   }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["Request payload too large."],
+      messages: options?.messages ?? ["common_errors_PAYLOAD_TOO_LARGE"],
       statusCode: HttpStatusCode.RequestEntityTooLarge,
       errorCode: ErrorCodes.PAYLOAD_TOO_LARGE,
       traceId: options?.traceId,
@@ -222,7 +226,7 @@ export class D2Result<TData = void> {
   static cancelled<T = void>(options?: { messages?: string[]; traceId?: string }): D2Result<T> {
     return new D2Result<T>({
       success: false,
-      messages: options?.messages ?? ["The operation was cancelled."],
+      messages: options?.messages ?? ["common_errors_CANCELLED"],
       statusCode: HttpStatusCode.BadRequest,
       errorCode: ErrorCodes.CANCELLED,
       traceId: options?.traceId,

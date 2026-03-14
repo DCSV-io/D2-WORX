@@ -228,7 +228,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["Resource not found."];
+        messages ??= ["common_errors_NOT_FOUND"];
         return new(
             false,
             default,
@@ -256,7 +256,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["Insufficient permissions."];
+        messages ??= ["common_errors_FORBIDDEN"];
         return new(
             false,
             default,
@@ -284,7 +284,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["You must be signed in to perform this action."];
+        messages ??= ["common_errors_UNAUTHORIZED"];
         return new(
             false,
             default,
@@ -317,7 +317,7 @@ public class D2Result<TData> : D2Result
         List<List<string>>? inputErrors = null,
         string? traceId = null)
     {
-        messages ??= ["One or more validation errors occurred."];
+        messages ??= ["common_errors_VALIDATION_FAILED"];
         return new(
             false,
             default,
@@ -346,7 +346,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["Conflict occurred while processing the request."];
+        messages ??= ["common_errors_CONFLICT"];
         return new(
             false,
             default,
@@ -374,7 +374,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["An unhandled exception occurred while processing the request."];
+        messages ??= ["common_errors_unknown"];
         return new(
             false,
             default,
@@ -438,7 +438,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["The service is temporarily unavailable."];
+        messages ??= ["common_errors_SERVICE_UNAVAILABLE"];
         return new(
             false,
             default,
@@ -466,7 +466,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["Request payload too large."];
+        messages ??= ["common_errors_PAYLOAD_TOO_LARGE"];
         return new(
             false,
             default,
@@ -494,7 +494,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
-        messages ??= ["The operation was cancelled."];
+        messages ??= ["common_errors_CANCELLED"];
         return new(
             false,
             default,
