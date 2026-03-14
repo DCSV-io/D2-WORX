@@ -57,7 +57,7 @@ public class CleanupOrphanedLocationsTests
                 new RepoDelete.DeleteOrphanedLocationsOutput(0)));
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Lock Not Acquired
 

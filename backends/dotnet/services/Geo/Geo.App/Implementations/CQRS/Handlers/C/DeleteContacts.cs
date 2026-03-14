@@ -8,6 +8,7 @@ namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Events.Protos.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
@@ -22,7 +23,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Handler for deleting Contacts.
 /// </summary>
-public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
+public partial class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
 {
     private readonly ReadRepo.IGetContactsByIdsHandler r_getContactsByIds;
     private readonly DeleteRepo.IDeleteContactsHandler r_deleteContactsFromRepo;
@@ -79,7 +80,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
         {
             if (input.ContactIds[i] == Guid.Empty)
             {
-                allErrors.Add([$"items[{i}]", "Contact ID must not be an empty GUID."]);
+                allErrors.Add([$"items[{i}]", TK.Geo.Validation.ID_INVALID]);
             }
         }
 
@@ -110,10 +111,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
 
             if (removeR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to remove Contact {ContactId} from memory cache after delete. TraceId: {TraceId}.",
-                    id,
-                    TraceId);
+                LogCacheRemoveFailed(Context.Logger, id, TraceId);
             }
         }
 
@@ -132,4 +130,10 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
 
         return D2Result<O?>.Ok(new O(repoOutput!.Deleted));
     }
+
+    /// <summary>
+    /// Logs a warning when removing a contact from the memory cache fails after deletion.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to remove Contact {ContactId} from memory cache after delete. TraceId: {TraceId}.")]
+    private static partial void LogCacheRemoveFailed(ILogger logger, Guid contactId, string? traceId);
 }

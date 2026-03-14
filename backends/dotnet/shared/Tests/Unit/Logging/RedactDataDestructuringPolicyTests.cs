@@ -8,6 +8,7 @@
 // ReSharper disable UnusedAutoPropertyAccessor.Local
 namespace D2.Shared.Tests.Unit.Logging;
 
+using System.Globalization;
 using D2.Shared.ServiceDefaults.Logging;
 using D2.Shared.Utilities.Attributes;
 using D2.Shared.Utilities.Enums;
@@ -380,7 +381,7 @@ public class RedactDataDestructuringPolicyTests
 
         // Assert — the raw IP DOES appear because scalars bypass destructuring
         events.Should().HaveCount(1);
-        var rendered = events[0].RenderMessage();
+        var rendered = events[0].RenderMessage(CultureInfo.InvariantCulture);
         rendered.Should().Contain(rawIp, "scalar parameter bypasses [RedactData] destructuring");
     }
 
@@ -409,7 +410,7 @@ public class RedactDataDestructuringPolicyTests
 
         // Assert — raw IP and UserAgent should NOT appear in rendered output
         events.Should().HaveCount(1);
-        var rendered = events[0].RenderMessage();
+        var rendered = events[0].RenderMessage(CultureInfo.InvariantCulture);
         rendered.Should().NotContain(rawIp, "destructured parameter should trigger [RedactData] masking");
         rendered.Should().NotContain(rawUserAgent, "destructured parameter should trigger [RedactData] masking");
         rendered.Should().Contain("[REDACTED: PersonalInformation]");
@@ -430,29 +431,29 @@ public class RedactDataDestructuringPolicyTests
     }
 
     [RedactData(Reason = RedactReason.PersonalInformation)]
-    private record TypeLevelRedacted(string Name, string Email);
+    private sealed record TypeLevelRedacted(string Name, string Email);
 
-    private record PropertyLevelRedacted(
+    private sealed record PropertyLevelRedacted(
         [property: RedactData(Reason = RedactReason.PersonalInformation)] string IpAddress,
         [property: RedactData(Reason = RedactReason.PersonalInformation)] string UserAgent,
         string HandlerName);
 
-    private record NoRedaction(string Name, int Age);
+    private sealed record NoRedaction(string Name, int Age);
 
-    private record NestedOuter(string Label, PropertyLevelRedacted Inner);
+    private sealed record NestedOuter(string Label, PropertyLevelRedacted Inner);
 
     [RedactData(CustomReason = "Contains API keys")]
-    private record CustomReasonType(string Value);
+    private sealed record CustomReasonType(string Value);
 
     [RedactData(CustomReason = "Top-secret payload")]
-    private record TypeLevelCustomReasonRedacted(string Secret, int Count);
+    private sealed record TypeLevelCustomReasonRedacted(string Secret, int Count);
 
-    private record WithNullableProperties(
+    private sealed record WithNullableProperties(
         [property: RedactData(Reason = RedactReason.PersonalInformation)] string? NullableField,
         string? NormalField);
 
     [RedactData(Reason = RedactReason.SecretInformation)]
-    private record TypeAndPropertyLevelRedacted(
+    private sealed record TypeAndPropertyLevelRedacted(
         [property: RedactData(Reason = RedactReason.PersonalInformation)] string Sensitive,
         string Normal);
 
@@ -464,20 +465,20 @@ public class RedactDataDestructuringPolicyTests
         public string Name { get; init; } = string.Empty;
     }
 
-    private record DerivedFromRedacted : BaseWithRedaction
+    private sealed record DerivedFromRedacted : BaseWithRedaction
     {
         public int Age { get; init; }
     }
 
-    private record EmptyRecord;
+    private sealed record EmptyRecord;
 
-    private record MixedReasonsRedacted(
+    private sealed record MixedReasonsRedacted(
         [property: RedactData(Reason = RedactReason.PersonalInformation)] string Email,
         [property: RedactData(Reason = RedactReason.FinancialInformation)] string CreditCard,
         [property: RedactData(Reason = RedactReason.SecretInformation)] string ApiKey,
         string PublicField);
 
-    private record DefaultReasonRedacted(
+    private sealed record DefaultReasonRedacted(
         [property: RedactData] string SomeField,
         string Normal);
 

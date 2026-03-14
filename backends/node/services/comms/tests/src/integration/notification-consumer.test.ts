@@ -329,7 +329,7 @@ describe("NotificationConsumer (integration)", () => {
       if (callCount === 1) {
         // First call: return DELIVERY_FAILED to trigger retry
         return D2Result.fail({
-          messages: ["Delivery failed for 1 channel(s), retry scheduled."],
+          messages: ["comms_errors_DELIVERY_RETRY_SCHEDULED"],
           statusCode: 503,
           errorCode: COMMS_RETRY.DELIVERY_FAILED,
         });

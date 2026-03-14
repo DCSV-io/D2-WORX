@@ -6,9 +6,11 @@
 
 namespace D2.Geo.Infra.Messaging.Handlers.Pub;
 
+using System.Net;
 using D2.Events.Protos.V1;
 using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using H = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs.IUpdateHandler;
@@ -18,7 +20,7 @@ using O = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs.UpdateOutput;
 /// <summary>
 /// Handler for publishing geographic reference data update notifications.
 /// </summary>
-public class Update : BaseHandler<Update, I, O>, H
+public partial class Update : BaseHandler<Update, I, O>, H
 {
     private readonly UpdatePublisher r_publisher;
 
@@ -65,21 +67,27 @@ public class Update : BaseHandler<Update, I, O>, H
 
         if (result.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to publish GeoRefDataUpdated event for version {Version}. TraceId: {TraceId}",
-                input.Version,
-                TraceId);
+            LogPublishGeoRefDataUpdatedFailed(Context.Logger, input.Version, TraceId);
 
             return D2Result<O?>.Fail(
-                ["Failed to publish update notification."],
-                System.Net.HttpStatusCode.InternalServerError);
+                [TK.Common.Errors.REQUEST_FAILED],
+                HttpStatusCode.InternalServerError);
         }
 
-        Context.Logger.LogInformation(
-            "Published GeoRefDataUpdated event for version {Version}. TraceId: {TraceId}",
-            input.Version,
-            TraceId);
+        LogPublishedGeoRefDataUpdated(Context.Logger, input.Version, TraceId);
 
         return D2Result<O?>.Ok(new O());
     }
+
+    /// <summary>
+    /// Logs an error when publishing a GeoRefDataUpdated event fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to publish GeoRefDataUpdated event for version {Version}. TraceId: {TraceId}")]
+    private static partial void LogPublishGeoRefDataUpdatedFailed(ILogger logger, string version, string? traceId);
+
+    /// <summary>
+    /// Logs that a GeoRefDataUpdated event was successfully published.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Published GeoRefDataUpdated event for version {Version}. TraceId: {TraceId}")]
+    private static partial void LogPublishedGeoRefDataUpdated(ILogger logger, string version, string? traceId);
 }

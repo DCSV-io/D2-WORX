@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { InMemoryCache } from "@d2/interfaces";
 import type { MemoryCacheStore } from "../../memory-cache-store.js";
@@ -12,6 +12,10 @@ export class Set<TValue>
   constructor(store: MemoryCacheStore, context: IHandlerContext) {
     super(context);
     this.store = store;
+  }
+
+  override get redaction(): RedactionSpec {
+    return { inputFields: ["value"] };
   }
 
   protected async executeAsync(

@@ -45,6 +45,18 @@ public class ContactConfig : IEntityTypeConfiguration<Contact>
             .HasColumnName("related_entity_id")
             .IsRequired();
 
+        builder.Property(c => c.IETFBCP47Tag)
+            .HasColumnName("ietf_bcp47_tag")
+            .HasMaxLength(35)
+            .HasDefaultValue("en-US")
+            .IsRequired();
+
+        // FK relationship to Locale entity (like Location → Country).
+        builder.HasOne(c => c.Locale)
+            .WithMany()
+            .HasForeignKey(c => c.IETFBCP47Tag)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // ContactMethods (stored as JSONB via value converter).
         // Using value converter instead of OwnsOne because nested types contain
         // ImmutableHashSet<string> which EF Core can't model, but System.Text.Json handles fine.
@@ -91,11 +103,11 @@ public class ContactConfig : IEntityTypeConfiguration<Contact>
                 .HasColumnType("text[]")
                 .HasConversion(
                     list => list.ToArray(),
-                    arr => arr != null ? arr.ToImmutableList() : ImmutableList<string>.Empty,
+                    arr => arr.ToImmutableList(),
                     new ValueComparer<ImmutableList<string>>(
                         (a, b) => a != null && b != null && a.SequenceEqual(b),
                         c => c.Aggregate(0, (h, v) => HashCode.Combine(h, v.GetHashCode())),
-                        c => c.ToImmutableList()));
+                        c => ImmutableList.CreateRange(c)));
 
             p.Property(x => x.DateOfBirth)
                 .HasColumnName("personal_date_of_birth");

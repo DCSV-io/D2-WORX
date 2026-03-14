@@ -7,6 +7,7 @@
  * Retry-After header if any dimension exceeds its threshold.
  */
 import type { Handle } from "@sveltejs/kit";
+import { TK } from "@d2/i18n/keys";
 import { getMiddlewareContext } from "../middleware.server";
 
 export function createRateLimitHandle(): Handle {
@@ -28,7 +29,7 @@ export function createRateLimitHandle(): Handle {
       return new Response(
         JSON.stringify({
           success: false,
-          messages: ["Too many requests. Please slow down."],
+          messages: [TK.common.errors.TOO_MANY_REQUESTS],
           statusCode: 429,
           errorCode: "RATE_LIMITED",
         }),

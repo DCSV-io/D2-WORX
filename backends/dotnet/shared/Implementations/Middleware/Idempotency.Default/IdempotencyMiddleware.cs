@@ -8,6 +8,7 @@ namespace D2.Shared.Idempotency.Default;
 
 using System.Net;
 using System.Text.Json;
+using D2.Shared.I18n;
 using D2.Shared.Idempotency.Default.Interfaces;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.D;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
@@ -25,7 +26,7 @@ using Microsoft.Extensions.Options;
 /// Uses a SET NX + GET pattern with distributed cache to detect duplicate requests.
 /// Replays cached responses for previously seen keys and returns 409 for in-flight duplicates.
 /// </remarks>
-public class IdempotencyMiddleware
+public partial class IdempotencyMiddleware
 {
     private const string _IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
     private const string _KEY_PREFIX = "idempotency:";
@@ -107,7 +108,7 @@ public class IdempotencyMiddleware
             context.Response.ContentType = "application/json";
 
             var badRequestResponse = D2Result.ValidationFailed(
-                inputErrors: [[_IDEMPOTENCY_KEY_HEADER, "Idempotency-Key must be a valid UUID."]],
+                inputErrors: [[_IDEMPOTENCY_KEY_HEADER, TK.Common.Errors.VALIDATION_FAILED]],
                 traceId: context.TraceIdentifier);
 
             await context.Response.WriteAsJsonAsync(badRequestResponse, SerializerOptions.SR_Web, context.RequestAborted);
@@ -116,7 +117,7 @@ public class IdempotencyMiddleware
 
         // 3b. Scope key to authenticated user to prevent cross-user collisions.
         // Auth runs before idempotency in the pipeline, so User.Identity is available.
-        var userId = context.User?.FindFirst("sub")?.Value;
+        var userId = context.User.FindFirst("sub")?.Value;
         if (userId is not null)
         {
             idempotencyKey = $"{userId}:{idempotencyKey}";
@@ -138,10 +139,7 @@ public class IdempotencyMiddleware
         catch (Exception ex)
         {
             // Fail-open: log warning and proceed.
-            r_logger.LogWarning(
-                ex,
-                "Idempotency check failed. Allowing request through (fail-open). TraceId: {TraceId}",
-                context.TraceIdentifier);
+            LogCheckFailed(r_logger, ex, context.TraceIdentifier);
         }
 
         // If check failed entirely, proceed (fail-open).
@@ -158,7 +156,7 @@ public class IdempotencyMiddleware
             context.Response.ContentType = "application/json";
 
             var conflictResponse = D2Result.Fail(
-                ["A request with this idempotency key is already being processed."],
+                [TK.Common.Errors.CONFLICT],
                 HttpStatusCode.Conflict,
                 inputErrors: null,
                 ErrorCodes.IDEMPOTENCY_IN_FLIGHT,
@@ -241,10 +239,7 @@ public class IdempotencyMiddleware
             catch (Exception ex)
             {
                 // Response already sent — just log.
-                r_logger.LogWarning(
-                    ex,
-                    "Failed to cache idempotent response. TraceId: {TraceId}",
-                    context.TraceIdentifier);
+                LogCacheFailed(r_logger, ex, context.TraceIdentifier);
             }
         }
         else
@@ -258,27 +253,47 @@ public class IdempotencyMiddleware
             }
             catch (Exception ex)
             {
-                r_logger.LogWarning(
-                    ex,
-                    "Failed to remove idempotency sentinel. TraceId: {TraceId}",
-                    context.TraceIdentifier);
+                LogSentinelRemovalFailed(r_logger, ex, context.TraceIdentifier);
             }
 
             if (!isSuccess)
             {
-                r_logger.LogDebug(
-                    "Non-success response ({StatusCode}) not cached for idempotency key. Sentinel removed. TraceId: {TraceId}",
-                    context.Response.StatusCode,
-                    context.TraceIdentifier);
+                LogNonSuccessNotCached(r_logger, context.Response.StatusCode, context.TraceIdentifier);
             }
             else
             {
-                r_logger.LogWarning(
-                    "Response body ({BodySize} bytes) exceeds MaxBodySizeBytes ({MaxSize}). Not cached. TraceId: {TraceId}",
-                    bodyBytes.Length,
-                    r_options.MaxBodySizeBytes,
-                    context.TraceIdentifier);
+                LogBodyTooLarge(r_logger, bodyBytes.Length, r_options.MaxBodySizeBytes, context.TraceIdentifier);
             }
         }
     }
+
+    /// <summary>
+    /// Logs that the idempotency check failed and the request is being allowed through (fail-open).
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Idempotency check failed. Allowing request through (fail-open). TraceId: {TraceId}")]
+    private static partial void LogCheckFailed(ILogger logger, Exception ex, string? traceId);
+
+    /// <summary>
+    /// Logs that caching the idempotent response failed.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to cache idempotent response. TraceId: {TraceId}")]
+    private static partial void LogCacheFailed(ILogger logger, Exception ex, string? traceId);
+
+    /// <summary>
+    /// Logs that removing the idempotency sentinel failed.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Failed to remove idempotency sentinel. TraceId: {TraceId}")]
+    private static partial void LogSentinelRemovalFailed(ILogger logger, Exception ex, string? traceId);
+
+    /// <summary>
+    /// Logs that a non-success response was not cached and the sentinel was removed.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Debug, Message = "Non-success response ({StatusCode}) not cached for idempotency key. Sentinel removed. TraceId: {TraceId}")]
+    private static partial void LogNonSuccessNotCached(ILogger logger, int statusCode, string? traceId);
+
+    /// <summary>
+    /// Logs that the response body exceeds the maximum size and was not cached.
+    /// </summary>
+    [LoggerMessage(EventId = 5, Level = LogLevel.Warning, Message = "Response body ({BodySize} bytes) exceeds MaxBodySizeBytes ({MaxSize}). Not cached. TraceId: {TraceId}")]
+    private static partial void LogBodyTooLarge(ILogger logger, int bodySize, int maxSize, string? traceId);
 }

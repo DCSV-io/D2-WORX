@@ -30,7 +30,7 @@ public class ContactsEvictedHandlerTests
         r_cacheRemoveMock = new Mock<IDelete.IRemoveHandler>();
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Eviction Tests
 

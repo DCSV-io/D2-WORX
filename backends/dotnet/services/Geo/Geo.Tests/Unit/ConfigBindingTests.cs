@@ -43,7 +43,7 @@ public class ConfigBindingTests
 
         options.ApiKeyMappings.Should().ContainKey("dev-auth-api-key");
         options.ApiKeyMappings["dev-auth-api-key"]
-            .Should().BeEquivalentTo(["org_contact", "user"]);
+            .Should().BeEquivalentTo("org_contact", "user");
     }
 
     /// <summary>
@@ -66,9 +66,9 @@ public class ConfigBindingTests
 
         options.ApiKeyMappings.Should().HaveCount(2);
         options.ApiKeyMappings["auth-key"]
-            .Should().BeEquivalentTo(["org_contact", "user"]);
+            .Should().BeEquivalentTo("org_contact", "user");
         options.ApiKeyMappings["billing-key"]
-            .Should().BeEquivalentTo(["billing_contact"]);
+            .Should().BeEquivalentTo("billing_contact");
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public class ConfigBindingTests
 
             options.ApiKeyMappings.Should().ContainKey("dev-auth-api-key");
             options.ApiKeyMappings["dev-auth-api-key"]
-                .Should().BeEquivalentTo(["org_contact", "user"]);
+                .Should().BeEquivalentTo("org_contact", "user");
         }
         finally
         {
@@ -174,7 +174,7 @@ public class ConfigBindingTests
         var options = new GeoClientOptions();
         config.GetSection("GEO_CLIENT").Bind(options);
 
-        options.AllowedContextKeys.Should().BeEquivalentTo(["org_contact", "user"]);
+        options.AllowedContextKeys.Should().BeEquivalentTo("org_contact", "user");
     }
 
     /// <summary>
@@ -223,7 +223,7 @@ public class ConfigBindingTests
             config.GetSection("GEO_CLIENT").Bind(options);
 
             options.ApiKey.Should().Be("dev-auth-api-key");
-            options.AllowedContextKeys.Should().BeEquivalentTo(["org_contact", "user"]);
+            options.AllowedContextKeys.Should().BeEquivalentTo("org_contact", "user");
         }
         finally
         {
@@ -290,7 +290,7 @@ public class ConfigBindingTests
 
         // New properties should be set.
         options.ApiKey.Should().Be("my-key");
-        options.AllowedContextKeys.Should().BeEquivalentTo(["ctx"]);
+        options.AllowedContextKeys.Should().BeEquivalentTo("ctx");
     }
 
     #endregion
@@ -327,7 +327,7 @@ public class ConfigBindingTests
 
         // Service-specific overrides should be applied.
         options.ApiKey.Should().Be("d2.auth.api.key");
-        options.AllowedContextKeys.Should().BeEquivalentTo(["org_contact"]);
+        options.AllowedContextKeys.Should().BeEquivalentTo("org_contact");
 
         // Other shared defaults should be preserved.
         options.WhoIsCacheExpiration.Should().Be(TimeSpan.FromHours(8));
@@ -416,7 +416,7 @@ public class ConfigBindingTests
 
             options.WhoIsCacheMaxEntries.Should().Be(12_000);
             options.ApiKey.Should().Be("d2.auth.api.key");
-            options.AllowedContextKeys.Should().BeEquivalentTo(["org_contact", "user"]);
+            options.AllowedContextKeys.Should().BeEquivalentTo("org_contact", "user");
         }
         finally
         {

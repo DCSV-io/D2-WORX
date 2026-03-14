@@ -7,6 +7,8 @@
 namespace D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 
 using D2.Shared.Handler;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
 
 public partial interface IRead
 {
@@ -39,5 +41,7 @@ public partial interface IRead
     /// <typeparam name="TValue">
     /// The type of the cached value.
     /// </typeparam>
-    public record GetOutput<TValue>(TValue Value);
+    public record GetOutput<TValue>(
+        [property: RedactData(Reason = RedactReason.SecretInformation, CustomReason = "Cached value")]
+        TValue Value);
 }

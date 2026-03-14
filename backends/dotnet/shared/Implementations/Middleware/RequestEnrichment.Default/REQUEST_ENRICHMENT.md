@@ -19,10 +19,10 @@ HTTP middleware that enriches requests with client information including IP reso
 
 The middleware performs the following enrichment steps:
 
-1. **IP Resolution** — Resolves client IP from headers in priority order:
-   - `CF-Connecting-IP` (Cloudflare)
-   - `X-Real-IP` (Nginx/reverse proxy)
-   - `X-Forwarded-For` (first entry)
+1. **IP Resolution** — Resolves client IP from configured `TrustedProxyHeaders` (default: Cloudflare only) in priority order:
+   - `CF-Connecting-IP` (Cloudflare) — if `CfConnectingIp` is trusted
+   - `X-Real-IP` (Nginx/reverse proxy) — if `XRealIp` is trusted
+   - `X-Forwarded-For` (first entry) — if `XForwardedFor` is trusted
    - `HttpContext.Connection.RemoteIpAddress` (fallback)
 
 2. **Server Fingerprint** — Computes SHA-256 hash of request headers for logging/analytics:
@@ -32,10 +32,11 @@ The middleware performs the following enrichment steps:
 
 4. **Device Fingerprint** — Computes `SHA-256(clientFingerprint + serverFingerprint + clientIp)`. Always present — if client fingerprint is missing, degrades to `SHA-256("" + serverFP + clientIp)`.
 
-5. **WhoIs Lookup** — Calls Geo.Client's WhoIs cache handler to enrich with geolocation data:
+5. **WhoIs Lookup** — Calls Geo.Client's WhoIs cache handler with the resolved IP address to enrich with geolocation data:
    - City, country code, subdivision code
    - VPN/proxy/Tor/hosting flags
    - Content-addressable hash ID for downstream lookups
+   - Note: User-Agent is used for server fingerprint computation (step 2) but is NOT passed to FindWhoIs — WhoIs hashing is IP-only (`SHA256(ip|year|month)`)
 
 ## MutableRequestContext
 
@@ -44,8 +45,9 @@ The middleware performs the following enrichment steps:
 The enrichment middleware creates the instance with network fields, then subsequent middleware mutates it:
 
 - **RequestEnrichmentMiddleware** — creates with network/geo fields (clientIp, fingerprints, WhoIs data)
-- **ServiceKeyMiddleware** — sets `IsTrustedService` flag
-- **JwtAuth + JwtFingerprintMiddleware** — sets identity/org fields (userId, agentOrg, targetOrg, etc.)
+- **ServiceKeyMiddleware** (`Auth.Default`) — sets `IsTrustedService` flag
+- **JwtAuth + JwtFingerprintMiddleware** (`Auth.Default`) — sets identity/org fields (userId, agentOrg, targetOrg, etc.)
+- **TranslationMiddleware** (`Translation.Default`) — translates D2Result message/inputError keys using locale resolved from request headers
 
 ### Network / Enrichment Fields (set by RequestEnrichmentMiddleware)
 
@@ -88,6 +90,15 @@ public class RequestEnrichmentOptions
 
     // Cookie name for client fingerprint (default: "d2-cfp").
     public string ClientFingerprintCookie { get; set; } = "d2-cfp";
+
+    // Proxy headers trusted for IP resolution (default: CfConnectingIp only).
+    public HashSet<TrustedProxyHeader> TrustedProxyHeaders { get; set; } = [TrustedProxyHeader.CfConnectingIp];
+
+    // Maximum length for client fingerprint header values (default: 256). Values exceeding this are truncated.
+    public int MaxFingerprintLength { get; set; } = 256;
+
+    // Maximum length for forwarded-for / IP proxy headers (default: 2048). Values exceeding this are truncated.
+    public int MaxForwardedForLength { get; set; } = 2048;
 }
 ```
 
@@ -136,5 +147,5 @@ When adding a new infrastructure path, add it to `InfrastructurePaths` — never
 
 ## Dependencies
 
-- `D2.Geo.Client` — For WhoIs cache handler (`IComplex.IFindWhoIsHandler`).
+- `D2.Geo.Client` — For WhoIs cache handler (`IComplex.IFindWhoIsHandler`). Only `IpAddress` is passed to FindWhoIs (no User-Agent).
 - `Microsoft.AspNetCore.Http` — For HTTP context and features.

@@ -34,9 +34,7 @@ export class CreateOrgContactRecord
       return D2Result.ok({ data: {} });
     } catch (err) {
       if (isPgUniqueViolation(err)) {
-        return D2Result.conflict({
-          messages: ["Record already exists."],
-        });
+        return D2Result.conflict();
       }
       throw err;
     }

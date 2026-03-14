@@ -10,6 +10,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.R;
 using System.Net;
 using System.Text.Json;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Serialization;
 using Microsoft.Extensions.Logging;
@@ -23,7 +24,7 @@ using S = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead;
 /// <typeparam name="TValue">
 /// The type of the cached value.
 /// </typeparam>
-public class Get<TValue> : BaseHandler<
+public partial class Get<TValue> : BaseHandler<
         S.IGetHandler<TValue>, S.GetInput, S.GetOutput<TValue>>,
     S.IGetHandler<TValue>
 {
@@ -83,35 +84,38 @@ public class Get<TValue> : BaseHandler<
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while getting value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogGetFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<S.GetOutput<TValue>?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
         catch (JsonException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "JsonException occurred while deserializing value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogGetDeserializationFailed(Context.Logger, ex, input.Key, TraceId);
 
-            const string err_msg = "Value could not be deserialized.";
             return D2Result<S.GetOutput<TValue>?>.Fail(
-                [err_msg],
+                [TK.Common.Errors.REQUEST_FAILED],
                 HttpStatusCode.InternalServerError,
-                [[nameof(S.GetInput.Key), err_msg]],
+                [[nameof(S.GetInput.Key), TK.Common.Errors.REQUEST_FAILED]],
                 ErrorCodes.COULD_NOT_BE_DESERIALIZED);
         }
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while getting a cached value.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while getting value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogGetFailed(ILogger logger, Exception ex, string key, string? traceId);
+
+    /// <summary>
+    /// Logs that a JSON deserialization exception occurred while getting a cached value.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "JsonException occurred while deserializing value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogGetDeserializationFailed(ILogger logger, Exception ex, string key, string? traceId);
 
     /// <summary>
     /// Parses a Protobuf message from a byte array using a cached delegate.
@@ -145,6 +149,6 @@ public class Get<TValue> : BaseHandler<
             ?? throw new InvalidOperationException(
                 $"The 'Parser' object on type '{typeof(TValue).FullName}' does not have a 'ParseFrom(byte[])' method. Ensure that TValue is a valid protobuf message type.");
 
-        return (byte[] data) => (TValue)parseFromMethod.Invoke(parser, [data])!;
+        return data => (TValue)parseFromMethod.Invoke(parser, [data])!;
     }
 }

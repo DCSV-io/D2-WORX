@@ -51,7 +51,7 @@ Write code following §5 (Code Quality Rules) and §6 (Code Conventions).
 - Track deviations from the plan — if something changes, note it
 - Fix bugs/warnings immediately when discovered — anywhere in the project, not just in files you modified
 - After editing TS code → check `mcp__cclsp__get_diagnostics`
-- After editing .NET code → `dotnet build` (zero warnings)
+- After editing .NET code → `dotnet build` (zero warnings) + `jb inspectcode` (zero warnings)
 
 ### Step 5: Verify (Definition of Done)
 
@@ -59,6 +59,7 @@ Every item MUST pass before a change is "done":
 
 - [ ] **Builds clean** — zero warnings/errors on ALL affected platforms:
   - `.NET`: `dotnet build` — zero StyleCop (SA\***\*), CS\*\*** warnings, null ref warnings
+  - `.NET`: `jb inspectcode` — zero Rider/ReSharper warnings (see §2 for command)
   - `Node.js @d2/*`: `pnpm --filter @d2/xxx exec tsc` (full build if consumers need `dist/`)
   - `SvelteKit`: `pnpm --filter d2-sveltekit exec svelte-check`
 - [ ] **Lint/style clean** — zero warnings:
@@ -94,6 +95,18 @@ dotnet build                                        # Full .NET solution
 pnpm --filter @d2/xxx exec tsc                      # Single Node.js package (emits dist/)
 pnpm --filter @d2/xxx exec tsc --noEmit             # Type-check only (no dist/ output)
 ```
+
+**Rider/ReSharper Inspections (.NET):**
+
+```bash
+# Full solution (WARNING+ severity, text output, no build — run after dotnet build)
+jb inspectcode D2.sln --severity=WARNING --format=Text --no-build --output=inspectcode.log && cat inspectcode.log
+
+# Single project (faster — use during focused work)
+jb inspectcode D2.sln --project="Geo.App" --severity=WARNING --format=Text --no-build --output=inspectcode.log && cat inspectcode.log
+```
+
+These catch warnings that `dotnet build` does NOT surface: `[MustDisposeResource]` misuse, captured variable/closure issues, object initialization suggestions, and other JetBrains-specific inspections. Must be zero warnings.
 
 **Test:**
 
@@ -266,6 +279,8 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Implement the interface**: Handlers MUST implement their interface for DI registration.
 - **`ValueTask` must not be awaited more than once** — call `.AsTask()` once, store the `Task` reference, reuse it for `Task.WhenAll()` and subsequent `await`.
 - **`Random.Shared`** — never `new Random()` in static/singleton contexts. `Random.Shared` is thread-safe.
+- **`[MustDisposeResource]`** (JetBrains.Annotations): `true` = caller is responsible for disposal (factory methods returning `IDisposable`). `false` = framework/DI manages lifetime (DI-injected services, `IHostedService` subclasses, test fixtures with `IAsyncLifetime`). Apply to classes, constructors, and factory methods as appropriate. Audit existing usage when touching disposable types.
+- **Rider inspections are NOT optional**: `jb inspectcode` catches warnings invisible to `dotnet build` — `[MustDisposeResource]` misuse, captured variable/closure issues, `AccessToModifiedClosure`, `AccessToDisposedClosure`. Run after `dotnet build` and fix all warnings. Use `// ReSharper disable once AccessToModifiedClosure` (or `AccessToDisposedClosure`) only for intentional test patterns where the closure capture is by design.
 
 ### TypeScript / Node.js
 
@@ -404,6 +419,8 @@ All logs and spans MUST include these fields for cross-service correlation:
 Before renaming or changing a function signature, use `findReferences` to find all call sites first. Use Grep/Glob for text/pattern searches (comments, strings, config values) where LSP doesn't help.
 
 After writing or editing TS code, check `mcp__cclsp__get_diagnostics` before moving on. Fix type errors and missing imports immediately.
+
+After writing or editing .NET code, run `dotnet build` (zero warnings) AND `jb inspectcode` (zero warnings). The two tools catch different issues — Roslyn analyzers vs JetBrains inspections. Both must be clean.
 
 ### Windows LSP Workaround
 

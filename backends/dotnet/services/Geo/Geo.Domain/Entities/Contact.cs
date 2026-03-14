@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="Contact.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -67,6 +67,16 @@ public record Contact
     /// </summary>
     public required Guid RelatedEntityId { get; init; }
 
+    /// <summary>
+    /// Gets the IETF BCP 47 locale tag (e.g., "en-US", "fr-CA"). Foreign key to the Locale
+    /// reference entity. Synced from the owning user's locale preference. Used by the Comms
+    /// service for notification language.
+    /// </summary>
+    /// <example>
+    /// "en-US", "fr-CA", "ja-JP".
+    /// </example>
+    public required string IETFBCP47Tag { get; init; }
+
     #endregion
 
     #region Nested Properties (Value Objects)
@@ -110,6 +120,12 @@ public record Contact
     /// </summary>
     public Location? Location { get; init; }
 
+    /// <summary>
+    /// Gets navigation property to the <see cref="D2.Geo.Domain.Entities.Locale"/> reference
+    /// entity for the contact's locale.
+    /// </summary>
+    public Locale? Locale { get; init; }
+
     #endregion
 
     #region Functionality
@@ -135,6 +151,9 @@ public record Contact
     /// </param>
     /// <param name="locationHashId">
     /// Foreign key to the associated <see cref="Location"/> entity. Optional.
+    /// </param>
+    /// <param name="ietfBcp47Tag">
+    /// IETF BCP 47 locale tag (e.g., "en-US", "fr-CA"). Defaults to "en-US".
     /// </param>
     ///
     /// <returns>
@@ -164,7 +183,8 @@ public record Contact
         ContactMethods? contactMethods = null,
         Personal? personalDetails = null,
         Professional? professionalDetails = null,
-        string? locationHashId = null)
+        string? locationHashId = null,
+        string? ietfBcp47Tag = null)
     {
         if (contextKey.Falsey())
         {
@@ -199,6 +219,11 @@ public record Contact
             ProfessionalDetails = professionalDetails is not null
                 ? Professional.Create(professionalDetails)
                 : null,
+
+            // Domain stays dependency-free — runtime default is SupportedLocales.BASE at app layer.
+            // EF Core ContactConfig also has HasDefaultValue("en-US") for DB-level default.
+            // Falsey() catches null, empty, and whitespace — all would violate the locales FK.
+            IETFBCP47Tag = ietfBcp47Tag.Falsey() ? "en-US" : ietfBcp47Tag!,
             LocationHashId = locationHashId,
         };
     }
@@ -239,7 +264,8 @@ public record Contact
             contact.ContactMethods,
             contact.PersonalDetails,
             contact.ProfessionalDetails,
-            contact.LocationHashId);
+            contact.LocationHashId,
+            contact.IETFBCP47Tag);
 
     #endregion
 }

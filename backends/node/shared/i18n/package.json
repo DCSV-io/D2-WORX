@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./keys": {
+      "types": "./dist/translation-keys.d.ts",
+      "default": "./dist/translation-keys.js"
     }
   },
   "scripts": {
@@ -16,6 +20,9 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "@d2/service-defaults": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "22.18.8"
   }

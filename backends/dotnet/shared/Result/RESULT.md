@@ -131,7 +131,7 @@ if (result.CheckFailure(out var partialData))
 
 ### Best Practices
 
-1. **Always use semantic factories** instead of raw `Fail()` with manual status codes. If the outcome is "not found", use `NotFound()` — not `Fail(statusCode: HttpStatusCode.NotFound, errorCode: ErrorCodes.NOT_FOUND)`. The factory sets the correct status code, error code, and default message automatically.
+1. **Always use semantic factories** instead of raw `Fail()` with manual status codes. If the outcome is "not found", use `NotFound()` — not `Fail(statusCode: HttpStatusCode.NotFound, errorCode: ErrorCodes.NOT_FOUND)`. The factory sets the correct status code, error code, and default message automatically. Default messages are TK translation key strings (e.g. `"common_errors_NOT_FOUND"`) — the translation middleware resolves them to locale-appropriate text before reaching the client.
 
 2. **Raw `Fail()` is only appropriate** when no semantic factory matches the scenario (e.g., an error handler re-mapping arbitrary upstream status codes, or a status code like `429 Too Many Requests` that has no dedicated factory).
 

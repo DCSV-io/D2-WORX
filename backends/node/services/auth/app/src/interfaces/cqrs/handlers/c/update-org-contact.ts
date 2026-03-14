@@ -9,6 +9,8 @@ export interface UpdateOrgContactHandlerInput {
   readonly updates: UpdateOrgContactInput & {
     /** If provided, triggers contact replacement via UpdateContactsByExtKeys. */
     readonly contact?: ContactInput;
+    /** IETF BCP 47 locale tag for the replacement contact (e.g., "en-US"). */
+    readonly ietfBcp47Tag?: string;
   };
 }
 

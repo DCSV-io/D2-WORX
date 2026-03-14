@@ -8,6 +8,7 @@ namespace D2.Geo.Client.CQRS.Handlers.C;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Constants;
 using Google.Protobuf;
@@ -20,7 +21,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.SetOnDiskOutput;
 /// <summary>
 /// Handler for setting georeference data on disk.
 /// </summary>
-public class SetOnDisk : BaseHandler<SetOnDisk, I, O>, H
+public partial class SetOnDisk : BaseHandler<SetOnDisk, I, O>, H
 {
     private readonly string r_filePath;
 
@@ -74,16 +75,19 @@ public class SetOnDisk : BaseHandler<SetOnDisk, I, O>, H
         }
         catch (IOException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "IOException occurred while writing georeference data to disk. TraceId: {TraceId}",
-                TraceId);
+            LogDiskWriteFailed(Context.Logger, ex, TraceId);
 
             return D2Result<O?>.Fail(
-                ["Unable to write to disk."],
+                [TK.Geo.Errors.DISK_WRITE_FAILED],
                 HttpStatusCode.InternalServerError);
         }
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs an error when an IOException occurs while writing georeference data to disk.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "IOException occurred while writing georeference data to disk. TraceId: {TraceId}")]
+    private static partial void LogDiskWriteFailed(ILogger logger, Exception ex, string? traceId);
 }

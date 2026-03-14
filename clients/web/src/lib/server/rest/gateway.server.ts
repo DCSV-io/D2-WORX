@@ -15,6 +15,7 @@
  * client-side bundles (SvelteKit convention).
  */
 import { D2Result } from "@d2/result";
+import { getLocale } from "$lib/paraglide/runtime.js";
 import { getAuthContext } from "../auth.server.js";
 import { executeFetch } from "$lib/shared/rest/gateway-response.js";
 
@@ -59,9 +60,16 @@ export function getGatewayContext(): GatewayContext {
 
 /**
  * Build common headers for gateway requests.
+ *
+ * Always includes `D2-Locale` so the gateway's TranslationMiddleware can
+ * translate D2Result messages into the user's language. The locale is
+ * resolved by Paraglide's AsyncLocalStorage context (set by the
+ * paraglideMiddleware in hooks.server.ts).
  */
 function buildHeaders(options?: GatewayRequestOptions): Headers {
   const headers = new Headers();
+
+  headers.set("D2-Locale", getLocale());
 
   if (options?.body !== undefined) {
     headers.set("Content-Type", "application/json");
@@ -110,16 +118,12 @@ export async function gatewayFetch<TData = void>(
   const authCtx = getAuthContext();
 
   if (!authCtx) {
-    return D2Result.serviceUnavailable<TData>({
-      messages: ["Auth context not available — cannot obtain JWT for gateway call."],
-    });
+    return D2Result.serviceUnavailable<TData>();
   }
 
   const jwt = await authCtx.jwtManager.getToken(cookies);
   if (!jwt) {
-    return D2Result.unauthorized<TData>({
-      messages: ["Failed to obtain JWT for gateway call."],
-    });
+    return D2Result.unauthorized<TData>();
   }
 
   const headers = buildHeaders(options);

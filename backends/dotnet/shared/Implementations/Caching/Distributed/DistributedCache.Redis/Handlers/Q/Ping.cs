@@ -19,7 +19,7 @@ using O = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead.PingOutput;
 /// <summary>
 /// Handler for pinging Redis to verify connectivity.
 /// </summary>
-public class Ping : BaseHandler<H, I, O>, H
+public partial class Ping : BaseHandler<H, I, O>, H
 {
     private readonly IConnectionMultiplexer r_redis;
 
@@ -59,13 +59,16 @@ public class Ping : BaseHandler<H, I, O>, H
         catch (RedisException ex)
         {
             sw.Stop();
-            Context.Logger.LogError(
-                ex,
-                "Redis ping failed. TraceId: {TraceId}",
-                TraceId);
+            LogPingFailed(Context.Logger, ex, TraceId);
 
             return D2Result<O?>.Ok(
                 new O(false, sw.ElapsedMilliseconds, ex.Message));
         }
     }
+
+    /// <summary>
+    /// Logs that a Redis ping failed.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Redis ping failed. TraceId: {TraceId}")]
+    private static partial void LogPingFailed(ILogger logger, Exception ex, string? traceId);
 }

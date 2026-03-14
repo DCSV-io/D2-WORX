@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="ICreate.CreateWhoIs.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -7,6 +7,7 @@
 namespace D2.Geo.App.Interfaces.Repository.Handlers.C;
 
 using D2.Geo.Domain.Entities;
+using D2.Shared.Handler;
 
 public partial interface ICreate
 {
@@ -14,7 +15,7 @@ public partial interface ICreate
     /// Handler for upserting WhoIs records.
     /// </summary>
     public interface ICreateWhoIsHandler
-        : D2.Shared.Handler.IHandler<CreateWhoIsInput, CreateWhoIsOutput>;
+        : IHandler<CreateWhoIsInput, CreateWhoIsOutput>;
 
     /// <summary>
     /// Input for upserting WhoIs records.

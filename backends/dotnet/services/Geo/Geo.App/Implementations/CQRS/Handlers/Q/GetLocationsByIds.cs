@@ -21,7 +21,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Handler for getting locations by their IDs.
 /// </summary>
-public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
+public partial class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
 {
     private readonly IRead.IGetManyHandler<Location> r_memoryCacheGetMany;
     private readonly IUpdate.ISetManyHandler<Location> r_memoryCacheSetMany;
@@ -150,6 +150,18 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         }
     }
 
+    private static D2Result<O?> Success(Dictionary<string, Location> locations) =>
+        D2Result<O?>.Ok(new O(locations));
+
+    private static D2Result<O?> SomeFound(Dictionary<string, Location> locations) =>
+        D2Result<O?>.SomeFound(new O(locations));
+
+    /// <summary>
+    /// Logs an error when setting locations in the memory cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to set locations in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.")]
+    private static partial void LogCacheSetFailed(ILogger logger, Type handlerName, string? traceId, string? errorCode, List<string> messages);
+
     private async ValueTask SetInCacheAsync(
         Dictionary<string, Location> locationsFromDbDict,
         CancellationToken ct)
@@ -164,18 +176,7 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
 
         if (setInCacheR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set locations in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.",
-                typeof(GetLocationsByIds),
-                TraceId,
-                setInCacheR.ErrorCode,
-                setInCacheR.Messages);
+            LogCacheSetFailed(Context.Logger, typeof(GetLocationsByIds), TraceId, setInCacheR.ErrorCode, setInCacheR.Messages);
         }
     }
-
-    private D2Result<O?> Success(Dictionary<string, Location> locations) =>
-        D2Result<O?>.Ok(new O(locations));
-
-    private D2Result<O?> SomeFound(Dictionary<string, Location> locations) =>
-        D2Result<O?>.SomeFound(new O(locations));
 }

@@ -365,7 +365,7 @@ public class EmailAddressTests
         // Arrange
         var emails = new[]
         {
-            ("test1@example.com", (IEnumerable<string>?)["work"]),
+            ("test1@example.com", ["work"]),
             ("test2@example.com", (IEnumerable<string>?)["personal"]),
         };
 

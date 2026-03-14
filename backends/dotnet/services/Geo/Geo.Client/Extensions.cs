@@ -27,7 +27,7 @@ using Microsoft.Extensions.Options;
 /// <summary>
 /// Extension methods for adding GeoRefDataService handlers.
 /// </summary>
-public static class Extensions
+public static partial class Extensions
 {
     /// <summary>
     /// Adds GeoRefDataService handlers for consumer services.
@@ -147,15 +147,14 @@ public static class Extensions
                     {
                         if (to == CircuitState.Open)
                         {
-                            logger.LogWarning(
-                                "Geo gRPC circuit breaker opened after {Threshold} consecutive failures. " +
-                                "Will probe in {Cooldown}.",
+                            LogCircuitBreakerOpened(
+                                logger,
                                 opts.CircuitBreakerFailureThreshold,
                                 opts.CircuitBreakerCooldownDuration);
                         }
                         else if (to == CircuitState.Closed && from == CircuitState.HalfOpen)
                         {
-                            logger.LogInformation("Geo gRPC circuit breaker closed — service recovered.");
+                            LogCircuitBreakerClosed(logger);
                         }
                     });
             });
@@ -218,4 +217,16 @@ public static class Extensions
             }
         }
     }
+
+    /// <summary>
+    /// Logs a warning when the Geo gRPC circuit breaker opens after consecutive failures.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Geo gRPC circuit breaker opened after {Threshold} consecutive failures. Will probe in {Cooldown}.")]
+    private static partial void LogCircuitBreakerOpened(ILogger logger, int threshold, TimeSpan cooldown);
+
+    /// <summary>
+    /// Logs an informational message when the Geo gRPC circuit breaker closes after recovery.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Geo gRPC circuit breaker closed — service recovered.")]
+    private static partial void LogCircuitBreakerClosed(ILogger logger);
 }

@@ -143,7 +143,7 @@ public class D2ResultTests
 
         // Assert
         Assert.False(result.Success);
-        Assert.Contains("One or more validation errors occurred.", result.Messages);
+        Assert.Contains("common_errors_VALIDATION_FAILED", result.Messages);
         Assert.Equal(inputErrors, result.InputErrors);
         Assert.Equal(HttpStatusCode.BadRequest, result.StatusCode);
         Assert.Equal(ErrorCodes.VALIDATION_FAILED, result.ErrorCode);

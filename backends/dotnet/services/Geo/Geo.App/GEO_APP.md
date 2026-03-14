@@ -47,7 +47,7 @@ Application layer for the Geo microservice defining handler interfaces and imple
 > | File Name                                                                                | Description                                                                                                                                                                   |
 > | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 > | [Get.cs](Implementations/CQRS/Handlers/X/Get.cs)                                         | Publisher-side orchestrator implementing memory → Redis → DB → disk fallback with cache population and update notification on authoritative fetch.                            |
-> | [FindWhoIs.cs](Implementations/CQRS/Handlers/X/FindWhoIs.cs)                             | Complex handler for WhoIs lookup by IP+fingerprint with cache check → external API → create flow, returning WhoIsDTOs with nested Location data when present.                 |
+> | [FindWhoIs.cs](Implementations/CQRS/Handlers/X/FindWhoIs.cs)                             | Complex handler for WhoIs lookup by IP with cache check → external API → create flow, returning WhoIsDTOs with nested Location data when present.                             |
 > | [UpdateContactsByExtKeys.cs](Implementations/CQRS/Handlers/X/UpdateContactsByExtKeys.cs) | Complex handler replacing contacts at given ext-keys (deletes old, creates new), returns ContactReplacement list with old-to-new ID mappings, publishes cache eviction event. |
 
 ---

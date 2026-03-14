@@ -22,7 +22,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.C.ICommands.DeleteContactsByExt
 /// Handler for deleting Geo contacts by ext keys via gRPC.
 /// Evicts deleted contacts from the local ext-key cache.
 /// </summary>
-public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O>, H
+public partial class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O>, H
 {
     private readonly IDelete.IRemoveHandler r_cacheRemove;
     private readonly GeoService.GeoServiceClient r_geoClient;
@@ -78,14 +78,16 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
                 new(CacheKeys.ContactsByExtKey(key.ContextKey, Guid.Parse(key.RelatedEntityId))), ct);
             if (removeR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
-                    key.ContextKey,
-                    key.RelatedEntityId,
-                    TraceId);
+                LogCacheEvictionFailed(Context.Logger, key.ContextKey, key.RelatedEntityId, TraceId);
             }
         }
 
         return D2Result<O?>.Bubble(r, new(r.Data));
     }
+
+    /// <summary>
+    /// Logs a warning when evicting a contacts-by-extkey entry from the cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}")]
+    private static partial void LogCacheEvictionFailed(ILogger logger, string contextKey, string relatedEntityId, string? traceId);
 }

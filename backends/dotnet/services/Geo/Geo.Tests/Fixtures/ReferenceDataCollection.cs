@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Tests.Fixtures;
 
+using System.Diagnostics.CodeAnalysis;
 using Xunit;
 
 /// <summary>
@@ -13,4 +14,5 @@ using Xunit;
 /// Tests in this collection assert on specific counts (249 countries, 183 subdivisions, etc.).
 /// </summary>
 [CollectionDefinition("ReferenceData")]
+[SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "xUnit collection definition convention requires 'Collection' suffix.")]
 public class ReferenceDataCollection : ICollectionFixture<SharedPostgresFixture>;

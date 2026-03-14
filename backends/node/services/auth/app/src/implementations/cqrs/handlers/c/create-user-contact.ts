@@ -3,6 +3,7 @@ import { BaseHandler, type IHandlerContext, zodGuid, zodNonEmptyString } from "@
 import { D2Result } from "@d2/result";
 import type { ContactToCreateDTO } from "@d2/protos";
 import { GEO_CONTEXT_KEYS } from "@d2/auth-domain";
+import { BASE_LOCALE } from "@d2/i18n";
 import type { Commands as GeoCommands } from "@d2/geo-client";
 import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 
@@ -13,6 +14,7 @@ const schema = z.object({
   userId: zodGuid,
   email: zodNonEmptyString(254), // Geo contact-schemas max
   name: zodNonEmptyString(511), // firstName(255) + " " + lastName(255)
+  locale: zodNonEmptyString(35), // BCP 47 tag (e.g. "en", "fr-CA")
 });
 
 /**
@@ -72,6 +74,9 @@ export class CreateUserContact
       },
       professionalDetails: undefined,
       location: undefined,
+      // Resolve bare language codes (e.g., "en" from pre-BCP47 users) to full tags.
+      // Passes through full tags as-is to preserve case matching with Geo locales FK.
+      ietfBcp47Tag: input.locale.includes("-") ? input.locale : BASE_LOCALE,
     };
 
     const result = await this.createContacts.handleAsync({ contacts: [contactToCreate] });

@@ -357,7 +357,7 @@ public class SeedDataIntegrityTests
             $"{tableName}: Expected at least {minimumExpected}, found {joinTableData.Count}");
     }
 
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     private static GeoDbContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<GeoDbContext>()

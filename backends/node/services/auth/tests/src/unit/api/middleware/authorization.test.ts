@@ -61,7 +61,7 @@ describe("requireOrg", () => {
     const res = await app.request("/test");
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.messages[0]).toContain("No active organization");
+    expect(body.messages[0]).toContain("middleware_errors_NO_ACTIVE_ORGANIZATION");
   });
 
   it("should reject with 403 when orgType is invalid", async () => {
@@ -112,7 +112,7 @@ describe("requireOrgType", () => {
     const res = await app.request("/test");
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.messages[0]).toContain("Organization type not authorized");
+    expect(body.messages[0]).toContain("middleware_errors_ORG_TYPE_NOT_AUTHORIZED");
   });
 
   it("should reject with 401 when no session", async () => {
@@ -140,7 +140,7 @@ describe("requireRole", () => {
     const res = await app.request("/test");
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.messages[0]).toContain("Insufficient role");
+    expect(body.messages[0]).toContain("middleware_errors_INSUFFICIENT_ROLE");
   });
 
   it("should reject auditor when minRole is agent", async () => {
@@ -404,7 +404,7 @@ describe("middleware composition", () => {
     const res = await app.request("/test");
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.messages[0]).toContain("Organization type not authorized");
+    expect(body.messages[0]).toContain("middleware_errors_ORG_TYPE_NOT_AUTHORIZED");
   });
 
   it("should reject at role check when orgType passes but role is too low", async () => {
@@ -417,6 +417,6 @@ describe("middleware composition", () => {
     const res = await app.request("/test");
     expect(res.status).toBe(403);
     const body = await res.json();
-    expect(body.messages[0]).toContain("Insufficient role");
+    expect(body.messages[0]).toContain("middleware_errors_INSUFFICIENT_ROLE");
   });
 });

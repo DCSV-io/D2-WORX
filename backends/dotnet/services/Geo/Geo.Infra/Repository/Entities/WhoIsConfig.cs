@@ -41,10 +41,6 @@ public class WhoIsConfig : IEntityTypeConfiguration<WhoIs>
             .HasColumnName("month")
             .IsRequired();
 
-        builder.Property(w => w.Fingerprint)
-            .HasColumnName("fingerprint")
-            .HasMaxLength(2048);
-
         // ASN properties.
         builder.Property(w => w.ASN)
             .HasColumnName("asn");
@@ -127,9 +123,5 @@ public class WhoIsConfig : IEntityTypeConfiguration<WhoIs>
         // Indexes.
         builder.HasIndex(w => w.IPAddress)
             .HasDatabaseName("ix_who_is_ip_address");
-
-        builder.HasIndex(w => w.Fingerprint)
-            .HasDatabaseName("ix_who_is_fingerprint")
-            .HasFilter("fingerprint IS NOT NULL");
     }
 }

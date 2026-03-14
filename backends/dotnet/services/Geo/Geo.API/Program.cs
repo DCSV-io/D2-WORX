@@ -7,9 +7,12 @@
 using D2.Geo.App;
 using D2.Geo.Client;
 using D2.Geo.Infra;
+using D2.Geo.Infra.Repository;
 using D2.Shared.Handler.Extensions;
+using D2.Shared.I18n;
 using D2.Shared.ServiceDefaults;
 using D2.Shared.Utilities.Configuration;
+using Geo.API.Interceptors;
 using Geo.API.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -26,7 +29,7 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 builder.Services.AddGrpc(options =>
 {
-    options.Interceptors.Add<Geo.API.Interceptors.ApiKeyInterceptor>();
+    options.Interceptors.Add<ApiKeyInterceptor>();
 });
 builder.Services.AddHandlerContext();
 builder.Services.AddGeoInfra(
@@ -36,6 +39,8 @@ builder.Services.AddGeoInfra(
     messageQueueConnectionString);
 builder.Services.AddGeoRefDataProvider();
 builder.Services.AddGeoApp(builder.Configuration);
+
+SupportedLocales.Configure(builder.Configuration);
 
 // Build app and use middleware.
 var app = builder.Build();
@@ -56,7 +61,7 @@ if (Environment.GetEnvironmentVariable("AUTO_MIGRATE") == "true")
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider
-        .GetRequiredService<D2.Geo.Infra.Repository.GeoDbContext>();
+        .GetRequiredService<GeoDbContext>();
     db.Database.Migrate();
     Log.Information("Auto-migration complete for Geo database");
 }

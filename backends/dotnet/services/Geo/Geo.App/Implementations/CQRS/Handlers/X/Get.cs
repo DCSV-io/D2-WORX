@@ -22,7 +22,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.GetOutput;
 /// <summary>
 /// Handler for getting georeference data.
 /// </summary>
-public class Get : BaseHandler<Get, I, O>, H
+public partial class Get : BaseHandler<Get, I, O>, H
 {
     private readonly IQueries.IGetFromMemHandler r_getFromMem;
     private readonly IQueries.IGetFromDistHandler r_getFromDist;
@@ -120,6 +120,36 @@ public class Get : BaseHandler<Get, I, O>, H
     }
 
     /// <summary>
+    /// Logs an error when fetching reference data from the database fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to get data from database (provider). TraceId: {TraceId}")]
+    private static partial void LogDatabaseFetchFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when setting reference data in the memory cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to set data in memory cache (provider). TraceId: {TraceId}")]
+    private static partial void LogSetInMemoryFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when setting reference data on disk fails.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "Failed to set data on disk (provider). TraceId: {TraceId}")]
+    private static partial void LogSetOnDiskFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when setting reference data in the distributed cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "Failed to set data in distributed cache (provider). TraceId: {TraceId}")]
+    private static partial void LogSetInDistFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when publishing the update notification fails.
+    /// </summary>
+    [LoggerMessage(EventId = 5, Level = LogLevel.Error, Message = "Failed to publish update notification (provider). TraceId: {TraceId}")]
+    private static partial void LogNotifyUpdateFailed(ILogger logger, string? traceId);
+
+    /// <summary>
     /// Attempts to get the georeference data from various sources.
     /// </summary>
     ///
@@ -176,9 +206,7 @@ public class Get : BaseHandler<Get, I, O>, H
         }
 
         // If we failed to get it from the database, log the error.
-        Context.Logger.LogError(
-            "Failed to get data from database (provider). TraceId: {TraceId}",
-            TraceId);
+        LogDatabaseFetchFailed(Context.Logger, TraceId);
 
         // Then try to get it from disk.
         var diskR = await r_getFromDisk.HandleAsync(new(), ct);
@@ -222,9 +250,7 @@ public class Get : BaseHandler<Get, I, O>, H
         var setInMemR = await r_setInMem.HandleAsync(new(data), ct);
         if (setInMemR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set data in memory cache (provider). TraceId: {TraceId}",
-                TraceId);
+            LogSetInMemoryFailed(Context.Logger, TraceId);
         }
     }
 
@@ -245,9 +271,7 @@ public class Get : BaseHandler<Get, I, O>, H
         var setOnDiskR = await r_setOnDisk.HandleAsync(new(data), ct);
         if (setOnDiskR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set data on disk (provider). TraceId: {TraceId}",
-                TraceId);
+            LogSetOnDiskFailed(Context.Logger, TraceId);
         }
     }
 
@@ -276,11 +300,8 @@ public class Get : BaseHandler<Get, I, O>, H
             return D2Result.Ok();
         }
 
-        Context.Logger.LogError(
-            "Failed to set data in distributed cache (provider). TraceId: {TraceId}",
-            TraceId);
-        return D2Result.UnhandledException(
-            ["Failed to set data in distributed cache."]);
+        LogSetInDistFailed(Context.Logger, TraceId);
+        return D2Result.UnhandledException();
     }
 
     /// <summary>
@@ -300,9 +321,7 @@ public class Get : BaseHandler<Get, I, O>, H
         var updateR = await r_updater.HandleAsync(new(data.Version), ct);
         if (updateR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to publish update notification (provider). TraceId: {TraceId}",
-                TraceId);
+            LogNotifyUpdateFailed(Context.Logger, TraceId);
         }
     }
 }

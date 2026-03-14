@@ -134,29 +134,29 @@ public class ValidatorsTests
     /// <summary>
     /// Tests that valid UUIDs pass validation.
     /// </summary>
-    /// <param name="guid">The UUID to validate.</param>
+    /// <param name="value">The UUID to validate.</param>
     [Theory]
     [InlineData("550e8400-e29b-41d4-a716-446655440000")]
     [InlineData("00000000-0000-0000-0000-000000000001")]
-    public void IsValidGuid_WithValidUuid_Passes(string guid)
+    public void IsValidGuid_WithValidUuid_Passes(string value)
     {
         var validator = new GuidTestValidator();
-        var result = validator.Validate(new StringTestModel(guid));
+        var result = validator.Validate(new StringTestModel(value));
         result.IsValid.Should().BeTrue();
     }
 
     /// <summary>
     /// Tests that invalid UUIDs fail validation.
     /// </summary>
-    /// <param name="guid">The invalid UUID to validate.</param>
+    /// <param name="value">The invalid UUID to validate.</param>
     [Theory]
     [InlineData("")]
     [InlineData("not-a-guid")]
     [InlineData("550e8400-e29b-41d4-a716")]
-    public void IsValidGuid_WithInvalidUuid_Fails(string guid)
+    public void IsValidGuid_WithInvalidUuid_Fails(string value)
     {
         var validator = new GuidTestValidator();
-        var result = validator.Validate(new StringTestModel(guid));
+        var result = validator.Validate(new StringTestModel(value));
         result.IsValid.Should().BeFalse();
     }
 
@@ -272,13 +272,13 @@ public class ValidatorsTests
 
     #region Test Models & Validators
 
-    private record IpTestModel(string IpAddress);
+    private sealed record IpTestModel(string IpAddress);
 
-    private record StringTestModel(string Value);
+    private sealed record StringTestModel(string Value);
 
-    private record ListTestModel(List<string> Items);
+    private sealed record ListTestModel(List<string> Items);
 
-    private class IpAddressTestValidator : AbstractValidator<IpTestModel>
+    private sealed class IpAddressTestValidator : AbstractValidator<IpTestModel>
     {
         public IpAddressTestValidator()
         {
@@ -286,7 +286,7 @@ public class ValidatorsTests
         }
     }
 
-    private class HashIdTestValidator : AbstractValidator<StringTestModel>
+    private sealed class HashIdTestValidator : AbstractValidator<StringTestModel>
     {
         public HashIdTestValidator()
         {
@@ -294,7 +294,7 @@ public class ValidatorsTests
         }
     }
 
-    private class GuidTestValidator : AbstractValidator<StringTestModel>
+    private sealed class GuidTestValidator : AbstractValidator<StringTestModel>
     {
         public GuidTestValidator()
         {
@@ -302,7 +302,7 @@ public class ValidatorsTests
         }
     }
 
-    private class EmailTestValidator : AbstractValidator<StringTestModel>
+    private sealed class EmailTestValidator : AbstractValidator<StringTestModel>
     {
         public EmailTestValidator()
         {
@@ -310,7 +310,7 @@ public class ValidatorsTests
         }
     }
 
-    private class PhoneTestValidator : AbstractValidator<StringTestModel>
+    private sealed class PhoneTestValidator : AbstractValidator<StringTestModel>
     {
         public PhoneTestValidator()
         {
@@ -318,7 +318,7 @@ public class ValidatorsTests
         }
     }
 
-    private class ListTestValidator : AbstractValidator<ListTestModel>
+    private sealed class ListTestValidator : AbstractValidator<ListTestModel>
     {
         public ListTestValidator()
         {

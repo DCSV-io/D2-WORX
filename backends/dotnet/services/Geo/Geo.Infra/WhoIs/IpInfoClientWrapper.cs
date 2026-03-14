@@ -15,7 +15,7 @@ using Microsoft.Extensions.Options;
 /// <summary>
 /// Implementation of <see cref="IIpInfoClient"/> wrapping the IPinfo.io SDK.
 /// </summary>
-public class IpInfoClientWrapper : IIpInfoClient
+public partial class IpInfoClientWrapper : IIpInfoClient
 {
     private readonly IPinfoClient r_client;
     private readonly ILogger<IpInfoClientWrapper> r_logger;
@@ -36,9 +36,7 @@ public class IpInfoClientWrapper : IIpInfoClient
     {
         if (options.Value.IpInfoAccessToken.Falsey())
         {
-            logger.LogCritical(
-                "IpInfoAccessToken is not configured — IPinfo requests will use unauthenticated (rate-limited) access. " +
-                "Set GeoInfraOptions:IpInfoAccessToken via configuration or environment variables for production use.");
+            LogIpInfoTokenNotConfigured(logger);
         }
 
         r_client = new IPinfoClient.Builder()
@@ -80,8 +78,20 @@ public class IpInfoClientWrapper : IIpInfoClient
         catch (Exception ex)
         {
             // Do not log raw ipAddress — it is PII.
-            r_logger.LogError(ex, "Failed to get IP details from IPinfo.io");
+            LogGetIpDetailsFailed(r_logger, ex);
             return null;
         }
     }
+
+    /// <summary>
+    /// Logs a critical message when the IpInfo access token is not configured.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Critical, Message = "IpInfoAccessToken is not configured — IPinfo requests will use unauthenticated (rate-limited) access. Set GeoInfraOptions:IpInfoAccessToken via configuration or environment variables for production use.")]
+    private static partial void LogIpInfoTokenNotConfigured(ILogger logger);
+
+    /// <summary>
+    /// Logs an error when fetching IP details from IPinfo.io fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to get IP details from IPinfo.io")]
+    private static partial void LogGetIpDetailsFailed(ILogger logger, Exception exception);
 }

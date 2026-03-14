@@ -60,7 +60,7 @@ describe("createSessionMiddleware", () => {
 
     expect(res.status).toBe(503);
     const body = await res.json();
-    expect(body.messages[0]).toContain("Service temporarily unavailable");
+    expect(body.messages[0]).toContain("common_errors_SERVICE_UNAVAILABLE");
   });
 
   it("should return 503 on infrastructure failure, not 401", async () => {

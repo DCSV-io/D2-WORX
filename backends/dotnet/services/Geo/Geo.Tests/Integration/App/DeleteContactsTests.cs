@@ -6,7 +6,6 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Events.Protos.V1;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.Domain.Entities;
@@ -29,7 +28,7 @@ using GetContactsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByIds
 using IPubs = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs;
 
 /// <summary>
-/// Integration tests for the <see cref="DeleteContacts"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.C.DeleteContacts"/> CQRS handler.
 /// </summary>
 [Collection("SharedPostgres")]
 [MustDisposeResource(value: false)]
@@ -56,7 +55,7 @@ public class DeleteContactsTests : IAsyncLifetime
         r_fixture = fixture;
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public ValueTask InitializeAsync()
@@ -83,6 +82,7 @@ public class DeleteContactsTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _db.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region Empty Input Tests

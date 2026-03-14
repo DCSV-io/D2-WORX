@@ -13,7 +13,7 @@ import type { RequestHandler } from "./$types";
 const handler: RequestHandler = async (event) => {
   const ctx = getAuthContext();
   if (!ctx) {
-    const result = D2Result.serviceUnavailable({ messages: ["Auth service not configured."] });
+    const result = D2Result.serviceUnavailable();
     return new Response(JSON.stringify(result), {
       status: result.statusCode,
       headers: { "Content-Type": "application/json" },

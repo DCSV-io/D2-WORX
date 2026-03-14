@@ -58,7 +58,7 @@ export function createUser(input: CreateUserInput): User {
     displayUsername: input.displayUsername,
     emailVerified: input.emailVerified ?? false,
     image: input.image ?? null,
-    locale: input.locale ?? "en",
+    locale: input.locale ?? "en-US",
     createdAt: new Date(),
     updatedAt: new Date(),
   };

@@ -14,6 +14,7 @@ using D2.Geo.Infra.WhoIs.Handlers.R;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -24,7 +25,8 @@ using InMemCache = D2.Shared.InMemoryCache.Default.Handlers;
 /// <summary>
 /// Unit tests for the <see cref="Populate"/> WhoIs provider handler.
 /// </summary>
-public class PopulateTests
+[MustDisposeResource(false)]
+public sealed class PopulateTests : IDisposable
 {
     private readonly Mock<IIpInfoClient> r_mockIpInfoClient;
     private readonly Mock<ICreate.ICreateLocationsHandler> r_mockCreateLocations;
@@ -37,6 +39,7 @@ public class PopulateTests
     /// <summary>
     /// Initializes a new instance of the <see cref="PopulateTests"/> class.
     /// </summary>
+    [MustDisposeResource(false)]
     public PopulateTests()
     {
         r_mockIpInfoClient = new Mock<IIpInfoClient>();
@@ -60,7 +63,13 @@ public class PopulateTests
         r_setManyCache = new InMemCache.U.SetMany<string>(r_memoryCache, r_context);
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        r_memoryCache.Dispose();
+    }
 
     #region Empty Input Tests
 
@@ -110,8 +119,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: "127.0.0.1",
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
@@ -146,8 +154,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: "::1",
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         var input = new IRead.PopulateInput(new Dictionary<string, WhoIs>
         {
@@ -187,8 +194,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         r_mockIpInfoClient
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
@@ -229,7 +235,6 @@ public class PopulateTests
         populatedWhoIs.IPAddress.Should().Be(ipAddress);
         populatedWhoIs.Year.Should().Be(2025);
         populatedWhoIs.Month.Should().Be(6);
-        populatedWhoIs.Fingerprint.Should().Be("test-fingerprint");
         populatedWhoIs.ASN.Should().Be(15169);
         populatedWhoIs.ASName.Should().Be("Google LLC");
         populatedWhoIs.IsHosting.Should().BeTrue();
@@ -261,8 +266,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "cloudflare-test");
+            month: 6);
 
         r_mockIpInfoClient
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
@@ -311,8 +315,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         r_mockIpInfoClient
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
@@ -361,8 +364,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         r_mockIpInfoClient
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
@@ -413,8 +415,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         r_mockIpInfoClient
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
@@ -454,8 +455,8 @@ public class PopulateTests
         var ip1 = "8.8.8.8";
         var ip2 = "8.8.4.4";
 
-        var whoIs1 = WhoIs.Create(ip1, 2025, 6, "fp1");
-        var whoIs2 = WhoIs.Create(ip2, 2025, 6, "fp2");
+        var whoIs1 = WhoIs.Create(ip1, 2025, 6);
+        var whoIs2 = WhoIs.Create(ip2, 2025, 6);
 
         // Both IPs return same location data
         var sharedLocationResponse = new IpInfoResponse
@@ -520,8 +521,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         r_mockIpInfoClient
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
@@ -567,8 +567,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         r_mockIpInfoClient
             .Setup(x => x.GetDetailsAsync(ipAddress, It.IsAny<CancellationToken>()))
@@ -636,8 +635,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         SetupGeoRefWithSubdivisions(("US-CA", "California", "US"));
 
@@ -692,8 +690,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         SetupGeoRefWithSubdivisions(("CA-AB", "Alberta", "CA"));
 
@@ -742,8 +739,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         r_mockGetGeoRef
             .Setup(x => x.HandleAsync(It.IsAny<GeoComplex.GetInput>(), It.IsAny<CancellationToken>(), It.IsAny<HandlerOptions?>()))
@@ -791,8 +787,7 @@ public class PopulateTests
         var partialWhoIs = WhoIs.Create(
             ipAddress: ipAddress,
             year: 2025,
-            month: 6,
-            fingerprint: "test-fingerprint");
+            month: 6);
 
         // GeoRef has US-CA but not "Atlantis"
         SetupGeoRefWithSubdivisions(("US-CA", "California", "US"));

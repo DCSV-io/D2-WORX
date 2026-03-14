@@ -83,6 +83,11 @@ export const deliveryAttempt = pgTable(
   (t) => [
     index("idx_delivery_attempt_request_id").on(t.requestId),
     index("idx_delivery_attempt_status_retry").on(t.status, t.nextRetryAt),
+    uniqueIndex("uq_delivery_attempt_request_channel_attempt").on(
+      t.requestId,
+      t.channel,
+      t.attemptNumber,
+    ),
   ],
 );
 

@@ -30,7 +30,7 @@ using GetContactsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetContactsByIds
 using GetLocationsByIdsRepo = D2.Geo.Infra.Repository.Handlers.R.GetLocationsByIds;
 
 /// <summary>
-/// Integration tests for the <see cref="GetContactsByIds"/> CQRS handler.
+/// Integration tests for the <see cref="Geo.App.Implementations.CQRS.Handlers.Q.GetContactsByIds"/> CQRS handler.
 /// </summary>
 [Collection("SharedPostgres")]
 [MustDisposeResource(value: false)]
@@ -57,7 +57,7 @@ public class GetContactsByIdsTests : IAsyncLifetime
         r_fixture = fixture;
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public ValueTask InitializeAsync()
@@ -75,6 +75,7 @@ public class GetContactsByIdsTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _db.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region Empty Input Tests

@@ -101,7 +101,6 @@ export interface FindWhoIsRequest {
 
 export interface FindWhoIsKeys {
   ipAddress: string;
-  fingerprint: string;
 }
 
 export interface FindWhoIsResponse {
@@ -213,7 +212,11 @@ export interface ContactToCreateDTO {
     | ProfessionalDTO
     | undefined;
   /** Full location data or just hash_id to reference existing. */
-  location: LocationDTO | undefined;
+  location:
+    | LocationDTO
+    | undefined;
+  /** IETF BCP 47 locale tag (e.g. "en-US", "fr-CA"). Synced from User.locale. */
+  ietfBcp47Tag: string;
 }
 
 export interface CountryDTO {
@@ -358,7 +361,6 @@ export interface WhoIsDTO {
   ipAddress: string;
   year: number;
   month: number;
-  fingerprint: string;
   /** ASN properties. */
   asn: number;
   asName: string;
@@ -397,7 +399,11 @@ export interface ContactDTO {
     | ProfessionalDTO
     | undefined;
   /** Full location data (null if no location). */
-  location: LocationDTO | undefined;
+  location:
+    | LocationDTO
+    | undefined;
+  /** IETF BCP 47 locale tag (e.g. "en-US", "fr-CA"). Synced from User.locale. */
+  ietfBcp47Tag: string;
 }
 
 function createBaseRequestReferenceDataUpdateRequest(): RequestReferenceDataUpdateRequest {
@@ -1593,16 +1599,13 @@ export const FindWhoIsRequest: MessageFns<FindWhoIsRequest> = {
 };
 
 function createBaseFindWhoIsKeys(): FindWhoIsKeys {
-  return { ipAddress: "", fingerprint: "" };
+  return { ipAddress: "" };
 }
 
 export const FindWhoIsKeys: MessageFns<FindWhoIsKeys> = {
   encode(message: FindWhoIsKeys, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
     if (message.ipAddress !== "") {
       writer.uint32(10).string(message.ipAddress);
-    }
-    if (message.fingerprint !== "") {
-      writer.uint32(18).string(message.fingerprint);
     }
     return writer;
   },
@@ -1622,14 +1625,6 @@ export const FindWhoIsKeys: MessageFns<FindWhoIsKeys> = {
           message.ipAddress = reader.string();
           continue;
         }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.fingerprint = reader.string();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1646,7 +1641,6 @@ export const FindWhoIsKeys: MessageFns<FindWhoIsKeys> = {
         : isSet(object.ip_address)
         ? globalThis.String(object.ip_address)
         : "",
-      fingerprint: isSet(object.fingerprint) ? globalThis.String(object.fingerprint) : "",
     };
   },
 
@@ -1654,9 +1648,6 @@ export const FindWhoIsKeys: MessageFns<FindWhoIsKeys> = {
     const obj: any = {};
     if (message.ipAddress !== "") {
       obj.ipAddress = message.ipAddress;
-    }
-    if (message.fingerprint !== "") {
-      obj.fingerprint = message.fingerprint;
     }
     return obj;
   },
@@ -1667,7 +1658,6 @@ export const FindWhoIsKeys: MessageFns<FindWhoIsKeys> = {
   fromPartial<I extends Exact<DeepPartial<FindWhoIsKeys>, I>>(object: I): FindWhoIsKeys {
     const message = createBaseFindWhoIsKeys();
     message.ipAddress = object.ipAddress ?? "";
-    message.fingerprint = object.fingerprint ?? "";
     return message;
   },
 };
@@ -3136,6 +3126,7 @@ function createBaseContactToCreateDTO(): ContactToCreateDTO {
     personalDetails: undefined,
     professionalDetails: undefined,
     location: undefined,
+    ietfBcp47Tag: "",
   };
 }
 
@@ -3161,6 +3152,9 @@ export const ContactToCreateDTO: MessageFns<ContactToCreateDTO> = {
     }
     if (message.location !== undefined) {
       LocationDTO.encode(message.location, writer.uint32(58).fork()).join();
+    }
+    if (message.ietfBcp47Tag !== "") {
+      writer.uint32(66).string(message.ietfBcp47Tag);
     }
     return writer;
   },
@@ -3228,6 +3222,14 @@ export const ContactToCreateDTO: MessageFns<ContactToCreateDTO> = {
           message.location = LocationDTO.decode(reader, reader.uint32());
           continue;
         }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.ietfBcp47Tag = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -3270,6 +3272,11 @@ export const ContactToCreateDTO: MessageFns<ContactToCreateDTO> = {
         ? ProfessionalDTO.fromJSON(object.professional_details)
         : undefined,
       location: isSet(object.location) ? LocationDTO.fromJSON(object.location) : undefined,
+      ietfBcp47Tag: isSet(object.ietfBcp47Tag)
+        ? globalThis.String(object.ietfBcp47Tag)
+        : isSet(object.ietf_bcp47_tag)
+        ? globalThis.String(object.ietf_bcp47_tag)
+        : "",
     };
   },
 
@@ -3296,6 +3303,9 @@ export const ContactToCreateDTO: MessageFns<ContactToCreateDTO> = {
     if (message.location !== undefined) {
       obj.location = LocationDTO.toJSON(message.location);
     }
+    if (message.ietfBcp47Tag !== "") {
+      obj.ietfBcp47Tag = message.ietfBcp47Tag;
+    }
     return obj;
   },
 
@@ -3319,6 +3329,7 @@ export const ContactToCreateDTO: MessageFns<ContactToCreateDTO> = {
     message.location = (object.location !== undefined && object.location !== null)
       ? LocationDTO.fromPartial(object.location)
       : undefined;
+    message.ietfBcp47Tag = object.ietfBcp47Tag ?? "";
     return message;
   },
 };
@@ -5317,7 +5328,6 @@ function createBaseWhoIsDTO(): WhoIsDTO {
     ipAddress: "",
     year: 0,
     month: 0,
-    fingerprint: "",
     asn: 0,
     asName: "",
     asDomain: "",
@@ -5354,9 +5364,6 @@ export const WhoIsDTO: MessageFns<WhoIsDTO> = {
     }
     if (message.month !== 0) {
       writer.uint32(32).int32(message.month);
-    }
-    if (message.fingerprint !== "") {
-      writer.uint32(42).string(message.fingerprint);
     }
     if (message.asn !== 0) {
       writer.uint32(48).int32(message.asn);
@@ -5458,14 +5465,6 @@ export const WhoIsDTO: MessageFns<WhoIsDTO> = {
           }
 
           message.month = reader.int32();
-          continue;
-        }
-        case 5: {
-          if (tag !== 42) {
-            break;
-          }
-
-          message.fingerprint = reader.string();
           continue;
         }
         case 6: {
@@ -5651,7 +5650,6 @@ export const WhoIsDTO: MessageFns<WhoIsDTO> = {
         : "",
       year: isSet(object.year) ? globalThis.Number(object.year) : 0,
       month: isSet(object.month) ? globalThis.Number(object.month) : 0,
-      fingerprint: isSet(object.fingerprint) ? globalThis.String(object.fingerprint) : "",
       asn: isSet(object.asn) ? globalThis.Number(object.asn) : 0,
       asName: isSet(object.asName)
         ? globalThis.String(object.asName)
@@ -5753,9 +5751,6 @@ export const WhoIsDTO: MessageFns<WhoIsDTO> = {
     if (message.month !== 0) {
       obj.month = Math.round(message.month);
     }
-    if (message.fingerprint !== "") {
-      obj.fingerprint = message.fingerprint;
-    }
     if (message.asn !== 0) {
       obj.asn = Math.round(message.asn);
     }
@@ -5828,7 +5823,6 @@ export const WhoIsDTO: MessageFns<WhoIsDTO> = {
     message.ipAddress = object.ipAddress ?? "";
     message.year = object.year ?? 0;
     message.month = object.month ?? 0;
-    message.fingerprint = object.fingerprint ?? "";
     message.asn = object.asn ?? 0;
     message.asName = object.asName ?? "";
     message.asDomain = object.asDomain ?? "";
@@ -5865,6 +5859,7 @@ function createBaseContactDTO(): ContactDTO {
     personalDetails: undefined,
     professionalDetails: undefined,
     location: undefined,
+    ietfBcp47Tag: "",
   };
 }
 
@@ -5893,6 +5888,9 @@ export const ContactDTO: MessageFns<ContactDTO> = {
     }
     if (message.location !== undefined) {
       LocationDTO.encode(message.location, writer.uint32(66).fork()).join();
+    }
+    if (message.ietfBcp47Tag !== "") {
+      writer.uint32(74).string(message.ietfBcp47Tag);
     }
     return writer;
   },
@@ -5968,6 +5966,14 @@ export const ContactDTO: MessageFns<ContactDTO> = {
           message.location = LocationDTO.decode(reader, reader.uint32());
           continue;
         }
+        case 9: {
+          if (tag !== 74) {
+            break;
+          }
+
+          message.ietfBcp47Tag = reader.string();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -6011,6 +6017,11 @@ export const ContactDTO: MessageFns<ContactDTO> = {
         ? ProfessionalDTO.fromJSON(object.professional_details)
         : undefined,
       location: isSet(object.location) ? LocationDTO.fromJSON(object.location) : undefined,
+      ietfBcp47Tag: isSet(object.ietfBcp47Tag)
+        ? globalThis.String(object.ietfBcp47Tag)
+        : isSet(object.ietf_bcp47_tag)
+        ? globalThis.String(object.ietf_bcp47_tag)
+        : "",
     };
   },
 
@@ -6040,6 +6051,9 @@ export const ContactDTO: MessageFns<ContactDTO> = {
     if (message.location !== undefined) {
       obj.location = LocationDTO.toJSON(message.location);
     }
+    if (message.ietfBcp47Tag !== "") {
+      obj.ietfBcp47Tag = message.ietfBcp47Tag;
+    }
     return obj;
   },
 
@@ -6064,6 +6078,7 @@ export const ContactDTO: MessageFns<ContactDTO> = {
     message.location = (object.location !== undefined && object.location !== null)
       ? LocationDTO.fromPartial(object.location)
       : undefined;
+    message.ietfBcp47Tag = object.ietfBcp47Tag ?? "";
     return message;
   },
 };

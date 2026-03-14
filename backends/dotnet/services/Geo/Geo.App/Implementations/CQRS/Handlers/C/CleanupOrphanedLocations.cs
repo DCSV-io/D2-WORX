@@ -22,7 +22,7 @@ using RepoDelete = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
 /// Job handler for cleaning up orphaned locations.
 /// Acquires a distributed lock, deletes orphaned locations, then releases the lock.
 /// </summary>
-public class CleanupOrphanedLocations : BaseHandler<CleanupOrphanedLocations, I, O>, H
+public partial class CleanupOrphanedLocations : BaseHandler<CleanupOrphanedLocations, I, O>, H
 {
     private const string _LOCK_KEY = "lock:job:cleanup-orphaned-locations";
 
@@ -79,17 +79,13 @@ public class CleanupOrphanedLocations : BaseHandler<CleanupOrphanedLocations, I,
 
         if (lockResult.Failed)
         {
-            Context.Logger.LogWarning(
-                "Failed to acquire lock for orphaned location cleanup (Redis error). TraceId: {TraceId}.",
-                TraceId);
+            LogLockAcquireFailed(Context.Logger, TraceId);
             return D2Result<O?>.Ok(new O(RowsAffected: 0, LockAcquired: false, DurationMs: sw.ElapsedMilliseconds));
         }
 
         if (!lockResult.Data!.Acquired)
         {
-            Context.Logger.LogInformation(
-                "Lock not acquired for orphaned location cleanup — another instance is handling it. TraceId: {TraceId}.",
-                TraceId);
+            LogLockNotAcquired(Context.Logger, TraceId);
             return D2Result<O?>.Ok(new O(RowsAffected: 0, LockAcquired: false, DurationMs: sw.ElapsedMilliseconds));
         }
 
@@ -106,11 +102,7 @@ public class CleanupOrphanedLocations : BaseHandler<CleanupOrphanedLocations, I,
 
             var rowsAffected = deleteResult.Data!.RowsAffected;
 
-            Context.Logger.LogInformation(
-                "Orphaned location cleanup completed. RowsAffected: {RowsAffected}, DurationMs: {DurationMs}. TraceId: {TraceId}.",
-                rowsAffected,
-                sw.ElapsedMilliseconds,
-                TraceId);
+            LogCleanupCompleted(Context.Logger, rowsAffected, sw.ElapsedMilliseconds, TraceId);
 
             return D2Result<O?>.Ok(new O(
                 RowsAffected: rowsAffected,
@@ -125,11 +117,32 @@ public class CleanupOrphanedLocations : BaseHandler<CleanupOrphanedLocations, I,
 
             if (releaseResult.Failed || !releaseResult.Data!.Released)
             {
-                Context.Logger.LogWarning(
-                    "Failed to release lock for orphaned location cleanup. LockId: {LockId}. TraceId: {TraceId}.",
-                    lockId,
-                    TraceId);
+                LogLockReleaseFailed(Context.Logger, lockId, TraceId);
             }
         }
     }
+
+    /// <summary>
+    /// Logs a warning when acquiring the distributed lock fails due to a Redis error.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to acquire lock for orphaned location cleanup (Redis error). TraceId: {TraceId}.")]
+    private static partial void LogLockAcquireFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs that the lock was not acquired because another instance is already handling the cleanup.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Lock not acquired for orphaned location cleanup — another instance is handling it. TraceId: {TraceId}.")]
+    private static partial void LogLockNotAcquired(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs the completion of the orphaned location cleanup with row count and duration.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Orphaned location cleanup completed. RowsAffected: {RowsAffected}, DurationMs: {DurationMs}. TraceId: {TraceId}.")]
+    private static partial void LogCleanupCompleted(ILogger logger, int rowsAffected, long durationMs, string? traceId);
+
+    /// <summary>
+    /// Logs a warning when releasing the distributed lock fails after cleanup.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Failed to release lock for orphaned location cleanup. LockId: {LockId}. TraceId: {TraceId}.")]
+    private static partial void LogLockReleaseFailed(ILogger logger, string lockId, string? traceId);
 }

@@ -6,12 +6,10 @@
 
 namespace D2.Geo.Tests.Integration.App;
 
-using D2.Events.Protos.V1;
 using D2.Geo.App;
 using D2.Geo.App.Implementations.CQRS.Handlers.C;
 using D2.Geo.App.Implementations.CQRS.Handlers.Q;
 using D2.Geo.App.Implementations.CQRS.Handlers.X;
-using D2.Geo.App.Interfaces.CQRS.Handlers.C;
 using D2.Geo.App.Interfaces.CQRS.Handlers.Q;
 using D2.Geo.App.Interfaces.CQRS.Handlers.X;
 using D2.Geo.Domain.Entities;
@@ -66,7 +64,7 @@ public class UpdateContactsByExtKeysTests : IAsyncLifetime
         r_fixture = fixture;
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public ValueTask InitializeAsync()
@@ -89,6 +87,7 @@ public class UpdateContactsByExtKeysTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _db.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region Empty Input
@@ -178,9 +177,12 @@ public class UpdateContactsByExtKeysTests : IAsyncLifetime
         var newId = Guid.Parse(newContact.Id);
         var dbNew = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == newId, Ct);
         dbNew.Should().NotBeNull("new contact should exist in database");
-        dbNew!.ContextKey.Should().Be(contextKey);
+        dbNew.ContextKey.Should().Be(contextKey);
         dbNew.RelatedEntityId.Should().Be(relatedEntityId);
         dbNew.PersonalDetails!.FirstName.Should().Be("New", "DB record must have the new first name");
+
+        // Assert — IETF BCP 47 tag defaults to "en-US" when not explicitly set
+        dbNew.IETFBCP47Tag.Should().Be("en-US", "contact should default to base locale");
     }
 
     #endregion
@@ -262,10 +264,10 @@ public class UpdateContactsByExtKeysTests : IAsyncLifetime
         var dbNew1 = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == newId1, Ct);
         var dbNew2 = await _db.Contacts.FirstOrDefaultAsync(c => c.Id == newId2, Ct);
         dbNew1.Should().NotBeNull();
-        dbNew1!.ContextKey.Should().Be(ctx1);
+        dbNew1.ContextKey.Should().Be(ctx1);
         dbNew1.PersonalDetails!.FirstName.Should().Be("New");
         dbNew2.Should().NotBeNull();
-        dbNew2!.ContextKey.Should().Be(ctx2);
+        dbNew2.ContextKey.Should().Be(ctx2);
         dbNew2.PersonalDetails!.FirstName.Should().Be("New");
     }
 
@@ -315,7 +317,7 @@ public class UpdateContactsByExtKeysTests : IAsyncLifetime
         var dbNew = await _db.Contacts.FirstOrDefaultAsync(
             c => c.ContextKey == contextKey && c.RelatedEntityId == relatedEntityId, Ct);
         dbNew.Should().NotBeNull("new contact should exist in database even without old contact");
-        dbNew!.PersonalDetails!.FirstName.Should().Be("Fresh");
+        dbNew.PersonalDetails!.FirstName.Should().Be("Fresh");
         dbNew.PersonalDetails.LastName.Should().Be("Contact");
     }
 

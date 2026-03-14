@@ -23,7 +23,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Handler for getting WhoIs records by their IDs.
 /// </summary>
-public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
+public partial class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
 {
     private readonly IRead.IGetManyHandler<WhoIs> r_memoryCacheGetMany;
     private readonly IUpdate.ISetManyHandler<WhoIs> r_memoryCacheSetMany;
@@ -159,6 +159,12 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
     private static Location? GetLocation(string? hashId, Dictionary<string, Location> locations) =>
         hashId is not null && locations.TryGetValue(hashId, out var loc) ? loc : null;
 
+    /// <summary>
+    /// Logs an error when setting WhoIs records in the memory cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to set WhoIs in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.")]
+    private static partial void LogCacheSetFailed(ILogger logger, Type handlerName, string? traceId, string? errorCode, List<string> messages);
+
     private async ValueTask SetInCacheAsync(
         Dictionary<string, WhoIs> fromDbDict,
         CancellationToken ct)
@@ -173,12 +179,7 @@ public class GetWhoIsByIds : BaseHandler<GetWhoIsByIds, I, O>, H
 
         if (setInCacheR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set WhoIs in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.",
-                typeof(GetWhoIsByIds),
-                TraceId,
-                setInCacheR.ErrorCode,
-                setInCacheR.Messages);
+            LogCacheSetFailed(Context.Logger, typeof(GetWhoIsByIds), TraceId, setInCacheR.ErrorCode, setInCacheR.Messages);
         }
     }
 

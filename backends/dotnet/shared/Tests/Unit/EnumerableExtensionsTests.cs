@@ -368,7 +368,7 @@ public class EnumerableExtensionsTests
             EnumerableExtensions.CleanValueNullBehavior.ThrowOnNull);
 
         // Assert
-        act.Should().Throw<NullReferenceException>();
+        act.Should().Throw<InvalidOperationException>();
     }
 
     #endregion

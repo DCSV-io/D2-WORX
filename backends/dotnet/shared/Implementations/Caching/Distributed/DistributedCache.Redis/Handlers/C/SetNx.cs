@@ -9,6 +9,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.C;
 using System.Net;
 using System.Text.Json;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Serialization;
 using Google.Protobuf;
@@ -23,7 +24,7 @@ using C = D2.Shared.Interfaces.Caching.Distributed.Handlers.C.ICreate;
 /// <typeparam name="TValue">
 /// The type of the value to cache.
 /// </typeparam>
-public class SetNx<TValue> : BaseHandler<
+public partial class SetNx<TValue> : BaseHandler<
         C.ISetNxHandler<TValue>, C.SetNxInput<TValue>, C.SetNxOutput>,
     C.ISetNxHandler<TValue>
 {
@@ -75,33 +76,36 @@ public class SetNx<TValue> : BaseHandler<
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while setting NX value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogSetNxFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<C.SetNxOutput?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
         catch (JsonException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "JsonException occurred while serializing value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogSetNxSerializationFailed(Context.Logger, ex, input.Key, TraceId);
 
-            const string err_msg = "Value could not be serialized.";
             return D2Result<C.SetNxOutput?>.Fail(
-                [err_msg],
+                [TK.Common.Errors.REQUEST_FAILED],
                 HttpStatusCode.InternalServerError,
-                [[nameof(C.SetNxInput<TValue>.Value), err_msg]],
+                [[nameof(C.SetNxInput<TValue>.Value), TK.Common.Errors.REQUEST_FAILED]],
                 ErrorCodes.COULD_NOT_BE_SERIALIZED);
         }
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while setting a value with NX semantics.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while setting NX value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogSetNxFailed(ILogger logger, Exception ex, string key, string? traceId);
+
+    /// <summary>
+    /// Logs that a JSON serialization exception occurred while setting a value with NX semantics.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "JsonException occurred while serializing value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogSetNxSerializationFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

@@ -143,7 +143,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenNoHeader_SkipsAndCallsNext()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         var middleware = CreateMiddleware();
 
         await middleware.InvokeAsync(
@@ -256,7 +256,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenEmptyHeader_SkipsAndCallsNext()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Request.Headers["Idempotency-Key"] = "   ";
         var middleware = CreateMiddleware();
 
@@ -289,7 +289,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenInvalidKey_Returns400()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = "not-a-uuid";
         var middleware = CreateMiddleware();
@@ -319,7 +319,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenMultipleHeaderValues_Returns400()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
 
         // Multiple header values get comma-joined which is not a valid UUID.
@@ -353,7 +353,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"id":"123"}""";
         _nextStatusCode = 201;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -397,7 +397,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenInFlight_Returns409()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.InFlight);
@@ -432,7 +432,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenCached_ReplaysResponse()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturnsCached(201, """{"id":"123"}""", "application/json");
@@ -464,7 +464,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenCachedWithNullBody_ReplaysWithoutBody()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturnsCached(204, null, null);
@@ -493,7 +493,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenCachedWithEmptyBody_ReplaysEmptyBody()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturnsCached(200, string.Empty, "application/json");
@@ -525,7 +525,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenCachedStateButNullResponse_ExecutesRequestSafely()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
 
@@ -564,7 +564,7 @@ public class IdempotencyMiddlewareTests
     [Fact]
     public async Task InvokeAsync_WhenCheckThrows_FailsOpen()
     {
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckThrows(new InvalidOperationException("Redis down"));
@@ -592,7 +592,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"ok":true}""";
         _nextStatusCode = 200;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -636,7 +636,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"error":"not found"}""";
         _nextStatusCode = 404;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -677,7 +677,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = new string('x', 2_000_000); // 2MB > 1MB default
         _nextStatusCode = 200;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -718,7 +718,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"error":"not found"}""";
         _nextStatusCode = 404;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -760,7 +760,7 @@ public class IdempotencyMiddlewareTests
         var options = new IdempotencyOptions { MaxBodySizeBytes = 10 };
         _nextBody = new string('a', 10); // Exactly 10 ASCII bytes.
         _nextStatusCode = 200;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -794,7 +794,7 @@ public class IdempotencyMiddlewareTests
         var options = new IdempotencyOptions { MaxBodySizeBytes = 10 };
         _nextBody = new string('a', 11); // 11 ASCII bytes > 10.
         _nextStatusCode = 200;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -837,7 +837,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"name":"O'Brien","emoji":"☺","quotes":"\"hello\""}""";
         _nextStatusCode = 201;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -866,7 +866,7 @@ public class IdempotencyMiddlewareTests
         // The serialized JSON uses Unicode escape sequences — verify it deserializes back correctly.
         var deserialized = System.Text.Json.JsonSerializer.Deserialize<CachedResponse>(capturedSerialized!);
         deserialized.Should().NotBeNull();
-        deserialized!.StatusCode.Should().Be(201);
+        deserialized.StatusCode.Should().Be(201);
         deserialized.Body.Should().Be(_nextBody, "round-trip should preserve the original body including special chars");
     }
 
@@ -885,7 +885,7 @@ public class IdempotencyMiddlewareTests
         var deserialized = System.Text.Json.JsonSerializer.Deserialize<CachedResponse>(json);
 
         deserialized.Should().NotBeNull();
-        deserialized!.StatusCode.Should().Be(201);
+        deserialized.StatusCode.Should().Be(201);
         deserialized.Body.Should().Be(original.Body);
         deserialized.ContentType.Should().Be("application/json; charset=utf-8");
     }
@@ -902,7 +902,7 @@ public class IdempotencyMiddlewareTests
         var deserialized = System.Text.Json.JsonSerializer.Deserialize<CachedResponse>(json);
 
         deserialized.Should().NotBeNull();
-        deserialized!.StatusCode.Should().Be(204);
+        deserialized.StatusCode.Should().Be(204);
         deserialized.Body.Should().BeNull();
         deserialized.ContentType.Should().BeNull();
     }
@@ -920,7 +920,7 @@ public class IdempotencyMiddlewareTests
         var deserialized = System.Text.Json.JsonSerializer.Deserialize<CachedResponse>(json);
 
         deserialized.Should().NotBeNull();
-        deserialized!.Body.Should().Be(bodyWithUnicode);
+        deserialized.Body.Should().Be(bodyWithUnicode);
     }
 
     /// <summary>
@@ -934,7 +934,7 @@ public class IdempotencyMiddlewareTests
         // This documents the behavior: {} → StatusCode 0, null body, null contentType.
         // The Check handler's CachedResponse null check passes, so it would replay status 0.
         deserialized.Should().NotBeNull();
-        deserialized!.StatusCode.Should().Be(0, "empty JSON deserializes StatusCode to default 0");
+        deserialized.StatusCode.Should().Be(0, "empty JSON deserializes StatusCode to default 0");
         deserialized.Body.Should().BeNull();
         deserialized.ContentType.Should().BeNull();
     }
@@ -951,7 +951,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"error":"internal server error","details":"stack trace"}""";
         _nextStatusCode = 500;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -984,7 +984,7 @@ public class IdempotencyMiddlewareTests
         _nextBody = """{"ok":true}""";
         _nextStatusCode = 200;
         var idempotencyKey = Guid.NewGuid().ToString();
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = idempotencyKey;
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -1017,7 +1017,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"ok":true}""";
         _nextStatusCode = 200;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -1049,7 +1049,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = null; // Downstream writes nothing.
         _nextStatusCode = 204;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -1084,7 +1084,7 @@ public class IdempotencyMiddlewareTests
     {
         _nextBody = """{"error":"bad"}""";
         _nextStatusCode = 400;
-        var context = CreateHttpContext("POST");
+        var context = CreateHttpContext();
         context.Response.Body = new MemoryStream();
         context.Request.Headers["Idempotency-Key"] = Guid.NewGuid().ToString();
         SetupCheckReturns(IdempotencyState.Acquired);
@@ -1117,7 +1117,7 @@ public class IdempotencyMiddlewareTests
 
     #region Helper Methods
 
-    private DefaultHttpContext CreateHttpContext(string method = "POST")
+    private static DefaultHttpContext CreateHttpContext(string method = "POST")
     {
         var context = new DefaultHttpContext();
         context.Request.Method = method;

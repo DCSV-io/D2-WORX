@@ -29,7 +29,7 @@ describe("check-email routes", () => {
 
     expect(res.status).toBe(400);
     expect(body.success).toBe(false);
-    expect(body.messages).toContain("Email query parameter is required.");
+    expect(body.messages).toContain("auth_errors_EMAIL_QUERY_REQUIRED");
     expect(handler.handleAsync).not.toHaveBeenCalled();
   });
 

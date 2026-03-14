@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
+import { TK } from "@d2/i18n";
 import { updateOrgContact, GEO_CONTEXT_KEYS, type UpdateOrgContactInput } from "@d2/auth-domain";
 import type { ContactDTO, ContactToCreateDTO } from "@d2/protos";
 import { contactInputSchema, type Complex } from "@d2/geo-client";
@@ -20,6 +21,7 @@ const schema = z.object({
     .object({
       label: z.string().max(100).optional(),
       isPrimary: z.boolean().optional(),
+      ietfBcp47Tag: z.string().max(35).optional(),
       contact: contactInputSchema.optional(),
     })
     .refine(
@@ -74,7 +76,7 @@ export class UpdateOrgContactHandler
     // IDOR check: contact must belong to the caller's active org
     if (existing.organizationId !== input.organizationId) {
       return D2Result.forbidden({
-        messages: ["Not authorized to modify this contact."],
+        messages: [TK.auth.errors.ORG_CONTACT_ORG_MISMATCH],
       });
     }
 
@@ -86,6 +88,7 @@ export class UpdateOrgContactHandler
         createdAt: new Date(),
         contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT,
         relatedEntityId: existing.id,
+        ietfBcp47Tag: input.updates.ietfBcp47Tag ?? undefined,
         contactMethods: input.updates.contact.contactMethods ?? undefined,
         personalDetails: input.updates.contact.personalDetails ?? undefined,
         professionalDetails: input.updates.contact.professionalDetails ?? undefined,

@@ -7,7 +7,7 @@ The **Web Client** is a SvelteKit 5 application that serves as the primary user 
 **Runtime:** Node.js (SvelteKit + adapter-node)
 **Framework:** Svelte 5 (runes) + SvelteKit 2
 **Styling:** Tailwind CSS v4 (Vite plugin, OKLCH theming with 3 presets)
-**i18n:** Paraglide (5 locales: en, es, de, fr, jp)
+**i18n:** Paraglide (10 BCP 47 locales: en-US, en-GB, en-CA, es-ES, es-MX, de-DE, fr-FR, fr-CA, it-IT, ja-JP)
 **Observability:** OpenTelemetry (server-side), Grafana Faro (client-side errors → Loki, traces → Tempo, Web Vitals → Mimir)
 
 > **Not a standalone app.** The web client depends on the .NET REST Gateway for all data operations and on the Auth Service (proxied through SvelteKit) for authentication. It is orchestrated via Aspire alongside all backend services.
@@ -84,7 +84,7 @@ Runs on every request via `hooks.server.ts`:
 
 - SvelteKit 2.53.3 with Svelte 5.53.5 (runes), adapter-node, Vite 7.3.1
 - Tailwind CSS v4.2.1 via Vite plugin with OKLCH theming (3 presets: WORX, Zinc, Ocean)
-- Paraglide i18n with 5 locales, server middleware URL rerouting
+- Paraglide i18n with 10 BCP 47 locales (`PUBLIC_ENABLED_LOCALES__N` env vars), server middleware URL rerouting
 - mdsvex preprocessor for `.svx` markdown-in-Svelte files
 - Aspire orchestration wired (`AddViteApp` with `.WithPnpm()`)
 
@@ -115,7 +115,7 @@ Runs on every request via `hooks.server.ts`:
 ### Auth Pages
 
 - Sign-in, sign-up, forgot-password, reset-password, verify-email
-- i18n support (5 locales), auth-aware public nav, TextLink component
+- i18n support (10 BCP 47 locales), auth-aware public nav, TextLink component
 
 ### Observability
 
@@ -196,30 +196,30 @@ This applies to ALL navigation: `<a href>`, `goto()`, `redirect()`, and `fetch()
 
 ### Installed Dependencies
 
-| Category      | Package                                     | Version         |
-| ------------- | ------------------------------------------- | --------------- |
-| Framework     | `svelte`                                    | 5.53.5          |
-| Framework     | `@sveltejs/kit`                             | 2.53.3          |
-| Build         | `vite`                                      | 7.3.1           |
-| Styling       | `tailwindcss`                               | 4.2.1           |
-| Styling       | `clsx` + `tailwind-merge`                   | 2.1.1 / 3.5.0   |
-| Styling       | `tailwind-variants`                         | 3.2.2           |
-| UI            | `bits-ui` (shadcn-svelte)                   | 2.16.2          |
-| Icons         | `@lucide/svelte`                            | 0.561.0         |
-| Forms         | `sveltekit-superforms` + `formsnap`         | 2.30.0 / 2.0.1  |
-| Validation    | `zod`                                       | 4.3.6           |
-| i18n          | `@inlang/paraglide-js`                      | 2.13.0          |
-| Phone         | `libphonenumber-js`                         | 1.12.38         |
-| Postal codes  | `postcode-validator`                        | 3.10.9          |
-| Dates         | `@internationalized/date`                   | 3.11.0          |
-| Auth          | `better-auth` + `@d2/auth-bff-client`       | 1.5.0           |
-| Payments      | `@stripe/stripe-js`                         | 8.8.0           |
-| OTel (server) | `@opentelemetry/sdk-node` + exporters       | 0.212.0         |
-| Faro (client) | `@grafana/faro-web-sdk` + tracing           | 1.19.0          |
-| Charts        | `layerchart`                                | 2.0.0-next.43   |
-| Testing       | `vitest` + `@vitest/browser` + `playwright` | 3.2.4 / 1.58.0  |
-| Toast         | `svelte-sonner`                             | 1.0.7           |
-| Theme         | `mode-watcher`                              | 1.1.0           |
+| Category      | Package                                     | Version        |
+| ------------- | ------------------------------------------- | -------------- |
+| Framework     | `svelte`                                    | 5.53.5         |
+| Framework     | `@sveltejs/kit`                             | 2.53.3         |
+| Build         | `vite`                                      | 7.3.1          |
+| Styling       | `tailwindcss`                               | 4.2.1          |
+| Styling       | `clsx` + `tailwind-merge`                   | 2.1.1 / 3.5.0  |
+| Styling       | `tailwind-variants`                         | 3.2.2          |
+| UI            | `bits-ui` (shadcn-svelte)                   | 2.16.2         |
+| Icons         | `@lucide/svelte`                            | 0.561.0        |
+| Forms         | `sveltekit-superforms` + `formsnap`         | 2.30.0 / 2.0.1 |
+| Validation    | `zod`                                       | 4.3.6          |
+| i18n          | `@inlang/paraglide-js`                      | 2.13.0         |
+| Phone         | `libphonenumber-js`                         | 1.12.38        |
+| Postal codes  | `postcode-validator`                        | 3.10.9         |
+| Dates         | `@internationalized/date`                   | 3.11.0         |
+| Auth          | `better-auth` + `@d2/auth-bff-client`       | 1.5.0          |
+| Payments      | `@stripe/stripe-js`                         | 8.8.0          |
+| OTel (server) | `@opentelemetry/sdk-node` + exporters       | 0.212.0        |
+| Faro (client) | `@grafana/faro-web-sdk` + tracing           | 1.19.0         |
+| Charts        | `layerchart`                                | 2.0.0-next.43  |
+| Testing       | `vitest` + `@vitest/browser` + `playwright` | 3.2.4 / 1.58.0 |
+| Toast         | `svelte-sonner`                             | 1.0.7          |
+| Theme         | `mode-watcher`                              | 1.1.0          |
 
 ### Workspace Dependencies (`@d2/*`)
 
@@ -264,15 +264,17 @@ pnpm test             # All tests (unit + mocked E2E)
 
 ### Environment Variables
 
-| Variable                      | Purpose                          | Required             |
-| ----------------------------- | -------------------------------- | -------------------- |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint          | For observability    |
-| `OTEL_SERVICE_NAME`           | Service name for traces/logs     | For observability    |
-| `PUBLIC_FARO_COLLECTOR_URL`   | Faro collector URL (client-side) | For client telemetry |
-| `PUBLIC_GATEWAY_URL`          | .NET Gateway URL (client-side)   | For client API calls |
-| `SVELTEKIT_AUTH__URL`         | Auth service URL (server-side)   | For auth proxy       |
-| `GATEWAY_URL`                 | .NET Gateway URL (server-side)   | For SSR API calls    |
-| `D2_MOCK_INFRA`               | Enable mock infra for tests      | For mocked E2E tests |
+| Variable                      | Purpose                          | Required                     |
+| ----------------------------- | -------------------------------- | ---------------------------- |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint          | For observability            |
+| `OTEL_SERVICE_NAME`           | Service name for traces/logs     | For observability            |
+| `PUBLIC_FARO_COLLECTOR_URL`   | Faro collector URL (client-side) | For client telemetry         |
+| `PUBLIC_GATEWAY_URL`          | .NET Gateway URL (client-side)   | For client API calls         |
+| `SVELTEKIT_AUTH__URL`         | Auth service URL (server-side)   | For auth proxy               |
+| `GATEWAY_URL`                 | .NET Gateway URL (server-side)   | For SSR API calls            |
+| `PUBLIC_DEFAULT_LOCALE`       | Default BCP 47 locale            | For i18n (defaults to en-US) |
+| `PUBLIC_ENABLED_LOCALES__N`   | Indexed BCP 47 locale list       | For i18n (defaults to en-US) |
+| `D2_MOCK_INFRA`               | Enable mock infra for tests      | For mocked E2E tests         |
 
 See `.env.local.example` in the project root for all environment variables.
 
@@ -291,11 +293,11 @@ See `.env.local.example` in the project root for all environment variables.
 
 E2E tests are split into three tiers based on infrastructure requirements:
 
-| Tier            | Directory                        | Config                       | Script                 | Backends Required | CI  |
-| --------------- | -------------------------------- | ---------------------------- | ---------------------- | ----------------- | --- |
-| **Mocked**      | `tests/mocked/`                  | `playwright.config.ts`       | `pnpm test:e2e:mocked` | None              | Yes |
-| **Local E2E**   | `tests/e2e/`                     | `playwright.local.config.ts` | `pnpm test:e2e:local`  | All (Aspire)      | No  |
-| **True E2E**    | `backends/node/services/e2e/`    | (separate project)           | (separate project)     | All (Aspire)      | No  |
+| Tier          | Directory                     | Config                       | Script                 | Backends Required | CI  |
+| ------------- | ----------------------------- | ---------------------------- | ---------------------- | ----------------- | --- |
+| **Mocked**    | `tests/mocked/`               | `playwright.config.ts`       | `pnpm test:e2e:mocked` | None              | Yes |
+| **Local E2E** | `tests/e2e/`                  | `playwright.local.config.ts` | `pnpm test:e2e:local`  | All (Aspire)      | No  |
+| **True E2E**  | `backends/node/services/e2e/` | (separate project)           | (separate project)     | All (Aspire)      | No  |
 
 **Tier 1 — Mocked tests** (`tests/mocked/*.spec.ts`): Run against the SvelteKit dev server with `D2_MOCK_INFRA=true`. Client-side HTTP requests are intercepted via Playwright's `page.route()` API. Server-side data loading (e.g., geo ref data via gRPC) is handled by the `D2_MOCK_INFRA` env var, which provides mock data at the SSR level. Shared mock helpers live in `tests/mocked/fixtures.ts` (e.g., `mockEmailCheck`). These tests run in CI and use `retries: 1` for flaky async behavior.
 

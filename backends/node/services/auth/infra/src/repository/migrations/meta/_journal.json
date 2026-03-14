@@ -43,6 +43,13 @@
       "when": 1773360000000,
       "tag": "0005_add_sign_in_event_device_fingerprint",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1773451305308,
+      "tag": "0006_huge_imperial_guard",
+      "breakpoints": true
     }
   ]
 }

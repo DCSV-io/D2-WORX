@@ -6,8 +6,10 @@
 
 namespace D2.Geo.Infra.Messaging.Handlers.Pub;
 
+using System.Net;
 using D2.Geo.Infra.Messaging.Publishers;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using H = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs.IContactEvictionHandler;
@@ -17,7 +19,7 @@ using O = D2.Geo.App.Interfaces.Messaging.Handlers.Pub.IPubs.ContactEvictionOutp
 /// <summary>
 /// Handler for publishing contact eviction events.
 /// </summary>
-public class ContactEviction : BaseHandler<ContactEviction, I, O>, H
+public partial class ContactEviction : BaseHandler<ContactEviction, I, O>, H
 {
     private readonly ContactEvictionPublisher r_publisher;
 
@@ -48,20 +50,27 @@ public class ContactEviction : BaseHandler<ContactEviction, I, O>, H
 
         if (result.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to publish ContactsEvicted event. TraceId: {TraceId}",
-                TraceId);
+            LogPublishContactsEvictedFailed(Context.Logger, TraceId);
 
             return D2Result<O?>.Fail(
-                ["Failed to publish contact eviction notification."],
-                System.Net.HttpStatusCode.InternalServerError);
+                [TK.Common.Errors.REQUEST_FAILED],
+                HttpStatusCode.InternalServerError);
         }
 
-        Context.Logger.LogInformation(
-            "Published ContactsEvicted event for {Count} contact(s). TraceId: {TraceId}",
-            input.Event.Contacts.Count,
-            TraceId);
+        LogPublishedContactsEvicted(Context.Logger, input.Event.Contacts.Count, TraceId);
 
         return D2Result<O?>.Ok(new O());
     }
+
+    /// <summary>
+    /// Logs an error when publishing a ContactsEvicted event fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to publish ContactsEvicted event. TraceId: {TraceId}")]
+    private static partial void LogPublishContactsEvictedFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs that a ContactsEvicted event was successfully published.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Published ContactsEvicted event for {Count} contact(s). TraceId: {TraceId}")]
+    private static partial void LogPublishedContactsEvicted(ILogger logger, int count, string? traceId);
 }

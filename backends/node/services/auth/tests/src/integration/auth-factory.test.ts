@@ -551,7 +551,12 @@ describe("createAuth() full integration", () => {
   // -----------------------------------------------------------------------
   describe("createUserContact hook", () => {
     it("should call createUserContact hook with userId and email on sign-up", async () => {
-      const createUserContactCalls: Array<{ userId: string; email: string; name: string }> = [];
+      const createUserContactCalls: Array<{
+        userId: string;
+        email: string;
+        name: string;
+        locale: string;
+      }> = [];
 
       const authWithHook = createAuth(testConfig, getDb(), undefined, {
         ...hooks,
@@ -567,6 +572,7 @@ describe("createAuth() full integration", () => {
       expect(createUserContactCalls).toHaveLength(1);
       expect(createUserContactCalls[0].email).toBe("geo-test@example.com");
       expect(createUserContactCalls[0].name).toBe("Geo Test");
+      expect(createUserContactCalls[0].locale).toBe("en-US");
       expect(createUserContactCalls[0].userId).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
       );

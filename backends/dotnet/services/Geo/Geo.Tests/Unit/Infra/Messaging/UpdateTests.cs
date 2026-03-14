@@ -6,6 +6,7 @@
 
 namespace D2.Geo.Tests.Unit.Infra.Messaging;
 
+using System.Net;
 using D2.Events.Protos.V1;
 using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
 using D2.Geo.Infra.Messaging.Handlers.Pub;
@@ -16,6 +17,7 @@ using D2.Shared.Result;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using RabbitMQ.Client;
 using Xunit;
 
 /// <summary>
@@ -33,7 +35,7 @@ public class UpdateTests
     {
         r_publisherMock = new Mock<UpdatePublisher>(
             new Mock<ProtoPublisher>(
-                Mock.Of<global::RabbitMQ.Client.IConnection>(),
+                Mock.Of<IConnection>(),
                 Mock.Of<ILogger<ProtoPublisher>>()).Object,
             Mock.Of<ILogger<UpdatePublisher>>());
         r_context = CreateHandlerContext();
@@ -82,7 +84,7 @@ public class UpdateTests
         // Arrange
         r_publisherMock
             .Setup(x => x.PublishAsync(It.IsAny<GeoRefDataUpdatedEvent>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(D2Result.Fail(["Failed"], System.Net.HttpStatusCode.ServiceUnavailable));
+            .ReturnsAsync(D2Result.Fail(["Failed"], HttpStatusCode.ServiceUnavailable));
 
         var handler = new Update(r_publisherMock.Object, r_context);
         var input = new IPubs.UpdateInput("1.0.0");
@@ -92,7 +94,7 @@ public class UpdateTests
 
         // Assert
         result.Success.Should().BeFalse();
-        result.StatusCode.Should().Be(System.Net.HttpStatusCode.InternalServerError);
+        result.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
     }
 
     /// <summary>

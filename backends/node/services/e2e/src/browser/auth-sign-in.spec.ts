@@ -58,7 +58,9 @@ test.describe("sign-in flow (full stack)", () => {
   });
 
   test("sign-in with non-existent email shows error", async ({ page }) => {
-    await page.getByRole("textbox", { name: "Email", exact: true }).fill("nonexistent@e2e-test.com");
+    await page
+      .getByRole("textbox", { name: "Email", exact: true })
+      .fill("nonexistent@e2e-test.com");
     await page.getByRole("textbox", { name: "Password" }).fill(TEST_PASSWORD);
 
     await page.getByRole("button", { name: "Sign In" }).click();

@@ -10,6 +10,7 @@ using System.Text;
 using global::RabbitMQ.Client;
 using global::RabbitMQ.Client.Events;
 using Google.Protobuf;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -19,7 +20,8 @@ using Microsoft.Extensions.Logging;
 /// <typeparam name="T">
 /// The protobuf message type.
 /// </typeparam>
-public sealed class ProtoConsumer<T> : IAsyncDisposable
+[MustDisposeResource]
+public sealed partial class ProtoConsumer<T> : IAsyncDisposable
     where T : IMessage<T>, new()
 {
     private readonly IChannel r_channel;
@@ -60,6 +62,7 @@ public sealed class ProtoConsumer<T> : IAsyncDisposable
     /// <returns>
     /// A configured <see cref="ProtoConsumer{T}"/> that is actively consuming.
     /// </returns>
+    [MustDisposeResource]
     public static async Task<ProtoConsumer<T>> CreateBroadcastAsync(
         IConnection connection,
         string exchange,
@@ -111,10 +114,7 @@ public sealed class ProtoConsumer<T> : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                logger.LogError(
-                    ex,
-                    "Failed to process {ProtoType} message, requeueing",
-                    typeof(T).Name);
+                LogMessageProcessingFailed(logger, ex, typeof(T).Name);
 
                 await channel.BasicNackAsync(
                     ea.DeliveryTag,
@@ -130,11 +130,7 @@ public sealed class ProtoConsumer<T> : IAsyncDisposable
             consumer: consumer,
             cancellationToken: ct);
 
-        logger.LogInformation(
-            "Started broadcast consumer for {ProtoType} on exchange {Exchange} (queue: {Queue})",
-            typeof(T).Name,
-            exchange,
-            queueName);
+        LogBroadcastConsumerStarted(logger, typeof(T).Name, exchange, queueName);
 
         return new ProtoConsumer<T>(channel, logger, consumerTag);
     }
@@ -154,9 +150,27 @@ public sealed class ProtoConsumer<T> : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            r_logger.LogWarning(ex, "Error cancelling consumer {Tag}", r_consumerTag);
+            LogConsumerCancelError(r_logger, ex, r_consumerTag);
         }
 
         await r_channel.DisposeAsync();
     }
+
+    /// <summary>
+    /// Logs that message processing failed and the message is being requeued.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to process {ProtoType} message, requeueing")]
+    private static partial void LogMessageProcessingFailed(ILogger logger, Exception ex, string protoType);
+
+    /// <summary>
+    /// Logs that a broadcast consumer has been started on an exchange.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Started broadcast consumer for {ProtoType} on exchange {Exchange} (queue: {Queue})")]
+    private static partial void LogBroadcastConsumerStarted(ILogger logger, string protoType, string exchange, string queue);
+
+    /// <summary>
+    /// Logs an error when cancelling a consumer fails.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Error cancelling consumer {Tag}")]
+    private static partial void LogConsumerCancelError(ILogger logger, Exception ex, string tag);
 }

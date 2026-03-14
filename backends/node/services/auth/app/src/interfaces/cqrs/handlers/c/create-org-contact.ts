@@ -39,6 +39,8 @@ export interface CreateOrgContactInput {
   readonly organizationId: string;
   readonly label: string;
   readonly isPrimary?: boolean;
+  /** IETF BCP 47 locale tag for the contact (e.g., "en-US"). Defaults to base locale if omitted. */
+  readonly ietfBcp47Tag?: string;
   readonly contact: ContactInput;
 }
 

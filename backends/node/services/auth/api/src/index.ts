@@ -15,7 +15,7 @@ export { createSessionMiddleware } from "./middleware/session.js";
 export {
   createSessionFingerprintMiddleware,
   computeFingerprint,
-  type SessionFingerprintOptions,
+  type SessionFingerprintMiddlewareOptions,
   type StoreFingerprint,
   type GetFingerprint,
   type RevokeSession,

@@ -6,7 +6,7 @@
 
 namespace D2.Shared.Tests.Unit.Gateway;
 
-using D2.Gateways.REST.Auth;
+using D2.Shared.Auth.Default;
 using D2.Shared.Handler;
 using D2.Shared.RequestEnrichment.Default;
 using FluentAssertions;

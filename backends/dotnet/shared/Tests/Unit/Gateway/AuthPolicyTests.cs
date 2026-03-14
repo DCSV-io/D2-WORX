@@ -117,7 +117,7 @@ public class AuthPolicyTests
 
         var policy = options.GetPolicy(AuthPolicies.AUTHENTICATED);
         policy.Should().NotBeNull();
-        policy!.AuthenticationSchemes.Should().BeEmpty(); // RequireAuthenticatedUser doesn't add schemes
+        policy.AuthenticationSchemes.Should().BeEmpty(); // RequireAuthenticatedUser doesn't add schemes
     }
 
     /// <summary>
@@ -134,7 +134,7 @@ public class AuthPolicyTests
         policy.Should().NotBeNull();
 
         // The policy should require orgId, orgType, and role claims.
-        var claimTypes = policy!.Requirements
+        var claimTypes = policy.Requirements
             .OfType<ClaimsAuthorizationRequirement>()
             .Select(r => r.ClaimType)
             .ToList();
@@ -157,11 +157,11 @@ public class AuthPolicyTests
         var policy = options.GetPolicy(AuthPolicies.STAFF_ONLY);
         policy.Should().NotBeNull();
 
-        var orgTypeReq = policy!.Requirements
+        var orgTypeReq = policy.Requirements
             .OfType<ClaimsAuthorizationRequirement>()
             .FirstOrDefault(r => r.ClaimType == JwtClaimTypes.ORG_TYPE);
         orgTypeReq.Should().NotBeNull();
-        orgTypeReq!.AllowedValues.Should().Contain(OrgTypeValues.ADMIN);
+        orgTypeReq.AllowedValues.Should().Contain(OrgTypeValues.ADMIN);
         orgTypeReq.AllowedValues.Should().Contain(OrgTypeValues.SUPPORT);
     }
 
@@ -178,11 +178,11 @@ public class AuthPolicyTests
         var policy = options.GetPolicy(AuthPolicies.ADMIN_ONLY);
         policy.Should().NotBeNull();
 
-        var orgTypeReq = policy!.Requirements
+        var orgTypeReq = policy.Requirements
             .OfType<ClaimsAuthorizationRequirement>()
             .FirstOrDefault(r => r.ClaimType == JwtClaimTypes.ORG_TYPE);
         orgTypeReq.Should().NotBeNull();
-        orgTypeReq!.AllowedValues.Should().Contain(OrgTypeValues.ADMIN);
+        orgTypeReq.AllowedValues.Should().Contain(OrgTypeValues.ADMIN);
         orgTypeReq.AllowedValues.Should().NotContain(OrgTypeValues.SUPPORT);
     }
 
@@ -203,11 +203,11 @@ public class AuthPolicyTests
         var policy = options.GetPolicy("CustomersOnly");
         policy.Should().NotBeNull();
 
-        var orgTypeReq = policy!.Requirements
+        var orgTypeReq = policy.Requirements
             .OfType<ClaimsAuthorizationRequirement>()
             .FirstOrDefault(r => r.ClaimType == JwtClaimTypes.ORG_TYPE);
         orgTypeReq.Should().NotBeNull();
-        orgTypeReq!.AllowedValues.Should().Contain(OrgTypeValues.CUSTOMER);
+        orgTypeReq.AllowedValues.Should().Contain(OrgTypeValues.CUSTOMER);
         orgTypeReq.AllowedValues.Should().Contain(OrgTypeValues.THIRD_PARTY);
         orgTypeReq.AllowedValues.Should().NotContain(OrgTypeValues.ADMIN);
     }
@@ -229,11 +229,11 @@ public class AuthPolicyTests
         var policy = options.GetPolicy("OfficerPlus");
         policy.Should().NotBeNull();
 
-        var roleReq = policy!.Requirements
+        var roleReq = policy.Requirements
             .OfType<ClaimsAuthorizationRequirement>()
             .FirstOrDefault(r => r.ClaimType == JwtClaimTypes.ROLE);
         roleReq.Should().NotBeNull();
-        roleReq!.AllowedValues.Should().Contain(RoleValues.OFFICER);
+        roleReq.AllowedValues.Should().Contain(RoleValues.OFFICER);
         roleReq.AllowedValues.Should().Contain(RoleValues.OWNER);
         roleReq.AllowedValues.Should().NotContain(RoleValues.AGENT);
         roleReq.AllowedValues.Should().NotContain(RoleValues.AUDITOR);
@@ -256,18 +256,18 @@ public class AuthPolicyTests
         var policy = options.GetPolicy("StaffOfficer");
         policy.Should().NotBeNull();
 
-        var requirements = policy!.Requirements
+        var requirements = policy.Requirements
             .OfType<ClaimsAuthorizationRequirement>()
             .ToList();
 
         var orgTypeReq = requirements.FirstOrDefault(r => r.ClaimType == JwtClaimTypes.ORG_TYPE);
         orgTypeReq.Should().NotBeNull();
-        orgTypeReq!.AllowedValues.Should().Contain(OrgTypeValues.ADMIN);
+        orgTypeReq.AllowedValues.Should().Contain(OrgTypeValues.ADMIN);
         orgTypeReq.AllowedValues.Should().Contain(OrgTypeValues.SUPPORT);
 
         var roleReq = requirements.FirstOrDefault(r => r.ClaimType == JwtClaimTypes.ROLE);
         roleReq.Should().NotBeNull();
-        roleReq!.AllowedValues.Should().Contain(RoleValues.OFFICER);
+        roleReq.AllowedValues.Should().Contain(RoleValues.OFFICER);
         roleReq.AllowedValues.Should().Contain(RoleValues.OWNER);
         roleReq.AllowedValues.Should().NotContain(RoleValues.AGENT);
     }

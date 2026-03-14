@@ -38,18 +38,21 @@ D2Result.created({ data: contactDto });
 
 ### Factory Methods — Failure
 
-```typescript
-// Not found (404, NOT_FOUND)
-D2Result.notFound<LocationDTO>();
-D2Result.notFound<LocationDTO>({ messages: ["Location not found."] });
+Each factory provides a default TK key message (e.g. `"common_errors_NOT_FOUND"`). Only pass `messages` when you need a **different** key.
 
-// Unauthorized (401, UNAUTHORIZED)
+```typescript
+// Not found (404, NOT_FOUND) — default message: "common_errors_NOT_FOUND"
+D2Result.notFound<LocationDTO>();
+D2Result.notFound<LocationDTO>({ messages: ["geo_errors_LOCATION_NOT_FOUND"] });
+
+// Unauthorized (401, UNAUTHORIZED) — default message: "common_errors_UNAUTHORIZED"
 D2Result.unauthorized();
 
-// Forbidden (403, FORBIDDEN)
-D2Result.forbidden<OrgDTO>({ messages: ["Insufficient permissions."] });
+// Forbidden (403, FORBIDDEN) — default message: "common_errors_FORBIDDEN"
+D2Result.forbidden();
+D2Result.forbidden<OrgDTO>({ messages: ["auth_errors_INSUFFICIENT_PERMISSIONS"] });
 
-// Validation failed (400, VALIDATION_FAILED)
+// Validation failed (400, VALIDATION_FAILED) — default message: "common_errors_VALIDATION_FAILED"
 D2Result.validationFailed({
   inputErrors: [
     ["email", "Email is required."],
@@ -57,24 +60,25 @@ D2Result.validationFailed({
   ],
 });
 
-// Conflict (409, CONFLICT)
-D2Result.conflict<ContactDTO>({ messages: ["Contact already exists."] });
+// Conflict (409, CONFLICT) — default message: "common_errors_CONFLICT"
+D2Result.conflict();
+D2Result.conflict<ContactDTO>({ messages: ["auth_errors_CONTACT_ALREADY_EXISTS"] });
 
-// Service unavailable (503, SERVICE_UNAVAILABLE)
-D2Result.serviceUnavailable({ messages: ["Geo service is down."] });
+// Service unavailable (503, SERVICE_UNAVAILABLE) — default message: "common_errors_SERVICE_UNAVAILABLE"
+D2Result.serviceUnavailable();
 
-// Unhandled exception (500, UNHANDLED_EXCEPTION)
-D2Result.unhandledException({ messages: ["Unexpected error in cache layer."] });
+// Unhandled exception (500, UNHANDLED_EXCEPTION) — default message: "common_errors_unknown"
+D2Result.unhandledException();
 
-// Payload too large (413, PAYLOAD_TOO_LARGE)
-D2Result.payloadTooLarge({ messages: ["Request body exceeds 10 MB limit."] });
+// Payload too large (413, PAYLOAD_TOO_LARGE) — default message: "common_errors_PAYLOAD_TOO_LARGE"
+D2Result.payloadTooLarge();
 
-// Cancelled (400, CANCELLED)
+// Cancelled (400, CANCELLED) — default message: "common_errors_CANCELLED"
 D2Result.cancelled();
 
 // Generic failure (specify status/error manually — only when no factory matches)
 D2Result.fail({
-  messages: ["Upstream timeout."],
+  messages: ["common_errors_REQUEST_FAILED"],
   statusCode: HttpStatusCode.InternalServerError,
   errorCode: "GATEWAY_TIMEOUT",
 });
@@ -220,7 +224,7 @@ Override with `isTransientResult` option for custom logic.
 
 ## Best Practices
 
-1. **Always use semantic factories** instead of raw `fail()`. If the outcome is "not found", use `notFound()` — not `fail({ statusCode: 404, errorCode: "NOT_FOUND" })`. The factory sets status code, error code, and default message automatically.
+1. **Always use semantic factories** instead of raw `fail()`. If the outcome is "not found", use `notFound()` — not `fail({ statusCode: 404, errorCode: "NOT_FOUND" })`. The factory sets status code, error code, and default message automatically. Default messages are TK translation key strings (e.g. `"common_errors_NOT_FOUND"`) — the translation middleware resolves them to locale-appropriate text before reaching the client.
 
 2. **Raw `fail()` is only appropriate** when no semantic factory matches (e.g., re-mapping arbitrary upstream status codes, or a code like `429` that has no dedicated factory).
 

@@ -282,7 +282,7 @@ describe("Invitation routes", () => {
       });
       expect(res.status).toBe(403);
       const body = (await res.json()) as { messages?: string[] };
-      expect(body.messages?.[0]).toContain('cannot invite role "owner"');
+      expect(body.messages?.[0]).toContain("auth_errors_INVITATION_ROLE_HIERARCHY");
       expect(mockCreateInvitation).not.toHaveBeenCalled();
     });
 
@@ -295,7 +295,7 @@ describe("Invitation routes", () => {
       });
       expect(res.status).toBe(403);
       const body = (await res.json()) as { messages?: string[] };
-      expect(body.messages?.[0]).toContain('cannot invite role "officer"');
+      expect(body.messages?.[0]).toContain("auth_errors_INVITATION_ROLE_HIERARCHY");
     });
 
     it("should allow officer to invite agent (201)", async () => {
@@ -564,7 +564,7 @@ describe("Invitation routes", () => {
       expect(res.status).toBe(400);
       const body = (await res.json()) as { messages?: string[] };
       // Must NOT leak internal error details — always generic message
-      expect(body.messages).toContain("Failed to create invitation.");
+      expect(body.messages).toContain("auth_errors_INVITATION_CREATION_FAILED");
       expect(body.messages).not.toContain("User is already a member.");
 
       // Should not attempt to notify
@@ -583,7 +583,7 @@ describe("Invitation routes", () => {
 
       expect(res.status).toBe(400);
       const body = (await res.json()) as { messages?: string[] };
-      expect(body.messages).toContain("Failed to create invitation.");
+      expect(body.messages).toContain("auth_errors_INVITATION_CREATION_FAILED");
     });
 
     it("should not leak error details even when logger is unavailable", async () => {
@@ -599,7 +599,7 @@ describe("Invitation routes", () => {
       // Should still return 400 with generic message even if logger resolve fails
       expect(res.status).toBe(400);
       const body = (await res.json()) as { messages?: string[] };
-      expect(body.messages).toContain("Failed to create invitation.");
+      expect(body.messages).toContain("auth_errors_INVITATION_CREATION_FAILED");
       expect(body.messages).not.toContain("Internal BetterAuth error details");
     });
   });

@@ -8,6 +8,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.D;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -18,7 +19,7 @@ using O = D2.Shared.Interfaces.Caching.Distributed.Handlers.D.IDelete.ReleaseLoc
 /// <summary>
 /// Handler for releasing a distributed lock in Redis using an atomic Lua compare-and-delete.
 /// </summary>
-public class ReleaseLock : BaseHandler<H, I, O>, H
+public partial class ReleaseLock : BaseHandler<H, I, O>, H
 {
     /// <summary>
     /// Lua script for atomic compare-and-delete.
@@ -70,18 +71,20 @@ public class ReleaseLock : BaseHandler<H, I, O>, H
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while releasing lock for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogReleaseLockFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<O?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while releasing a distributed lock.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while releasing lock for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogReleaseLockFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

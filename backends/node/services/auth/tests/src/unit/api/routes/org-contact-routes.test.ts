@@ -384,7 +384,7 @@ describe("Org contact routes", () => {
       });
       expect(res.status).toBe(403);
       const body = await res.json();
-      expect(body.messages[0]).toContain("No active organization");
+      expect(body.messages[0]).toContain("middleware_errors_NO_ACTIVE_ORGANIZATION");
     });
 
     it("should reject GET when no active org in session", async () => {

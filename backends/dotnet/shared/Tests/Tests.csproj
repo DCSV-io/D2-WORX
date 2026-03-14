@@ -36,13 +36,22 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Content Include="..\..\..\..\contracts\messages\*.json" Link="messages\%(FileName)%(Extension)">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Handler\Handler.csproj" />
         <ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
+        <ProjectReference Include="..\I18n\I18n.csproj" />
         <ProjectReference Include="..\Implementations\Caching\Distributed\DistributedCache.Redis\DistributedCache.Redis.csproj" />
         <ProjectReference Include="..\Implementations\Caching\InMemory\InMemoryCache.Default\InMemoryCache.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Middleware\Auth.Default\Auth.Default.csproj" />
         <ProjectReference Include="..\Implementations\Middleware\Idempotency.Default\Idempotency.Default.csproj" />
         <ProjectReference Include="..\Implementations\Middleware\RateLimit.Default\RateLimit.Default.csproj" />
         <ProjectReference Include="..\Implementations\Middleware\RequestEnrichment.Default\RequestEnrichment.Default.csproj" />
+        <ProjectReference Include="..\Implementations\Middleware\Translation.Default\Translation.Default.csproj" />
         <ProjectReference Include="..\Implementations\Messaging\Messaging.RabbitMQ\Messaging.RabbitMQ.csproj" />
         <ProjectReference Include="..\Implementations\Repository\Batch\Batch.Pg\Batch.Pg.csproj" />
         <ProjectReference Include="..\Implementations\Repository\Transactions\Transactions.Pg\Transactions.Pg.csproj" />

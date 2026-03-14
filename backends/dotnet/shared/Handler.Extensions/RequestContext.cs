@@ -7,7 +7,6 @@
 namespace D2.Shared.Handler.Extensions;
 
 using System.Diagnostics;
-using System.Security.Claims;
 using D2.Shared.Handler.Auth;
 using D2.Shared.Utilities.Extensions;
 using Microsoft.AspNetCore.Http;

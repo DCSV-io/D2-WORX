@@ -262,7 +262,7 @@ public class PhoneNumberTests
 
         // Assert
         phoneNumber.Labels.Should().BeOfType<ImmutableHashSet<string>>();
-        phoneNumber.Labels.Should().BeEquivalentTo(["mobile", "primary"]);
+        phoneNumber.Labels.Should().BeEquivalentTo("mobile", "primary");
     }
 
     /// <summary>
@@ -280,7 +280,7 @@ public class PhoneNumberTests
 
         // Assert
         phoneNumber.Labels.Should().HaveCount(2);
-        phoneNumber.Labels.Should().BeEquivalentTo(["mobile", "primary"]);
+        phoneNumber.Labels.Should().BeEquivalentTo("mobile", "primary");
     }
 
     /// <summary>
@@ -297,7 +297,7 @@ public class PhoneNumberTests
         var phoneNumber = PhoneNumber.Create(phone, dirtyLabels);
 
         // Assert
-        phoneNumber.Labels.Should().BeEquivalentTo(["mobile", "primary"]);
+        phoneNumber.Labels.Should().BeEquivalentTo("mobile", "primary");
     }
 
     /// <summary>
@@ -316,7 +316,7 @@ public class PhoneNumberTests
 
         // Assert
         phoneNumber.Labels.Should().HaveCount(2);
-        phoneNumber.Labels.Should().BeEquivalentTo(["mobile", "primary"]);
+        phoneNumber.Labels.Should().BeEquivalentTo("mobile", "primary");
     }
 
     #endregion
@@ -406,7 +406,7 @@ public class PhoneNumberTests
         // Arrange
         var phones = new[]
         {
-            ("5551234567", (IEnumerable<string>?)["mobile"]),
+            ("5551234567", ["mobile"]),
             ("5559876543", (IEnumerable<string>?)["work"]),
         };
 

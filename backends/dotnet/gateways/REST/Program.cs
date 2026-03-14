@@ -5,15 +5,17 @@
 // -----------------------------------------------------------------------
 
 using System.Text.Json.Serialization;
-using D2.Gateways.REST.Auth;
 using D2.Gateways.REST.Endpoints;
 using D2.Geo.Client;
+using D2.Shared.Auth.Default;
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.Handler.Extensions;
+using D2.Shared.I18n;
 using D2.Shared.Idempotency.Default;
 using D2.Shared.RateLimit.Default;
 using D2.Shared.RequestEnrichment.Default;
 using D2.Shared.ServiceDefaults;
+using D2.Shared.Translation.Default;
 using D2.Shared.Utilities.Configuration;
 using Serilog;
 
@@ -73,7 +75,7 @@ var corsOrigins = (builder.Configuration["CorsOrigin"] ?? "http://localhost:5173
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(corsOrigins)
      .AllowCredentials()
-     .WithHeaders("Content-Type", "Authorization", "Idempotency-Key", "X-Client-Fingerprint")
+     .WithHeaders("Content-Type", "Authorization", "Idempotency-Key", "X-Client-Fingerprint", "D2-Locale")
      .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")));
 
 // Request body size limit (256 KB — gateway payloads are small JSON).
@@ -82,16 +84,21 @@ builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 256 * 1024);
 // Register idempotency middleware services.
 builder.Services.AddIdempotency(builder.Configuration);
 
+// Register translation middleware services — messages copied to output by MSBuild.
+builder.Services.AddTranslation(builder.Configuration);
+
 // Register gRPC clients + HTTP client for health endpoint fan-out.
 builder.Services.AddHealthEndpointDependencies();
+
+SupportedLocales.Configure(builder.Configuration);
 
 var app = builder.Build();
 
 // Security headers — before exception handler so they apply to all responses.
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
     await next();
 });
 
@@ -105,6 +112,7 @@ app.UseRateLimiting();
 app.UseJwtAuth();
 app.UseRequestContextLogging();
 app.UseIdempotency();
+app.UseTranslation();
 
 if (app.Environment.IsDevelopment())
 {

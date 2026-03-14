@@ -46,6 +46,7 @@
    - [ADR-020: D2_MOCK_INFRA Infrastructure Stubbing](#adr-020-d2_mock_infra-infrastructure-stubbing)
    - [ADR-021: Grafana Faro Client Telemetry](#adr-021-grafana-faro-client-telemetry)
    - [ADR-022: Design System-First Development](#adr-022-design-system-first-development)
+   - [ADR-023: Gateway-Edge i18n Translation](#adr-023-gateway-edge-i18n-translation)
 
 ---
 
@@ -53,24 +54,26 @@
 
 ### Completed Milestones
 
-- **Phase 1: TypeScript Shared Infrastructure** ✅ — 19 shared `@d2/*` packages mirroring .NET (result, handler, DI, caching, messaging, middleware, batch-pg, errors-pg)
+- **Phase 1: TypeScript Shared Infrastructure** ✅ — 24 shared `@d2/*` packages mirroring .NET (result, handler, DI, caching, messaging, middleware, batch-pg, errors-pg, i18n, auth/CSRF/translation middleware)
 - **Phase 2 Stage A: Cross-cutting foundations** ✅ — Retry utility, idempotency middleware, UUIDv7
 - **Phase 2 Stage B: Auth Service DDD layers** ✅ — domain, app, infra, api (969 tests)
 - **Comms Service Stage A** ✅ — Delivery engine, email + SMS providers, `@d2/comms-client` (575 tests)
 - **E2E Cross-Service Tests** ✅ — 31 tests (22 API-level + 9 browser E2E: Auth → Geo → Comms delivery pipeline + Dkron job chain + BFF client integration)
 - **Cross-platform Parity** ✅ — `@d2/batch-pg`, `@d2/errors-pg`, .NET `Errors.Pg`, documented in `backends/PARITY.md`
-- **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware
+- **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware, translation middleware
 - **Geo Service** ✅ — Complete (.NET), 798 tests
 - **Production-readiness Sweep** ✅ — 40 items triaged, all high/medium fixed, polish items done
 - **Scheduled Jobs (Dkron)** ✅ — 8 daily maintenance jobs (Auth 4, Geo 2, Comms 2), `@d2/dkron-mgr` reconciler (64 tests), full-chain E2E tested
 - **SvelteKit Web Client Steps 0–9** ✅ — Design system, routing, auth BFF, gateway client, forms, auth pages, fingerprinting, Faro telemetry, three-tier Playwright tests (706 tests: 551 Vitest + 146 mocked Playwright + 9 browser E2E)
+- **Q1 2026 Dependency Update** ✅ — .NET 10.0.103, Node 24.14, pnpm 10.30, auth health gRPC migration (#43)
+- **i18n & BCP 47 Locale Migration** ✅ — 10 BCP 47 locales (en-US, en-CA, en-GB, fr-FR, fr-CA, es-ES, es-MX, de-DE, it-IT, ja-JP) replacing 5 bare language codes. D2.Shared.I18n + @d2/i18n packages, gateway-edge translation middleware, Contact.IETFBCP47Tag field, auth middleware extraction to shared packages
 - **Shared tests** — 1,127 passing
 
 ### Phase 2: Auth Service + SvelteKit Integration
 
 **Stage B.5 — Scheduled Jobs (Dkron) ✅** — See [ADR-013](#adr-013-scheduled-jobs-dkron).
 
-**Dependency Update — Q1 2026** — Pending. Quarterly bump before SvelteKit feature pages. See [ADR-018](#adr-018-dependency-update-policy).
+**Dependency Update — Q1 2026 ✅** — Completed. See [ADR-018](#adr-018-dependency-update-policy).
 
 **SvelteKit App Foundations ✅** — Route groups, layouts, sidebar, shadcn-svelte, design system, server middleware (enrichment + rate limiting + idempotency), auth BFF proxy, API gateway client. See [WIP](#work-in-progress) for step-by-step progress.
 
@@ -83,7 +86,7 @@
 **Stage D — Auth Integration + Comms Con't**
 
 - ~~**Forms architecture**~~ ✅ — Superforms + Formsnap, Zod 4, field presets, D2Result error mapping (73 tests)
-- ~~**Auth pages**~~ ✅ — Sign-in, sign-up, forgot/reset password, email verification. i18n (5 locales)
+- ~~**Auth pages**~~ ✅ — Sign-in, sign-up, forgot/reset password, email verification. i18n (10 BCP 47 locales)
 - ~~**Device fingerprinting**~~ ✅ — Cross-cutting: SvelteKit + Node.js + .NET. `d2-cfp` cookie, DeviceFingerprint dimension
 - ~~**Client telemetry**~~ ✅ — Grafana Faro (errors → Loki, traces → Tempo, Web Vitals → Mimir). Alloy `faro.receiver`, Web Vitals RUM dashboard
 - **Onboarding** — Post-verification: accept pending invitation(s) or create `customer` org
@@ -109,11 +112,11 @@ Auth service architecture documented in [`AUTH.md`](backends/node/services/auth/
 
 ### Open — Can Fix Now
 
-| #   | Item                          | Owner | Effort | Notes                                                                                                                                                                                                                                                                                                                                   |
-| --- | ----------------------------- | ----- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 40  | OTel alerting rules           | All   | Medium | Grafana is running — no longer blocked. Define Grafana alert rules + alerting channel config. Targets: error rate >5% 5xx over 5min, latency P99 >2s, rate limit blocks per dimension, delivery failures, gRPC failure rate, service unavailability (RabbitMQ down, Redis down). Requires alert rule YAML + notification channel setup. |
-| 41  | .NET i18n for D2Result output | Geo   | Medium | Geo.App has hardcoded English in FluentValidation messages and D2Result `inputErrors`/`messages`. End users see these. Domain-layer validation (entities, value objects) is exempt — domain stays pure, no i18n dependency. But app-layer and above must translate. Need a .NET i18n solution (resource files or shared translation keys from `contracts/messages/`) so handler output respects the caller's locale. `@d2/i18n` exists for Node.js but has no .NET equivalent. |
-| 42  | Comms delivery_attempt unique constraint | Comms | Low | OPERATIONAL-GUARANTEES.md documents a unique constraint on `(delivery_request_id, channel, attempt_number)` in the `delivery_attempt` table, but it doesn't exist in the Drizzle schema (`comms/infra/src/repository/schema/tables.ts`). Add a composite unique index to prevent duplicate delivery attempts for the same request+channel+attempt. |
+| #      | Item                                         | Owner     | Effort     | Notes                                                                                                                                                                                                                                                                                                                                   |
+| ------ | -------------------------------------------- | --------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 40     | OTel alerting rules                          | All       | Medium     | Grafana is running — no longer blocked. Define Grafana alert rules + alerting channel config. Targets: error rate >5% 5xx over 5min, latency P99 >2s, rate limit blocks per dimension, delivery failures, gRPC failure rate, service unavailability (RabbitMQ down, Redis down). Requires alert rule YAML + notification channel setup. |
+| ~~41~~ | ~~.NET i18n for D2Result output~~            | ~~Geo~~   | ~~Medium~~ | **Resolved.** ADR-023: Gateway-edge translation. D2.Shared.I18n package (Translator + TK constants). TranslationMiddleware in REST gateway. Geo validators use TK.\* keys. Contact.IETFBCP47Tag added for Comms.                                                                                                                        |
+| ~~42~~ | ~~Comms delivery_attempt unique constraint~~ | ~~Comms~~ | ~~Low~~    | **Resolved.** Added `uq_delivery_attempt_request_channel_attempt` unique index on `(request_id, channel, attempt_number)` to Drizzle schema + migration.                                                                                                                                                                                |
 
 ### Open Questions
 
@@ -184,7 +187,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | 6    | API Client Layer (Gateway)          | ✅ Done | 90 tests. camelCase normalizer, dynamic public URL, service key bypass, shared executeFetch      |
 | 6.5  | Chart Showcase (LayerChart 2.0)     | ✅ Done | 5 chart types: area, bar, line, donut, sparkline                                                 |
 | 7    | Forms Architecture (Superforms)     | ✅ Done | 108 tests. Superforms + Formsnap + Zod 4, field presets, D2Result mapping, form-actions pipeline |
-| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done | Sign-in, sign-up, forgot/reset password, verify-email. i18n (5 locales)                          |
+| 8    | Auth Pages (Sign-In, Sign-Up, etc.) | ✅ Done | Sign-in, sign-up, forgot/reset password, verify-email. i18n (10 BCP 47 locales)                  |
 | 9    | Client Telemetry (Grafana Faro)     | ✅ Done | Faro SDK, Alloy faro.receiver pipeline, Web Vitals → Mimir histograms, RUM dashboard             |
 | 10   | Onboarding Flow                     | Pending | Post-auth org selection/creation + Radar address autocomplete backend                            |
 | 11   | App Shell (Sidebar, Header, Org)    | Pending | Org-type nav, org switcher, emulation banner, breadcrumbs                                        |
@@ -194,13 +197,19 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 | Task                           | Status  | Related ADRs | Notes                                   |
 | ------------------------------ | ------- | ------------ | --------------------------------------- |
-| Dependency audit & update      | Pending | ADR-018      | Q1 2026 quarterly bump — pre-SvelteKit  |
+| Dependency audit & update      | ✅ Done | ADR-018      | Q1 2026 quarterly bump completed (#43)  |
 | @d2/auth-client (backend gRPC) | Planned | —            | Mirrors @d2/geo-client pattern, Stage C |
 | .NET Auth.Client               | Planned | ADR-001      | JWT validation via JWKS + gRPC client   |
 
 ### Recently Completed
 
-- **SvelteKit web client merged to main** (PR #44): Steps 0–9 complete — design system (27 shadcn components, 3 OKLCH presets), routing (auth/onboarding/app groups), auth BFF proxy + JWT manager, API gateway client, forms (Superforms + Zod 4), auth pages (5 locales), device fingerprinting, Grafana Faro telemetry, three-tier Playwright tests. 706 SvelteKit tests total (551 Vitest + 146 mocked Playwright + 9 browser E2E)
+- **BCP 47 locale migration**: Migrated from 5 bare language codes (en, fr, es, de, ja) to 10 IETF BCP 47 locale tags (en-US, en-CA, en-GB, fr-FR, fr-CA, es-ES, es-MX, de-DE, it-IT, ja-JP). `contracts/messages/` files renamed, Paraglide config updated, `@d2/i18n` and `D2.Shared.I18n` packages provide locale validation/resolution on both platforms
+- **Middleware extraction to shared packages**: Auth middleware (service key, session fingerprint, JWT auth) extracted from gateway-local code to `Auth.Default` (.NET) and `@d2/service-key` + `@d2/session-fingerprint` (Node.js). Translation middleware extracted to `Translation.Default` (.NET) and `@d2/translation` (Node.js). CSRF middleware extracted to `@d2/csrf` (Node-only). Gateways and auth-api now delegate to shared packages for framework-agnostic core logic
+- **WhoIs fingerprint removal**: Hash simplified to `SHA256(ip|year|month)` — fingerprint field removed from proto, .NET domain, Node.js geo-client, and request enrichment. Old fingerprint-based records age out naturally via 180-day retention (`PurgeStaleWhoIs` job)
+- **Comms delivery_attempt unique constraint** (#42): Added `uq_delivery_attempt_request_channel_attempt` unique index on `(request_id, channel, attempt_number)`
+- **.NET i18n gateway-edge translation** (#41): `D2.Shared.I18n` package with `Translator` + `TK` constants. `TranslationMiddleware` in REST gateway resolves `D2-Locale` / `Accept-Language` at response time. Geo validators use `TK.*` keys instead of hardcoded English. See ADR-023
+- **Contact.IETFBCP47Tag field**: BCP 47 locale on Geo Contact entity (defaults to `"en-US"`), synced from `User.locale` during `CreateUserContact`. Enables Comms service to deliver notifications in recipient's preferred language
+- **SvelteKit web client merged to main** (PR #44): Steps 0–9 complete — design system (27 shadcn components, 3 OKLCH presets), routing (auth/onboarding/app groups), auth BFF proxy + JWT manager, API gateway client, forms (Superforms + Zod 4), auth pages (10 BCP 47 locales), device fingerprinting, Grafana Faro telemetry, three-tier Playwright tests. 706 SvelteKit tests total (551 Vitest + 146 mocked Playwright + 9 browser E2E)
 - Browser E2E tests (Tier 2): 9 full-stack tests — sign-up, sign-in, sign-out, password reset. Self-contained via Testcontainers (PG, Redis, RabbitMQ) + .NET Geo child process + in-process Auth + SvelteKit dev server
 - Playwright test restructure: Mocked tests moved from `e2e/` to `tests/mocked/` with `D2_MOCK_INFRA` mock injection. 146 mocked tests passing (5 skipped pending authenticated sessions). Three-tier test architecture: mocked CI, local E2E (`tests/e2e/`), true browser E2E (`backends/node/services/e2e/`)
 - PR review fixes (#42–#53): CI job for bff-client tests, 72 new tests (reset-password, forgot-password, form-actions, auth-gateway-client, auth.server, middleware.server), shared `executeFetch()` extraction, schema dedup, .NET CORS multi-origin, empty-message fallback bug fix, CLAUDE.md path fix
@@ -251,8 +260,12 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | Batch.Pg                      | ✅ Done | `backends/dotnet/shared/Implementations/Repository/`                                            |
 | **RequestEnrichment.Default** | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/`                                            |
 | **RateLimit.Default**         | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (uses abstracted cache handlers)           |
+| **Idempotency.Default**       | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (Idempotency-Key header, Redis-backed)     |
 | **Handler.Extensions**        | ✅ Done | `backends/dotnet/shared/Handler.Extensions/` (JWT/auth extensions)                              |
 | **Errors.Pg**                 | ✅ Done | `backends/dotnet/shared/Implementations/Repository/Errors/Errors.Pg/` (PG error code helpers)   |
+| **D2.Shared.I18n**            | ✅ Done | `backends/dotnet/shared/I18n/` (Translator + TK constants for gateway-edge translation)         |
+| **Auth.Default**              | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (JWT auth, service key, fingerprint)       |
+| **Translation.Default**       | ✅ Done | `backends/dotnet/shared/Implementations/Middleware/` (gateway-edge D2Result translation)        |
 | **Geo.Client**                | ✅ Done | `backends/dotnet/services/Geo/Geo.Client/` (includes WhoIs cache handler)                       |
 
 ### Shared Packages (Node.js)
@@ -260,40 +273,45 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 > Mirrors .NET shared project structure under `backends/node/shared/`. All packages use `@d2/` scope.
 > Workspace root is at project root (`D2-WORX/`) — SvelteKit and other clients can consume any `@d2/*` package.
 
-| Package                    | Status     | Location                                                                      | .NET Equivalent                            |
-| -------------------------- | ---------- | ----------------------------------------------------------------------------- | ------------------------------------------ |
-| **@d2/result**             | ✅ Done    | `backends/node/shared/result/`                                                | `D2.Shared.Result`                         |
-| **@d2/utilities**          | ✅ Done    | `backends/node/shared/utilities/`                                             | `D2.Shared.Utilities`                      |
-| **@d2/protos**             | ✅ Done    | `backends/node/shared/protos/`                                                | `Protos.DotNet`                            |
-| **@d2/testing**            | ✅ Done    | `backends/node/shared/testing/`                                               | `D2.Shared.Tests` (infra)                  |
-| **@d2/shared-tests**       | ✅ Done    | `backends/node/shared/tests/`                                                 | `D2.Shared.Tests` (tests)                  |
-| **@d2/logging**            | ✅ Done    | `backends/node/shared/logging/`                                               | `Microsoft.Extensions.Logging` (ILogger)   |
-| **@d2/service-defaults**   | ✅ Done    | `backends/node/shared/service-defaults/`                                      | `D2.Shared.ServiceDefaults`                |
-| **@d2/handler**            | ✅ Done    | `backends/node/shared/handler/`                                               | `D2.Shared.Handler`                        |
-| **@d2/interfaces**         | ✅ Done    | `backends/node/shared/interfaces/`                                            | `D2.Shared.Interfaces`                     |
-| **@d2/result-extensions**  | ✅ Done    | `backends/node/shared/result-extensions/`                                     | `D2.Shared.Result.Extensions`              |
-| **@d2/cache-memory**       | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`             | `InMemoryCache.Default`                    |
-| **@d2/cache-redis**        | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`             | `DistributedCache.Redis`                   |
-| **@d2/messaging**          | ✅ Done    | `backends/node/shared/messaging/`                                             | Messaging.RabbitMQ (raw AMQP + proto JSON) |
-| **@d2/geo-client**         | ✅ Done    | `backends/node/services/geo/geo-client/`                                      | `Geo.Client` (full parity)                 |
-| **@d2/request-enrichment** | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/` | `RequestEnrichment.Default`                |
-| **@d2/ratelimit**          | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`          | `RateLimit.Default`                        |
-| **@d2/idempotency**        | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`        | `Idempotency.Default`                      |
-| **@d2/di**                 | ✅ Done    | `backends/node/shared/di/`                                                    | `Microsoft.Extensions.DependencyInjection` |
-| **@d2/batch-pg**           | ✅ Done    | `backends/node/shared/implementations/repository/batch/pg/`                   | `Batch.Pg`                                 |
-| **@d2/errors-pg**          | ✅ Done    | `backends/node/shared/implementations/repository/errors/pg/`                  | `Errors.Pg`                                |
-| **@d2/comms-client**       | ✅ Done    | `backends/node/services/comms/client/`                                        | — (RabbitMQ notification publisher)        |
-| **@d2/auth-bff-client**    | ✅ Done    | `backends/node/services/auth/bff-client/`                                     | — (BFF client, HTTP — no .NET equivalent)  |
-| **@d2/auth-client**        | 📋 Phase 2 | `backends/node/services/auth/client/`                                         | `Auth.Client` (gRPC, service-to-service)   |
+| Package                     | Status     | Location                                                                       | .NET Equivalent                            |
+| --------------------------- | ---------- | ------------------------------------------------------------------------------ | ------------------------------------------ |
+| **@d2/result**              | ✅ Done    | `backends/node/shared/result/`                                                 | `D2.Shared.Result`                         |
+| **@d2/utilities**           | ✅ Done    | `backends/node/shared/utilities/`                                              | `D2.Shared.Utilities`                      |
+| **@d2/protos**              | ✅ Done    | `backends/node/shared/protos/`                                                 | `Protos.DotNet`                            |
+| **@d2/testing**             | ✅ Done    | `backends/node/shared/testing/`                                                | `D2.Shared.Tests` (infra)                  |
+| **@d2/shared-tests**        | ✅ Done    | `backends/node/shared/tests/`                                                  | `D2.Shared.Tests` (tests)                  |
+| **@d2/logging**             | ✅ Done    | `backends/node/shared/logging/`                                                | `Microsoft.Extensions.Logging` (ILogger)   |
+| **@d2/service-defaults**    | ✅ Done    | `backends/node/shared/service-defaults/`                                       | `D2.Shared.ServiceDefaults`                |
+| **@d2/handler**             | ✅ Done    | `backends/node/shared/handler/`                                                | `D2.Shared.Handler`                        |
+| **@d2/interfaces**          | ✅ Done    | `backends/node/shared/interfaces/`                                             | `D2.Shared.Interfaces`                     |
+| **@d2/result-extensions**   | ✅ Done    | `backends/node/shared/result-extensions/`                                      | `D2.Shared.Result.Extensions`              |
+| **@d2/cache-memory**        | ✅ Done    | `backends/node/shared/implementations/caching/in-memory/default/`              | `InMemoryCache.Default`                    |
+| **@d2/cache-redis**         | ✅ Done    | `backends/node/shared/implementations/caching/distributed/redis/`              | `DistributedCache.Redis`                   |
+| **@d2/messaging**           | ✅ Done    | `backends/node/shared/messaging/`                                              | Messaging.RabbitMQ (raw AMQP + proto JSON) |
+| **@d2/geo-client**          | ✅ Done    | `backends/node/services/geo/geo-client/`                                       | `Geo.Client` (full parity)                 |
+| **@d2/request-enrichment**  | ✅ Done    | `backends/node/shared/implementations/middleware/request-enrichment/default/`  | `RequestEnrichment.Default`                |
+| **@d2/ratelimit**           | ✅ Done    | `backends/node/shared/implementations/middleware/ratelimit/default/`           | `RateLimit.Default`                        |
+| **@d2/idempotency**         | ✅ Done    | `backends/node/shared/implementations/middleware/idempotency/default/`         | `Idempotency.Default`                      |
+| **@d2/di**                  | ✅ Done    | `backends/node/shared/di/`                                                     | `Microsoft.Extensions.DependencyInjection` |
+| **@d2/batch-pg**            | ✅ Done    | `backends/node/shared/implementations/repository/batch/pg/`                    | `Batch.Pg`                                 |
+| **@d2/errors-pg**           | ✅ Done    | `backends/node/shared/implementations/repository/errors/pg/`                   | `Errors.Pg`                                |
+| **@d2/comms-client**        | ✅ Done    | `backends/node/services/comms/client/`                                         | — (RabbitMQ notification publisher)        |
+| **@d2/auth-bff-client**     | ✅ Done    | `backends/node/services/auth/bff-client/`                                      | — (BFF client, HTTP — no .NET equivalent)  |
+| **@d2/csrf**                | ✅ Done    | `backends/node/shared/implementations/middleware/csrf/default/`                | — (Node-only, .NET uses CORS for CSRF)     |
+| **@d2/service-key**         | ✅ Done    | `backends/node/shared/implementations/middleware/service-key/default/`         | `Auth.Default` (partial)                   |
+| **@d2/session-fingerprint** | ✅ Done    | `backends/node/shared/implementations/middleware/session-fingerprint/default/` | `Auth.Default` (partial)                   |
+| **@d2/translation**         | ✅ Done    | `backends/node/shared/implementations/middleware/translation/default/`         | `Translation.Default`                      |
+| **@d2/i18n**                | ✅ Done    | `backends/node/shared/i18n/`                                                   | `D2.Shared.I18n`                           |
+| **@d2/auth-client**         | 📋 Phase 2 | `backends/node/services/auth/client/`                                          | `Auth.Client` (gRPC, service-to-service)   |
 
 ### Services
 
-| Service   | Platform | Status     | Tests         | Notes                                                                          |
-| --------- | -------- | ---------- | ------------- | ------------------------------------------------------------------------------ |
-| Geo       | .NET     | ✅ Done    | 798 passing   | Geographic reference data, locations, contacts, WHOIS, multi-tier caching      |
-| Auth      | Node.js  | 🚧 Stage C | 969 passing   | Hono + BetterAuth + Drizzle. Stages A-B done, BFF client done, E2E tested     |
-| Comms     | Node.js  | 🚧 Stage B | 575 passing   | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)   |
-| dkron-mgr | Node.js  | ✅ Done    | 64 passing    | Declarative Dkron job reconciler — drift detection, orphan cleanup             |
+| Service   | Platform | Status     | Tests       | Notes                                                                        |
+| --------- | -------- | ---------- | ----------- | ---------------------------------------------------------------------------- |
+| Geo       | .NET     | ✅ Done    | 798 passing | Geographic reference data, locations, contacts, WHOIS, multi-tier caching    |
+| Auth      | Node.js  | 🚧 Stage C | 969 passing | Hono + BetterAuth + Drizzle. Stages A-B done, BFF client done, E2E tested    |
+| Comms     | Node.js  | 🚧 Stage B | 575 passing | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR) |
+| dkron-mgr | Node.js  | ✅ Done    | 64 passing  | Declarative Dkron job reconciler — drift detection, orphan cleanup           |
 
 ### Gateways
 
@@ -304,14 +322,14 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Frontends
 
-| Component            | Status         | Notes                                                                                                  |
-| -------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
-| SvelteKit App        | 🚧 Stage B     | Stage A (Steps 0–9) merged to main. Stage B (Steps 10–12: onboarding, app shell, SignalR) pending |
-| Auth BFF Integration | ✅ Done        | Proxy, session resolver, JWT manager, route guards (ADR-017)                                           |
-| API Gateway Client   | ✅ Done        | Server-side + client-side, camelCase normalizer (ADR-005)                                              |
-| Server Middleware    | ✅ Done        | Request enrichment, rate limiting, idempotency on SvelteKit                                            |
-| Playwright Tests     | ✅ Done        | Three-tier architecture (ADR-019): mocked CI (`tests/mocked/`, 146 passing, 5 skipped), local E2E (`tests/e2e/`), true browser E2E (`backends/node/services/e2e/`, 9 passing) |
-| OpenTelemetry        | ✅ Done        | Server instrumentation via OTLP/HTTP. Client telemetry via Grafana Faro (Step 9)                       |
+| Component            | Status     | Notes                                                                                                                                                                         |
+| -------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SvelteKit App        | 🚧 Stage B | Stage A (Steps 0–9) merged to main. Stage B (Steps 10–12: onboarding, app shell, SignalR) pending                                                                             |
+| Auth BFF Integration | ✅ Done    | Proxy, session resolver, JWT manager, route guards (ADR-017)                                                                                                                  |
+| API Gateway Client   | ✅ Done    | Server-side + client-side, camelCase normalizer (ADR-005)                                                                                                                     |
+| Server Middleware    | ✅ Done    | Request enrichment, rate limiting, idempotency on SvelteKit                                                                                                                   |
+| Playwright Tests     | ✅ Done    | Three-tier architecture (ADR-019): mocked CI (`tests/mocked/`, 146 passing, 5 skipped), local E2E (`tests/e2e/`), true browser E2E (`backends/node/services/e2e/`, 9 passing) |
+| OpenTelemetry        | ✅ Done    | Server instrumentation via OTLP/HTTP. Client telemetry via Grafana Faro (Step 9)                                                                                              |
 
 ---
 
@@ -1234,9 +1252,9 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 
 **Update log**:
 
-| Quarter | Date | Notes                                    |
-| ------- | ---- | ---------------------------------------- |
-| Q1 2026 | TBD  | First update — post-Dkron, pre-SvelteKit |
+| Quarter | Date       | Notes                                                                              |
+| ------- | ---------- | ---------------------------------------------------------------------------------- |
+| Q1 2026 | 2026-03-10 | Completed (#43). .NET 10.0.103, Node 24.14, pnpm 10.30, auth health gRPC migration |
 
 ---
 
@@ -1248,19 +1266,21 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 
 **Decision**: Three tiers with clear boundaries, each with its own config, runner, and CI strategy.
 
-| Tier | Location                            | Infrastructure                                                                       | CI?     | Purpose                                   |
-| ---- | ----------------------------------- | ------------------------------------------------------------------------------------ | ------- | ----------------------------------------- |
-| 1    | `clients/web/tests/mocked/`        | SvelteKit dev server only (`D2_MOCK_INFRA=true`), `page.route()` API mocks          | Yes     | UI rendering, client validation, nav      |
-| 2    | `backends/node/services/e2e/`      | Full stack: Testcontainers (PG, Redis, RabbitMQ) + .NET Geo + in-process Auth/Comms  | Yes     | High-value end-to-end user flows          |
-| 3    | `clients/web/tests/e2e/`           | Expects all services running externally (Aspire or manual)                           | No      | Comprehensive local-only coverage         |
+| Tier | Location                      | Infrastructure                                                                      | CI? | Purpose                              |
+| ---- | ----------------------------- | ----------------------------------------------------------------------------------- | --- | ------------------------------------ |
+| 1    | `clients/web/tests/mocked/`   | SvelteKit dev server only (`D2_MOCK_INFRA=true`), `page.route()` API mocks          | Yes | UI rendering, client validation, nav |
+| 2    | `backends/node/services/e2e/` | Full stack: Testcontainers (PG, Redis, RabbitMQ) + .NET Geo + in-process Auth/Comms | Yes | High-value end-to-end user flows     |
+| 3    | `clients/web/tests/e2e/`      | Expects all services running externally (Aspire or manual)                          | No  | Comprehensive local-only coverage    |
 
 **Tier 1 — Mocked Playwright** (146 tests, 5 skipped):
+
 - Config: `clients/web/playwright.config.ts` → `testDir: "tests/mocked"`
 - Mocking: `page.route()` intercepts for auth API, email availability, Geo validation
 - Shared fixtures: `tests/mocked/fixtures.ts` — `mockAuthApi()`, `mockGeoApi()`
 - CI job: `web-playwright-mocked` — runs on every PR/push, no backends needed
 
 **Tier 2 — True Browser E2E** (9 tests):
+
 - Config: `backends/node/services/e2e/playwright.config.ts`
 - Global setup/teardown: starts all infra + services + SvelteKit dev server, exports URLs via env
 - Helper: `startSvelteKitServer()` — same pattern as `startGeoService()` (spawn, poll health, return URL)
@@ -1268,6 +1288,7 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 - CI job: `e2e-browser` — runs alongside API-level E2E jobs
 
 **Tier 3 — Wide Local E2E** (local only):
+
 - Config: `clients/web/playwright.local.config.ts`
 - Script: `pnpm test:e2e:local`
 - Not in CI — requires manually running all services
@@ -1294,13 +1315,13 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 
 **What gets stubbed:**
 
-| Middleware           | Normal Mode                                        | Mock Mode                                          |
-| -------------------- | -------------------------------------------------- | -------------------------------------------------- |
-| Session resolution   | `SessionResolver.resolve(cookies)` → Auth service  | Returns `null` session (unauthenticated)            |
-| Request enrichment   | IP resolution, fingerprinting, WhoIs lookup         | Sets empty/default `IRequestContext` fields         |
-| Rate limiting        | Redis-backed sliding window counters                | Always passes (no Redis)                            |
-| Idempotency          | Redis-backed key dedup                              | Always passes (no Redis)                            |
-| Geo ref data         | gRPC call to Geo service for country/locale data    | Returns hardcoded reference data                    |
+| Middleware         | Normal Mode                                       | Mock Mode                                   |
+| ------------------ | ------------------------------------------------- | ------------------------------------------- |
+| Session resolution | `SessionResolver.resolve(cookies)` → Auth service | Returns `null` session (unauthenticated)    |
+| Request enrichment | IP resolution, fingerprinting, WhoIs lookup       | Sets empty/default `IRequestContext` fields |
+| Rate limiting      | Redis-backed sliding window counters              | Always passes (no Redis)                    |
+| Idempotency        | Redis-backed key dedup                            | Always passes (no Redis)                    |
+| Geo ref data       | gRPC call to Geo service for country/locale data  | Returns hardcoded reference data            |
 
 **Implementation**: Single `if` check at the top of `hooks.server.ts`:
 
@@ -1314,6 +1335,7 @@ if (process.env.D2_MOCK_INFRA === "true") {
 ```
 
 **Where set:**
+
 - Playwright config: `webServer.env.D2_MOCK_INFRA = "true"` (Tier 1 mocked tests)
 - Manual dev: `D2_MOCK_INFRA=true pnpm dev` (frontend-only development)
 - NOT set in Tier 2/3 tests (they use real infrastructure)
@@ -1348,14 +1370,14 @@ Browser (Faro SDK) ──HTTP POST──► Alloy (faro.receiver :12347)
 
 **Faro SDK configuration:**
 
-| Concern              | Setting                                                           |
-| -------------------- | ----------------------------------------------------------------- |
-| Instrumentations     | `errors`, `console` (warn+error), `web-vitals`, `fetch`          |
-| Session tracking     | `SessionInstrumentation` — generates session ID for RUM grouping  |
-| User identity        | `userId` + `username` only — **never** email, real name, or PII  |
-| Batching             | `BatchTransport` — debounce sends, reduce request count           |
-| Source maps          | Uploaded at build time for stack trace symbolication              |
-| Dev toggle           | Disabled when `PUBLIC_FARO_URL` is not set                        |
+| Concern          | Setting                                                          |
+| ---------------- | ---------------------------------------------------------------- |
+| Instrumentations | `errors`, `console` (warn+error), `web-vitals`, `fetch`          |
+| Session tracking | `SessionInstrumentation` — generates session ID for RUM grouping |
+| User identity    | `userId` + `username` only — **never** email, real name, or PII  |
+| Batching         | `BatchTransport` — debounce sends, reduce request count          |
+| Source maps      | Uploaded at build time for stack trace symbolication             |
+| Dev toggle       | Disabled when `PUBLIC_FARO_URL` is not set                       |
 
 **Web Vitals as OTel histograms:**
 
@@ -1408,6 +1430,26 @@ Faro SDK captures Web Vitals (LCP, FID, CLS, TTFB, INP) and sends them as measur
 - Design system sprint (Steps 2–3.5) took ~3 days but prevented weeks of per-page styling inconsistencies
 - OKLCH color space enables perceptually uniform theme generation — one preset definition generates the full palette
 
+### ADR-023: Gateway-Edge i18n Translation
+
+**Status**: Decided (2026-03)
+
+**Context**: Geo.App had hardcoded English strings in FluentValidation messages and D2Result `inputErrors`/`messages`. End users see these. Need a .NET i18n solution so handler output respects the caller's locale. Domain-layer validation (entities, value objects) is exempt — domain stays pure, no i18n dependency.
+
+**Decision**: Gateway translates D2Result messages/inputErrors using shared `contracts/messages/*.json`. Services emit `TK.*` key constants, gateway resolves at response time using `D2-Locale` / `Accept-Language`. Contact.IETFBCP47Tag synced from User.locale for async delivery.
+
+**Implementation:**
+
+1. **D2.Shared.I18n** — `Translator` class loads `contracts/messages/*.json` at startup. `TK` static class provides compile-time translation key constants (e.g., `TK.CommonErrors_NotFound`, `TK.GeoValidation_InvalidEmail`). Services reference `TK.*` in D2Result messages/inputErrors instead of hardcoded English
+2. **TranslationMiddleware** — REST gateway middleware intercepts responses, resolves locale from `D2-Locale` header (primary) or `Accept-Language` (fallback), translates all `TK.*` keys in D2Result `messages` and `inputErrors` arrays. Untranslated keys pass through as-is
+3. **Contact.IETFBCP47Tag** — Geo Contact entity gains an `IETFBCP47Tag` field (BCP 47, default `"en-US"`). Synced from `User.locale` during `CreateUserContact`. Comms service reads this for async notification language resolution (email/SMS templates)
+
+**Rationale:**
+
+- Gateway-edge translation keeps services locale-agnostic — they emit keys, not localized strings
+- Shared `contracts/messages/*.json` is the single source of truth for all translations (Node.js Paraglide + .NET Translator)
+- Contact.IETFBCP47Tag enables async delivery (Comms) to use the recipient's language without querying Auth
+
 ---
 
-_Last updated: 2026-03-12_
+_Last updated: 2026-03-13_

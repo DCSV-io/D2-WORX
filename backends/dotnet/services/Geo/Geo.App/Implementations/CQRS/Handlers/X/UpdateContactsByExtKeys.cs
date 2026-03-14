@@ -10,6 +10,7 @@ using D2.Events.Protos.V1;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using DeleteRepo = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
 using H = D2.Geo.App.Interfaces.CQRS.Handlers.X.IComplex.IUpdateContactsByExtKeysHandler;
@@ -76,7 +77,7 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
 
         // Step 1: Extract ext-keys from the input contacts.
         var allExtKeys = input.Request.Contacts
-            .Select(c => (ContextKey: c.ContextKey, RelatedEntityId: Guid.TryParse(c.RelatedEntityId, out var g) ? g : Guid.Empty))
+            .Select(c => (c.ContextKey, RelatedEntityId: Guid.TryParse(c.RelatedEntityId, out var g) ? g : Guid.Empty))
             .Where(t => t.RelatedEntityId != Guid.Empty)
             .ToList();
 
@@ -93,7 +94,7 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
             return D2Result<O?>.BubbleFail(
                 D2Result.ValidationFailed(inputErrors:
                 [
-                    ["contacts", "Duplicate ext-keys (ContextKey + RelatedEntityId) are not allowed. Each ext-key must appear at most once."],
+                    ["contacts", TK.Geo.Validation.DUPLICATE_EXT_KEYS],
                 ]));
         }
 

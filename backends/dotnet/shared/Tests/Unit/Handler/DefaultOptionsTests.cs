@@ -228,8 +228,8 @@ public class DefaultOptionsTests
         // Act
         await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
 
-        // Assert — debug-level messages should not appear (logger won't emit them)
-        // Note: BaseHandler uses LogDebug which checks IsEnabled internally
+        // Assert — debug-level messages should not appear because the [LoggerMessage]
+        // source generator checks IsEnabled before calling ILogger.Log.
         mockLogger.Verify(
             l => l.Log(
                 LogLevel.Debug,
@@ -237,7 +237,7 @@ public class DefaultOptionsTests
                 It.IsAny<It.IsAnyType>(),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Exactly(2)); // LogDebug still calls Log — filtering is in the logger itself
+            Times.Never);
 
         // The important thing: no crash, handler completes normally
     }
@@ -309,7 +309,7 @@ public class DefaultOptionsTests
         return mockContext.Object;
     }
 
-    private class PlainHandler : BaseHandler<PlainHandler, string, string>
+    private sealed class PlainHandler : BaseHandler<PlainHandler, string, string>
     {
         public PlainHandler(IHandlerContext context)
             : base(context)
@@ -321,7 +321,7 @@ public class DefaultOptionsTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class SuppressedHandler : BaseHandler<SuppressedHandler, string, string>
+    private sealed class SuppressedHandler : BaseHandler<SuppressedHandler, string, string>
     {
         public SuppressedHandler(IHandlerContext context)
             : base(context)
@@ -335,7 +335,7 @@ public class DefaultOptionsTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class InputOnlyHandler : BaseHandler<InputOnlyHandler, string, string>
+    private sealed class InputOnlyHandler : BaseHandler<InputOnlyHandler, string, string>
     {
         public InputOnlyHandler(IHandlerContext context)
             : base(context)
@@ -349,7 +349,7 @@ public class DefaultOptionsTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class ThrowingHandler : BaseHandler<ThrowingHandler, string, string>
+    private sealed class ThrowingHandler : BaseHandler<ThrowingHandler, string, string>
     {
         public ThrowingHandler(IHandlerContext context)
             : base(context)

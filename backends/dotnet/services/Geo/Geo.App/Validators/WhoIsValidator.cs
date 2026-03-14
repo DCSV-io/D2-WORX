@@ -8,6 +8,7 @@ namespace D2.Geo.App.Validators;
 
 using D2.Geo.Domain.Entities;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Utilities.Extensions;
 using FluentValidation;
 
@@ -35,7 +36,7 @@ public class WhoIsValidator : AbstractValidator<WhoIs>
         RuleFor(w => w.IPAddress)
             .NotEmpty()
             .OverridePropertyName($"{indexPrefix}ipAddress")
-            .WithMessage("IP address is required.")
+            .WithMessage(TK.Geo.Validation.IP_REQUIRED)
             .MaximumLength(45)
             .OverridePropertyName($"{indexPrefix}ipAddress")
             .IsValidIpAddress()
@@ -45,19 +46,13 @@ public class WhoIsValidator : AbstractValidator<WhoIs>
         RuleFor(w => w.Month)
             .InclusiveBetween(1, 12)
             .OverridePropertyName($"{indexPrefix}month")
-            .WithMessage("Must be between 1 and 12.");
+            .WithMessage(TK.Geo.Validation.MONTH_RANGE);
 
         // Year: 1-9999.
         RuleFor(w => w.Year)
             .InclusiveBetween(1, 9999)
             .OverridePropertyName($"{indexPrefix}year")
-            .WithMessage("Must be between 1 and 9999.");
-
-        // Fingerprint: max 2048 (optional).
-        RuleFor(w => w.Fingerprint)
-            .MaximumLength(2048)
-            .When(w => w.Fingerprint is not null)
-            .OverridePropertyName($"{indexPrefix}fingerprint");
+            .WithMessage(TK.Geo.Validation.YEAR_RANGE);
 
         // HashId: 64-char hex (if already computed).
         RuleFor(w => w.HashId)

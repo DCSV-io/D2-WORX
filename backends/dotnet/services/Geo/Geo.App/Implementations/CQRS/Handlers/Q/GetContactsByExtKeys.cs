@@ -31,7 +31,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// list of contacts. Cache is checked first, and only missing keys are fetched from
 /// the repository. Found results are cached for the configured expiration duration.
 /// </remarks>
-public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
+public partial class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
 {
     private readonly IRead.IGetManyHandler<List<Contact>> r_memoryCacheGetMany;
     private readonly IUpdate.ISetManyHandler<List<Contact>> r_memoryCacheSetMany;
@@ -199,6 +199,12 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
     private static Location? GetLocation(string? hashId, Dictionary<string, Location> locations) =>
         hashId is not null && locations.TryGetValue(hashId, out var loc) ? loc : null;
 
+    /// <summary>
+    /// Logs an error when setting contacts in the memory cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to set Contacts in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.")]
+    private static partial void LogCacheSetFailed(ILogger logger, Type handlerName, string? traceId, string? errorCode, List<string> messages);
+
     private async ValueTask SetInCacheAsync(
         Dictionary<(string ContextKey, Guid RelatedEntityId), List<Contact>> fromRepoDict,
         CancellationToken ct)
@@ -213,12 +219,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
 
         if (setInCacheR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set Contacts in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.",
-                typeof(GetContactsByExtKeys),
-                TraceId,
-                setInCacheR.ErrorCode,
-                setInCacheR.Messages);
+            LogCacheSetFailed(Context.Logger, typeof(GetContactsByExtKeys), TraceId, setInCacheR.ErrorCode, setInCacheR.Messages);
         }
     }
 

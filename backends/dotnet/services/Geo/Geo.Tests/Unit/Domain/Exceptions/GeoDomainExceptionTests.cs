@@ -78,7 +78,7 @@ public class GeoDomainExceptionTests
     /// <summary>
     /// Test-only derived exception to cover the inner exception constructor path.
     /// </summary>
-    private class TestGeoDomainException : GeoDomainException
+    private sealed class TestGeoDomainException : GeoDomainException
     {
         public TestGeoDomainException(string message, Exception innerException)
             : base(message, innerException)

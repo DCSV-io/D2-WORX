@@ -4,9 +4,10 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
-// ReSharper disable RedundantCapturedContext
 namespace D2.Geo.Tests.Integration.App;
 
+// ReSharper disable RedundantCapturedContext
+using System.Net;
 using D2.Geo.App.Interfaces.Messaging.Handlers.Pub;
 using D2.Geo.App.Interfaces.Repository.Handlers.R;
 using D2.Geo.Client;
@@ -29,6 +30,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using StackExchange.Redis;
 using Testcontainers.PostgreSql;
 using Testcontainers.Redis;
 using Xunit;
@@ -48,7 +50,7 @@ public class GetTests : IAsyncLifetime
     private Mock<IPubs.IUpdateHandler> _updaterMock = null!;
     private string _testFilePath = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -130,6 +132,8 @@ public class GetTests : IAsyncLifetime
         {
             Directory.Delete(_testFilePath, true);
         }
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -148,7 +152,7 @@ public class GetTests : IAsyncLifetime
         firstResult.Success.Should().BeTrue();
 
         // Clear Redis and reset updater mock to verify memory hit
-        var redis = _services.GetRequiredService<StackExchange.Redis.IConnectionMultiplexer>();
+        var redis = _services.GetRequiredService<IConnectionMultiplexer>();
         await redis.GetDatabase().KeyDeleteAsync(CacheKeys.REFDATA);
         _updaterMock.Invocations.Clear();
 
@@ -320,7 +324,7 @@ public class GetTests : IAsyncLifetime
         return context.Object;
     }
 
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     private ServiceProvider BuildServicesWithFailingSetInDist(out Mock<IPubs.IUpdateHandler> updaterMock)
     {
         var configDict = new Dictionary<string, string>
@@ -345,7 +349,7 @@ public class GetTests : IAsyncLifetime
             .Setup(x => x.HandleAsync(It.IsAny<ICommands.SetInDistInput>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(D2Result<ICommands.SetInDistOutput?>.Fail(
                 ["Redis unavailable"],
-                System.Net.HttpStatusCode.ServiceUnavailable));
+                HttpStatusCode.ServiceUnavailable));
 
         var services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(config);
@@ -367,7 +371,7 @@ public class GetTests : IAsyncLifetime
         return services.BuildServiceProvider();
     }
 
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     private ServiceProvider BuildFreshServices()
     {
         var configDict = new Dictionary<string, string>
@@ -401,7 +405,7 @@ public class GetTests : IAsyncLifetime
         return services.BuildServiceProvider();
     }
 
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     private ServiceProvider BuildFreshServicesWithStoppedInfra()
     {
         var configDict = new Dictionary<string, string>

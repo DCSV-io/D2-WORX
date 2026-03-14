@@ -8,6 +8,17 @@
     "pathPattern": "../../contracts/messages/{locale}.json"
   },
   "telemetry": "off",
-  "baseLocale": "en",
-  "locales": ["en", "es", "de", "fr", "ja"]
+  "baseLocale": "en-US",
+  "locales": [
+    "en-US",
+    "en-CA",
+    "en-GB",
+    "fr-FR",
+    "fr-CA",
+    "es-ES",
+    "es-MX",
+    "de-DE",
+    "it-IT",
+    "ja-JP"
+  ]
 }

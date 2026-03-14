@@ -7,6 +7,7 @@
  *
  * This file is only imported when the mock flag is set.
  */
+import { TK } from "@d2/i18n/keys";
 import { createLogger } from "@d2/logging";
 import { D2Result } from "@d2/result";
 import type { GeoRefData, CountryDTO, SubdivisionDTO } from "@d2/protos";
@@ -64,10 +65,13 @@ export function createMockAuthContext(): AuthContext {
     } as unknown as JwtManager,
     authProxy: {
       proxyRequest: async () =>
-        new Response(JSON.stringify({ success: false, messages: ["Auth mocked"] }), {
-          status: 503,
-          headers: { "Content-Type": "application/json" },
-        }),
+        new Response(
+          JSON.stringify({ success: false, messages: [TK.common.errors.SERVICE_UNAVAILABLE] }),
+          {
+            status: 503,
+            headers: { "Content-Type": "application/json" },
+          },
+        ),
     } as unknown as AuthProxy,
   };
 }

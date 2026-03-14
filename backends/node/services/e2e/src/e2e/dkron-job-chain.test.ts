@@ -145,8 +145,8 @@ describe("E2E: Dkron -> Gateway -> Geo full job chain", () => {
     geoPool = new pg.Pool({ connectionString: getGeoPgUrl() });
 
     await geoPool.query(
-      `INSERT INTO who_is (hash_id, ip_address, year, month, fingerprint)
-       VALUES ($1, $2, $3, $4, $5), ($6, $7, $8, $9, $10), ($11, $12, $13, $14, $15)
+      `INSERT INTO who_is (hash_id, ip_address, year, month)
+       VALUES ($1, $2, $3, $4), ($5, $6, $7, $8), ($9, $10, $11, $12)
        ON CONFLICT (hash_id) DO NOTHING`,
       [
         // Stale record 1: Year 2024, Month 1 — well before any cutoff
@@ -154,19 +154,16 @@ describe("E2E: Dkron -> Gateway -> Geo full job chain", () => {
         "10.0.0.1",
         2024,
         1,
-        "fp-stale-1",
         // Stale record 2: Year 2024, Month 6
         staleHash2,
         "10.0.0.2",
         2024,
         6,
-        "fp-stale-2",
         // Fresh record: Year 2099, Month 1 — always newer than cutoff
         freshHash,
         "10.0.0.3",
         2099,
         1,
-        "fp-fresh-1",
       ],
     );
   }, 180_000);

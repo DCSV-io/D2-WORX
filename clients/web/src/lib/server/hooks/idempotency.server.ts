@@ -7,6 +7,7 @@
  * response on replay or stores new response after downstream completes.
  */
 import type { Handle } from "@sveltejs/kit";
+import { TK } from "@d2/i18n/keys";
 import { getMiddlewareContext, checkIdempotency } from "../middleware.server";
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -49,7 +50,7 @@ export function createIdempotencyHandle(): Handle {
       return new Response(
         JSON.stringify({
           success: false,
-          messages: ["Request is already being processed."],
+          messages: [TK.common.errors.CONFLICT],
           statusCode: 409,
           errorCode: "IDEMPOTENCY_IN_FLIGHT",
         }),

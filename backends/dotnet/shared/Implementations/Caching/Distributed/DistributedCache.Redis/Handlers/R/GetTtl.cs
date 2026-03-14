@@ -8,6 +8,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.R;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -16,7 +17,7 @@ using S = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead;
 /// <summary>
 /// Handler for getting the time-to-live of a key in the distributed cache.
 /// </summary>
-public class GetTtl : BaseHandler<S.IGetTtlHandler, S.GetTtlInput, S.GetTtlOutput>,
+public partial class GetTtl : BaseHandler<S.IGetTtlHandler, S.GetTtlInput, S.GetTtlOutput>,
     S.IGetTtlHandler
 {
     private readonly IConnectionMultiplexer r_redis;
@@ -54,18 +55,20 @@ public class GetTtl : BaseHandler<S.IGetTtlHandler, S.GetTtlInput, S.GetTtlOutpu
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while getting TTL for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogGetTtlFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<S.GetTtlOutput?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while getting the TTL of a key.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while getting TTL for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogGetTtlFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

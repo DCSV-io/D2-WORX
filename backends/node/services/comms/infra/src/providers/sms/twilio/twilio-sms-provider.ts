@@ -1,6 +1,7 @@
 import twilio from "twilio";
 import type { Twilio } from "twilio";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { TK } from "@d2/i18n";
 import { D2Result } from "@d2/result";
 import type { ISmsProvider, SendSmsInput, SendSmsOutput } from "@d2/comms-app";
 
@@ -37,10 +38,8 @@ export class TwilioSmsProvider
         data: { providerMessageId: message.sid },
       });
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown Twilio error";
-
       return D2Result.serviceUnavailable({
-        messages: [errorMessage],
+        messages: [error instanceof Error ? error.message : TK.comms.errors.PROVIDER_UNKNOWN],
       });
     }
   }

@@ -8,6 +8,7 @@ namespace D2.Geo.Client.Validators;
 
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using FluentValidation;
 
 /// <summary>
@@ -34,7 +35,7 @@ public class ContactToCreateValidator : AbstractValidator<ContactToCreateDTO>
         RuleFor(c => c.ContextKey)
             .NotEmpty()
             .OverridePropertyName($"{indexPrefix}contextKey")
-            .WithMessage("Context key is required.")
+            .WithMessage(TK.Geo.Validation.CONTEXT_KEY_REQUIRED)
             .MaximumLength(255)
             .OverridePropertyName($"{indexPrefix}contextKey");
 
@@ -42,7 +43,7 @@ public class ContactToCreateValidator : AbstractValidator<ContactToCreateDTO>
         RuleFor(c => c.RelatedEntityId)
             .NotEmpty()
             .OverridePropertyName($"{indexPrefix}relatedEntityId")
-            .WithMessage("Related entity ID is required.")
+            .WithMessage(TK.Geo.Validation.RELATED_ENTITY_ID_REQUIRED)
             .IsValidGuid()
             .OverridePropertyName($"{indexPrefix}relatedEntityId");
 
@@ -52,7 +53,7 @@ public class ContactToCreateValidator : AbstractValidator<ContactToCreateDTO>
             RuleFor(c => c.PersonalDetails.FirstName)
                 .NotEmpty()
                 .OverridePropertyName($"{indexPrefix}personalDetails.firstName")
-                .WithMessage("First name is required when personal details are provided.")
+                .WithMessage(TK.Geo.Validation.FIRST_NAME_REQUIRED)
                 .MaximumLength(255)
                 .OverridePropertyName($"{indexPrefix}personalDetails.firstName");
 
@@ -75,7 +76,7 @@ public class ContactToCreateValidator : AbstractValidator<ContactToCreateDTO>
             RuleFor(c => c.ProfessionalDetails.CompanyName)
                 .NotEmpty()
                 .OverridePropertyName($"{indexPrefix}professionalDetails.companyName")
-                .WithMessage("Company name is required when professional details are provided.")
+                .WithMessage(TK.Geo.Validation.COMPANY_NAME_REQUIRED)
                 .MaximumLength(255)
                 .OverridePropertyName($"{indexPrefix}professionalDetails.companyName");
 
@@ -92,6 +93,11 @@ public class ContactToCreateValidator : AbstractValidator<ContactToCreateDTO>
                 .OverridePropertyName($"{indexPrefix}professionalDetails.companyWebsite");
         });
 
+        // IetfBcp47Tag: optional (defaults in domain), max 35 chars.
+        RuleFor(c => c.IetfBcp47Tag)
+            .MaximumLength(35)
+            .OverridePropertyName($"{indexPrefix}ietfBcp47Tag");
+
         // Contact methods — emails (if present).
         When(c => c.ContactMethods is not null && c.ContactMethods.Emails.Count > 0, () =>
         {
@@ -100,7 +106,7 @@ public class ContactToCreateValidator : AbstractValidator<ContactToCreateDTO>
                 {
                     email.RuleFor(e => e.Value)
                         .NotEmpty()
-                        .WithMessage("Email address is required.")
+                        .WithMessage(TK.Geo.Validation.EMAIL_REQUIRED)
                         .IsValidEmail();
                 })
                 .OverridePropertyName($"{indexPrefix}contactMethods.emails");
@@ -114,7 +120,7 @@ public class ContactToCreateValidator : AbstractValidator<ContactToCreateDTO>
                 {
                     phone.RuleFor(p => p.Value)
                         .NotEmpty()
-                        .WithMessage("Phone number is required.")
+                        .WithMessage(TK.Geo.Validation.PHONE_REQUIRED)
                         .IsValidPhoneE164();
                 })
                 .OverridePropertyName($"{indexPrefix}contactMethods.phoneNumbers");

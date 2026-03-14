@@ -18,6 +18,7 @@ const schema = z.object({
   organizationId: zodGuid,
   label: zodNonEmptyString(100),
   isPrimary: z.boolean().optional(),
+  ietfBcp47Tag: z.string().max(35).optional(),
   contact: contactInputSchema,
 });
 
@@ -77,6 +78,7 @@ export class CreateOrgContact
       createdAt: new Date(),
       contextKey: GEO_CONTEXT_KEYS.ORG_CONTACT,
       relatedEntityId: orgContactId,
+      ietfBcp47Tag: input.ietfBcp47Tag ?? undefined,
       contactMethods: input.contact.contactMethods ?? undefined,
       personalDetails: input.contact.personalDetails ?? undefined,
       professionalDetails: input.contact.professionalDetails ?? undefined,

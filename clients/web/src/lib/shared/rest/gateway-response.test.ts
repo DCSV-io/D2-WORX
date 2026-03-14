@@ -128,7 +128,7 @@ describe("parseGatewayResponse — camelCase responses", () => {
   it("parses a camelCase middleware error", async () => {
     const body = {
       success: false,
-      messages: ["Rate limit exceeded on fingerprint dimension."],
+      messages: ["common_errors_TOO_MANY_REQUESTS"],
       inputErrors: [],
       errorCode: "RATE_LIMITED",
       traceId: "trace-789",
@@ -143,7 +143,7 @@ describe("parseGatewayResponse — camelCase responses", () => {
     const result = await parseGatewayResponse(response);
 
     expect(result.success).toBe(false);
-    expect(result.messages).toEqual(["Rate limit exceeded on fingerprint dimension."]);
+    expect(result.messages).toEqual(["common_errors_TOO_MANY_REQUESTS"]);
     expect(result.errorCode).toBe("RATE_LIMITED");
     expect(result.statusCode).toBe(429);
   });
@@ -271,13 +271,13 @@ describe("networkErrorResult", () => {
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(500);
-    expect(result.messages).toEqual(["An unexpected network error occurred."]);
+    expect(result.messages).toEqual(["common_errors_REQUEST_FAILED"]);
   });
 
   it("creates a generic message for null", () => {
     const result = networkErrorResult(null);
 
     expect(result.success).toBe(false);
-    expect(result.messages).toEqual(["An unexpected network error occurred."]);
+    expect(result.messages).toEqual(["common_errors_REQUEST_FAILED"]);
   });
 });

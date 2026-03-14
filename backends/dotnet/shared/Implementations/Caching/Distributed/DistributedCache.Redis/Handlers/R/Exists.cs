@@ -8,6 +8,7 @@ namespace D2.Shared.DistributedCache.Redis.Handlers.R;
 
 using System.Net;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
@@ -18,7 +19,7 @@ using O = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead.ExistsOutput
 /// <summary>
 /// Handler for checking if a key exists in the Redis distributed cache.
 /// </summary>
-public class Exists : BaseHandler<H, I, O>, H
+public partial class Exists : BaseHandler<H, I, O>, H
 {
     private readonly IConnectionMultiplexer r_redis;
 
@@ -57,18 +58,20 @@ public class Exists : BaseHandler<H, I, O>, H
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while checking existence of key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogExistsFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<O?>.Fail(
-                ["Unable to connect to Redis."],
+                [TK.Common.Errors.SERVICE_UNAVAILABLE],
                 HttpStatusCode.ServiceUnavailable,
                 errorCode: ErrorCodes.SERVICE_UNAVAILABLE);
         }
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while checking key existence.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while checking existence of key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogExistsFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

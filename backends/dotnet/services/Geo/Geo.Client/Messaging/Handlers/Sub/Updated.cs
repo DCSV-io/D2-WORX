@@ -19,7 +19,7 @@ using O = D2.Geo.Client.Interfaces.Messaging.Handlers.Sub.ISubs.UpdatedOutput;
 /// <summary>
 /// Messaging subscription handler for geographic reference data updated notifications.
 /// </summary>
-public class Updated : BaseHandler<Updated, I, O>, H
+public partial class Updated : BaseHandler<Updated, I, O>, H
 {
     private readonly IComplex.IGetHandler r_getHandler;
     private readonly IQueries.IGetFromDistHandler r_getFromDist;
@@ -93,9 +93,7 @@ public class Updated : BaseHandler<Updated, I, O>, H
         if (distR.CheckFailure(out var output))
         {
             // If not found in distributed cache, log and return NotFound.
-            Context.Logger.LogError(
-                "Failed to get data from dist cache after update message. TraceId: {TraceId}",
-                TraceId);
+            LogDistCacheFetchFailed(Context.Logger, TraceId);
 
             return D2Result<O?>.NotFound();
         }
@@ -107,9 +105,7 @@ public class Updated : BaseHandler<Updated, I, O>, H
         if (setInMemR.Failed)
         {
             // Log the error but continue.
-            Context.Logger.LogError(
-                "Failed to set data in memory cache after update message. TraceId: {TraceId}",
-                TraceId);
+            LogSetInMemoryFailed(Context.Logger, TraceId);
         }
 
         // And on disk.
@@ -117,12 +113,28 @@ public class Updated : BaseHandler<Updated, I, O>, H
         if (setOnDiskR.Failed)
         {
             // Log the error but continue.
-            Context.Logger.LogError(
-                "Failed to set data on disk after update message. TraceId: {TraceId}",
-                TraceId);
+            LogSetOnDiskFailed(Context.Logger, TraceId);
         }
 
         // Return OK.
         return D2Result<O?>.Ok(new O());
     }
+
+    /// <summary>
+    /// Logs an error when fetching data from the distributed cache fails after an update message.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to get data from dist cache after update message. TraceId: {TraceId}")]
+    private static partial void LogDistCacheFetchFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when setting data in the memory cache fails after an update message.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to set data in memory cache after update message. TraceId: {TraceId}")]
+    private static partial void LogSetInMemoryFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when setting data on disk fails after an update message.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "Failed to set data on disk after update message. TraceId: {TraceId}")]
+    private static partial void LogSetOnDiskFailed(ILogger logger, string? traceId);
 }

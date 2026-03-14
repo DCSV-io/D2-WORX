@@ -8,7 +8,6 @@ namespace D2.Geo.Tests.Integration.Infra.Repository.Handlers;
 
 using D2.Geo.App.Interfaces.Repository.Handlers.D;
 using D2.Geo.Domain.Entities;
-using D2.Geo.Domain.ValueObjects;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
 using D2.Geo.Infra.Repository.Handlers.D;
@@ -48,7 +47,7 @@ public class DeleteOrphanedLocationsTests : IAsyncLifetime
         r_fixture = fixture;
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public ValueTask InitializeAsync()
@@ -63,6 +62,7 @@ public class DeleteOrphanedLocationsTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _db.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region Empty Database
@@ -205,8 +205,7 @@ public class DeleteOrphanedLocationsTests : IAsyncLifetime
         var whoIs = WhoIs.Create(
             ipAddress: $"10.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.1",
             year: 2025,
-            month: 1,
-            fingerprint: $"fp-{suffix}");
+            month: 1);
         whoIs = whoIs with { LocationHashId = referencedLoc.HashId };
         _db.WhoIsRecords.Add(whoIs);
         await _db.SaveChangesAsync(Ct);
@@ -308,7 +307,7 @@ public class DeleteOrphanedLocationsTests : IAsyncLifetime
         _db.Contacts.Add(contact);
 
         var whoIs = WhoIs.Create(
-            $"172.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.1", 2025, 6, $"mix-{suffix}");
+            $"172.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}.1", 2025, 6);
         whoIs = whoIs with { LocationHashId = whoIsRefLoc.HashId };
         _db.WhoIsRecords.Add(whoIs);
         await _db.SaveChangesAsync(Ct);

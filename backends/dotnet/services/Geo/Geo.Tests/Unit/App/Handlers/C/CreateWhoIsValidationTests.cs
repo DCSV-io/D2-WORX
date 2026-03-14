@@ -47,7 +47,7 @@ public class CreateWhoIsValidationTests
         r_context = CreateHandlerContext();
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Empty Input
 
@@ -88,8 +88,7 @@ public class CreateWhoIsValidationTests
         var whoIs = WhoIs.Create(
             ipAddress: "192.168.1.1",
             year: 2025,
-            month: 6,
-            fingerprint: "test-fp");
+            month: 6);
 
         var handler = CreateHandler();
         var input = new CqrsCmd.CreateWhoIsInput([whoIs]);
@@ -289,8 +288,7 @@ public class CreateWhoIsValidationTests
         var validItem1 = WhoIs.Create(
             ipAddress: "192.168.1.1",
             year: 2025,
-            month: 6,
-            fingerprint: "test-fp");
+            month: 6);
 
         var invalidItem2 = new WhoIs
         {

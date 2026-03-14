@@ -11,6 +11,7 @@ using System.Diagnostics;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -38,7 +39,7 @@ public class TracingTests
 
         // Assert
         activity.Should().NotBeNull();
-        activity!.OperationName.Should().Be(nameof(TracingPlainHandler));
+        activity.OperationName.Should().Be(nameof(TracingPlainHandler));
     }
 
     /// <summary>
@@ -64,7 +65,7 @@ public class TracingTests
 
         // Assert
         activity.Should().NotBeNull();
-        activity!.GetTagItem("handler.type").Should().Be(typeof(TracingTagsHandler).FullName);
+        activity.GetTagItem("handler.type").Should().Be(typeof(TracingTagsHandler).FullName);
         activity.GetTagItem("trace.id").Should().Be("trace-abc");
 
         // SetTagIfNotNull converts values to string via .ToString() for OTel compatibility.
@@ -87,7 +88,7 @@ public class TracingTests
 
         // Assert
         activity.Should().NotBeNull();
-        activity!.GetTagItem("handler.success").Should().Be(true);
+        activity.GetTagItem("handler.success").Should().Be(true);
         activity.GetTagItem("handler.status.code").Should().Be(HttpStatusCode.OK);
         activity.GetTagItem("handler.elapsed.ms").Should().NotBeNull();
         activity.Status.Should().Be(ActivityStatusCode.Ok);
@@ -107,7 +108,7 @@ public class TracingTests
 
         // Assert
         activity.Should().NotBeNull();
-        activity!.Status.Should().Be(ActivityStatusCode.Error);
+        activity.Status.Should().Be(ActivityStatusCode.Error);
         activity.GetTagItem("handler.success").Should().Be(false);
     }
 
@@ -125,7 +126,7 @@ public class TracingTests
 
         // Assert
         activity.Should().NotBeNull();
-        activity!.Status.Should().Be(ActivityStatusCode.Error);
+        activity.Status.Should().Be(ActivityStatusCode.Error);
 
         // AddException records an ActivityEvent with name "exception"
         var exceptionEvent = activity.Events
@@ -184,18 +185,17 @@ public class TracingTests
     /// <c>D2.Shared.Handler</c> ActivitySource. Returns the activity matching the handler's
     /// OperationName, filtering out activities from other handlers running in parallel.
     /// </summary>
+    [MustDisposeResource(false)]
     private static async Task<Activity?> RunWithActivityCapture<THandler>(
         IHandlerContext context)
         where THandler : BaseHandler<THandler, string, string>
     {
         var stoppedActivities = new ConcurrentBag<Activity>();
-        using var listener = new ActivityListener
-        {
-            ShouldListenTo = source => source.Name == "D2.Shared.Handler",
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) =>
-                ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = activity => stoppedActivities.Add(activity),
-        };
+        using var listener = new ActivityListener();
+        listener.ShouldListenTo = source => source.Name == "D2.Shared.Handler";
+        listener.Sample = (ref _) =>
+            ActivitySamplingResult.AllDataAndRecorded;
+        listener.ActivityStopped = activity => stoppedActivities.Add(activity);
         ActivitySource.AddActivityListener(listener);
 
         var handler = (THandler)Activator.CreateInstance(typeof(THandler), context)!;
@@ -226,7 +226,7 @@ public class TracingTests
 
     // Each handler type has a unique "Tracing_" prefix so that its Activity.OperationName
     // is distinguishable from handlers created by other parallel test classes.
-    private class TracingPlainHandler : BaseHandler<TracingPlainHandler, string, string>
+    private sealed class TracingPlainHandler : BaseHandler<TracingPlainHandler, string, string>
     {
         public TracingPlainHandler(IHandlerContext context)
             : base(context)
@@ -238,7 +238,7 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class TracingTagsHandler : BaseHandler<TracingTagsHandler, string, string>
+    private sealed class TracingTagsHandler : BaseHandler<TracingTagsHandler, string, string>
     {
         public TracingTagsHandler(IHandlerContext context)
             : base(context)
@@ -250,7 +250,7 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class TracingSuccessHandler : BaseHandler<TracingSuccessHandler, string, string>
+    private sealed class TracingSuccessHandler : BaseHandler<TracingSuccessHandler, string, string>
     {
         public TracingSuccessHandler(IHandlerContext context)
             : base(context)
@@ -262,7 +262,7 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class TracingThrowingHandler : BaseHandler<TracingThrowingHandler, string, string>
+    private sealed class TracingThrowingHandler : BaseHandler<TracingThrowingHandler, string, string>
     {
         public TracingThrowingHandler(IHandlerContext context)
             : base(context)
@@ -274,7 +274,7 @@ public class TracingTests
             => throw new InvalidOperationException("Boom!");
     }
 
-    private class TracingNoTraceIdHandler : BaseHandler<TracingNoTraceIdHandler, string, string>
+    private sealed class TracingNoTraceIdHandler : BaseHandler<TracingNoTraceIdHandler, string, string>
     {
         public TracingNoTraceIdHandler(IHandlerContext context)
             : base(context)
@@ -286,7 +286,7 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input));
     }
 
-    private class TracingExplicitTraceIdHandler : BaseHandler<TracingExplicitTraceIdHandler, string, string>
+    private sealed class TracingExplicitTraceIdHandler : BaseHandler<TracingExplicitTraceIdHandler, string, string>
     {
         public TracingExplicitTraceIdHandler(IHandlerContext context)
             : base(context)
@@ -298,7 +298,7 @@ public class TracingTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input, traceId: "explicit-trace"));
     }
 
-    private class TracingFailingHandler : BaseHandler<TracingFailingHandler, string, string>
+    private sealed class TracingFailingHandler : BaseHandler<TracingFailingHandler, string, string>
     {
         public TracingFailingHandler(IHandlerContext context)
             : base(context)

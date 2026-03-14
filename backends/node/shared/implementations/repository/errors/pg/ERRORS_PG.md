@@ -32,11 +32,7 @@ try {
   return D2Result.ok({ data: user });
 } catch (err) {
   if (isPgUniqueViolation(err)) {
-    return D2Result.fail(
-      ["User with this email already exists."],
-      HttpStatusCode.Conflict,
-      ErrorCodes.DUPLICATE,
-    );
+    return D2Result.conflict();
   }
   throw err;
 }

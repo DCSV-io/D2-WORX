@@ -112,7 +112,7 @@ describe("D2Result.notFound", () => {
     expect(result).toBeFailure();
     expect(result).toHaveStatusCode(HttpStatusCode.NotFound);
     expect(result).toHaveErrorCode(ErrorCodes.NOT_FOUND);
-    expect(result).toHaveMessages(["Resource not found."]);
+    expect(result).toHaveMessages(["common_errors_NOT_FOUND"]);
   });
 
   it("creates a 404 result with custom message", () => {
@@ -131,7 +131,7 @@ describe("D2Result.unauthorized", () => {
     expect(result).toBeFailure();
     expect(result).toHaveStatusCode(HttpStatusCode.Unauthorized);
     expect(result).toHaveErrorCode(ErrorCodes.UNAUTHORIZED);
-    expect(result).toHaveMessages(["You must be signed in to perform this action."]);
+    expect(result).toHaveMessages(["common_errors_UNAUTHORIZED"]);
   });
 });
 
@@ -142,7 +142,7 @@ describe("D2Result.forbidden", () => {
     expect(result).toBeFailure();
     expect(result).toHaveStatusCode(HttpStatusCode.Forbidden);
     expect(result).toHaveErrorCode(ErrorCodes.FORBIDDEN);
-    expect(result).toHaveMessages(["Insufficient permissions."]);
+    expect(result).toHaveMessages(["common_errors_FORBIDDEN"]);
   });
 });
 
@@ -153,7 +153,7 @@ describe("D2Result.validationFailed", () => {
     expect(result).toBeFailure();
     expect(result).toHaveStatusCode(HttpStatusCode.BadRequest);
     expect(result).toHaveErrorCode(ErrorCodes.VALIDATION_FAILED);
-    expect(result).toHaveMessages(["One or more validation errors occurred."]);
+    expect(result).toHaveMessages(["common_errors_VALIDATION_FAILED"]);
   });
 
   it("creates a validation failure with input errors", () => {
@@ -173,7 +173,7 @@ describe("D2Result.conflict", () => {
     expect(result).toBeFailure();
     expect(result).toHaveStatusCode(HttpStatusCode.Conflict);
     expect(result).toHaveErrorCode(ErrorCodes.CONFLICT);
-    expect(result).toHaveMessages(["Conflict occurred while processing the request."]);
+    expect(result).toHaveMessages(["common_errors_CONFLICT"]);
   });
 });
 
@@ -184,9 +184,7 @@ describe("D2Result.unhandledException", () => {
     expect(result).toBeFailure();
     expect(result).toHaveStatusCode(HttpStatusCode.InternalServerError);
     expect(result).toHaveErrorCode(ErrorCodes.UNHANDLED_EXCEPTION);
-    expect(result).toHaveMessages([
-      "An unhandled exception occurred while processing the request.",
-    ]);
+    expect(result).toHaveMessages(["common_errors_unknown"]);
   });
 });
 

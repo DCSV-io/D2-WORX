@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable LocalSuppression
 namespace D2.Shared.Tests.Unit.BatchPg;
 
 using D2.Shared.Batch.Pg;
@@ -16,7 +17,7 @@ using Xunit;
 /// </summary>
 public class BatchDeleteTests
 {
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Empty Dataset
 
@@ -33,14 +34,16 @@ public class BatchDeleteTests
         var selectCalls = 0;
         var deleteCalls = 0;
 
-        var result = await BatchDelete.ExecuteAsync<int>(
+        var result = await BatchDelete.ExecuteAsync(
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 selectCalls++;
                 return Task.FromResult(new List<int>());
             },
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 deleteCalls++;
                 return Task.CompletedTask;
             },
@@ -68,9 +71,10 @@ public class BatchDeleteTests
         var ids = new List<int> { 1, 2, 3 };
         var selectCalls = 0;
 
-        var result = await BatchDelete.ExecuteAsync<int>(
+        var result = await BatchDelete.ExecuteAsync(
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 selectCalls++;
                 return Task.FromResult(selectCalls == 1 ? ids : []);
             },
@@ -102,9 +106,10 @@ public class BatchDeleteTests
         var batch = Enumerable.Range(1, 500).ToList();
         var selectCalls = 0;
 
-        var result = await BatchDelete.ExecuteAsync<int>(
+        var result = await BatchDelete.ExecuteAsync(
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 selectCalls++;
                 return Task.FromResult(selectCalls == 1 ? batch : []);
             },
@@ -135,9 +140,10 @@ public class BatchDeleteTests
         var selectCalls = 0;
         var deleteCalls = 0;
 
-        var result = await BatchDelete.ExecuteAsync<int>(
+        var result = await BatchDelete.ExecuteAsync(
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 selectCalls++;
                 return selectCalls switch
                 {
@@ -149,6 +155,7 @@ public class BatchDeleteTests
             },
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 deleteCalls++;
                 return Task.CompletedTask;
             },
@@ -173,9 +180,10 @@ public class BatchDeleteTests
         const int batch_size = 500;
         var selectCalls = 0;
 
-        var result = await BatchDelete.ExecuteAsync<int>(
+        var result = await BatchDelete.ExecuteAsync(
             (limit, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 selectCalls++;
                 var remaining = total_count - ((selectCalls - 1) * batch_size);
                 var count = Math.Min(remaining, limit);
@@ -208,7 +216,7 @@ public class BatchDeleteTests
     {
         var receivedLimits = new List<int>();
 
-        await BatchDelete.ExecuteAsync<int>(
+        await BatchDelete.ExecuteAsync(
             (limit, _) =>
             {
                 receivedLimits.Add(limit);
@@ -237,6 +245,7 @@ public class BatchDeleteTests
         var result = await BatchDelete.ExecuteAsync<string>(
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 selectCalls++;
                 return selectCalls switch
                 {
@@ -248,6 +257,7 @@ public class BatchDeleteTests
             },
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 deleteCalls++;
                 return Task.CompletedTask;
             },
@@ -292,7 +302,7 @@ public class BatchDeleteTests
     [Fact]
     public async Task ExecuteAsync_WhenDeleteBatchThrows_Propagates()
     {
-        var act = () => BatchDelete.ExecuteAsync<int>(
+        var act = () => BatchDelete.ExecuteAsync(
             (_, _) => Task.FromResult(new List<int> { 1, 2 }),
             (_, _) => throw new InvalidOperationException("FK constraint violation"),
             ct: Ct);
@@ -318,10 +328,14 @@ public class BatchDeleteTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        var act = () => BatchDelete.ExecuteAsync<int>(
+        var act = () => BatchDelete.ExecuteAsync(
             (_, _) => Task.FromResult(new List<int>()),
             (_, _) => Task.CompletedTask,
+
+            // ReSharper disable once AccessToDisposedClosure
+#pragma warning disable SA1115
             ct: cts.Token);
+#pragma warning restore SA1115
 
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
@@ -339,19 +353,25 @@ public class BatchDeleteTests
         using var cts = new CancellationTokenSource();
         var selectCalls = 0;
 
-        var act = () => BatchDelete.ExecuteAsync<int>(
+        var act = () => BatchDelete.ExecuteAsync(
             (_, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 selectCalls++;
                 if (selectCalls == 2)
                 {
+                    // ReSharper disable once AccessToDisposedClosure
                     cts.Cancel();
                 }
 
                 return Task.FromResult(Enumerable.Range(1, 500).ToList());
             },
             (_, _) => Task.CompletedTask,
+
+            // ReSharper disable once AccessToDisposedClosure
+#pragma warning disable SA1115
             ct: cts.Token);
+#pragma warning restore SA1115
 
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
@@ -370,7 +390,7 @@ public class BatchDeleteTests
     [Fact]
     public async Task ExecuteAsync_WhenBatchSizeIsZero_ThrowsArgumentOutOfRange()
     {
-        var act = () => BatchDelete.ExecuteAsync<int>(
+        var act = () => BatchDelete.ExecuteAsync(
             (_, _) => Task.FromResult(new List<int>()),
             (_, _) => Task.CompletedTask,
             batchSize: 0,
@@ -390,7 +410,7 @@ public class BatchDeleteTests
     [Fact]
     public async Task ExecuteAsync_WhenBatchSizeIsNegative_ThrowsArgumentOutOfRange()
     {
-        var act = () => BatchDelete.ExecuteAsync<int>(
+        var act = () => BatchDelete.ExecuteAsync(
             (_, _) => Task.FromResult(new List<int>()),
             (_, _) => Task.CompletedTask,
             batchSize: -1,
@@ -421,6 +441,7 @@ public class BatchDeleteTests
             (_, _) => Task.FromResult(ids),
             (batch, _) =>
             {
+                // ReSharper disable once AccessToModifiedClosure
                 deletedBatch = batch;
                 return Task.CompletedTask;
             },

@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="WhoIsMapper.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -6,6 +6,7 @@
 
 namespace D2.Geo.App.Mappers;
 
+using System.Globalization;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Utilities.Extensions;
@@ -43,7 +44,6 @@ public static class WhoIsMapper
                 IpAddress = whoIs.IPAddress,
                 Year = whoIs.Year,
                 Month = whoIs.Month,
-                Fingerprint = whoIs.Fingerprint ?? string.Empty,
                 Asn = whoIs.ASN ?? 0,
                 AsName = whoIs.ASName ?? string.Empty,
                 AsDomain = whoIs.ASDomain ?? string.Empty,
@@ -51,8 +51,8 @@ public static class WhoIsMapper
                 CarrierName = whoIs.CarrierName ?? string.Empty,
                 Mcc = whoIs.MCC ?? string.Empty,
                 Mnc = whoIs.MNC ?? string.Empty,
-                AsChanged = whoIs.ASChanged?.ToString("O") ?? string.Empty,
-                GeoChanged = whoIs.GeoChanged?.ToString("O") ?? string.Empty,
+                AsChanged = whoIs.ASChanged?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty,
+                GeoChanged = whoIs.GeoChanged?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty,
                 IsAnonymous = whoIs.IsAnonymous ?? false,
                 IsAnycast = whoIs.IsAnycast ?? false,
                 IsHosting = whoIs.IsHosting ?? false,
@@ -90,7 +90,6 @@ public static class WhoIsMapper
                 whoIsDTO.IpAddress,
                 whoIsDTO.Year,
                 whoIsDTO.Month,
-                whoIsDTO.Fingerprint.Falsey() ? null : whoIsDTO.Fingerprint,
                 whoIsDTO.Asn == 0 ? null : whoIsDTO.Asn,
                 whoIsDTO.AsName.Falsey() ? null : whoIsDTO.AsName,
                 whoIsDTO.AsDomain.Falsey() ? null : whoIsDTO.AsDomain,

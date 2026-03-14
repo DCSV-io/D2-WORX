@@ -8,6 +8,7 @@ namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Events.Protos.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.D;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Extensions;
@@ -23,7 +24,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Handler for deleting Contacts by their external keys (ContextKey + RelatedEntityId).
 /// </summary>
-public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O>, H
+public partial class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O>, H
 {
     private readonly ReadRepo.IGetContactsByExtKeysHandler r_getByExtKeys;
     private readonly DeleteRepo.IDeleteContactsByExtKeysHandler r_deleteFromRepo;
@@ -82,12 +83,12 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
 
             if (contextKey.Falsey())
             {
-                allErrors.Add([$"keys[{i}].contextKey", "Context key must not be empty."]);
+                allErrors.Add([$"keys[{i}].contextKey", TK.Geo.Validation.CONTEXT_KEY_REQUIRED]);
             }
 
             if (relatedEntityId == Guid.Empty)
             {
-                allErrors.Add([$"keys[{i}].relatedEntityId", "Related entity ID must not be an empty GUID."]);
+                allErrors.Add([$"keys[{i}].relatedEntityId", TK.Geo.Validation.RELATED_ENTITY_ID_REQUIRED]);
             }
         }
 
@@ -117,10 +118,7 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
 
             if (removeR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to remove Contact {ContactId} from memory cache after ext-key delete. TraceId: {TraceId}.",
-                    id,
-                    TraceId);
+                LogCacheRemoveFailed(Context.Logger, id, TraceId);
             }
         }
 
@@ -140,4 +138,10 @@ public class DeleteContactsByExtKeys : BaseHandler<DeleteContactsByExtKeys, I, O
 
         return D2Result<O?>.Ok(new O(repoOutput.Deleted));
     }
+
+    /// <summary>
+    /// Logs a warning when removing a contact from the memory cache fails after ext-key deletion.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to remove Contact {ContactId} from memory cache after ext-key delete. TraceId: {TraceId}.")]
+    private static partial void LogCacheRemoveFailed(ILogger logger, Guid contactId, string? traceId);
 }

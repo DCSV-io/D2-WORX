@@ -79,7 +79,7 @@ describe("FindWhoIs handler", () => {
 
   it("should return cached WhoIs data without making gRPC call", async () => {
     const whoIs = createMockWhoIs();
-    store.set(GEO_CACHE_KEYS.whois("1.2.3.4", "ua-fingerprint"), whoIs);
+    store.set(GEO_CACHE_KEYS.whois("1.2.3.4"), whoIs);
 
     const mockGeoClient = { findWhoIs: vi.fn() } as unknown as GeoServiceClient;
     const handler = new FindWhoIs(
@@ -92,7 +92,6 @@ describe("FindWhoIs handler", () => {
     );
     const result = await handler.handleAsync({
       ipAddress: "1.2.3.4",
-      fingerprint: "ua-fingerprint",
     });
 
     expect(result).toBeSuccess();
@@ -112,7 +111,7 @@ describe("FindWhoIs handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [{ key: { ipAddress: "1.2.3.4", fingerprint: "fp" }, whois: whoIs }],
+        data: [{ key: { ipAddress: "1.2.3.4" }, whois: whoIs }],
       }),
     } as unknown as GeoServiceClient;
 
@@ -124,7 +123,7 @@ describe("FindWhoIs handler", () => {
       testSingleflight,
       createTestContext(),
     );
-    const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
+    const result = await handler.handleAsync({ ipAddress: "1.2.3.4" });
 
     expect(result).toBeSuccess();
     expect(result.data?.whoIs).toEqual(whoIs);
@@ -143,7 +142,7 @@ describe("FindWhoIs handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [{ key: { ipAddress: "1.2.3.4", fingerprint: "fp" }, whois: whoIs }],
+        data: [{ key: { ipAddress: "1.2.3.4" }, whois: whoIs }],
       }),
     } as unknown as GeoServiceClient;
 
@@ -155,9 +154,9 @@ describe("FindWhoIs handler", () => {
       testSingleflight,
       createTestContext(),
     );
-    await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
+    await handler.handleAsync({ ipAddress: "1.2.3.4" });
 
-    expect(store.get(GEO_CACHE_KEYS.whois("1.2.3.4", "fp"))).toEqual(whoIs);
+    expect(store.get(GEO_CACHE_KEYS.whois("1.2.3.4"))).toEqual(whoIs);
   });
 
   it("should return Ok(undefined) on gRPC failure (fail-open)", async () => {
@@ -173,7 +172,7 @@ describe("FindWhoIs handler", () => {
       testSingleflight,
       createTestContext(),
     );
-    const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
+    const result = await handler.handleAsync({ ipAddress: "1.2.3.4" });
 
     expect(result).toBeSuccess();
     expect(result.data?.whoIs).toBeUndefined();
@@ -202,7 +201,7 @@ describe("FindWhoIs handler", () => {
       testSingleflight,
       createTestContext(),
     );
-    const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
+    const result = await handler.handleAsync({ ipAddress: "1.2.3.4" });
 
     expect(result).toBeSuccess();
     expect(result.data?.whoIs).toBeUndefined();
@@ -231,13 +230,13 @@ describe("FindWhoIs handler", () => {
       testSingleflight,
       createTestContext(),
     );
-    const result = await handler.handleAsync({ ipAddress: "1.2.3.4", fingerprint: "fp" });
+    const result = await handler.handleAsync({ ipAddress: "1.2.3.4" });
 
     expect(result).toBeSuccess();
     expect(result.data?.whoIs).toBeUndefined();
   });
 
-  it("should use correct cache key format geo:whois:{ip}:{fingerprint}", async () => {
+  it("should use correct cache key format geo:whois:{ip}", async () => {
     const whoIs = createMockWhoIs();
     const mockGeoClient = {
       findWhoIs: mockGrpcMethod({
@@ -249,7 +248,7 @@ describe("FindWhoIs handler", () => {
           errorCode: "",
           traceId: "",
         },
-        data: [{ key: { ipAddress: "10.0.0.1", fingerprint: "abc123" }, whois: whoIs }],
+        data: [{ key: { ipAddress: "10.0.0.1" }, whois: whoIs }],
       }),
     } as unknown as GeoServiceClient;
 
@@ -261,10 +260,10 @@ describe("FindWhoIs handler", () => {
       testSingleflight,
       createTestContext(),
     );
-    await handler.handleAsync({ ipAddress: "10.0.0.1", fingerprint: "abc123" });
+    await handler.handleAsync({ ipAddress: "10.0.0.1" });
 
-    expect(store.get("geo:whois:10.0.0.1:abc123")).toEqual(whoIs);
-    expect(store.get("geo:whois:10.0.0.1:other")).toBeUndefined();
+    expect(store.get("geo:whois:10.0.0.1")).toEqual(whoIs);
+    expect(store.get("geo:whois:10.0.0.2")).toBeUndefined();
   });
 
   // -------------------------------------------------------------------------
@@ -283,27 +282,6 @@ describe("FindWhoIs handler", () => {
     );
     const result = await handler.handleAsync({
       ipAddress: "not-an-ip",
-      fingerprint: "ua-fingerprint",
-    });
-
-    expect(result).toBeFailure();
-    expect(result.errorCode).toBe(ErrorCodes.VALIDATION_FAILED);
-    expect(mockGeoClient.findWhoIs).not.toHaveBeenCalled();
-  });
-
-  it("should return validationFailed for empty fingerprint", async () => {
-    const mockGeoClient = { findWhoIs: vi.fn() } as unknown as GeoServiceClient;
-    const handler = new FindWhoIs(
-      store,
-      mockGeoClient,
-      DEFAULT_GEO_CLIENT_OPTIONS,
-      testCircuitBreaker,
-      testSingleflight,
-      createTestContext(),
-    );
-    const result = await handler.handleAsync({
-      ipAddress: "1.2.3.4",
-      fingerprint: "",
     });
 
     expect(result).toBeFailure();
@@ -323,7 +301,6 @@ describe("FindWhoIs handler", () => {
     );
     const result = await handler.handleAsync({
       ipAddress: "",
-      fingerprint: "ua-fingerprint",
     });
 
     expect(result).toBeFailure();

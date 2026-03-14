@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
 import { createCsrfMiddleware } from "@d2/auth-api";
+import { TK } from "@d2/i18n";
 
 function createApp(...allowedOrigins: string[]) {
   const app = new Hono();
@@ -32,7 +33,7 @@ describe("CSRF middleware", () => {
       });
       expect(res.status).toBe(403);
       const body = await res.json();
-      expect(body.messages[0]).toContain("Content-Type");
+      expect(body.messages[0]).toBe(TK.common.errors.FORBIDDEN);
     });
 
     it("should pass POST with Content-Type: application/json", async () => {
@@ -107,7 +108,7 @@ describe("CSRF middleware", () => {
       });
       expect(res.status).toBe(403);
       const body = await res.json();
-      expect(body.messages[0]).toContain("origin");
+      expect(body.messages[0]).toBe(TK.common.errors.FORBIDDEN);
     });
 
     it("should pass POST when Origin matches", async () => {

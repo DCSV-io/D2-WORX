@@ -212,7 +212,7 @@ public class RateLimitMiddlewareTests
         var body = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
 
         body.Should().Contain("RATE_LIMITED");
-        body.Should().Contain("Rate limit exceeded on City dimension");
+        body.Should().Contain("common_errors_TOO_MANY_REQUESTS");
         context.Response.ContentType.Should().StartWith("application/json");
     }
 
@@ -356,19 +356,17 @@ public class RateLimitMiddlewareTests
     /// </summary>
     ///
     /// <param name="dimension">The dimension that caused the block.</param>
-    /// <param name="expectedMessage">Expected message in response.</param>
     ///
     /// <returns>
     /// A <see cref="Task"/> representing the asynchronous unit test.
     /// </returns>
     [Theory]
-    [InlineData(RateLimitDimension.DeviceFingerprint, "DeviceFingerprint")]
-    [InlineData(RateLimitDimension.Ip, "Ip")]
-    [InlineData(RateLimitDimension.City, "City")]
-    [InlineData(RateLimitDimension.Country, "Country")]
-    public async Task InvokeAsync_WhenBlockedByDimension_IncludesDimensionInMessage(
-        RateLimitDimension dimension,
-        string expectedMessage)
+    [InlineData(RateLimitDimension.DeviceFingerprint)]
+    [InlineData(RateLimitDimension.Ip)]
+    [InlineData(RateLimitDimension.City)]
+    [InlineData(RateLimitDimension.Country)]
+    public async Task InvokeAsync_WhenBlockedByDimension_ReturnsTkKeyInMessage(
+        RateLimitDimension dimension)
     {
         // Arrange
         var context = CreateHttpContextWithRequestInfo();
@@ -385,7 +383,7 @@ public class RateLimitMiddlewareTests
         using var reader = new StreamReader(context.Response.Body);
         var body = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
 
-        body.Should().Contain(expectedMessage);
+        body.Should().Contain("common_errors_TOO_MANY_REQUESTS");
     }
 
     #endregion
@@ -474,7 +472,7 @@ public class RateLimitMiddlewareTests
                 It.IsAny<IRateLimit.CheckInput>(),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()))
-            .ReturnsAsync(D2Result<IRateLimit.CheckOutput?>.Ok(null));
+            .ReturnsAsync(D2Result<IRateLimit.CheckOutput?>.Ok());
     }
 
     private void SetupCheckThrows(Exception exception)

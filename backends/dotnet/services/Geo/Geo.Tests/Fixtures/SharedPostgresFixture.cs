@@ -35,6 +35,7 @@ public class SharedPostgresFixture : IAsyncLifetime
     /// <returns>
     /// A new <see cref="GeoDbContext"/> instance.
     /// </returns>
+    [MustDisposeResource]
     public GeoDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<GeoDbContext>()
@@ -60,5 +61,6 @@ public class SharedPostgresFixture : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _container.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 }

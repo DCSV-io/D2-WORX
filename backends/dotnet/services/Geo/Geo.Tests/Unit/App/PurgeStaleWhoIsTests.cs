@@ -57,7 +57,7 @@ public class PurgeStaleWhoIsTests
                 new RepoDelete.DeleteStaleWhoIsOutput(0)));
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Lock Not Acquired
 

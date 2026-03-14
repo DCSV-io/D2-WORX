@@ -43,6 +43,14 @@ namespace D2.Geo.Infra.Repository.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("IETFBCP47Tag")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(35)
+                        .HasColumnType("character varying(35)")
+                        .HasDefaultValue("en-US")
+                        .HasColumnName("ietf_bcp47_tag");
+
                     b.Property<string>("LocationHashId")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
@@ -53,6 +61,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                         .HasColumnName("related_entity_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IETFBCP47Tag");
 
                     b.HasIndex("LocationHashId");
 
@@ -5878,11 +5888,6 @@ namespace D2.Geo.Infra.Repository.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("carrier_name");
 
-                    b.Property<string>("Fingerprint")
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)")
-                        .HasColumnName("fingerprint");
-
                     b.Property<DateOnly?>("GeoChanged")
                         .HasColumnType("date")
                         .HasColumnName("geo_changed");
@@ -5958,10 +5963,6 @@ namespace D2.Geo.Infra.Repository.Migrations
                         .HasColumnName("year");
 
                     b.HasKey("HashId");
-
-                    b.HasIndex("Fingerprint")
-                        .HasDatabaseName("ix_who_is_fingerprint")
-                        .HasFilter("fingerprint IS NOT NULL");
 
                     b.HasIndex("IPAddress")
                         .HasDatabaseName("ix_who_is_ip_address");
@@ -12725,6 +12726,12 @@ namespace D2.Geo.Infra.Repository.Migrations
 
             modelBuilder.Entity("D2.Geo.Domain.Entities.Contact", b =>
                 {
+                    b.HasOne("D2.Geo.Domain.Entities.Locale", "Locale")
+                        .WithMany()
+                        .HasForeignKey("IETFBCP47Tag")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("D2.Geo.Domain.Entities.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationHashId")
@@ -12821,6 +12828,8 @@ namespace D2.Geo.Infra.Repository.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("ContactId");
                         });
+
+                    b.Navigation("Locale");
 
                     b.Navigation("Location");
 

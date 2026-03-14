@@ -1,6 +1,6 @@
 # @d2/e2e-tests
 
-Cross-service E2E tests validating the full Auth → Comms delivery pipeline and Dkron job execution chain. Two test tiers: **Vitest API-level** tests call services directly (in-process), and **Playwright browser** tests drive real browsers against the full stack (SvelteKit + Auth + Geo + Comms). Auth pipeline tests exercise sign-up → Geo contact creation → RabbitMQ → Comms → email delivery. Dkron tests exercise job registration, reconciliation, and the full-chain Dkron → REST Gateway → gRPC → service → database cleanup.
+Cross-service E2E tests validating the full Auth → Comms delivery pipeline, Dkron job execution chain, and BFF auth client integration. Two test tiers: **Vitest API-level** tests call services directly (in-process), and **Playwright browser** tests drive real browsers against the full stack (SvelteKit + Auth + Geo + Comms). Auth pipeline tests exercise sign-up → Geo contact creation → RabbitMQ → Comms → email delivery. Dkron tests exercise job registration, reconciliation, and the full-chain Dkron → REST Gateway → gRPC → service → database cleanup. BFF client tests exercise SessionResolver, AuthProxy, and JwtManager over real HTTP against the Auth service.
 
 ## Purpose
 
@@ -8,10 +8,10 @@ Proves that the three services (Auth, Geo, Comms) integrate correctly when wired
 
 The project contains two complementary test tiers:
 
-| Tier                    | Runner          | Scope                                                      | Run Command                                           |
-| ----------------------- | --------------- | ----------------------------------------------------------- | ----------------------------------------------------- |
-| API-level (Vitest)      | Vitest          | In-process service calls, DB assertions, message bus events | `pnpm vitest run --project e2e-tests`                 |
-| Browser (Playwright)    | Playwright Test | Real browser → SvelteKit → all backend services             | `npx playwright test --config playwright.config.ts`   |
+| Tier                 | Runner          | Scope                                                       | Run Command                                         |
+| -------------------- | --------------- | ----------------------------------------------------------- | --------------------------------------------------- |
+| API-level (Vitest)   | Vitest          | In-process service calls, DB assertions, message bus events | `pnpm vitest run --project e2e-tests`               |
+| Browser (Playwright) | Playwright Test | Real browser → SvelteKit → all backend services             | `npx playwright test --config playwright.config.ts` |
 
 ## Vitest API-Level Tests
 
@@ -91,6 +91,21 @@ Run: `pnpm vitest run --project e2e-tests`
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
 | Should execute a Dkron job through the full chain (Dkron → Gateway → Geo) | Dkron fires HTTP → Gateway (service key auth) → gRPC (API key) → Geo handler → DB cleanup |
 
+#### `bff-client.test.ts` (10 tests)
+
+| Test                                                                       | Validates                                                            |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Should resolve session and user from a valid session cookie                | SessionResolver returns session+user from signed cookie over HTTP    |
+| Should return null session for an invalid cookie                           | SessionResolver handles invalid/expired cookies gracefully           |
+| Should return null without making a network call when no cookie is present | SessionResolver short-circuits when no session cookie exists         |
+| Should proxy GET /api/auth/get-session with valid cookie and return 200    | AuthProxy forwards GET requests with cookies preserved               |
+| Should proxy POST /api/auth/sign-in/email and return 200                   | AuthProxy forwards POST requests with body and returns auth response |
+| Should proxy sign-in response with set-cookie headers preserved            | AuthProxy preserves set-cookie headers from Auth service responses   |
+| Should produce the same session data as a direct BetterAuth API call       | SessionResolver HTTP path returns identical data to in-process API   |
+| Should obtain a valid RS256 JWT from the auth service                      | JwtManager fetches and returns a valid RS256 JWT token               |
+| Should return cached token on second call                                  | JwtManager caches JWT and returns same token on subsequent calls     |
+| Should re-fetch after invalidate()                                         | JwtManager.invalidate() clears cache, next call fetches fresh token  |
+
 #### `geo-unavailable.test.ts` (2 tests)
 
 | Test                                                                   | Validates                                                                    |
@@ -152,40 +167,40 @@ Polling utilities for async assertions:
 
 ## Dependencies
 
-| Package                      | Purpose                                              |
-| ---------------------------- | ---------------------------------------------------- |
-| `@d2/auth-api`               | Auth composition root (`createApp`)                  |
-| `@d2/auth-app`               | Auth handler types                                   |
-| `@d2/auth-bff-client`        | SvelteKit BFF auth client (route guards, session)    |
-| `@d2/auth-infra`             | Auth config types, password functions                |
-| `@d2/cache-memory`           | In-memory cache for Geo client (Comms service)       |
-| `@d2/cache-redis`            | Distributed cache handlers                           |
-| `@d2/comms-app`              | Comms handler interfaces + DI registration           |
-| `@d2/comms-client`           | `COMMS_EVENTS` exchange constants                    |
-| `@d2/comms-domain`           | Comms domain types                                   |
-| `@d2/comms-infra`            | Comms migrations, consumer, retry topology           |
-| `@d2/di`                     | DI container for Comms wiring                        |
-| `@d2/geo-client`             | Geo gRPC client + `GetContactsByIds`                 |
-| `@d2/handler`                | `BaseHandler`, `HandlerContext`                      |
-| `@d2/logging`                | ILogger + Pino                                       |
-| `@d2/messaging`              | RabbitMQ `MessageBus` + publisher                    |
-| `@d2/protos`                 | Proto-generated types                                |
-| `@d2/result`                 | D2Result pattern                                     |
-| `@d2/testing`                | Custom Vitest matchers                               |
-| `@d2/utilities`              | UUIDv7 generation                                    |
-| `@d2/dkron-mgr`              | Dkron job definitions + reconciler                   |
-| `@hono/node-server`          | HTTP server wrapper for Hono (browser E2E Auth)      |
-| `@playwright/test`           | Browser E2E test runner                              |
-| `testcontainers`             | GenericContainer for Dkron                           |
-| `@testcontainers/postgresql` | PostgreSQL container                                 |
-| `@testcontainers/rabbitmq`   | RabbitMQ container                                   |
-| `@testcontainers/redis`      | Redis container                                      |
-| `drizzle-orm`                | Comms DB access + migrations                         |
-| `hono`                       | HTTP framework (Auth service, browser E2E)           |
-| `ioredis`                    | Redis client (transitive, Comms infra)               |
-| `pg`                         | PostgreSQL client + assertion pools                  |
-| `rabbitmq-client`            | AMQP client (transitive, messaging)                  |
-| `vitest`                     | API-level test runner                                |
+| Package                      | Purpose                                           |
+| ---------------------------- | ------------------------------------------------- |
+| `@d2/auth-api`               | Auth composition root (`createApp`)               |
+| `@d2/auth-app`               | Auth handler types                                |
+| `@d2/auth-bff-client`        | SvelteKit BFF auth client (route guards, session) |
+| `@d2/auth-infra`             | Auth config types, password functions             |
+| `@d2/cache-memory`           | In-memory cache for Geo client (Comms service)    |
+| `@d2/cache-redis`            | Distributed cache handlers                        |
+| `@d2/comms-app`              | Comms handler interfaces + DI registration        |
+| `@d2/comms-client`           | `COMMS_EVENTS` exchange constants                 |
+| `@d2/comms-domain`           | Comms domain types                                |
+| `@d2/comms-infra`            | Comms migrations, consumer, retry topology        |
+| `@d2/di`                     | DI container for Comms wiring                     |
+| `@d2/geo-client`             | Geo gRPC client + `GetContactsByIds`              |
+| `@d2/handler`                | `BaseHandler`, `HandlerContext`                   |
+| `@d2/logging`                | ILogger + Pino                                    |
+| `@d2/messaging`              | RabbitMQ `MessageBus` + publisher                 |
+| `@d2/protos`                 | Proto-generated types                             |
+| `@d2/result`                 | D2Result pattern                                  |
+| `@d2/testing`                | Custom Vitest matchers                            |
+| `@d2/utilities`              | UUIDv7 generation                                 |
+| `@d2/dkron-mgr`              | Dkron job definitions + reconciler                |
+| `@hono/node-server`          | HTTP server wrapper for Hono (browser E2E Auth)   |
+| `@playwright/test`           | Browser E2E test runner                           |
+| `testcontainers`             | GenericContainer for Dkron                        |
+| `@testcontainers/postgresql` | PostgreSQL container                              |
+| `@testcontainers/rabbitmq`   | RabbitMQ container                                |
+| `@testcontainers/redis`      | Redis container                                   |
+| `drizzle-orm`                | Comms DB access + migrations                      |
+| `hono`                       | HTTP framework (Auth service, browser E2E)        |
+| `ioredis`                    | Redis client (transitive, Comms infra)            |
+| `pg`                         | PostgreSQL client + assertion pools               |
+| `rabbitmq-client`            | AMQP client (transitive, messaging)               |
+| `vitest`                     | API-level test runner                             |
 
 ## Stub vs Production Divergence
 
@@ -238,15 +253,15 @@ Chromium browser
 
 Infrastructure is self-contained via Testcontainers — the same containers used by the Vitest API-level tests. The key difference is the addition of the SvelteKit dev server and an HTTP wrapper around the Auth service (Hono).
 
-| Component  | Image / Runtime              | Purpose                                                               |
-| ---------- | ---------------------------- | --------------------------------------------------------------------- |
-| PostgreSQL | `postgres:18`                | Single container, 3 databases: default (Geo), `e2e_auth`, `e2e_comms` |
-| Redis      | `redis:8.2`                  | Distributed cache + session secondary storage                         |
-| RabbitMQ   | `rabbitmq:4.1-management`    | Async event bus (Auth → Comms)                                        |
-| Geo.API    | .NET child process           | gRPC service for contacts + WhoIs                                     |
-| Auth       | In-process + HTTP server     | BetterAuth + Hono, wrapped in `@hono/node-server` on ephemeral port   |
-| Comms      | In-process (DI wired)        | Notification consumer + stub email provider                           |
-| SvelteKit  | Child process (`pnpm dev`)   | Dev server on random port, configured to proxy to Auth + Geo + Redis  |
+| Component  | Image / Runtime            | Purpose                                                               |
+| ---------- | -------------------------- | --------------------------------------------------------------------- |
+| PostgreSQL | `postgres:18`              | Single container, 3 databases: default (Geo), `e2e_auth`, `e2e_comms` |
+| Redis      | `redis:8.2`                | Distributed cache + session secondary storage                         |
+| RabbitMQ   | `rabbitmq:4.1-management`  | Async event bus (Auth → Comms)                                        |
+| Geo.API    | .NET child process         | gRPC service for contacts + WhoIs                                     |
+| Auth       | In-process + HTTP server   | BetterAuth + Hono, wrapped in `@hono/node-server` on ephemeral port   |
+| Comms      | In-process (DI wired)      | Notification consumer + stub email provider                           |
+| SvelteKit  | Child process (`pnpm dev`) | Dev server on random port, configured to proxy to Auth + Geo + Redis  |
 
 ### Lifecycle
 
@@ -265,15 +280,15 @@ Unlike the Vitest tests (which start/stop infrastructure per test file in `befor
 
 ### Playwright Configuration
 
-| Setting           | Value              | Reason                                                                     |
-| ----------------- | ------------------ | -------------------------------------------------------------------------- |
-| `testDir`         | `src/browser`      | Separates browser specs from Vitest API-level tests                        |
-| `timeout`         | 60,000 ms          | Full-stack round-trips through SvelteKit + Auth + Geo + Comms              |
-| `retries`         | 1                  | Infrastructure flakiness mitigation (container startup timing)             |
-| `trace`           | `on-first-retry`   | Captures trace only when a test is retried (for debugging)                 |
-| `screenshot`      | `only-on-failure`  | Captures screenshot on failure for CI debugging                            |
-| `baseURL`         | `SVELTEKIT_BASE_URL` env var | Set dynamically by global-setup to the SvelteKit dev server URL      |
-| `reporter`        | `html` (open: never) | HTML report generated but not auto-opened (CI-friendly)                  |
+| Setting      | Value                        | Reason                                                          |
+| ------------ | ---------------------------- | --------------------------------------------------------------- |
+| `testDir`    | `src/browser`                | Separates browser specs from Vitest API-level tests             |
+| `timeout`    | 60,000 ms                    | Full-stack round-trips through SvelteKit + Auth + Geo + Comms   |
+| `retries`    | 1                            | Infrastructure flakiness mitigation (container startup timing)  |
+| `trace`      | `on-first-retry`             | Captures trace only when a test is retried (for debugging)      |
+| `screenshot` | `only-on-failure`            | Captures screenshot on failure for CI debugging                 |
+| `baseURL`    | `SVELTEKIT_BASE_URL` env var | Set dynamically by global-setup to the SvelteKit dev server URL |
+| `reporter`   | `html` (open: never)         | HTML report generated but not auto-opened (CI-friendly)         |
 
 Run: `npx playwright test --config playwright.config.ts` (from the e2e project directory)
 
@@ -283,34 +298,34 @@ CI job: `e2e-browser` (separate from the Vitest `e2e-auth`, `e2e-comms`, `e2e-in
 
 #### `auth-sign-up.spec.ts` (2 tests)
 
-| Test                                                           | Validates                                                                |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Test                                                                      | Validates                                                                  |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 | Sign-up with valid credentials creates user and redirects to verify-email | Fill form → submit → redirect to `/verify-email` with confirmation message |
-| Sign-up with duplicate email shows error                       | Second sign-up with same email shows "already exists" error              |
+| Sign-up with duplicate email shows error                                  | Second sign-up with same email shows "already exists" error                |
 
 #### `auth-sign-in.spec.ts` (3 tests)
 
-| Test                                                           | Validates                                                                |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Sign-in with valid credentials redirects to authenticated area | Fill email + password → submit → redirected away from `/sign-in`         |
-| Sign-in with wrong password shows error                        | Incorrect password → credential error shown, stays on `/sign-in`         |
-| Sign-in with non-existent email shows error                    | Unknown email → same credential error (no user enumeration)              |
+| Test                                                           | Validates                                                        |
+| -------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Sign-in with valid credentials redirects to authenticated area | Fill email + password → submit → redirected away from `/sign-in` |
+| Sign-in with wrong password shows error                        | Incorrect password → credential error shown, stays on `/sign-in` |
+| Sign-in with non-existent email shows error                    | Unknown email → same credential error (no user enumeration)      |
 
 Pre-creates a test user via the Auth API (`AUTH_BASE_URL`) in `beforeAll` so sign-in tests have a valid account.
 
 #### `auth-sign-out.spec.ts` (1 test)
 
-| Test                                                           | Validates                                                                |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Sign out after sign in clears session and redirects to sign-in | Sign in → find sign-out button → click → end up on `/sign-in`           |
+| Test                                                           | Validates                                                     |
+| -------------------------------------------------------------- | ------------------------------------------------------------- |
+| Sign out after sign in clears session and redirects to sign-in | Sign in → find sign-out button → click → end up on `/sign-in` |
 
 #### `auth-password-reset.spec.ts` (3 tests)
 
-| Test                                                           | Validates                                                                |
-| -------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| Forgot password form submits and shows confirmation            | Enter email → submit → success message shown                            |
-| Forgot password with unknown email still shows confirmation    | No user enumeration — unknown email gets same confirmation              |
-| Reset password page without token shows invalid link message   | Navigate to `/reset-password` without token → shows "Invalid or Expired Link" |
+| Test                                                         | Validates                                                                     |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Forgot password form submits and shows confirmation          | Enter email → submit → success message shown                                  |
+| Forgot password with unknown email still shows confirmation  | No user enumeration — unknown email gets same confirmation                    |
+| Reset password page without token shows invalid link message | Navigate to `/reset-password` without token → shows "Invalid or Expired Link" |
 
 ### Browser E2E Helpers
 

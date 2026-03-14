@@ -6,9 +6,6 @@
 
 namespace D2.Geo.Client;
 
-using System.Security.Cryptography;
-using System.Text;
-
 /// <summary>
 /// Centralized cache key definitions for the Geo client library.
 /// </summary>
@@ -41,16 +38,9 @@ public static class CacheKeys
         $"{CONTACTS_BY_EXT_KEY_PREFIX}:{contextKey}:{relatedEntityId}";
 
     /// <summary>
-    /// Generates a cache key for WhoIs lookup by IP and user agent.
-    /// The user agent is hashed to SHA-256 to keep cache keys compact
-    /// (raw UA strings can exceed 500 characters).
+    /// Generates a cache key for WhoIs lookup by IP address.
     /// </summary>
     /// <param name="ip">The IP address.</param>
-    /// <param name="userAgent">The user agent string (hashed internally to a 64-char fingerprint).</param>
-    /// <returns>Cache key in format <c>geo:whois:{ip}:{fingerprint}</c>.</returns>
-    public static string WhoIs(string ip, string userAgent)
-    {
-        var fingerprint = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(userAgent)));
-        return $"geo:whois:{ip}:{fingerprint}";
-    }
+    /// <returns>Cache key in format <c>geo:whois:{ip}</c>.</returns>
+    public static string WhoIs(string ip) => $"geo:whois:{ip}";
 }

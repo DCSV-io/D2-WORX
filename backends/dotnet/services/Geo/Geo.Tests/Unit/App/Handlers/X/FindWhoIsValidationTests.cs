@@ -78,7 +78,7 @@ public class FindWhoIsValidationTests
         r_context = CreateHandlerContext();
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Empty Input
 
@@ -119,8 +119,8 @@ public class FindWhoIsValidationTests
         // Arrange
         var handler = CreateHandler();
         var request = new FindWhoIsRequest();
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "192.168.1.1", Fingerprint = "test-fp" });
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "2001:0db8::1", Fingerprint = "test-fp-v6" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "192.168.1.1" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "2001:0db8::1" });
         var input = new IComplex.FindWhoIsInput(request);
 
         // Act
@@ -146,7 +146,7 @@ public class FindWhoIsValidationTests
         // Arrange
         var handler = CreateHandler();
         var request = new FindWhoIsRequest();
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = string.Empty, Fingerprint = "test-fp" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = string.Empty });
         var input = new IComplex.FindWhoIsInput(request);
 
         // Act
@@ -157,7 +157,7 @@ public class FindWhoIsValidationTests
         result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
         result.InputErrors.Should().HaveCount(1);
         result.InputErrors[0][0].Should().Be("requests[0].ipAddress");
-        result.InputErrors[0][1].Should().Be("Must be a valid IPv4 or IPv6 address.");
+        result.InputErrors[0][1].Should().Be("geo_validation_ip_invalid");
     }
 
     /// <summary>
@@ -171,7 +171,7 @@ public class FindWhoIsValidationTests
         // Arrange
         var handler = CreateHandler();
         var request = new FindWhoIsRequest();
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "   ", Fingerprint = "test-fp" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "   " });
         var input = new IComplex.FindWhoIsInput(request);
 
         // Act
@@ -182,7 +182,7 @@ public class FindWhoIsValidationTests
         result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
         result.InputErrors.Should().HaveCount(1);
         result.InputErrors[0][0].Should().Be("requests[0].ipAddress");
-        result.InputErrors[0][1].Should().Be("Must be a valid IPv4 or IPv6 address.");
+        result.InputErrors[0][1].Should().Be("geo_validation_ip_invalid");
     }
 
     /// <summary>
@@ -196,7 +196,7 @@ public class FindWhoIsValidationTests
         // Arrange
         var handler = CreateHandler();
         var request = new FindWhoIsRequest();
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "not-an-ip", Fingerprint = "test-fp" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "not-an-ip" });
         var input = new IComplex.FindWhoIsInput(request);
 
         // Act
@@ -207,7 +207,7 @@ public class FindWhoIsValidationTests
         result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
         result.InputErrors.Should().HaveCount(1);
         result.InputErrors[0][0].Should().Be("requests[0].ipAddress");
-        result.InputErrors[0][1].Should().Be("Must be a valid IPv4 or IPv6 address.");
+        result.InputErrors[0][1].Should().Be("geo_validation_ip_invalid");
     }
 
     #endregion
@@ -226,9 +226,9 @@ public class FindWhoIsValidationTests
         // Arrange
         var handler = CreateHandler();
         var request = new FindWhoIsRequest();
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "bad-ip-0", Fingerprint = "fp-0" });
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "10.0.0.1", Fingerprint = "fp-1" });
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "also-bad", Fingerprint = "fp-2" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "bad-ip-0" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "10.0.0.1" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "also-bad" });
         var input = new IComplex.FindWhoIsInput(request);
 
         // Act
@@ -256,9 +256,9 @@ public class FindWhoIsValidationTests
         // Arrange
         var handler = CreateHandler();
         var request = new FindWhoIsRequest();
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = string.Empty, Fingerprint = "fp-0" });
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "   ", Fingerprint = "fp-1" });
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "not-valid", Fingerprint = "fp-2" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = string.Empty });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "   " });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "not-valid" });
         var input = new IComplex.FindWhoIsInput(request);
 
         // Act
@@ -289,7 +289,7 @@ public class FindWhoIsValidationTests
         // Arrange
         var handler = CreateHandler();
         var request = new FindWhoIsRequest();
-        request.Requests.Add(new FindWhoIsKeys { IpAddress = "not-an-ip", Fingerprint = "fp" });
+        request.Requests.Add(new FindWhoIsKeys { IpAddress = "not-an-ip" });
         var input = new IComplex.FindWhoIsInput(request);
 
         // Act

@@ -58,7 +58,7 @@ export async function enrichRequest(
   // 4. Compute combined device fingerprint (always present).
   const deviceFingerprint = buildDeviceFingerprint(clientFingerprint, serverFingerprint, clientIp);
 
-  // 5. Build initial request context (without WhoIs data).
+  // 4. Build initial request context (without WhoIs data).
   let requestContext: IRequestContext = new MutableRequestContext({
     clientIp,
     serverFingerprint,
@@ -69,12 +69,8 @@ export async function enrichRequest(
   // 5. Perform WhoIs lookup if enabled and not localhost.
   if (opts.enableWhoIsLookup && !isLocalhost(clientIp)) {
     try {
-      const userAgent = headers["user-agent"];
-      const fingerprint = Array.isArray(userAgent) ? (userAgent[0] ?? "") : (userAgent ?? "");
-
       const whoIsResult = await findWhoIs.handleAsync({
         ipAddress: clientIp,
-        fingerprint,
       });
 
       const output = whoIsResult.checkSuccess();

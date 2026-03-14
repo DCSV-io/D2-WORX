@@ -37,7 +37,7 @@ public static class Extensions
         /// </returns>
         public IServiceCollection AddRabbitMqMessaging(string connectionString)
         {
-            services.AddSingleton<IConnection>(sp =>
+            services.AddSingleton<IConnection>(_ =>
             {
                 var factory = new ConnectionFactory
                 {

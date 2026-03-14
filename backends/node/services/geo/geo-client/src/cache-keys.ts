@@ -13,6 +13,6 @@ export const GEO_CACHE_KEYS = {
   contactsByExtKey: (contextKey: string, relatedEntityId: string) =>
     `geo:contacts-by-extkey:${contextKey}:${relatedEntityId}`,
 
-  /** WhoIs lookup by IP + fingerprint. Format: `geo:whois:{ip}:{fingerprint}` */
-  whois: (ip: string, fingerprint: string) => `geo:whois:${ip}:${fingerprint}`,
+  /** WhoIs lookup by IP address. Format: `geo:whois:{ip}` */
+  whois: (ip: string) => `geo:whois:${ip}`,
 } as const;

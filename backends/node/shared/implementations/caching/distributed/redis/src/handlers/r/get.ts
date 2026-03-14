@@ -1,5 +1,6 @@
 import type Redis from "ioredis";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
+import { TK } from "@d2/i18n";
 import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
 import { redisErrorResult } from "../../redis-error-result.js";
 import type { DistributedCache } from "@d2/interfaces";
@@ -18,6 +19,10 @@ export class Get<TValue>
     this.serializer = serializer ?? new JsonCacheSerializer<TValue>();
   }
 
+  override get redaction(): RedactionSpec {
+    return { outputFields: ["value"] };
+  }
+
   protected async executeAsync(
     input: DistributedCache.GetInput,
   ): Promise<D2Result<DistributedCache.GetOutput<TValue> | undefined>> {
@@ -31,7 +36,7 @@ export class Get<TValue>
         return D2Result.ok({ data: { value } });
       } catch {
         return D2Result.fail({
-          messages: ["Value could not be deserialized."],
+          messages: [TK.common.errors.COULD_NOT_BE_DESERIALIZED],
           statusCode: HttpStatusCode.InternalServerError,
           errorCode: ErrorCodes.COULD_NOT_BE_DESERIALIZED,
         });

@@ -10,8 +10,6 @@ using D2.Geo.Client;
 using D2.Geo.Client.CQRS.Handlers.C;
 using D2.Geo.Client.Interfaces.CQRS.Handlers.C;
 using D2.Services.Protos.Geo.V1;
-
-// ReSharper disable AccessToStaticMemberViaDerivedType
 using D2.Shared.DistributedCache.Redis;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
@@ -19,6 +17,8 @@ using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.Redis;
 using Xunit;
+
+// ReSharper disable AccessToStaticMemberViaDerivedType
 
 /// <summary>
 /// Integration tests for GeoRefData provider-side handlers using Redis.
@@ -30,7 +30,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
     private IServiceProvider _services = null!;
     private IHandlerContext _context = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -59,6 +59,7 @@ public class GeoRefDataProviderTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _container.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

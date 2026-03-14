@@ -58,7 +58,7 @@ public class DeleteContactsValidationTests
         r_context = CreateHandlerContext();
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Empty Input
 
@@ -142,7 +142,7 @@ public class DeleteContactsValidationTests
         result.ErrorCode.Should().Be(ErrorCodes.VALIDATION_FAILED);
         result.InputErrors.Should().HaveCount(1);
         result.InputErrors[0][0].Should().Be("items[0]");
-        result.InputErrors[0][1].Should().Be("Contact ID must not be an empty GUID.");
+        result.InputErrors[0][1].Should().Be("geo_validation_id_invalid");
     }
 
     #endregion

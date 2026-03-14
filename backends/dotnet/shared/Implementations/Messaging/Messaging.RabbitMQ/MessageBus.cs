@@ -11,6 +11,7 @@ using D2.Shared.Interfaces.Messaging;
 using global::RabbitMQ.Client;
 using global::RabbitMQ.Client.Events;
 using Google.Protobuf;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -18,7 +19,7 @@ using Microsoft.Extensions.Logging;
 /// Wraps <see cref="ProtoPublisher"/> for publishing and creates managed consumers
 /// for subscribing. Consumers NACK without requeue on failure (no poison message loops).
 /// </summary>
-public sealed class MessageBus : IMessageBus
+public sealed partial class MessageBus : IMessageBus
 {
     private readonly IConnection r_connection;
     private readonly ProtoPublisher r_publisher;
@@ -48,6 +49,7 @@ public sealed class MessageBus : IMessageBus
     }
 
     /// <inheritdoc/>
+    [MustDisposeResource]
     public async Task<IAsyncDisposable> SubscribeAsync<T>(
         ConsumerConfig config,
         Func<IncomingMessage<T>, CancellationToken, Task<ConsumerResult>> handler,
@@ -123,10 +125,7 @@ public sealed class MessageBus : IMessageBus
             }
             catch (Exception ex)
             {
-                r_logger.LogError(
-                    ex,
-                    "Exception processing {ProtoType} message, dropping (NACK requeue=false)",
-                    typeof(T).Name);
+                LogMessageProcessingFailed(r_logger, ex, typeof(T).Name);
                 result = ConsumerResult.Drop;
             }
 
@@ -150,12 +149,7 @@ public sealed class MessageBus : IMessageBus
             consumer: consumer,
             cancellationToken: ct);
 
-        r_logger.LogInformation(
-            "Started {ProtoType} consumer on exchange {Exchange} (queue: {Queue}, prefetch: {Prefetch})",
-            typeof(T).Name,
-            config.Exchange,
-            queueName,
-            config.PrefetchCount);
+        LogConsumerStarted(r_logger, typeof(T).Name, config.Exchange, queueName, config.PrefetchCount);
 
         return new Subscription(channel, consumerTag, r_logger);
     }
@@ -178,9 +172,22 @@ public sealed class MessageBus : IMessageBus
     }
 
     /// <summary>
+    /// Logs that message processing failed and the message is being dropped.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Exception processing {ProtoType} message, dropping (NACK requeue=false)")]
+    private static partial void LogMessageProcessingFailed(ILogger logger, Exception ex, string protoType);
+
+    /// <summary>
+    /// Logs that a consumer has been started on an exchange.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Started {ProtoType} consumer on exchange {Exchange} (queue: {Queue}, prefetch: {Prefetch})")]
+    private static partial void LogConsumerStarted(ILogger logger, string protoType, string exchange, string queue, ushort prefetch);
+
+    /// <summary>
     /// Represents an active subscription that can be disposed to stop consuming.
     /// </summary>
-    private sealed class Subscription : IAsyncDisposable
+    [MustDisposeResource]
+    private sealed partial class Subscription : IAsyncDisposable
     {
         private readonly IChannel r_channel;
         private readonly string r_consumerTag;
@@ -201,10 +208,16 @@ public sealed class MessageBus : IMessageBus
             }
             catch (Exception ex)
             {
-                r_logger.LogWarning(ex, "Error cancelling consumer {Tag}", r_consumerTag);
+                LogConsumerCancelError(r_logger, ex, r_consumerTag);
             }
 
             await r_channel.DisposeAsync();
         }
+
+        /// <summary>
+        /// Logs an error when cancelling a consumer fails.
+        /// </summary>
+        [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Error cancelling consumer {Tag}")]
+        private static partial void LogConsumerCancelError(ILogger logger, Exception ex, string tag);
     }
 }

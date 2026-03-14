@@ -11,6 +11,7 @@ using D2.Geo.App.Mappers;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Handler;
+using D2.Shared.I18n;
 using D2.Shared.Result;
 using D2.Shared.Utilities.Extensions;
 using Microsoft.Extensions.Logging;
@@ -27,10 +28,10 @@ using WhoIsProvider = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead;
 ///
 /// <remarks>
 /// <para>
-/// This handler resolves WhoIs records for IP + fingerprint pairs:
+/// This handler resolves WhoIs records for IP addresses:
 /// </para>
 /// <list type="number">
-/// <item>Computes WhoIs hash IDs from IP + current year/month + fingerprint.</item>
+/// <item>Computes WhoIs hash IDs from IP + current year/month.</item>
 /// <item>Checks for existing records in cache/database.</item>
 /// <item>For misses: builds partial WhoIs and calls PopulateWhoIs to fetch external data.</item>
 /// <item>Persists newly populated WhoIs records.</item>
@@ -40,7 +41,7 @@ using WhoIsProvider = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead;
 /// If population fails for some requests, returns SOME_FOUND with partial results.
 /// </para>
 /// </remarks>
-public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
+public partial class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 {
     private readonly Queries.IGetWhoIsByIdsHandler r_getWhoIsByIds;
     private readonly Queries.IGetLocationsByIdsHandler r_getLocationsByIds;
@@ -99,7 +100,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
             if (key.IpAddress.Falsey()
                 || !IPAddress.TryParse(key.IpAddress, out _))
             {
-                allErrors.Add([$"requests[{i}].ipAddress", "Must be a valid IPv4 or IPv6 address."]);
+                allErrors.Add([$"requests[{i}].ipAddress", TK.Geo.Validation.IP_INVALID]);
             }
         }
 
@@ -124,8 +125,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
             var partialWhoIs = WhoIs.Create(
                 ipAddress: key.IpAddress,
                 year: year,
-                month: month,
-                fingerprint: key.Fingerprint);
+                month: month);
 
             keyToPartialWhoIs[key] = partialWhoIs;
             hashIdToKey[partialWhoIs.HashId] = key;
@@ -181,10 +181,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         var populateR = await r_populateWhoIs.HandleAsync(new(missingPartials), ct);
         if (populateR.CheckFailure(out var populateOutput))
         {
-            Context.Logger.LogWarning(
-                "Failed to populate WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}",
-                TraceId,
-                populateR.ErrorCode);
+            LogPopulateFailed(Context.Logger, TraceId, populateR.ErrorCode);
 
             // Return what we have if population failed entirely.
             if (results.Count > 0)
@@ -215,10 +212,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 
         if (createWhoIsR.CheckFailure(out _))
         {
-            Context.Logger.LogWarning(
-                "Failed to create WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}",
-                TraceId,
-                createWhoIsR.ErrorCode);
+            LogCreateFailed(Context.Logger, TraceId, createWhoIsR.ErrorCode);
         }
 
         // Step 6: Fetch locations for newly populated WhoIs records.
@@ -245,6 +239,18 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 
         return D2Result<O?>.SomeFound(new O(results));
     }
+
+    /// <summary>
+    /// Logs a warning when populating WhoIs records from the external source fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to populate WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}")]
+    private static partial void LogPopulateFailed(ILogger logger, string? traceId, string? errorCode);
+
+    /// <summary>
+    /// Logs a warning when persisting newly created WhoIs records to the repository fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to create WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}")]
+    private static partial void LogCreateFailed(ILogger logger, string? traceId, string? errorCode);
 
     private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(
         IEnumerable<WhoIs> whoIsRecords,

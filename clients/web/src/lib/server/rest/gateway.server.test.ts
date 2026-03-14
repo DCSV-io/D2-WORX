@@ -10,6 +10,13 @@ vi.mock("../auth.server", () => ({
   }),
 }));
 
+// Mock Paraglide runtime — default locale "en-US", overridable per-test
+const mockGetLocale = vi.fn(() => "en-US");
+
+vi.mock("$lib/paraglide/runtime.js", () => ({
+  getLocale: () => mockGetLocale(),
+}));
+
 describe("gateway.server", () => {
   const ENV_BACKUP: Record<string, string | undefined> = {};
 
@@ -21,6 +28,7 @@ describe("gateway.server", () => {
   beforeEach(() => {
     vi.resetModules();
     mockGetToken.mockReset();
+    mockGetLocale.mockReturnValue("en-US");
   });
 
   afterEach(() => {
@@ -104,7 +112,7 @@ describe("gateway.server", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(401);
-      expect(result.messages[0]).toContain("Failed to obtain JWT");
+      expect(result.messages[0]).toContain("common_errors_UNAUTHORIZED");
     });
 
     it("sends Authorization and X-Api-Key headers", async () => {
@@ -224,7 +232,7 @@ describe("gateway.server", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(408);
-      expect(result.messages[0]).toContain("aborted");
+      expect(result.messages[0]).toContain("common_errors_CANCELLED");
 
       fetchSpy.mockRestore();
     });
@@ -241,7 +249,7 @@ describe("gateway.server", () => {
 
       expect(result.success).toBe(false);
       expect(result.statusCode).toBe(408);
-      expect(result.messages[0]).toContain("timed out");
+      expect(result.messages[0]).toContain("common_errors_REQUEST_FAILED");
 
       fetchSpy.mockRestore();
     });
@@ -301,6 +309,63 @@ describe("gateway.server", () => {
 
       expect(result.success).toBe(true);
       expect(result.data?.items).toEqual([1, 2, 3]);
+
+      fetchSpy.mockRestore();
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // D2-Locale header
+  // -------------------------------------------------------------------------
+  describe("D2-Locale header", () => {
+    it("sends D2-Locale header with default locale on authenticated calls", async () => {
+      setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
+      mockGetToken.mockResolvedValue("jwt-token");
+
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      const { gatewayFetch } = await import("./gateway.server");
+      await gatewayFetch("/api/v1/test", "cookies");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Headers;
+      expect(headers.get("D2-Locale")).toBe("en-US");
+
+      fetchSpy.mockRestore();
+    });
+
+    it("sends D2-Locale header with non-default locale", async () => {
+      setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
+      mockGetToken.mockResolvedValue("jwt-token");
+      mockGetLocale.mockReturnValue("de-DE");
+
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      const { gatewayFetch } = await import("./gateway.server");
+      await gatewayFetch("/api/v1/test", "cookies");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Headers;
+      expect(headers.get("D2-Locale")).toBe("de-DE");
+
+      fetchSpy.mockRestore();
+    });
+
+    it("sends D2-Locale header on anonymous calls", async () => {
+      setEnv("SVELTEKIT_GATEWAY__URL", "http://localhost:5461");
+      mockGetLocale.mockReturnValue("fr-FR");
+
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(new Response(JSON.stringify({ success: true }), { status: 200 }));
+
+      const { gatewayFetchAnon } = await import("./gateway.server");
+      await gatewayFetchAnon("/api/v1/geo/countries");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Headers;
+      expect(headers.get("D2-Locale")).toBe("fr-FR");
 
       fetchSpy.mockRestore();
     });

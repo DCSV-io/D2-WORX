@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 /// Publishes contact eviction events via raw AMQP.
 /// All geo-client instances (Node.js + .NET) subscribe to evict matching cache entries.
 /// </summary>
-public class ContactEvictionPublisher
+public partial class ContactEvictionPublisher
 {
     private readonly ProtoPublisher r_publisher;
     private readonly ILogger<ContactEvictionPublisher> r_logger;
@@ -64,21 +64,27 @@ public class ContactEvictionPublisher
                 message,
                 ct: ct);
 
-            r_logger.LogInformation(
-                "Published ContactsEvicted event for {Count} contact(s)",
-                message.Contacts.Count);
+            LogPublishedContactsEvicted(r_logger, message.Contacts.Count);
 
             return D2Result.Ok();
         }
         catch (Exception ex)
         {
-            r_logger.LogError(
-                ex,
-                "Failed to publish ContactsEvicted event for {Count} contact(s)",
-                message.Contacts.Count);
+            LogPublishContactsEvictedFailed(r_logger, ex, message.Contacts.Count);
 
-            return D2Result.ServiceUnavailable(
-                ["Failed to publish contact eviction event to RabbitMQ."]);
+            return D2Result.ServiceUnavailable();
         }
     }
+
+    /// <summary>
+    /// Logs that a ContactsEvicted event was successfully published.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Published ContactsEvicted event for {Count} contact(s)")]
+    private static partial void LogPublishedContactsEvicted(ILogger logger, int count);
+
+    /// <summary>
+    /// Logs an error when publishing a ContactsEvicted event fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to publish ContactsEvicted event for {Count} contact(s)")]
+    private static partial void LogPublishContactsEvictedFailed(ILogger logger, Exception exception, int count);
 }

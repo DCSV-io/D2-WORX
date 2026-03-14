@@ -9,12 +9,14 @@ namespace D2.Shared.Tests.Unit.BatchPg;
 using D2.Shared.Batch.Pg;
 using D2.Shared.Result;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 /// <summary>
 /// Unit tests for <see cref="D2ResultExtensions"/>.
 /// </summary>
+[MustDisposeResource(false)]
 public class BatchD2ResultExtensionsTests : IDisposable
 {
     private const string _TRACE_ID = "test-trace-id-123";
@@ -23,6 +25,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchD2ResultExtensionsTests"/> class.
     /// </summary>
+    [MustDisposeResource(false)]
     public BatchD2ResultExtensionsTests()
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
@@ -32,7 +35,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
         r_db = new TestDbContext(options);
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region ToD2ResultAsync — Empty Input
 
@@ -46,7 +49,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     {
         // Arrange
         var query = r_db.TestEntities.BatchGetByIds(
-            Array.Empty<int>(),
+            [],
             e => e.Id);
 
         // Act
@@ -79,7 +82,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 2, 3 },
+            [1, 2, 3],
             e => e.Id);
 
         // Act
@@ -105,7 +108,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     {
         // Arrange — no data in DB
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 99, 100 },
+            [99, 100],
             e => e.Id);
 
         // Act
@@ -135,7 +138,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 2, 3 },
+            [1, 2, 3],
             e => e.Id);
 
         // Act
@@ -164,7 +167,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     {
         // Arrange
         var query = r_db.TestEntities.BatchGetByIds(
-            Array.Empty<int>(),
+            [],
             e => e.Id);
 
         // Act
@@ -189,7 +192,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     {
         // Arrange
         var query = r_db.TestEntities.BatchGetByIds(
-            Array.Empty<int>(),
+            [],
             e => e.Id);
 
         // Act
@@ -221,7 +224,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 2 },
+            [1, 2],
             e => e.Id);
 
         // Act
@@ -249,7 +252,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     {
         // Arrange — no data in DB
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 99, 100 },
+            [99, 100],
             e => e.Id);
 
         // Act
@@ -281,7 +284,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 2, 3 },
+            [1, 2, 3],
             e => e.Id);
 
         // Act
@@ -328,6 +331,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
     /// <summary>
     /// A test DbContext for D2ResultExtensions tests.
     /// </summary>
+    [MustDisposeResource(false)]
     public class TestDbContext : DbContext
     {
         /// <summary>
@@ -337,6 +341,7 @@ public class BatchD2ResultExtensionsTests : IDisposable
         /// <param name="options">
         /// The DbContext options.
         /// </param>
+        [MustDisposeResource(false)]
         public TestDbContext(DbContextOptions<TestDbContext> options)
             : base(options)
         {

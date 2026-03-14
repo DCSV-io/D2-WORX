@@ -66,7 +66,7 @@ describe("d2ResultFromProto — failure", () => {
       statusCode: HttpStatusCode.ServiceUnavailable,
       errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
       traceId: "trace-456",
-      messages: ["Service is unavailable."],
+      messages: ["common_errors_SERVICE_UNAVAILABLE"],
     });
 
     const result = d2ResultFromProto(proto);
@@ -75,7 +75,7 @@ describe("d2ResultFromProto — failure", () => {
     expect(result).toHaveStatusCode(HttpStatusCode.ServiceUnavailable);
     expect(result).toHaveErrorCode(ErrorCodes.SERVICE_UNAVAILABLE);
     expect(result.traceId).toBe("trace-456");
-    expect(result).toHaveMessages(["Service is unavailable."]);
+    expect(result).toHaveMessages(["common_errors_SERVICE_UNAVAILABLE"]);
   });
 
   it("converts empty errorCode string to undefined", () => {

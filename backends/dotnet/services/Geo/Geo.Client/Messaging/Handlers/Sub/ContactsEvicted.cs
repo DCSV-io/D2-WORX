@@ -18,7 +18,7 @@ using O = D2.Geo.Client.Interfaces.Messaging.Handlers.Sub.ISubs.ContactsEvictedO
 /// Messaging subscription handler for contact eviction notifications.
 /// Evicts matching entries from the local in-memory cache.
 /// </summary>
-public class ContactsEvicted : BaseHandler<ContactsEvicted, I, O>, H
+public partial class ContactsEvicted : BaseHandler<ContactsEvicted, I, O>, H
 {
     private readonly IDelete.IRemoveHandler r_cacheRemove;
 
@@ -53,10 +53,7 @@ public class ContactsEvicted : BaseHandler<ContactsEvicted, I, O>, H
 
             if (removeByIdR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to evict contact {ContactId} from cache. TraceId: {TraceId}",
-                    contact.ContactId,
-                    TraceId);
+                LogContactEvictionFailed(Context.Logger, contact.ContactId, TraceId);
             }
 
             // Evict by ext-key.
@@ -65,19 +62,30 @@ public class ContactsEvicted : BaseHandler<ContactsEvicted, I, O>, H
 
             if (removeByExtR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
-                    contact.ContextKey,
-                    contact.RelatedEntityId,
-                    TraceId);
+                LogExtKeyEvictionFailed(Context.Logger, contact.ContextKey, contact.RelatedEntityId, TraceId);
             }
         }
 
-        Context.Logger.LogInformation(
-            "Evicted {Count} contact(s) (by ID + ext-key) from cache. TraceId: {TraceId}",
-            input.Contacts.Count,
-            TraceId);
+        LogContactsEvicted(Context.Logger, input.Contacts.Count, TraceId);
 
         return D2Result<O?>.Ok(new O());
     }
+
+    /// <summary>
+    /// Logs a warning when evicting a contact by ID from the cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to evict contact {ContactId} from cache. TraceId: {TraceId}")]
+    private static partial void LogContactEvictionFailed(ILogger logger, string contactId, string? traceId);
+
+    /// <summary>
+    /// Logs a warning when evicting a contacts-by-extkey entry from the cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}")]
+    private static partial void LogExtKeyEvictionFailed(ILogger logger, string contextKey, string relatedEntityId, string? traceId);
+
+    /// <summary>
+    /// Logs that contacts were successfully evicted from the cache.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Evicted {Count} contact(s) (by ID + ext-key) from cache. TraceId: {TraceId}")]
+    private static partial void LogContactsEvicted(ILogger logger, int count, string? traceId);
 }

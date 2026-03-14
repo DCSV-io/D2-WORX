@@ -9,6 +9,7 @@ namespace D2.Shared.Messaging.RabbitMQ;
 using System.Text;
 using global::RabbitMQ.Client;
 using Google.Protobuf;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -16,7 +17,8 @@ using Microsoft.Extensions.Logging;
 /// Lazily creates and caches a single channel, and tracks declared exchanges
 /// to avoid per-publish overhead.
 /// </summary>
-public class ProtoPublisher : IAsyncDisposable
+[MustDisposeResource(false)]
+public partial class ProtoPublisher : IAsyncDisposable
 {
     private readonly IConnection r_connection;
     private readonly ILogger<ProtoPublisher> r_logger;
@@ -34,6 +36,7 @@ public class ProtoPublisher : IAsyncDisposable
     /// <param name="logger">
     /// The logger.
     /// </param>
+    [MustDisposeResource(false)]
     public ProtoPublisher(
         IConnection connection,
         ILogger<ProtoPublisher> logger)
@@ -83,10 +86,10 @@ public class ProtoPublisher : IAsyncDisposable
             ContentType = "application/json",
             MessageId = Guid.NewGuid().ToString("N"),
             Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds()),
-        };
-        properties.Headers = new Dictionary<string, object?>
-        {
-            ["x-proto-type"] = message.Descriptor.FullName,
+            Headers = new Dictionary<string, object?>
+            {
+                ["x-proto-type"] = message.Descriptor.FullName,
+            },
         };
 
         await channel.BasicPublishAsync(
@@ -97,10 +100,7 @@ public class ProtoPublisher : IAsyncDisposable
             body: body,
             cancellationToken: ct);
 
-        r_logger.LogDebug(
-            "Published {ProtoType} to exchange {Exchange}",
-            message.Descriptor.FullName,
-            exchange);
+        LogMessagePublished(r_logger, message.Descriptor.FullName, exchange);
     }
 
     /// <inheritdoc/>
@@ -116,6 +116,13 @@ public class ProtoPublisher : IAsyncDisposable
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Logs that a protobuf message was published to an exchange.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "Published {ProtoType} to exchange {Exchange}")]
+    private static partial void LogMessagePublished(ILogger logger, string protoType, string exchange);
+
+    [MustDisposeResource(false)]
     private async Task<IChannel> GetOrCreateChannelAsync(CancellationToken ct)
     {
         if (_channel is { IsOpen: true })

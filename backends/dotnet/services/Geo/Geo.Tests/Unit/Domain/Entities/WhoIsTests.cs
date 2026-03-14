@@ -37,7 +37,6 @@ public class WhoIsTests
         whois.IPAddress.Should().Be("192.168.1.1");
         whois.Year.Should().BeGreaterThan(0); // Defaults to current year
         whois.Month.Should().BeInRange(1, 12); // Defaults to current month
-        whois.Fingerprint.Should().BeNull();
         whois.ASN.Should().BeNull();
     }
 
@@ -59,23 +58,6 @@ public class WhoIsTests
         whois.IPAddress.Should().Be("192.168.1.1");
         whois.Year.Should().Be(2025);
         whois.Month.Should().Be(6);
-    }
-
-    /// <summary>
-    /// Tests creating a WhoIs instance with an IP address and fingerprint.
-    /// </summary>
-    [Fact]
-    public void Create_WithFingerprint_Success()
-    {
-        // Arrange
-        const string ip_address = "192.168.1.1";
-        const string fingerprint = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
-
-        // Act
-        var whois = WhoIs.Create(ip_address, fingerprint: fingerprint);
-
-        // Assert
-        whois.Fingerprint.Should().Be(fingerprint);
     }
 
     #endregion
@@ -483,27 +465,6 @@ public class WhoIsTests
     }
 
     /// <summary>
-    /// Tests that creating WhoIs instances with the same IP, year, month, and fingerprint
-    /// generates the same hash.
-    /// </summary>
-    [Fact]
-    public void Create_WithSameIPYearMonthAndFingerprint_GeneratesSameHash()
-    {
-        // Arrange
-        const string ip_address = "192.168.1.1";
-        const int year = 2025;
-        const int month = 6;
-        const string fingerprint = "Mozilla/5.0";
-
-        // Act
-        var whois1 = WhoIs.Create(ip_address, year, month, fingerprint);
-        var whois2 = WhoIs.Create(ip_address, year, month, fingerprint);
-
-        // Assert
-        whois1.HashId.Should().Be(whois2.HashId);
-    }
-
-    /// <summary>
     /// Tests that creating WhoIs instances with the same IP but different surrounding whitespace
     /// generates the same hash.
     /// </summary>
@@ -578,44 +539,6 @@ public class WhoIsTests
         whois1.HashId.Should().NotBe(whois2.HashId);
     }
 
-    /// <summary>
-    /// Tests that creating WhoIs instances with different fingerprints generates different hashes.
-    /// </summary>
-    [Fact]
-    public void Create_WithDifferentFingerprint_GeneratesDifferentHash()
-    {
-        // Arrange
-        const string ip_address = "192.168.1.1";
-        const string fingerprint1 = "Mozilla/5.0";
-        const string fingerprint2 = "Chrome/91.0";
-
-        // Act
-        var whois1 = WhoIs.Create(ip_address, 2025, 6, fingerprint1);
-        var whois2 = WhoIs.Create(ip_address, 2025, 6, fingerprint2);
-
-        // Assert
-        whois1.HashId.Should().NotBe(whois2.HashId);
-    }
-
-    /// <summary>
-    /// Tests that creating WhoIs instances with a fingerprint versus null generates different
-    /// hashes.
-    /// </summary>
-    [Fact]
-    public void Create_WithFingerprintVsNull_GeneratesDifferentHash()
-    {
-        // Arrange
-        const string ip_address = "192.168.1.1";
-        const string fingerprint = "Mozilla/5.0";
-
-        // Act
-        var whois1 = WhoIs.Create(ip_address, 2025, 6, fingerprint);
-        var whois2 = WhoIs.Create(ip_address, 2025, 6);
-
-        // Assert
-        whois1.HashId.Should().NotBe(whois2.HashId);
-    }
-
     #endregion
 
     #region Temporal Versioning
@@ -661,30 +584,6 @@ public class WhoIsTests
 
     #endregion
 
-    #region Device Differentiation
-
-    /// <summary>
-    /// Tests that creating WhoIs instances with the same IP but different fingerprints creates
-    /// distinct records.
-    /// </summary>
-    [Fact]
-    public void Create_SameIPDifferentFingerprints_CreatesDistinctRecords()
-    {
-        // Arrange
-        const string ip_address = "192.168.1.1";
-        const string device1_fingerprint = "Mozilla/5.0 (Windows NT 10.0)";
-        const string device2_fingerprint = "Mozilla/5.0 (Macintosh; Intel Mac OS X)";
-
-        // Act
-        var device1 = WhoIs.Create(ip_address, 2025, 6, device1_fingerprint);
-        var device2 = WhoIs.Create(ip_address, 2025, 6, device2_fingerprint);
-
-        // Assert - Multiple devices behind same IP get separate records
-        device1.HashId.Should().NotBe(device2.HashId);
-    }
-
-    #endregion
-
     #region Create Overload Tests
 
     /// <summary>
@@ -698,7 +597,6 @@ public class WhoIsTests
             "192.168.1.1",
             2025,
             6,
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             asn: 852,
             asName: "TELUS Communications Inc.",
             isVpn: true);
@@ -712,7 +610,6 @@ public class WhoIsTests
         copy.IPAddress.Should().Be(original.IPAddress);
         copy.Year.Should().Be(original.Year);
         copy.Month.Should().Be(original.Month);
-        copy.Fingerprint.Should().Be(original.Fingerprint);
         copy.ASN.Should().Be(original.ASN);
         copy.ASName.Should().Be(original.ASName);
         copy.IsVPN.Should().Be(original.IsVPN);
@@ -732,11 +629,10 @@ public class WhoIsTests
         const string ip_address = "192.168.1.1";
         const int year = 2025;
         const int month = 6;
-        const string fingerprint = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
 
         // Act - Create same WhoIs 5 times
         var whoisRecords = Enumerable.Range(0, 5)
-            .Select(_ => WhoIs.Create(ip_address, year, month, fingerprint))
+            .Select(_ => WhoIs.Create(ip_address, year, month))
             .ToList();
 
         // Assert - All should have identical hashes

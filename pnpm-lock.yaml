@@ -68,6 +68,9 @@ importers:
       '@d2/comms-client':
         specifier: workspace:*
         version: link:../../comms/client
+      '@d2/csrf':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/middleware/csrf/default
       '@d2/di':
         specifier: workspace:*
         version: link:../../../shared/di
@@ -107,6 +110,15 @@ importers:
       '@d2/service-defaults':
         specifier: workspace:*
         version: link:../../../shared/service-defaults
+      '@d2/service-key':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/middleware/service-key/default
+      '@d2/session-fingerprint':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/middleware/session-fingerprint/default
+      '@d2/translation':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/middleware/translation/default
       '@d2/utilities':
         specifier: workspace:*
         version: link:../../../shared/utilities
@@ -159,6 +171,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../shared/i18n
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
@@ -180,6 +195,9 @@ importers:
 
   backends/node/services/auth/bff-client:
     dependencies:
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../shared/i18n
       '@d2/logging':
         specifier: workspace:*
         version: link:../../../shared/logging
@@ -230,6 +248,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../shared/i18n
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
@@ -294,6 +315,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../shared/i18n
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
@@ -436,6 +460,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../shared/i18n
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../shared/interfaces
@@ -509,6 +536,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../shared/handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../shared/i18n
       '@d2/logging':
         specifier: workspace:*
         version: link:../../../shared/logging
@@ -818,6 +848,10 @@ importers:
         version: 4.3.6
 
   backends/node/shared/i18n:
+    dependencies:
+      '@d2/service-defaults':
+        specifier: workspace:*
+        version: link:../service-defaults
     devDependencies:
       '@types/node':
         specifier: 22.18.8
@@ -831,6 +865,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../../../handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../../i18n
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../../interfaces
@@ -852,6 +889,15 @@ importers:
       '@d2/interfaces':
         specifier: workspace:*
         version: link:../../../../interfaces
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../../../../result
+
+  backends/node/shared/implementations/middleware/csrf/default:
+    dependencies:
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../../i18n
       '@d2/result':
         specifier: workspace:*
         version: link:../../../../result
@@ -909,6 +955,35 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../../../../result
+
+  backends/node/shared/implementations/middleware/service-key/default:
+    dependencies:
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../../i18n
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../../../../result
+    devDependencies:
+      '@types/node':
+        specifier: 22.18.8
+        version: 22.18.8
+
+  backends/node/shared/implementations/middleware/session-fingerprint/default:
+    dependencies:
+      '@d2/result':
+        specifier: workspace:*
+        version: link:../../../../result
+    devDependencies:
+      '@types/node':
+        specifier: 22.18.8
+        version: 22.18.8
+
+  backends/node/shared/implementations/middleware/translation/default:
+    dependencies:
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../../../i18n
 
   backends/node/shared/implementations/repository/batch/pg:
     dependencies:
@@ -1081,6 +1156,9 @@ importers:
       '@d2/cache-redis':
         specifier: workspace:*
         version: link:../implementations/caching/distributed/redis
+      '@d2/csrf':
+        specifier: workspace:*
+        version: link:../implementations/middleware/csrf/default
       '@d2/di':
         specifier: workspace:*
         version: link:../di
@@ -1123,9 +1201,18 @@ importers:
       '@d2/service-defaults':
         specifier: workspace:*
         version: link:../service-defaults
+      '@d2/service-key':
+        specifier: workspace:*
+        version: link:../implementations/middleware/service-key/default
+      '@d2/session-fingerprint':
+        specifier: workspace:*
+        version: link:../implementations/middleware/session-fingerprint/default
       '@d2/testing':
         specifier: workspace:*
         version: link:../testing
+      '@d2/translation':
+        specifier: workspace:*
+        version: link:../implementations/middleware/translation/default
       '@d2/utilities':
         specifier: workspace:*
         version: link:../utilities
@@ -1174,6 +1261,9 @@ importers:
       '@d2/handler':
         specifier: workspace:*
         version: link:../../backends/node/shared/handler
+      '@d2/i18n':
+        specifier: workspace:*
+        version: link:../../backends/node/shared/i18n
       '@d2/idempotency':
         specifier: workspace:*
         version: link:../../backends/node/shared/implementations/middleware/idempotency/default
