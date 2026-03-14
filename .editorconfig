@@ -90,3 +90,12 @@ dotnet_diagnostic.CA1873.severity = none
 
 # CA1068: CancellationToken should be last parameter (BaseHandler design — ct is passed far more often than options)
 dotnet_diagnostic.CA1068.severity = none
+
+# ReSharper: Partial type with single part (intentional — scaffolding for future extension per convention)
+resharper_partial_type_with_single_part_highlighting = none
+
+# ReSharper: Positional property never accessed (consumed via serialization, proto mapping, destructuring)
+resharper_not_accessed_positional_property_global_highlighting = none
+
+# ReSharper: Auto-property accessor never used (set by JSON deserialization or config binding)
+resharper_unused_auto_property_accessor_global_highlighting = none

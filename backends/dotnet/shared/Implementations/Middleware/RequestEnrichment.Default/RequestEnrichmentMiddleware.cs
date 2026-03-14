@@ -22,7 +22,7 @@ using Microsoft.Extensions.Options;
 /// The enriched information is stored in <see cref="HttpContext.Features"/> as
 /// <see cref="IRequestContext"/>.
 /// </remarks>
-public class RequestEnrichmentMiddleware
+public partial class RequestEnrichmentMiddleware
 {
     private readonly RequestDelegate r_next;
     private readonly ILogger<RequestEnrichmentMiddleware> r_logger;
@@ -104,8 +104,7 @@ public class RequestEnrichmentMiddleware
         if (clientFingerprint.Falsey())
         {
             clientFingerprint = null;
-            r_logger.LogWarning(
-                "Client fingerprint missing (no d2-cfp cookie or X-Client-Fingerprint header). Device rate-limit bucket will be shared.");
+            LogClientFingerprintMissing(r_logger);
         }
 
         // 4. Compute combined device fingerprint (always present).
@@ -155,24 +154,19 @@ public class RequestEnrichmentMiddleware
                     };
 
                     // Do not log raw clientIp — it is PII. City/Country are non-identifying.
-                    r_logger.LogDebug(
-                        "Enriched request with WhoIs data. City: {City}, Country: {Country}",
-                        whoIs.Location?.City,
-                        whoIs.Location?.CountryIso31661Alpha2Code);
+                    LogWhoIsEnriched(r_logger, whoIs.Location?.City, whoIs.Location?.CountryIso31661Alpha2Code);
                 }
                 else
                 {
                     // Do not log raw clientIp — it is PII.
-                    r_logger.LogDebug("WhoIs lookup returned no data");
+                    LogWhoIsNoData(r_logger);
                 }
             }
             catch (Exception ex)
             {
                 // Fail-open: log warning and continue without WhoIs data.
                 // Do not log raw clientIp — it is PII.
-                r_logger.LogWarning(
-                    ex,
-                    "WhoIs lookup failed. Proceeding without WhoIs data.");
+                LogWhoIsLookupFailed(r_logger, ex);
             }
         }
 
@@ -182,4 +176,28 @@ public class RequestEnrichmentMiddleware
         // 8. Continue pipeline.
         await r_next(context);
     }
+
+    /// <summary>
+    /// Logs that the client fingerprint is missing from the request.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Client fingerprint missing (no d2-cfp cookie or X-Client-Fingerprint header). Device rate-limit bucket will be shared.")]
+    private static partial void LogClientFingerprintMissing(ILogger logger);
+
+    /// <summary>
+    /// Logs that the request was enriched with WhoIs data.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Enriched request with WhoIs data. City: {City}, Country: {Country}")]
+    private static partial void LogWhoIsEnriched(ILogger logger, string? city, string? country);
+
+    /// <summary>
+    /// Logs that the WhoIs lookup returned no data.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "WhoIs lookup returned no data")]
+    private static partial void LogWhoIsNoData(ILogger logger);
+
+    /// <summary>
+    /// Logs that the WhoIs lookup failed.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "WhoIs lookup failed. Proceeding without WhoIs data.")]
+    private static partial void LogWhoIsLookupFailed(ILogger logger, Exception ex);
 }

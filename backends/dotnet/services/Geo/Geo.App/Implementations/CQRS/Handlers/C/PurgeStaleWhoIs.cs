@@ -30,7 +30,7 @@ using RepoDelete = D2.Geo.App.Interfaces.Repository.Handlers.D.IDelete;
 /// This job should run BEFORE orphaned location cleanup, as deleting WhoIs records
 /// may orphan their associated Locations.
 /// </remarks>
-public class PurgeStaleWhoIs : BaseHandler<PurgeStaleWhoIs, I, O>, H
+public partial class PurgeStaleWhoIs : BaseHandler<PurgeStaleWhoIs, I, O>, H
 {
     private const string _LOCK_KEY = "lock:job:purge-stale-whois";
 
@@ -87,17 +87,13 @@ public class PurgeStaleWhoIs : BaseHandler<PurgeStaleWhoIs, I, O>, H
 
         if (lockResult.Failed)
         {
-            Context.Logger.LogWarning(
-                "Failed to acquire lock for stale WhoIs purge (Redis error). TraceId: {TraceId}.",
-                TraceId);
+            LogLockAcquireFailed(Context.Logger, TraceId);
             return D2Result<O?>.Ok(new O(RowsAffected: 0, LockAcquired: false, DurationMs: sw.ElapsedMilliseconds));
         }
 
         if (!lockResult.Data!.Acquired)
         {
-            Context.Logger.LogInformation(
-                "Lock not acquired for stale WhoIs purge — another instance is handling it. TraceId: {TraceId}.",
-                TraceId);
+            LogLockNotAcquired(Context.Logger, TraceId);
             return D2Result<O?>.Ok(new O(RowsAffected: 0, LockAcquired: false, DurationMs: sw.ElapsedMilliseconds));
         }
 
@@ -117,13 +113,7 @@ public class PurgeStaleWhoIs : BaseHandler<PurgeStaleWhoIs, I, O>, H
 
             var rowsAffected = deleteResult.Data!.RowsAffected;
 
-            Context.Logger.LogInformation(
-                "Stale WhoIs purge completed. CutoffYear: {CutoffYear}, CutoffMonth: {CutoffMonth}, RowsAffected: {RowsAffected}, DurationMs: {DurationMs}. TraceId: {TraceId}.",
-                cutoff.Year,
-                cutoff.Month,
-                rowsAffected,
-                sw.ElapsedMilliseconds,
-                TraceId);
+            LogPurgeCompleted(Context.Logger, cutoff.Year, cutoff.Month, rowsAffected, sw.ElapsedMilliseconds, TraceId);
 
             return D2Result<O?>.Ok(new O(
                 RowsAffected: rowsAffected,
@@ -138,11 +128,32 @@ public class PurgeStaleWhoIs : BaseHandler<PurgeStaleWhoIs, I, O>, H
 
             if (releaseResult.Failed || !releaseResult.Data!.Released)
             {
-                Context.Logger.LogWarning(
-                    "Failed to release lock for stale WhoIs purge. LockId: {LockId}. TraceId: {TraceId}.",
-                    lockId,
-                    TraceId);
+                LogLockReleaseFailed(Context.Logger, lockId, TraceId);
             }
         }
     }
+
+    /// <summary>
+    /// Logs a warning when acquiring the distributed lock fails due to a Redis error.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to acquire lock for stale WhoIs purge (Redis error). TraceId: {TraceId}.")]
+    private static partial void LogLockAcquireFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs that the lock was not acquired because another instance is already handling the purge.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Lock not acquired for stale WhoIs purge — another instance is handling it. TraceId: {TraceId}.")]
+    private static partial void LogLockNotAcquired(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs the completion of the stale WhoIs purge with cutoff date, row count, and duration.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Stale WhoIs purge completed. CutoffYear: {CutoffYear}, CutoffMonth: {CutoffMonth}, RowsAffected: {RowsAffected}, DurationMs: {DurationMs}. TraceId: {TraceId}.")]
+    private static partial void LogPurgeCompleted(ILogger logger, int cutoffYear, int cutoffMonth, int rowsAffected, long durationMs, string? traceId);
+
+    /// <summary>
+    /// Logs a warning when releasing the distributed lock fails after purge.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Failed to release lock for stale WhoIs purge. LockId: {LockId}. TraceId: {TraceId}.")]
+    private static partial void LogLockReleaseFailed(ILogger logger, string lockId, string? traceId);
 }

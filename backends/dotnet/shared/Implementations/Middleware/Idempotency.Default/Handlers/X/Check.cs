@@ -24,7 +24,7 @@ using O = D2.Shared.Idempotency.Default.Interfaces.IIdempotency.CheckOutput;
 /// Complex handler (X/) because it may mutate shared state (creates Redis keys)
 /// while its primary intent is retrieval of state.
 /// </remarks>
-public class Check : BaseHandler<Check, I, O>, H
+public partial class Check : BaseHandler<Check, I, O>, H
 {
     private const string _SENTINEL = "__processing__";
     private const string _KEY_PREFIX = "idempotency:";
@@ -91,9 +91,7 @@ public class Check : BaseHandler<Check, I, O>, H
             {
                 // GET failed or returned null — key may have expired between SET NX and GET.
                 // Fail-open: treat as acquired.
-                Context.Logger.LogWarning(
-                    "Idempotency key exists but GET returned no value. Failing open. TraceId: {TraceId}",
-                    TraceId);
+                LogGetReturnedNoValue(Context.Logger, TraceId);
 
                 return D2Result<O?>.Ok(
                     new O(IdempotencyState.Acquired, null));
@@ -118,10 +116,7 @@ public class Check : BaseHandler<Check, I, O>, H
             }
             catch (JsonException ex)
             {
-                Context.Logger.LogWarning(
-                    ex,
-                    "Failed to deserialize cached response for idempotency key. Failing open. TraceId: {TraceId}",
-                    TraceId);
+                LogDeserializationFailed(Context.Logger, ex, TraceId);
             }
 
             // Could not parse — fail-open: treat as acquired.
@@ -131,13 +126,28 @@ public class Check : BaseHandler<Check, I, O>, H
         catch (Exception ex)
         {
             // Fail-open on all cache errors.
-            Context.Logger.LogWarning(
-                ex,
-                "Idempotency check failed. Failing open. TraceId: {TraceId}",
-                TraceId);
+            LogCheckFailed(Context.Logger, ex, TraceId);
 
             return D2Result<O?>.Ok(
                 new O(IdempotencyState.Acquired, null));
         }
     }
+
+    /// <summary>
+    /// Logs that the idempotency key exists but GET returned no value.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Idempotency key exists but GET returned no value. Failing open. TraceId: {TraceId}")]
+    private static partial void LogGetReturnedNoValue(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs that deserialization of a cached response failed.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to deserialize cached response for idempotency key. Failing open. TraceId: {TraceId}")]
+    private static partial void LogDeserializationFailed(ILogger logger, Exception ex, string? traceId);
+
+    /// <summary>
+    /// Logs that the idempotency check failed entirely.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Idempotency check failed. Failing open. TraceId: {TraceId}")]
+    private static partial void LogCheckFailed(ILogger logger, Exception ex, string? traceId);
 }

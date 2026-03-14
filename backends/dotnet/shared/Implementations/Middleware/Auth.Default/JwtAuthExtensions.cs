@@ -17,7 +17,7 @@ using Microsoft.IdentityModel.Tokens;
 /// <summary>
 /// Extension methods for adding JWT authentication to the REST gateway.
 /// </summary>
-public static class JwtAuthExtensions
+public static partial class JwtAuthExtensions
 {
     /// <summary>
     /// Extension methods for <see cref="IServiceCollection"/>.
@@ -88,10 +88,7 @@ public static class JwtAuthExtensions
                             var logger = context.HttpContext.RequestServices
                                 .GetRequiredService<ILoggerFactory>()
                                 .CreateLogger("JwtAuth");
-                            logger.LogWarning(
-                                context.Exception,
-                                "JWT authentication failed for {Path}",
-                                context.HttpContext.Request.Path);
+                            LogJwtAuthenticationFailed(logger, context.Exception, context.HttpContext.Request.Path.Value);
                             return Task.CompletedTask;
                         },
                     };
@@ -128,4 +125,10 @@ public static class JwtAuthExtensions
             return app;
         }
     }
+
+    /// <summary>
+    /// Logs that JWT authentication failed for a request path.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "JWT authentication failed for {Path}")]
+    private static partial void LogJwtAuthenticationFailed(ILogger logger, Exception ex, string? path);
 }

@@ -20,7 +20,7 @@ using Microsoft.Extensions.Logging;
 /// Creates an exclusive auto-delete queue per instance (broadcast semantics).
 /// </summary>
 [MustDisposeResource(false)]
-public class ContactEvictionConsumerService : BackgroundService
+public partial class ContactEvictionConsumerService : BackgroundService
 {
     private readonly IMessageBus r_messageBus;
     private readonly IServiceScopeFactory r_scopeFactory;
@@ -96,9 +96,7 @@ public class ContactEvictionConsumerService : BackgroundService
             },
             async (message, ct) =>
             {
-                r_logger.LogInformation(
-                    "Received ContactsEvicted event for {IdCount} contact(s)",
-                    message.Body.Contacts.Count);
+                LogEventReceived(r_logger, message.Body.Contacts.Count);
 
                 await using var scope = r_scopeFactory.CreateAsyncScope();
                 var handler = scope.ServiceProvider.GetRequiredService<ISubs.IContactsEvictedHandler>();
@@ -107,18 +105,33 @@ public class ContactEvictionConsumerService : BackgroundService
 
                 if (result.Failed)
                 {
-                    r_logger.LogError(
-                        "Failed to process ContactsEvicted event");
+                    LogEventProcessingFailed(r_logger);
 
                     return ConsumerResult.Drop;
                 }
 
-                r_logger.LogInformation(
-                    "Successfully processed ContactsEvicted event for {IdCount} contact(s)",
-                    message.Body.Contacts.Count);
+                LogEventProcessed(r_logger, message.Body.Contacts.Count);
 
                 return ConsumerResult.Ack;
             },
             stoppingToken);
     }
+
+    /// <summary>
+    /// Logs that a ContactsEvicted event was received.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Received ContactsEvicted event for {IdCount} contact(s)")]
+    private static partial void LogEventReceived(ILogger logger, int idCount);
+
+    /// <summary>
+    /// Logs that processing a ContactsEvicted event failed.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to process ContactsEvicted event")]
+    private static partial void LogEventProcessingFailed(ILogger logger);
+
+    /// <summary>
+    /// Logs that a ContactsEvicted event was successfully processed.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Successfully processed ContactsEvicted event for {IdCount} contact(s)")]
+    private static partial void LogEventProcessed(ILogger logger, int idCount);
 }

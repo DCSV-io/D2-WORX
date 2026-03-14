@@ -26,7 +26,7 @@ using O = D2.Shared.RateLimit.Default.Interfaces.IRateLimit.CheckOutput;
 /// Uses two fixed-window counters per dimension with weighted average to approximate
 /// a sliding window. Uses distributed cache handlers for storage abstraction.
 /// </remarks>
-public class Check : BaseHandler<Check, I, O>, H
+public partial class Check : BaseHandler<Check, I, O>, H
 {
     private readonly IRead.IGetTtlHandler r_getTtl;
     private readonly IUpdate.IIncrementHandler r_increment;
@@ -92,9 +92,7 @@ public class Check : BaseHandler<Check, I, O>, H
         // Trusted services bypass all rate limiting.
         if (requestContext.IsTrustedService == true)
         {
-            Context.Logger.LogInformation(
-                "Rate limit bypassed for trusted service. TraceId: {TraceId}",
-                TraceId);
+            LogTrustedServiceBypassed(Context.Logger, TraceId);
             return D2Result<O?>.Ok(new O(false, null, null));
         }
 
@@ -171,6 +169,36 @@ public class Check : BaseHandler<Check, I, O>, H
     }
 
     /// <summary>
+    /// Logs that rate limiting was bypassed for a trusted service.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Rate limit bypassed for trusted service. TraceId: {TraceId}")]
+    private static partial void LogTrustedServiceBypassed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs that a request is blocked on a specific dimension.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Request blocked on {Dimension} dimension. TTL: {TTL}. TraceId: {TraceId}")]
+    private static partial void LogRequestBlocked(ILogger logger, RateLimitDimension dimension, TimeSpan ttl, string? traceId);
+
+    /// <summary>
+    /// Logs that incrementing the rate limit counter failed.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Failed to increment rate limit counter for {Dimension}. Failing open. TraceId: {TraceId}")]
+    private static partial void LogIncrementFailed(ILogger logger, RateLimitDimension dimension, string? traceId);
+
+    /// <summary>
+    /// Logs that the rate limit was exceeded on a specific dimension.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "Rate limit exceeded on {Dimension} dimension. Count: {Count}/{Threshold}. TraceId: {TraceId}")]
+    private static partial void LogRateLimitExceeded(ILogger logger, RateLimitDimension dimension, long count, int threshold, string? traceId);
+
+    /// <summary>
+    /// Logs an error when checking the rate limit for a dimension.
+    /// </summary>
+    [LoggerMessage(EventId = 5, Level = LogLevel.Warning, Message = "Error checking rate limit for {Dimension}. Failing open. TraceId: {TraceId}")]
+    private static partial void LogCheckError(ILogger logger, Exception ex, RateLimitDimension dimension, string? traceId);
+
+    /// <summary>
     /// Checks a single dimension using sliding window approximation.
     /// </summary>
     ///
@@ -230,11 +258,7 @@ public class Check : BaseHandler<Check, I, O>, H
             if (ttlResult.CheckSuccess(out var ttlOutput) && ttlOutput?.TimeToLive.HasValue == true)
             {
                 // Do not log raw `value` — it may be an IP address or fingerprint (PII).
-                Context.Logger.LogDebug(
-                    "Request blocked on {Dimension} dimension. TTL: {TTL}. TraceId: {TraceId}",
-                    dimension,
-                    ttlOutput.TimeToLive.Value,
-                    TraceId);
+                LogRequestBlocked(Context.Logger, dimension, ttlOutput.TimeToLive.Value, TraceId);
 
                 return new O(true, dimension, ttlOutput.TimeToLive.Value);
             }
@@ -243,10 +267,7 @@ public class Check : BaseHandler<Check, I, O>, H
             if (!incrResult.CheckSuccess(out var incrOutput))
             {
                 // Fail-open on cache errors. Do not log raw `value` — may be PII.
-                Context.Logger.LogWarning(
-                    "Failed to increment rate limit counter for {Dimension}. Failing open. TraceId: {TraceId}",
-                    dimension,
-                    TraceId);
+                LogIncrementFailed(Context.Logger, dimension, TraceId);
 
                 return new O(false, null, null);
             }
@@ -268,12 +289,7 @@ public class Check : BaseHandler<Check, I, O>, H
                     ct);
 
                 // Do not log raw `value` — may be an IP address or fingerprint (PII).
-                Context.Logger.LogWarning(
-                    "Rate limit exceeded on {Dimension} dimension. Count: {Count}/{Threshold}. TraceId: {TraceId}",
-                    dimension,
-                    estimated,
-                    threshold,
-                    TraceId);
+                LogRateLimitExceeded(Context.Logger, dimension, estimated, threshold, TraceId);
 
                 return new O(true, dimension, r_options.BlockDuration);
             }
@@ -283,11 +299,7 @@ public class Check : BaseHandler<Check, I, O>, H
         catch (Exception ex)
         {
             // Fail-open on cache errors. Do not log raw `value` — may be PII.
-            Context.Logger.LogWarning(
-                ex,
-                "Error checking rate limit for {Dimension}. Failing open. TraceId: {TraceId}",
-                dimension,
-                TraceId);
+            LogCheckError(Context.Logger, ex, dimension, TraceId);
 
             return new O(false, null, null);
         }

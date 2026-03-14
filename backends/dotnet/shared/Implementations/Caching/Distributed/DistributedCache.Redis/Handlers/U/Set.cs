@@ -24,7 +24,7 @@ using S = D2.Shared.Interfaces.Caching.Distributed.Handlers.U.IUpdate;
 /// <typeparam name="TValue">
 /// The type of the value to cache.
 /// </typeparam>
-public class Set<TValue> : BaseHandler<
+public partial class Set<TValue> : BaseHandler<
         S.ISetHandler<TValue>, S.SetInput<TValue>, S.SetOutput>,
     S.ISetHandler<TValue>
 {
@@ -75,11 +75,7 @@ public class Set<TValue> : BaseHandler<
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while setting value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogSetFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<S.SetOutput?>.Fail(
                 [TK.Common.Errors.SERVICE_UNAVAILABLE],
@@ -88,11 +84,7 @@ public class Set<TValue> : BaseHandler<
         }
         catch (JsonException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "JsonException occurred while serializing value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogSetSerializationFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<S.SetOutput?>.Fail(
                 [TK.Common.Errors.REQUEST_FAILED],
@@ -103,4 +95,16 @@ public class Set<TValue> : BaseHandler<
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while setting a cached value.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while setting value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogSetFailed(ILogger logger, Exception ex, string key, string? traceId);
+
+    /// <summary>
+    /// Logs that a JSON serialization exception occurred while setting a cached value.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "JsonException occurred while serializing value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogSetSerializationFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

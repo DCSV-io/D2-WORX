@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 /// to avoid per-publish overhead.
 /// </summary>
 [MustDisposeResource(false)]
-public class ProtoPublisher : IAsyncDisposable
+public partial class ProtoPublisher : IAsyncDisposable
 {
     private readonly IConnection r_connection;
     private readonly ILogger<ProtoPublisher> r_logger;
@@ -100,10 +100,7 @@ public class ProtoPublisher : IAsyncDisposable
             body: body,
             cancellationToken: ct);
 
-        r_logger.LogDebug(
-            "Published {ProtoType} to exchange {Exchange}",
-            message.Descriptor.FullName,
-            exchange);
+        LogMessagePublished(r_logger, message.Descriptor.FullName, exchange);
     }
 
     /// <inheritdoc/>
@@ -118,6 +115,12 @@ public class ProtoPublisher : IAsyncDisposable
         r_channelLock.Dispose();
         GC.SuppressFinalize(this);
     }
+
+    /// <summary>
+    /// Logs that a protobuf message was published to an exchange.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Debug, Message = "Published {ProtoType} to exchange {Exchange}")]
+    private static partial void LogMessagePublished(ILogger logger, string protoType, string exchange);
 
     [MustDisposeResource(false)]
     private async Task<IChannel> GetOrCreateChannelAsync(CancellationToken ct)

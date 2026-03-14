@@ -19,7 +19,7 @@ using O = D2.Shared.Interfaces.Messaging.Handlers.Q.IRead.PingOutput;
 /// <summary>
 /// Handler for pinging RabbitMQ to verify connectivity.
 /// </summary>
-public class Ping : BaseHandler<H, I, O>, H
+public partial class Ping : BaseHandler<H, I, O>, H
 {
     private readonly IConnection r_connection;
 
@@ -58,9 +58,7 @@ public class Ping : BaseHandler<H, I, O>, H
                     D2Result<O?>.Ok(new O(true, sw.ElapsedMilliseconds, null)));
             }
 
-            Context.Logger.LogWarning(
-                "RabbitMQ connection is not open. TraceId: {TraceId}",
-                TraceId);
+            LogConnectionNotOpen(Context.Logger, TraceId);
 
             return ValueTask.FromResult(
                 D2Result<O?>.Ok(new O(false, sw.ElapsedMilliseconds, "Connection is not open")));
@@ -68,13 +66,22 @@ public class Ping : BaseHandler<H, I, O>, H
         catch (Exception ex)
         {
             sw.Stop();
-            Context.Logger.LogError(
-                ex,
-                "RabbitMQ ping failed. TraceId: {TraceId}",
-                TraceId);
+            LogPingFailed(Context.Logger, ex, TraceId);
 
             return ValueTask.FromResult(
                 D2Result<O?>.Ok(new O(false, sw.ElapsedMilliseconds, ex.Message)));
         }
     }
+
+    /// <summary>
+    /// Logs that the RabbitMQ connection is not open.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "RabbitMQ connection is not open. TraceId: {TraceId}")]
+    private static partial void LogConnectionNotOpen(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs that the RabbitMQ ping failed with an exception.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "RabbitMQ ping failed. TraceId: {TraceId}")]
+    private static partial void LogPingFailed(ILogger logger, Exception ex, string? traceId);
 }

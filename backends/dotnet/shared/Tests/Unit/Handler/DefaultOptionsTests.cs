@@ -228,8 +228,8 @@ public class DefaultOptionsTests
         // Act
         await handler.HandleAsync("test", ct: TestContext.Current.CancellationToken);
 
-        // Assert — debug-level messages should not appear (logger won't emit them)
-        // Note: BaseHandler uses LogDebug which checks IsEnabled internally
+        // Assert — debug-level messages should not appear because the [LoggerMessage]
+        // source generator checks IsEnabled before calling ILogger.Log.
         mockLogger.Verify(
             l => l.Log(
                 LogLevel.Debug,
@@ -237,7 +237,7 @@ public class DefaultOptionsTests
                 It.IsAny<It.IsAnyType>(),
                 null,
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Exactly(2)); // LogDebug still calls Log — filtering is in the logger itself
+            Times.Never);
 
         // The important thing: no crash, handler completes normally
     }

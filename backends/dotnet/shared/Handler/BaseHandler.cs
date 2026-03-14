@@ -26,7 +26,7 @@ using Microsoft.Extensions.Logging;
 /// <typeparam name="TOutput">
 /// The type of output the handler produces.
 /// </typeparam>
-public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, TOutput>
+public abstract partial class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, TOutput>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="BaseHandler{THandler, TInput, TOutput}"/>
@@ -107,19 +107,12 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         try
         {
             // Log that we are now executing the handler.
-            Context.Logger.LogInformation(
-                "Executing handler {HandlerName}. TraceId: {TraceId}.",
-                typeof(THandler).Name,
-                Context.Request.TraceId);
+            LogHandlerExecuting(Context.Logger, typeof(THandler).Name, Context.Request.TraceId);
 
             // Log the input as debug if enabled.
             if (options.LogInput)
             {
-                Context.Logger.LogDebug(
-                    "Handler {HandlerName} received input: {@Input}. TraceId: {TraceId}.",
-                    typeof(THandler).Name,
-                    input,
-                    Context.Request.TraceId);
+                LogHandlerReceivedInput(Context.Logger, typeof(THandler).Name, input, Context.Request.TraceId);
             }
 
             // Execute the handler's logic.
@@ -135,11 +128,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
             // Log the output as debug if enabled.
             if (options.LogOutput)
             {
-                Context.Logger.LogDebug(
-                    "Handler {HandlerName} produced result: {@Output}. TraceId: {TraceId}.",
-                    typeof(THandler).Name,
-                    result,
-                    Context.Request.TraceId);
+                LogHandlerProducedResult(Context.Logger, typeof(THandler).Name, result, Context.Request.TraceId);
             }
 
             // Add result metadata to the activity.
@@ -168,9 +157,9 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
                         : LogLevel.Critical;
 
             // Log the completion of the handler execution.
-            Context.Logger.Log(
+            LogHandlerExecuted(
+                Context.Logger,
                 level,
-                "Executed handler {HandlerName} {Status} in {ElapsedMilliseconds}ms. TraceId: {TraceId}.",
                 typeof(THandler).Name,
                 result.Success ? "successfully" : "unsuccessfully",
                 elapsedMs,
@@ -202,12 +191,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
             BHASW.SR_Exceptions.Add(1, tags);
 
             // Log the unhandled exception.
-            Context.Logger.LogError(
-                ex,
-                "Handler {HandlerName} encountered an unhandled exception after {ElapsedMilliseconds}ms. TraceId: {TraceId}.",
-                typeof(THandler).Name,
-                elapsedMs,
-                Context.Request.TraceId);
+            LogHandlerUnhandledException(Context.Logger, ex, typeof(THandler).Name, elapsedMs, Context.Request.TraceId);
 
             // Return the error result.
             return errorResult;
@@ -300,17 +284,17 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         SetTagIfNotNull(activity, "targetOrgType", req.TargetOrgType);
 
         // Auth/trust flags — skip when null (unknown in pre-auth handlers).
-        if (req.IsAuthenticated.HasValue)
+        if (req.IsAuthenticated is not null)
         {
-            activity.SetTag("isAuthenticated", req.IsAuthenticated.Value);
+            activity.SetTag("isAuthenticated", (bool)req.IsAuthenticated);
         }
 
-        if (req.IsTrustedService.HasValue)
+        if (req.IsTrustedService is not null)
         {
-            activity.SetTag("isTrustedService", req.IsTrustedService.Value);
+            activity.SetTag("isTrustedService", (bool)req.IsTrustedService);
         }
 
-        if (req.IsAuthenticated == true)
+        if (req.IsAuthenticated is true)
         {
             activity.SetTag("isOrgEmulating", req.IsOrgEmulating ?? false);
         }
@@ -339,6 +323,37 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
     }
 
     /// <summary>
+    /// Logs that a handler is beginning execution.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Executing handler {HandlerName}. TraceId: {TraceId}.")]
+    private static partial void LogHandlerExecuting(ILogger logger, string handlerName, string? traceId);
+
+    /// <summary>
+    /// Logs the input received by a handler at debug level.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Handler {HandlerName} received input: {Input}. TraceId: {TraceId}.")]
+    private static partial void LogHandlerReceivedInput(ILogger logger, string handlerName, object? input, string? traceId);
+
+    /// <summary>
+    /// Logs the result produced by a handler at debug level.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Handler {HandlerName} produced result: {Output}. TraceId: {TraceId}.")]
+    private static partial void LogHandlerProducedResult(ILogger logger, string handlerName, object? output, string? traceId);
+
+    /// <summary>
+    /// Logs the completion of a handler execution with a dynamic log level determined by
+    /// elapsed time thresholds and success status.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Message = "Executed handler {HandlerName} {Status} in {ElapsedMilliseconds}ms. TraceId: {TraceId}.")]
+    private static partial void LogHandlerExecuted(ILogger logger, LogLevel level, string handlerName, string status, long elapsedMilliseconds, string? traceId);
+
+    /// <summary>
+    /// Logs an unhandled exception that occurred during handler execution.
+    /// </summary>
+    [LoggerMessage(EventId = 5, Level = LogLevel.Error, Message = "Handler {HandlerName} encountered an unhandled exception after {ElapsedMilliseconds}ms. TraceId: {TraceId}.")]
+    private static partial void LogHandlerUnhandledException(ILogger logger, Exception ex, string handlerName, long elapsedMilliseconds, string? traceId);
+
+    /// <summary>
     /// Builds a dictionary of non-PII request context fields for log scope enrichment.
     /// </summary>
     private Dictionary<string, object?> BuildLogScope()
@@ -353,9 +368,9 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
         AddIfNotNull(scope, "agentOrgRole", req.AgentOrgRole);
         AddIfNotNull(scope, "targetOrgId", req.TargetOrgId);
         AddIfNotNull(scope, "targetOrgType", req.TargetOrgType);
-        if (req.IsAuthenticated.HasValue)
+        if (req.IsAuthenticated is not null)
         {
-            scope["isAuthenticated"] = req.IsAuthenticated.Value;
+            scope["isAuthenticated"] = (bool)req.IsAuthenticated;
         }
 
         if (req.IsAuthenticated == true)

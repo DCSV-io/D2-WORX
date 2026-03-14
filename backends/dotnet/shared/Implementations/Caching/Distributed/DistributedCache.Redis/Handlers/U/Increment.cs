@@ -17,7 +17,7 @@ using S = D2.Shared.Interfaces.Caching.Distributed.Handlers.U.IUpdate;
 /// <summary>
 /// Handler for atomically incrementing a counter in the distributed cache.
 /// </summary>
-public class Increment : BaseHandler<S.IIncrementHandler, S.IncrementInput, S.IncrementOutput>,
+public partial class Increment : BaseHandler<S.IIncrementHandler, S.IncrementInput, S.IncrementOutput>,
     S.IIncrementHandler
 {
     private readonly IConnectionMultiplexer r_redis;
@@ -63,11 +63,7 @@ public class Increment : BaseHandler<S.IIncrementHandler, S.IncrementInput, S.In
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while incrementing key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogIncrementFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<S.IncrementOutput?>.Fail(
                 [TK.Common.Errors.SERVICE_UNAVAILABLE],
@@ -77,4 +73,10 @@ public class Increment : BaseHandler<S.IIncrementHandler, S.IncrementInput, S.In
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while incrementing a key.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while incrementing key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogIncrementFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

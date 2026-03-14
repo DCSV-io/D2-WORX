@@ -19,7 +19,7 @@ using O = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead.PingDbOutput;
 /// <summary>
 /// Handler for pinging the Geo database to verify connectivity.
 /// </summary>
-public class PingDb : BaseHandler<H, I, O>, H
+public partial class PingDb : BaseHandler<H, I, O>, H
 {
     private readonly GeoDbContext r_db;
 
@@ -58,13 +58,16 @@ public class PingDb : BaseHandler<H, I, O>, H
         catch (Exception ex)
         {
             sw.Stop();
-            Context.Logger.LogError(
-                ex,
-                "Database ping failed. TraceId: {TraceId}",
-                TraceId);
+            LogDatabasePingFailed(Context.Logger, ex, TraceId);
 
             return D2Result<O?>.Ok(
                 new O(false, sw.ElapsedMilliseconds, ex.Message));
         }
     }
+
+    /// <summary>
+    /// Logs an error when the database ping fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Database ping failed. TraceId: {TraceId}")]
+    private static partial void LogDatabasePingFailed(ILogger logger, Exception exception, string? traceId);
 }

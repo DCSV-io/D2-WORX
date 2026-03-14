@@ -24,7 +24,7 @@ using S = D2.Shared.Interfaces.Caching.Distributed.Handlers.R.IRead;
 /// <typeparam name="TValue">
 /// The type of the cached value.
 /// </typeparam>
-public class Get<TValue> : BaseHandler<
+public partial class Get<TValue> : BaseHandler<
         S.IGetHandler<TValue>, S.GetInput, S.GetOutput<TValue>>,
     S.IGetHandler<TValue>
 {
@@ -84,11 +84,7 @@ public class Get<TValue> : BaseHandler<
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while getting value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogGetFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<S.GetOutput<TValue>?>.Fail(
                 [TK.Common.Errors.SERVICE_UNAVAILABLE],
@@ -97,11 +93,7 @@ public class Get<TValue> : BaseHandler<
         }
         catch (JsonException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "JsonException occurred while deserializing value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogGetDeserializationFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<S.GetOutput<TValue>?>.Fail(
                 [TK.Common.Errors.REQUEST_FAILED],
@@ -112,6 +104,18 @@ public class Get<TValue> : BaseHandler<
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while getting a cached value.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while getting value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogGetFailed(ILogger logger, Exception ex, string key, string? traceId);
+
+    /// <summary>
+    /// Logs that a JSON deserialization exception occurred while getting a cached value.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "JsonException occurred while deserializing value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogGetDeserializationFailed(ILogger logger, Exception ex, string key, string? traceId);
 
     /// <summary>
     /// Parses a Protobuf message from a byte array using a cached delegate.

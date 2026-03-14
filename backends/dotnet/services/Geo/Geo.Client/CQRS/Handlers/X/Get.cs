@@ -23,7 +23,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.GetOutput;
 /// <remarks>
 /// This implementation is meant for consumer services only.
 /// </remarks>
-public class Get : BaseHandler<Get, I, O>, H
+public partial class Get : BaseHandler<Get, I, O>, H
 {
     private readonly IQueries.IGetFromMemHandler r_getFromMem;
     private readonly IQueries.IGetFromDistHandler r_getFromDist;
@@ -113,6 +113,24 @@ public class Get : BaseHandler<Get, I, O>, H
     }
 
     /// <summary>
+    /// Logs an error when requesting an update of georeference data from the Geo service fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to request update of georeference data (consumer). TraceId: {TraceId}")]
+    private static partial void LogRequestUpdateFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when setting georeference data in the memory cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to set data in memory cache (consumer). TraceId: {TraceId}")]
+    private static partial void LogSetInMemoryFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs an error when setting georeference data on disk fails.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Error, Message = "Failed to set data on disk (consumer). TraceId: {TraceId}")]
+    private static partial void LogSetOnDiskFailed(ILogger logger, string? traceId);
+
+    /// <summary>
     /// Attempts to get the georeference data from various sources.
     /// </summary>
     ///
@@ -153,9 +171,7 @@ public class Get : BaseHandler<Get, I, O>, H
         if (updateR.Failed)
         {
             // If we failed to reach the Geo service, log an error.
-            Context.Logger.LogError(
-                "Failed to request update of georeference data (consumer). TraceId: {TraceId}",
-                TraceId);
+            LogRequestUpdateFailed(Context.Logger, TraceId);
         }
 
         // Then try to get it from disk.
@@ -168,9 +184,7 @@ public class Get : BaseHandler<Get, I, O>, H
             var setInMemR = await r_setInMem.HandleAsync(new(data), ct);
             if (setInMemR.Failed)
             {
-                Context.Logger.LogError(
-                    "Failed to set data in memory cache (consumer). TraceId: {TraceId}",
-                    TraceId);
+                LogSetInMemoryFailed(Context.Logger, TraceId);
             }
 
             // Then return the data.
@@ -198,17 +212,13 @@ public class Get : BaseHandler<Get, I, O>, H
         var setInMemR = await r_setInMem.HandleAsync(new(data), ct);
         if (setInMemR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set data in memory cache (consumer). TraceId: {TraceId}",
-                TraceId);
+            LogSetInMemoryFailed(Context.Logger, TraceId);
         }
 
         var setOnDiskR = await r_setOnDisk.HandleAsync(new(data), ct);
         if (setOnDiskR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set data on disk (consumer). TraceId: {TraceId}",
-                TraceId);
+            LogSetOnDiskFailed(Context.Logger, TraceId);
         }
     }
 }

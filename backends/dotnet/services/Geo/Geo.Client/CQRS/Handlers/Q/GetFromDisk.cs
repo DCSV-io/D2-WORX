@@ -23,7 +23,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.Q.IQueries.GetFromDiskOutput;
 /// <summary>
 /// Handler for getting georeference data from disk.
 /// </summary>
-public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
+public partial class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
 {
     private readonly string r_filePath;
 
@@ -82,10 +82,7 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
         }
         catch (Google.Protobuf.InvalidProtocolBufferException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "Failed to parse georeference data from disk. TraceId: {TraceId}",
-                TraceId);
+            LogCorruptedDataOnDisk(Context.Logger, ex, TraceId);
 
             return D2Result<O?>.Fail(
                 [TK.Geo.Errors.CORRUPTED_DATA_ON_DISK],
@@ -94,10 +91,7 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
         }
         catch (IOException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "IOException occurred while reading georeference data from disk. TraceId: {TraceId}",
-                TraceId);
+            LogDiskReadFailed(Context.Logger, ex, TraceId);
 
             return D2Result<O?>.Fail(
                 [TK.Geo.Errors.DISK_READ_FAILED],
@@ -106,4 +100,16 @@ public class GetFromDisk : BaseHandler<GetFromDisk, I, O>, H
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs an error when georeference data on disk is corrupted and cannot be parsed.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to parse georeference data from disk. TraceId: {TraceId}")]
+    private static partial void LogCorruptedDataOnDisk(ILogger logger, Exception ex, string? traceId);
+
+    /// <summary>
+    /// Logs an error when an IOException occurs while reading georeference data from disk.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "IOException occurred while reading georeference data from disk. TraceId: {TraceId}")]
+    private static partial void LogDiskReadFailed(ILogger logger, Exception ex, string? traceId);
 }

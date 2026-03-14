@@ -26,7 +26,7 @@ using Microsoft.Extensions.Options;
 ///         AND verify request context keys are in the caller's allowed set.</item>
 /// </list>
 /// </summary>
-public class ApiKeyInterceptor : Interceptor
+public partial class ApiKeyInterceptor : Interceptor
 {
     private readonly GeoAppOptions r_options;
     private readonly ILogger<ApiKeyInterceptor> r_logger;
@@ -66,9 +66,7 @@ public class ApiKeyInterceptor : Interceptor
         // Fail closed: if API key mappings are not configured, reject protected RPCs.
         if (r_options.ApiKeyMappings.Count == 0)
         {
-            r_logger.LogError(
-                "API key mappings are not configured but RPC {Method} requires an API key",
-                methodName);
+            LogApiKeyMappingsNotConfigured(r_logger, methodName);
             throw new RpcException(
                 new Status(
                     StatusCode.Unauthenticated,
@@ -79,8 +77,7 @@ public class ApiKeyInterceptor : Interceptor
         var apiKey = context.RequestHeaders.GetValue("x-api-key");
         if (apiKey.Falsey())
         {
-            r_logger.LogWarning(
-                "Missing x-api-key header on RPC {Method}", methodName);
+            LogMissingApiKeyHeader(r_logger, methodName);
             throw new RpcException(
                 new Status(StatusCode.Unauthenticated, "Missing x-api-key header."));
         }
@@ -88,8 +85,7 @@ public class ApiKeyInterceptor : Interceptor
         // Validate API key exists in mappings.
         if (!r_options.ApiKeyMappings.TryGetValue(apiKey!, out var allowedContextKeys))
         {
-            r_logger.LogWarning(
-                "Invalid API key on RPC {Method}", methodName);
+            LogInvalidApiKey(r_logger, methodName);
             throw new RpcException(
                 new Status(StatusCode.Unauthenticated, "Invalid API key."));
         }
@@ -106,10 +102,7 @@ public class ApiKeyInterceptor : Interceptor
         {
             if (!allowedContextKeys.Contains(contextKey))
             {
-                r_logger.LogWarning(
-                    "API key not authorized for context key \"{ContextKey}\" on {Method}",
-                    contextKey,
-                    methodName);
+                LogUnauthorizedContextKey(r_logger, contextKey, methodName);
                 throw new RpcException(
                     new Status(
                         StatusCode.PermissionDenied,
@@ -170,4 +163,28 @@ public class ApiKeyInterceptor : Interceptor
 
         return keys;
     }
+
+    /// <summary>
+    /// Logs an error when API key mappings are not configured but a protected RPC is called.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "API key mappings are not configured but RPC {Method} requires an API key")]
+    private static partial void LogApiKeyMappingsNotConfigured(ILogger logger, string method);
+
+    /// <summary>
+    /// Logs a warning when a request is missing the x-api-key header.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Missing x-api-key header on RPC {Method}")]
+    private static partial void LogMissingApiKeyHeader(ILogger logger, string method);
+
+    /// <summary>
+    /// Logs a warning when an invalid API key is provided.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Invalid API key on RPC {Method}")]
+    private static partial void LogInvalidApiKey(ILogger logger, string method);
+
+    /// <summary>
+    /// Logs a warning when an API key is not authorized for a specific context key.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Warning, Message = "API key not authorized for context key \"{ContextKey}\" on {Method}")]
+    private static partial void LogUnauthorizedContextKey(ILogger logger, string contextKey, string method);
 }

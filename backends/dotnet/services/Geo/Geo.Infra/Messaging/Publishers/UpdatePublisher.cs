@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Publishes geographic reference data updated events via raw AMQP.
 /// </summary>
-public class UpdatePublisher
+public partial class UpdatePublisher
 {
     private readonly ProtoPublisher r_publisher;
     private readonly ILogger<UpdatePublisher> r_logger;
@@ -63,20 +63,27 @@ public class UpdatePublisher
                 message,
                 ct: ct);
 
-            r_logger.LogInformation(
-                "Successfully published GeoRefDataUpdated event for version {Version}",
-                message.Version);
+            LogPublishedGeoRefDataUpdated(r_logger, message.Version);
 
             return D2Result.Ok();
         }
         catch (Exception ex)
         {
-            r_logger.LogError(
-                ex,
-                "Failed to publish GeoRefDataUpdated event for version {Version}",
-                message.Version);
+            LogPublishGeoRefDataUpdatedFailed(r_logger, ex, message.Version);
 
             return D2Result.ServiceUnavailable();
         }
     }
+
+    /// <summary>
+    /// Logs that a GeoRefDataUpdated event was successfully published.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Successfully published GeoRefDataUpdated event for version {Version}")]
+    private static partial void LogPublishedGeoRefDataUpdated(ILogger logger, string version);
+
+    /// <summary>
+    /// Logs an error when publishing a GeoRefDataUpdated event fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to publish GeoRefDataUpdated event for version {Version}")]
+    private static partial void LogPublishGeoRefDataUpdatedFailed(ILogger logger, Exception exception, string version);
 }

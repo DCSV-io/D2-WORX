@@ -20,7 +20,7 @@ using Microsoft.Extensions.Logging;
 /// Creates an exclusive auto-delete queue per instance (broadcast semantics).
 /// </summary>
 [MustDisposeResource(false)]
-public class UpdatedConsumerService : BackgroundService
+public partial class UpdatedConsumerService : BackgroundService
 {
     private readonly IMessageBus r_messageBus;
     private readonly IServiceScopeFactory r_scopeFactory;
@@ -96,9 +96,7 @@ public class UpdatedConsumerService : BackgroundService
             },
             async (message, ct) =>
             {
-                r_logger.LogInformation(
-                    "Received GeoRefDataUpdated event for version {Version}",
-                    message.Body.Version);
+                LogEventReceived(r_logger, message.Body.Version);
 
                 await using var scope = r_scopeFactory.CreateAsyncScope();
                 var handler = scope.ServiceProvider.GetRequiredService<ISubs.IUpdatedHandler>();
@@ -107,19 +105,33 @@ public class UpdatedConsumerService : BackgroundService
 
                 if (result.Failed)
                 {
-                    r_logger.LogError(
-                        "Failed to process GeoRefDataUpdated event for version {Version}",
-                        message.Body.Version);
+                    LogEventProcessingFailed(r_logger, message.Body.Version);
 
                     return ConsumerResult.Drop;
                 }
 
-                r_logger.LogInformation(
-                    "Successfully processed GeoRefDataUpdated event for version {Version}",
-                    message.Body.Version);
+                LogEventProcessed(r_logger, message.Body.Version);
 
                 return ConsumerResult.Ack;
             },
             stoppingToken);
     }
+
+    /// <summary>
+    /// Logs that a GeoRefDataUpdated event was received.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Received GeoRefDataUpdated event for version {Version}")]
+    private static partial void LogEventReceived(ILogger logger, string version);
+
+    /// <summary>
+    /// Logs that processing a GeoRefDataUpdated event failed.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Failed to process GeoRefDataUpdated event for version {Version}")]
+    private static partial void LogEventProcessingFailed(ILogger logger, string version);
+
+    /// <summary>
+    /// Logs that a GeoRefDataUpdated event was successfully processed.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Successfully processed GeoRefDataUpdated event for version {Version}")]
+    private static partial void LogEventProcessed(ILogger logger, string version);
 }

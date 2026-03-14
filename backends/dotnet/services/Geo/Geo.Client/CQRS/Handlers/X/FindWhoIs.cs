@@ -27,7 +27,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.FindWhoIsOutput;
 /// This implementation checks the local memory cache first, then falls back to
 /// the Geo service via gRPC if not cached. Results are cached for future lookups.
 /// </remarks>
-public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
+public partial class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 {
     private readonly IRead.IGetHandler<WhoIsDTO> r_cacheGet;
     private readonly IUpdate.ISetHandler<WhoIsDTO> r_cacheSet;
@@ -142,11 +142,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
             // destructuring. Use {@Input} for structured logging or omit PII entirely.
             if (r_circuitBreaker.State != CircuitState.Open)
             {
-                Context.Logger.LogWarning(
-                    ex,
-                    "gRPC call to Geo service failed for {@Input}. TraceId: {TraceId}",
-                    input,
-                    TraceId);
+                LogGrpcCallFailed(Context.Logger, ex, input, TraceId);
             }
 
             return D2Result<O?>.Ok(new O(null));
@@ -169,12 +165,21 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         {
             // Note: Do not log input.IpAddress as a scalar — it bypasses [RedactData]
             // destructuring. Use {@Input} for structured logging or omit PII entirely.
-            Context.Logger.LogWarning(
-                "Failed to cache WhoIs for {@Input}. TraceId: {TraceId}",
-                input,
-                TraceId);
+            LogCacheSetFailed(Context.Logger, input, TraceId);
         }
 
         return D2Result<O?>.Ok(new O(whoIs));
     }
+
+    /// <summary>
+    /// Logs a warning when the gRPC call to the Geo service fails for FindWhoIs.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "gRPC call to Geo service failed for {Input}. TraceId: {TraceId}")]
+    private static partial void LogGrpcCallFailed(ILogger logger, Exception ex, I input, string? traceId);
+
+    /// <summary>
+    /// Logs a warning when caching WhoIs data fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to cache WhoIs for {Input}. TraceId: {TraceId}")]
+    private static partial void LogCacheSetFailed(ILogger logger, I input, string? traceId);
 }

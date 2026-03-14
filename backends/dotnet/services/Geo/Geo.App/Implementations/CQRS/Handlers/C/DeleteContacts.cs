@@ -23,7 +23,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Handler for deleting Contacts.
 /// </summary>
-public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
+public partial class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
 {
     private readonly ReadRepo.IGetContactsByIdsHandler r_getContactsByIds;
     private readonly DeleteRepo.IDeleteContactsHandler r_deleteContactsFromRepo;
@@ -111,10 +111,7 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
 
             if (removeR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to remove Contact {ContactId} from memory cache after delete. TraceId: {TraceId}.",
-                    id,
-                    TraceId);
+                LogCacheRemoveFailed(Context.Logger, id, TraceId);
             }
         }
 
@@ -133,4 +130,10 @@ public class DeleteContacts : BaseHandler<DeleteContacts, I, O>, H
 
         return D2Result<O?>.Ok(new O(repoOutput!.Deleted));
     }
+
+    /// <summary>
+    /// Logs a warning when removing a contact from the memory cache fails after deletion.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to remove Contact {ContactId} from memory cache after delete. TraceId: {TraceId}.")]
+    private static partial void LogCacheRemoveFailed(ILogger logger, Guid contactId, string? traceId);
 }

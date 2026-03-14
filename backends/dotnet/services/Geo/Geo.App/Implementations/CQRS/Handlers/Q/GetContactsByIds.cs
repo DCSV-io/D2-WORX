@@ -25,7 +25,7 @@ using ReadRepo = D2.Geo.App.Interfaces.Repository.Handlers.R.IRead;
 /// <summary>
 /// Handler for getting Contacts by their IDs.
 /// </summary>
-public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
+public partial class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
 {
     private readonly IRead.IGetManyHandler<Contact> r_memoryCacheGetMany;
     private readonly IUpdate.ISetManyHandler<Contact> r_memoryCacheSetMany;
@@ -182,6 +182,12 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
     private static Location? GetLocation(string? hashId, Dictionary<string, Location> locations) =>
         hashId is not null && locations.TryGetValue(hashId, out var loc) ? loc : null;
 
+    /// <summary>
+    /// Logs an error when setting contacts in the memory cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Failed to set Contacts in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.")]
+    private static partial void LogCacheSetFailed(ILogger logger, Type handlerName, string? traceId, string? errorCode, List<string> messages);
+
     private async ValueTask SetInCacheAsync(
         Dictionary<Guid, Contact> fromDbDict,
         CancellationToken ct)
@@ -196,12 +202,7 @@ public class GetContactsByIds : BaseHandler<GetContactsByIds, I, O>, H
 
         if (setInCacheR.Failed)
         {
-            Context.Logger.LogError(
-                "Failed to set Contacts in memory cache from {HandlerName}. TraceId: {TraceId}. ErrorCode: {ErrorCode}. Messages: {Messages}.",
-                typeof(GetContactsByIds),
-                TraceId,
-                setInCacheR.ErrorCode,
-                setInCacheR.Messages);
+            LogCacheSetFailed(Context.Logger, typeof(GetContactsByIds), TraceId, setInCacheR.ErrorCode, setInCacheR.Messages);
         }
     }
 

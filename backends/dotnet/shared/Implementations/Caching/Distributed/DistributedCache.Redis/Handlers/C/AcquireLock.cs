@@ -19,7 +19,7 @@ using O = D2.Shared.Interfaces.Caching.Distributed.Handlers.C.ICreate.AcquireLoc
 /// <summary>
 /// Handler for acquiring a distributed lock in Redis using SET NX with mandatory TTL.
 /// </summary>
-public class AcquireLock : BaseHandler<H, I, O>, H
+public partial class AcquireLock : BaseHandler<H, I, O>, H
 {
     private readonly IConnectionMultiplexer r_redis;
 
@@ -59,11 +59,7 @@ public class AcquireLock : BaseHandler<H, I, O>, H
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while acquiring lock for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogAcquireLockFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<O?>.Fail(
                 [TK.Common.Errors.SERVICE_UNAVAILABLE],
@@ -73,4 +69,10 @@ public class AcquireLock : BaseHandler<H, I, O>, H
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while acquiring a distributed lock.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while acquiring lock for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogAcquireLockFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

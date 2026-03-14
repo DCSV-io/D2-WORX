@@ -24,7 +24,7 @@ using Microsoft.Extensions.Logging;
 /// Reads <see cref="IRequestContext"/> from HttpContext.Features and calls the rate
 /// limit check handler. Returns 429 Too Many Requests if blocked.
 /// </remarks>
-public class RateLimitMiddleware
+public partial class RateLimitMiddleware
 {
     private readonly RequestDelegate r_next;
     private readonly ILogger<RateLimitMiddleware> r_logger;
@@ -76,8 +76,7 @@ public class RateLimitMiddleware
         var requestContext = context.Features.Get<IRequestContext>();
         if (requestContext is null)
         {
-            r_logger.LogWarning(
-                "IRequestContext not found in HttpContext.Features. Ensure RequestEnrichmentMiddleware runs first. Allowing request.");
+            LogRequestContextMissing(r_logger);
 
             await r_next(context);
             return;
@@ -100,9 +99,7 @@ public class RateLimitMiddleware
         {
             // Fail-open: log warning and allow request through.
             // Do not log raw ClientIp — it is PII.
-            r_logger.LogWarning(
-                ex,
-                "Rate limit check failed. Allowing request through (fail-open).");
+            LogCheckFailed(r_logger, ex);
         }
 
         if (output?.IsBlocked == true)
@@ -124,10 +121,7 @@ public class RateLimitMiddleware
             await context.Response.WriteAsJsonAsync(response, SerializerOptions.SR_Web, context.RequestAborted);
 
             // Do not log raw ClientIp — it is PII.
-            r_logger.LogInformation(
-                "Rate limited request on {Dimension} dimension. RetryAfter: {RetryAfter}s",
-                output.BlockedDimension,
-                retryAfterSeconds);
+            LogRateLimited(r_logger, output.BlockedDimension, retryAfterSeconds);
 
             return;
         }
@@ -135,4 +129,22 @@ public class RateLimitMiddleware
         // Not blocked — continue pipeline.
         await r_next(context);
     }
+
+    /// <summary>
+    /// Logs a warning when IRequestContext is not found in HttpContext.Features.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "IRequestContext not found in HttpContext.Features. Ensure RequestEnrichmentMiddleware runs first. Allowing request.")]
+    private static partial void LogRequestContextMissing(ILogger logger);
+
+    /// <summary>
+    /// Logs a warning when the rate limit check fails (fail-open).
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Rate limit check failed. Allowing request through (fail-open).")]
+    private static partial void LogCheckFailed(ILogger logger, Exception ex);
+
+    /// <summary>
+    /// Logs that a request was rate limited.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Rate limited request on {Dimension} dimension. RetryAfter: {RetryAfterSeconds}s")]
+    private static partial void LogRateLimited(ILogger logger, RateLimitDimension? dimension, double retryAfterSeconds);
 }

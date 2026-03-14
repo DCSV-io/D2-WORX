@@ -34,7 +34,7 @@ using Microsoft.Extensions.Logging;
 /// </list>
 /// </para>
 /// </remarks>
-public class JwtFingerprintMiddleware
+public partial class JwtFingerprintMiddleware
 {
     private readonly RequestDelegate r_next;
     private readonly ILogger<JwtFingerprintMiddleware> r_logger;
@@ -88,9 +88,7 @@ public class JwtFingerprintMiddleware
         // For non-trusted requests, fp claim is REQUIRED.
         if (fpClaim.Falsey())
         {
-            r_logger.LogWarning(
-                "JWT missing required fingerprint claim for {Path}",
-                context.Request.Path);
+            LogMissingFingerprintClaim(r_logger, context.Request.Path.Value);
 
             context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
             context.Response.ContentType = "application/json";
@@ -117,11 +115,7 @@ public class JwtFingerprintMiddleware
         }
 
         // Mismatch — JWT is being used from a different client.
-        r_logger.LogWarning(
-            "JWT fingerprint mismatch for {Path}. Expected: {Expected}, Got: {Got}",
-            context.Request.Path,
-            Truncate(fpClaim ?? string.Empty),
-            Truncate(computed));
+        LogFingerprintMismatch(r_logger, context.Request.Path.Value, Truncate(fpClaim ?? string.Empty), Truncate(computed));
 
         var response = D2Result.Fail(
             [TK.Common.Errors.UNAUTHORIZED],
@@ -244,4 +238,16 @@ public class JwtFingerprintMiddleware
             ? value[..prefix_length] + "..."
             : value + "...";
     }
+
+    /// <summary>
+    /// Logs that a JWT is missing the required fingerprint claim.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "JWT missing required fingerprint claim for {Path}")]
+    private static partial void LogMissingFingerprintClaim(ILogger logger, string? path);
+
+    /// <summary>
+    /// Logs a JWT fingerprint mismatch between expected and actual values.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "JWT fingerprint mismatch for {Path}. Expected: {Expected}, Got: {Got}")]
+    private static partial void LogFingerprintMismatch(ILogger logger, string? path, string expected, string got);
 }

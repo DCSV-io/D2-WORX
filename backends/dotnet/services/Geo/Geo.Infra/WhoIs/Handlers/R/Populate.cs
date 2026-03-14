@@ -30,7 +30,7 @@ using O = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead.PopulateOutput;
 /// Takes partial WhoIs records and populates them with ASN, location, and privacy data
 /// from the IPinfo.io API. Also creates any required Location records.
 /// </remarks>
-public class Populate : BaseHandler<Populate, I, O>, H
+public partial class Populate : BaseHandler<Populate, I, O>, H
 {
     private readonly IIpInfoClient r_ipInfoClient;
     private readonly CreateRepo.ICreateLocationsHandler r_createLocations;
@@ -135,10 +135,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
 
             if (createLocR.CheckFailure(out _))
             {
-                Context.Logger.LogWarning(
-                    "Failed to create locations during WhoIs population. TraceId: {TraceId}. ErrorCode: {ErrorCode}",
-                    TraceId,
-                    createLocR.ErrorCode);
+                LogCreateLocationsFailed(Context.Logger, TraceId, createLocR.ErrorCode);
             }
         }
 
@@ -264,6 +261,42 @@ public class Populate : BaseHandler<Populate, I, O>, H
             locationHashId: locationHashId);
     }
 
+    /// <summary>
+    /// Logs a warning when creating locations during WhoIs population fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to create locations during WhoIs population. TraceId: {TraceId}. ErrorCode: {ErrorCode}")]
+    private static partial void LogCreateLocationsFailed(ILogger logger, string? traceId, string? errorCode);
+
+    /// <summary>
+    /// Logs a warning when an invalid IP address is encountered during WhoIs population.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Invalid IP address encountered. TraceId: {TraceId}")]
+    private static partial void LogInvalidIpAddress(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs a debug message when skipping a localhost IP address.
+    /// </summary>
+    [LoggerMessage(EventId = 3, Level = LogLevel.Debug, Message = "Skipping localhost IP address")]
+    private static partial void LogSkippingLocalhostIp(ILogger logger);
+
+    /// <summary>
+    /// Logs an error when fetching geo reference data for region population fails.
+    /// </summary>
+    [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "Failed to get geo ref data for who-is region population. TraceId: {TraceId}")]
+    private static partial void LogGeoRefDataFetchFailed(ILogger logger, string? traceId);
+
+    /// <summary>
+    /// Logs a warning when setting the region-to-subdivision-code cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 5, Level = LogLevel.Warning, Message = "Failed to set region to subdivision code map in cache during WhoIs population. TraceId: {TraceId}. ErrorCode: {ErrorCode}")]
+    private static partial void LogSetRegionCacheFailed(ILogger logger, string? traceId, string? errorCode);
+
+    /// <summary>
+    /// Logs an error when building the region-to-subdivision-code map fails unexpectedly.
+    /// </summary>
+    [LoggerMessage(EventId = 6, Level = LogLevel.Error, Message = "Error building region to subdivision code map during WhoIs population. TraceId: {TraceId}")]
+    private static partial void LogBuildRegionMapError(ILogger logger, Exception exception, string? traceId);
+
     private async Task<IpInfoResponse?> FetchIpDetailsAsync(
         string ipAddress,
         CancellationToken ct)
@@ -277,7 +310,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
         if (!IPAddress.TryParse(ipAddress, out var ip))
         {
             // Do not log raw ipAddress — it is PII.
-            Context.Logger.LogWarning("Invalid IP address encountered. TraceId: {TraceId}", TraceId);
+            LogInvalidIpAddress(Context.Logger, TraceId);
             return null;
         }
 
@@ -285,7 +318,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
         var ipStr = ip.ToString();
         if (ipStr is "127.0.0.1" or "::1")
         {
-            Context.Logger.LogDebug("Skipping localhost IP address");
+            LogSkippingLocalhostIp(Context.Logger);
             return null;
         }
 
@@ -344,9 +377,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
             // If that failed, log it and return what we have.
             if (geoRefR.Failed)
             {
-                Context.Logger.LogError(
-                    "Failed to get geo ref data for who-is region population. TraceId: {TraceId}",
-                    TraceId);
+                LogGeoRefDataFetchFailed(Context.Logger, TraceId);
                 return regionMap;
             }
 
@@ -388,10 +419,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
             // Log if cache set failed.
             if (setCacheR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to set region to subdivision code map in cache during WhoIs population. TraceId: {TraceId}. ErrorCode: {ErrorCode}",
-                    TraceId,
-                    setCacheR.ErrorCode);
+                LogSetRegionCacheFailed(Context.Logger, TraceId, setCacheR.ErrorCode);
             }
 
             // Return the constructed map.
@@ -403,10 +431,7 @@ public class Populate : BaseHandler<Populate, I, O>, H
         }
         catch (Exception ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "Error building region to subdivision code map during WhoIs population. TraceId: {TraceId}",
-                TraceId);
+            LogBuildRegionMapError(Context.Logger, ex, TraceId);
 
             return [];
         }

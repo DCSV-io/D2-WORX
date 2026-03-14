@@ -26,7 +26,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.Q.IQueries.GetContactsByExtKeys
 /// Contacts are immutable, so cached entries never expire (only LRU eviction).
 /// Fail-open: returns whatever was cached if gRPC fails.
 /// </remarks>
-public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
+public partial class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
 {
     private readonly IRead.IGetHandler<List<ContactDTO>> r_cacheGet;
     private readonly IUpdate.ISetHandler<List<ContactDTO>> r_cacheSet;
@@ -114,10 +114,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
         catch (RpcException ex)
         {
             // Fail-open: return whatever was cached.
-            Context.Logger.LogWarning(
-                ex,
-                "gRPC call to Geo service failed for GetContactsByExtKeys. TraceId: {TraceId}",
-                TraceId);
+            LogGrpcCallFailed(Context.Logger, ex, TraceId);
 
             return D2Result<O?>.Ok(new O(result));
         }
@@ -136,11 +133,7 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
                     var setR = await r_cacheSet.HandleAsync(new(cacheKey, contacts), ct);
                     if (setR.Failed)
                     {
-                        Context.Logger.LogWarning(
-                            "Failed to cache geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId}. TraceId: {TraceId}",
-                            entry.Key.ContextKey,
-                            entry.Key.RelatedEntityId,
-                            TraceId);
+                        LogCacheSetFailed(Context.Logger, entry.Key.ContextKey, entry.Key.RelatedEntityId, TraceId);
                     }
 
                     result[mapKey] = contacts;
@@ -150,4 +143,16 @@ public class GetContactsByExtKeys : BaseHandler<GetContactsByExtKeys, I, O>, H
 
         return D2Result<O?>.Ok(new O(result));
     }
+
+    /// <summary>
+    /// Logs a warning when the gRPC call to the Geo service fails for GetContactsByExtKeys.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "gRPC call to Geo service failed for GetContactsByExtKeys. TraceId: {TraceId}")]
+    private static partial void LogGrpcCallFailed(ILogger logger, Exception ex, string? traceId);
+
+    /// <summary>
+    /// Logs a warning when caching a contacts-by-extkey entry fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to cache geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId}. TraceId: {TraceId}")]
+    private static partial void LogCacheSetFailed(ILogger logger, string contextKey, string relatedEntityId, string? traceId);
 }

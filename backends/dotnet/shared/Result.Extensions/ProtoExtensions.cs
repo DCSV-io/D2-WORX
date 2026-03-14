@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="ProtoExtensions.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>
@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 /// <summary>
 /// Extension methods for converting D2Result to its protobuf representation.
 /// </summary>
-public static class ProtoExtensions
+public static partial class ProtoExtensions
 {
     /// <summary>
     /// Converts a <see cref="D2Result"/> instance to its protobuf representation
@@ -159,11 +159,10 @@ public static class ProtoExtensions
             }
             catch (RpcException ex)
             {
-                logger?.LogError(
-                    ex,
-                    "gRPC transport failure. StatusCode: {StatusCode}, TraceId: {TraceId}",
-                    ex.StatusCode,
-                    traceId);
+                if (logger is not null)
+                {
+                    LogGrpcTransportFailure(logger, ex, ex.StatusCode, traceId);
+                }
 
                 return D2Result<TData>.Fail(
                     ["Service is unavailable."],
@@ -173,13 +172,25 @@ public static class ProtoExtensions
             }
             catch (Exception ex)
             {
-                logger?.LogError(
-                    ex,
-                    "Unexpected error during gRPC call. TraceId: {TraceId}",
-                    traceId);
+                if (logger is not null)
+                {
+                    LogGrpcUnexpectedError(logger, ex, traceId);
+                }
 
                 return D2Result<TData>.UnhandledException(traceId: traceId);
             }
         }
     }
+
+    /// <summary>
+    /// Logs a gRPC transport failure.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "gRPC transport failure. StatusCode: {StatusCode}, TraceId: {TraceId}")]
+    private static partial void LogGrpcTransportFailure(ILogger logger, Exception ex, StatusCode statusCode, string? traceId);
+
+    /// <summary>
+    /// Logs an unexpected error during a gRPC call.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Unexpected error during gRPC call. TraceId: {TraceId}")]
+    private static partial void LogGrpcUnexpectedError(ILogger logger, Exception ex, string? traceId);
 }

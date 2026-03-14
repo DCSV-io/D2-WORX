@@ -35,7 +35,7 @@ using Microsoft.Extensions.Options;
 /// </list>
 /// </para>
 /// </remarks>
-public class ServiceKeyMiddleware
+public partial class ServiceKeyMiddleware
 {
     private readonly RequestDelegate r_next;
     private readonly ILogger<ServiceKeyMiddleware> r_logger;
@@ -107,7 +107,7 @@ public class ServiceKeyMiddleware
         // Invalid key → 401 immediately (fail fast).
         if (!matched)
         {
-            r_logger.LogWarning("Invalid service API key presented");
+            LogInvalidServiceKey(r_logger);
 
             context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
             context.Response.ContentType = "application/json";
@@ -127,7 +127,19 @@ public class ServiceKeyMiddleware
             mutableCtx.IsTrustedService = true;
         }
 
-        r_logger.LogDebug("Request authenticated via service key");
+        LogServiceKeyAuthenticated(r_logger);
         await r_next(context);
     }
+
+    /// <summary>
+    /// Logs that an invalid service API key was presented.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Invalid service API key presented")]
+    private static partial void LogInvalidServiceKey(ILogger logger);
+
+    /// <summary>
+    /// Logs that a request was authenticated via a service key.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Debug, Message = "Request authenticated via service key")]
+    private static partial void LogServiceKeyAuthenticated(ILogger logger);
 }

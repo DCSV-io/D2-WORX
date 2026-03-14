@@ -23,7 +23,7 @@ using O = D2.Geo.Client.Interfaces.CQRS.Handlers.X.IComplex.UpdateContactsByExtK
 /// Geo internally deletes old contacts and creates new ones atomically.
 /// Evicts ext-key cache for each input contact's key.
 /// </summary>
-public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O>, H
+public partial class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O>, H
 {
     private readonly IDelete.IRemoveHandler r_cacheRemove;
     private readonly GeoService.GeoServiceClient r_geoClient;
@@ -82,14 +82,16 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
                 new(CacheKeys.ContactsByExtKey(contact.ContextKey, Guid.Parse(contact.RelatedEntityId))), ct);
             if (removeR.Failed)
             {
-                Context.Logger.LogWarning(
-                    "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}",
-                    contact.ContextKey,
-                    contact.RelatedEntityId,
-                    TraceId);
+                LogCacheEvictionFailed(Context.Logger, contact.ContextKey, contact.RelatedEntityId, TraceId);
             }
         }
 
         return D2Result<O?>.Bubble(r, new([.. r.Data ?? []]));
     }
+
+    /// <summary>
+    /// Logs a warning when evicting a contacts-by-extkey entry from the cache fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to evict geo:contacts-by-extkey:{ContextKey}:{RelatedEntityId} from cache. TraceId: {TraceId}")]
+    private static partial void LogCacheEvictionFailed(ILogger logger, string contextKey, string relatedEntityId, string? traceId);
 }

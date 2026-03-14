@@ -24,7 +24,7 @@ using C = D2.Shared.Interfaces.Caching.Distributed.Handlers.C.ICreate;
 /// <typeparam name="TValue">
 /// The type of the value to cache.
 /// </typeparam>
-public class SetNx<TValue> : BaseHandler<
+public partial class SetNx<TValue> : BaseHandler<
         C.ISetNxHandler<TValue>, C.SetNxInput<TValue>, C.SetNxOutput>,
     C.ISetNxHandler<TValue>
 {
@@ -76,11 +76,7 @@ public class SetNx<TValue> : BaseHandler<
         }
         catch (RedisException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "RedisException occurred while setting NX value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogSetNxFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<C.SetNxOutput?>.Fail(
                 [TK.Common.Errors.SERVICE_UNAVAILABLE],
@@ -89,11 +85,7 @@ public class SetNx<TValue> : BaseHandler<
         }
         catch (JsonException ex)
         {
-            Context.Logger.LogError(
-                ex,
-                "JsonException occurred while serializing value for key '{Key}'. TraceId: {TraceId}",
-                input.Key,
-                TraceId);
+            LogSetNxSerializationFailed(Context.Logger, ex, input.Key, TraceId);
 
             return D2Result<C.SetNxOutput?>.Fail(
                 [TK.Common.Errors.REQUEST_FAILED],
@@ -104,4 +96,16 @@ public class SetNx<TValue> : BaseHandler<
 
         // Let the base handler catch any other exceptions.
     }
+
+    /// <summary>
+    /// Logs that a Redis exception occurred while setting a value with NX semantics.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "RedisException occurred while setting NX value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogSetNxFailed(ILogger logger, Exception ex, string key, string? traceId);
+
+    /// <summary>
+    /// Logs that a JSON serialization exception occurred while setting a value with NX semantics.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "JsonException occurred while serializing value for key '{Key}'. TraceId: {TraceId}")]
+    private static partial void LogSetNxSerializationFailed(ILogger logger, Exception ex, string key, string? traceId);
 }

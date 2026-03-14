@@ -41,7 +41,7 @@ using WhoIsProvider = D2.Geo.App.Interfaces.WhoIs.Handlers.R.IRead;
 /// If population fails for some requests, returns SOME_FOUND with partial results.
 /// </para>
 /// </remarks>
-public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
+public partial class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 {
     private readonly Queries.IGetWhoIsByIdsHandler r_getWhoIsByIds;
     private readonly Queries.IGetLocationsByIdsHandler r_getLocationsByIds;
@@ -181,10 +181,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
         var populateR = await r_populateWhoIs.HandleAsync(new(missingPartials), ct);
         if (populateR.CheckFailure(out var populateOutput))
         {
-            Context.Logger.LogWarning(
-                "Failed to populate WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}",
-                TraceId,
-                populateR.ErrorCode);
+            LogPopulateFailed(Context.Logger, TraceId, populateR.ErrorCode);
 
             // Return what we have if population failed entirely.
             if (results.Count > 0)
@@ -215,10 +212,7 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 
         if (createWhoIsR.CheckFailure(out _))
         {
-            Context.Logger.LogWarning(
-                "Failed to create WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}",
-                TraceId,
-                createWhoIsR.ErrorCode);
+            LogCreateFailed(Context.Logger, TraceId, createWhoIsR.ErrorCode);
         }
 
         // Step 6: Fetch locations for newly populated WhoIs records.
@@ -245,6 +239,18 @@ public class FindWhoIs : BaseHandler<FindWhoIs, I, O>, H
 
         return D2Result<O?>.SomeFound(new O(results));
     }
+
+    /// <summary>
+    /// Logs a warning when populating WhoIs records from the external source fails.
+    /// </summary>
+    [LoggerMessage(EventId = 1, Level = LogLevel.Warning, Message = "Failed to populate WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}")]
+    private static partial void LogPopulateFailed(ILogger logger, string? traceId, string? errorCode);
+
+    /// <summary>
+    /// Logs a warning when persisting newly created WhoIs records to the repository fails.
+    /// </summary>
+    [LoggerMessage(EventId = 2, Level = LogLevel.Warning, Message = "Failed to create WhoIs records. TraceId: {TraceId}. ErrorCode: {ErrorCode}")]
+    private static partial void LogCreateFailed(ILogger logger, string? traceId, string? errorCode);
 
     private async ValueTask<Dictionary<string, Location>> FetchLocationsAsync(
         IEnumerable<WhoIs> whoIsRecords,
