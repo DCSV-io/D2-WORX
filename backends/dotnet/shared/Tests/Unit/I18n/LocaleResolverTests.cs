@@ -9,6 +9,7 @@ namespace D2.Shared.Tests.Unit.I18n;
 using D2.Shared.I18n;
 using D2.Shared.Translation.Default;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 
@@ -16,12 +17,14 @@ using Microsoft.Extensions.Configuration;
 /// Unit tests for the <see cref="LocaleResolver"/> static class.
 /// </summary>
 [Collection("I18n")]
+[MustDisposeResource(false)]
 public class LocaleResolverTests : IDisposable
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="LocaleResolverTests"/> class.
     /// Configures <see cref="SupportedLocales"/> with all 10 BCP 47 locales.
     /// </summary>
+    [MustDisposeResource(false)]
     public LocaleResolverTests()
     {
         ConfigureLocales();
@@ -324,6 +327,7 @@ public class LocaleResolverTests : IDisposable
     {
         // Reset to default state.
         ConfigureLocales();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

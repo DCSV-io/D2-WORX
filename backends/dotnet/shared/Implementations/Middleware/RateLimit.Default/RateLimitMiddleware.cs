@@ -6,6 +6,7 @@
 
 namespace D2.Shared.RateLimit.Default;
 
+using System.Globalization;
 using System.Net;
 using D2.Shared.Handler;
 using D2.Shared.I18n;
@@ -110,7 +111,7 @@ public class RateLimitMiddleware
             var retryAfterSeconds = output.RetryAfter?.TotalSeconds ?? 300;
 
             context.Response.StatusCode = (int)HttpStatusCode.TooManyRequests;
-            context.Response.Headers.RetryAfter = ((int)retryAfterSeconds).ToString();
+            context.Response.Headers.RetryAfter = ((int)retryAfterSeconds).ToString(CultureInfo.InvariantCulture);
             context.Response.ContentType = "application/json";
 
             var response = D2Result.Fail(

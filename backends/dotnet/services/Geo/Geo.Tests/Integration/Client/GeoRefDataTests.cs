@@ -40,7 +40,7 @@ public class GeoRefDataTests : IAsyncLifetime
     private IServiceProvider _services = null!;
     private IHandlerContext _context = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -83,6 +83,8 @@ public class GeoRefDataTests : IAsyncLifetime
         {
             File.Delete(filePath);
         }
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

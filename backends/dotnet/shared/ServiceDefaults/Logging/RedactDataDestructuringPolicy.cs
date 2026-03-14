@@ -36,7 +36,7 @@ public class RedactDataDestructuringPolicy : IDestructuringPolicy
     /// <inheritdoc />
     public bool TryDestructure(
         object value,
-        ILogEventPropertyValueFactory factory,
+        ILogEventPropertyValueFactory propertyValueFactory,
         [NotNullWhen(true)] out LogEventPropertyValue? result)
     {
         var type = value.GetType();
@@ -71,7 +71,7 @@ public class RedactDataDestructuringPolicy : IDestructuringPolicy
                 var propValue = prop.GetValue(value);
                 properties.Add(new LogEventProperty(
                     prop.Name,
-                    factory.CreatePropertyValue(propValue, destructureObjects: true)));
+                    propertyValueFactory.CreatePropertyValue(propValue, destructureObjects: true)));
             }
         }
 

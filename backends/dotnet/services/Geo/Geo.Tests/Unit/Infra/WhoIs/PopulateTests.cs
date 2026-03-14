@@ -14,6 +14,7 @@ using D2.Geo.Infra.WhoIs.Handlers.R;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -24,7 +25,8 @@ using InMemCache = D2.Shared.InMemoryCache.Default.Handlers;
 /// <summary>
 /// Unit tests for the <see cref="Populate"/> WhoIs provider handler.
 /// </summary>
-public class PopulateTests
+[MustDisposeResource(false)]
+public sealed class PopulateTests : IDisposable
 {
     private readonly Mock<IIpInfoClient> r_mockIpInfoClient;
     private readonly Mock<ICreate.ICreateLocationsHandler> r_mockCreateLocations;
@@ -37,6 +39,7 @@ public class PopulateTests
     /// <summary>
     /// Initializes a new instance of the <see cref="PopulateTests"/> class.
     /// </summary>
+    [MustDisposeResource(false)]
     public PopulateTests()
     {
         r_mockIpInfoClient = new Mock<IIpInfoClient>();
@@ -60,7 +63,13 @@ public class PopulateTests
         r_setManyCache = new InMemCache.U.SetMany<string>(r_memoryCache, r_context);
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        r_memoryCache.Dispose();
+    }
 
     #region Empty Input Tests
 

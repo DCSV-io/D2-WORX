@@ -150,6 +150,12 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
         }
     }
 
+    private static D2Result<O?> Success(Dictionary<string, Location> locations) =>
+        D2Result<O?>.Ok(new O(locations));
+
+    private static D2Result<O?> SomeFound(Dictionary<string, Location> locations) =>
+        D2Result<O?>.SomeFound(new O(locations));
+
     private async ValueTask SetInCacheAsync(
         Dictionary<string, Location> locationsFromDbDict,
         CancellationToken ct)
@@ -172,10 +178,4 @@ public class GetLocationsByIds : BaseHandler<GetLocationsByIds, I, O>, H
                 setInCacheR.Messages);
         }
     }
-
-    private D2Result<O?> Success(Dictionary<string, Location> locations) =>
-        D2Result<O?>.Ok(new O(locations));
-
-    private D2Result<O?> SomeFound(Dictionary<string, Location> locations) =>
-        D2Result<O?>.SomeFound(new O(locations));
 }

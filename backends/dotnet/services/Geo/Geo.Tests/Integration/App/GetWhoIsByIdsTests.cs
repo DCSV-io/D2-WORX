@@ -58,7 +58,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
         r_fixture = fixture;
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public ValueTask InitializeAsync()
@@ -101,6 +101,7 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     {
         await _services.DisposeAsync();
         await _db.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region Success Path Tests
@@ -363,7 +364,6 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     public async Task GetWhoIsByIds_WithSomeMissingIds_ReturnsSomeFound()
     {
         // Arrange
-        var suffix = Guid.NewGuid().ToString("N");
         var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.{Random.Shared.Next(1, 255)}", 2025, 1);
         _db.WhoIsRecords.Add(existingWhoIs);
         await _db.SaveChangesAsync(Ct);
@@ -424,7 +424,6 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     public async Task GetWhoIsByIds_WithPartialCache_FetchesMissingFromDb()
     {
         // Arrange - Create two WhoIs records with unique IPs
-        var suffix = Guid.NewGuid().ToString("N");
         var whoIs1 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1);
         var whoIs2 = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.2", 2025, 1);
         _db.WhoIsRecords.AddRange(whoIs1, whoIs2);
@@ -457,7 +456,6 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
     public async Task GetWhoIsByIds_WithLargeBatch_HandlesCorrectly()
     {
         // Arrange - Create 150 WhoIs records
-        var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = Enumerable.Range(0, 150)
             .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1))
             .ToList();
@@ -493,7 +491,6 @@ public class GetWhoIsByIdsTests : IAsyncLifetime
 
     private async Task<List<WhoIs>> CreateTestWhoIsRecordsAsync()
     {
-        var suffix = Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
             WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1),

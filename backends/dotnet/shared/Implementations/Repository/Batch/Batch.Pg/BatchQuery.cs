@@ -60,7 +60,7 @@ public sealed class BatchQuery<TEntity, TKey>
 
         if (r_options.FilterNullIds)
         {
-            processedIds = processedIds.Where(id => id is not null && !EqualityComparer<TKey>.Default.Equals(id, default!));
+            processedIds = processedIds.Where(id => !EqualityComparer<TKey>.Default.Equals(id, default!));
         }
 
         if (r_options.DeduplicateIds)

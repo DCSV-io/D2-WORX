@@ -6,6 +6,7 @@
 
 namespace D2.Geo.App.Mappers;
 
+using System.Globalization;
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Utilities.Extensions;
@@ -50,8 +51,8 @@ public static class WhoIsMapper
                 CarrierName = whoIs.CarrierName ?? string.Empty,
                 Mcc = whoIs.MCC ?? string.Empty,
                 Mnc = whoIs.MNC ?? string.Empty,
-                AsChanged = whoIs.ASChanged?.ToString("O") ?? string.Empty,
-                GeoChanged = whoIs.GeoChanged?.ToString("O") ?? string.Empty,
+                AsChanged = whoIs.ASChanged?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty,
+                GeoChanged = whoIs.GeoChanged?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty,
                 IsAnonymous = whoIs.IsAnonymous ?? false,
                 IsAnycast = whoIs.IsAnycast ?? false,
                 IsHosting = whoIs.IsHosting ?? false,

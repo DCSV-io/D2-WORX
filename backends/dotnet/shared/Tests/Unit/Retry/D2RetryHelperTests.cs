@@ -16,7 +16,7 @@ public class D2RetryHelperTests
 {
     private readonly List<TimeSpan> r_delays = [];
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region IsTransientResult
 

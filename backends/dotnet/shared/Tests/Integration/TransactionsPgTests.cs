@@ -27,7 +27,7 @@ public class TransactionsPgTests : IAsyncLifetime
     private TestDbContext _db = null!;
     private IHandlerContext _context = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -53,6 +53,7 @@ public class TransactionsPgTests : IAsyncLifetime
     {
         await _db.DisposeAsync();
         await _container.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -283,7 +284,7 @@ public class TransactionsPgTests : IAsyncLifetime
     /// <summary>
     /// Simple test entity for transaction testing.
     /// </summary>
-    private class TestEntity
+    private sealed class TestEntity
     {
         /// <summary>
         /// Gets or sets the entity identifier.
@@ -305,7 +306,7 @@ public class TransactionsPgTests : IAsyncLifetime
     /// </param>
     [MustDisposeResource(false)]
     [method: MustDisposeResource(false)]
-    private class TestDbContext(DbContextOptions<TestDbContext> options) : DbContext(options)
+    private sealed class TestDbContext(DbContextOptions<TestDbContext> options) : DbContext(options)
     {
         /// <summary>
         /// Gets or sets the test entities DbSet.

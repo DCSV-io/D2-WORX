@@ -40,7 +40,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     private IHandlerContext _context = null!;
     private bool _containerStopped;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -58,6 +58,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     {
         _redis.Dispose();
         await _container.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -710,7 +711,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         var db = _redis.GetDatabase();
         var ttl = await db.KeyTimeToLiveAsync("lock:ttl-test");
         ttl.Should().NotBeNull();
-        ttl!.Value.Should().BeGreaterThan(TimeSpan.Zero);
+        ttl.Value.Should().BeGreaterThan(TimeSpan.Zero);
         ttl.Value.Should().BeLessThanOrEqualTo(TimeSpan.FromSeconds(30));
     }
 
@@ -1007,7 +1008,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         var db = _redis.GetDatabase();
         var ttl = await db.KeyTimeToLiveAsync("incr-ttl-key");
         ttl.Should().NotBeNull();
-        ttl!.Value.Should().BeGreaterThan(TimeSpan.Zero);
+        ttl.Value.Should().BeGreaterThan(TimeSpan.Zero);
         ttl.Value.Should().BeLessThanOrEqualTo(TimeSpan.FromSeconds(30));
     }
 
@@ -1054,7 +1055,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     /// <summary>
     /// Fake IMessage implementation without a Parser property.
     /// </summary>
-    private class FakeMessageWithoutParser : IMessage
+    private sealed class FakeMessageWithoutParser : IMessage
     {
         /// <inheritdoc/>
         public MessageDescriptor Descriptor => null!;
@@ -1076,7 +1077,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     /// <summary>
     /// Fake IMessage implementation with a null Parser property.
     /// </summary>
-    private class FakeMessageWithNullParser : IMessage
+    private sealed class FakeMessageWithNullParser : IMessage
     {
         /// <summary>
         /// Gets the parser (always null for testing).
@@ -1103,7 +1104,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     /// <summary>
     /// Fake IMessage implementation with a Parser that lacks ParseFrom method.
     /// </summary>
-    private class FakeMessageWithoutParseFrom : IMessage
+    private sealed class FakeMessageWithoutParseFrom : IMessage
     {
         /// <summary>
         /// Gets the parser (missing ParseFrom method).
@@ -1129,7 +1130,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
         /// <summary>
         /// Fake parser without ParseFrom method.
         /// </summary>
-        public class FakeParser
+        public sealed class FakeParser
         {
             // Intentionally missing ParseFrom(byte[]) method
         }
@@ -1138,7 +1139,7 @@ public class RedisDistributedCacheTests : IAsyncLifetime
     /// <summary>
     /// Test data class for complex object caching tests.
     /// </summary>
-    private record TestData
+    private sealed record TestData
     {
         /// <summary>
         /// Gets the identifier.

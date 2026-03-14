@@ -95,18 +95,18 @@ public static partial class Extensions
         /// </summary>
         private void ConfigureOpenTelemetry()
         {
-            var logsCollUri = builder.Configuration["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"];
+            var otlpLogsUri = builder.Configuration["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"];
 
             builder.Logging.AddOpenTelemetry(logging =>
             {
                 logging.IncludeFormattedMessage = true;
                 logging.IncludeScopes = true;
 
-                if (logsCollUri.Truthy())
+                if (otlpLogsUri.Truthy())
                 {
                     logging.AddOtlpExporter(options =>
                     {
-                        options.Endpoint = new Uri(logsCollUri!);
+                        options.Endpoint = new Uri(otlpLogsUri!);
                         options.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                     });
                 }
@@ -184,7 +184,6 @@ public static partial class Extensions
                                 }
 
                                 // Ensure this is not a request to our OTLP logs collection.
-                                var otlpLogsUri = builder.Configuration["OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"];
                                 if (otlpLogsUri is not null && IsOtlp(otlpLogsUri))
                                 {
                                     return false;

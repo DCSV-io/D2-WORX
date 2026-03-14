@@ -16,12 +16,14 @@ using D2.Shared.Interfaces.Caching.InMemory.Handlers.R;
 using D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 using D2.Shared.Result;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
 
 /// <summary>
 /// Tests for the default in-memory cache handlers.
 /// </summary>
-public class DefaultMemoryCacheTests
+[MustDisposeResource(false)]
+public sealed class DefaultMemoryCacheTests : IDisposable
 {
     private readonly IMemoryCache r_cache
         = new Microsoft.Extensions.Caching.Memory.MemoryCache(new MemoryCacheOptions());
@@ -330,4 +332,10 @@ public class DefaultMemoryCacheTests
     }
 
     #endregion
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        r_cache.Dispose();
+    }
 }

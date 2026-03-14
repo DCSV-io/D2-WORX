@@ -8,10 +8,12 @@ namespace D2.Shared.Tests.Unit;
 
 using D2.Shared.Utilities.Configuration;
 using FluentAssertions;
+using JetBrains.Annotations;
 
 /// <summary>
 /// Unit tests for <see cref="ConnectionStringHelper"/>.
 /// </summary>
+[MustDisposeResource(false)]
 public class ConnectionStringHelperTests : IDisposable
 {
     private readonly List<string> r_envKeysSet = [];
@@ -23,6 +25,8 @@ public class ConnectionStringHelperTests : IDisposable
         {
             Environment.SetEnvironmentVariable(key, null);
         }
+
+        GC.SuppressFinalize(this);
     }
 
     #region ParseRedisUri

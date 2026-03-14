@@ -6,6 +6,7 @@
 
 namespace D2.Geo.App.Mappers;
 
+using System.Globalization;
 using D2.Geo.Domain.Enums;
 using D2.Geo.Domain.ValueObjects;
 using D2.Services.Protos.Geo.V1;
@@ -41,7 +42,7 @@ public static class PersonalMapper
                 MiddleName = personal.MiddleName ?? string.Empty,
                 LastName = personal.LastName ?? string.Empty,
                 GenerationalSuffix = personal.GenerationalSuffix?.ToString() ?? string.Empty,
-                DateOfBirth = personal.DateOfBirth?.ToString("O") ?? string.Empty,
+                DateOfBirth = personal.DateOfBirth?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty,
                 BiologicalSex = personal.BiologicalSex?.ToString() ?? string.Empty,
             };
             dto.ProfessionalCredentials.AddRange(personal.ProfessionalCredentials);

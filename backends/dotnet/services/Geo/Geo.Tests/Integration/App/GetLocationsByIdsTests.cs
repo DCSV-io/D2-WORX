@@ -57,7 +57,7 @@ public class GetLocationsByIdsTests : IAsyncLifetime
         r_fixture = fixture;
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public ValueTask InitializeAsync()
@@ -98,6 +98,7 @@ public class GetLocationsByIdsTests : IAsyncLifetime
     {
         await _services.DisposeAsync();
         await _db.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region Success Path Tests

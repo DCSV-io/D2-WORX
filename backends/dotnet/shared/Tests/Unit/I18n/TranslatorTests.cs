@@ -8,12 +8,14 @@ namespace D2.Shared.Tests.Unit.I18n;
 
 using D2.Shared.I18n;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 
 /// <summary>
 /// Unit tests for the <see cref="Translator"/> class.
 /// </summary>
 [Collection("I18n")]
+[MustDisposeResource(false)]
 public class TranslatorTests : IDisposable
 {
     private static readonly string sr_messagesDir = Path.Combine(AppContext.BaseDirectory, "messages");
@@ -23,6 +25,7 @@ public class TranslatorTests : IDisposable
     /// Configures <see cref="SupportedLocales"/> so <see cref="Translator.T"/>
     /// can resolve BCP 47 locale tags correctly.
     /// </summary>
+    [MustDisposeResource(false)]
     public TranslatorTests()
     {
         ConfigureLocales();
@@ -251,6 +254,7 @@ public class TranslatorTests : IDisposable
     {
         // Reset to default state.
         ConfigureLocales();
+        GC.SuppressFinalize(this);
     }
 
     private static void ConfigureLocales()

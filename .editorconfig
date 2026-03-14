@@ -26,6 +26,9 @@ trim_trailing_whitespace = false
 indent_style = space
 indent_size = 4
 
+# Promote all analyzer diagnostics to warning (visible in build + Rider)
+dotnet_analyzer_diagnostic.severity = warning
+
 # SA1633: File should have header
 dotnet_diagnostic.SA1633.severity = warning
 
@@ -63,3 +66,27 @@ dotnet_diagnostic.CA2007.severity = none
 
 # SA1118: Parameter should not span multiple lines
 dotnet_diagnostic.SA1118.severity = none
+
+# CA1716: Identifiers should not match keywords (e.g. namespace segments like "Shared")
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1707: Identifiers should not contain underscores (test method naming convention uses them)
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1861: Prefer static readonly fields over constant array arguments (mostly test [InlineData])
+dotnet_diagnostic.CA1861.severity = none
+
+# CA1000: Do not declare static members on generic types (D2Result<T> factory pattern)
+dotnet_diagnostic.CA1000.severity = none
+
+# CA1859: Use concrete types for performance (interfaces are intentional for DI/testability)
+dotnet_diagnostic.CA1859.severity = none
+
+# CA1708: Identifiers should differ by more than case (TLC namespace convention)
+dotnet_diagnostic.CA1708.severity = none
+
+# CA1873: Avoid unnecessary logging calls (false positives on Moq test predicates)
+dotnet_diagnostic.CA1873.severity = none
+
+# CA1068: CancellationToken should be last parameter (BaseHandler design — ct is passed far more often than options)
+dotnet_diagnostic.CA1068.severity = none

@@ -8,12 +8,14 @@ namespace D2.Shared.Tests.Unit.I18n;
 
 using D2.Shared.I18n;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
 
 /// <summary>
 /// Unit tests for the <see cref="SupportedLocales"/> static class.
 /// </summary>
 [Collection("I18n")]
+[MustDisposeResource(false)]
 public class SupportedLocalesTests : IDisposable
 {
     /// <summary>
@@ -21,6 +23,7 @@ public class SupportedLocalesTests : IDisposable
     /// Configures <see cref="SupportedLocales"/> with 10 BCP 47 locales
     /// matching the <c>PUBLIC_ENABLED_LOCALES</c> indexed env var convention.
     /// </summary>
+    [MustDisposeResource(false)]
     public SupportedLocalesTests()
     {
         ConfigureWithAllLocales();
@@ -301,6 +304,7 @@ public class SupportedLocalesTests : IDisposable
     {
         // Reset to default state so other test classes are unaffected.
         ConfigureWithAllLocales();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

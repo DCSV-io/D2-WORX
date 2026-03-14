@@ -58,7 +58,7 @@ public static class EnumerableExtensions
         /// The cleaned enumerable.
         /// </returns>
         ///
-        /// <exception cref="NullReferenceException">
+        /// <exception cref="InvalidOperationException">
         /// Thrown if a cleaned value is null and <paramref name="valueNullBehavior"/> is
         /// <see cref="CleanValueNullBehavior.ThrowOnNull"/>.
         /// </exception>
@@ -107,7 +107,7 @@ public static class EnumerableExtensions
 
                     // If we should throw on null, raise an exception.
                     case CleanValueNullBehavior.ThrowOnNull:
-                        throw new NullReferenceException("A cleaned value evaluated to null.");
+                        throw new InvalidOperationException("A cleaned value evaluated to null.");
                 }
             }
 

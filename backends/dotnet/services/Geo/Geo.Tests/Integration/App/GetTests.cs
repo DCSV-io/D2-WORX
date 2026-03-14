@@ -50,7 +50,7 @@ public class GetTests : IAsyncLifetime
     private Mock<IPubs.IUpdateHandler> _updaterMock = null!;
     private string _testFilePath = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -132,6 +132,8 @@ public class GetTests : IAsyncLifetime
         {
             Directory.Delete(_testFilePath, true);
         }
+
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -322,7 +324,7 @@ public class GetTests : IAsyncLifetime
         return context.Object;
     }
 
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     private ServiceProvider BuildServicesWithFailingSetInDist(out Mock<IPubs.IUpdateHandler> updaterMock)
     {
         var configDict = new Dictionary<string, string>
@@ -369,7 +371,7 @@ public class GetTests : IAsyncLifetime
         return services.BuildServiceProvider();
     }
 
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     private ServiceProvider BuildFreshServices()
     {
         var configDict = new Dictionary<string, string>
@@ -403,7 +405,7 @@ public class GetTests : IAsyncLifetime
         return services.BuildServiceProvider();
     }
 
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     private ServiceProvider BuildFreshServicesWithStoppedInfra()
     {
         var configDict = new Dictionary<string, string>

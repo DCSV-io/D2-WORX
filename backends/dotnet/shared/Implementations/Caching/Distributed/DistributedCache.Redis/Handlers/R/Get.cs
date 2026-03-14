@@ -145,6 +145,6 @@ public class Get<TValue> : BaseHandler<
             ?? throw new InvalidOperationException(
                 $"The 'Parser' object on type '{typeof(TValue).FullName}' does not have a 'ParseFrom(byte[])' method. Ensure that TValue is a valid protobuf message type.");
 
-        return (byte[] data) => (TValue)parseFromMethod.Invoke(parser, [data])!;
+        return data => (TValue)parseFromMethod.Invoke(parser, [data])!;
     }
 }

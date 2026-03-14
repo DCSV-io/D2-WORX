@@ -8,12 +8,14 @@ namespace D2.Shared.Tests.Unit.BatchPg;
 
 using D2.Shared.Batch.Pg;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 /// <summary>
 /// Unit tests for <see cref="BatchQuery{TEntity, TKey}"/>.
 /// </summary>
+[MustDisposeResource(false)]
 public class BatchQueryTests : IDisposable
 {
     private readonly TestDbContext r_db;
@@ -21,6 +23,7 @@ public class BatchQueryTests : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="BatchQueryTests"/> class.
     /// </summary>
+    [MustDisposeResource(false)]
     public BatchQueryTests()
     {
         var options = new DbContextOptionsBuilder<TestDbContext>()
@@ -30,7 +33,7 @@ public class BatchQueryTests : IDisposable
         r_db = new TestDbContext(options);
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Empty Input
 
@@ -42,7 +45,7 @@ public class BatchQueryTests : IDisposable
     {
         // Arrange & Act
         var query = r_db.TestEntities.BatchGetByIds(
-            Array.Empty<int>(),
+            [],
             e => e.Id);
 
         // Assert
@@ -57,7 +60,7 @@ public class BatchQueryTests : IDisposable
     {
         // Arrange & Act
         var query = r_db.TestEntities.BatchGetByIds(
-            Array.Empty<int>(),
+            [],
             e => e.Id);
 
         // Assert
@@ -74,7 +77,7 @@ public class BatchQueryTests : IDisposable
     {
         // Arrange
         var query = r_db.TestEntities.BatchGetByIds(
-            Array.Empty<int>(),
+            [],
             e => e.Id);
 
         // Act
@@ -94,7 +97,7 @@ public class BatchQueryTests : IDisposable
     {
         // Arrange
         var query = r_db.TestEntities.BatchGetByIds(
-            Array.Empty<int>(),
+            [],
             e => e.Id);
 
         // Act
@@ -372,7 +375,7 @@ public class BatchQueryTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 3 },
+            [1, 3],
             e => e.Id);
 
         // Act
@@ -396,7 +399,7 @@ public class BatchQueryTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 99 },
+            [1, 99],
             e => e.Id);
 
         // Act
@@ -426,7 +429,7 @@ public class BatchQueryTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 2 },
+            [1, 2],
             e => e.Id);
 
         // Act
@@ -455,7 +458,7 @@ public class BatchQueryTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 2, 3 },
+            [1, 2, 3],
             e => e.Id);
 
         // Act
@@ -480,7 +483,7 @@ public class BatchQueryTests : IDisposable
         await r_db.SaveChangesAsync(Ct);
 
         var query = r_db.TestEntities.BatchGetByIds(
-            new[] { 1, 2 },
+            [1, 2],
             e => e.Id);
 
         // Act
@@ -536,6 +539,7 @@ public class BatchQueryTests : IDisposable
     /// <summary>
     /// A test DbContext for BatchQuery tests.
     /// </summary>
+    [MustDisposeResource(false)]
     public class TestDbContext : DbContext
     {
         /// <summary>
@@ -545,6 +549,7 @@ public class BatchQueryTests : IDisposable
         /// <param name="options">
         /// The DbContext options.
         /// </param>
+        [MustDisposeResource(false)]
         public TestDbContext(DbContextOptions<TestDbContext> options)
             : base(options)
         {

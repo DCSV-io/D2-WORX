@@ -10,6 +10,7 @@ using System.Text;
 using global::RabbitMQ.Client;
 using global::RabbitMQ.Client.Events;
 using Google.Protobuf;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -19,6 +20,7 @@ using Microsoft.Extensions.Logging;
 /// <typeparam name="T">
 /// The protobuf message type.
 /// </typeparam>
+[MustDisposeResource]
 public sealed class ProtoConsumer<T> : IAsyncDisposable
     where T : IMessage<T>, new()
 {
@@ -60,6 +62,7 @@ public sealed class ProtoConsumer<T> : IAsyncDisposable
     /// <returns>
     /// A configured <see cref="ProtoConsumer{T}"/> that is actively consuming.
     /// </returns>
+    [MustDisposeResource]
     public static async Task<ProtoConsumer<T>> CreateBroadcastAsync(
         IConnection connection,
         string exchange,

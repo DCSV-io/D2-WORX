@@ -309,7 +309,7 @@ public class DefaultOptionsTests
         return mockContext.Object;
     }
 
-    private class PlainHandler : BaseHandler<PlainHandler, string, string>
+    private sealed class PlainHandler : BaseHandler<PlainHandler, string, string>
     {
         public PlainHandler(IHandlerContext context)
             : base(context)
@@ -321,7 +321,7 @@ public class DefaultOptionsTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class SuppressedHandler : BaseHandler<SuppressedHandler, string, string>
+    private sealed class SuppressedHandler : BaseHandler<SuppressedHandler, string, string>
     {
         public SuppressedHandler(IHandlerContext context)
             : base(context)
@@ -335,7 +335,7 @@ public class DefaultOptionsTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class InputOnlyHandler : BaseHandler<InputOnlyHandler, string, string>
+    private sealed class InputOnlyHandler : BaseHandler<InputOnlyHandler, string, string>
     {
         public InputOnlyHandler(IHandlerContext context)
             : base(context)
@@ -349,7 +349,7 @@ public class DefaultOptionsTests
             => ValueTask.FromResult(D2Result<string?>.Ok(input.ToUpperInvariant()));
     }
 
-    private class ThrowingHandler : BaseHandler<ThrowingHandler, string, string>
+    private sealed class ThrowingHandler : BaseHandler<ThrowingHandler, string, string>
     {
         public ThrowingHandler(IHandlerContext context)
             : base(context)

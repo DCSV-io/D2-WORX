@@ -31,7 +31,7 @@ public class RateLimitRedisTests : IAsyncLifetime
     private IConnectionMultiplexer _redis = null!;
     private ServiceProvider _serviceProvider = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -60,6 +60,7 @@ public class RateLimitRedisTests : IAsyncLifetime
         await _serviceProvider.DisposeAsync();
         _redis.Dispose();
         await _container.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

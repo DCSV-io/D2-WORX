@@ -52,7 +52,7 @@ public class FindWhoIsTests : IAsyncLifetime
     private GeoDbContext _db = null!;
     private Mock<WhoIsRead.IPopulateHandler> _mockPopulateHandler = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -113,6 +113,7 @@ public class FindWhoIsTests : IAsyncLifetime
         await _services.DisposeAsync();
         await _db.DisposeAsync();
         await _pgContainer.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region Empty Input Tests

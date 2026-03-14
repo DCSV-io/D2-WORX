@@ -34,6 +34,18 @@ public class D2EnvTests : IClassFixture<D2EnvTests.EnvFixture>
     /// </summary>
     private const string _PREFIX = "D2ENVTEST";
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="D2EnvTests"/> class.
+    /// The fixture's <see cref="EnvFixture.InitializeAsync"/> runs before any test,
+    /// ensuring environment variables are loaded.
+    /// </summary>
+    /// <param name="fixture">The shared fixture (lifecycle-managed by xUnit).</param>
+    public D2EnvTests(EnvFixture fixture)
+    {
+        // Fixture is consumed for its lifecycle only (InitializeAsync/DisposeAsync).
+        _ = fixture;
+    }
+
     #region Infrastructure Transform Tests
 
     /// <summary>
@@ -287,6 +299,7 @@ public class D2EnvTests : IClassFixture<D2EnvTests.EnvFixture>
                 File.Delete(_envFilePath);
             }
 
+            GC.SuppressFinalize(this);
             return ValueTask.CompletedTask;
         }
     }

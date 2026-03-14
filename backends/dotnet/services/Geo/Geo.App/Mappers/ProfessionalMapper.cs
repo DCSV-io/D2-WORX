@@ -34,7 +34,7 @@ public static class ProfessionalMapper
         {
             return new ProfessionalDTO
             {
-                CompanyName = professional.CompanyName ?? string.Empty,
+                CompanyName = professional.CompanyName,
                 JobTitle = professional.JobTitle ?? string.Empty,
                 Department = professional.Department ?? string.Empty,
                 CompanyWebsite = professional.CompanyWebsite?.ToString() ?? string.Empty,

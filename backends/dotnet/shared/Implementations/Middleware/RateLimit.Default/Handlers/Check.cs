@@ -6,6 +6,7 @@
 
 namespace D2.Shared.RateLimit.Default.Handlers;
 
+using System.Globalization;
 using D2.Shared.Handler;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.U;
@@ -166,7 +167,7 @@ public class Check : BaseHandler<Check, I, O>, H
     private static string GetWindowId(DateTime time)
     {
         // Use minute-granularity for 60-second windows.
-        return time.ToString("yyyy-MM-ddTHH:mm");
+        return time.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -212,17 +213,18 @@ public class Check : BaseHandler<Check, I, O>, H
             // Fire all three Redis operations concurrently: blocked check, previous
             // window read, and current window increment. If already blocked, the
             // extra increment is harmless (counter auto-expires via TTL).
-            var ttlTask = r_getTtl.HandleAsync(new IRead.GetTtlInput(blockedKey), ct);
+            // Convert ValueTasks to Tasks immediately — ValueTask must not be consumed more than once.
+            var ttlTask = r_getTtl.HandleAsync(new IRead.GetTtlInput(blockedKey), ct).AsTask();
             var prevTask = r_increment.HandleAsync(
-                new IUpdate.IncrementInput(previousKey, 0, r_options.Window * 2), ct);
+                new IUpdate.IncrementInput(previousKey, 0, r_options.Window * 2), ct).AsTask();
             var incrTask = r_increment.HandleAsync(
-                new IUpdate.IncrementInput(currentKey, 1, r_options.Window * 2), ct);
+                new IUpdate.IncrementInput(currentKey, 1, r_options.Window * 2), ct).AsTask();
 
-            await Task.WhenAll(ttlTask.AsTask(), prevTask.AsTask(), incrTask.AsTask());
+            await Task.WhenAll(ttlTask, prevTask, incrTask);
 
-            var ttlResult = ttlTask.Result;
-            var prevResult = prevTask.Result;
-            var incrResult = incrTask.Result;
+            var ttlResult = await ttlTask;
+            var prevResult = await prevTask;
+            var incrResult = await incrTask;
 
             // 1. Check if already blocked.
             if (ttlResult.CheckSuccess(out var ttlOutput) && ttlOutput?.TimeToLive.HasValue == true)

@@ -391,7 +391,7 @@ public abstract class BaseHandler<THandler, TInput, TOutput> : IHandler<TInput, 
     /// A configurable validator that allows dynamic configuration of validation rules via an
     /// action.
     /// </summary>
-    private class ConfigurableValidator : AbstractValidator<TInput>
+    private sealed class ConfigurableValidator : AbstractValidator<TInput>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="ConfigurableValidator"/> class.

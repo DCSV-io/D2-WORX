@@ -97,8 +97,8 @@ var app = builder.Build();
 // Security headers — before exception handler so they apply to all responses.
 app.Use(async (context, next) =>
 {
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
     await next();
 });
 

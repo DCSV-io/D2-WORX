@@ -7,6 +7,7 @@
 namespace D2.Shared.Interfaces.Messaging;
 
 using Google.Protobuf;
+using JetBrains.Annotations;
 
 /// <summary>
 /// Unified messaging abstraction for publishing and subscribing to protobuf messages.
@@ -34,6 +35,7 @@ public interface IMessageBus
     /// <returns>
     /// An <see cref="IAsyncDisposable"/> that stops the consumer when disposed.
     /// </returns>
+    [MustDisposeResource]
     Task<IAsyncDisposable> SubscribeAsync<T>(
         ConsumerConfig config,
         Func<IncomingMessage<T>, CancellationToken, Task<ConsumerResult>> handler,

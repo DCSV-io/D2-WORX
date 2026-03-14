@@ -27,7 +27,7 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
     private IConnection _connection = null!;
     private ProtoPublisher _publisher = null!;
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public async ValueTask InitializeAsync()
@@ -49,6 +49,7 @@ public class RabbitMqRoundTripTests : IAsyncLifetime
     {
         await _connection.DisposeAsync();
         await _container.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

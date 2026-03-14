@@ -10,6 +10,7 @@ using System.Text.Json;
 using D2.Shared.I18n;
 using D2.Shared.Translation.Default;
 using FluentAssertions;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Moq;
@@ -18,12 +19,14 @@ using Moq;
 /// Unit tests for the <see cref="TranslationMiddleware"/> class.
 /// </summary>
 [Collection("I18n")]
+[MustDisposeResource(false)]
 public class TranslationMiddlewareTests : IDisposable
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="TranslationMiddlewareTests"/> class.
     /// Configures <see cref="SupportedLocales"/> with all 10 BCP 47 locales.
     /// </summary>
+    [MustDisposeResource(false)]
     public TranslationMiddlewareTests()
     {
         ConfigureLocales();
@@ -251,6 +254,7 @@ public class TranslationMiddlewareTests : IDisposable
     {
         // Reset to default state.
         ConfigureLocales();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

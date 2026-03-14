@@ -510,7 +510,7 @@ public class D2ResultGenericTests
     /// <summary>
     /// A test data transfer object (DTO) for complex type testing.
     /// </summary>
-    private class TestDto
+    private sealed class TestDto
     {
         /// <summary>
         /// Gets the identifier.

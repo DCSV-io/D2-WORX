@@ -10,6 +10,7 @@ using D2.Events.Protos.V1;
 using D2.Geo.Client.Interfaces.Messaging.Handlers.Sub;
 using D2.Shared.Interfaces.Messaging;
 using D2.Shared.Messaging.RabbitMQ.Conventions;
+using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ using Microsoft.Extensions.Logging;
 /// Background service that consumes contact eviction events.
 /// Creates an exclusive auto-delete queue per instance (broadcast semantics).
 /// </summary>
+[MustDisposeResource(false)]
 public class ContactEvictionConsumerService : BackgroundService
 {
     private readonly IMessageBus r_messageBus;
@@ -39,6 +41,7 @@ public class ContactEvictionConsumerService : BackgroundService
     /// <param name="logger">
     /// The logger.
     /// </param>
+    [MustDisposeResource(false)]
     public ContactEvictionConsumerService(
         IMessageBus messageBus,
         IServiceScopeFactory scopeFactory,

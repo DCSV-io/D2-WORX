@@ -48,7 +48,7 @@ public class CheckHandlerTests
         };
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Trusted Service Bypass Tests
 

@@ -49,7 +49,7 @@ public class FindWhoIsHandlerTests
         };
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Cache Hit Tests
 
@@ -557,7 +557,7 @@ public class FindWhoIsHandlerTests
                 Task.FromResult(response),
                 Task.FromResult(new Metadata()),
                 () => Status.DefaultSuccess,
-                () => new Metadata(),
+                () => [],
                 () => { }));
     }
 
@@ -573,7 +573,7 @@ public class FindWhoIsHandlerTests
                 Task.FromException<FindWhoIsResponse>(exception),
                 Task.FromResult(new Metadata()),
                 () => Status.DefaultSuccess,
-                () => new Metadata(),
+                () => [],
                 () => { }));
     }
 
@@ -594,7 +594,7 @@ public class FindWhoIsHandlerTests
                 Task.FromResult(response),
                 Task.FromResult(new Metadata()),
                 () => Status.DefaultSuccess,
-                () => new Metadata(),
+                () => [],
                 () => { }));
     }
 
@@ -615,7 +615,7 @@ public class FindWhoIsHandlerTests
                 Task.FromResult(response),
                 Task.FromResult(new Metadata()),
                 () => Status.DefaultSuccess,
-                () => new Metadata(),
+                () => [],
                 () => { }));
     }
 

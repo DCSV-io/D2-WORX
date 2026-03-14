@@ -49,7 +49,7 @@ public class WhoIsHandlerTests : IAsyncLifetime
         r_fixture = fixture;
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     /// <inheritdoc/>
     public ValueTask InitializeAsync()
@@ -64,6 +64,7 @@ public class WhoIsHandlerTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _db.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     #region CreateWhoIs Tests
@@ -103,7 +104,6 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange
         var handler = new CreateWhoIs(_db, _options, _context);
-        Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
             WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1),
@@ -172,7 +172,6 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        Guid.NewGuid().ToString("N");
 
         var existingWhoIs = WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1);
 
@@ -239,7 +238,6 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create WhoIs records first
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        Guid.NewGuid().ToString("N");
         var whoIsRecords = new List<WhoIs>
         {
             WhoIs.Create($"192.168.{Random.Shared.Next(1, 255)}.1", 2025, 1),
@@ -332,7 +330,6 @@ public class WhoIsHandlerTests : IAsyncLifetime
     {
         // Arrange - Create 150 WhoIs records (more than batch size of 100)
         var createHandler = new CreateWhoIs(_db, _options, _context);
-        Guid.NewGuid().ToString("N");
         var whoIsRecords = Enumerable.Range(0, 150)
             .Select(i => WhoIs.Create($"10.0.{i / 256}.{i % 256}", 2025, 1))
             .ToList();

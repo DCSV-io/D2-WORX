@@ -472,7 +472,7 @@ public class RateLimitMiddlewareTests
                 It.IsAny<IRateLimit.CheckInput>(),
                 It.IsAny<CancellationToken>(),
                 It.IsAny<HandlerOptions?>()))
-            .ReturnsAsync(D2Result<IRateLimit.CheckOutput?>.Ok(null));
+            .ReturnsAsync(D2Result<IRateLimit.CheckOutput?>.Ok());
     }
 
     private void SetupCheckThrows(Exception exception)

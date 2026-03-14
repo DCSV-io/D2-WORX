@@ -37,7 +37,7 @@ public class TKConstantsTests
         var entries = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
         entries.Should().NotBeNull();
 
-        var enKeys = new HashSet<string>(entries!.Keys);
+        var enKeys = new HashSet<string>(entries.Keys);
 
         // Act — collect all const string fields from TK and nested types
         var tkConstants = GetAllConstStringFields(typeof(TK));

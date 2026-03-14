@@ -26,7 +26,7 @@ public class GeoDbContextFactory : IDesignTimeDbContextFactory<GeoDbContext>
     /// <returns>
     /// A configured <see cref="GeoDbContext"/> instance.
     /// </returns>
-    [MustDisposeResource(false)]
+    [MustDisposeResource]
     public GeoDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<GeoDbContext>();

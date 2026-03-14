@@ -103,11 +103,11 @@ public class ContactConfig : IEntityTypeConfiguration<Contact>
                 .HasColumnType("text[]")
                 .HasConversion(
                     list => list.ToArray(),
-                    arr => arr != null ? arr.ToImmutableList() : ImmutableList<string>.Empty,
+                    arr => arr.ToImmutableList(),
                     new ValueComparer<ImmutableList<string>>(
                         (a, b) => a != null && b != null && a.SequenceEqual(b),
                         c => c.Aggregate(0, (h, v) => HashCode.Combine(h, v.GetHashCode())),
-                        c => c.ToImmutableList()));
+                        c => ImmutableList.CreateRange(c)));
 
             p.Property(x => x.DateOfBirth)
                 .HasColumnName("personal_date_of_birth");

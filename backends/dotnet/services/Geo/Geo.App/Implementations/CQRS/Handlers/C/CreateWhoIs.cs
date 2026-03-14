@@ -7,7 +7,6 @@
 namespace D2.Geo.App.Implementations.CQRS.Handlers.C;
 
 using D2.Geo.App.Validators;
-using D2.Geo.Domain.Exceptions;
 using D2.Shared.Handler;
 using D2.Shared.Result;
 using CreateRepo = D2.Geo.App.Interfaces.Repository.Handlers.C.ICreate;

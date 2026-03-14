@@ -11,6 +11,7 @@ using D2.Shared.Interfaces.Messaging;
 using global::RabbitMQ.Client;
 using global::RabbitMQ.Client.Events;
 using Google.Protobuf;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -48,6 +49,7 @@ public sealed class MessageBus : IMessageBus
     }
 
     /// <inheritdoc/>
+    [MustDisposeResource]
     public async Task<IAsyncDisposable> SubscribeAsync<T>(
         ConsumerConfig config,
         Func<IncomingMessage<T>, CancellationToken, Task<ConsumerResult>> handler,
@@ -180,6 +182,7 @@ public sealed class MessageBus : IMessageBus
     /// <summary>
     /// Represents an active subscription that can be disposed to stop consuming.
     /// </summary>
+    [MustDisposeResource]
     private sealed class Subscription : IAsyncDisposable
     {
         private readonly IChannel r_channel;

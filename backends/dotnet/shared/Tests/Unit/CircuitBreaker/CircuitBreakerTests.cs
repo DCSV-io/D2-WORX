@@ -4,6 +4,7 @@
 // </copyright>
 // -----------------------------------------------------------------------
 
+// ReSharper disable LocalSuppression
 namespace D2.Shared.Tests.Unit.CircuitBreaker;
 
 using D2.Shared.Utilities.CircuitBreaker;
@@ -14,7 +15,7 @@ using FluentAssertions;
 /// </summary>
 public class CircuitBreakerTests
 {
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Initial State
 
@@ -262,6 +263,8 @@ public class CircuitBreakerTests
             {
                 FailureThreshold = 1,
                 CooldownDuration = TimeSpan.FromSeconds(10),
+
+                // ReSharper disable once AccessToModifiedClosure
                 NowFunc = () => now,
             });
 
@@ -294,6 +297,8 @@ public class CircuitBreakerTests
             {
                 FailureThreshold = 1,
                 CooldownDuration = TimeSpan.FromSeconds(10),
+
+                // ReSharper disable once AccessToModifiedClosure
                 NowFunc = () => now,
             });
 
@@ -325,6 +330,8 @@ public class CircuitBreakerTests
             {
                 FailureThreshold = 1,
                 CooldownDuration = TimeSpan.FromSeconds(10),
+
+                // ReSharper disable once AccessToModifiedClosure
                 NowFunc = () => now,
             });
 
@@ -355,6 +362,8 @@ public class CircuitBreakerTests
             {
                 FailureThreshold = 1,
                 CooldownDuration = TimeSpan.FromSeconds(30),
+
+                // ReSharper disable once AccessToModifiedClosure
                 NowFunc = () => now,
             });
 
@@ -385,6 +394,8 @@ public class CircuitBreakerTests
             {
                 FailureThreshold = 1,
                 CooldownDuration = TimeSpan.FromSeconds(10),
+
+                // ReSharper disable once AccessToModifiedClosure
                 NowFunc = () => now,
             });
 
@@ -456,6 +467,8 @@ public class CircuitBreakerTests
             {
                 FailureThreshold = 2,
                 CooldownDuration = TimeSpan.FromSeconds(5),
+
+                // ReSharper disable once AccessToModifiedClosure
                 NowFunc = () => now,
             },
             onStateChange: (from, to) => transitions.Add((from, to)));

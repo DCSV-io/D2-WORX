@@ -58,7 +58,7 @@ public class DeleteContactsValidationTests
         r_context = CreateHandlerContext();
     }
 
-    private CancellationToken Ct => TestContext.Current.CancellationToken;
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     #region Empty Input
 

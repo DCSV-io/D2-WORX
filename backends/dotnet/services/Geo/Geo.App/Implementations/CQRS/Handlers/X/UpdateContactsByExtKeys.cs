@@ -77,7 +77,7 @@ public class UpdateContactsByExtKeys : BaseHandler<UpdateContactsByExtKeys, I, O
 
         // Step 1: Extract ext-keys from the input contacts.
         var allExtKeys = input.Request.Contacts
-            .Select(c => (ContextKey: c.ContextKey, RelatedEntityId: Guid.TryParse(c.RelatedEntityId, out var g) ? g : Guid.Empty))
+            .Select(c => (c.ContextKey, RelatedEntityId: Guid.TryParse(c.RelatedEntityId, out var g) ? g : Guid.Empty))
             .Where(t => t.RelatedEntityId != Guid.Empty)
             .ToList();
 
