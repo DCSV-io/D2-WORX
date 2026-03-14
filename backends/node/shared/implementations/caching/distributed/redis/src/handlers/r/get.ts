@@ -1,5 +1,5 @@
 import type Redis from "ioredis";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { TK } from "@d2/i18n";
 import { D2Result, ErrorCodes, HttpStatusCode } from "@d2/result";
 import { redisErrorResult } from "../../redis-error-result.js";
@@ -17,6 +17,10 @@ export class Get<TValue>
     super(context);
     this.redis = redis;
     this.serializer = serializer ?? new JsonCacheSerializer<TValue>();
+  }
+
+  override get redaction(): RedactionSpec {
+    return { outputFields: ["value"] };
   }
 
   protected async executeAsync(

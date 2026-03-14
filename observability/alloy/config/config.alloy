@@ -241,7 +241,7 @@ faro.receiver "frontend" {
       burst_size = 200
     }
 
-    max_allowed_payload_size = "10KiB"
+    max_allowed_payload_size = "64KiB"
   }
 
   output {

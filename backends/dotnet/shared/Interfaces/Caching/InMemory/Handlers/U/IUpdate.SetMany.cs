@@ -7,6 +7,8 @@
 namespace D2.Shared.Interfaces.Caching.InMemory.Handlers.U;
 
 using D2.Shared.Handler;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
 
 public partial interface IUpdate
 {
@@ -34,6 +36,7 @@ public partial interface IUpdate
     /// The type of the values to cache.
     /// </typeparam>
     public record SetManyInput<TValue>(
+        [property: RedactData(Reason = RedactReason.SecretInformation, CustomReason = "Cached value")]
         Dictionary<string, TValue> Values,
         TimeSpan? Expiration = null);
 

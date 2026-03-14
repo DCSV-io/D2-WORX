@@ -7,6 +7,8 @@
 namespace D2.Shared.Interfaces.Caching.Distributed.Handlers.C;
 
 using D2.Shared.Handler;
+using D2.Shared.Utilities.Attributes;
+using D2.Shared.Utilities.Enums;
 
 public partial interface ICreate
 {
@@ -36,7 +38,11 @@ public partial interface ICreate
     /// <typeparam name="TValue">
     /// The type of the value to cache.
     /// </typeparam>
-    public record SetNxInput<TValue>(string Key, TValue Value, TimeSpan? Expiration = null);
+    public record SetNxInput<TValue>(
+        string Key,
+        [property: RedactData(Reason = RedactReason.SecretInformation, CustomReason = "Cached value")]
+        TValue Value,
+        TimeSpan? Expiration = null);
 
     /// <summary>
     /// Output for setting a value in the cache only if the key does not already exist.
