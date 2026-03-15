@@ -20,7 +20,6 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Serilog.Formatting.Compact;
-using Serilog.Sinks.Grafana.Loki;
 
 public static partial class Extensions
 {
@@ -43,7 +42,6 @@ public static partial class Extensions
         /// </summary>
         private void AddStructuredLogging()
         {
-            var logsEndpoint = builder.Configuration["LOGS_URI"];
             var serviceName = builder.Configuration["OTEL_SERVICE_NAME"]
                               ?? builder.Environment.ApplicationName;
             var environment = builder.Environment.EnvironmentName;
@@ -62,27 +60,11 @@ public static partial class Extensions
                 .Enrich.WithMachineName()
                 .WriteTo.Console(new CompactJsonFormatter());
 
-            if (logsEndpoint.Truthy())
-            {
-                var lokiLabels = new List<LokiLabel>
-                {
-                    new() { Key = "service_name", Value = serviceName },
-                    new() { Key = "environment", Value = environment },
-                };
-
-                loggerConfig.WriteTo.GrafanaLoki(
-                    logsEndpoint!,
-                    labels: lokiLabels,
-                    textFormatter: new CompactJsonFormatter(),
-                    batchPostingLimit: 1000,
-                    period: TimeSpan.FromSeconds(2));
-            }
-
             Log.Logger = loggerConfig.CreateLogger();
 
             // writeToProviders: true routes Serilog output to other registered
             // ILoggerProviders (i.e. the OTel OTLP log exporter), so logs reach
-            // Alloy → Loki alongside the direct GrafanaLoki sink.
+            // Alloy → Loki via the OTLP pipeline.
             // preserveStaticLogger: true keeps our manually-built Log.Logger above.
             builder.Services.AddSerilog(
                 configureLogger: _ => { },
@@ -168,13 +150,6 @@ public static partial class Extensions
                             {
                                 // Get the request URI.
                                 var requestUri = message.RequestUri?.AbsoluteUri ?? string.Empty;
-
-                                // Ensure this is not a request to logs collection.
-                                var logsCollUri = builder.Configuration["LOGS_URI"];
-                                if (logsCollUri is not null && IsOtlp(logsCollUri))
-                                {
-                                    return false;
-                                }
 
                                 // Ensure this is not a request to our traces' collection.
                                 var tracesCollUri = builder.Configuration["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"];
