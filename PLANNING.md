@@ -1522,9 +1522,9 @@ graph TB
 
 #### Design Principle
 
-If **Node 1** dies: Node 2 promotes PostgreSQL standby, Redis replica becomes master (Sentinel), RabbitMQ quorum queue survives, services on Node 2 keep serving. Zero downtime for users.
+If **Node 1** dies: Node 2 promotes PostgreSQL standby, Redis replica becomes master (Sentinel), services on Node 2 keep serving. RabbitMQ quorum queues lose Raft majority — async messaging (notifications, side effects) pauses until the failed node rejoins or is replaced. Synchronous request handling (HTTP/gRPC) is unaffected.
 
-If **Node 2** dies: Same — Node 1 continues. If LGTM lives on Node 2, telemetry is lost until recovery (Alloy WAL buffers on Node 1).
+If **Node 2** dies: Same — Node 1 continues. RabbitMQ async messaging pauses (same caveat). If LGTM lives on Node 2, telemetry is also lost until recovery (Alloy WAL buffers on Node 1).
 
 If **LGTM host** dies: All services continue. Alloy buffers locally (WAL). Telemetry resumes when LGTM recovers. No user impact.
 
@@ -1558,7 +1558,7 @@ If **LGTM host** dies: All services continue. Alloy buffers locally (WAL). Telem
 | Code change    | `@d2/messaging` `subscribe()`: add `arguments: { "x-queue-type": "quorum" }`                                   |
 | DLX            | Compatible with quorum queues (retry topology works as-is)                                                      |
 | Partition      | `pause-minority` — minority node pauses until partition heals                                                   |
-| 2-node caveat  | Single node loss = no Raft majority for new elections. Surviving node serves existing queues. Manual rejoin on recovery |
+| 2-node caveat  | Single node loss = no Raft majority. Quorum queues become unavailable for writes until failed node rejoins. Sync request handling (HTTP/gRPC) unaffected — only async side effects (notifications, emails) pause. Acceptable: these are retried on recovery |
 
 **Dkron 4 — Single Server + Agent**
 

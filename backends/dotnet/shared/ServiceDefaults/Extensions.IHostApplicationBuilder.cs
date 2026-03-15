@@ -153,13 +153,13 @@ public static partial class Extensions
 
                                 // Ensure this is not a request to our traces' collection.
                                 var tracesCollUri = builder.Configuration["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"];
-                                if (tracesCollUri is not null && IsOtlp(tracesCollUri))
+                                if (tracesCollUri.Truthy() && IsOtlp(tracesCollUri!))
                                 {
                                     return false;
                                 }
 
                                 // Ensure this is not a request to our OTLP logs collection.
-                                if (otlpLogsUri is not null && IsOtlp(otlpLogsUri))
+                                if (otlpLogsUri.Truthy() && IsOtlp(otlpLogsUri!))
                                 {
                                     return false;
                                 }

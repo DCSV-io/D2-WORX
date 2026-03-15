@@ -1,6 +1,6 @@
 ﻿# ServiceDefaults
 
-Shared Aspire configuration providing observability infrastructure (OpenTelemetry, Serilog), health checks, service discovery, and resilience patterns. All telemetry signals (traces, logs, metrics) route through Alloy (OTLP) to the LGTM stack (Loki, Grafana, Tempo, Mimir).
+Shared Aspire configuration providing observability infrastructure (OpenTelemetry, Serilog), health checks, service discovery, and resilience patterns. Traces and logs route through Alloy via OTLP; .NET metrics are scraped by Alloy's Prometheus endpoint. All signals land in the LGTM stack (Loki, Grafana, Tempo, Mimir).
 
 ## Files
 
