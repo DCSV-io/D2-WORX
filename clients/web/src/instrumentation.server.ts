@@ -120,15 +120,15 @@ export function getServerSpan(request: Request): Span | undefined {
 const serviceName = "d2-sveltekit";
 
 const traceExporter = new OTLPTraceExporter({
-  url: "http://localhost:4318/v1/traces",
+  url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ?? "http://localhost:4318/v1/traces",
 });
 
 const logExporter = new OTLPLogExporter({
-  url: "http://localhost:4318/v1/logs",
+  url: process.env.OTEL_EXPORTER_OTLP_LOGS_ENDPOINT ?? "http://localhost:4318/v1/logs",
 });
 
 const metricExporter = new OTLPMetricExporter({
-  url: "http://localhost:4318/v1/metrics",
+  url: process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT ?? "http://localhost:4318/v1/metrics",
 });
 
 // Set up logging

@@ -47,6 +47,7 @@
    - [ADR-021: Grafana Faro Client Telemetry](#adr-021-grafana-faro-client-telemetry)
    - [ADR-022: Design System-First Development](#adr-022-design-system-first-development)
    - [ADR-023: Gateway-Edge i18n Translation](#adr-023-gateway-edge-i18n-translation)
+   - [ADR-024: Production Topology (1-Node → 3-Node)](#adr-024-production-topology-1-node--3-node)
 
 ---
 
@@ -242,7 +243,7 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 | RabbitMQ 4.1  | ✅ Done | Aspire-managed                                           |
 | MinIO         | ✅ Done | Aspire-managed                                           |
 | Dkron 4.0.9   | ✅ Done | Aspire-managed, persistent container, dashboard on :8888 |
-| LGTM Stack    | ✅ Done | Full observability                                       |
+| LGTM Stack    | ✅ Done | All telemetry via Alloy (OTLP) → Loki / Tempo / Mimir    |
 
 ### Shared Packages (.NET)
 
@@ -1430,6 +1431,8 @@ Faro SDK captures Web Vitals (LCP, FID, CLS, TTFB, INP) and sends them as measur
 - Design system sprint (Steps 2–3.5) took ~3 days but prevented weeks of per-page styling inconsistencies
 - OKLCH color space enables perceptually uniform theme generation — one preset definition generates the full palette
 
+---
+
 ### ADR-023: Gateway-Edge i18n Translation
 
 **Status**: Decided (2026-03)
@@ -1452,4 +1455,404 @@ Faro SDK captures Web Vitals (LCP, FID, CLS, TTFB, INP) and sends them as measur
 
 ---
 
-_Last updated: 2026-03-13_
+### ADR-024: Production Topology (1-Node → 3-Node)
+
+**Status**: Proposed (2026-03)
+
+**Context**: D²-WORX runs as a single-node Aspire dev setup. Production needs a clear growth path — start simple and add redundancy when justified. 2 nodes is the **worst number** for consensus systems: RabbitMQ quorum queues, Patroni/etcd, Redis Sentinel, and Dkron Raft all need majority quorum, which is impossible with 2 nodes when 1 fails. You get all the complexity of distribution with none of the fault tolerance. The minimum for proper HA is 3 nodes.
+
+**Decision**: Two-phase growth. Phase 1 = single node with Docker Swarm (production-ready, no HA). Phase 2 = add 2 nodes for full active-active-active with proper quorum everywhere. Same container images, same stack file — just add nodes and increase replicas.
+
+#### Phase 1: Single Node (Launch)
+
+Everything on one 32 GB node. Docker Swarm in single-manager mode (`docker swarm init`). Production-ready but no redundancy — node dies = downtime until recovery. Acceptable for early production / small user base.
+
+```mermaid
+graph TB
+    subgraph External
+        CF[Cloudflare Tunnel]
+    end
+
+    subgraph Node1[Node 1 — 32 GB]
+        GW[.NET Gateway]
+        GEO[.NET Geo]
+        AUTH[Node.js Auth]
+        COMMS[Node.js Comms]
+        SK[SvelteKit]
+        PG[(PostgreSQL 18)]
+        RD[(Redis 8)]
+        RMQ[RabbitMQ 4]
+        DK[Dkron 4]
+        MINIO[(MinIO — local)]
+        ALLOY[Alloy]
+        LGTM[Loki + Tempo + Mimir + Grafana]
+    end
+
+    CF -->|tunnel| GW & SK
+    ALLOY -->|OTLP| LGTM
+```
+
+| Concern           | Config                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| **Orchestration** | Docker Swarm (single-manager). Same stack file as Phase 2, just `replicas: 1`                       |
+| **Ingress**       | Cloudflare Tunnel (`cloudflared` on node). No public IPs, built-in DDoS protection                  |
+| **PostgreSQL**    | Single instance. Automated `pg_dump` to MinIO (local) + offsite copy (S3/Backblaze B2)              |
+| **Redis**         | Single instance. RDB + AOF persistence                                                              |
+| **RabbitMQ**      | Single node. Classic queues (quorum requires 3 nodes — no benefit with 1)                           |
+| **Dkron**         | Single server (also executes jobs)                                                                  |
+| **MinIO**         | Single-node mode (local backups + LGTM object store). NOT erasure-coded — backups are offsite       |
+| **LGTM**          | Colocated on same node. Alloy WAL buffers if LGTM components restart                                |
+| **Backups**       | Automated `pg_dump` → MinIO → offsite. Redis RDB snapshots → same path. RabbitMQ definitions export |
+| **HA**            | None. Node loss = downtime until recovery from backups on replacement hardware                      |
+
+#### Phase 2: 3-Node HA (Scale)
+
+Add 2 nodes to the Swarm (`docker swarm join`). All consensus systems get proper 3-node quorum. Any single node can fail with zero downtime.
+
+```mermaid
+graph TB
+    subgraph External
+        CF[Cloudflare Tunnel / LB]
+    end
+
+    subgraph WireGuard Mesh
+        subgraph Node1[Node 1]
+            GW1[.NET Gateway]
+            GEO1[.NET Geo]
+            AUTH1[Node.js Auth]
+            COMMS1[Node.js Comms]
+            SK1[SvelteKit]
+            PG1[(PG primary)]
+            RD1[(Redis master)]
+            RMQ1[RabbitMQ]
+            DK1[Dkron server]
+            MINIO1[(MinIO 2×drives)]
+            ALLOY1[Alloy]
+            ETCD1[etcd]
+            SENT1[Sentinel]
+        end
+
+        subgraph Node2[Node 2]
+            GW2[.NET Gateway]
+            GEO2[.NET Geo]
+            AUTH2[Node.js Auth]
+            COMMS2[Node.js Comms]
+            SK2[SvelteKit]
+            PG2[(PG standby)]
+            RD2[(Redis replica)]
+            RMQ2[RabbitMQ]
+            DK2[Dkron server]
+            MINIO2[(MinIO 2×drives)]
+            ALLOY2[Alloy]
+            ETCD2[etcd]
+            SENT2[Sentinel]
+        end
+
+        subgraph Node3[Node 3 — LGTM dedicated]
+            PG3[(PG standby)]
+            RD3[(Redis replica)]
+            RMQ3[RabbitMQ]
+            DK3[Dkron server]
+            MINIO3[(MinIO 2×drives)]
+            ETCD3[etcd]
+            SENT3[Sentinel]
+            LOKI[Loki]
+            TEMPO[Tempo]
+            MIMIR[Mimir]
+            GRAFANA[Grafana]
+            ALLOY3[Alloy]
+        end
+    end
+
+    CF -->|failover| GW1 & GW2
+    CF -->|failover| SK1 & SK2
+
+    PG1 -- streaming replication --> PG2 & PG3
+    RD1 -- replication --> RD2 & RD3
+    RMQ1 -- quorum queue Raft --> RMQ2 & RMQ3
+    MINIO1 -- erasure coding --> MINIO2 & MINIO3
+
+    ALLOY1 -->|OTLP| LOKI & TEMPO & MIMIR
+    ALLOY2 -->|OTLP| LOKI & TEMPO & MIMIR
+    ALLOY3 -->|OTLP| LOKI & TEMPO & MIMIR
+```
+
+#### Why Skip 2 Nodes
+
+2 nodes gives you all the complexity of distribution with none of the fault tolerance. Every consensus system degrades:
+
+| System     | 2 Nodes (majority = 2)                                     | 3 Nodes (majority = 2)                                            |
+| ---------- | ---------------------------------------------------------- | ----------------------------------------------------------------- |
+| PostgreSQL | Patroni/etcd can't elect leader on 1 failure (no quorum)   | 1 failure → 2 remaining nodes elect new leader (quorum = 2)       |
+| Redis      | Sentinel needs 3rd tiebreaker container (hacky)            | 3 Sentinels — natural quorum, 1 per node                          |
+| RabbitMQ   | Quorum queues unavailable on 1 failure (no Raft majority)  | 1 failure → 2 remaining nodes have majority, queues stay writable |
+| Dkron      | 2-node Raft can't elect leader on 1 failure                | 1 failure → 2 remaining elect leader, jobs continue               |
+| etcd       | Same — 2-node cluster can't achieve consensus on 1 failure | Standard 3-node cluster, survives 1 failure                       |
+| MinIO      | 2×2=4 drives (EC:2) — works but tight margin               | 3×2=6 drives (EC:3) — survives full node loss comfortably         |
+
+**Bottom line**: 1 node is honest (no HA, fast recovery from backups). 3 nodes is correct (proper quorum everywhere). 2 nodes is the worst of both worlds.
+
+#### Design Principles (Phase 2)
+
+**Any single node failure**: All consensus systems maintain quorum (majority = 2 of 3). Zero downtime for all workloads including async messaging.
+
+- **Node 1 or Node 2 dies**: PostgreSQL standby auto-promotes (Patroni), Redis replica becomes master (Sentinel), RabbitMQ quorum queues stay writable (2 of 3 = majority), Dkron re-elects leader. App services on remaining nodes continue serving.
+- **Node 3 (LGTM) dies**: All services continue. Telemetry buffers in Alloy WAL on Nodes 1 & 2. Grafana dashboards unavailable until recovery. Stateful infra (PG standby, Redis replica, RMQ member) on Node 3 loses one replica — quorum maintained by Nodes 1 & 2.
+- **Two simultaneous node failures**: Degraded — no quorum for any consensus system. This requires 2 of 3 nodes to fail simultaneously, which is an acceptable risk.
+
+#### Component HA (Phase 2)
+
+**PostgreSQL 18 — Streaming Replication + Patroni**
+
+| Concern            | Config                                                                                        |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| Topology           | 1 primary (Node 1) + 2 standby (Nodes 2, 3). Async streaming replication                      |
+| Failover           | Patroni auto-promotes best standby. DCS: 3-node etcd cluster (1 per node)                     |
+| Connection routing | PgBouncer or Patroni REST endpoint. Apps connect to VIP or Swarm service name                 |
+| Backup             | `pg_basebackup` (initial) + continuous WAL archiving to MinIO                                 |
+| Per-service DBs    | `d2-services-geo`, `d2-services-auth`, `d2-services-comms` — all replicated together          |
+| Sync replication   | Optional for RPO=0 (set `synchronous_commit = on` + `synchronous_standby_names` to 1 standby) |
+
+**Redis 8 — Sentinel**
+
+| Concern     | Config                                                                     |
+| ----------- | -------------------------------------------------------------------------- |
+| Topology    | 1 master (Node 1) + 2 replicas (Nodes 2, 3). 3 Sentinels (1 per node)      |
+| Failover    | Sentinel auto-promotes replica. ioredis reconnects via Sentinel discovery  |
+| Quorum      | 2 of 3 Sentinels must agree — natural majority, no tiebreaker hacks needed |
+| Persistence | RDB + AOF on all 3 nodes                                                   |
+
+**RabbitMQ 4 — 3-Node Cluster + Quorum Queues**
+
+| Concern         | Config                                                                                                 |
+| --------------- | ------------------------------------------------------------------------------------------------------ |
+| Cluster         | 3-node Erlang cluster (shared cookie, nodes join via `--cluster-with`)                                 |
+| Queue type      | Quorum (`x-queue-type: quorum`) — Raft-replicated across all 3 nodes                                   |
+| Code change     | `@d2/messaging` `subscribe()`: add `arguments: { "x-queue-type": "quorum" }`                           |
+| DLX             | Compatible with quorum queues (retry topology works as-is)                                             |
+| Partition       | `pause-minority` — minority (1 node) pauses until partition heals. Works correctly with 3 nodes        |
+| Fault tolerance | 1 node loss → 2 remaining = Raft majority. Queues stay fully writable. No async messaging interruption |
+
+**Dkron 4 — 3 Servers (Raft)**
+
+| Concern       | Config                                                                             |
+| ------------- | ---------------------------------------------------------------------------------- |
+| Topology      | 3 servers (1 per node). All can execute jobs. Raft elects leader                   |
+| Failover      | 1 server dies → 2 remaining elect new leader. Jobs continue uninterrupted          |
+| Job placement | Tag-based targeting or any-node execution (default). Swarm overlay handles routing |
+
+**etcd — 3-Node Cluster (Patroni DCS)**
+
+| Concern  | Config                                                                          |
+| -------- | ------------------------------------------------------------------------------- |
+| Topology | 3-node cluster (1 per node). Used as Patroni DCS for PostgreSQL leader election |
+| Quorum   | 2 of 3 = majority. Survives 1 node loss                                         |
+| Data     | Lightweight — only Patroni leader/member state. Minimal disk/memory footprint   |
+
+**MinIO — Distributed Erasure Coding**
+
+| Concern    | Config                                                                      |
+| ---------- | --------------------------------------------------------------------------- |
+| Topology   | 3 nodes × 2 drives = 6 drives total (EC:3)                                  |
+| Redundancy | Survives loss of 1 full node (2 drives). 4 remaining drives > EC parity     |
+| Buckets    | `loki-logs`, `tempo-traces`, `mimir-blocks`, `mimir-ruler`, `minio-uploads` |
+
+#### Networking
+
+| Layer                 | Config                                                                                                                                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **External ingress**  | **Cloudflare Tunnel** (`cloudflared` on Nodes 1 & 2 → Cloudflare edge). No public IPs, built-in DDoS protection. Cloudflare routes to healthy node via tunnel health checks                                                                                         |
+| **Inter-node**        | **Same LAN**: private IPs directly (no tunnel needed). **Different locations**: WireGuard kernel module (built into Linux kernel, `wg-quick up` with a config file). All cross-node traffic (PG replication, Redis, RabbitMQ, etcd, OTLP) stays on the private link |
+| **Load balancing**    | Cloudflare LB across tunnels. Health-check failover. Sticky sessions NOT needed (stateless JWT for .NET gateway, Redis-backed sessions for SvelteKit)                                                                                                               |
+| **Service discovery** | Docker Swarm overlay network (built-in DNS round-robin across nodes)                                                                                                                                                                                                |
+
+No additional vendors. Cloudflare (already used) handles external. Inter-node is either direct LAN or WireGuard (kernel-level, no account/service).
+
+#### LGTM Placement
+
+| Phase                 | Placement                                                                                                              | Failover                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Phase 1 (1 node)**  | Colocated on the single node                                                                                           | Node dies = everything dies. Recover from backups                  |
+| **Phase 2 (3 nodes)** | Dedicated on Node 3 (isolated failure domain). Node 3 also runs stateful infra replicas (PG standby, Redis, RMQ, etc.) | Node 3 dies = telemetry lost, services continue. Alloy WAL buffers |
+| **Alternative**       | Grafana Cloud — zero ops, SLA-backed, dashboards port 1:1. Switch if self-hosted ops burden grows                      | It's an Alloy config change (remote_write endpoint), not code      |
+
+#### Orchestration
+
+| Concern            | Docker Swarm (Recommended)                          | k3s (Alternative)                   |
+| ------------------ | --------------------------------------------------- | ----------------------------------- |
+| Multi-node         | Native overlay network                              | Native (Flannel/Calico)             |
+| Service placement  | `--constraint node.hostname==X`                     | `nodeSelector` / `affinity`         |
+| Rolling updates    | Built-in (`--update-delay`, `--update-parallelism`) | Built-in (`Deployment` strategy)    |
+| Secrets            | Docker Secrets (encrypted at rest)                  | K8s Secrets (+ Sealed Secrets/SOPS) |
+| Health checks      | Docker `HEALTHCHECK` → auto-restart                 | Liveness/readiness probes           |
+| Stateful workloads | Named volumes                                       | StatefulSets + PVCs                 |
+| Learning curve     | Low (already using Docker)                          | Steep (but k3s simplifies)          |
+| Phase 1 → 2        | Identical stack file — add nodes, increase replicas | Identical manifests — add nodes     |
+
+**Recommendation**: Docker Swarm. Already using Docker, native multi-node, minimal tooling. The same stack file works for 1 and 3 nodes. Migrate to k3s later if GitOps (ArgoCD/Flux) or autoscaling is needed.
+
+#### CI/CD
+
+| Concern        | GitHub Actions (Recommended)                   | Self-Hosted (Woodpecker/Drone)       |
+| -------------- | ---------------------------------------------- | ------------------------------------ |
+| Runners        | GitHub-hosted (3000 min/mo via Pro org)        | On a node (competes for resources)   |
+| Registry       | ghcr.io (private repos via Pro org)            | Self-hosted Harbor / Docker Registry |
+| Deploy trigger | SSH → `docker stack deploy` or `kubectl apply` | Same                                 |
+| Secrets        | GitHub Secrets (encrypted)                     | Environment variables                |
+
+**Pipeline:**
+
+```
+Push to main → GitHub Actions:
+  1. Build .NET + Node.js + SvelteKit
+  2. Test (dotnet test + pnpm vitest + playwright)
+  3. Lint (eslint + prettier + stylecop + jb inspectcode)
+  4. Build container images → push to ghcr.io
+  5. Deploy: SSH to manager node → docker stack deploy (Swarm)
+```
+
+**Container images:**
+
+| Image          | Base                                   | Contents                 |
+| -------------- | -------------------------------------- | ------------------------ |
+| `d2-gateway`   | `mcr.microsoft.com/dotnet/aspnet:10.0` | .NET REST gateway        |
+| `d2-geo`       | `mcr.microsoft.com/dotnet/aspnet:10.0` | .NET Geo service + API   |
+| `d2-auth`      | `node:24-slim`                         | Node.js Auth service     |
+| `d2-comms`     | `node:24-slim`                         | Node.js Comms service    |
+| `d2-sveltekit` | `node:24-slim`                         | SvelteKit (node adapter) |
+
+#### Decision Summary
+
+| Decision      | Recommended                                                          | Alternative            | Switch when                          |
+| ------------- | -------------------------------------------------------------------- | ---------------------- | ------------------------------------ |
+| Topology      | 1 node → 3 nodes (skip 2)                                            | —                      | —                                    |
+| Orchestration | Docker Swarm                                                         | k3s                    | Need GitOps/HPA, advanced scheduling |
+| LGTM          | Colocated (Phase 1) → Node 3 (Phase 2)                               | Grafana Cloud          | Ops burden > cost                    |
+| PG failover   | None (Phase 1) → Patroni + 3-node etcd (Phase 2)                     | repmgr (manual)        | Simpler ops, less automation needed  |
+| Redis HA      | None (Phase 1) → 3 Sentinels (Phase 2)                               | —                      | —                                    |
+| RabbitMQ HA   | Single node (Phase 1) → 3-node quorum queues (Phase 2)               | —                      | —                                    |
+| Networking    | Cloudflare Tunnels (external) + private LAN / WireGuard (inter-node) | —                      | —                                    |
+| CI/CD         | GitHub Actions + ghcr.io                                             | Self-hosted Woodpecker | Air-gapped / on-prem CI              |
+
+#### Deployment & Migration Strategy
+
+**Principle**: Migration `up`/`down` is the primary rollback mechanism. DB backup restore is the disaster-recovery fallback — only used when migration `down` itself is broken.
+
+**Every migration MUST have a tested `down` step.** No exceptions. If a migration cannot be reversed (rare), it must be explicitly marked as irreversible and requires manual approval before deploy.
+
+##### Standard Deploy (additive changes, bug fixes)
+
+Most deploys are additive: new columns with defaults, new tables, new indexes, code changes with no schema impact.
+
+**Phase 1 (single node):**
+
+```
+1. GitHub Actions: build → test → lint → push container images to ghcr.io
+2. SSH to Node 1:
+   a. Enable maintenance page (Cloudflare custom response rule)
+   b. Backup all DBs to MinIO (automated pg_dump — safety net, not primary rollback)
+   c. Pull new container images
+   d. Run migrations in dependency order:
+      - Geo (EF Core — no deps)
+      - Auth (Drizzle — depends on Geo for contacts)
+      - Comms (Drizzle — depends on Geo + Auth)
+   e. Restart services (docker service update --image ...)
+   f. Disable maintenance page
+3. Total downtime: ~30-60 seconds (migration + restart)
+```
+
+**Phase 2 (3 nodes):**
+
+```
+1. GitHub Actions: build → test → lint → push container images to ghcr.io
+2. SSH to manager node (deploy coordinator):
+   a. Enable maintenance page (Cloudflare custom response rule)
+   b. Backup all DBs to MinIO (automated pg_dump — safety net, not primary rollback)
+   c. Pull new container images on all nodes
+   d. Run migrations in dependency order:
+      - Geo (EF Core — no deps)
+      - Auth (Drizzle — depends on Geo for contacts)
+      - Comms (Drizzle — depends on Geo + Auth)
+   e. Rolling restart: --update-parallelism 1 --update-delay 10s (one node at a time, health check between)
+   f. Disable maintenance page
+3. Total downtime: ~30-60 seconds (migration window). Service restart is rolling — zero downtime
+```
+
+**Rollback (hours/days later):**
+
+```
+1. Enable maintenance page
+2. Deploy old container images (previous tag from ghcr.io)
+3. Run migrations DOWN in reverse dependency order:
+   - Comms down
+   - Auth down
+   - Geo down
+4. Restart / rolling restart with old images
+5. Disable maintenance page
+```
+
+No data loss. New rows written to new columns are dropped by `down`, but all pre-existing data is intact. This is acceptable — the alternative (keeping incompatible schema) is worse.
+
+##### Destructive Schema Changes (expand-contract)
+
+When a migration removes, renames, or changes the type of an existing column/table, use the 3-phase expand-contract pattern. This is NOT for zero-downtime — it's for **data preservation during rollback**.
+
+**Phase 1 — Expand** (deploy N):
+
+| Step         | Action                                                | `down` safety                               |
+| ------------ | ----------------------------------------------------- | ------------------------------------------- |
+| Migration up | Add new column/table alongside old                    | `down` = drop new column (old still intact) |
+| Code change  | Dual-write: write to BOTH old and new                 | Old code only writes to old (safe)          |
+| Backfill     | Copy existing data from old → new (idempotent script) | New data is supplementary, old is source    |
+
+Rollback at this point: `migration down` drops the new column. Zero data loss. Old column was never touched.
+
+**Phase 2 — Cutover** (deploy N+1, days/weeks later):
+
+| Step         | Action                                           | `down` safety              |
+| ------------ | ------------------------------------------------ | -------------------------- |
+| Code change  | Read from new, stop writing to old               | `down` = resume dual-write |
+| Migration up | (optional) Add NOT NULL constraint on new column | `down` = drop constraint   |
+
+Rollback at this point: deploy old code (resumes dual-write) + `migration down` (drop constraint). Old column still has all data from Phase 1 dual-writes.
+
+**Phase 3 — Cleanup** (deploy N+2, after confidence period):
+
+| Step         | Action                | `down` safety                                  |
+| ------------ | --------------------- | ---------------------------------------------- |
+| Migration up | Drop old column/table | `down` = re-add column (**empty** — data loss) |
+
+This is the only point where rollback loses data. By Phase 3 you've had days/weeks of production confidence. If you still need to roll back past Phase 3, that's a disaster-recovery scenario → restore from backup.
+
+**Phase timing**: Phases are separate deploys, not separate PRs. Each phase is a normal deploy that goes through the standard deploy flow. Minimum gap between phases: long enough to be confident (hours for low-risk, days for high-risk).
+
+##### Migration Rules
+
+| Rule                                                    | Rationale                                                       |
+| ------------------------------------------------------- | --------------------------------------------------------------- |
+| Every `up` has a matching `down`                        | `down` is the primary rollback mechanism                        |
+| `down` must be tested (CI runs `up` then `down`)        | Untested `down` = no rollback                                   |
+| Additive migrations: single deploy                      | No dual-write overhead for safe changes                         |
+| Destructive migrations: 3-phase expand-contract         | Preserves data at every rollback point except final cleanup     |
+| Migrations run in dependency order (Geo → Auth → Comms) | Prevents FK / cross-service reference failures                  |
+| Migrations roll back in reverse order                   | Comms → Auth → Geo                                              |
+| Never mix additive + destructive in one migration       | Keeps rollback granularity clean                                |
+| Backfills are idempotent                                | Safe to re-run if deploy is retried                             |
+| DB backup to MinIO before every deploy                  | Disaster-recovery fallback only — not the primary rollback path |
+
+##### When to Use What
+
+| Scenario                        | Strategy                | Rollback cost       |
+| ------------------------------- | ----------------------- | ------------------- |
+| New column (nullable/defaulted) | Standard deploy         | `down` drops column |
+| New table                       | Standard deploy         | `down` drops table  |
+| New index                       | Standard deploy         | `down` drops index  |
+| Bug fix (no schema change)      | Standard deploy         | Deploy old image    |
+| Drop column                     | 3-phase expand-contract | Zero until Phase 3  |
+| Rename column                   | 3-phase expand-contract | Zero until Phase 3  |
+| Change column type              | 3-phase expand-contract | Zero until Phase 3  |
+| Merge two tables                | 3-phase expand-contract | Zero until Phase 3  |
+
+---
+
+_Last updated: 2026-03-15_
