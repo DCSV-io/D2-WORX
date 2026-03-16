@@ -441,7 +441,7 @@ services:
   # ==========================================================================
 
   d2-portainer:
-    image: portainer/portainer-ce:latest
+    image: ${PORTAINER_IMAGE}:${PORTAINER_TAG}
     container_name: d2-portainer
     # Admin credentials: admin / <your password>
     # PORTAINER_ADMIN_PASSWORD_HASH must be a bcrypt hash (see .env.local.example for generation).
@@ -467,7 +467,7 @@ services:
       - -c
       - |
         corepack enable && corepack prepare pnpm@10.30.3 --activate
-        pnpm install
+        pnpm install --frozen-lockfile
     working_dir: /app
     volumes:
       - ./package.json:/app/package.json:ro
@@ -511,6 +511,8 @@ services:
     volumes:
       - ./backends/dotnet:/src/backends/dotnet
       - ./contracts:/src/contracts
+      - ./Directory.Build.props:/src/Directory.Build.props:ro
+      - ./stylecop.json:/src/stylecop.json:ro
     networks: [d2-network]
     depends_on:
       d2-postgres:
@@ -667,6 +669,8 @@ services:
     volumes:
       - ./backends/dotnet:/src/backends/dotnet
       - ./contracts:/src/contracts
+      - ./Directory.Build.props:/src/Directory.Build.props:ro
+      - ./stylecop.json:/src/stylecop.json:ro
     networks: [d2-network]
     depends_on:
       d2-geo:
