@@ -29,9 +29,10 @@ WORKDIR /src
 ENV ASPNETCORE_ENVIRONMENT=Development
 # Polling watcher required inside containers (inotify not available on bind mounts)
 ENV DOTNET_USE_POLLING_FILE_WATCHER=true
-ENV ASPNETCORE_URLS=http://+:5138
+ARG GEO_PORT=5138
+ENV ASPNETCORE_URLS=http://+:${GEO_PORT}
 
-EXPOSE 5138
+EXPOSE ${GEO_PORT}
 
 # Source tree is volume-mounted at runtime for live editing
 ENTRYPOINT ["dotnet", "watch", "run", \
@@ -42,9 +43,10 @@ ENTRYPOINT ["dotnet", "watch", "run", \
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS prod
 WORKDIR /app
 
-ENV ASPNETCORE_URLS=http://+:5138
+ARG GEO_PORT=5138
+ENV ASPNETCORE_URLS=http://+:${GEO_PORT}
 
-EXPOSE 5138
+EXPOSE ${GEO_PORT}
 
 COPY --from=build /app/publish .
 

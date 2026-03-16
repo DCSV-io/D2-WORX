@@ -731,10 +731,12 @@ services:
       target: dev
     container_name: d2-sveltekit
     ports:
-      - "${SVELTEKIT_PORT}:5173"
+      - "${SVELTEKIT_PORT}:${SVELTEKIT_PORT}"
     env_file: .env.local
     environment:
       OTEL_SERVICE_NAME: ${SVELTEKIT_SERVICE_NAME}
+      # Vite dev server port (must match host port mapping for health checks).
+      VITE_PORT: ${SVELTEKIT_PORT}
       # Server-side Docker DNS overrides.
       SVELTEKIT_AUTH__URL: "http://${AUTH_SERVICE_NAME}:${AUTH_HTTP_PORT}"
       SVELTEKIT_GATEWAY__URL: "http://${GATEWAY_SERVICE_NAME}:${GATEWAY_PORT}"

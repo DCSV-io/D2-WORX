@@ -42,8 +42,8 @@ WORKDIR /app
 
 ENV NODE_ENV=development
 
-# 5200 = gRPC
-EXPOSE 5200
+ARG COMMS_GRPC_PORT=5200
+EXPOSE ${COMMS_GRPC_PORT}
 
 # Source is bind-mounted at runtime. d2-node-init service pre-installs deps
 # into the shared node_modules volume before this container starts.
@@ -55,8 +55,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# 5200 = gRPC
-EXPOSE 5200
+ARG COMMS_GRPC_PORT=5200
+EXPOSE ${COMMS_GRPC_PORT}
 
 # Copy the full built workspace (source + compiled dist/ + node_modules)
 COPY --from=build /app/ .

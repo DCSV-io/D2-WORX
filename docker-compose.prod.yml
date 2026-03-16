@@ -166,6 +166,8 @@ services:
     volumes: []
     environment:
       LOG_LEVEL: info
+      # adapter-node reads PORT env var — must match SVELTEKIT_PORT for health check.
+      PORT: ${SVELTEKIT_PORT}
     # Prod SvelteKit uses adapter-node (runs `node build`, not Vite).
     # Health check can use Node.js fetch (always available).
     healthcheck:

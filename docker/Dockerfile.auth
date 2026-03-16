@@ -42,8 +42,10 @@ WORKDIR /app
 
 ENV NODE_ENV=development
 
-# 5100 = HTTP (Hono), 5101 = gRPC
-EXPOSE 5100 5101
+# HTTP (Hono) + gRPC
+ARG AUTH_HTTP_PORT=5100
+ARG AUTH_GRPC_PORT=5101
+EXPOSE ${AUTH_HTTP_PORT} ${AUTH_GRPC_PORT}
 
 # Source is bind-mounted at runtime. d2-node-init service pre-installs deps
 # into the shared node_modules volume before this container starts.
@@ -55,8 +57,10 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# 5100 = HTTP (Hono), 5101 = gRPC
-EXPOSE 5100 5101
+# HTTP (Hono) + gRPC
+ARG AUTH_HTTP_PORT=5100
+ARG AUTH_GRPC_PORT=5101
+EXPOSE ${AUTH_HTTP_PORT} ${AUTH_GRPC_PORT}
 
 # Copy the full built workspace (source + compiled dist/ + node_modules)
 COPY --from=build /app/ .

@@ -42,25 +42,28 @@ WORKDIR /app
 
 ENV NODE_ENV=development
 
-EXPOSE 5173
+ARG SVELTEKIT_PORT=5173
+EXPOSE ${SVELTEKIT_PORT}
 
 # Source is bind-mounted at runtime. d2-node-init service pre-installs deps
 # into the shared node_modules volume before this container starts.
 # --host 0.0.0.0 required to accept connections from outside the container.
 # Uses pnpm exec to invoke vite directly (pnpm run passes '--' to the script,
 # which makes vite stop parsing options and ignore --host/--port).
-ENTRYPOINT ["pnpm", "--filter", "d2-sveltekit", "exec", \
-    "vite", "dev", "--host", "0.0.0.0", "--port", "5173"]
+# Shell form required for VITE_PORT env var expansion at runtime.
+ENTRYPOINT ["sh", "-c", \
+    "pnpm --filter d2-sveltekit exec vite dev --host 0.0.0.0 --port ${VITE_PORT:-5173}"]
 
 # --- Prod stage: adapter-node output with server-side dependencies ---
 FROM base AS prod
 WORKDIR /app
 
 ENV NODE_ENV=production
-# adapter-node reads PORT env var (default 3000); override at runtime as needed
-ENV PORT=5173
+# adapter-node reads PORT env var; default matches SVELTEKIT_PORT.
+ARG SVELTEKIT_PORT=5173
+ENV PORT=${SVELTEKIT_PORT}
 
-EXPOSE 5173
+EXPOSE ${SVELTEKIT_PORT}
 
 # Copy adapter-node build output (self-contained server bundle)
 COPY --from=build /app/clients/web/build ./build
