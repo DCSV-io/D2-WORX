@@ -93,7 +93,7 @@ builder.Services.AddGeoApp();                              // Application layer 
 
 ## Connection Strings
 
-Required connection strings (injected via Aspire):
+Required connection strings (injected via Docker Compose / .env.local):
 
 | Key               | Description             |
 | ----------------- | ----------------------- |

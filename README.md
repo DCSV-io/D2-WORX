@@ -24,13 +24,14 @@ WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and
 
 ### Getting started with local dev environment:
 
-1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK (10.0.103+)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Aspire 13.1 CLI](https://aspire.dev/get-started/install-cli/), [Node v24.14.0+](https://nodejs.org/en/download), [PNPM 10.30.3+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
+1. **Pre-reqs**: to run this project on your machine, you will need the [.NET 10 SDK (10.0.103+)](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [Node v24.14.0+](https://nodejs.org/en/download), [PNPM 10.30.3+](https://pnpm.io/installation), [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/) and to, obviously, clone this repository.
 2. Copy `.env.local.example` to `.env.local` in the project root and fill in your values (credentials for PostgreSQL, Redis, RabbitMQ, MinIO, Grafana, and your IPInfo API token). Env vars use `SECTION_PROPERTY` naming — `D2Env` auto-maps them to .NET configuration paths.
 3. Edit any `appsettings.*.json` files as needed.
-4. Run the AppHost project either via CLI or IDE of your choice.
+4. Start all services: `docker compose --env-file .env.local up -d`
 5. Once running, access:
-   - Aspire dashboard: `http://localhost:15888`
    - Grafana dashboard: `http://localhost:3000`
+   - Portainer (container management): `https://localhost:9443`
+   - Alloy telemetry UI: `http://localhost:12345`
 
 ## Project Status 🚨
 
@@ -178,7 +179,7 @@ D² was designed from the ground up to maximize developer experience while provi
 
 #### Infrastructure & Orchestration
 
-![.NET Aspire](https://img.shields.io/badge/.NET_Aspire-13.1-512BD4?logo=dotnet)
+![Docker Compose](https://img.shields.io/badge/Docker_Compose-2.x-2496ED?logo=docker)
 ![Docker](https://img.shields.io/badge/Docker-Containers-2496ED?logo=docker)
 ![pnpm](https://img.shields.io/badge/pnpm-10.30-F69220?logo=pnpm)
 
@@ -354,9 +355,10 @@ _Service-owned client libraries for consumers._
 
 ### Orchestration
 
-| Component                                                   | Description                                    |
-| ----------------------------------------------------------- | ---------------------------------------------- |
-| [AppHost](backends/dotnet/orchestration/AppHost/APPHOST.md) | Aspire orchestration and service configuration |
+| Component                                | Description                                            |
+| ---------------------------------------- | ------------------------------------------------------ |
+| [docker-compose.yml](docker-compose.yml) | Docker Compose dev environment (replaces .NET Aspire)  |
+| [Makefile](Makefile)                     | DX shortcuts (`make up`, `make down`, `make logs s=X`) |
 
 ### Frontends
 
@@ -386,7 +388,7 @@ DeCAF v1 and v2 are in production use by thousands of users (closed source). Out
 
 ### D²
 
-D² (Decisive Distributed Application Framework) is the distributed evolution of DeCAF v3. It is built with Aspire (.NET 10 / C# 14), retains a SvelteKit front end, and uses PostgreSQL as its core relational database. The goal of D² is to provide a **horizontally scalable successor** to DeCAF while keeping the strong developer experience.
+D² (Decisive Distributed Application Framework) is the distributed evolution of DeCAF v3. It is built with .NET 10 / C# 14 and Docker Compose, retains a SvelteKit front end, and uses PostgreSQL as its core relational database. The goal of D² is to provide a **horizontally scalable successor** to DeCAF while keeping the strong developer experience.
 
 ### WORX
 

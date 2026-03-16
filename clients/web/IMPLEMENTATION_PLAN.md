@@ -112,7 +112,7 @@ Living document tracking the iterative build-out of the D2-WORX web client.
 | `src/lib/server/hooks/idempotency.server.ts`        | SvelteKit Handle wrapper for mutation dedup via Idempotency-Key            |
 | `src/hooks.server.ts`                               | Wired via `sequence()` — enrichment → rate-limit → idempotency → paraglide |
 | `src/app.d.ts`                                      | Added `requestInfo` to `App.Locals`                                        |
-| `backends/dotnet/orchestration/AppHost/AppHost.cs`  | Added Redis + Geo references to SvelteKit resource                         |
+| ~~`AppHost.cs`~~                                    | _(Removed — replaced by docker-compose.yml per ADR-025)_                   |
 | `.env.local` / `.env.local.example`                 | Added `SVELTEKIT_GEO_CLIENT__APIKEY` + Geo API key mapping                 |
 
 **Graceful degradation:** If Redis/Geo env vars are missing, `getMiddlewareContext()` returns `null` and all hooks skip (no-op). SvelteKit remains usable for frontend-only development.
@@ -354,28 +354,28 @@ interface Locals {
 
 **5B:** SvelteKit integration — auth proxy catch-all at `/api/auth/[...path]`, session resolution in hooks.server.ts (after enrichment, before paraglide), route guards wired in all layout.server.ts files. Client-side BetterAuth client store at `src/lib/stores/auth-client.ts`.
 
-**5C:** Environment — `SVELTEKIT_AUTH__URL` env var, Aspire wiring (`.WaitFor(authService)`, `.WithEnvironment()`).
+**5C:** Environment — `SVELTEKIT_AUTH__URL` env var, Docker Compose `environment:` block (replaces Aspire wiring per ADR-025).
 
 **Requires:** Auth service running for full integration. Graceful degradation when unavailable.
 
 #### Files Created/Modified
 
-| File                                                    | Action                                                      |
-| ------------------------------------------------------- | ----------------------------------------------------------- |
-| `backends/node/services/auth/bff-client/`               | Created — full package (6 source files, 4 test files)       |
-| `clients/web/src/lib/server/auth.server.ts`             | Created — lazy singleton auth context                       |
-| `clients/web/src/lib/server/hooks/auth.server.ts`       | Created — auth hook for sequence()                          |
-| `clients/web/src/routes/api/auth/[...path]/+server.ts`  | Created — auth proxy catch-all                              |
-| `clients/web/src/routes/(public)/+page.server.ts`       | Created — auth-aware root redirect                          |
-| `clients/web/src/lib/stores/auth-client.ts`             | Created — browser-side BetterAuth client                    |
-| `clients/web/src/hooks.server.ts`                       | Modified — added createAuthHandle to sequence               |
-| `clients/web/src/app.d.ts`                              | Modified — imports AuthSession/AuthUser from bff-client     |
-| `clients/web/src/routes/(auth)/+layout.server.ts`       | Modified — wired redirectIfAuthenticated                    |
-| `clients/web/src/routes/(onboarding)/+layout.server.ts` | Modified — wired requireAuth                                |
-| `clients/web/src/routes/(app)/+layout.server.ts`        | Modified — wired requireOrg                                 |
-| `clients/web/package.json`                              | Modified — added @d2/auth-bff-client + better-auth deps     |
-| `AppHost.cs`                                            | Modified — added .WaitFor(authService) + .WithEnvironment() |
-| `.env.local` / `.env.local.example`                     | Modified — added SVELTEKIT_AUTH\_\_URL                      |
+| File                                                    | Action                                                   |
+| ------------------------------------------------------- | -------------------------------------------------------- |
+| `backends/node/services/auth/bff-client/`               | Created — full package (6 source files, 4 test files)    |
+| `clients/web/src/lib/server/auth.server.ts`             | Created — lazy singleton auth context                    |
+| `clients/web/src/lib/server/hooks/auth.server.ts`       | Created — auth hook for sequence()                       |
+| `clients/web/src/routes/api/auth/[...path]/+server.ts`  | Created — auth proxy catch-all                           |
+| `clients/web/src/routes/(public)/+page.server.ts`       | Created — auth-aware root redirect                       |
+| `clients/web/src/lib/stores/auth-client.ts`             | Created — browser-side BetterAuth client                 |
+| `clients/web/src/hooks.server.ts`                       | Modified — added createAuthHandle to sequence            |
+| `clients/web/src/app.d.ts`                              | Modified — imports AuthSession/AuthUser from bff-client  |
+| `clients/web/src/routes/(auth)/+layout.server.ts`       | Modified — wired redirectIfAuthenticated                 |
+| `clients/web/src/routes/(onboarding)/+layout.server.ts` | Modified — wired requireAuth                             |
+| `clients/web/src/routes/(app)/+layout.server.ts`        | Modified — wired requireOrg                              |
+| `clients/web/package.json`                              | Modified — added @d2/auth-bff-client + better-auth deps  |
+| ~~`AppHost.cs`~~                                        | _(Removed — replaced by docker-compose.yml per ADR-025)_ |
+| `.env.local` / `.env.local.example`                     | Modified — added SVELTEKIT_AUTH\_\_URL                   |
 
 ---
 
@@ -396,7 +396,7 @@ interface Locals {
 | `src/routes/+layout.server.ts`      | Modified — pass `clientFingerprint` to browser via layout data |
 | `src/routes/+layout.svelte`         | Modified — initialize fingerprint on mount                     |
 | `.env.local.example`                | Modified — add gateway env vars                                |
-| `backends/.../AppHost/AppHost.cs`   | Modified — wire gateway URLs to SvelteKit resource             |
+| ~~`AppHost.cs`~~                    | _(Removed — replaced by docker-compose.yml per ADR-025)_       |
 
 **Tests:** 66 tests across 5 files (gateway-response: 21, idempotency: 2, gateway.server: 17, gateway-client: 18, layout.server: 5 + 3 existing).
 
@@ -595,7 +595,7 @@ Dev-only page at `/debug/session` (gated by `dev` env check) displaying:
 **What was built:**
 
 - `faro.receiver` block in Alloy config (port 12347, CORS, rate limiting 100/s burst 200)
-- Port 12347 exposed in AppHost, `FARO_CORS_ORIGINS` env var passed to Alloy container
+- Port 12347 exposed in docker-compose.yml, `FARO_CORS_ORIGINS` env var passed to Alloy container
 - `$lib/client/telemetry/faro.ts` — browser-only init, SSR-safe, graceful degradation
 - `hooks.client.ts` rewritten — Faro `pushError` replaces custom POST endpoint
 - User enrichment in root `+layout.svelte` — `setFaroUser`/`resetFaroUser` reactive to auth state

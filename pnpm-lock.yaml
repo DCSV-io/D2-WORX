@@ -71,6 +71,9 @@ importers:
       '@d2/csrf':
         specifier: workspace:*
         version: link:../../../shared/implementations/middleware/csrf/default
+      '@d2/database-startup-pg':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/repository/database-startup/pg
       '@d2/di':
         specifier: workspace:*
         version: link:../../../shared/di
@@ -387,6 +390,9 @@ importers:
       '@d2/comms-infra':
         specifier: workspace:*
         version: link:../infra
+      '@d2/database-startup-pg':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/repository/database-startup/pg
       '@d2/di':
         specifier: workspace:*
         version: link:../../../shared/di
@@ -990,6 +996,16 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../../../../result
+
+  backends/node/shared/implementations/repository/database-startup/pg:
+    dependencies:
+      pg:
+        specifier: 8.19.0
+        version: 8.19.0
+    devDependencies:
+      '@types/pg':
+        specifier: 8.16.0
+        version: 8.16.0
 
   backends/node/shared/implementations/repository/errors/pg: {}
 
@@ -8781,7 +8797,7 @@ snapshots:
   '@types/pg@8.16.0':
     dependencies:
       '@types/node': 22.18.8
-      pg-protocol: 1.11.0
+      pg-protocol: 1.12.0
       pg-types: 2.2.0
 
   '@types/react@19.2.14':

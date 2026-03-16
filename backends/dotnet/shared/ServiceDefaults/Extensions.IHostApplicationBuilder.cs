@@ -94,7 +94,7 @@ public static partial class Extensions
                 }
             });
 
-            // Use the Aspire-assigned service name (OTEL_SERVICE_NAME) when available
+            // Use the Container-assigned service name (OTEL_SERVICE_NAME) when available
             // so that traces, logs, and metrics use consistent names (d2-geo, d2-rest, etc.)
             // instead of the .NET project name (Geo.API, REST, etc.).
             var otelServiceName = builder.Configuration["OTEL_SERVICE_NAME"]
@@ -237,12 +237,9 @@ public static partial class Extensions
 
             builder.AddDefaultHealthChecks();
 
-            builder.Services.AddServiceDiscovery();
-
             builder.Services.ConfigureHttpClientDefaults(http =>
             {
                 http.AddStandardResilienceHandler();
-                http.AddServiceDiscovery();
             });
         }
     }

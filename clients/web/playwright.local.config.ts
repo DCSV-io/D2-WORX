@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 /**
  * Tier 3: Wide local E2E tests.
  *
- * Expects all services running externally (Aspire or manual).
+ * Expects all services running externally (Docker Compose or manual).
  * NOT included in CI — local dev only.
  *
  * Run: pnpm test:e2e:local

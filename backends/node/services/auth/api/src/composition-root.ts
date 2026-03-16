@@ -1,3 +1,4 @@
+import { ensureDatabase } from "@d2/database-startup-pg";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { dirname, resolve as pathResolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -97,7 +98,8 @@ export async function createApp(
     logger,
   );
 
-  // 2. Run Drizzle migrations + create Drizzle instance
+  // 2. Ensure database exists + run Drizzle migrations
+  await ensureDatabase(config.databaseUrl, logger);
   await runMigrations(pool);
   const db = drizzle(pool);
 

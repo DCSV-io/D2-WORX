@@ -4,7 +4,7 @@
 //      BEFORE any application code loads, enabling auto-instrumentation of Pino, pg,
 //      @grpc/grpc-js, etc.
 //   2. Calls `setupTelemetry({ serviceName })` using OTEL_SERVICE_NAME from env vars
-//      (set by Aspire's `WithOtelRefs()`).
+//      (set by Docker Compose env vars).
 //
 // This means OTel is fully active before this file even executes. There is no need
 // for an explicit `setupTelemetry()` call here. The `--import` approach is required
@@ -29,7 +29,7 @@ import { createCommsService } from "./composition-root.js";
 
 const logger = createLogger({ serviceName: "comms-service" });
 
-// Aspire injects connection strings in .NET formats (ADO.NET for PG).
+// Docker Compose injects connection strings in .NET formats (ADO.NET for PG).
 // Parser converts to URI format for Node.js clients, passing through URIs unchanged.
 const config = defineConfig("comms-service", {
   databaseUrl: requiredParsed(parsePostgresUrl, "COMMS_DATABASE_URL"),

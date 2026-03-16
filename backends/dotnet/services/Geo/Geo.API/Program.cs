@@ -8,6 +8,7 @@ using D2.Geo.App;
 using D2.Geo.Client;
 using D2.Geo.Infra;
 using D2.Geo.Infra.Repository;
+using D2.Shared.DatabaseStartup.Pg;
 using D2.Shared.Handler.Extensions;
 using D2.Shared.I18n;
 using D2.Shared.ServiceDefaults;
@@ -19,7 +20,7 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Get required connection strings from env vars (set via .env.local or Aspire).
+// Get required connection strings from env vars (set via .env.local / Docker Compose).
 var dbConnectionString = ConnectionStringHelper.GetPostgres("GEO_DATABASE_URL");
 var distributedCacheConnectionString = ConnectionStringHelper.GetRedis();
 var messageQueueConnectionString = ConnectionStringHelper.GetRabbitMq();
@@ -59,6 +60,10 @@ app.MapDefaultEndpoints();
 // Set AUTO_MIGRATE=true to apply EF Core migrations before serving requests.
 if (Environment.GetEnvironmentVariable("AUTO_MIGRATE") == "true")
 {
+    await DatabaseHelper.EnsureDatabaseExistsAsync(
+        dbConnectionString,
+        msg => Log.Information("{Message}", msg));
+
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider
         .GetRequiredService<GeoDbContext>();

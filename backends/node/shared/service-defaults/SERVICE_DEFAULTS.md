@@ -38,7 +38,7 @@ setupTelemetry({
 
 ## Config Utilities
 
-Shared Aspire connection-string parsers and env-var helpers, importable via `@d2/service-defaults/config`:
+Shared connection-string parsers and env-var helpers, importable via `@d2/service-defaults/config`:
 
 ```typescript
 import { parseEnvArray, parsePostgresUrl, parseRedisUrl } from "@d2/service-defaults/config";
@@ -55,7 +55,7 @@ import { parseEnvArray, parsePostgresUrl, parseRedisUrl } from "@d2/service-defa
 - **`parsePostgresUrl(connectionString)`** — Converts ADO.NET format (`Host=...;Port=...;Username=...;Password=...;Database=...`) to libpq URI (`postgresql://user:pass@host:port/db`). Passes through existing `postgresql://` or `postgres://` URIs unchanged.
 - **`parseRedisUrl(connectionString)`** — Converts StackExchange format (`host:port,password=pass`) to Redis URI (`redis://:pass@host:port`). Passes through existing `redis://` or `rediss://` URIs unchanged.
 
-These utilities are used by both `auth-api` and `comms-api` composition roots to bridge the gap between Aspire-injected .NET connection strings and Node.js client libraries.
+These utilities are used by both `auth-api` and `comms-api` composition roots to bridge the gap between container-injected .NET connection strings and Node.js client libraries.
 
 ## Re-exports
 

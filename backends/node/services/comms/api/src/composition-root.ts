@@ -1,4 +1,5 @@
 import pg from "pg";
+import { ensureDatabase } from "@d2/database-startup-pg";
 import Redis from "ioredis";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { createLogger, type ILogger } from "@d2/logging";
@@ -70,7 +71,8 @@ export async function createCommsService(config: CommsServiceConfig) {
     logger,
   );
 
-  // 2. Run Drizzle migrations
+  // 2. Ensure database exists + run Drizzle migrations
+  await ensureDatabase(config.databaseUrl, logger);
   await runMigrations(pool);
   const db = drizzle(pool);
 

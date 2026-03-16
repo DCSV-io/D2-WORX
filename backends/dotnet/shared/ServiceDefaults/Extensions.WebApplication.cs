@@ -9,7 +9,6 @@ namespace D2.Shared.ServiceDefaults;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 
 public static partial class Extensions
@@ -70,11 +69,6 @@ public static partial class Extensions
         /// </summary>
         public void MapDefaultEndpoints()
         {
-            if (!app.Environment.IsDevelopment())
-            {
-                return;
-            }
-
             app.MapHealthChecks(_HEALTH_ENDPOINT_PATH);
 
             app.MapHealthChecks(_ALIVE_ENDPOINT_PATH, new HealthCheckOptions

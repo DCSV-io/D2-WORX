@@ -1,7 +1,7 @@
 // Grafana Alloy Configuration for D²-WORX
 // Handles metrics scraping, log collection, and trace forwarding
 //
-// All container names and endpoints are injected as env vars by AppHost.cs.
+// All container names and endpoints are injected as env vars by docker-compose.yml.
 // Use env("VAR") to reference them — values come from .env.local.
 
 logging {
@@ -26,7 +26,7 @@ prometheus.scrape "infrastructure" {
       service     = "cadvisor",
     },
 
-    // Application services (running on host via Aspire)
+    // Application services (running in Docker Compose)
     // Note: Node.js services (Auth, Comms) push metrics via OTLP, not Prometheus scrape.
     // Only .NET services expose /metrics endpoints for pull-based scraping.
     {
@@ -149,10 +149,15 @@ discovery.relabel "containers" {
     target_label  = "container"
   }
 
-  // Extract service name from d2-xxx pattern
+  // Use the full container name (d2-geo, d2-postgres, etc.) as the service label.
+  // This keeps Docker-scraped logs aligned with OTel-pushed logs (which use
+  // OTEL_SERVICE_NAME = d2-geo, d2-auth, etc.), so both streams appear under
+  // the same service name in Grafana. App services will have entries from both
+  // Docker stdout scraping AND OTel SDK push — useful for crash/startup logs
+  // that happen before OTel initializes.
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/d2-(.*)"
+    regex         = "/(.*)"
     target_label  = "service"
   }
 
