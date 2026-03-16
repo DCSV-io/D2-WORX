@@ -71,6 +71,10 @@ graph TB
             AUTH[Auth<br/>Node.js + BetterAuth]
         end
 
+        subgraph FilesSvc["Files Service"]
+            FILES[Files<br/>Node.js + Hono]
+        end
+
         subgraph Services["Internal Services"]
             GEO[Geo<br/>.NET]
             COMMS[Comms<br/>Node.js]
@@ -83,7 +87,9 @@ graph TB
 
         Gateways <-->|gRPC| Services
         Gateways <-->|JWKS + gRPC| AuthSvc
+        Gateways <-->|gRPC| FilesSvc
         AuthSvc <-->|gRPC| Services
+        FilesSvc <-->|gRPC| Services
         DKRONMGR -->|REST API| DKRON
         DKRON -->|HTTP + API key| REST
     end
@@ -99,6 +105,7 @@ graph TB
     BROWSER <-->|WebSocket| SR
     SK <-->|JWT| REST
     SK <-->|Auth proxy| AuthSvc
+    BROWSER <-->|JWT file uploads| FILES
 
     %% Infra connection
     Backends --- Infra
@@ -108,6 +115,7 @@ graph TB
     classDef svelte fill:#FF3E00,stroke:#c73100,color:#fff
     classDef gateway fill:#512BD4,stroke:#3d1f9e,color:#fff
     classDef auth fill:#339933,stroke:#267326,color:#fff
+    classDef files fill:#E36002,stroke:#b34d01,color:#fff
     classDef service fill:#1a73e8,stroke:#1557b0,color:#fff
     classDef infra fill:#4169E1,stroke:#2f4fb3,color:#fff
     classDef redis fill:#DC382D,stroke:#b02d24,color:#fff
@@ -120,6 +128,7 @@ graph TB
     class REST,SR gateway
     class AUTH auth
     class GEO,COMMS service
+    class FILES files
     class DKRON,DKRONMGR infra
     class PG infra
     class REDIS redis
@@ -131,6 +140,7 @@ graph TB
     style Backends fill:#1e1e2e,stroke:#444,color:#ccc
     style Gateways fill:#2a2a4a,stroke:#555,color:#ccc
     style AuthSvc fill:#1a3a1a,stroke:#555,color:#ccc
+    style FilesSvc fill:#3a2a1a,stroke:#555,color:#ccc
     style Services fill:#2a2a4a,stroke:#555,color:#ccc
     style Jobs fill:#2e2e1e,stroke:#555,color:#ccc
     style Infra fill:#2e1e2e,stroke:#444,color:#ccc
@@ -323,6 +333,7 @@ _Domain-specific microservices. Each service owns its data and communicates via 
 | [Geo](backends/dotnet/services/Geo/GEO_SERVICE.md)         | .NET     | ✅ Done    | Geographic reference data, locations, contacts, and WHOIS with multi-tier caching |
 | [Auth](backends/node/services/auth/AUTH.md)                | Node.js  | 🚧 Stage C | Standalone Hono + BetterAuth + Drizzle — Stages A-B done, BFF client done         |
 | [Comms](backends/node/services/comms/COMMS.md)             | Node.js  | 🚧 Stage B | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)      |
+| Files                                                      | Node.js  | 📋 Planned | File uploads, image processing, MinIO storage — event-driven (ADR-026)            |
 | [dkron-mgr](backends/node/services/dkron-mgr/DKRON_MGR.md) | Node.js  | ✅ Done    | Declarative Dkron job reconciler — drift detection, orphan cleanup                |
 
 _Service internals (DDD layers):_
@@ -332,6 +343,7 @@ _Service internals (DDD layers):_
 | Geo       | [Domain](backends/dotnet/services/Geo/Geo.Domain/GEO_DOMAIN.md) | [App](backends/dotnet/services/Geo/Geo.App/GEO_APP.md) | [Infra](backends/dotnet/services/Geo/Geo.Infra/GEO_INFRA.md) | [API](backends/dotnet/services/Geo/Geo.API/GEO_API.md) | [Tests](backends/dotnet/services/Geo/Geo.Tests/GEO_TESTS.md)       |
 | Auth      | [Domain](backends/node/services/auth/domain/AUTH_DOMAIN.md)     | [App](backends/node/services/auth/app/AUTH_APP.md)     | [Infra](backends/node/services/auth/infra/AUTH_INFRA.md)     | [API](backends/node/services/auth/api/AUTH_API.md)     | [Tests](backends/node/services/auth/tests/AUTH_TESTS.md)           |
 | Comms     | [Domain](backends/node/services/comms/domain/COMMS_DOMAIN.md)   | [App](backends/node/services/comms/app/COMMS_APP.md)   | [Infra](backends/node/services/comms/infra/COMMS_INFRA.md)   | [API](backends/node/services/comms/api/COMMS_API.md)   | [Tests](backends/node/services/comms/tests/COMMS_TESTS.md)         |
+| Files     | —                                                               | —                                                      | —                                                            | —                                                      | —                                                                  |
 | dkron-mgr | —                                                               | —                                                      | —                                                            | —                                                      | [Tests](backends/node/services/dkron-mgr/tests/DKRON_MGR_TESTS.md) |
 
 ### Client Libraries
@@ -348,10 +360,17 @@ _Service-owned client libraries for consumers._
 
 ### Gateways
 
-| Gateway                                               | Platform | Status     | Description                      |
-| ----------------------------------------------------- | -------- | ---------- | -------------------------------- |
-| [REST Gateway](backends/dotnet/gateways/REST/REST.md) | .NET     | ✅ Done    | HTTP/REST → gRPC routing gateway |
-| SignalR Gateway                                       | .NET     | 📋 Planned | WebSocket → gRPC routing gateway |
+| Gateway                                               | Platform | Status     | Description                                |
+| ----------------------------------------------------- | -------- | ---------- | ------------------------------------------ |
+| [REST Gateway](backends/dotnet/gateways/REST/REST.md) | .NET     | ✅ Done    | HTTP/REST → gRPC routing gateway           |
+| SignalR Gateway                                       | .NET     | 📋 Planned | Real-time WebSocket push gateway (ADR-028) |
+
+_Gateway internals:_
+
+| Gateway         | Docs                                             | Description                                                                 |
+| --------------- | ------------------------------------------------ | --------------------------------------------------------------------------- |
+| REST Gateway    | [REST.md](backends/dotnet/gateways/REST/REST.md) | JWT auth, gRPC routing, rate limiting, idempotency, request enrichment      |
+| SignalR Gateway | —                                                | JWT-authed WebSocket connections, gRPC push interface for internal services |
 
 ### Orchestration
 
