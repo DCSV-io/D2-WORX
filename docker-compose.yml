@@ -443,10 +443,9 @@ services:
   d2-portainer:
     image: portainer/portainer-ce:latest
     container_name: d2-portainer
-    # Admin credentials: admin / ${PORTAINER_ADMIN_PASSWORD} (from .env.local)
-    # Hash generated via: htpasswd -nbB admin <password> | cut -d: -f2
-    # Regenerate if you change PORTAINER_ADMIN_PASSWORD.
-    command: --admin-password '$$2y$$05$$3hnrhvIr15StAzblNKPAbuSeueGB4vBVCiftBE2bb5cXpBb3HSV1a'
+    # Admin credentials: admin / <your password>
+    # PORTAINER_ADMIN_PASSWORD_HASH must be a bcrypt hash (see .env.local.example for generation).
+    command: --admin-password '${PORTAINER_ADMIN_PASSWORD_HASH}'
     ports:
       - "9443:9443"
       - "8000:8000"
@@ -467,7 +466,7 @@ services:
       - sh
       - -c
       - |
-        corepack enable && corepack prepare pnpm@latest --activate
+        corepack enable && corepack prepare pnpm@10.30.3 --activate
         pnpm install
     working_dir: /app
     volumes:
@@ -480,6 +479,7 @@ services:
       - ./contracts:/app/contracts:ro
       - d2-node-modules:/app/node_modules
       - d2-sveltekit-modules:/app/clients/web/node_modules
+    restart: "no"
     networks: [d2-network]
 
   # ==========================================================================
