@@ -72,6 +72,7 @@ Every item MUST pass before a change is "done":
 - [ ] **i18n** — no hardcoded user-visible strings (UI, handler messages, input errors, notifications). All locale files in sync.
 - [ ] **Documentation** — affected `.md` files updated
 - [ ] **TS diagnostics** — `mcp__cclsp__get_diagnostics` clean for edited TS files
+- [ ] **Container health** — if Docker Compose is running, verify affected containers are healthy (`docker compose --env-file .env.local ps`). Restart any containers that are unhealthy or have stale code (`docker compose --env-file .env.local restart <service>`). Changes to shared packages, dependencies, or service code can leave containers in a broken state until restarted.
 
 ### Step 6: Report
 
@@ -85,8 +86,17 @@ After completing a task, briefly report:
 
 ## §2. Commands
 
-> ⚠️ **DO NOT START SERVICES MANUALLY** — Never run `dotnet run`, `pnpm dev`, `pnpm preview`, or any long-running server directly.
+> ⚠️ **DO NOT START SERVICES MANUALLY** — Never run `dotnet run`, `pnpm dev`, `pnpm preview`, or any long-running server directly. Services are managed by Docker Compose.
 > E2E tests that self-manage their infrastructure (Testcontainers, child processes with cleanup) ARE allowed — they start and stop their own services.
+
+**Docker Compose (service lifecycle):**
+
+```bash
+make up                                             # Start all services (detached)
+make down                                           # Stop all services
+docker compose --env-file .env.local up -d          # Start with explicit env file
+docker compose --env-file .env.local down           # Stop with explicit env file
+```
 
 **Build:**
 

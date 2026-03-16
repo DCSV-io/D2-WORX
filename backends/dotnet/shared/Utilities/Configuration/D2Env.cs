@@ -31,7 +31,7 @@ using dotenv.net;
 /// </list>
 /// <para>
 /// Existing environment variables are never overwritten (<see cref="SetIfAbsent"/>),
-/// so Aspire-injected or container-injected values always win.
+/// so container-injected values always win.
 /// </para>
 /// </remarks>
 public static class D2Env
@@ -76,7 +76,7 @@ public static class D2Env
             var sep = key.IndexOf('_');
             if (sep > 0 && sep < key.Length - 1)
             {
-                SetIfAbsent($"{key[..sep]}__{key[(sep + 1)..]}", value);
+                SetIfAbsent($"{key.Substring(0, sep)}__{key.Substring(sep + 1)}", value);
             }
         }
     }

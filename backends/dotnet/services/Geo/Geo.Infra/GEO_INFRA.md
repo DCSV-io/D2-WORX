@@ -44,7 +44,7 @@ Infrastructure layer for the Geo microservice implementing Entity Framework Core
 > | File Name                                                   | Description                                                                                                               |
 > | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 > | [GeoDbContext.cs](Repository/GeoDbContext.cs)               | EF Core DbContext exposing DbSets for all geographic entities, applying configurations and seed data via OnModelCreating. |
-> | [GeoDbContextFactory.cs](Repository/GeoDbContextFactory.cs) | Design-time factory enabling EF Core tooling (migrations) without requiring a running application or Aspire host.         |
+> | [GeoDbContextFactory.cs](Repository/GeoDbContextFactory.cs) | Design-time factory enabling EF Core tooling (migrations) without requiring a running application host.                   |
 >
 > ### Entities
 >

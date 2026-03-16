@@ -22,6 +22,7 @@
     "@d2/comms-app": "workspace:*",
     "@d2/comms-domain": "workspace:*",
     "@d2/comms-infra": "workspace:*",
+    "@d2/database-startup-pg": "workspace:*",
     "@d2/cache-memory": "workspace:*",
     "@d2/cache-redis": "workspace:*",
     "@d2/di": "workspace:*",

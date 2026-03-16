@@ -5,7 +5,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>D2.Shared.Utilities</RootNamespace>
-        <IsAspireSharedProject>true</IsAspireSharedProject>
     </PropertyGroup>
 
     <ItemGroup>

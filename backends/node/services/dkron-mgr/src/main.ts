@@ -7,7 +7,7 @@
 // NOTE: OpenTelemetry is bootstrapped via the `--import @d2/service-defaults/register`
 // Node.js loader flag in package.json scripts (dev + start). The register module
 // calls `setupTelemetry({ serviceName })` using OTEL_SERVICE_NAME from env vars
-// (set by Aspire's `WithOtelRefs()`). OTel is fully active before this file executes.
+// (set by Docker Compose env vars). OTel is fully active before this file executes.
 
 import { createLogger } from "@d2/logging";
 import { parseConfig, logConfig } from "./config.js";

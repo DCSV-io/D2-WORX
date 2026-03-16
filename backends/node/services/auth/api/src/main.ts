@@ -18,7 +18,7 @@ import { createApp } from "./composition-root.js";
 
 const logger = createLogger({ serviceName: "auth-service" });
 
-// Aspire injects connection strings in .NET formats (ADO.NET for PG, StackExchange for Redis).
+// Docker Compose injects connection strings in .NET formats (ADO.NET for PG, StackExchange for Redis).
 // Parsers convert to URI format for Node.js clients, passing through URIs unchanged.
 const config = defineConfig("auth-service", {
   databaseUrl: requiredParsed(parsePostgresUrl, "AUTH_DATABASE_URL"),

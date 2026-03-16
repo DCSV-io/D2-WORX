@@ -10,7 +10,7 @@ The **Web Client** is a SvelteKit 5 application that serves as the primary user 
 **i18n:** Paraglide (10 BCP 47 locales: en-US, en-GB, en-CA, es-ES, es-MX, de-DE, fr-FR, fr-CA, it-IT, ja-JP)
 **Observability:** OpenTelemetry (server-side), Grafana Faro (client-side errors → Loki, traces → Tempo, Web Vitals → Mimir)
 
-> **Not a standalone app.** The web client depends on the .NET REST Gateway for all data operations and on the Auth Service (proxied through SvelteKit) for authentication. It is orchestrated via Aspire alongside all backend services.
+> **Not a standalone app.** The web client depends on the .NET REST Gateway for all data operations and on the Auth Service (proxied through SvelteKit) for authentication. It is orchestrated via Docker Compose alongside all backend services.
 
 ---
 
@@ -86,7 +86,7 @@ Runs on every request via `hooks.server.ts`:
 - Tailwind CSS v4.2.1 via Vite plugin with OKLCH theming (3 presets: WORX, Zinc, Ocean)
 - Paraglide i18n with 10 BCP 47 locales (`PUBLIC_ENABLED_LOCALES__N` env vars), server middleware URL rerouting
 - mdsvex preprocessor for `.svx` markdown-in-Svelte files
-- Aspire orchestration wired (`AddViteApp` with `.WithPnpm()`)
+- Docker Compose orchestration with Vite dev server (hot reload via bind mounts)
 
 ### Auth & Session
 
@@ -247,7 +247,7 @@ This applies to ALL navigation: `<a href>`, `goto()`, `redirect()`, and `fetch()
 
 - Node.js 24+
 - pnpm 10+
-- All backend services running via Aspire (or manually)
+- All backend services running via Docker Compose (`docker compose --env-file .env.local up -d`)
 
 ### Commands
 
@@ -296,12 +296,12 @@ E2E tests are split into three tiers based on infrastructure requirements:
 | Tier          | Directory                     | Config                       | Script                 | Backends Required | CI  |
 | ------------- | ----------------------------- | ---------------------------- | ---------------------- | ----------------- | --- |
 | **Mocked**    | `tests/mocked/`               | `playwright.config.ts`       | `pnpm test:e2e:mocked` | None              | Yes |
-| **Local E2E** | `tests/e2e/`                  | `playwright.local.config.ts` | `pnpm test:e2e:local`  | All (Aspire)      | No  |
-| **True E2E**  | `backends/node/services/e2e/` | (separate project)           | (separate project)     | All (Aspire)      | No  |
+| **Local E2E** | `tests/e2e/`                  | `playwright.local.config.ts` | `pnpm test:e2e:local`  | All (Compose)     | No  |
+| **True E2E**  | `backends/node/services/e2e/` | (separate project)           | (separate project)     | All (Compose)     | No  |
 
 **Tier 1 — Mocked tests** (`tests/mocked/*.spec.ts`): Run against the SvelteKit dev server with `D2_MOCK_INFRA=true`. Client-side HTTP requests are intercepted via Playwright's `page.route()` API. Server-side data loading (e.g., geo ref data via gRPC) is handled by the `D2_MOCK_INFRA` env var, which provides mock data at the SSR level. Shared mock helpers live in `tests/mocked/fixtures.ts` (e.g., `mockEmailCheck`). These tests run in CI and use `retries: 1` for flaky async behavior.
 
-**Tier 2 — Local E2E** (`tests/e2e/*.spec.ts`): Full integration tests that require all backend services running (via Aspire or manually). Uses `playwright.local.config.ts` which reuses an existing dev server on port 5173. Not included in CI — local development only.
+**Tier 2 — Local E2E** (`tests/e2e/*.spec.ts`): Full integration tests that require all backend services running (via Docker Compose). Uses `playwright.local.config.ts` which reuses an existing dev server on port 5173. Not included in CI — local development only.
 
 **Tier 3 — True E2E** (`backends/node/services/e2e/`): Cross-service E2E tests in a separate project. Tests the full stack including Auth, Comms, and Geo services. Managed independently from the web client.
 

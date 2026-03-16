@@ -48,6 +48,8 @@
    - [ADR-022: Design System-First Development](#adr-022-design-system-first-development)
    - [ADR-023: Gateway-Edge i18n Translation](#adr-023-gateway-edge-i18n-translation)
    - [ADR-024: Production Topology (1-Node → 3-Node)](#adr-024-production-topology-1-node--3-node)
+   - [ADR-025: Replace .NET Aspire with Docker Compose / Swarm](#adr-025-replace-net-aspire-with-docker-compose--swarm)
+6. [Production Deployment Checklist](#production-deployment-checklist)
 
 ---
 
@@ -154,16 +156,16 @@ From Q1 2026 audit:
 
 ### Blocked — Can Only Fix Later
 
-| #   | Item                                        | Blocker                                       | Priority | Notes                                                                                                                                                          |
-| --- | ------------------------------------------- | --------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API            | P2       | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
-| 2   | Graceful shutdown test                      | Needs #1 (drain API) first                    | P2       | Can't test shutdown behavior until drain is implemented                                                                                                        |
-| 3   | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Stage B/C)   | P2       | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
-| 4   | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built     | P2       | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
-| 5   | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)           | P2       | Requires auth org contact API routes + multi-service orchestration                                                                                             |
-| 8   | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                    | P3       | Automated dependency staleness checks                                                                                                                          |
-| 9   | Service auto-restart / readiness probes     | Deployment infrastructure (K8s/Aspire health) | Medium   | Auto-restart policies, graceful startup when deps aren't ready, readiness probes                                                                               |
-| 10  | Verification email delivery confirmation    | SignalR / push infra (Comms Stage B/C)        | P2       | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
+| #     | Item                                        | Blocker                                     | Priority   | Notes                                                                                                                                                          |
+| ----- | ------------------------------------------- | ------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Graceful shutdown: drain RabbitMQ consumer  | MessageBus needs new `drain()` API          | P2         | Consumer not drained before SIGTERM — in-flight messages lost                                                                                                  |
+| 2     | Graceful shutdown test                      | Needs #1 (drain API) first                  | P2         | Can't test shutdown behavior until drain is implemented                                                                                                        |
+| 3     | E2E delivery pipeline retry path test       | Comms retry scheduler not built (Stage B/C) | P2         | Retry processor that picks up failed attempts doesn't exist yet                                                                                                |
+| 4     | Hook integration tests with real BetterAuth | BetterAuth test lifecycle infra not built   | P2         | Starting/stopping BetterAuth with real DB in test harness needs new infra                                                                                      |
+| 5     | E2E Org contact CRUD flow test              | Stage C (auth org routes not built)         | P2         | Requires auth org contact API routes + multi-service orchestration                                                                                             |
+| 8     | `dotnet outdated` in CI pipeline            | CI pipeline not set up yet                  | P3         | Automated dependency staleness checks                                                                                                                          |
+| ~~9~~ | ~~Service auto-restart / readiness probes~~ | ~~Deployment infrastructure~~               | ~~Medium~~ | **Resolved.** Docker Compose health checks + `depends_on: condition: service_healthy` for startup ordering. Prod: Swarm `deploy.restart_policy` (ADR-025)      |
+| 10    | Verification email delivery confirmation    | SignalR / push infra (Comms Stage B/C)      | P2         | FE should show pending state, listen on SignalR for delivery result. Generalizes to all async delivery feedback. `sendOnSignIn: true` auto-retries on recovery |
 
 ---
 
@@ -236,14 +238,14 @@ Full implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clients/web/IMP
 
 ### Infrastructure
 
-| Component     | Status  | Notes                                                    |
-| ------------- | ------- | -------------------------------------------------------- |
-| PostgreSQL 18 | ✅ Done | Aspire-managed                                           |
-| Redis 8.2     | ✅ Done | Aspire-managed                                           |
-| RabbitMQ 4.1  | ✅ Done | Aspire-managed                                           |
-| MinIO         | ✅ Done | Aspire-managed                                           |
-| Dkron 4.0.9   | ✅ Done | Aspire-managed, persistent container, dashboard on :8888 |
-| LGTM Stack    | ✅ Done | All telemetry via Alloy (OTLP) → Loki / Tempo / Mimir    |
+| Component     | Status  | Notes                                                         |
+| ------------- | ------- | ------------------------------------------------------------- |
+| PostgreSQL 18 | ✅ Done | Docker Compose-managed                                        |
+| Redis 8.2     | ✅ Done | Docker Compose-managed                                        |
+| RabbitMQ 4.1  | ✅ Done | Docker Compose-managed                                        |
+| MinIO         | ✅ Done | Docker Compose-managed                                        |
+| Dkron 4.0.9   | ✅ Done | Docker Compose-managed, persistent volume, dashboard on :8888 |
+| LGTM Stack    | ✅ Done | All telemetry via Alloy (OTLP) → Loki / Tempo / Mimir         |
 
 ### Shared Packages (.NET)
 
@@ -899,7 +901,7 @@ Each service package exports an `addXxx(services, ...)` registration function th
 
 **Status**: Implemented (2026-02)
 
-**Context**: Multiple services need periodic data maintenance (purging expired sessions, cleaning stale WhoIs data, removing soft-deleted messages). Need a distributed job scheduler that works with the existing Aspire infrastructure and supports the handler pattern.
+**Context**: Multiple services need periodic data maintenance (purging expired sessions, cleaning stale WhoIs data, removing soft-deleted messages). Need a distributed job scheduler that works with the existing Docker Compose infrastructure and supports the handler pattern.
 
 **Decision**: **Dkron 4.0.9** as the scheduler with `@d2/dkron-mgr` as a declarative job reconciler. Jobs execute via HTTP→gRPC chain through the .NET REST gateway.
 
@@ -917,7 +919,7 @@ Dkron (cron) → HTTP POST to REST Gateway (X-Api-Key)
 
 | Component        | Role                                                                             |
 | ---------------- | -------------------------------------------------------------------------------- |
-| Dkron 4.0.9      | Persistent Aspire container, dashboard at `:8888`, single-node Raft              |
+| Dkron 4.0.9      | Persistent Docker container, dashboard at `:8888`, single-node Raft              |
 | `@d2/dkron-mgr`  | Node.js reconciler — declarative job definitions → Dkron REST API                |
 | REST Gateway     | Receives Dkron HTTP callbacks, forwards via gRPC with service key auth           |
 | Service handlers | App-layer CQRS handlers with Redis distributed locks and batch delete operations |
@@ -970,7 +972,7 @@ Dkron (cron) → HTTP POST to REST Gateway (X-Api-Key)
 
 **Rationale:**
 
-- Dkron is a lightweight, Raft-based scheduler that fits the Aspire container model
+- Dkron is a lightweight, Raft-based scheduler that fits the Docker Compose container model
 - Reconciler pattern ensures job definitions are version-controlled and drift-resistant
 - HTTP→gRPC chain reuses existing gateway infrastructure and auth patterns
 - Redis distributed locks prevent concurrent job execution across instances
@@ -1094,25 +1096,26 @@ See [`backends/node/services/comms/COMMS.md`](backends/node/services/comms/COMMS
 
 **Status**: Implemented (2026-03)
 
+> **Note**: The Aspire AppHost layer described below was removed in ADR-025. Services now read env vars directly via `D2Env.Load()` (.NET) or `loadEnv()` (Node.js), and Docker Compose injects container-specific overrides via `environment:` blocks.
+
 **Context**: The .NET Aspire AppHost had hardcoded configuration values (ports, URLs, connection strings) scattered across `Program.cs`. Node.js services used `process.env` directly with no validation. SvelteKit couldn't use Node.js `--import` flag for early env loading. Needed a consistent, typed, validated approach to environment configuration across all platforms.
 
-**Decision**: Platform-specific typed config systems with Aspire AppHost as the orchestration layer that injects env vars into all services.
+**Decision**: Platform-specific typed config systems. Docker Compose `env_file:` loads `.env.local` and `environment:` blocks override container-specific values (DNS names, internal ports).
 
 **Three layers:**
 
 | Layer            | Platform | Mechanism                                                             |
 | ---------------- | -------- | --------------------------------------------------------------------- |
-| Aspire AppHost   | .NET     | `Env()`/`EnvInt()` helpers read from `.env.local`, inject into child  |
+| Docker Compose   | YAML     | `env_file: .env.local` + `environment:` overrides for container DNS   |
 | Node.js services | Node     | `defineConfig()` typed schema with `requiredString`/`defaultInt`/etc. |
 | SvelteKit        | Node     | `loadEnv()` in `instrumentation.server.ts` (earliest server hook)     |
 
-**Aspire AppHost (`ServiceExtensions.cs`):**
+**Docker Compose (`docker-compose.yml`):**
 
-- `Env(name)` / `EnvInt(name, default)` static helpers read from process environment
-- AppHost loads `.env.local` via `dotenv.net` at startup
-- All hardcoded values extracted into env vars with sensible defaults
-- Child services receive env vars via `.WithEnvironment()` on resource builders
-- Clean env var names (e.g., `AUTH_HTTP_PORT`, `GATEWAY_GRPC_PORT`) replace Aspire's `services__*` format
+- `env_file: .env.local` loads all vars into each service's environment
+- `environment:` block overrides container-specific values (Docker DNS names, internal ports)
+- Services read env vars directly via `D2Env.Load()` (.NET) or `loadEnv()` (Node.js)
+- `.env.local` is the single source of truth — all values parameterized via `${VAR}` in compose
 
 **Node.js `defineConfig()` (`@d2/service-defaults`):**
 
@@ -1146,7 +1149,7 @@ const config = defineConfig("auth-service", {
 
 - Type-safe config catches missing env vars at startup, not at runtime
 - Single source of truth (`.env.local`) for all services during local development
-- Aspire AppHost orchestrates env var injection — services don't read `.env.local` directly
+- Docker Compose loads `.env.local` via `env_file:` — services receive all vars at startup
 - `defineConfig()` provides .NET-style Options pattern for Node.js services
 - Aggregate errors prevent the "fix one, find another" debugging loop
 
@@ -1228,7 +1231,7 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 
 - .NET SDK/runtime, NuGet packages (`dotnet outdated`)
 - Node.js/pnpm packages (`pnpm outdated`, all `@d2/*` + third-party)
-- Aspire container image tags (PostgreSQL, Redis, RabbitMQ, Dkron, LGTM stack)
+- Docker image tags in `.env.local` (PostgreSQL, Redis, RabbitMQ, Dkron, LGTM stack)
 - Dev tooling (ESLint, Prettier, Vitest, TypeScript, Drizzle Kit, Buf)
 - BetterAuth (pin exact, test thoroughly — check known gotchas list in AUTH.md for regressions)
 
@@ -1238,7 +1241,7 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 2. Bump in dependency order (shared packages first, then services, then clients)
 3. Run full test suites after each tier (.NET: `dotnet test`, Node: `pnpm vitest`)
 4. Fix any breakage before proceeding to next tier
-5. Update Aspire container image tags, verify orchestration starts cleanly
+5. Update Docker image tags in `.env.local`, verify `docker compose up` starts cleanly
 6. Commit as a single `chore: quarterly dependency update (Q# YYYY)` PR
 
 **Timing rule**: Always do the quarterly bump **before** starting a new major feature phase — especially before pulling in new client-side dependencies (e.g., SvelteKit libraries). This keeps the foundation current and avoids version conflicts with freshly installed packages.
@@ -1271,7 +1274,7 @@ See [`backends/node/services/auth/bff-client/AUTH_BFF_CLIENT.md`](backends/node/
 | ---- | ----------------------------- | ----------------------------------------------------------------------------------- | --- | ------------------------------------ |
 | 1    | `clients/web/tests/mocked/`   | SvelteKit dev server only (`D2_MOCK_INFRA=true`), `page.route()` API mocks          | Yes | UI rendering, client validation, nav |
 | 2    | `backends/node/services/e2e/` | Full stack: Testcontainers (PG, Redis, RabbitMQ) + .NET Geo + in-process Auth/Comms | Yes | High-value end-to-end user flows     |
-| 3    | `clients/web/tests/e2e/`      | Expects all services running externally (Aspire or manual)                          | No  | Comprehensive local-only coverage    |
+| 3    | `clients/web/tests/e2e/`      | Expects all services running externally (Docker Compose)                            | No  | Comprehensive local-only coverage    |
 
 **Tier 1 — Mocked Playwright** (146 tests, 5 skipped):
 
@@ -1459,7 +1462,7 @@ Faro SDK captures Web Vitals (LCP, FID, CLS, TTFB, INP) and sends them as measur
 
 **Status**: Proposed (2026-03)
 
-**Context**: D²-WORX runs as a single-node Aspire dev setup. Production needs a clear growth path — start simple and add redundancy when justified. 2 nodes is the **worst number** for consensus systems: RabbitMQ quorum queues, Patroni/etcd, Redis Sentinel, and Dkron Raft all need majority quorum, which is impossible with 2 nodes when 1 fails. You get all the complexity of distribution with none of the fault tolerance. The minimum for proper HA is 3 nodes.
+**Context**: D²-WORX runs as a single-node Docker Compose dev setup. Production needs a clear growth path — start simple and add redundancy when justified. 2 nodes is the **worst number** for consensus systems: RabbitMQ quorum queues, Patroni/etcd, Redis Sentinel, and Dkron Raft all need majority quorum, which is impossible with 2 nodes when 1 fails. You get all the complexity of distribution with none of the fault tolerance. The minimum for proper HA is 3 nodes.
 
 **Decision**: Two-phase growth. Phase 1 = single node with Docker Swarm (production-ready, no HA). Phase 2 = add 2 nodes for full active-active-active with proper quorum everywhere. Same container images, same stack file — just add nodes and increase replicas.
 
@@ -1852,6 +1855,145 @@ This is the only point where rollback loses data. By Phase 3 you've had days/wee
 | Rename column                   | 3-phase expand-contract | Zero until Phase 3  |
 | Change column type              | 3-phase expand-contract | Zero until Phase 3  |
 | Merge two tables                | 3-phase expand-contract | Zero until Phase 3  |
+
+---
+
+### ADR-025: Replace .NET Aspire with Docker Compose / Swarm
+
+**Status**: Resolved (2026-03)
+
+**Context**: .NET Aspire was used as the local orchestrator during early development, but accumulated five critical limitations:
+
+1. **AppHost crash kills all networking** — a crash in the Aspire AppHost process severs all inter-service networking instantly. Services stay running but can't communicate, requiring a full restart of the entire stack
+2. **No telemetry through Alloy pipeline** — Aspire's built-in dashboard intercepts OTLP telemetry, bypassing the Alloy → Loki/Tempo/Mimir pipeline that production uses. Dev telemetry and prod telemetry flow through completely different paths, hiding configuration issues until deployment
+3. **No auto-restart or failure recovery** — if a service crashes, Aspire does not restart it. Manual intervention required for every service failure during development
+4. **Useless outside dev / bloats codebase** — the AppHost project, Aspire hosting packages, and ServiceDiscovery references add complexity that serves no purpose in production. The AppHost is a dev-only artifact with no prod equivalent
+5. **Can't mirror production locally** — Aspire's orchestration model has no equivalent in any production environment. The gap between "works in Aspire" and "works in production" is unbridgeable — different networking, different service discovery, different health checking
+
+**Decision**: Replace Aspire with Docker Compose (dev) + Docker Swarm (prod). This aligns with the topology established in ADR-024.
+
+**Implementation:**
+
+1. **6 multi-stage Dockerfiles** in `docker/` — each service has a dev stage (hot-reload via volume-mounted source) and a prod stage (compiled/optimized). Dev: `dotnet watch` (.NET), `tsx watch` (Node.js), `vite dev` (SvelteKit). Prod: published .NET binaries, transpiled Node.js, built SvelteKit output
+2. **`docker-compose.yml`** — full local stack definition. All services, infrastructure (PostgreSQL, Redis, RabbitMQ, Dkron), and observability (Alloy, Loki, Tempo, Mimir, Grafana). `depends_on` with health checks for correct startup ordering
+3. **`docker-compose.prod.yml`** — production overlay with compiled images, resource limits, restart policies, and Swarm-compatible configuration
+4. **Per-service database auto-creation** — each service creates its own database on startup if it doesn't exist. No external migration runner or init container needed. Services are fully self-contained
+5. **`Makefile`** — developer ergonomics: `make up`, `make down`, `make logs`, `make rebuild <service>`, etc.
+6. **Portainer Business Edition** — visual management UI for Docker Swarm (optional, included in stack for production monitoring)
+
+**Consequences:**
+
+- **90% dev-prod parity** — same container images, same networking model, same health checks. Docker Compose locally, `docker stack deploy` in production. The gap between dev and prod is minimal
+- **Services are fully self-contained** — self-create databases, self-configure via environment variables, self-register health checks. No orchestrator-level magic needed
+- **Hot reload preserved** — dev Dockerfiles volume-mount source directories. `dotnet watch`, `tsx watch`, and `vite dev` work inside containers with file-watching
+- **Telemetry unified** — all telemetry flows through Alloy in both dev and prod. No more Aspire dashboard intercepting OTLP. Issues surface in dev, not after deployment
+- **Removed**: AppHost project, `Aspire.Hosting.*` packages, `Aspire.ServiceDiscovery` references, all Aspire-specific configuration
+- **Added**: `docker-compose.yml`, `docker-compose.prod.yml`, `Makefile`, 6 Dockerfiles in `docker/`, Portainer service definition
+
+---
+
+## Production Deployment Checklist
+
+Prerequisites and tasks required to deploy D²-WORX to production (ADR-024 Phase 1: single-node Docker Swarm). Tracks the gap between "works in Docker Compose locally" and "runs in production."
+
+### 1. Secrets & Credentials
+
+| Task                                      | Status   | Notes                                                                                                                                                                 |
+| ----------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create `.env.prod` with production values | Pending  | Copy `.env.local.example`, fill with real credentials. **Never commit.** Store encrypted (e.g., `age`/SOPS) or in a secrets manager                                   |
+| Generate all API keys / service keys      | Pending  | Each `*_API_KEY`, `*_SERVICE_KEY`, `GATEWAY_SERVICEKEY__VALIDKEYS__*` needs a unique, cryptographically random value. Use `openssl rand -hex 32`                      |
+| Generate RS256 key pair for JWT signing   | Pending  | BetterAuth generates on first start (stored in `jwks` table), but verify the key persists across restarts via PG volume                                               |
+| Resend production API key                 | Pending  | Replace `re_your_api_key_here` with production Resend key. Verify sender domain (not `resend.dev`)                                                                    |
+| Twilio production credentials             | Pending  | Replace test SID/token with production values. Purchase production phone number                                                                                       |
+| IPInfo production token                   | Pending  | Replace dev token with production tier if needed (free = 50K req/month)                                                                                               |
+| Portainer admin password                  | Pending  | Set `PORTAINER_ADMIN_PASSWORD` to a strong value. Consider disabling Portainer in prod (`profiles: [dev-tools]`) if not needed                                        |
+| Docker Secrets migration (Phase 2)        | Deferred | Convert credential env vars to Docker Secrets (`_FILE` convention) for Swarm secret injection. Not required for Phase 1 single-node but recommended before multi-node |
+
+### 2. Environment Configuration
+
+| Task                                     | Status  | Notes                                                                                            |
+| ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------ |
+| `OTEL_ENVIRONMENT=Production`            | Pending | Distinguishes prod telemetry from dev in Grafana dashboards                                      |
+| `OTEL_CLUSTER_NAME=d2-prod` (or similar) | Pending | Labels all metrics/logs/traces with cluster identity                                             |
+| `GRAFANA_COOKIE_SECURE=true`             | Pending | Required when Grafana is behind HTTPS (Cloudflare tunnel)                                        |
+| `GRAFANA_STRICT_TRANSPORT_SECURITY=true` | Pending | HSTS header for Grafana                                                                          |
+| `GRAFANA_COOKIE_SAMESITE=strict`         | Pending | Tighten from `lax` to `strict` in prod                                                           |
+| `AUTH_BASE_URL` / `AUTH_EMAIL_BASE_URL`  | Pending | Set to production domain (e.g., `https://app.dcsv.io`). Email verification/reset links use this  |
+| `AUTH_CORS_ORIGINS__*`                   | Pending | Set to production domain(s) only. Remove `localhost` entries                                     |
+| `CorsOrigin`                             | Pending | Gateway CORS — set to production frontend URL                                                    |
+| `PUBLIC_GATEWAY_URL`                     | Pending | Public-facing gateway URL (Cloudflare tunnel endpoint)                                           |
+| `PUBLIC_FARO_COLLECTOR_URL`              | Pending | Alloy Faro endpoint, accessible from browser through Cloudflare tunnel or separate subdomain     |
+| `FARO_CORS_ORIGINS`                      | Pending | Set to production frontend origin(s) for browser telemetry                                       |
+| `RESEND_FROM_ADDRESS`                    | Pending | Branded sender with verified domain (e.g., `D²-WORX <noreply@dcsv.io>`)                          |
+| `VITE_ALLOWED_HOSTS`                     | Pending | Set to production hostname                                                                       |
+| `AUTO_MIGRATE=false` (or remove)         | Pending | Disable auto-migration in prod. Run migrations as a deliberate deploy step, not on every startup |
+
+### 3. Infrastructure Setup
+
+| Task                                           | Status  | Notes                                                                                                                                                         |
+| ---------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Provision production node (32 GB+ RAM)         | Pending | Linux (Debian/Ubuntu recommended). Docker Engine + Docker Compose plugin installed                                                                            |
+| `docker swarm init`                            | Pending | Initialize single-manager Swarm on the production node                                                                                                        |
+| Install `cloudflared`                          | Pending | Cloudflare Tunnel daemon — routes public traffic to internal services without exposing ports                                                                  |
+| Configure Cloudflare Tunnel routes             | Pending | Map public domains → internal Docker services (e.g., `app.dcsv.io → d2-sveltekit:5173`, `api.dcsv.io → d2-gateway:5461`). Include Grafana, Faro collector     |
+| Firewall — block all inbound except Cloudflare | Pending | No public ports. Only Cloudflare Tunnel egress + SSH for management. UFW/nftables rules                                                                       |
+| Docker log rotation                            | Pending | Configure Docker daemon `log-driver` with `max-size` / `max-file` to prevent disk exhaustion. Alloy scrapes logs — Docker's own JSON logs are a fallback only |
+| Create Docker volumes on host                  | Pending | Swarm creates volumes automatically, but verify volume driver and backup-ability                                                                              |
+| RabbitMQ classic queues (not quorum)           | Pending | Single-node = classic queues only. Quorum queues provide no benefit with 1 node. Verify existing queue config doesn't default to quorum                       |
+
+### 4. CI/CD Pipeline
+
+| Task                                     | Status  | Notes                                                                                                                                                          |
+| ---------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub Actions workflow for image builds | Pending | Build all 6 Dockerfiles with `--target prod`, tag with commit SHA + `latest`, push to `ghcr.io/dcsv-io/d2-worx/<service>`                                      |
+| GHCR authentication                      | Pending | `GITHUB_TOKEN` or PAT with `write:packages` scope. Configure in GitHub Actions secrets                                                                         |
+| `IMAGE_TAG` strategy                     | Pending | Compose prod uses `${IMAGE_TAG:-latest}`. CI sets this to git SHA or semver tag. Deploy script pulls specific tag                                              |
+| Automated tests in CI                    | Pending | `dotnet build` → `dotnet test` → `pnpm vitest run` → `pnpm lint` → `pnpm format:check` before image push                                                       |
+| Deploy script / GitHub Action            | Pending | SSH to prod node → `docker pull` new images → `docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml d2-worx`. Consider rolling update strategy |
+| Migration strategy in CI                 | Pending | Run migrations as a separate deploy step (not `AUTO_MIGRATE`). Order: Geo → Auth → Comms. Rollback: reverse order                                              |
+
+### 5. Backups & Recovery
+
+| Task                                   | Status  | Notes                                                                                                                                     |
+| -------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Automated `pg_dump` to MinIO           | Pending | Dkron job or cron: `pg_dump` all 3 databases → MinIO local bucket. Daily minimum, hourly for production traffic                           |
+| Offsite backup replication             | Pending | MinIO mirror / `mc mirror` to Backblaze B2 or S3. Backups on-node are useless if the node dies                                            |
+| Redis RDB/AOF persistence verification | Pending | Verify Redis `save` config and AOF enabled. Snapshot to MinIO alongside PG dumps                                                          |
+| RabbitMQ definitions export            | Pending | Automated `rabbitmqctl export_definitions` → MinIO. Queues/exchanges/bindings can be recreated from this                                  |
+| Backup restoration test                | Pending | **Critical** — verify you can actually restore from backups. `pg_restore` round-trip, Redis load, RabbitMQ import. Document the procedure |
+| Disaster recovery runbook              | Pending | Document: new node setup → install Docker → pull images → restore backups → `docker stack deploy`. Target: <1 hour recovery               |
+
+### 6. Monitoring & Alerting
+
+| Task                            | Status  | Notes                                                                                                                                                         |
+| ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grafana alert rules (Issue #40) | Pending | Error rate >5% 5xx/5min, P99 latency >2s, rate limit spikes, delivery failures, gRPC errors, service down                                                     |
+| Alert notification channel      | Pending | Email (Resend), Slack webhook, or PagerDuty for production alerts. Configure in Grafana                                                                       |
+| Uptime monitoring (external)    | Pending | External ping from outside Cloudflare (e.g., UptimeRobot, Checkly) → public health endpoint. Catches total-node-down scenarios that internal monitoring can't |
+| Disk space alerts               | Pending | Docker volumes, `/var/lib/docker`, Loki/Tempo/Mimir storage. Alert at 80% capacity                                                                            |
+| Log retention tuning            | Pending | Loki retention period, Tempo trace retention, Mimir metric retention — size for production volume. Dev defaults may be too generous                           |
+
+### 7. Security Hardening
+
+| Task                        | Status  | Notes                                                                                                                                                                 |
+| --------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SSH key-only authentication | Pending | Disable password auth on production node                                                                                                                              |
+| Docker socket access        | Pending | Only Alloy and cAdvisor need Docker socket (`/var/run/docker.sock`). Verify no other containers have access. Consider socket proxy for read-only access               |
+| Non-root containers         | Pending | Verify all Dockerfiles run as non-root user in prod stage. .NET `aspnet` image runs as `app` by default. Node.js needs explicit `USER node`                           |
+| Grafana public access       | Pending | Decide: Cloudflare tunnel with auth (Cloudflare Access) or VPN-only. Internal dashboards should NOT be publicly accessible without authentication                     |
+| Rate limiting review        | Pending | Dev rate limits may be too generous for prod. Review dimensions in [RATE_LIMIT.md](backends/dotnet/shared/Implementations/Middleware/RateLimit.Default/RATE_LIMIT.md) |
+| CORS production lockdown    | Pending | Remove all `localhost` origins. Only production domains in `AUTH_CORS_ORIGINS`, `CorsOrigin`, `FARO_CORS_ORIGINS`                                                     |
+
+### 8. Pre-Deploy Verification
+
+| Task                                    | Status  | Notes                                                                                                                                  |
+| --------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Build all prod images locally           | Pending | `docker compose -f docker-compose.yml -f docker-compose.prod.yml build` — verify all 6 Dockerfiles build with `--target prod`          |
+| Test prod stack locally                 | Pending | `docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d` — verify all services reach healthy state |
+| Verify telemetry in prod mode           | Pending | Confirm logs/metrics/traces flow through Alloy → LGTM with `OTEL_ENVIRONMENT=Production` labels                                        |
+| Health check endpoints work with `wget` | Pending | Prod .NET images use `wget` not `curl`. Verify health checks pass in prod images                                                       |
+| Email delivery end-to-end               | Pending | Send a real verification email through prod Resend credentials. Verify SPF/DKIM/DMARC on sender domain                                 |
+| Load test (basic)                       | Pending | Verify resource limits in `docker-compose.prod.yml` are adequate. Stress test key endpoints, watch for OOM kills                       |
 
 ---
 

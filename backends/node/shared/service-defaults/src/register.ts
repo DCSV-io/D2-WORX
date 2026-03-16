@@ -12,8 +12,8 @@
  *   - No gRPC trace context propagation (disconnected spans)
  *   - No automatic database spans (pg)
  *
- * Configuration is read from standard OTel env vars (set by Aspire's
- * `WithOtelRefs()`):
+ * Configuration is read from standard OTel env vars (set by Docker Compose
+ * environment):
  *   - OTEL_SERVICE_NAME
  *   - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
  *   - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
@@ -25,7 +25,7 @@ import { register } from "node:module";
 import { setupTelemetry } from "./setup-telemetry.js";
 
 // Load .env.local BEFORE anything else — mirrors .NET D2Env.Load().
-// Aspire-injected vars are already in process.env and won't be overwritten.
+// Container-injected vars are already in process.env and won't be overwritten.
 loadEnv();
 
 // Register ESM loader hooks BEFORE the SDK starts.

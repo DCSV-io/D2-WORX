@@ -3,7 +3,7 @@
  *
  * Walks up from cwd looking for `.env.local` (then `.env`), parses it, and
  * sets vars via `process.env[key] ??= value` (never overwrites existing).
- * This means Aspire-injected vars always win, and `.env.local` fills the gaps.
+ * This means Container-injected vars always win, and `.env.local` fills the gaps.
  *
  * Zero external dependencies — just `node:fs` and `node:path`.
  */
@@ -59,7 +59,7 @@ export function loadEnv(): void {
       value = value.slice(1, -1);
     }
 
-    // Never overwrite existing (Aspire-injected vars win).
+    // Never overwrite existing (Container-injected vars win).
     process.env[key] ??= value;
   }
 }

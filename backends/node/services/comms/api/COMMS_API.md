@@ -12,7 +12,7 @@ This is the executable entry point for the Comms service. It:
 4. Starts a gRPC server with per-RPC scope isolation
 5. Starts a RabbitMQ consumer with DLX retry topology
 
-Consumed directly by Aspire orchestration (`AddJavaScriptApp`) and integration tests.
+Consumed directly by Docker Compose orchestration and integration tests.
 
 ## Design Decisions
 

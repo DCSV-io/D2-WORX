@@ -21,7 +21,7 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Get Redis connection string from env var (set via .env.local or Aspire).
+// Get Redis connection string from env var (set via .env.local / Docker Compose).
 var redisConnectionString = ConnectionStringHelper.GetRedis();
 
 builder.AddServiceDefaults();

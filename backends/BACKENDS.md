@@ -551,7 +551,7 @@ public class SetInMem : BaseHandler<SetInMem, I, O>, H
 
 ### Overview
 
-Background maintenance jobs (data purge, cleanup) are triggered by [Dkron](https://dkron.io/) (v4.0.9), a distributed cron service running as a Docker container via Aspire.
+Background maintenance jobs (data purge, cleanup) are triggered by [Dkron](https://dkron.io/) (v4.0.9), a distributed cron service running as a Docker container via Docker Compose.
 
 **Flow:** `Dkron (cron) → REST Gateway (HTTP POST) → gRPC Service (handler)`
 
@@ -586,7 +586,7 @@ The Dkron service key is configured in `.env.local` as `GATEWAY_SERVICEKEY__VALI
 
 ### Dashboard
 
-Dkron dashboard: check the Aspire dashboard for the mapped port (container port 8080).
+Dkron dashboard: check Docker Compose port mappings for the exposed port (container port 8080).
 
 ---
 

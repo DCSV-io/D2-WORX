@@ -693,7 +693,7 @@ backends/node/services/comms/
 - [x] Proto: `contracts/protos/comms/v1/comms.proto` -- full Stage A-C gRPC service surface
 - [x] API: gRPC server (`@d2/comms-api`) -- composition root, mappers, Stage A handlers wired, Stage B-C stubs return UNIMPLEMENTED
 - [x] API: `main.ts` entrypoint (gRPC server + RabbitMQ consumer)
-- [x] Aspire: Auth + Comms services wired via `AddJavaScriptApp` + `.WithPnpm()`
+- [x] Docker Compose: Auth + Comms services wired via `docker-compose.yml`
 - [x] CI: GitHub Actions jobs for comms unit + integration tests
 - [x] Tests: 575 unit + integration tests passing
 - [x] RecipientResolver: contactId via `GetContactsByIds` (contacts-only resolution)
@@ -741,8 +741,8 @@ backends/node/services/comms/
 
 ## Open Questions
 
-- **SignalR gateway**: Does it already exist in the Aspire stack, or is it a new service to build?
-- **File storage for attachments**: MinIO is in the Aspire stack -- confirm it's the right choice for message attachments.
+- **SignalR gateway**: Does it already exist in the Docker Compose stack, or is it a new service to build?
+- **File storage for attachments**: MinIO is in the Docker Compose stack -- confirm it's the right choice for message attachments.
 - **Rate limiting on comms**: Should the delivery engine rate-limit itself per-provider (e.g., Resend has 100/day on free tier)?
 - **Unsubscribe / CAN-SPAM compliance**: Marketing emails need unsubscribe links. Transactional emails don't. How do we classify?
 

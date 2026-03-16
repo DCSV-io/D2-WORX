@@ -11,6 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\..\shared\Implementations\Repository\DatabaseStartup\DatabaseStartup.Pg\DatabaseStartup.Pg.csproj" />
       <ProjectReference Include="..\..\..\shared\Handler.Extensions\Handler.Extensions.csproj" />
       <ProjectReference Include="..\..\..\shared\ServiceDefaults\ServiceDefaults.csproj" />
       <ProjectReference Include="..\..\..\shared\protos\_gen\Protos.DotNet\Protos.DotNet.csproj" />

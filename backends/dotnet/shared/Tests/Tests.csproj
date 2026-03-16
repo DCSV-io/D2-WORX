@@ -12,7 +12,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.Testing" Version="13.1.2" />
         <PackageReference Include="FluentAssertions" Version="8.8.0" />
         <PackageReference Include="JetBrains.Annotations" Version="2025.2.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
@@ -30,8 +29,6 @@
     <ItemGroup>
         <Using Include="System.Net"/>
         <Using Include="Microsoft.Extensions.DependencyInjection"/>
-        <Using Include="Aspire.Hosting.ApplicationModel"/>
-        <Using Include="Aspire.Hosting.Testing"/>
         <Using Include="Xunit"/>
     </ItemGroup>
 
