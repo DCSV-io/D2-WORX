@@ -1994,7 +1994,27 @@ This is the only point where rollback loses data. By Phase 3 you've had days/wee
 
 7. **MinIO behind infra layer only** — App layer works with `IFileStorage` (put/get/delete/presign). Only the infra layer knows about MinIO. No SvelteKit, gateway, or other service ever touches MinIO directly. Provider is swappable (S3, Garage, SeaweedFS) by changing the infra implementation.
 
-8. **Access control via metadata** — File metadata row includes `ownerUserId` (from JWT), `ownerOrgId` (from JWT, nullable), `visibility` (public/private/org). Downloads: `public` → presigned MinIO URL (time-limited); `private` → verify JWT userId === ownerUserId; `org` → verify JWT orgId === ownerOrgId.
+8. **Access control via `contextKey` prefix resolution** — No separate visibility/owner columns. Access is derived entirely from `contextKey` + `relatedEntityId`:
+   - `user_*` prefixes (e.g., `auth_user_avatar`) → JWT `sub` must match `relatedEntityId`
+   - `org_*` prefixes (e.g., `org_document`) → JWT `activeOrganizationId` must match `relatedEntityId`
+   - `thread_*` prefixes (e.g., `thread_attachment`) → gRPC callback to owning service via `IAccessCheck` interface
+   - **Unmapped prefixes → deny** (fail-closed). No implicit public access.
+
+   **`IAccessCheck` gRPC interface**: A single generic proto contract (`CanAccess` RPC) that any service can implement. The File Service resolves which service to call based on an env-var-configured endpoint map (`FILES__ACCESS_CHECK__thread=comms:5200`). This keeps Files completely decoupled — it doesn't know about Comms, Auth, or any future service. It just knows "for prefix X, call endpoint Y." External authz responses are cached in-memory with a **5-minute TTL** to avoid per-request gRPC round-trips. Proto shape:
+   ```protobuf
+   service AccessCheck {
+     rpc CanAccess(CanAccessRequest) returns (CanAccessResponse);
+   }
+   message CanAccessRequest {
+     string context_key = 1;
+     string related_entity_id = 2;
+     string requesting_user_id = 3;
+     string requesting_org_id = 4;
+   }
+   message CanAccessResponse {
+     bool allowed = 1;
+   }
+   ```
 
 9. **Publicly exposed REST API** — File uploads go directly to the File Service (Hono), not through the .NET gateway or SvelteKit. This is a special case for binary payloads. Requires JWT validation middleware (ADR-027). Rate limiting, request enrichment, and service key validation reused from existing `@d2/*` packages.
 
@@ -2004,22 +2024,17 @@ This is the only point where rollback loses data. By Phase 3 you've had days/wee
 
 **File metadata schema (conceptual):**
 
-| Column           | Type      | Description                                                               |
-| ---------------- | --------- | ------------------------------------------------------------------------- |
-| id               | uuid (v7) | Primary key                                                               |
-| contextKey       | text      | Service ownership identifier (`"auth_user_avatar"`, `"org_document"`)     |
-| relatedEntityId  | text      | Entity ID in the owning service (userId, orgId)                           |
-| ownerUserId      | text      | Who uploaded (from JWT `sub`)                                             |
-| ownerOrgId       | text?     | Org context at upload time (from JWT, nullable)                           |
-| purpose          | text      | `"avatar"`, `"document"`, `"attachment"`                                  |
-| visibility       | text      | `"public"`, `"private"`, `"org"`                                          |
-| status           | text      | `"pending"`, `"processing"`, `"ready"`, `"rejected"`                      |
-| contentType      | text      | Validated MIME type (`"image/webp"`, `"application/pdf"`)                 |
-| originalFilename | text      | User-provided filename (display only, never used for storage paths)       |
-| sizeBytes        | bigint    | Raw file size                                                             |
-| variants         | jsonb     | Processed variants `[{size: "thumb", key: "...", width: 64, height: 64}]` |
-| createdAt        | timestamp | Upload time                                                               |
-| updatedAt        | timestamp | Last status change                                                        |
+| Column           | Type      | Description                                                                      |
+| ---------------- | --------- | -------------------------------------------------------------------------------- |
+| id               | uuid (v7) | Primary key                                                                      |
+| contextKey       | text      | Ownership + categorization (`"auth_user_avatar"`, `"org_document"`, `"thread_attachment"`) |
+| relatedEntityId  | text      | Entity ID in the owning domain (userId, orgId, threadId)                         |
+| status           | text      | `"pending"`, `"processing"`, `"ready"`, `"rejected"`                             |
+| contentType      | text      | Validated MIME type (`"image/webp"`, `"application/pdf"`)                        |
+| displayName      | text      | User-provided filename (display only, never used for storage paths)              |
+| sizeBytes        | bigint    | Raw file size                                                                    |
+| variants         | jsonb     | Processed variants `[{size: "thumb", key: "...", width: 64, height: 64}]`        |
+| createdAt        | timestamp | Upload time (also used for stuck-processing detection: `status + createdAt`)     |
 
 **Upload data flow:**
 
@@ -2053,7 +2068,10 @@ Browser (SignalR WebSocket)
 - File Service is fully domain-agnostic and reusable by any future service
 - Binary payloads never transit through SvelteKit or the .NET gateway
 - Auth never handles file bytes — it reacts to events
-- Same contextKey/relatedEntityId pattern as Geo ensures cross-service isolation
+- Same `contextKey`/`relatedEntityId` pattern as Geo contacts ensures consistent cross-service isolation
+- Access control is derived from `contextKey` prefix — no separate visibility/owner columns needed. Two fields (`contextKey` + `relatedEntityId`) cover ownership, categorization, AND access in one unified model
+- Thread-scoped files (and any future cross-service scope) supported via generic `IAccessCheck` gRPC callback — Files stays decoupled from consuming services
+- Fail-closed access: unmapped `contextKey` prefixes are denied by default. New scopes require explicit endpoint configuration
 - Requires ADR-027 (JWT validation) and ADR-028 (SignalR Gateway) as prerequisites
 
 ---
