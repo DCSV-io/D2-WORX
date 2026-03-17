@@ -56,93 +56,91 @@ WORX is a SaaS product designed for use by small-to-medium businesses (SMBs) and
 ## Architecture Diagram 🏗️
 
 ```mermaid
-graph TB
-    BROWSER[Browser / Client]
+block-beta
+    columns 10
 
-    SK[SvelteKit Client App]
-
-    subgraph Backends
-        subgraph Gateways["API Gateways"]
-            REST[REST Gateway<br/>.NET]
-            SR[SignalR Gateway<br/>.NET]
-        end
-
-        subgraph AuthSvc["Auth Service"]
-            AUTH[Auth<br/>Node.js + BetterAuth]
-        end
-
-        subgraph FilesSvc["Files Service"]
-            FILES[Files<br/>Node.js + Hono]
-        end
-
-        subgraph Services["Internal Services"]
-            GEO[Geo<br/>.NET]
-            COMMS[Comms<br/>Node.js]
-        end
-
-        subgraph Jobs["Job Scheduling"]
-            DKRON[Dkron<br/>Container]
-            DKRONMGR[dkron-mgr<br/>Node.js]
-        end
-
-        Gateways <-->|gRPC| Services
-        Gateways <-->|JWKS + gRPC| AuthSvc
-        Gateways <-->|gRPC| FilesSvc
-        AuthSvc <-->|gRPC| Services
-        FilesSvc <-->|gRPC| Services
-        DKRONMGR -->|REST API| DKRON
-        DKRON -->|HTTP + API key| REST
+    block:Client:10
+        columns 10
+        space:3 BROWSER["Browser"] space:2 space:4
     end
 
-    subgraph Infra["Infrastructure"]
-        PG[(PostgreSQL)] ~~~ REDIS[(Redis)] ~~~ RMQ[RabbitMQ]
-        MINIO[MinIO S3] ~~~ LGTM[LGTM Stack]
+    space:10
+
+    block:Edge:10
+        columns 6
+        SK["SvelteKit\nNode.js"]
+        E_MID[" "]
+        AUTH["Auth\nNode.js"]
+        FILES["Files\nNode.js"]
+        SR["SignalR Gateway\n.NET"]
+        REST["REST Gateway\n.NET"]
     end
 
-    %% External connections
-    BROWSER <-->|SSR + Auth| SK
-    BROWSER <-->|JWT API calls| REST
-    BROWSER <-->|WebSocket| SR
-    SK <-->|JWT| REST
-    SK <-->|Auth proxy| AuthSvc
-    BROWSER <-->|JWT file uploads| FILES
+    space:10
 
-    %% Infra connection
-    Backends --- Infra
+    block:Internal:4
+        columns 3
+        GEO["Geo\n.NET"]
+        I_MID[" "]
+        COMMS["Comms\nNode.js"]
+    end
+    space:2
+    block:Jobs:4
+        columns 3
+        DKRONMGR["dkron-mgr\nNode.js"]
+        space
+        DKRON["Dkron"]
+    end
 
-    %% Node colors
-    classDef browser fill:#6c757d,stroke:#495057,color:#fff
-    classDef svelte fill:#FF3E00,stroke:#c73100,color:#fff
-    classDef gateway fill:#512BD4,stroke:#3d1f9e,color:#fff
-    classDef auth fill:#339933,stroke:#267326,color:#fff
-    classDef files fill:#E36002,stroke:#b34d01,color:#fff
-    classDef service fill:#1a73e8,stroke:#1557b0,color:#fff
-    classDef infra fill:#4169E1,stroke:#2f4fb3,color:#fff
-    classDef redis fill:#DC382D,stroke:#b02d24,color:#fff
-    classDef rabbitmq fill:#FF6600,stroke:#cc5200,color:#fff
-    classDef minio fill:#C72E49,stroke:#9e243a,color:#fff
-    classDef grafana fill:#F46800,stroke:#c35300,color:#fff
+    space:10
 
-    class BROWSER browser
-    class SK svelte
-    class REST,SR gateway
-    class AUTH auth
-    class GEO,COMMS service
-    class FILES files
-    class DKRON,DKRONMGR infra
-    class PG infra
-    class REDIS redis
-    class RMQ rabbitmq
-    class MINIO minio
-    class LGTM grafana
+    block:Infra:10
+        columns 9
+        PG["PostgreSQL"]
+        INF_MID[" "]
+        REDIS["Redis"]
+        space
+        RMQ["RabbitMQ"]
+        space
+        MINIO["MinIO S3"]
+        space
+        LGTM["LGTM + Alloy"]
+    end
 
-    %% Subgraph colors
-    style Backends fill:#1e1e2e,stroke:#444,color:#ccc
-    style Gateways fill:#2a2a4a,stroke:#555,color:#ccc
-    style AuthSvc fill:#1a3a1a,stroke:#555,color:#ccc
-    style FilesSvc fill:#3a2a1a,stroke:#555,color:#ccc
-    style Services fill:#2a2a4a,stroke:#555,color:#ccc
+    BROWSER -- "REST (cookie)" --- SK
+    BROWSER -- "WS (JWT)" --- SR
+    BROWSER -- "REST (JWT)" --- REST
+    BROWSER -- "REST (JWT)" --- FILES
+    SK -- "HTTP (proxy)" --- AUTH
+    E_MID -- "gRPC" --- I_MID
+    Edge -- "infra" --- Infra
+    I_MID -- "infra" --- INF_MID
+    DKRON -- "HTTP" --- REST
+    GEO -- "gRPC" --- COMMS
+    DKRONMGR -- "REST" --- DKRON
+
+    style BROWSER fill:#6c757d,stroke:#495057,color:#fff
+    style SK fill:#FF3E00,stroke:#c73100,color:#fff
+    style REST fill:#512BD4,stroke:#3d1f9e,color:#fff
+    style SR fill:#512BD4,stroke:#3d1f9e,color:#fff
+    style AUTH fill:#339933,stroke:#267326,color:#fff
+    style FILES fill:#E36002,stroke:#b34d01,color:#fff
+    style GEO fill:#1a73e8,stroke:#1557b0,color:#fff
+    style COMMS fill:#1a73e8,stroke:#1557b0,color:#fff
+    style DKRONMGR fill:#3C4A6C,stroke:#2e3a54,color:#fff
+    style DKRON fill:#3C4A6C,stroke:#2e3a54,color:#fff
+    style PG fill:#4169E1,stroke:#2f4fb3,color:#fff
+    style REDIS fill:#DC382D,stroke:#b02d24,color:#fff
+    style RMQ fill:#FF6600,stroke:#cc5200,color:#fff
+    style MINIO fill:#C72E49,stroke:#9e243a,color:#fff
+    style LGTM fill:#F46800,stroke:#c35300,color:#fff
+    style Client fill:#2e2e2e,stroke:#555,color:#ccc
+    style Edge fill:#1e1e2e,stroke:#444,color:#ccc
+    style Internal fill:#1e2e1e,stroke:#444,color:#ccc
     style Jobs fill:#2e2e1e,stroke:#555,color:#ccc
+    style E_MID fill:transparent,stroke:transparent,color:transparent
+    style I_MID fill:transparent,stroke:transparent,color:transparent
+    style INF_MID fill:transparent,stroke:transparent,color:transparent
     style Infra fill:#2e1e2e,stroke:#444,color:#ccc
 ```
 
