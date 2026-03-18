@@ -1,0 +1,150 @@
+import { describe, it, expect, vi } from "vitest";
+import { D2Result } from "@d2/result";
+import { RunCleanup, DEFAULT_FILES_JOB_OPTIONS } from "@d2/files-app";
+import { createFile } from "@d2/files-domain";
+import {
+  createMockAcquireLock,
+  createMockReleaseLock,
+  createMockFindStaleFiles,
+  createMockDeleteByIds,
+  createMockStorage,
+  createMockContext,
+} from "../../helpers/mock-handlers.js";
+
+function createHandler(
+  overrides: {
+    acquireLock?: ReturnType<typeof createMockAcquireLock>;
+    releaseLock?: ReturnType<typeof createMockReleaseLock>;
+    findStaleFiles?: ReturnType<typeof createMockFindStaleFiles>;
+    deleteByIds?: ReturnType<typeof createMockDeleteByIds>;
+    storage?: ReturnType<typeof createMockStorage>;
+  } = {},
+) {
+  const acquireLock = overrides.acquireLock ?? createMockAcquireLock();
+  const releaseLock = overrides.releaseLock ?? createMockReleaseLock();
+  const findStaleFiles = overrides.findStaleFiles ?? createMockFindStaleFiles();
+  const deleteByIds = overrides.deleteByIds ?? createMockDeleteByIds();
+  const storage = overrides.storage ?? createMockStorage();
+  const context = createMockContext();
+
+  return {
+    handler: new RunCleanup(
+      acquireLock,
+      releaseLock,
+      findStaleFiles,
+      deleteByIds,
+      storage,
+      DEFAULT_FILES_JOB_OPTIONS,
+      context,
+    ),
+    acquireLock,
+    releaseLock,
+    findStaleFiles,
+    deleteByIds,
+    storage,
+  };
+}
+
+describe("RunCleanup", () => {
+  it("should return lockAcquired=false when lock is held", async () => {
+    const acquireLock = createMockAcquireLock(false);
+    const { handler } = createHandler({ acquireLock });
+
+    const result = await handler.handleAsync({});
+
+    expect(result.success).toBe(true);
+    expect(result.data?.lockAcquired).toBe(false);
+  });
+
+  it("should always release lock in finally block", async () => {
+    const releaseLock = createMockReleaseLock();
+    const findStaleFiles = createMockFindStaleFiles();
+    vi.mocked(findStaleFiles.handleAsync).mockRejectedValue(new Error("boom"));
+
+    const { handler } = createHandler({ releaseLock, findStaleFiles });
+
+    // Should not throw — BaseHandler catches exceptions
+    const result = await handler.handleAsync({});
+    // Lock should still be released
+    expect(releaseLock.handleAsync).toHaveBeenCalled();
+  });
+
+  it("should clean stale files and return counts", async () => {
+    const staleFile = createFile({
+      contextKey: "user_avatar",
+      relatedEntityId: "user-old",
+      contentType: "image/jpeg",
+      displayName: "old.jpg",
+      sizeBytes: 512,
+      id: "stale-001",
+    });
+    const findStaleFiles = createMockFindStaleFiles([staleFile]);
+    const storage = createMockStorage();
+    const deleteByIds = createMockDeleteByIds();
+
+    const { handler } = createHandler({ findStaleFiles, storage, deleteByIds });
+
+    const result = await handler.handleAsync({});
+
+    expect(result.success).toBe(true);
+    expect(result.data?.lockAcquired).toBe(true);
+    // findStaleFiles called 3 times (pending, processing, rejected)
+    expect(findStaleFiles.handleAsync).toHaveBeenCalledTimes(3);
+    // Storage deleteMany called for each status that has files
+    expect(storage.deleteMany.handleAsync).toHaveBeenCalled();
+    // DB delete called for each status that has files
+    expect(deleteByIds.handleAsync).toHaveBeenCalled();
+  });
+
+  it("should report zero cleaned when no stale files found", async () => {
+    const findStaleFiles = createMockFindStaleFiles([]);
+    const { handler } = createHandler({ findStaleFiles });
+
+    const result = await handler.handleAsync({});
+
+    expect(result.success).toBe(true);
+    expect(result.data?.pendingCleaned).toBe(0);
+    expect(result.data?.processingCleaned).toBe(0);
+    expect(result.data?.rejectedCleaned).toBe(0);
+  });
+
+  it("should include durationMs in output", async () => {
+    const { handler } = createHandler();
+    const result = await handler.handleAsync({});
+
+    expect(result.success).toBe(true);
+    expect(result.data?.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("should search for each status with correct cutoff", async () => {
+    const findStaleFiles = createMockFindStaleFiles([]);
+    const { handler } = createHandler({ findStaleFiles });
+
+    await handler.handleAsync({});
+
+    const calls = vi.mocked(findStaleFiles.handleAsync).mock.calls;
+    expect(calls).toHaveLength(3);
+
+    // Verify statuses
+    expect(calls[0]![0].status).toBe("pending");
+    expect(calls[1]![0].status).toBe("processing");
+    expect(calls[2]![0].status).toBe("rejected");
+
+    // Verify cutoff dates are in the past
+    for (const call of calls) {
+      expect(call[0].cutoffDate.getTime()).toBeLessThan(Date.now());
+    }
+  });
+
+  it("should pass batch limit to findStaleFiles", async () => {
+    const findStaleFiles = createMockFindStaleFiles([]);
+    const { handler } = createHandler({ findStaleFiles });
+
+    await handler.handleAsync({});
+
+    const calls = vi.mocked(findStaleFiles.handleAsync).mock.calls;
+    for (const call of calls) {
+      expect(call[0].limit).toBe(100);
+    }
+  });
+});

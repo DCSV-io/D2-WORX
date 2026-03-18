@@ -1,17 +1,7 @@
 /**
- * Standard image processing variant sizes.
+ * Variant size name — arbitrary, configured per context key.
  *
- * - `thumb` — 64x64 thumbnail
- * - `small` — 128x128
- * - `medium` — 512x512
- * - `large` — 1024x1024
- * - `original` — unmodified (0x0 = no resize)
+ * Examples: "thumb", "small", "medium", "preview", "original".
+ * No fixed set — each context key defines its own variants at runtime.
  */
-
-export const VARIANT_SIZES = ["thumb", "small", "medium", "large", "original"] as const;
-
-export type VariantSize = (typeof VARIANT_SIZES)[number];
-
-export function isValidVariantSize(value: unknown): value is VariantSize {
-  return typeof value === "string" && VARIANT_SIZES.includes(value as VariantSize);
-}
+export type VariantSize = string;

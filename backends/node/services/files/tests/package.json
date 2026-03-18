@@ -8,7 +8,10 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
+    "@d2/files-app": "workspace:*",
     "@d2/files-domain": "workspace:*",
+    "@d2/handler": "workspace:*",
+    "@d2/result": "workspace:*",
     "@d2/testing": "workspace:*",
     "@d2/utilities": "workspace:*",
     "vitest": "4.0.18"

@@ -1,14 +1,11 @@
 import type { ContentCategory } from "../enums/content-category.js";
-import type { VariantSize } from "../enums/variant-size.js";
 
 /**
- * Maximum file size limits in bytes, per purpose.
+ * Default maximum file size in bytes.
+ * Per-context-key overrides are runtime config (app layer).
  */
 export const FILES_SIZE_LIMITS = {
   DEFAULT_MAX_SIZE_BYTES: 25 * 1024 * 1024, // 25 MB
-  AVATAR_MAX_SIZE_BYTES: 5 * 1024 * 1024, // 5 MB
-  DOCUMENT_MAX_SIZE_BYTES: 25 * 1024 * 1024, // 25 MB
-  ATTACHMENT_MAX_SIZE_BYTES: 10 * 1024 * 1024, // 10 MB
 } as const;
 
 /**
@@ -21,17 +18,6 @@ export const FILES_FIELD_LIMITS = {
   MAX_DISPLAY_NAME_LENGTH: 255,
   MAX_VARIANT_KEY_LENGTH: 512,
 } as const;
-
-/**
- * Dimensions per variant size. Width/height of 0 = no resize (original).
- */
-export const VARIANT_CONFIGS: Readonly<Record<VariantSize, { width: number; height: number }>> = {
-  thumb: { width: 64, height: 64 },
-  small: { width: 128, height: 128 },
-  medium: { width: 512, height: 512 },
-  large: { width: 1024, height: 1024 },
-  original: { width: 0, height: 0 },
-};
 
 /**
  * Allowed MIME content types per content category.
@@ -59,45 +45,19 @@ export const ALLOWED_CONTENT_TYPES: Readonly<Record<ContentCategory, readonly st
 };
 
 /**
- * Context key prefix → access resolution strategy.
- *
- * - `jwt` — resolved from JWT claims (userId, orgId)
- * - `callback` — resolved via external access check (e.g., thread membership)
- */
-export const CONTEXT_KEY_PREFIXES: Readonly<
-  Record<string, { prefix: string; resolution: "jwt" | "callback" }>
-> = {
-  user_: { prefix: "user_", resolution: "jwt" },
-  org_: { prefix: "org_", resolution: "jwt" },
-  thread_: { prefix: "thread_", resolution: "callback" },
-};
-
-/**
- * Well-known context keys for common file purposes.
- */
-export const FILES_CONTEXT_KEYS = {
-  USER_AVATAR: "user_avatar",
-  ORG_LOGO: "org_logo",
-  ORG_DOCUMENT: "org_document",
-  THREAD_ATTACHMENT: "thread_attachment",
-} as const;
-
-/**
  * Messaging topology for the files service.
+ *
+ * MinIO publishes bucket notification events to the direct exchange.
+ * All Files service instances consume from the same durable queue
+ * (competing consumers — each file processed by exactly one worker).
  */
 export const FILES_MESSAGING = {
-  /** Topic exchange for file lifecycle events. */
+  /** Direct exchange for MinIO bucket notification events. */
   EVENTS_EXCHANGE: "files.events",
-  /** Exchange type for file events. */
-  EVENTS_EXCHANGE_TYPE: "topic" as const,
-  /** Queue for file processing workers. */
+  /** Exchange type — direct (competing consumers via shared queue). */
+  EVENTS_EXCHANGE_TYPE: "direct" as const,
+  /** Routing key for file event messages. */
+  EVENTS_ROUTING_KEY: "file-uploaded",
+  /** Work queue bound to the events exchange (single delivery per message). */
   PROCESSING_QUEUE: "files.processing",
-} as const;
-
-/**
- * Processing pipeline constants.
- */
-export const FILES_PROCESSING = {
-  /** Minutes before a "processing" file is considered stuck. */
-  STUCK_PROCESSING_THRESHOLD_MINUTES: 15,
 } as const;

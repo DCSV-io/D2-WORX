@@ -37,10 +37,22 @@ describe("FileVariant", () => {
 
     // --- Validation: size ---
 
-    it("should throw on invalid variant size", () => {
-      expect(() => createFileVariant({ ...validInput, size: "huge" })).toThrow(
-        FilesValidationError,
-      );
+    it("should accept any non-empty string as size", () => {
+      const variant = createFileVariant({ ...validInput, size: "custom_preview" });
+      expect(variant.size).toBe("custom_preview");
+    });
+
+    it("should throw on empty size", () => {
+      expect(() => createFileVariant({ ...validInput, size: "" })).toThrow(FilesValidationError);
+    });
+
+    it("should throw on whitespace-only size", () => {
+      expect(() => createFileVariant({ ...validInput, size: "   " })).toThrow(FilesValidationError);
+    });
+
+    it("should trim size", () => {
+      const variant = createFileVariant({ ...validInput, size: "  thumb  " });
+      expect(variant.size).toBe("thumb");
     });
 
     // --- Validation: key ---

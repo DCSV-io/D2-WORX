@@ -1,6 +1,5 @@
 import { cleanStr } from "@d2/utilities";
 import type { VariantSize } from "../enums/variant-size.js";
-import { isValidVariantSize } from "../enums/variant-size.js";
 import { FILES_FIELD_LIMITS } from "../constants/files-constants.js";
 import { FilesValidationError } from "../exceptions/files-validation-error.js";
 
@@ -32,13 +31,9 @@ export interface CreateFileVariantInput {
  * Creates a validated FileVariant value object.
  */
 export function createFileVariant(input: CreateFileVariantInput): FileVariant {
-  if (!isValidVariantSize(input.size)) {
-    throw new FilesValidationError(
-      "FileVariant",
-      "size",
-      input.size,
-      "is not a valid variant size.",
-    );
+  const size = cleanStr(input.size);
+  if (!size) {
+    throw new FilesValidationError("FileVariant", "size", input.size, "is required.");
   }
 
   const key = cleanStr(input.key);
@@ -87,7 +82,7 @@ export function createFileVariant(input: CreateFileVariantInput): FileVariant {
   }
 
   return {
-    size: input.size,
+    size,
     key,
     width: input.width,
     height: input.height,

@@ -1,0 +1,106 @@
+import { describe, it, expect, vi } from "vitest";
+import { D2Result } from "@d2/result";
+import { DeleteFile } from "@d2/files-app";
+import { createFile, transitionFileStatus, createFileVariant } from "@d2/files-domain";
+import {
+  createMockRepo,
+  createMockStorage,
+  createMockContext,
+} from "../../helpers/mock-handlers.js";
+
+function createHandler(
+  overrides: {
+    repo?: ReturnType<typeof createMockRepo>;
+    storage?: ReturnType<typeof createMockStorage>;
+  } = {},
+) {
+  const repo = overrides.repo ?? createMockRepo();
+  const storage = overrides.storage ?? createMockStorage();
+  const context = createMockContext();
+  return { handler: new DeleteFile(repo, storage, context), repo, storage };
+}
+
+function makePendingFile() {
+  return createFile({
+    contextKey: "user_avatar",
+    relatedEntityId: "user-123",
+    contentType: "image/jpeg",
+    displayName: "avatar.jpg",
+    sizeBytes: 1024,
+    id: "file-001",
+  });
+}
+
+function makeReadyFile() {
+  const pending = makePendingFile();
+  const processing = transitionFileStatus(pending, "processing");
+  const variant = createFileVariant({
+    size: "original",
+    key: "user_avatar/user-123/file-001/original.jpg",
+    width: 100,
+    height: 100,
+    sizeBytes: 1024,
+    contentType: "image/jpeg",
+  });
+  return transitionFileStatus(processing, "ready", { variants: [variant] });
+}
+
+describe("DeleteFile", () => {
+  it("should delete storage objects and DB record", async () => {
+    const repo = createMockRepo();
+    const storage = createMockStorage();
+    const file = makePendingFile();
+    vi.mocked(repo.findById.handleAsync).mockResolvedValue(D2Result.ok({ data: { file } }));
+    const { handler } = createHandler({ repo, storage });
+
+    const result = await handler.handleAsync({ fileId: "file-001" });
+
+    expect(result.success).toBe(true);
+    expect(storage.deleteMany.handleAsync).toHaveBeenCalled();
+    expect(repo.delete.handleAsync).toHaveBeenCalledWith({ id: "file-001" });
+  });
+
+  it("should include variant keys when deleting ready file", async () => {
+    const repo = createMockRepo();
+    const storage = createMockStorage();
+    const file = makeReadyFile();
+    vi.mocked(repo.findById.handleAsync).mockResolvedValue(D2Result.ok({ data: { file } }));
+    const { handler } = createHandler({ repo, storage });
+
+    await handler.handleAsync({ fileId: "file-001" });
+
+    const deleteCall = vi.mocked(storage.deleteMany.handleAsync).mock.calls[0]![0];
+    expect(deleteCall.keys.length).toBeGreaterThan(1); // raw + at least one variant
+  });
+
+  it("should return notFound when file does not exist", async () => {
+    const repo = createMockRepo();
+    vi.mocked(repo.findById.handleAsync).mockResolvedValue(D2Result.notFound());
+    const { handler } = createHandler({ repo });
+
+    const result = await handler.handleAsync({ fileId: "nonexistent" });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(404);
+  });
+
+  it("should return validation error for empty fileId", async () => {
+    const { handler } = createHandler();
+    const result = await handler.handleAsync({ fileId: "" });
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
+  });
+
+  it("should propagate repo delete failure", async () => {
+    const repo = createMockRepo();
+    const file = makePendingFile();
+    vi.mocked(repo.findById.handleAsync).mockResolvedValue(D2Result.ok({ data: { file } }));
+    vi.mocked(repo.delete.handleAsync).mockResolvedValue(D2Result.serviceUnavailable());
+    const { handler } = createHandler({ repo });
+
+    const result = await handler.handleAsync({ fileId: "file-001" });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(503);
+  });
+});
