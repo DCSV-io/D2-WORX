@@ -221,6 +221,8 @@ The infra layer requires these services in `docker-compose.yml`:
 
 All tests are in `@d2/files-tests` (`backends/node/services/files/tests/`):
 
+### Unit Tests
+
 ```
 src/unit/infra/
   helpers/          test-context.ts
@@ -236,5 +238,19 @@ src/unit/infra/
   outbound/         outbound-handlers.test.ts
   messaging/        messaging-handlers.test.ts
 ```
+
+### Integration Tests (Testcontainers)
+
+```
+src/integration/
+  helpers/
+    postgres-test-helpers.ts   PostgresTestHelper wrapper (start/stop/clean)
+    minio-test-helpers.ts      MinIO GenericContainer + S3Client + Content-MD5 middleware
+    test-context.ts            Silent logger + IRequestContext
+  repository-handlers.test.ts  29 tests — all 8 repo handlers against real PostgreSQL
+  storage-handlers.test.ts     13 tests — all 7 storage handlers against real MinIO
+```
+
+Integration tests use `@testcontainers/postgresql` (Postgres 18) and `testcontainers` `GenericContainer` (MinIO latest). The MinIO S3Client includes Content-MD5 middleware for AWS SDK v3 compatibility (MinIO requires Content-MD5 on `DeleteObjects`, but SDK v3.800+ switched to CRC32).
 
 Run: `pnpm vitest run --project files-tests`
