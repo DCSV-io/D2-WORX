@@ -15,10 +15,15 @@ client/
     ├── index.ts                     # Public API re-exports
     ├── comms-client-constants.ts    # RabbitMQ exchange names
     ├── registration.ts              # DI registration (addCommsClient)
-    ├── service-keys.ts              # DI ServiceKeys (INotifyKey)
+    ├── service-keys.ts              # DI ServiceKeys (INotifyKey → INotifyHandler)
+    ├── interfaces/
+    │   ├── index.ts
+    │   └── pub/
+    │       ├── index.ts
+    │       └── notify.ts            # INotifyHandler interface
     └── handlers/
         └── pub/
-            └── notify.ts            # Notify handler (Pub = publish)
+            └── notify.ts            # Notify handler (implements INotifyHandler)
 ```
 
 ---

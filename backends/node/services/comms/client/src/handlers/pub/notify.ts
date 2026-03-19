@@ -2,6 +2,7 @@ import { z } from "zod";
 import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { IMessagePublisher } from "@d2/messaging";
+import type { INotifyHandler } from "../../interfaces/pub/notify.js";
 import { COMMS_EVENTS } from "../../comms-client-constants.js";
 
 export interface NotifyInput {
@@ -48,7 +49,7 @@ const notifySchema = z.object({
  * When no publisher is provided (local dev, tests without RabbitMQ),
  * the handler logs the notification and returns success.
  */
-export class Notify extends BaseHandler<NotifyInput, NotifyOutput> {
+export class Notify extends BaseHandler<NotifyInput, NotifyOutput> implements INotifyHandler {
   private readonly publisher: IMessagePublisher | undefined;
 
   get redaction(): RedactionSpec {
