@@ -183,17 +183,17 @@ Full SvelteKit implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clien
 
 ### File Service + SignalR Gateway Implementation
 
-| Step | Name                                       | Status  | Related ADRs     | Notes                                                                                                                                                                                                                                                                                                                                                                                            |
-| ---- | ------------------------------------------ | ------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| F1   | File domain layer (`@d2/files-domain`)     | Done    | ADR-026          | Entities, enums, rules, VariantConfig, constants. 236 tests. VariantSize = plain string, per-context-key variant config, no hardcoded context keys                                                                                                                                                                                                                                               |
-| F2   | File app layer (`@d2/files-app`)           | Done    | ADR-026          | 6 C/ + 3 Q/ + 1 U/ CQRS handlers, 3 messaging (1 pub + 2 sub), 4 provider groups (storage 7, image-processing, scanning, gRPC callback), repo bundle, 33 service keys, DI registration. 323 total tests                                                                                                                                                                                          |
-| F3   | File infra layer (`@d2/files-infra`)       | Done    | ADR-026          | 8 repo handlers (Drizzle/PG), 7 S3 storage handlers, Sharp image-processing (→ WebP), ClamAV scanning (direct TCP clamd), 2 gRPC outbound (FileCallback), SignalR realtime push, 3 messaging handlers (1 pub + 2 sub), 2 consumers (intake + processing), DI registration. 42 Testcontainers integration tests (PG + MinIO). 532 total tests                                                     |
-| F4   | JWT validation middleware (`@d2/jwt-auth`) | Done    | ADR-027          | Shared package at `backends/node/shared/jwt-auth/`. RS256 JWKS verification (jose), fingerprint check (SHA-256 UA+Accept), IRequestContext population from JWT claims. Hono middleware for public-facing Node.js services                                                                                                                                                                        |
-| F5   | File API layer (`@d2/files-api`)           | Done    | ADR-026, ADR-027 | Hono REST (upload/download/list/health routes) + gRPC (FilesService + FilesJobsService). Composition root with DI wiring. Dockerfile (`docker/Dockerfile.files`), `d2-files` docker-compose service (ports 5300/5301), `FILES_S3_PUBLIC_ENDPOINT` for browser-reachable presigned URLs via cloudflared tunnel                                                                                    |
-| F6   | SignalR Gateway                            | Pending | ADR-028          | Separate .NET service, JWT-authed WebSocket, gRPC interface for internal push notifications. Note: `PushFileUpdate` handler is registered in files-infra DI but not yet wired — will connect when F6 is built.                                                                                                                                                                                   |
-| F7   | Owning service gRPC callback               | Pending | ADR-026          | Auth implements `OnFileProcessed` RPC — sets `user.image = fileId` for `auth_user_avatar` context                                                                                                                                                                                                                                                                                                |
-| F8   | File service E2E test                      | Pending | ADR-026          | Full pipeline E2E: sign in → upload avatar → MinIO notification → intake → scan → process variants → gRPC callback to Auth (`OnFileProcessed` sets `user.image`) → SignalR push to browser → verify avatar URL resolves + thumbnail downloaded. Blocked by F6 (SignalR) + F7 (Auth callback). Also: adversarial upload tests (bad MIME types, oversized, malformed JSON, expired presigned URLs) |
-| F9   | SvelteKit profile page + avatar upload     | Pending | ADR-026, ADR-028 | User profile page with avatar upload widget. Browser flow: select image → POST /api/v1/avatar → get presigned URL → PUT to MinIO → realtime status update via SignalR → display processed thumbnail. Depends on F6 + F7 + F8                                                                                                                                                                     |
+| Step | Name                                       | Status  | Related ADRs     | Notes                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---- | ------------------------------------------ | ------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1   | File domain layer (`@d2/files-domain`)     | Done    | ADR-026          | Entities, enums, rules, VariantConfig, constants. 236 tests. VariantSize = plain string, per-context-key variant config, no hardcoded context keys                                                                                                                                                                                                                                                                  |
+| F2   | File app layer (`@d2/files-app`)           | Done    | ADR-026          | 6 C/ + 3 Q/ + 1 U/ CQRS handlers, 3 messaging (1 pub + 2 sub), 4 provider groups (storage 7, image-processing, scanning, gRPC callback), repo bundle, 33 service keys, DI registration. 323 total tests                                                                                                                                                                                                             |
+| F3   | File infra layer (`@d2/files-infra`)       | Done    | ADR-026          | 8 repo handlers (Drizzle/PG), 7 S3 storage handlers, Sharp image-processing (→ WebP), ClamAV scanning (direct TCP clamd), 2 gRPC outbound (FileCallback), SignalR realtime push, 3 messaging handlers (1 pub + 2 sub), 2 consumers (intake + processing), DI registration. 42 Testcontainers integration tests (PG + MinIO). 532 total tests                                                                        |
+| F4   | JWT validation middleware (`@d2/jwt-auth`) | Done    | ADR-027          | Shared package at `backends/node/shared/jwt-auth/`. RS256 JWKS verification (jose), fingerprint check (SHA-256 UA+Accept), IRequestContext population from JWT claims. Hono middleware for public-facing Node.js services                                                                                                                                                                                           |
+| F5   | File API layer (`@d2/files-api`)           | Done    | ADR-026, ADR-027 | Hono REST (upload/download/list/health routes) + gRPC (FilesService + FilesJobsService). Composition root with DI wiring. Dockerfile (`docker/Dockerfile.files`), `d2-files` docker-compose service (ports 5300/5301), `FILES_S3_PUBLIC_ENDPOINT` for browser-reachable presigned URLs via cloudflared tunnel                                                                                                       |
+| F6   | SignalR Gateway                            | Pending | ADR-028          | .NET service: authenticated hub (JWT on WS upgrade), channel-based routing (`user:`, `org:` auto-subscribed from claims), `PushToChannel` gRPC, Redis backplane, health check. Ports 5400/5401. Proto at `realtime/v1/realtime_gateway.proto` (supersedes `files/v1/signalr_bridge.proto`). Files-infra `PushFileUpdate` wired to new proto when built. Public hub + subscription tokens deferred to Comms Stage B. |
+| F7   | Owning service gRPC callback               | Pending | ADR-026          | Auth implements `OnFileProcessed` RPC — sets `user.image = fileId` for `auth_user_avatar` context                                                                                                                                                                                                                                                                                                                   |
+| F8   | File service E2E test                      | Pending | ADR-026          | Full pipeline E2E: sign in → upload avatar → MinIO notification → intake → scan → process variants → gRPC callback to Auth (`OnFileProcessed` sets `user.image`) → SignalR push to browser → verify avatar URL resolves + thumbnail downloaded. Blocked by F6 (SignalR) + F7 (Auth callback). Also: adversarial upload tests (bad MIME types, oversized, malformed JSON, expired presigned URLs)                    |
+| F9   | SvelteKit profile page + avatar upload     | Pending | ADR-026, ADR-028 | User profile page with avatar upload widget. Browser flow: select image → POST /api/v1/avatar → get presigned URL → PUT to MinIO → realtime status update via SignalR → display processed thumbnail. Depends on F6 + F7 + F8                                                                                                                                                                                        |
 
 ### SvelteKit Implementation Progress
 
@@ -2277,64 +2277,128 @@ backends/node/shared/implementations/middleware/jwt-auth/default/
 
 [↑ back to top](#table-of-contents)
 
-**Status**: Resolved (2026-03)
+**Status**: Resolved (2026-03, expanded 2026-03-19)
 
-**Context**: Long-running operations (file processing, future background jobs, notification delivery) need to push results to connected clients in real-time. Polling is wasteful and provides poor UX. The SvelteKit implementation plan (Step 12) already identified SignalR as the real-time transport — this ADR defines the architecture.
+**Context**: Long-running operations (file processing, future background jobs, notification delivery) need to push results to connected clients in real-time. Polling is wasteful and provides poor UX. The SvelteKit implementation plan (Step 12) already identified SignalR as the real-time transport — this ADR defines the architecture. Additionally, anonymous/third-party realtime (support chat) must be supported without requiring a full user account.
 
-**Decision**: Build a separate .NET SignalR Gateway service. It accepts WebSocket connections from browsers (JWT-authed) and receives push requests from internal services via gRPC. It is NOT part of the REST gateway — WebSocket connections are stateful and should be isolated from the stateless REST fan-out layer.
+**Decision**: Build a separate .NET SignalR Gateway service. It accepts WebSocket connections from browsers and receives push requests from internal services via gRPC. It is NOT part of the REST gateway — WebSocket connections are stateful and should be isolated from the stateless REST fan-out layer. Channel-based routing with a two-tier auth model (JWT for authenticated users, subscription tokens for anonymous/third-party).
 
 **Architecture:**
 
 ```
-Browser ──WebSocket──→ SignalR Gateway (.NET, JWT-authed)
-                         ← push events ←── gRPC ←── internal services (File, Comms, Auth, etc.)
+Authenticated browser ──WebSocket──→ /hub/authenticated (JWT)
+Anonymous visitor     ──WebSocket──→ /hub/public (subscription token)
+                                         ↕
+                                   SignalR Gateway (.NET)
+                                     - Redis backplane (multi-instance)
+                                     - Channel → connection mapping (SignalR Groups)
+                                         ↑
+                                    gRPC (service-key authed)
+                                         ↑
+                          internal services (Files, Comms, Auth, etc.)
 ```
 
 **Key Design Decisions:**
 
 1. **Separate service from REST gateway** — WebSocket connections are stateful (long-lived, memory per connection). The REST gateway is stateless (request/response fan-out). Mixing them couples scaling characteristics and failure modes. Shared middleware (`Auth.Default`, `RequestEnrichment`, `RateLimit`) is already abstracted into packages — reuse is plug-and-play.
 
-2. **JWT authentication on connect** — Client provides JWT as access token during WebSocket handshake. SignalR Gateway validates using the same `Auth.Default` middleware (JWKS, fingerprint check). Connection is associated with `userId` from JWT `sub` claim. Token refresh handled by client-side reconnect.
+2. **Channel-based routing** — All push targeting uses named channels, not connection IDs or user IDs directly. Internal services push to a channel name; the gateway resolves channel → connections via SignalR Groups. Examples: `user:{userId}`, `org:{orgId}`, `thread:{threadId}`. Services never track WebSocket connections.
 
-3. **gRPC interface for internal push** — Internal services call the SignalR Gateway via gRPC to push events to specific users. Proto contract: `PushNotification(targetUserId, event, payload)`. Service-key authenticated. The SignalR Gateway maps `targetUserId` → active connection(s) and pushes.
+3. **Two-tier subscription model:**
+   - **JWT-implicit (Tier 1, F6 scope)** — Authenticated users connect to `/hub/authenticated` with JWT (`?access_token=` query param on WebSocket upgrade). Gateway validates JWT via `JwtBearerEvents.OnMessageReceived` (RS256, JWKS, issuer, audience — same validation as REST endpoints). On connect, gateway auto-subscribes the connection to `user:{userId}` and `org:{targetOrgId}` channels derived from JWT claims. No explicit subscribe call needed. Org switch = reconnect with new JWT.
 
-4. **Event shape** — All push events follow a common shape: `{event: string, payload: object}`. Examples: `file:ready`, `notification:delivered`, `job:completed`. Consumers (browser) switch on event type.
+   - **Service-validated (Tier 2, Comms Stage B scope)** — For resource-level channels (e.g., `thread:{threadId}`), the client calls `subscribe("thread:abc")` on the hub. The gateway calls back to the owning service's `CanSubscribe` RPC to validate access. Authenticated users validated by service + JWT context. Anonymous visitors validated by subscription token.
 
-5. **Connection lifecycle** — Connect on auth, disconnect on sign-out. Client-side reconnect with exponential backoff (handled by `@microsoft/signalr` HubConnectionBuilder). If user has multiple tabs/devices, all connections receive the push (user-level targeting, not connection-level).
+4. **Two hubs** — `/hub/authenticated` (requires JWT, full middleware) and `/hub/public` (requires subscription token, rate-limited, no JWT). Both expose the same event shape to the browser. Clean security boundary — different middleware stacks, same channel routing underneath.
 
-**Proto contract (conceptual):**
+5. **Anonymous/third-party access (Tier 2, Comms Stage B scope):**
+   - Anonymous visitors (support chat) connect to `/hub/public` with a short-lived **subscription token** — a signed JWT-like token scoped to specific channels (e.g., `{ channels: ["thread:abc"], exp: ... }`), issued by the owning service (Comms) when the chat session starts.
+   - Token auto-refreshes before expiry — `@microsoft/signalr` `accessTokenFactory` calls a refresh endpoint. Visitor loses access only if they close the connection for an extended period (token + refresh both expire).
+   - **Email re-join** — Comms sends an email with a longer-lived re-join token (or a one-time code that exchanges for a fresh subscription token). Visitor clicks link → gets new token → reconnects to the same thread. No account needed.
+   - **Thread participant tracking** — Comms stores subscription token hash alongside the participant record on the thread. Re-join tokens map back to the same participant.
+   - The gateway doesn't know or care about the token issuance flow — it just validates signature + expiry + channel scope.
+
+6. **Redis backplane** — `Microsoft.AspNetCore.SignalR.StackExchangeRedis` for multi-instance connection tracking. Wired from day one so scaling is transparent. Uses the existing Redis instance (`REDIS_URL`).
+
+7. **gRPC interface for internal push** — Service-key authenticated. Single primary RPC:
+
+   ```protobuf
+   service RealtimeGateway {
+     rpc PushToChannel(PushToChannelRequest) returns (PushResponse);
+     rpc RemoveFromChannel(RemoveFromChannelRequest) returns (PushResponse);
+     rpc CheckHealth(CheckHealthRequest) returns (CheckHealthResponse);
+   }
+   ```
+
+   `RemoveFromChannel` allows owning services to evict connections (e.g., user removed from thread, org membership revoked).
+
+8. **Subscription validation callback (Tier 2):**
+
+   ```protobuf
+   service RealtimeSubscription {
+     rpc CanSubscribe(CanSubscribeRequest) returns (CanSubscribeResponse);
+   }
+   ```
+
+   Implemented by owning services (Comms, etc.). Called BY the gateway when a client requests subscription to a service-validated channel. Gateway routes by channel prefix (`thread:` → Comms gRPC address). Called once per subscribe — not re-validated on each push.
+
+9. **Event shape** — All push events follow a common shape: `{event: string, payload: object}`. Examples: `file:ready`, `file:rejected`, `notification:delivered`, `message:new`, `job:completed`. Browser-side consumers switch on event type.
+
+10. **Connection lifecycle** — Authenticated: connect on auth, disconnect on sign-out. Anonymous: connect on chat start, disconnect on token expiry. Client-side reconnect with exponential backoff (handled by `@microsoft/signalr` HubConnectionBuilder). If user has multiple tabs/devices, all connections receive the push (user-level targeting via channel).
+
+11. **Ports** — `5400` (HTTP/WebSocket) + `5401` (gRPC internal push).
+
+**Proto contract:**
 
 ```protobuf
-service SignalRBridge {
-  rpc PushToUser (PushRequest) returns (PushResponse);
+// contracts/protos/realtime/v1/realtime_gateway.proto
+service RealtimeGateway {
+  rpc PushToChannel(PushToChannelRequest) returns (PushResponse);
+  rpc RemoveFromChannel(RemoveFromChannelRequest) returns (PushResponse);
+  rpc CheckHealth(d2.common.v1.CheckHealthRequest) returns (d2.common.v1.CheckHealthResponse);
 }
 
-message PushRequest {
-  string target_user_id = 1;
-  string event = 2;
-  string payload_json = 3;
+message PushToChannelRequest {
+  string channel = 1;        // e.g., "user:abc-123", "org:def-456", "thread:ghi-789"
+  string event = 2;          // e.g., "file:ready", "message:new"
+  string payload_json = 3;   // JSON-serialized event payload
+}
+
+message RemoveFromChannelRequest {
+  string channel = 1;
+  string connection_id = 2;  // SignalR connection ID to evict
 }
 
 message PushResponse {
-  bool delivered = 1;          // true if user had active connection(s)
+  bool delivered = 1;
   int32 connections_reached = 2;
 }
 ```
+
+**Phasing:**
+
+| Phase         | Scope                                                                                                                                                          | Blocked by |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| F6 (now)      | .NET service, authenticated hub, JWT validation, `PushToChannel` gRPC, Redis backplane, auto-subscribe `user:` + `org:` channels, health check, Docker service | —          |
+| Comms Stage B | Public hub, subscription token validation, `CanSubscribe` callback, `RemoveFromChannel`, anonymous chat flow, email re-join tokens                             | F6         |
 
 **SvelteKit integration:**
 
 - `@microsoft/signalr` client library in browser
 - Connection initialized after auth, torn down on sign-out
+- `accessTokenFactory` provides JWT (authenticated) or subscription token (anonymous)
 - Svelte store wraps connection state + event subscriptions
-- Events dispatched to component-level handlers (e.g., avatar update, toast notification)
+- Events dispatched to component-level handlers (e.g., avatar update, toast notification, chat message)
 
 **Consequences:**
 
 - Real-time push for all long-running operations (file processing, notifications, job completions)
 - No polling anywhere in the frontend
 - Clean separation: REST gateway = stateless request/response, SignalR gateway = stateful push
-- Internal services push via gRPC — no direct WebSocket knowledge needed
-- Unblocks File Service real-time feedback (ADR-026) and future notification features
+- Internal services push via gRPC to named channels — no direct WebSocket or connection knowledge needed
+- Channel-based model supports authenticated users, anonymous visitors, and mixed-auth group scenarios (chat threads) with the same gateway
+- Anonymous/third-party access via subscription tokens — no user account required, graceful reconnect via email re-join links
+- Unblocks File Service real-time feedback (ADR-026) and future notification/chat features
 
 ---
 
