@@ -192,7 +192,7 @@ Full SvelteKit implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clien
 | F5   | File API layer (`@d2/files-api`)           | Done    | ADR-026, ADR-027 | Hono REST (upload/download/list/health routes) + gRPC (FilesService + FilesJobsService). Composition root with DI wiring. Dockerfile (`docker/Dockerfile.files`), `d2-files` docker-compose service (ports 5300/5301), `FILES_S3_PUBLIC_ENDPOINT` for browser-reachable presigned URLs via cloudflared tunnel                                                                                                       |
 | F6   | SignalR Gateway                            | Done    | ADR-028          | .NET service: authenticated hub (JWT on WS upgrade), channel-based routing (`user:`, `org:` auto-subscribed from claims), `PushToChannel` gRPC, Redis backplane, health check. Ports 5400/5401. Proto at `realtime/v1/realtime_gateway.proto` (supersedes `files/v1/signalr_bridge.proto`). Files-infra `PushFileUpdate` wired to new proto when built. Public hub + subscription tokens deferred to Comms Stage B. |
 | F7   | Auth FileCallback gRPC server              | Done    | ADR-026          | `FileCallbackService` gRPC server on Auth port 5101 (OnFileProcessed + CanAccess). HandleFileProcessed command handler routes by context key: `auth_user_avatar` → `user.image`, `auth_org_logo` → `organization.logo`, others → ack. CanAccess returns `allowed: false` (fail-closed; Auth CKs use JWT resolution). UpdateUserImage + UpdateOrgLogo repo handlers. Service-key auth via `withApiKeyAuth`           |
-| F7.5 | Cross-cutting security + logic audit       | Pending | —                | Deep scan of ALL F1–F7 code: security (IDOR, injection, auth bypass), logic (race conditions, error swallowing, pipeline breaks), process (CLAUDE.md compliance, RedactionSpec, test coverage, docs accuracy). Fix everything found. No new features — pure audit.                                                                                                                                                  |
+| F7.5 | Cross-cutting security + logic audit       | Pending | —                | See [F7.5 audit checklist](#f75-cross-cutting-audit-checklist) below. Scope: full `git diff main` — every changed file on `feat/files`. Fix everything found. No new features — pure audit.                                                                                                                                                                                                                         |
 | F8   | File service E2E test                      | Pending | ADR-026          | Full pipeline E2E: sign in → upload avatar → MinIO notification → intake → scan → process variants → gRPC callback to Auth (`OnFileProcessed` sets `user.image`) → SignalR push to browser → verify avatar URL resolves + thumbnail downloaded. Blocked by F7. Also: adversarial upload tests (bad MIME types, oversized, malformed JSON, expired presigned URLs)                                                   |
 | F9   | SvelteKit profile page + avatar upload     | Pending | ADR-026, ADR-028 | User profile page with avatar upload widget. Browser flow: select image → POST /api/v1/avatar → get presigned URL → PUT to MinIO → realtime status update via SignalR → display processed thumbnail. Depends on F7 + F8                                                                                                                                                                                             |
 
@@ -224,6 +224,76 @@ Auth implements the `FileCallback` gRPC server (`contracts/protos/files/v1/files
 - Auth's `buildGrpcServer()` already sets up gRPC with `withApiKeyAuth`
 - BetterAuth schema already has `user.image` (nullable text) and `organization.logo` (nullable text)
 - Per-RPC DI scope pattern from `createRpcScope` / `withTraceContext`
+
+#### F7.5: Cross-Cutting Audit Checklist
+
+Scope: **every file in `git diff main`** — not just new files. Includes modifications to auth, comms-client, service-defaults, shared tests, docker-compose, env files, protos, etc.
+
+**Security:**
+
+- [ ] IDOR checks on every endpoint/handler that accesses resources by ID
+- [ ] Auth bypass paths — can unauthenticated requests reach protected handlers?
+- [ ] Input validation completeness — every handler has Zod schema at top of `executeAsync`
+- [ ] String max lengths on all Zod string fields
+- [ ] Constant-time comparisons on all secret/key comparisons
+- [ ] Header injection / XSS via user-controlled response data (Content-Disposition, error messages)
+- [ ] gRPC service-key auth on all non-health RPCs (fail-closed when no keys configured)
+- [ ] JWT claim validation — null checks before trusting claims
+- [ ] CORS configuration — allowed origins, headers (incl. X-Client-Fingerprint), methods
+- [ ] No sensitive data in error responses (no stack traces, no internal paths)
+- [ ] API key configuration — Files has keys Auth accepts, Files has keys SignalR accepts
+
+**Logic / Data Integrity:**
+
+- [ ] Pipeline completeness — upload → intake → publish → process → callback → push (no gaps)
+- [ ] Error propagation — no swallowed failures, no `ok()` after unchecked downstream operations
+- [ ] Status state machine adherence — can files get stuck in invalid states?
+- [ ] Fire-and-forget operations properly caught (`.catch()` with logging)
+- [ ] Drizzle UPDATE/DELETE chains `.returning()` and check for empty results → `notFound()`
+- [ ] DI registration completeness — every handler registered, no missing keys, no stale registrations
+- [ ] Race conditions — concurrent uploads, duplicate messages, double-processing
+- [ ] Resource leaks — DI scopes disposed, gRPC clients cleaned up, connections closed
+
+**CLAUDE.md §5 (Code Quality):**
+
+- [ ] RedactionSpec on ALL handlers touching PII (displayName, presignedUrl, email — NOT UUIDs)
+- [ ] Semantic D2Result factories — no raw `fail()` when a factory exists
+- [ ] Auth flags initialize to `null` (pre-auth), not `false`
+- [ ] Validate inputs BEFORE infrastructure calls
+- [ ] RedactionSpec covers auto I/O logging only — manual `logger.*` calls reviewed for PII leaks
+- [ ] Never return `ok()` unconditionally after branching operations
+- [ ] No `!` for silencing warnings (only after Falsey/early return guard)
+- [ ] Build warnings = bugs — zero warnings on `tsc`, `eslint`, `prettier`
+
+**CLAUDE.md §6 (Conventions):**
+
+- [ ] C# file headers on all `.cs` files
+- [ ] C# naming conventions (`r_camelCase` readonly, `_camelCase` mutable, `UPPER_CASE` constants)
+- [ ] TS naming (camelCase functions, PascalCase types, kebab-case files)
+- [ ] Observability fields (traceId, correlationId, userId, orgId, service) on logs/spans
+
+**Cross-Service:**
+
+- [ ] Proto contracts match both caller and implementor
+- [ ] Docker dependency chain — startup order, health checks, port conflicts
+- [ ] Env var completeness — every var read in code exists in `.env.local` + `.env.local.example`
+- [ ] `.env.local.example` placeholder values are realistic (correct ports, hostnames, patterns)
+
+**Test Coverage:**
+
+- [ ] Every new handler has unit tests
+- [ ] Adversarial cases covered (invalid input, missing fields, boundary values)
+- [ ] Access control tested (forbidden/unauthorized paths)
+- [ ] Error propagation tested (downstream failures bubble correctly)
+- [ ] Integration tests for repo handlers (Testcontainers)
+- [ ] All existing tests still pass (zero regressions)
+
+**Documentation:**
+
+- [ ] Every new handler/service/endpoint reflected in `.md` files
+- [ ] PLANNING.md phasing table accurate
+- [ ] CLAUDE.md reference table includes all new docs
+- [ ] No stale "Pending" or "not yet implemented" references for completed work
 
 ### SvelteKit Implementation Progress
 
