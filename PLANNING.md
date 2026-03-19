@@ -191,9 +191,39 @@ Full SvelteKit implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clien
 | F4   | JWT validation middleware (`@d2/jwt-auth`) | Done    | ADR-027          | Shared package at `backends/node/shared/jwt-auth/`. RS256 JWKS verification (jose), fingerprint check (SHA-256 UA+Accept), IRequestContext population from JWT claims. Hono middleware for public-facing Node.js services                                                                                                                                                                                           |
 | F5   | File API layer (`@d2/files-api`)           | Done    | ADR-026, ADR-027 | Hono REST (upload/download/list/health routes) + gRPC (FilesService + FilesJobsService). Composition root with DI wiring. Dockerfile (`docker/Dockerfile.files`), `d2-files` docker-compose service (ports 5300/5301), `FILES_S3_PUBLIC_ENDPOINT` for browser-reachable presigned URLs via cloudflared tunnel                                                                                                       |
 | F6   | SignalR Gateway                            | Done    | ADR-028          | .NET service: authenticated hub (JWT on WS upgrade), channel-based routing (`user:`, `org:` auto-subscribed from claims), `PushToChannel` gRPC, Redis backplane, health check. Ports 5400/5401. Proto at `realtime/v1/realtime_gateway.proto` (supersedes `files/v1/signalr_bridge.proto`). Files-infra `PushFileUpdate` wired to new proto when built. Public hub + subscription tokens deferred to Comms Stage B. |
-| F7   | Owning service gRPC callback               | Pending | ADR-026          | Auth implements `OnFileProcessed` RPC — sets `user.image = fileId` for `auth_user_avatar` context                                                                                                                                                                                                                                                                                                                   |
-| F8   | File service E2E test                      | Pending | ADR-026          | Full pipeline E2E: sign in → upload avatar → MinIO notification → intake → scan → process variants → gRPC callback to Auth (`OnFileProcessed` sets `user.image`) → SignalR push to browser → verify avatar URL resolves + thumbnail downloaded. Blocked by F6 (SignalR) + F7 (Auth callback). Also: adversarial upload tests (bad MIME types, oversized, malformed JSON, expired presigned URLs)                    |
-| F9   | SvelteKit profile page + avatar upload     | Pending | ADR-026, ADR-028 | User profile page with avatar upload widget. Browser flow: select image → POST /api/v1/avatar → get presigned URL → PUT to MinIO → realtime status update via SignalR → display processed thumbnail. Depends on F6 + F7 + F8                                                                                                                                                                                        |
+| F7   | Auth FileCallback gRPC server              | Pending | ADR-026          | See [F7 implementation details](#f7-auth-filecallback-implementation) below                                                                                                                                                                                                                                                                                                                                         |
+| F7.5 | Cross-cutting security + logic audit       | Pending | —                | Deep scan of ALL F1–F7 code: security (IDOR, injection, auth bypass), logic (race conditions, error swallowing, pipeline breaks), process (CLAUDE.md compliance, RedactionSpec, test coverage, docs accuracy). Fix everything found. No new features — pure audit.                                                                                                                                                  |
+| F8   | File service E2E test                      | Pending | ADR-026          | Full pipeline E2E: sign in → upload avatar → MinIO notification → intake → scan → process variants → gRPC callback to Auth (`OnFileProcessed` sets `user.image`) → SignalR push to browser → verify avatar URL resolves + thumbnail downloaded. Blocked by F7. Also: adversarial upload tests (bad MIME types, oversized, malformed JSON, expired presigned URLs)                                                   |
+| F9   | SvelteKit profile page + avatar upload     | Pending | ADR-026, ADR-028 | User profile page with avatar upload widget. Browser flow: select image → POST /api/v1/avatar → get presigned URL → PUT to MinIO → realtime status update via SignalR → display processed thumbnail. Depends on F7 + F8                                                                                                                                                                                             |
+
+#### F7: Auth FileCallback Implementation
+
+Auth implements the `FileCallback` gRPC server (`contracts/protos/files/v1/files.proto`) so Files can notify Auth when uploads complete. Proto + types already exist in `@d2/protos`.
+
+**Two RPCs:**
+
+| RPC               | Trigger                                            | Auth action                                                                                                                                                         |
+| ----------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `OnFileProcessed` | Files finishes processing (ready or rejected)      | `user_avatar` + ready → set `user.image = fileId`. `org_logo` + ready → set `organization.logo = fileId`. `org_document` → no-op (just ack). Rejected → log, ack.   |
+| `CanAccess`       | Files checks upload/read permission (callback CKs) | Not needed for `user_avatar`/`org_logo`/`org_document` (they use `jwt_owner`/`jwt_org` resolution, not `callback`). Only `thread_attachment` uses callback → Comms. |
+
+**Since Auth's context keys all use JWT-based resolution** (`jwt_owner` for avatar, `jwt_org` for logo/document), `CanAccess` will never be called for Auth-owned context keys. Auth should still implement it (fail-closed: return `allowed: false` for unknown context keys) but the logic is trivial.
+
+**Implementation scope:**
+
+1. `auth-api`: Register `FileCallbackService` on existing gRPC server alongside `AuthService` + `AuthJobService`
+2. `auth-api`: Create `file-callback-grpc-service.ts` — maps RPCs to handler calls
+3. `auth-app`: Add `OnFileProcessed` command handler — switch on contextKey, update user.image or org.logo
+4. `auth-infra`: Add `UpdateUserImage` + `UpdateOrgLogo` repo handlers (simple UPDATE ... SET image/logo WHERE id)
+5. Tests: handler logic (ready/rejected per context key), repo handlers, gRPC service integration
+6. Env: Files service needs an API key that Auth accepts — add to `AUTH_API_KEYS` + `FILES_AUTH_CALLBACK_API_KEY`
+
+**Existing infrastructure that's reused:**
+
+- `FileCallbackService` proto + types already in `@d2/protos`
+- Auth's `buildGrpcServer()` already sets up gRPC with `withApiKeyAuth`
+- BetterAuth schema already has `user.image` (nullable text) and `organization.logo` (nullable text)
+- Per-RPC DI scope pattern from `createRpcScope` / `withTraceContext`
 
 ### SvelteKit Implementation Progress
 
