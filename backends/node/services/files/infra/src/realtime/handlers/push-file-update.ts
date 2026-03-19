@@ -1,12 +1,13 @@
 import * as grpc from "@grpc/grpc-js";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
-import { D2Result } from "@d2/result";
+import type { D2Result } from "@d2/result";
 import {
   RealtimeGatewayClientCtor,
   type RealtimeGatewayClient,
   type RealtimePushResponse,
 } from "@d2/protos";
-import { createTraceContextInterceptor } from "@d2/service-defaults/grpc";
+import { handleGrpcCall } from "@d2/result-extensions";
+import { createApiKeyInterceptor, createTraceContextInterceptor } from "@d2/service-defaults/grpc";
 import {
   type PushFileUpdateInput as I,
   type PushFileUpdateOutput as O,
@@ -24,11 +25,13 @@ const GRPC_TIMEOUT_MS = 10_000;
  */
 export class PushFileUpdate extends BaseHandler<I, O> implements IPushFileUpdate {
   private readonly gatewayAddress: string;
+  private readonly apiKey: string;
   private client: RealtimeGatewayClient | undefined;
 
-  constructor(gatewayAddress: string, context: IHandlerContext) {
+  constructor(gatewayAddress: string, apiKey: string, context: IHandlerContext) {
     super(context);
     this.gatewayAddress = gatewayAddress;
+    this.apiKey = apiKey;
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
@@ -44,33 +47,26 @@ export class PushFileUpdate extends BaseHandler<I, O> implements IPushFileUpdate
       variants: input.variants,
     });
 
-    try {
-      const response = await new Promise<RealtimePushResponse>((resolve, reject) => {
-        client.pushToChannel(
-          {
-            channel,
-            event,
-            payloadJson: payload,
-          },
-          new grpc.Metadata(),
-          { deadline: Date.now() + GRPC_TIMEOUT_MS },
-          (err: grpc.ServiceError | null, res: RealtimePushResponse) => {
-            if (err) reject(err);
-            else resolve(res);
-          },
-        );
-      });
-
-      return D2Result.ok({ data: { delivered: response.delivered } });
-    } catch (err: unknown) {
-      this.context.logger.error("PushFileUpdate gRPC call failed", {
-        gatewayAddress: this.gatewayAddress,
-        uploaderUserId: input.uploaderUserId,
-        fileId: input.fileId,
-        err,
-      });
-      return D2Result.serviceUnavailable();
-    }
+    return handleGrpcCall(
+      () =>
+        new Promise<RealtimePushResponse>((resolve, reject) => {
+          client.pushToChannel(
+            {
+              channel,
+              event,
+              payloadJson: payload,
+            },
+            new grpc.Metadata(),
+            { deadline: Date.now() + GRPC_TIMEOUT_MS },
+            (err: grpc.ServiceError | null, res: RealtimePushResponse) => {
+              if (err) reject(err);
+              else resolve(res);
+            },
+          );
+        }),
+      (res) => res.result!,
+      (res) => ({ delivered: res.delivered }),
+    );
   }
 
   private getOrCreateClient(): RealtimeGatewayClient {
@@ -78,7 +74,9 @@ export class PushFileUpdate extends BaseHandler<I, O> implements IPushFileUpdate
       this.client = new RealtimeGatewayClientCtor(
         this.gatewayAddress,
         grpc.credentials.createInsecure(),
-        { interceptors: [createTraceContextInterceptor()] },
+        {
+          interceptors: [createTraceContextInterceptor(), createApiKeyInterceptor(this.apiKey)],
+        },
       ) as unknown as RealtimeGatewayClient;
     }
     return this.client;

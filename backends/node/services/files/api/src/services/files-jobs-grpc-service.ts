@@ -42,10 +42,10 @@ export function createFilesJobsGrpcService(provider: ServiceProvider): FilesJobS
               executedAt: new Date().toISOString(),
             },
           });
-        } catch (err) {
+        } catch {
           callback({
             code: grpc.status.INTERNAL,
-            message: err instanceof Error ? err.message : "Unknown error",
+            message: "Internal error",
           });
         } finally {
           scope.dispose();

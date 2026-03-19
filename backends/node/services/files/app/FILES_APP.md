@@ -88,7 +88,7 @@ Per-context-key runtime config loaded from indexed env vars (`FILES_CK__0__KEY`,
 
 Each context key config specifies:
 
-- `contextKey` — the key name (e.g., `auth_user_avatar`)
+- `contextKey` — the key name (e.g., `user_avatar`)
 - `callbackAddress` — gRPC host:port of the owning service
 - `allowedCategories` — which content categories are accepted
 - `maxSizeBytes` — per-key upload size limit (optional, falls back to domain default)

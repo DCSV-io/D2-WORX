@@ -334,6 +334,12 @@ export type {
   RunEmulationConsentCleanupOutput,
 } from "./interfaces/cqrs/handlers/c/run-emulation-consent-cleanup.js";
 
+export { HandleFileProcessed } from "./implementations/cqrs/handlers/c/handle-file-processed.js";
+export type {
+  HandleFileProcessedInput,
+  HandleFileProcessedOutput,
+} from "./interfaces/cqrs/handlers/c/handle-file-processed.js";
+
 // --- Job Options ---
 export type { AuthJobOptions } from "./auth-job-options.js";
 export { DEFAULT_AUTH_JOB_OPTIONS } from "./auth-job-options.js";

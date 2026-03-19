@@ -49,7 +49,7 @@ src/
     call-on-file-processed.ts  OnFileProcessed RPC (dynamic connection cache)
     call-can-access.ts         CanAccess RPC (dynamic connection cache)
   realtime/handlers/
-    push-file-update.ts        SignalR Bridge PushToUser RPC
+    push-file-update.ts        SignalR Bridge PushToChannel RPC
   messaging/
     handlers/
       pub/  publish-file-for-processing.ts   Publishes { fileId } to processing queue

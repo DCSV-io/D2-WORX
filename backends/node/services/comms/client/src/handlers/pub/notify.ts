@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { BaseHandler, type IHandlerContext, type RedactionSpec, zodGuid } from "@d2/handler";
 import { D2Result } from "@d2/result";
-import type { IMessagePublisher } from "@d2/messaging";
+import { handlePublish, type IMessagePublisher } from "@d2/messaging";
 import type { INotifyHandler } from "../../interfaces/pub/notify.js";
 import { COMMS_EVENTS } from "../../comms-client-constants.js";
 
@@ -75,7 +75,8 @@ export class Notify extends BaseHandler<NotifyInput, NotifyOutput> implements IN
       return D2Result.ok({ data: {} });
     }
 
-    await this.publisher.send(
+    const publishResult = await handlePublish(
+      this.publisher,
       {
         exchange: COMMS_EVENTS.NOTIFICATIONS_EXCHANGE,
         routingKey: "",
@@ -92,6 +93,8 @@ export class Notify extends BaseHandler<NotifyInput, NotifyOutput> implements IN
         metadata: input.metadata,
       },
     );
+
+    if (!publishResult.success) return D2Result.bubbleFail(publishResult);
 
     return D2Result.ok({ data: {} });
   }

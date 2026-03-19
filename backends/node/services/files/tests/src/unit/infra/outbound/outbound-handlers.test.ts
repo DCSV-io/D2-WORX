@@ -23,8 +23,19 @@ vi.mock("@d2/protos", () => ({
 }));
 
 vi.mock("@d2/service-defaults/grpc", () => ({
+  createApiKeyInterceptor: vi.fn().mockReturnValue(() => {}),
   createTraceContextInterceptor: vi.fn().mockReturnValue(() => {}),
 }));
+
+/** Helper to create a successful D2ResultProto shape for mock responses. */
+const okResultProto = {
+  success: true,
+  statusCode: 200,
+  messages: [],
+  inputErrors: [],
+  errorCode: "",
+  traceId: "",
+};
 
 // --- Imports (after mocks) ---
 
@@ -83,11 +94,11 @@ describe("CallCanAccess", () => {
 
   it("should return allowed=true on successful gRPC call", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { allowed: true });
+        cb(null, { result: okResultProto, allowed: true });
       },
     );
 
@@ -106,11 +117,11 @@ describe("CallCanAccess", () => {
 
   it("should return allowed=false when service denies access", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { allowed: false });
+        cb(null, { result: okResultProto, allowed: false });
       },
     );
 
@@ -129,11 +140,12 @@ describe("CallCanAccess", () => {
 
   it("should return serviceUnavailable on gRPC error", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(new Error("UNAVAILABLE: connection refused"), null);
+        const err = Object.assign(new Error("UNAVAILABLE: connection refused"), { code: 14 });
+        cb(err, null);
       },
     );
 
@@ -152,7 +164,7 @@ describe("CallCanAccess", () => {
 
   it("should pass correct request fields to gRPC", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (
@@ -168,7 +180,7 @@ describe("CallCanAccess", () => {
           requestingOrgId: "org-bbb",
           action: "read",
         });
-        cb(null, { allowed: true });
+        cb(null, { result: okResultProto, allowed: true });
       },
     );
 
@@ -184,7 +196,7 @@ describe("CallCanAccess", () => {
 
   it("should set deadline on gRPC call options", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (
@@ -196,7 +208,7 @@ describe("CallCanAccess", () => {
         // Deadline should be Date.now() + 10_000
         expect(opts.deadline).toBeGreaterThan(Date.now() - 1000);
         expect(opts.deadline).toBeLessThanOrEqual(Date.now() + 11_000);
-        cb(null, { allowed: true });
+        cb(null, { result: okResultProto, allowed: true });
       },
     );
 
@@ -212,11 +224,11 @@ describe("CallCanAccess", () => {
 
   it("should create and cache client for new address", async () => {
     const clients = new Map<string, unknown>();
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { allowed: true });
+        cb(null, { result: okResultProto, allowed: true });
       },
     );
 
@@ -235,11 +247,11 @@ describe("CallCanAccess", () => {
 
   it("should reuse cached client for same address", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { allowed: true });
+        cb(null, { result: okResultProto, allowed: true });
       },
     );
 
@@ -269,11 +281,11 @@ describe("CallCanAccess", () => {
 
   it("should create separate clients for different addresses", async () => {
     const clients = new Map<string, unknown>();
-    const handler = new CallCanAccess(clients as never, createTestContext());
+    const handler = new CallCanAccess(clients as never, "test-callback-key", createTestContext());
 
     mockCanAccess.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { allowed: true });
+        cb(null, { result: okResultProto, allowed: true });
       },
     );
 
@@ -313,11 +325,15 @@ describe("CallOnFileProcessed", () => {
 
   it("should return success=true on successful gRPC call", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { success: true });
+        cb(null, { result: okResultProto, success: true });
       },
     );
 
@@ -336,11 +352,15 @@ describe("CallOnFileProcessed", () => {
 
   it("should return success=false when service responds with failure", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { success: false });
+        cb(null, { result: okResultProto, success: false });
       },
     );
 
@@ -358,11 +378,16 @@ describe("CallOnFileProcessed", () => {
 
   it("should return serviceUnavailable on gRPC error", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(new Error("DEADLINE_EXCEEDED"), null);
+        const err = Object.assign(new Error("DEADLINE_EXCEEDED"), { code: 4 });
+        cb(err, null);
       },
     );
 
@@ -380,7 +405,11 @@ describe("CallOnFileProcessed", () => {
 
   it("should pass correct request fields including status and variants", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (
@@ -396,7 +425,7 @@ describe("CallOnFileProcessed", () => {
           status: "rejected",
           variants: [],
         });
-        cb(null, { success: true });
+        cb(null, { result: okResultProto, success: true });
       },
     );
 
@@ -411,7 +440,11 @@ describe("CallOnFileProcessed", () => {
 
   it("should spread variants array to new array", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
     const inputVariants = ["thumb", "medium", "original"];
 
     mockOnFileProcessed.mockImplementation(
@@ -424,7 +457,7 @@ describe("CallOnFileProcessed", () => {
         expect(req.variants).toEqual(inputVariants);
         // Should be a new array, not the same reference
         expect(req.variants).not.toBe(inputVariants);
-        cb(null, { success: true });
+        cb(null, { result: okResultProto, success: true });
       },
     );
 
@@ -440,7 +473,11 @@ describe("CallOnFileProcessed", () => {
 
   it("should pass empty array when variants is undefined", async () => {
     const clients = createPreSeededClients("comms:3200");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (
@@ -450,7 +487,7 @@ describe("CallOnFileProcessed", () => {
         cb: (err: unknown, res: unknown) => void,
       ) => {
         expect(req.variants).toEqual([]);
-        cb(null, { success: true });
+        cb(null, { result: okResultProto, success: true });
       },
     );
 
@@ -465,7 +502,11 @@ describe("CallOnFileProcessed", () => {
 
   it("should set deadline on gRPC call options", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (
@@ -476,7 +517,7 @@ describe("CallOnFileProcessed", () => {
       ) => {
         expect(opts.deadline).toBeGreaterThan(Date.now() - 1000);
         expect(opts.deadline).toBeLessThanOrEqual(Date.now() + 11_000);
-        cb(null, { success: true });
+        cb(null, { result: okResultProto, success: true });
       },
     );
 
@@ -491,11 +532,15 @@ describe("CallOnFileProcessed", () => {
 
   it("should create and cache client for new address", async () => {
     const clients = new Map<string, unknown>();
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { success: true });
+        cb(null, { result: okResultProto, success: true });
       },
     );
 
@@ -513,11 +558,15 @@ describe("CallOnFileProcessed", () => {
 
   it("should reuse cached client for same address", async () => {
     const clients = createPreSeededClients("auth:5101");
-    const handler = new CallOnFileProcessed(clients as never, createTestContext());
+    const handler = new CallOnFileProcessed(
+      clients as never,
+      "test-callback-key",
+      createTestContext(),
+    );
 
     mockOnFileProcessed.mockImplementation(
       (_req: unknown, _meta: unknown, _opts: unknown, cb: (err: unknown, res: unknown) => void) => {
-        cb(null, { success: true });
+        cb(null, { result: okResultProto, success: true });
       },
     );
 

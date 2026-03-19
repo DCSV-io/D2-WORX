@@ -283,7 +283,7 @@ describe("Notify", () => {
   // -------------------------------------------------------------------------
 
   describe("publisher error handling", () => {
-    it("should return unhandled exception result when publisher.send throws", async () => {
+    it("should return serviceUnavailable when publisher.send throws", async () => {
       (publisher.send as ReturnType<typeof vi.fn>).mockRejectedValue(
         new Error("RabbitMQ connection lost"),
       );
@@ -291,18 +291,18 @@ describe("Notify", () => {
       const result = await handler.handleAsync(validInput());
 
       expect(result).toBeFailure();
-      expect(result).toHaveStatusCode(500);
-      expect(result).toHaveErrorCode("UNHANDLED_EXCEPTION");
+      expect(result).toHaveStatusCode(503);
+      expect(result).toHaveErrorCode("SERVICE_UNAVAILABLE");
     });
 
-    it("should return unhandled exception result for non-Error throws", async () => {
+    it("should return serviceUnavailable for non-Error throws", async () => {
       (publisher.send as ReturnType<typeof vi.fn>).mockRejectedValue("connection timeout");
 
       const result = await handler.handleAsync(validInput());
 
       expect(result).toBeFailure();
-      expect(result).toHaveStatusCode(500);
-      expect(result).toHaveErrorCode("UNHANDLED_EXCEPTION");
+      expect(result).toHaveStatusCode(503);
+      expect(result).toHaveErrorCode("SERVICE_UNAVAILABLE");
     });
   });
 

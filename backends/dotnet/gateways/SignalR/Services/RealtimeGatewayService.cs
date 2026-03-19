@@ -52,7 +52,11 @@ public partial class RealtimeGatewayService : RealtimeGateway.RealtimeGatewayBas
 
         LogPushedEvent(r_logger, request.Event, request.Channel);
 
-        return new PushResponse { Delivered = true };
+        return new PushResponse
+        {
+            Result = new D2ResultProto { Success = true, StatusCode = 200 },
+            Delivered = true,
+        };
     }
 
     /// <summary>
@@ -74,7 +78,11 @@ public partial class RealtimeGatewayService : RealtimeGateway.RealtimeGatewayBas
 
         LogRemovedFromChannel(r_logger, request.ConnectionId, request.Channel);
 
-        return new PushResponse { Delivered = true };
+        return new PushResponse
+        {
+            Result = new D2ResultProto { Success = true, StatusCode = 200 },
+            Delivered = true,
+        };
     }
 
     /// <summary>

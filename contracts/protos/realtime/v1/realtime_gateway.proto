@@ -1,5 +1,6 @@
 syntax = "proto3";
 
+import "common/v1/d2_result.proto";
 import "common/v1/health.proto";
 
 package d2.realtime.v1;
@@ -55,8 +56,9 @@ message RemoveFromChannelRequest {
 // ****************************************
 
 message PushResponse {
+  d2.common.v1.D2ResultProto result = 1;
   // Whether the event was delivered to at least one connection.
-  bool delivered = 1;
+  bool delivered = 2;
   // Number of connections that received the event.
-  int32 connections_reached = 2;
+  int32 connections_reached = 3;
 }

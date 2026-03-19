@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { z } from "zod";
 import {
@@ -35,6 +35,10 @@ export class ProcessFile
   extends BaseHandler<Input, Output>
   implements Commands.IProcessFileHandler
 {
+  override get redaction(): RedactionSpec {
+    return { suppressOutput: true };
+  }
+
   private readonly repo: FileRepoHandlers;
   private readonly storage: FileStorageHandlers;
   private readonly scanFile: IScanFile;
@@ -73,6 +77,10 @@ export class ProcessFile
     if (!findResult.data?.file) return D2Result.notFound();
 
     const file = findResult.data.file;
+
+    // Idempotency guard: if already past "processing", return as-is (duplicate message)
+    if (file.status !== "processing") return D2Result.ok({ data: { file } });
+
     const config = this.configs.get(file.contextKey);
     if (!config) return D2Result.forbidden();
 
@@ -92,20 +100,28 @@ export class ProcessFile
 
     if (!scanResult.data?.clean) {
       // Virus detected — reject and notify
-      await this.storage.delete.handleAsync({ key: rawKey });
+      const deleteResult = await this.storage.delete.handleAsync({ key: rawKey });
+      if (!deleteResult.success) {
+        this.context.logger.warn("Failed to delete infected file from storage", {
+          fileId: file.id,
+          key: rawKey,
+        });
+      }
 
       const rejectedFile = transitionFileStatus(file, "rejected", {
         rejectionReason: "content_moderation_failed",
       });
-      await this.repo.update.handleAsync({ file: rejectedFile });
+      const rejectUpdateResult = await this.repo.update.handleAsync({ file: rejectedFile });
+      if (!rejectUpdateResult.success) return D2Result.bubbleFail(rejectUpdateResult);
 
-      await this.notifier.handleAsync({
+      const rejectNotifyResult = await this.notifier.handleAsync({
         address: config.callbackAddress,
         fileId: file.id,
         contextKey: file.contextKey,
         relatedEntityId: file.relatedEntityId,
         status: "rejected",
       });
+      if (!rejectNotifyResult.success) return D2Result.bubbleFail(rejectNotifyResult);
 
       // Fire-and-forget: push rejection to uploader's browser
       this.pushFileUpdate
@@ -216,8 +232,12 @@ export class ProcessFile
     const updateResult = await this.repo.update.handleAsync({ file: readyFile });
     if (!updateResult.success) return D2Result.bubbleFail(updateResult);
 
-    // Clean up raw upload
-    await this.storage.delete.handleAsync({ key: rawKey });
+    // Clean up raw upload (fire-and-forget — orphaned objects cleaned by RunCleanup)
+    this.storage.delete
+      .handleAsync({ key: rawKey })
+      .catch((err) =>
+        this.context.logger.warn("Raw upload cleanup failed", { fileId: file.id, err }),
+      );
 
     // Fire-and-forget: push ready status to uploader's browser
     this.pushFileUpdate

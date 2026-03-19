@@ -930,6 +930,9 @@ importers:
       '@d2/di':
         specifier: workspace:*
         version: link:../../../shared/di
+      '@d2/errors-pg':
+        specifier: workspace:*
+        version: link:../../../shared/implementations/repository/errors/pg
       '@d2/files-app':
         specifier: workspace:*
         version: link:../app
@@ -951,6 +954,9 @@ importers:
       '@d2/result':
         specifier: workspace:*
         version: link:../../../shared/result
+      '@d2/result-extensions':
+        specifier: workspace:*
+        version: link:../../../shared/result-extensions
       '@d2/service-defaults':
         specifier: workspace:*
         version: link:../../../shared/service-defaults

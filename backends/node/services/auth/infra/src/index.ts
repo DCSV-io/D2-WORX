@@ -87,6 +87,10 @@ export { PurgeSignInEvents } from "./repository/handlers/d/purge-sign-in-events.
 export { PurgeExpiredInvitations } from "./repository/handlers/d/purge-expired-invitations.js";
 export { PurgeExpiredEmulationConsents } from "./repository/handlers/d/purge-expired-emulation-consents.js";
 
+// --- Repository Handlers (file callback) ---
+export { UpdateUserImage } from "./repository/handlers/u/update-user-image.js";
+export { UpdateOrgLogo } from "./repository/handlers/u/update-org-logo.js";
+
 // --- Messaging Consumers ---
 export { createWhoIsResolutionConsumer } from "./messaging/consumers/whois-resolution-consumer.js";
 export type { WhoIsResolutionConsumerDeps } from "./messaging/consumers/whois-resolution-consumer.js";

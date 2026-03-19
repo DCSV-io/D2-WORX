@@ -46,14 +46,18 @@ Order matters -- middleware executes top-to-bottom on request, bottom-to-top on 
 ```
 Request
   1. CORS (origin allowlist, expose Content-Disposition)
-  2. Security headers (X-Content-Type-Options: nosniff, X-Frame-Options: DENY)
+  2. Security headers (X-Content-Type-Options: nosniff, X-Frame-Options: DENY, CSP, Referrer-Policy)
   3. Body limit (1 MB -- REST payloads are metadata only, files upload direct to MinIO)
-  4. Error handler (catches unhandled errors, returns D2Result shape)
+  4. Request enrichment (IP resolution, fingerprinting, WhoIs -- requires Geo client)
+  5. Request context logging (child logger with traceId, userId, etc.)
+  6. Ambient scope (AsyncLocalStorage for per-request context on singletons)
+  7. Rate limiting (multi-dimensional sliding window -- requires Geo client)
+  8. Error handler (catches unhandled errors, returns D2Result shape)
   ├── /health, /ready  → public (no further middleware)
   └── /api/v1/*        → protected:
-        5. JWT auth (@d2/jwt-auth -- JWKS, issuer, audience, fingerprint check)
-        6. DI scope (createServiceScope, inject IRequestContext from JWT claims)
-        7. Route handler
+        9. JWT auth (@d2/jwt-auth -- JWKS, issuer, audience, fingerprint check)
+       10. DI scope (createServiceScope, merge enriched + JWT IRequestContext)
+       11. Route handler
 Response
 ```
 

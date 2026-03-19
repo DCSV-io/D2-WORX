@@ -80,6 +80,10 @@ export interface FilesInfraConfig {
   readonly publisher: IMessagePublisher;
   /** gRPC address of the SignalR Gateway (e.g., "d2-signalr:5200"). */
   readonly signalrGatewayAddress: string;
+  /** API key sent on outbound gRPC callbacks to owning services (Auth, Comms). */
+  readonly callbackApiKey: string;
+  /** API key sent on outbound gRPC calls to the SignalR Gateway. */
+  readonly signalrApiKey: string;
   /**
    * Optional S3 client configured with a browser-reachable endpoint.
    * Used only by PresignPutUrl to generate URLs that browsers can PUT to directly
@@ -88,14 +92,34 @@ export interface FilesInfraConfig {
   readonly s3Public?: S3Client;
 }
 
+export interface FilesInfraDisposable {
+  /** Closes all cached gRPC callback clients. Call during graceful shutdown. */
+  dispose(): void;
+}
+
 /**
  * Registers files infrastructure services (repository handlers, storage handlers,
  * provider handlers, messaging handlers) with the DI container.
  *
  * All handlers are transient — new instance per resolve.
+ *
+ * Returns a disposable that must be called during shutdown to close gRPC clients.
  */
-export function addFilesInfra(services: ServiceCollection, config: FilesInfraConfig): void {
-  const { db, s3, bucketName, clamd, publisher, signalrGatewayAddress, s3Public } = config;
+export function addFilesInfra(
+  services: ServiceCollection,
+  config: FilesInfraConfig,
+): FilesInfraDisposable {
+  const {
+    db,
+    s3,
+    bucketName,
+    clamd,
+    publisher,
+    signalrGatewayAddress,
+    callbackApiKey,
+    signalrApiKey,
+    s3Public,
+  } = config;
 
   // Shared gRPC client cache for outbound handlers
   const callbackClients = new Map<string, FileCallbackClient>();
@@ -175,18 +199,20 @@ export function addFilesInfra(services: ServiceCollection, config: FilesInfraCon
 
   services.addTransient(
     ICallOnFileProcessedKey,
-    (sp) => new CallOnFileProcessed(callbackClients, sp.resolve(IHandlerContextKey)),
+    (sp) =>
+      new CallOnFileProcessed(callbackClients, callbackApiKey, sp.resolve(IHandlerContextKey)),
   );
   services.addTransient(
     ICallCanAccessKey,
-    (sp) => new CallCanAccess(callbackClients, sp.resolve(IHandlerContextKey)),
+    (sp) => new CallCanAccess(callbackClients, callbackApiKey, sp.resolve(IHandlerContextKey)),
   );
 
   // --- Realtime handlers ---
 
   services.addTransient(
     IPushFileUpdateKey,
-    (sp) => new PushFileUpdate(signalrGatewayAddress, sp.resolve(IHandlerContextKey)),
+    (sp) =>
+      new PushFileUpdate(signalrGatewayAddress, signalrApiKey, sp.resolve(IHandlerContextKey)),
   );
 
   // --- Messaging handlers ---
@@ -208,4 +234,13 @@ export function addFilesInfra(services: ServiceCollection, config: FilesInfraCon
     IProcessUploadedFileKey,
     (sp) => new ProcessUploadedFile(sp.resolve(IProcessFileKey), sp.resolve(IHandlerContextKey)),
   );
+
+  return {
+    dispose() {
+      for (const client of callbackClients.values()) {
+        client.close();
+      }
+      callbackClients.clear();
+    },
+  };
 }

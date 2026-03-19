@@ -125,15 +125,26 @@ export class RunCleanup extends BaseHandler<Input, Output> implements Commands.I
       }
     }
 
-    // Delete from storage (silently ignores missing keys)
+    // Delete from storage — log warning on failure but continue to DB cleanup
     if (keysToDelete.length > 0) {
-      await this.storage.deleteMany.handleAsync({ keys: keysToDelete });
+      const storageResult = await this.storage.deleteMany.handleAsync({ keys: keysToDelete });
+      if (!storageResult.success) {
+        this.context.logger.warn("Storage cleanup partially failed — orphaned objects may remain", {
+          status,
+          fileCount: files.length,
+          keyCount: keysToDelete.length,
+        });
+      }
     }
 
     // Delete DB records
     const ids = files.map((f: File) => f.id);
-    await this.deleteByIds.handleAsync({ ids });
+    const deleteResult = await this.deleteByIds.handleAsync({ ids });
+    if (!deleteResult.success) {
+      this.context.logger.warn("DB cleanup failed", { status, fileCount: files.length });
+      return 0;
+    }
 
-    return files.length;
+    return deleteResult.data?.rowsAffected ?? 0;
   }
 }

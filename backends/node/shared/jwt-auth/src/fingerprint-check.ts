@@ -1,4 +1,4 @@
-import { subtle } from "node:crypto";
+import { subtle, timingSafeEqual } from "node:crypto";
 import type { JWTPayload } from "jose";
 import { D2Result } from "@d2/result";
 
@@ -37,7 +37,9 @@ export async function checkFingerprint(
   }
 
   const actual = await computeFingerprint(userAgent, accept);
-  if (actual !== expectedFingerprint) {
+  const a = Buffer.from(actual, "utf-8");
+  const b = Buffer.from(expectedFingerprint, "utf-8");
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return D2Result.unauthorized({ messages: ["Fingerprint mismatch."] });
   }
 

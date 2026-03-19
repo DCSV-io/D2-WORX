@@ -18,6 +18,7 @@ import {
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
+import { D2ResultProto } from "../../common/v1/d2_result";
 import { CheckHealthRequest, CheckHealthResponse } from "../../common/v1/health";
 
 export const protobufPackage = "d2.realtime.v1";
@@ -39,6 +40,9 @@ export interface RemoveFromChannelRequest {
 }
 
 export interface PushResponse {
+  result:
+    | D2ResultProto
+    | undefined;
   /** Whether the event was delivered to at least one connection. */
   delivered: boolean;
   /** Number of connections that received the event. */
@@ -222,16 +226,19 @@ export const RemoveFromChannelRequest: MessageFns<RemoveFromChannelRequest> = {
 };
 
 function createBasePushResponse(): PushResponse {
-  return { delivered: false, connectionsReached: 0 };
+  return { result: undefined, delivered: false, connectionsReached: 0 };
 }
 
 export const PushResponse: MessageFns<PushResponse> = {
   encode(message: PushResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.result !== undefined) {
+      D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
+    }
     if (message.delivered !== false) {
-      writer.uint32(8).bool(message.delivered);
+      writer.uint32(16).bool(message.delivered);
     }
     if (message.connectionsReached !== 0) {
-      writer.uint32(16).int32(message.connectionsReached);
+      writer.uint32(24).int32(message.connectionsReached);
     }
     return writer;
   },
@@ -244,15 +251,23 @@ export const PushResponse: MessageFns<PushResponse> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.result = D2ResultProto.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
             break;
           }
 
           message.delivered = reader.bool();
           continue;
         }
-        case 2: {
-          if (tag !== 16) {
+        case 3: {
+          if (tag !== 24) {
             break;
           }
 
@@ -270,6 +285,7 @@ export const PushResponse: MessageFns<PushResponse> = {
 
   fromJSON(object: any): PushResponse {
     return {
+      result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
       delivered: isSet(object.delivered) ? globalThis.Boolean(object.delivered) : false,
       connectionsReached: isSet(object.connectionsReached)
         ? globalThis.Number(object.connectionsReached)
@@ -281,6 +297,9 @@ export const PushResponse: MessageFns<PushResponse> = {
 
   toJSON(message: PushResponse): unknown {
     const obj: any = {};
+    if (message.result !== undefined) {
+      obj.result = D2ResultProto.toJSON(message.result);
+    }
     if (message.delivered !== false) {
       obj.delivered = message.delivered;
     }
@@ -295,6 +314,9 @@ export const PushResponse: MessageFns<PushResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<PushResponse>, I>>(object: I): PushResponse {
     const message = createBasePushResponse();
+    message.result = (object.result !== undefined && object.result !== null)
+      ? D2ResultProto.fromPartial(object.result)
+      : undefined;
     message.delivered = object.delivered ?? false;
     message.connectionsReached = object.connectionsReached ?? 0;
     return message;

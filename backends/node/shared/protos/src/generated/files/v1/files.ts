@@ -18,6 +18,7 @@ import {
   type ServiceError,
   type UntypedServiceImplementation,
 } from "@grpc/grpc-js";
+import { D2ResultProto } from "../../common/v1/d2_result";
 
 export const protobufPackage = "d2.files.v1";
 
@@ -31,6 +32,7 @@ export interface CanAccessRequest {
 }
 
 export interface CanAccessResponse {
+  result: D2ResultProto | undefined;
   allowed: boolean;
 }
 
@@ -45,6 +47,7 @@ export interface FileProcessedRequest {
 }
 
 export interface FileProcessedResponse {
+  result: D2ResultProto | undefined;
   success: boolean;
 }
 
@@ -189,13 +192,16 @@ export const CanAccessRequest: MessageFns<CanAccessRequest> = {
 };
 
 function createBaseCanAccessResponse(): CanAccessResponse {
-  return { allowed: false };
+  return { result: undefined, allowed: false };
 }
 
 export const CanAccessResponse: MessageFns<CanAccessResponse> = {
   encode(message: CanAccessResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.result !== undefined) {
+      D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
+    }
     if (message.allowed !== false) {
-      writer.uint32(8).bool(message.allowed);
+      writer.uint32(16).bool(message.allowed);
     }
     return writer;
   },
@@ -208,7 +214,15 @@ export const CanAccessResponse: MessageFns<CanAccessResponse> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.result = D2ResultProto.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
             break;
           }
 
@@ -225,11 +239,17 @@ export const CanAccessResponse: MessageFns<CanAccessResponse> = {
   },
 
   fromJSON(object: any): CanAccessResponse {
-    return { allowed: isSet(object.allowed) ? globalThis.Boolean(object.allowed) : false };
+    return {
+      result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
+      allowed: isSet(object.allowed) ? globalThis.Boolean(object.allowed) : false,
+    };
   },
 
   toJSON(message: CanAccessResponse): unknown {
     const obj: any = {};
+    if (message.result !== undefined) {
+      obj.result = D2ResultProto.toJSON(message.result);
+    }
     if (message.allowed !== false) {
       obj.allowed = message.allowed;
     }
@@ -241,6 +261,9 @@ export const CanAccessResponse: MessageFns<CanAccessResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<CanAccessResponse>, I>>(object: I): CanAccessResponse {
     const message = createBaseCanAccessResponse();
+    message.result = (object.result !== undefined && object.result !== null)
+      ? D2ResultProto.fromPartial(object.result)
+      : undefined;
     message.allowed = object.allowed ?? false;
     return message;
   },
@@ -383,13 +406,16 @@ export const FileProcessedRequest: MessageFns<FileProcessedRequest> = {
 };
 
 function createBaseFileProcessedResponse(): FileProcessedResponse {
-  return { success: false };
+  return { result: undefined, success: false };
 }
 
 export const FileProcessedResponse: MessageFns<FileProcessedResponse> = {
   encode(message: FileProcessedResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.result !== undefined) {
+      D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
+    }
     if (message.success !== false) {
-      writer.uint32(8).bool(message.success);
+      writer.uint32(16).bool(message.success);
     }
     return writer;
   },
@@ -402,7 +428,15 @@ export const FileProcessedResponse: MessageFns<FileProcessedResponse> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.result = D2ResultProto.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
             break;
           }
 
@@ -419,11 +453,17 @@ export const FileProcessedResponse: MessageFns<FileProcessedResponse> = {
   },
 
   fromJSON(object: any): FileProcessedResponse {
-    return { success: isSet(object.success) ? globalThis.Boolean(object.success) : false };
+    return {
+      result: isSet(object.result) ? D2ResultProto.fromJSON(object.result) : undefined,
+      success: isSet(object.success) ? globalThis.Boolean(object.success) : false,
+    };
   },
 
   toJSON(message: FileProcessedResponse): unknown {
     const obj: any = {};
+    if (message.result !== undefined) {
+      obj.result = D2ResultProto.toJSON(message.result);
+    }
     if (message.success !== false) {
       obj.success = message.success;
     }
@@ -435,6 +475,9 @@ export const FileProcessedResponse: MessageFns<FileProcessedResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<FileProcessedResponse>, I>>(object: I): FileProcessedResponse {
     const message = createBaseFileProcessedResponse();
+    message.result = (object.result !== undefined && object.result !== null)
+      ? D2ResultProto.fromPartial(object.result)
+      : undefined;
     message.success = object.success ?? false;
     return message;
   },

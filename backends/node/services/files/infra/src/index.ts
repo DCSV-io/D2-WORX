@@ -4,7 +4,7 @@
 
 // --- DI Registration ---
 export { addFilesInfra } from "./registration.js";
-export type { FilesInfraConfig } from "./registration.js";
+export type { FilesInfraConfig, FilesInfraDisposable } from "./registration.js";
 
 // --- Drizzle Schema ---
 export { file } from "./repository/schema/index.js";

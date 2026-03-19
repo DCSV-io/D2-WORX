@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type {
   UpdateFileRecordInput as I,
@@ -11,6 +11,10 @@ import { file } from "../../schema/tables.js";
 import { toFile } from "../../mappers/file-mapper.js";
 
 export class UpdateFileRecord extends BaseHandler<I, O> implements IUpdateFileRecordHandler {
+  override get redaction(): RedactionSpec {
+    return { suppressOutput: true };
+  }
+
   private readonly db: NodePgDatabase;
 
   constructor(db: NodePgDatabase, context: IHandlerContext) {

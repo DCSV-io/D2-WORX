@@ -115,17 +115,17 @@ src/
 
 ### Command Handlers (9)
 
-| Handler                   | Input                                                  | Output                     | Description                                                                                                                                |
-| ------------------------- | ------------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `RecordSignInEvent`       | userId, successful, IP, UA                             | `{ event }`                | Creates immutable audit record via domain factory + repo                                                                                   |
-| `RecordSignInOutcome`     | identifierHash, identityHash                           | `{ recorded }`             | Records throttle state: success marks known-good, failure increments                                                                       |
-| `CreateEmulationConsent`  | userId, grantedToOrgId, expiry                         | `{ consent }`              | Validates org type, checks org exists, prevents duplicates                                                                                 |
-| `RevokeEmulationConsent`  | consentId, userId                                      | `{ consent }`              | Ownership check + active check before revoking                                                                                             |
-| `CreateOrgContact`        | orgId, label, contact details                          | `{ contact, geoContact }`  | Creates junction then Geo contact; rollback on Geo failure                                                                                 |
-| `UpdateOrgContactHandler` | id, orgId, updates                                     | `{ contact, geoContact? }` | Metadata-only or contact replacement via UpdateContactsByExtKeys                                                                           |
-| `DeleteOrgContact`        | id, orgId                                              | `{}`                       | IDOR check, best-effort Geo delete, then junction delete                                                                                   |
-| `CreateUserContact`       | userId, email, name, locale                            | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast                                                                             |
-| `HandleFileProcessed`     | fileId, contextKey, relatedEntityId, status, variants? | `{ success }`              | Routes by contextKey: `auth_user_avatar` → UpdateUserImage, `auth_org_logo` → UpdateOrgLogo, others → ack. Rejected files logged and acked |
+| Handler                   | Input                                                  | Output                     | Description                                                                                                                      |
+| ------------------------- | ------------------------------------------------------ | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `RecordSignInEvent`       | userId, successful, IP, UA                             | `{ event }`                | Creates immutable audit record via domain factory + repo                                                                         |
+| `RecordSignInOutcome`     | identifierHash, identityHash                           | `{ recorded }`             | Records throttle state: success marks known-good, failure increments                                                             |
+| `CreateEmulationConsent`  | userId, grantedToOrgId, expiry                         | `{ consent }`              | Validates org type, checks org exists, prevents duplicates                                                                       |
+| `RevokeEmulationConsent`  | consentId, userId                                      | `{ consent }`              | Ownership check + active check before revoking                                                                                   |
+| `CreateOrgContact`        | orgId, label, contact details                          | `{ contact, geoContact }`  | Creates junction then Geo contact; rollback on Geo failure                                                                       |
+| `UpdateOrgContactHandler` | id, orgId, updates                                     | `{ contact, geoContact? }` | Metadata-only or contact replacement via UpdateContactsByExtKeys                                                                 |
+| `DeleteOrgContact`        | id, orgId                                              | `{}`                       | IDOR check, best-effort Geo delete, then junction delete                                                                         |
+| `CreateUserContact`       | userId, email, name, locale                            | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast                                                                   |
+| `HandleFileProcessed`     | fileId, contextKey, relatedEntityId, status, variants? | `{ success }`              | Routes by contextKey: `user_avatar` → UpdateUserImage, `org_logo` → UpdateOrgLogo, others → ack. Rejected files logged and acked |
 
 ### Job Handlers (4)
 

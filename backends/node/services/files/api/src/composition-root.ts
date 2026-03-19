@@ -69,6 +69,9 @@ export interface FilesServiceConfig {
   readonly geoApiKey?: string;
   // SignalR
   readonly signalrGatewayAddress?: string;
+  // Outbound API keys (required — fail-closed)
+  readonly callbackApiKey: string;
+  readonly signalrApiKey: string;
   // Jobs
   readonly jobOptions?: FilesJobOptions;
 }
@@ -207,7 +210,7 @@ export async function createFilesApp(
     logger.info("Request enrichment + rate limiting enabled (Geo client connected)");
   } else {
     logger.warn(
-      "GEO_GRPC_ADDRESS or FILES_GEO_API_KEY not configured — request enrichment + rate limiting disabled",
+      "GEO_GRPC_ADDRESS or FILES_GEO_CLIENT__APIKEY not configured — request enrichment + rate limiting disabled",
     );
   }
 
@@ -221,7 +224,7 @@ export async function createFilesApp(
   );
 
   // Infra layer (repo, storage, providers, outbound, realtime, messaging)
-  addFilesInfra(services, {
+  const infraDisposable = addFilesInfra(services, {
     db,
     s3,
     s3Public,
@@ -229,6 +232,8 @@ export async function createFilesApp(
     clamd: { host: config.clamdHost, port: config.clamdPort },
     publisher,
     signalrGatewayAddress: config.signalrGatewayAddress ?? "localhost:5200",
+    callbackApiKey: config.callbackApiKey,
+    signalrApiKey: config.signalrApiKey,
   });
 
   // App layer (CQRS handlers)
@@ -306,6 +311,7 @@ export async function createFilesApp(
         });
       });
     }
+    infraDisposable.dispose();
     s3.destroy();
     s3Public?.destroy();
     provider.dispose();

@@ -26,6 +26,10 @@ describe("IntakeFile", () => {
     const repo = createMockRepo();
     const file = makePendingFile();
     vi.mocked(repo.findById.handleAsync).mockResolvedValue(D2Result.ok({ data: { file } }));
+    // Mock update to return the file in "processing" status (optimistic concurrency check)
+    vi.mocked(repo.update.handleAsync).mockResolvedValue(
+      D2Result.ok({ data: { file: { ...file, status: "processing" } } }),
+    );
     const { handler } = createHandler(repo);
 
     const result = await handler.handleAsync({ fileId: "file-001" });

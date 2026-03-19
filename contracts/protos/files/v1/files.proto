@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "common/v1/d2_result.proto";
+
 package d2.files.v1;
 
 option csharp_namespace = "D2.Services.Protos.Files.V1";
@@ -27,7 +29,8 @@ message CanAccessRequest {
 }
 
 message CanAccessResponse {
-  bool allowed = 1;
+  d2.common.v1.D2ResultProto result = 1;
+  bool allowed = 2;
 }
 
 // ****************************************
@@ -43,5 +46,6 @@ message FileProcessedRequest {
 }
 
 message FileProcessedResponse {
-  bool success = 1;
+  d2.common.v1.D2ResultProto result = 1;
+  bool success = 2;
 }

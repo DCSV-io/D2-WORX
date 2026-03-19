@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { z } from "zod";
 import { transitionFileStatus } from "@d2/files-domain";
@@ -20,6 +20,10 @@ const schema = z.object({
  * wrong status, the event is silently discarded (not an error).
  */
 export class IntakeFile extends BaseHandler<Input, Output> implements Commands.IIntakeFileHandler {
+  override get redaction(): RedactionSpec {
+    return { suppressOutput: true };
+  }
+
   private readonly repo: FileRepoHandlers;
 
   constructor(repo: FileRepoHandlers, context: IHandlerContext) {
@@ -45,6 +49,13 @@ export class IntakeFile extends BaseHandler<Input, Output> implements Commands.I
 
     const updateResult = await this.repo.update.handleAsync({ file: processingFile });
     if (!updateResult.success) return D2Result.bubbleFail(updateResult);
+
+    // Optimistic concurrency check: if another consumer already transitioned the file,
+    // the returned record will have a different status than what we set.
+    const updatedFile = updateResult.data?.file;
+    if (updatedFile && updatedFile.status !== "processing") {
+      return D2Result.ok({ data: { discarded: true, reason: "concurrent_transition" } });
+    }
 
     return D2Result.ok({ data: { discarded: false, file: processingFile } });
   }

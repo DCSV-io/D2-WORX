@@ -34,10 +34,10 @@ export function createFilesGrpcService(provider: ServiceProvider): FilesServiceS
             timestamp: new Date().toISOString(),
             components,
           });
-        } catch (err) {
+        } catch {
           callback({
             code: grpc.status.INTERNAL,
-            message: err instanceof Error ? err.message : "Unknown error",
+            message: "Internal error",
           });
         } finally {
           scope.dispose();

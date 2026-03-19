@@ -27,7 +27,7 @@ The **Files** service is a standalone Node.js service that handles file uploads,
 
 ## Design Principles
 
-1. **Context-key-driven configuration** -- Each feature that uses files registers a context key (e.g., `auth_user_avatar`, `org_logo`). The context key determines: allowed content types, max file size, variant definitions (thumbnail sizes), access control strategy, and the gRPC callback address for the owning service. No hardcoded feature knowledge in the Files service.
+1. **Context-key-driven configuration** -- Each feature that uses files registers a context key (e.g., `user_avatar`, `org_logo`). The context key determines: allowed content types, max file size, variant definitions (thumbnail sizes), access control strategy, and the gRPC callback address for the owning service. No hardcoded feature knowledge in the Files service.
 
 2. **Presigned URLs for uploads** -- Clients upload directly to MinIO via presigned PUT URLs, bypassing the Files service for large binary payloads. The Files service generates the URL (with size/type constraints) and MinIO notifies via RabbitMQ when the upload completes.
 
@@ -80,7 +80,7 @@ Each context key is a runtime-configured feature slot. Configuration is loaded f
 
 | Env Var                           | Purpose                                             |
 | --------------------------------- | --------------------------------------------------- |
-| `FILES_CK__0__KEY`                | Context key name (e.g., `auth_user_avatar`)         |
+| `FILES_CK__0__KEY`                | Context key name (e.g., `user_avatar`)              |
 | `FILES_CK__0__CALLBACK_ADDR`      | gRPC address of owning service                      |
 | `FILES_CK__0__ALLOWED_CATEGORIES` | Accepted content categories (image, document, etc.) |
 | `FILES_CK__0__MAX_SIZE_BYTES`     | Per-key upload size limit                           |
@@ -101,7 +101,7 @@ Each context key is a runtime-configured feature slot. Configuration is loaded f
 
 Files are processed into variants (thumbnails, previews) defined per context key. Each variant specifies a `name` and `maxDimension`. Images are resized (fit inside, no enlargement) and converted to WebP. SVGs are passed through unchanged.
 
-Example variant config for `auth_user_avatar`:
+Example variant config for `user_avatar`:
 
 - `thumb` (maxDimension: 64) -- navigation bar
 - `medium` (maxDimension: 256) -- profile page
@@ -118,7 +118,7 @@ Example variant config for `auth_user_avatar`:
 3. **Request uploads** via the Files REST API (presigned URL flow)
 4. **Receive callbacks** when processing completes
 
-### Auth Service (`auth_user_avatar`)
+### Auth Service (`user_avatar`)
 
 - Upload: `jwt_owner` -- user can only upload their own avatar
 - Read: `jwt_owner` -- user can only view their own avatar
@@ -213,7 +213,7 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 | F3   | Infra layer                     | Done    | 532 tests total. Drizzle, S3, ClamAV, Sharp, gRPC, messaging                      |
 | F4   | JWT middleware (`@d2/jwt-auth`) | Done    | RS256 JWKS verification, fingerprint check, IRequestContext                       |
 | F5   | API layer (`@d2/files-api`)     | Done    | Hono REST + gRPC server, composition root, Docker service                         |
-| F6   | SignalR Gateway                 | Pending | Separate .NET service, JWT-authed WebSocket, gRPC push interface                  |
+| F6   | SignalR Gateway                 | Done    | Separate .NET service, JWT-authed WebSocket, gRPC push interface                  |
 | F7   | Owning service callback         | Done    | Auth `FileCallbackService` gRPC server (OnFileProcessed + CanAccess) on port 5101 |
 | F8   | Full-stack tests                | Pending | API + E2E adversarial upload testing                                              |
 | F9   | SvelteKit profile route         | Pending | Avatar upload, real-time update via SignalR                                       |
@@ -229,7 +229,7 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 | Virus scanning             | ClamAV via direct TCP INSTREAM protocol (no REST wrapper)                      |
 | Access control             | Per-context-key resolution strategy (jwt_owner, jwt_org, callback, public)     |
 | Variant definitions        | Per-context-key runtime config, not hardcoded. Indexed env vars                |
-| Context key naming         | Feature-prefixed: `auth_user_avatar`, `org_logo`, `thread_attachment`          |
+| Context key naming         | Feature-prefixed: `user_avatar`, `org_logo`, `thread_attachment`               |
 | Public REST API            | Hono (same as Auth). JWT validation via `@d2/jwt-auth` (ADR-027)               |
 | Presigned URL expiry       | 15 minutes (900 seconds)                                                       |
 | Processing pipeline        | Two-stage RabbitMQ (intake → processing). Always-ACK + cleanup job             |

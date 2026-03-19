@@ -25,11 +25,21 @@ export function createFileCallbackGrpcService(provider: ServiceProvider): FileCa
             variants: call.request.variants,
           });
 
-          callback(null, { success: result.success && (result.data?.success ?? false) });
-        } catch (err) {
+          callback(null, {
+            result: {
+              success: true,
+              statusCode: 200,
+              messages: [],
+              inputErrors: [],
+              errorCode: "",
+              traceId: "",
+            },
+            success: result.success && (result.data?.success ?? false),
+          });
+        } catch {
           callback({
             code: grpc.status.INTERNAL,
-            message: err instanceof Error ? err.message : "Unknown error",
+            message: "Internal error",
           });
         } finally {
           scope.dispose();
@@ -41,7 +51,17 @@ export function createFileCallbackGrpcService(provider: ServiceProvider): FileCa
       return withTraceContext(call, async () => {
         // Auth-owned context keys (user_avatar, org_logo, org_document) use JWT resolution,
         // so CanAccess is never called for them by the Files service. Fail-closed for safety.
-        callback(null, { allowed: false });
+        callback(null, {
+          result: {
+            success: true,
+            statusCode: 200,
+            messages: [],
+            inputErrors: [],
+            errorCode: "",
+            traceId: "",
+          },
+          allowed: false,
+        });
       });
     },
   };

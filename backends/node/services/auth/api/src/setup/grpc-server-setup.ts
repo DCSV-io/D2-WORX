@@ -27,25 +27,22 @@ export async function buildGrpcServer(options: GrpcServerOptions): Promise<grpc.
   const fileCallbackService = createFileCallbackGrpcService(provider);
   const publicRpcs = new Set(["checkHealth"]);
 
-  if (authApiKeys?.length) {
-    const validKeys = new Set(authApiKeys);
-    server.addService(
-      AuthServiceService,
-      withApiKeyAuth(authGrpcService, { validKeys, logger, exempt: publicRpcs }),
+  if (!authApiKeys?.length) {
+    throw new Error(
+      "AUTH_API_KEYS not configured. gRPC server requires at least one API key (fail-closed).",
     );
-    server.addService(
-      AuthJobServiceService,
-      withApiKeyAuth(jobsGrpcService, { validKeys, logger }),
-    );
-    server.addService(
-      FileCallbackService,
-      withApiKeyAuth(fileCallbackService, { validKeys, logger }),
-    );
-  } else {
-    server.addService(AuthServiceService, authGrpcService);
-    server.addService(AuthJobServiceService, jobsGrpcService);
-    server.addService(FileCallbackService, fileCallbackService);
   }
+
+  const validKeys = new Set(authApiKeys);
+  server.addService(
+    AuthServiceService,
+    withApiKeyAuth(authGrpcService, { validKeys, logger, exempt: publicRpcs }),
+  );
+  server.addService(AuthJobServiceService, withApiKeyAuth(jobsGrpcService, { validKeys, logger }));
+  server.addService(
+    FileCallbackService,
+    withApiKeyAuth(fileCallbackService, { validKeys, logger }),
+  );
 
   await new Promise<void>((resolve, reject) => {
     server.bindAsync(`0.0.0.0:${grpcPort}`, grpc.ServerCredentials.createInsecure(), (err) =>

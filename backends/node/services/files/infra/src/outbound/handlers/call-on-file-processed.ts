@@ -1,12 +1,13 @@
 import * as grpc from "@grpc/grpc-js";
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
-import { D2Result } from "@d2/result";
+import type { D2Result } from "@d2/result";
 import {
   FileCallbackClientCtor,
   type FileCallbackClient,
   type FileProcessedResponse,
 } from "@d2/protos";
-import { createTraceContextInterceptor } from "@d2/service-defaults/grpc";
+import { handleGrpcCall } from "@d2/result-extensions";
+import { createApiKeyInterceptor, createTraceContextInterceptor } from "@d2/service-defaults/grpc";
 import {
   type CallOnFileProcessedInput as I,
   type CallOnFileProcessedOutput as O,
@@ -23,50 +24,46 @@ const GRPC_TIMEOUT_MS = 10_000;
  */
 export class CallOnFileProcessed extends BaseHandler<I, O> implements ICallOnFileProcessed {
   private readonly clients: Map<string, FileCallbackClient>;
+  private readonly apiKey: string;
 
-  constructor(clients: Map<string, FileCallbackClient>, context: IHandlerContext) {
+  constructor(clients: Map<string, FileCallbackClient>, apiKey: string, context: IHandlerContext) {
     super(context);
     this.clients = clients;
+    this.apiKey = apiKey;
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
     const client = this.getOrCreateClient(input.address);
 
-    try {
-      const response = await new Promise<FileProcessedResponse>((resolve, reject) => {
-        client.onFileProcessed(
-          {
-            fileId: input.fileId,
-            contextKey: input.contextKey,
-            relatedEntityId: input.relatedEntityId,
-            status: input.status,
-            variants: input.variants ? [...input.variants] : [],
-          },
-          new grpc.Metadata(),
-          { deadline: Date.now() + GRPC_TIMEOUT_MS },
-          (err, res) => {
-            if (err) reject(err);
-            else resolve(res);
-          },
-        );
-      });
-
-      return D2Result.ok({ data: { success: response.success } });
-    } catch (err: unknown) {
-      this.context.logger.error("CallOnFileProcessed gRPC call failed", {
-        address: input.address,
-        fileId: input.fileId,
-        err,
-      });
-      return D2Result.serviceUnavailable();
-    }
+    return handleGrpcCall(
+      () =>
+        new Promise<FileProcessedResponse>((resolve, reject) => {
+          client.onFileProcessed(
+            {
+              fileId: input.fileId,
+              contextKey: input.contextKey,
+              relatedEntityId: input.relatedEntityId,
+              status: input.status,
+              variants: input.variants ? [...input.variants] : [],
+            },
+            new grpc.Metadata(),
+            { deadline: Date.now() + GRPC_TIMEOUT_MS },
+            (err, res) => {
+              if (err) reject(err);
+              else resolve(res);
+            },
+          );
+        }),
+      (res) => res.result!,
+      (res) => ({ success: res.success }),
+    );
   }
 
   private getOrCreateClient(address: string): FileCallbackClient {
     let client = this.clients.get(address);
     if (!client) {
       client = new FileCallbackClientCtor(address, grpc.credentials.createInsecure(), {
-        interceptors: [createTraceContextInterceptor()],
+        interceptors: [createTraceContextInterceptor(), createApiKeyInterceptor(this.apiKey)],
       }) as unknown as FileCallbackClient;
       this.clients.set(address, client);
     }

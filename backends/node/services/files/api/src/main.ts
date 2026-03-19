@@ -48,6 +48,9 @@ const config = defineConfig("files-service", {
   geoApiKey: optionalString("FILES_GEO_CLIENT__APIKEY"),
   // SignalR gateway
   signalrGatewayAddress: optionalString("SIGNALR_GRPC_ADDRESS"),
+  // Outbound API keys (required — fail-closed, no empty-string fallback)
+  callbackApiKey: requiredString("FILES_CALLBACK_API_KEY"),
+  signalrApiKey: requiredString("FILES_SIGNALR_API_KEY"),
   // Job options
   jobOptions: optionalSection("FILES_APP", DEFAULT_FILES_JOB_OPTIONS),
 });

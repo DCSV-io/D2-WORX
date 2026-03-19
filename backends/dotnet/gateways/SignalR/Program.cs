@@ -37,8 +37,7 @@ builder.Services.PostConfigure<JwtBearerOptions>(
     JwtBearerDefaults.AuthenticationScheme,
     options =>
     {
-        var existingOnMessageReceived = options.Events?.OnMessageReceived;
-        options.Events ??= new JwtBearerEvents();
+        var existingHandler = options.Events.OnMessageReceived;
         options.Events.OnMessageReceived = async context =>
         {
             var accessToken = context.Request.Query["access_token"];
@@ -48,10 +47,7 @@ builder.Services.PostConfigure<JwtBearerOptions>(
                 context.Token = accessToken;
             }
 
-            if (existingOnMessageReceived is not null)
-            {
-                await existingOnMessageReceived(context);
-            }
+            await existingHandler(context);
         };
     });
 

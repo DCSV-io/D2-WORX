@@ -1,6 +1,6 @@
 import { PutObjectCommand, type S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type {
   PresignPutUrlInput as I,
@@ -11,6 +11,10 @@ import type {
 const DEFAULT_EXPIRY_SECONDS = 900; // 15 minutes
 
 export class PresignPutUrl extends BaseHandler<I, O> implements IPresignPutUrl {
+  override get redaction(): RedactionSpec {
+    return { outputFields: ["url"] };
+  }
+
   private readonly s3: S3Client;
   private readonly bucket: string;
 

@@ -15,5 +15,5 @@ public class SignalRServiceKeyOptions
     /// <summary>
     /// Gets or sets the list of valid API keys.
     /// </summary>
-    public List<string> ValidKeys { get; set; } = [];
+    public IReadOnlyList<string> ValidKeys { get; set; } = [];
 }

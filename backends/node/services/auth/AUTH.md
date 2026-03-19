@@ -87,7 +87,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | CreateUserContact      | Command | Create Geo contact via gRPC (`contextKey: auth_user`) during sign-up hook            |
 | HandleFileProcessed    | Command | Routes file processing callbacks by contextKey: avatar → user.image, logo → org.logo |
 
-**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 14 CQRS handlers (9 command + 5 query) as transient services, `addAuthInfra(services, db)` registers all 16 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. Notification publishing uses `@d2/comms-client` (configured in `@d2/auth-api` composition root via `addCommsClient(services, { publisher })`), not app-layer handlers. See ADR-011 in `PLANNING.md`.
+**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 19 CQRS handlers (9 command + 6 query + 4 job) as transient services, `addAuthInfra(services, db)` registers all 23 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. Notification publishing uses `@d2/comms-client` (configured in `@d2/auth-api` composition root via `addCommsClient(services, { publisher })`), not app-layer handlers. See ADR-011 in `PLANNING.md`.
 
 **Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["auth_org_contact", "auth_user", "auth_org_invitation"]` (from `GEO_CONTEXT_KEYS`) and an `apiKey` for gRPC authentication.
 
@@ -110,7 +110,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | Hooks               | `infra/src/auth/better-auth/hooks/`               | ID generation (UUIDv7), org creation validation, username auto-generation (`ensureUsername`)                                             |
 | SignInThrottleStore | `infra/src/auth/sign-in-throttle-store.ts`        | Redis-backed brute-force throttle state (uses `@d2/cache-redis` handlers)                                                                |
 | Drizzle Schema      | `infra/src/repository/schema/`                    | `pgTable()` declarations for all 11 tables (8 BetterAuth + 3 custom)                                                                     |
-| Repo Handlers       | `infra/src/repository/handlers/{c,r,u,d}/`        | BaseHandler-based DB operations (14 handlers, TLC layout). Automatic OTel spans + D2Result error handling. PG 23505 → 409 in infra layer |
+| Repo Handlers       | `infra/src/repository/handlers/{c,r,u,d}/`        | BaseHandler-based DB operations (23 handlers, TLC layout). Automatic OTel spans + D2Result error handling. PG 23505 → 409 in infra layer |
 | Repo Factories      | `infra/src/repository/handlers/factories.ts`      | `createSignInEventRepoHandlers(db, ctx)`, `createEmulationConsentRepoHandlers(db, ctx)`, `createOrgContactRepoHandlers(db, ctx)`         |
 | Migrations          | `infra/src/repository/migrations/`                | Drizzle auto-generated SQL migrations (all tables + indexes)                                                                             |
 | Migration runner    | `infra/src/repository/migrate.ts`                 | Programmatic `runMigrations(pool)` for app startup + tests                                                                               |
@@ -1186,7 +1186,7 @@ backends/node/services/auth/
 │       │           └── q/               # Query handlers (4) — CheckSignInThrottle + 3 with Zod validation
 │       ├── interfaces/
 │       │   └── repository/
-│       │       ├── handlers/            # Repo handler interfaces (14) + bundle types (TLC: c/, r/, u/, d/)
+│       │       ├── handlers/            # Repo handler interfaces (23) + bundle types (TLC: c/, r/, u/, d/)
 │       │       └── sign-in-throttle-store.ts  # ISignInThrottleStore (already delegates to cache handlers)
 │       ├── service-keys.ts              # ServiceKey<T> constants for all handler interfaces
 │       ├── registration.ts              # addAuthApp(services, options) — DI registration
