@@ -2,6 +2,7 @@ import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { z } from "zod";
 import { Queries } from "../../../../interfaces/cqrs/handlers/index.js";
+import { LIST_FILES_REDACTION } from "../../../../interfaces/cqrs/handlers/q/list-files.js";
 import type { FileRepoHandlers } from "../../../../interfaces/repository/handlers/index.js";
 import type { ContextKeyConfigMap } from "../../../../context-key-config.js";
 import type { IResolveFileAccessHandler } from "../../../../interfaces/cqrs/handlers/u/resolve-file-access.js";
@@ -34,6 +35,10 @@ export class ListFiles extends BaseHandler<Input, Output> implements Queries.ILi
     this.repo = repo;
     this.configs = configs;
     this.resolveAccess = resolveAccess;
+  }
+
+  override get redaction() {
+    return LIST_FILES_REDACTION;
   }
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {

@@ -21,6 +21,7 @@ The **Files** service is a standalone Node.js service that handles file uploads,
 | [FILES_DOMAIN.md](domain/FILES_DOMAIN.md) | Domain model: File entity, FileVariant, VariantConfig, enums, business rules |
 | [FILES_APP.md](app/FILES_APP.md)          | Application layer: CQRS handlers, service keys, context key configuration    |
 | [FILES_INFRA.md](infra/FILES_INFRA.md)    | Infrastructure: Drizzle repos, S3 storage, ClamAV, Sharp, gRPC, messaging    |
+| [FILES_API.md](api/FILES_API.md)          | API layer: Hono REST routes, gRPC services, composition root, config         |
 
 ---
 
@@ -156,7 +157,7 @@ MinIO bucket notification
 | Domain | `@d2/files-domain` | `@d2/utilities`       | Entities, enums, rules, constants                         |
 | App    | `@d2/files-app`    | domain, `@d2/handler` | CQRS handlers, service keys, interfaces, DI registration  |
 | Infra  | `@d2/files-infra`  | app, domain           | Drizzle repos, S3 storage, ClamAV, Sharp, gRPC, messaging |
-| API    | `@d2/files-api`    | app, infra            | Hono REST + gRPC server, composition root (pending F5)    |
+| API    | `@d2/files-api`    | app, infra            | Hono REST + gRPC server, composition root, Docker service |
 | Tests  | `@d2/files-tests`  | all layers            | Unit + integration tests (Testcontainers)                 |
 
 ---
@@ -208,8 +209,8 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 | F1   | Domain layer                    | Done    | 236 tests at commit. Entities, enums, rules, constants           |
 | F2   | App layer                       | Done    | 323 tests at commit. 11 CQRS handlers, 33 service keys           |
 | F3   | Infra layer                     | Done    | 532 tests total. Drizzle, S3, ClamAV, Sharp, gRPC, messaging     |
-| F4   | JWT middleware (`@d2/jwt-auth`) | Pending | RS256 JWKS verification, fingerprint check, IRequestContext      |
-| F5   | API layer (`@d2/files-api`)     | Pending | Hono REST + gRPC server, composition root                        |
+| F4   | JWT middleware (`@d2/jwt-auth`) | Done    | RS256 JWKS verification, fingerprint check, IRequestContext      |
+| F5   | API layer (`@d2/files-api`)     | Done    | Hono REST + gRPC server, composition root, Docker service        |
 | F6   | SignalR Gateway                 | Pending | Separate .NET service, JWT-authed WebSocket, gRPC push interface |
 | F7   | Owning service callback         | Pending | Auth implements `OnFileProcessed` for `auth_user_avatar`         |
 | F8   | Full-stack tests                | Pending | API + E2E adversarial upload testing                             |
@@ -227,8 +228,33 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 | Access control             | Per-context-key resolution strategy (jwt_owner, jwt_org, callback, public)     |
 | Variant definitions        | Per-context-key runtime config, not hardcoded. Indexed env vars                |
 | Context key naming         | Feature-prefixed: `auth_user_avatar`, `org_logo`, `thread_attachment`          |
-| Public REST API            | Hono (same as Auth). Requires JWT validation middleware (ADR-027)              |
+| Public REST API            | Hono (same as Auth). JWT validation via `@d2/jwt-auth` (ADR-027)               |
 | Presigned URL expiry       | 15 minutes (900 seconds)                                                       |
 | Processing pipeline        | Two-stage RabbitMQ (intake → processing). Always-ACK + cleanup job             |
 | Real-time status push      | gRPC → SignalR Gateway (ADR-028)                                               |
 | Owning service integration | gRPC `FileCallback` service with `OnFileProcessed` + `CanAccess` RPCs          |
+
+---
+
+## Docker Service
+
+The `d2-files` service in `docker-compose.yml` runs the Files API (Hono REST + gRPC):
+
+- **HTTP port:** `${FILES_HTTP_PORT}` (default 5300) — public REST endpoints (upload, download, list)
+- **gRPC port:** `${FILES_GRPC_PORT}` (default 5301) — internal queries and job RPCs
+- **Depends on:** `d2-postgres`, `d2-redis`, `d2-rabbitmq`, `d2-minio`, `d2-clamav`, `d2-auth` (JWKS source)
+- **Dockerfile:** `docker/Dockerfile.files` (multi-stage, `dev` target for local)
+
+### Environment Variables (Docker overrides)
+
+| Variable                   | Purpose                                                                                                                                               |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FILES_DATABASE_URL`       | PostgreSQL connection string (points to `d2-postgres` container)                                                                                      |
+| `REDIS_URL`                | Redis connection string                                                                                                                               |
+| `RABBITMQ_URL`             | RabbitMQ AMQP connection string                                                                                                                       |
+| `FILES_S3_ENDPOINT`        | MinIO S3 endpoint (internal Docker network, e.g., `http://d2-minio:9000`)                                                                             |
+| `FILES_S3_PUBLIC_ENDPOINT` | Optional. Browser-reachable S3 endpoint for presigned URLs. Used when MinIO is behind a tunnel (e.g., cloudflared). Falls back to `FILES_S3_ENDPOINT` |
+| `FILES_JWKS_URL`           | Auth Service JWKS endpoint for JWT verification (e.g., `http://d2-auth:5100/api/auth/jwks`)                                                           |
+| `CLAMAV_HOST`              | ClamAV daemon hostname                                                                                                                                |
+
+The `FILES_S3_PUBLIC_ENDPOINT` is necessary because presigned URLs contain the S3 endpoint hostname. When MinIO runs inside Docker, its internal hostname (e.g., `d2-minio:9000`) is not reachable from the browser. Setting `FILES_S3_PUBLIC_ENDPOINT` to a tunnel URL (e.g., a cloudflared tunnel) ensures browsers can PUT directly to MinIO via the presigned URL. The composition root creates a separate `S3Client` for presigning when this variable is set

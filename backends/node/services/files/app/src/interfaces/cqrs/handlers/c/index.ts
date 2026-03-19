@@ -1,4 +1,5 @@
 export type { UploadFileInput, UploadFileOutput, IUploadFileHandler } from "./upload-file.js";
+export { UPLOAD_FILE_REDACTION } from "./upload-file.js";
 
 export type { IntakeFileInput, IntakeFileOutput, IIntakeFileHandler } from "./intake-file.js";
 

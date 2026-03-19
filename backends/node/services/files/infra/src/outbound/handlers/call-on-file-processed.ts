@@ -7,10 +7,10 @@ import {
   type FileProcessedResponse,
 } from "@d2/protos";
 import { createTraceContextInterceptor } from "@d2/service-defaults/grpc";
-import type {
-  CallOnFileProcessedInput as I,
-  CallOnFileProcessedOutput as O,
-  ICallOnFileProcessed,
+import {
+  type CallOnFileProcessedInput as I,
+  type CallOnFileProcessedOutput as O,
+  type ICallOnFileProcessed,
 } from "@d2/files-app";
 
 const GRPC_TIMEOUT_MS = 10_000;

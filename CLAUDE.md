@@ -266,7 +266,7 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 ### Cross-Platform
 
 - **D2Result semantic factories**: Never raw `Fail()` with manual `statusCode` when a factory exists. See list in §4.
-- **RedactionSpec on PII handlers**: Every handler touching PII (emails, phones, IPs, addresses, names, message content) MUST declare a `RedactionSpec`. Applies to BOTH app AND repo handlers — each `BaseHandler` independently logs its I/O.
+- **RedactionSpec on PII handlers**: Every handler touching PII (emails, phones, IPs, addresses, names, message content, filenames, presigned URLs) MUST declare a `RedactionSpec`. Applies to BOTH app AND repo handlers — each `BaseHandler` independently logs its I/O. Redact actual PII and secrets (displayName, presignedUrl, email, IP), NOT opaque identifiers (userId, orgId, relatedEntityId — these are UUIDs, not PII). Use `suppressOutput: true` when output contains nested PII (e.g., File objects with displayNames).
 - **Input validation on all handlers**: Node.js = Zod via `this.validateInput()`. .NET = FluentValidation/DataAnnotations. All string fields need max length.
 - **Build warnings = bugs**: Fix ALL warnings — StyleCop (SA\***\*), CS\*\*** (null refs, hiding), ESLint, `svelte-check`. Never suppress with `#pragma warning disable`, `!` (for silencing warnings), or `@ts-ignore`.
 - **Lint/style warnings = bugs**: `pnpm lint` (ESLint) and `pnpm format:check` (Prettier) must be zero warnings.
@@ -423,6 +423,7 @@ All logs and spans MUST include these fields for cross-service correlation:
 8. **Check [PLANNING.md](PLANNING.md)** — For current phase, status, and resolved decisions.
 9. **Provide options** — When multiple approaches exist, present them for user decision.
 10. **Maximize parallelization** — Spawn as many sub-agents as makes sense to complete tasks as fast as possible. Independent work (file reads, doc updates, code fixes, test runs, audits) should run in parallel, not sequentially. Use background agents for non-blocking work. The user values speed — don't serialize work that can be parallelized.
+11. **Never defer work without explicit permission** — Do NOT unilaterally decide to defer, skip, or deprioritize any planned work. If you think something should be deferred, **ASK the user first** and present the tradeoff. If the user approves deferral, **document it** in PLANNING.md as a tracked issue with rationale. Never silently omit planned work or rationalize skipping it with "not blocking" or "can add later." Any work item that is deferred for any reason MUST appear as a documented issue in PLANNING.md.
 
 ### Code Intelligence Tools
 

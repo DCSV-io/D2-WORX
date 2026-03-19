@@ -14,6 +14,11 @@ export class PresignPutUrl extends BaseHandler<I, O> implements IPresignPutUrl {
   private readonly s3: S3Client;
   private readonly bucket: string;
 
+  /**
+   * @param s3 — S3 client used for presigned URL generation. When a public endpoint
+   *   is configured (e.g., cloudflared tunnel), this should be a separate client
+   *   pointing at the public URL so browsers can reach MinIO directly.
+   */
   constructor(s3: S3Client, bucket: string, context: IHandlerContext) {
     super(context);
     this.s3 = s3;
@@ -22,11 +27,13 @@ export class PresignPutUrl extends BaseHandler<I, O> implements IPresignPutUrl {
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
     try {
+      // Do NOT set ContentLength — the presigned URL is for the client to PUT any size
+      // up to maxSizeBytes. Setting ContentLength would require the upload to be exactly
+      // that size. The app layer validates sizeBytes <= maxSizeBytes before reaching here.
       const command = new PutObjectCommand({
         Bucket: this.bucket,
         Key: input.key,
         ContentType: input.contentType,
-        ContentLength: input.maxSizeBytes,
       });
 
       const url = await getSignedUrl(this.s3, command, {

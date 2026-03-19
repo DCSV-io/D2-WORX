@@ -3,7 +3,7 @@ import { D2Result } from "@d2/result";
 import { FILES_MESSAGING } from "@d2/files-domain";
 import type { IHandlerContext, IRequestContext } from "@d2/handler";
 import type { IMessagePublisher } from "@d2/messaging";
-import type { FilesCommands } from "@d2/files-app";
+import type { FilesCommands, IPublishFileForProcessingHandler } from "@d2/files-app";
 import { PublishFileForProcessing, IntakeFileUploaded, ProcessUploadedFile } from "@d2/files-infra";
 
 // --- Helpers ---
@@ -44,6 +44,12 @@ function createMockIntakeFile(success = true): FilesCommands.IIntakeFileHandler 
       ? vi.fn().mockResolvedValue(D2Result.ok({ data: { discarded: false, file: {} } }))
       : vi.fn().mockResolvedValue(D2Result.serviceUnavailable()),
   } as unknown as FilesCommands.IIntakeFileHandler;
+}
+
+function createMockPublishForProcessing(): IPublishFileForProcessingHandler {
+  return {
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: {} })),
+  } as unknown as IPublishFileForProcessingHandler;
 }
 
 function createMockProcessFile(success = true): FilesCommands.IProcessFileHandler {
@@ -117,10 +123,12 @@ describe("PublishFileForProcessing", () => {
 describe("IntakeFileUploaded", () => {
   let handler: IntakeFileUploaded;
   let intakeFile: FilesCommands.IIntakeFileHandler;
+  let publishForProcessing: IPublishFileForProcessingHandler;
 
   beforeEach(() => {
     intakeFile = createMockIntakeFile();
-    handler = new IntakeFileUploaded(intakeFile, createTestContext());
+    publishForProcessing = createMockPublishForProcessing();
+    handler = new IntakeFileUploaded(intakeFile, publishForProcessing, createTestContext());
   });
 
   it("should delegate to IntakeFile handler and return ok on success", async () => {
@@ -138,7 +146,7 @@ describe("IntakeFileUploaded", () => {
 
   it("should propagate failure from IntakeFile handler", async () => {
     intakeFile = createMockIntakeFile(false);
-    handler = new IntakeFileUploaded(intakeFile, createTestContext());
+    handler = new IntakeFileUploaded(intakeFile, publishForProcessing, createTestContext());
 
     const result = await handler.handleAsync({ fileId: "file-fail" });
 

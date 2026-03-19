@@ -6,18 +6,27 @@ import {
   createMockRepo,
   createMockStorage,
   createMockContext,
+  createMockResolveFileAccess,
 } from "../../helpers/mock-handlers.js";
+import { TEST_CONFIG_MAP } from "../../helpers/test-config.js";
 
 function createHandler(
   overrides: {
     repo?: ReturnType<typeof createMockRepo>;
     storage?: ReturnType<typeof createMockStorage>;
+    accessAllowed?: boolean;
   } = {},
 ) {
   const repo = overrides.repo ?? createMockRepo();
   const storage = overrides.storage ?? createMockStorage();
+  const resolveAccess = createMockResolveFileAccess(overrides.accessAllowed ?? true);
   const context = createMockContext();
-  return { handler: new DeleteFile(repo, storage, context), repo, storage };
+  return {
+    handler: new DeleteFile(repo, storage, TEST_CONFIG_MAP, context, resolveAccess),
+    repo,
+    storage,
+    resolveAccess,
+  };
 }
 
 function makePendingFile() {
@@ -102,5 +111,17 @@ describe("DeleteFile", () => {
 
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(503);
+  });
+
+  it("should return forbidden when access is denied", async () => {
+    const repo = createMockRepo();
+    const file = makePendingFile();
+    vi.mocked(repo.findById.handleAsync).mockResolvedValue(D2Result.ok({ data: { file } }));
+    const { handler } = createHandler({ repo, accessAllowed: false });
+
+    const result = await handler.handleAsync({ fileId: "file-001" });
+
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(403);
   });
 });

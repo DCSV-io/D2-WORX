@@ -3,6 +3,7 @@ import { D2Result } from "@d2/result";
 import { z } from "zod";
 import { createFile, isContentTypeAllowed } from "@d2/files-domain";
 import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
+import { UPLOAD_FILE_REDACTION } from "../../../../interfaces/cqrs/handlers/c/upload-file.js";
 import type { FileRepoHandlers } from "../../../../interfaces/repository/handlers/index.js";
 import type { FileStorageHandlers } from "../../../../interfaces/providers/storage/handlers/index.js";
 import type { ContextKeyConfigMap } from "../../../../context-key-config.js";
@@ -38,6 +39,10 @@ export class UploadFile extends BaseHandler<Input, Output> implements Commands.I
     this.storage = storage;
     this.configs = configs;
     this.resolveAccess = resolveAccess;
+  }
+
+  override get redaction() {
+    return UPLOAD_FILE_REDACTION;
   }
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {

@@ -242,6 +242,25 @@ export {
   FileProcessedResponse as FileProcessedResponseFns,
 } from "./generated/files/v1/files.js";
 
+// Files service — FilesService (inbound gRPC API)
+export type { FilesServiceClient, FilesServiceServer } from "./generated/files/v1/files_service.js";
+
+export {
+  FilesServiceClient as FilesServiceClientCtor,
+  FilesServiceService,
+} from "./generated/files/v1/files_service.js";
+
+// Files job service — FilesJobService (inbound gRPC API)
+export type {
+  FilesJobServiceClient,
+  FilesJobServiceServer,
+} from "./generated/files/v1/files_jobs.js";
+
+export {
+  FilesJobServiceClient as FilesJobServiceClientCtor,
+  FilesJobServiceService,
+} from "./generated/files/v1/files_jobs.js";
+
 // Files service — SignalR Bridge (implemented by SignalR Gateway, called by Files)
 export type {
   PushToUserRequest,

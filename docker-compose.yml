@@ -675,6 +675,72 @@ services:
       start_period: 60s
     restart: unless-stopped
 
+  d2-files:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.files
+      target: dev
+    container_name: d2-files
+    ports:
+      - "${FILES_HTTP_PORT}:${FILES_HTTP_PORT}"
+      - "${FILES_GRPC_PORT}:${FILES_GRPC_PORT}"
+    env_file: .env.local
+    environment:
+      OTEL_SERVICE_NAME: ${FILES_SERVICE_NAME}
+      # Docker DNS overrides.
+      FILES_DATABASE_URL: "postgresql://${DB_USERNAME}:${DB_PASSWORD}@${POSTGRES_NAME}:5432/${FILES_DB_NAME}"
+      REDIS_URL: "redis://:${CACHE_PASSWORD}@${REDIS_NAME}:${REDIS_PORT}"
+      RABBITMQ_URL: "amqp://${MQ_USERNAME}:${MQ_PASSWORD}@${RABBITMQ_NAME}:${RABBITMQ_PORT}"
+      FILES_S3_ENDPOINT: "http://${MINIO_NAME}:9000"
+      FILES_S3_ACCESS_KEY: "${S3_USERNAME}"
+      FILES_S3_SECRET_KEY: "${S3_PASSWORD}"
+      FILES_JWKS_URL: "http://d2-auth:${AUTH_HTTP_PORT}/api/auth/jwks"
+      CLAMAV_HOST: "${CLAMAV_NAME}"
+      GEO_GRPC_ADDRESS: "${GEO_SERVICE_NAME}:${GEO_PORT}"
+      # OTel → Alloy.
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/traces"
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/logs"
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/metrics"
+      LOG_LEVEL: debug
+    volumes:
+      - ./package.json:/app/package.json:ro
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+      - ./.npmrc:/app/.npmrc:ro
+      - ./backends/node:/app/backends/node
+      - ./contracts:/app/contracts
+      - ./clients/web/package.json:/app/clients/web/package.json:ro
+      - d2-node-modules:/app/node_modules
+    networks: [d2-network]
+    depends_on:
+      d2-node-init:
+        condition: service_completed_successfully
+      d2-postgres:
+        condition: service_healthy
+      d2-redis:
+        condition: service_healthy
+      d2-rabbitmq:
+        condition: service_healthy
+      d2-minio:
+        condition: service_healthy
+      d2-clamav:
+        condition: service_healthy
+      d2-geo:
+        condition: service_healthy
+      d2-auth:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "const s=require(''net'').createConnection(${FILES_HTTP_PORT},()=>{s.destroy();process.exit(0)});s.on(''error'',()=>process.exit(1))"',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+    restart: unless-stopped
+
   d2-gateway:
     build:
       context: .

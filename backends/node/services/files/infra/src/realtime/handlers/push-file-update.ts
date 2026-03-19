@@ -7,10 +7,10 @@ import {
   type PushToUserResponse,
 } from "@d2/protos";
 import { createTraceContextInterceptor } from "@d2/service-defaults/grpc";
-import type {
-  PushFileUpdateInput as I,
-  PushFileUpdateOutput as O,
-  IPushFileUpdate,
+import {
+  type PushFileUpdateInput as I,
+  type PushFileUpdateOutput as O,
+  type IPushFileUpdate,
 } from "@d2/files-app";
 
 const GRPC_TIMEOUT_MS = 10_000;

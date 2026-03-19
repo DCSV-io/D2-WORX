@@ -1,4 +1,4 @@
-import type { IHandler } from "@d2/handler";
+import type { IHandler, RedactionSpec } from "@d2/handler";
 import type { File } from "@d2/files-domain";
 
 export interface ListFilesInput {
@@ -12,5 +12,9 @@ export interface ListFilesOutput {
   readonly files: readonly File[];
   readonly total: number;
 }
+
+export const LIST_FILES_REDACTION: RedactionSpec = {
+  suppressOutput: true,
+};
 
 export interface IListFilesHandler extends IHandler<ListFilesInput, ListFilesOutput> {}

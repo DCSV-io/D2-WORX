@@ -35,9 +35,11 @@ export class ResolveFileAccess
 
     switch (resolution) {
       case "jwt_owner":
+        if (request.isAuthenticated !== true) return D2Result.unauthorized();
         return request.userId === input.relatedEntityId ? D2Result.ok() : D2Result.forbidden();
 
       case "jwt_org":
+        if (request.isAuthenticated !== true) return D2Result.unauthorized();
         return request.targetOrgId === input.relatedEntityId ? D2Result.ok() : D2Result.forbidden();
 
       case "authenticated":

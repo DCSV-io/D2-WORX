@@ -184,8 +184,11 @@ interface FilesInfraConfig {
   readonly clamd: ClamdConfig; // { host, port }
   readonly publisher: IMessagePublisher;
   readonly signalrGatewayAddress: string; // e.g., "d2-signalr:5200"
+  readonly s3Public?: S3Client;
 }
 ```
+
+The optional `s3Public` field is a separate `S3Client` configured with a browser-reachable endpoint (e.g., a cloudflared tunnel URL via `FILES_S3_PUBLIC_ENDPOINT`). It is used only by `PresignPutUrl` to generate presigned URLs that browsers can PUT to directly. When MinIO runs inside Docker, its internal hostname is not reachable from the browser -- `s3Public` provides an alternative endpoint for presigning. Falls back to the primary `s3` client if not provided.
 
 All handlers are transient. gRPC callback clients share a `Map<string, FileCallbackClient>` connection cache.
 

@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import type * as grpc from "@grpc/grpc-js";
 import { status } from "@grpc/grpc-js";
 import type { ILogger } from "@d2/logging";
@@ -59,7 +60,7 @@ export function withApiKeyAuth<T extends Record<string, grpc.UntypedHandleCall>>
         return;
       }
 
-      if (!validKeys.has(apiKey as string)) {
+      if (!constantTimeHasKey(validKeys, apiKey as string)) {
         logger.warn(`Invalid API key on RPC ${method}`);
         callback({
           code: status.UNAUTHENTICATED,
@@ -74,4 +75,24 @@ export function withApiKeyAuth<T extends Record<string, grpc.UntypedHandleCall>>
   }
 
   return wrapped as T;
+}
+
+/**
+ * Constant-time check for whether a key exists in a set.
+ * Iterates all keys and compares with `timingSafeEqual` to prevent timing attacks.
+ * Returns true if any key matches.
+ */
+function constantTimeHasKey(validKeys: ReadonlySet<string>, candidate: string): boolean {
+  const candidateBuffer = Buffer.from(candidate, "utf-8");
+  let found = false;
+  for (const key of validKeys) {
+    const keyBuffer = Buffer.from(key, "utf-8");
+    if (
+      keyBuffer.length === candidateBuffer.length &&
+      timingSafeEqual(keyBuffer, candidateBuffer)
+    ) {
+      found = true;
+    }
+  }
+  return found;
 }

@@ -179,7 +179,9 @@ export function addFilesApp(
           head: sp.resolve(IHeadStorageObjectKey),
           ping: sp.resolve(IPingStorageKey),
         },
+        contextKeyConfigs,
         sp.resolve(IHandlerContextKey),
+        sp.resolve(IResolveFileAccessKey),
       ),
   );
 

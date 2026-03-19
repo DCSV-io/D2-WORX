@@ -1,4 +1,4 @@
-import type { IHandler } from "@d2/handler";
+import type { IHandler, RedactionSpec } from "@d2/handler";
 
 export interface UploadFileInput {
   readonly contextKey: string;
@@ -12,5 +12,10 @@ export interface UploadFileOutput {
   readonly fileId: string;
   readonly presignedUrl: string;
 }
+
+export const UPLOAD_FILE_REDACTION: RedactionSpec = {
+  inputFields: ["displayName"],
+  outputFields: ["presignedUrl"],
+};
 
 export interface IUploadFileHandler extends IHandler<UploadFileInput, UploadFileOutput> {}

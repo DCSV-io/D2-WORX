@@ -7,10 +7,10 @@ import {
   type CanAccessResponse,
 } from "@d2/protos";
 import { createTraceContextInterceptor } from "@d2/service-defaults/grpc";
-import type {
-  CallCanAccessInput as I,
-  CallCanAccessOutput as O,
-  ICallCanAccess,
+import {
+  type CallCanAccessInput as I,
+  type CallCanAccessOutput as O,
+  type ICallCanAccess,
 } from "@d2/files-app";
 
 const GRPC_TIMEOUT_MS = 10_000;

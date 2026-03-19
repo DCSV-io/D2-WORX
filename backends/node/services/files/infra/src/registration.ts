@@ -80,6 +80,12 @@ export interface FilesInfraConfig {
   readonly publisher: IMessagePublisher;
   /** gRPC address of the SignalR Gateway (e.g., "d2-signalr:5200"). */
   readonly signalrGatewayAddress: string;
+  /**
+   * Optional S3 client configured with a browser-reachable endpoint.
+   * Used only by PresignPutUrl to generate URLs that browsers can PUT to directly
+   * (e.g., via a cloudflared tunnel to MinIO). Falls back to `s3` if not provided.
+   */
+  readonly s3Public?: S3Client;
 }
 
 /**
@@ -89,7 +95,7 @@ export interface FilesInfraConfig {
  * All handlers are transient — new instance per resolve.
  */
 export function addFilesInfra(services: ServiceCollection, config: FilesInfraConfig): void {
-  const { db, s3, bucketName, clamd, publisher, signalrGatewayAddress } = config;
+  const { db, s3, bucketName, clamd, publisher, signalrGatewayAddress, s3Public } = config;
 
   // Shared gRPC client cache for outbound handlers
   const callbackClients = new Map<string, FileCallbackClient>();
@@ -146,7 +152,7 @@ export function addFilesInfra(services: ServiceCollection, config: FilesInfraCon
   );
   services.addTransient(
     IPresignPutUrlKey,
-    (sp) => new PresignPutUrl(s3, bucketName, sp.resolve(IHandlerContextKey)),
+    (sp) => new PresignPutUrl(s3Public ?? s3, bucketName, sp.resolve(IHandlerContextKey)),
   );
   services.addTransient(
     IHeadStorageObjectKey,
@@ -191,7 +197,12 @@ export function addFilesInfra(services: ServiceCollection, config: FilesInfraCon
   );
   services.addTransient(
     IIntakeFileUploadedKey,
-    (sp) => new IntakeFileUploaded(sp.resolve(IIntakeFileKey), sp.resolve(IHandlerContextKey)),
+    (sp) =>
+      new IntakeFileUploaded(
+        sp.resolve(IIntakeFileKey),
+        sp.resolve(IPublishFileForProcessingKey),
+        sp.resolve(IHandlerContextKey),
+      ),
   );
   services.addTransient(
     IProcessUploadedFileKey,
