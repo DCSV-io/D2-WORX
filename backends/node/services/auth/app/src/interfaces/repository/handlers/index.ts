@@ -108,6 +108,18 @@ export type {
   IUpdateSignInEventWhoIsIdHandler,
 } from "./u/update-sign-in-event-who-is-id.js";
 
+export type {
+  UpdateUserImageInput,
+  UpdateUserImageOutput,
+  IUpdateUserImageHandler,
+} from "./u/update-user-image.js";
+
+export type {
+  UpdateOrgLogoInput,
+  UpdateOrgLogoOutput,
+  IUpdateOrgLogoHandler,
+} from "./u/update-org-logo.js";
+
 // --- Delete (D) ---
 export type {
   DeleteOrgContactRecordInput,

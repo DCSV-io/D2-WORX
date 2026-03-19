@@ -67,6 +67,7 @@ import { RunSessionPurge } from "./implementations/cqrs/handlers/c/run-session-p
 import { RunSignInEventPurge } from "./implementations/cqrs/handlers/c/run-sign-in-event-purge.js";
 import { RunInvitationCleanup } from "./implementations/cqrs/handlers/c/run-invitation-cleanup.js";
 import { RunEmulationConsentCleanup } from "./implementations/cqrs/handlers/c/run-emulation-consent-cleanup.js";
+import { HandleFileProcessed } from "./implementations/cqrs/handlers/c/handle-file-processed.js";
 import type { AuthJobOptions } from "./auth-job-options.js";
 import { DEFAULT_AUTH_JOB_OPTIONS } from "./auth-job-options.js";
 import {
@@ -78,6 +79,9 @@ import {
   IRunSignInEventPurgeKey,
   IRunInvitationCleanupKey,
   IRunEmulationConsentCleanupKey,
+  IHandleFileProcessedKey,
+  IUpdateUserImageKey,
+  IUpdateOrgLogoKey,
 } from "./service-keys.js";
 
 /** DI key for the auth-scoped AcquireLock handler (registered in composition root). */
@@ -279,6 +283,17 @@ export function addAuthApp(
         sp.resolve(IAuthReleaseLockKey),
         sp.resolve(IPurgeExpiredEmulationConsentsKey),
         jobOptions,
+        sp.resolve(IHandlerContextKey),
+      ),
+  );
+
+  // File callback handler
+  services.addTransient(
+    IHandleFileProcessedKey,
+    (sp) =>
+      new HandleFileProcessed(
+        sp.resolve(IUpdateUserImageKey),
+        sp.resolve(IUpdateOrgLogoKey),
         sp.resolve(IHandlerContextKey),
       ),
   );

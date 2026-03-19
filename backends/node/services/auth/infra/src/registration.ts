@@ -8,6 +8,8 @@ import {
   ICountSignInEventsByUserIdKey,
   IGetLatestSignInEventDateKey,
   IUpdateSignInEventWhoIsIdKey,
+  IUpdateUserImageKey,
+  IUpdateOrgLogoKey,
   ICreateEmulationConsentRecordKey,
   IFindEmulationConsentByIdKey,
   IFindActiveConsentsByUserIdKey,
@@ -34,6 +36,8 @@ import { FindActiveConsentsByUserId } from "./repository/handlers/r/find-active-
 import { FindActiveConsentByUserIdAndOrg } from "./repository/handlers/r/find-active-consent-by-user-id-and-org.js";
 import { RevokeEmulationConsentRecord } from "./repository/handlers/u/revoke-emulation-consent-record.js";
 import { UpdateSignInEventWhoIsId } from "./repository/handlers/u/update-sign-in-event-who-is-id.js";
+import { UpdateUserImage } from "./repository/handlers/u/update-user-image.js";
+import { UpdateOrgLogo } from "./repository/handlers/u/update-org-logo.js";
 import { CreateOrgContactRecord } from "./repository/handlers/c/create-org-contact-record.js";
 import { FindOrgContactById } from "./repository/handlers/r/find-org-contact-by-id.js";
 import { FindOrgContactsByOrgId } from "./repository/handlers/r/find-org-contacts-by-org-id.js";
@@ -82,6 +86,14 @@ export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): v
   services.addTransient(
     IUpdateSignInEventWhoIsIdKey,
     (sp) => new UpdateSignInEventWhoIsId(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IUpdateUserImageKey,
+    (sp) => new UpdateUserImage(db, sp.resolve(IHandlerContextKey)),
+  );
+  services.addTransient(
+    IUpdateOrgLogoKey,
+    (sp) => new UpdateOrgLogo(db, sp.resolve(IHandlerContextKey)),
   );
 
   // Emulation consent repo handlers

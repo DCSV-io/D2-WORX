@@ -17,6 +17,8 @@ import type {
   IUpdateOrgContactRecordHandler,
   IDeleteOrgContactRecordHandler,
   IUpdateSignInEventWhoIsIdHandler,
+  IUpdateUserImageHandler,
+  IUpdateOrgLogoHandler,
   IPurgeExpiredSessionsHandler,
   IPurgeSignInEventsHandler,
   IPurgeExpiredInvitationsHandler,
@@ -47,6 +49,10 @@ export const IGetLatestSignInEventDateKey = createServiceKey<IGetLatestSignInEve
 export const IUpdateSignInEventWhoIsIdKey = createServiceKey<IUpdateSignInEventWhoIsIdHandler>(
   "Auth.Repo.UpdateSignInEventWhoIsId",
 );
+export const IUpdateUserImageKey = createServiceKey<IUpdateUserImageHandler>(
+  "Auth.Repo.UpdateUserImage",
+);
+export const IUpdateOrgLogoKey = createServiceKey<IUpdateOrgLogoHandler>("Auth.Repo.UpdateOrgLogo");
 
 // --- Emulation Consent Repository Handlers ---
 
@@ -180,3 +186,7 @@ export const IRunEmulationConsentCleanupKey =
   createServiceKey<Commands.IRunEmulationConsentCleanupHandler>(
     "Auth.App.RunEmulationConsentCleanup",
   );
+
+export const IHandleFileProcessedKey = createServiceKey<Commands.IHandleFileProcessedHandler>(
+  "Auth.App.HandleFileProcessed",
+);

@@ -1,10 +1,11 @@
 import * as grpc from "@grpc/grpc-js";
 import type { ServiceProvider } from "@d2/di";
 import type { ILogger } from "@d2/logging";
-import { AuthServiceService, AuthJobServiceService } from "@d2/protos";
+import { AuthServiceService, AuthJobServiceService, FileCallbackService } from "@d2/protos";
 import { withApiKeyAuth } from "@d2/service-defaults/grpc";
 import { createAuthGrpcService } from "../services/auth-grpc-service.js";
 import { createAuthJobsGrpcService } from "../services/auth-jobs-grpc-service.js";
+import { createFileCallbackGrpcService } from "../services/file-callback-grpc-service.js";
 
 export interface GrpcServerOptions {
   provider: ServiceProvider;
@@ -23,24 +24,27 @@ export async function buildGrpcServer(options: GrpcServerOptions): Promise<grpc.
   const server = new grpc.Server();
   const authGrpcService = createAuthGrpcService(provider);
   const jobsGrpcService = createAuthJobsGrpcService(provider);
+  const fileCallbackService = createFileCallbackGrpcService(provider);
   const publicRpcs = new Set(["checkHealth"]);
 
   if (authApiKeys?.length) {
+    const validKeys = new Set(authApiKeys);
     server.addService(
       AuthServiceService,
-      withApiKeyAuth(authGrpcService, {
-        validKeys: new Set(authApiKeys),
-        logger,
-        exempt: publicRpcs,
-      }),
+      withApiKeyAuth(authGrpcService, { validKeys, logger, exempt: publicRpcs }),
     );
     server.addService(
       AuthJobServiceService,
-      withApiKeyAuth(jobsGrpcService, { validKeys: new Set(authApiKeys), logger }),
+      withApiKeyAuth(jobsGrpcService, { validKeys, logger }),
+    );
+    server.addService(
+      FileCallbackService,
+      withApiKeyAuth(fileCallbackService, { validKeys, logger }),
     );
   } else {
     server.addService(AuthServiceService, authGrpcService);
     server.addService(AuthJobServiceService, jobsGrpcService);
+    server.addService(FileCallbackService, fileCallbackService);
   }
 
   await new Promise<void>((resolve, reject) => {

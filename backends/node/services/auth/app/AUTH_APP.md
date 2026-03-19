@@ -48,6 +48,7 @@ src/
           run-sign-in-event-purge.ts         IRunSignInEventPurgeHandler
           run-invitation-cleanup.ts          IRunInvitationCleanupHandler
           run-emulation-consent-cleanup.ts   IRunEmulationConsentCleanupHandler
+          handle-file-processed.ts           IHandleFileProcessedHandler
         q/
           index.ts                           Barrel re-exports all query interfaces
           check-email-availability.ts        ICheckEmailAvailabilityHandler + REDACTION
@@ -76,6 +77,8 @@ src/
         u/
           revoke-emulation-consent-record.ts   IRevokeEmulationConsentRecordHandler
           update-org-contact-record.ts         IUpdateOrgContactRecordHandler
+          update-user-image.ts                 IUpdateUserImageHandler
+          update-org-logo.ts                   IUpdateOrgLogoHandler
         d/
           delete-org-contact-record.ts                IDeleteOrgContactRecordHandler
           purge-expired-sessions.ts                   IPurgeExpiredSessionsHandler
@@ -98,6 +101,7 @@ src/
           run-sign-in-event-purge.ts     RunSignInEventPurge
           run-invitation-cleanup.ts      RunInvitationCleanup
           run-emulation-consent-cleanup.ts  RunEmulationConsentCleanup
+          handle-file-processed.ts         HandleFileProcessed
         q/
           get-sign-in-events.ts          GetSignInEvents
           get-active-consents.ts         GetActiveConsents
@@ -109,18 +113,19 @@ src/
 
 ## CQRS Handlers
 
-### Command Handlers (8)
+### Command Handlers (9)
 
-| Handler                   | Input                          | Output                     | Description                                                          |
-| ------------------------- | ------------------------------ | -------------------------- | -------------------------------------------------------------------- |
-| `RecordSignInEvent`       | userId, successful, IP, UA     | `{ event }`                | Creates immutable audit record via domain factory + repo             |
-| `RecordSignInOutcome`     | identifierHash, identityHash   | `{ recorded }`             | Records throttle state: success marks known-good, failure increments |
-| `CreateEmulationConsent`  | userId, grantedToOrgId, expiry | `{ consent }`              | Validates org type, checks org exists, prevents duplicates           |
-| `RevokeEmulationConsent`  | consentId, userId              | `{ consent }`              | Ownership check + active check before revoking                       |
-| `CreateOrgContact`        | orgId, label, contact details  | `{ contact, geoContact }`  | Creates junction then Geo contact; rollback on Geo failure           |
-| `UpdateOrgContactHandler` | id, orgId, updates             | `{ contact, geoContact? }` | Metadata-only or contact replacement via UpdateContactsByExtKeys     |
-| `DeleteOrgContact`        | id, orgId                      | `{}`                       | IDOR check, best-effort Geo delete, then junction delete             |
-| `CreateUserContact`       | userId, email, name, locale    | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast       |
+| Handler                   | Input                                                  | Output                     | Description                                                                                                                                |
+| ------------------------- | ------------------------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `RecordSignInEvent`       | userId, successful, IP, UA                             | `{ event }`                | Creates immutable audit record via domain factory + repo                                                                                   |
+| `RecordSignInOutcome`     | identifierHash, identityHash                           | `{ recorded }`             | Records throttle state: success marks known-good, failure increments                                                                       |
+| `CreateEmulationConsent`  | userId, grantedToOrgId, expiry                         | `{ consent }`              | Validates org type, checks org exists, prevents duplicates                                                                                 |
+| `RevokeEmulationConsent`  | consentId, userId                                      | `{ consent }`              | Ownership check + active check before revoking                                                                                             |
+| `CreateOrgContact`        | orgId, label, contact details                          | `{ contact, geoContact }`  | Creates junction then Geo contact; rollback on Geo failure                                                                                 |
+| `UpdateOrgContactHandler` | id, orgId, updates                                     | `{ contact, geoContact? }` | Metadata-only or contact replacement via UpdateContactsByExtKeys                                                                           |
+| `DeleteOrgContact`        | id, orgId                                              | `{}`                       | IDOR check, best-effort Geo delete, then junction delete                                                                                   |
+| `CreateUserContact`       | userId, email, name, locale                            | `{ contact }`              | Sign-up hook: Geo contact with contextKey=auth_user. Fail-fast                                                                             |
+| `HandleFileProcessed`     | fileId, contextKey, relatedEntityId, status, variants? | `{ success }`              | Routes by contextKey: `auth_user_avatar` → UpdateUserImage, `auth_org_logo` → UpdateOrgLogo, others → ack. Rejected files logged and acked |
 
 ### Job Handlers (4)
 
@@ -167,10 +172,10 @@ Plus `ISignInThrottleStore` (non-handler interface with 6 methods for Redis key 
 
 ## Service Keys
 
-39 `ServiceKey<T>` tokens organized in two groups:
+42 `ServiceKey<T>` tokens organized in two groups:
 
-- **21 infra-layer keys** — for repository handlers, PingDb, throttle store, and 4 purge handlers (interfaces defined here, implemented in `@d2/auth-infra`)
-- **18 app-layer keys** — for CQRS handlers including CheckEmailAvailability, CheckHealth, and 4 job handlers (typed against handler interfaces, e.g., `Commands.IRecordSignInEventHandler`)
+- **23 infra-layer keys** — for repository handlers (including `IUpdateUserImageKey`, `IUpdateOrgLogoKey`), PingDb, throttle store, and 4 purge handlers (interfaces defined here, implemented in `@d2/auth-infra`)
+- **19 app-layer keys** — for CQRS handlers including CheckEmailAvailability, CheckHealth, HandleFileProcessed, and 4 job handlers (typed against handler interfaces, e.g., `Commands.IRecordSignInEventHandler`)
 
 ## AuthJobOptions
 
@@ -188,7 +193,7 @@ Configuration for scheduled job handlers, provided via `addAuthApp()` (defaults 
 addAuthApp(services: ServiceCollection, options: AddAuthAppOptions, jobOptions?: AuthJobOptions): void
 ```
 
-Registers all 18 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
+Registers all 19 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
 
 ## Handler Implementation Patterns
 

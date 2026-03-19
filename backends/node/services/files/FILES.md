@@ -206,17 +206,17 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 
 ## Phasing
 
-| Step | Name                            | Status  | Notes                                                            |
-| ---- | ------------------------------- | ------- | ---------------------------------------------------------------- |
-| F1   | Domain layer                    | Done    | 236 tests at commit. Entities, enums, rules, constants           |
-| F2   | App layer                       | Done    | 323 tests at commit. 11 CQRS handlers, 33 service keys           |
-| F3   | Infra layer                     | Done    | 532 tests total. Drizzle, S3, ClamAV, Sharp, gRPC, messaging     |
-| F4   | JWT middleware (`@d2/jwt-auth`) | Done    | RS256 JWKS verification, fingerprint check, IRequestContext      |
-| F5   | API layer (`@d2/files-api`)     | Done    | Hono REST + gRPC server, composition root, Docker service        |
-| F6   | SignalR Gateway                 | Pending | Separate .NET service, JWT-authed WebSocket, gRPC push interface |
-| F7   | Owning service callback         | Pending | Auth implements `OnFileProcessed` for `auth_user_avatar`         |
-| F8   | Full-stack tests                | Pending | API + E2E adversarial upload testing                             |
-| F9   | SvelteKit profile route         | Pending | Avatar upload, real-time update via SignalR                      |
+| Step | Name                            | Status  | Notes                                                                             |
+| ---- | ------------------------------- | ------- | --------------------------------------------------------------------------------- |
+| F1   | Domain layer                    | Done    | 236 tests at commit. Entities, enums, rules, constants                            |
+| F2   | App layer                       | Done    | 323 tests at commit. 11 CQRS handlers, 33 service keys                            |
+| F3   | Infra layer                     | Done    | 532 tests total. Drizzle, S3, ClamAV, Sharp, gRPC, messaging                      |
+| F4   | JWT middleware (`@d2/jwt-auth`) | Done    | RS256 JWKS verification, fingerprint check, IRequestContext                       |
+| F5   | API layer (`@d2/files-api`)     | Done    | Hono REST + gRPC server, composition root, Docker service                         |
+| F6   | SignalR Gateway                 | Pending | Separate .NET service, JWT-authed WebSocket, gRPC push interface                  |
+| F7   | Owning service callback         | Done    | Auth `FileCallbackService` gRPC server (OnFileProcessed + CanAccess) on port 5101 |
+| F8   | Full-stack tests                | Pending | API + E2E adversarial upload testing                                              |
+| F9   | SvelteKit profile route         | Pending | Avatar upload, real-time update via SignalR                                       |
 
 ---
 

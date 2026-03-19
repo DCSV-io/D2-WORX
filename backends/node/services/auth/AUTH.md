@@ -85,8 +85,9 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | CheckEmailAvailability | Query   | Check if an email is available for registration (in-memory cache + DB, fail-open)    |
 | RecordSignInOutcome    | Command | Record sign-in success/failure → mark known-good or increment failures + set lockout |
 | CreateUserContact      | Command | Create Geo contact via gRPC (`contextKey: auth_user`) during sign-up hook            |
+| HandleFileProcessed    | Command | Routes file processing callbacks by contextKey: avatar → user.image, logo → org.logo |
 
-**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 13 CQRS handlers (8 command + 5 query) as transient services, `addAuthInfra(services, db)` registers all 14 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. Notification publishing uses `@d2/comms-client` (configured in `@d2/auth-api` composition root via `addCommsClient(services, { publisher })`), not app-layer handlers. See ADR-011 in `PLANNING.md`.
+**DI pattern**: `@d2/di` registration functions — `addAuthApp(services, options)` registers all 14 CQRS handlers (9 command + 5 query) as transient services, `addAuthInfra(services, db)` registers all 16 repo handlers as transient services. Both accept a `ServiceCollection` and use `ServiceKey<T>` tokens for type-safe registration/resolution. Handlers resolve their dependencies (repo handlers, geo-client handlers, `IHandlerContext`) from the `ServiceProvider` at resolve time. Notification publishing uses `@d2/comms-client` (configured in `@d2/auth-api` composition root via `addCommsClient(services, { publisher })`), not app-layer handlers. See ADR-011 in `PLANNING.md`.
 
 **Geo integration**: Org contact handlers take `@d2/geo-client` handler interfaces directly as constructor deps (`Commands.ICreateContactsHandler`, `Commands.IDeleteContactsByExtKeysHandler`, `Complex.IUpdateContactsByExtKeysHandler`, `Queries.IGetContactsByExtKeysHandler`). Contacts are accessed exclusively via ext keys (`contextKey="org_contact"`, `relatedEntityId=junction.id`). Contacts are cached locally in the geo-client's `MemoryCacheStore` (immutable, no TTL, LRU eviction). Auth-app depends on `@d2/geo-client` for handler interfaces but remains zero-gRPC (gRPC calls happen inside geo-client handlers). The geo-client is configured with `allowedContextKeys: ["auth_org_contact", "auth_user", "auth_org_invitation"]` (from `GEO_CONTEXT_KEYS`) and an `apiKey` for gRPC authentication.
 
@@ -149,7 +150,7 @@ The auth service is a standalone Node.js application built on **Hono** + **Bette
 | Scope middleware | `api/src/middleware/scope.ts`     | Per-request DI scope on protected routes                                                                                                                    |
 | Middleware       | `api/src/middleware/`             | Thin Hono adapters delegating to shared packages (@d2/csrf, @d2/service-key, @d2/session-fingerprint), plus session, enrichment, rate-limit, error handling |
 | Routes           | `api/src/routes/`                 | Thin routes with visible authorization (5-8 lines each)                                                                                                     |
-| gRPC services    | `api/src/services/`               | AuthServiceServer (health) + auth-jobs gRPC service                                                                                                         |
+| gRPC services    | `api/src/services/`               | AuthServiceServer (health) + auth-jobs gRPC service + FileCallbackService (OnFileProcessed + CanAccess)                                                     |
 
 **Shared middleware delegation**: CSRF (`@d2/csrf`), session fingerprint (`@d2/session-fingerprint`), service key (`@d2/service-key`), and translation (`@d2/translation`) middleware delegate to shared packages under `backends/node/shared/implementations/middleware/` for framework-agnostic core logic. Auth API middleware files are thin Hono adapters around these shared packages. The error handler uses `TK` translation key constants (from `@d2/i18n`) instead of hardcoded English strings. The auth service also uses `@d2/i18n` (`BASE_LOCALE`, `createTranslator`) for locale resolution — `BASE_LOCALE` defaults to `"en-US"` (BCP 47 tag, configurable via `PUBLIC_DEFAULT_LOCALE` env var).
 
@@ -170,7 +171,7 @@ The auth service uses `@d2/di` (`ServiceCollection` / `ServiceProvider` / `Servi
 7. Create i18n translator (`@d2/i18n` — loads `contracts/messages/*.json` at startup)
 8. Create BetterAuth with scoped callbacks (including `createUserContact` with locale)
 9. Build Hono app with scope middleware on protected routes
-10. Build gRPC server (AuthServiceServer for health checks, auth-jobs service)
+10. Build gRPC server (AuthServiceServer for health checks, auth-jobs service, FileCallbackService for file processing callbacks from Files service)
 
 **Service lifetimes:**
 
@@ -1239,7 +1240,8 @@ backends/node/services/auth/
 │       │   └── health.ts               # Health check
 │       ├── services/
 │       │   ├── auth-grpc-service.ts     # AuthServiceServer gRPC implementation (health checks)
-│       │   └── auth-jobs-grpc-service.ts # Auth job gRPC service
+│       │   ├── auth-jobs-grpc-service.ts # Auth job gRPC service
+│       │   └── file-callback-grpc-service.ts # FileCallbackService (OnFileProcessed + CanAccess) — called by Files service
 │       ├── setup/
 │       │   └── hono-app-setup.ts        # Hono app builder with full middleware pipeline
 │       └── index.ts

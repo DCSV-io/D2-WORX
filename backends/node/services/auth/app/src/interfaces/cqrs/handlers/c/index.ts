@@ -74,3 +74,9 @@ export type {
   RunEmulationConsentCleanupOutput,
   IRunEmulationConsentCleanupHandler,
 } from "./run-emulation-consent-cleanup.js";
+
+export type {
+  HandleFileProcessedInput,
+  HandleFileProcessedOutput,
+  IHandleFileProcessedHandler,
+} from "./handle-file-processed.js";
