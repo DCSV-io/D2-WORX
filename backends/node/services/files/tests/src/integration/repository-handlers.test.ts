@@ -55,6 +55,7 @@ describe("Repository handlers (integration)", () => {
     const base = createFile({
       contextKey: "user_avatar",
       relatedEntityId: generateUuidV7(),
+      uploaderUserId: "user-123",
       contentType: "image/jpeg",
       displayName: "photo.jpg",
       sizeBytes: 2048,

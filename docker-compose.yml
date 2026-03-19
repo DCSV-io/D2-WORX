@@ -697,6 +697,7 @@ services:
       FILES_JWKS_URL: "http://d2-auth:${AUTH_HTTP_PORT}/api/auth/jwks"
       CLAMAV_HOST: "${CLAMAV_NAME}"
       GEO_GRPC_ADDRESS: "${GEO_SERVICE_NAME}:${GEO_PORT}"
+      SIGNALR_GRPC_ADDRESS: "${SIGNALR_SERVICE_NAME}:${SIGNALR_GRPC_PORT}"
       # OTel → Alloy.
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/traces"
       OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/logs"
@@ -728,6 +729,8 @@ services:
       d2-geo:
         condition: service_healthy
       d2-auth:
+        condition: service_healthy
+      d2-signalr:
         condition: service_healthy
     healthcheck:
       test:
@@ -782,6 +785,47 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:${GATEWAY_PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 60s
+    restart: unless-stopped
+
+  d2-signalr:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.signalr
+      target: dev
+    container_name: d2-signalr
+    ports:
+      - "${SIGNALR_HTTP_PORT}:${SIGNALR_HTTP_PORT}"
+      - "${SIGNALR_GRPC_PORT}:${SIGNALR_GRPC_PORT}"
+    env_file: .env.local
+    environment:
+      OTEL_SERVICE_NAME: ${SIGNALR_SERVICE_NAME}
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:${SIGNALR_HTTP_PORT};http://+:${SIGNALR_GRPC_PORT}"
+      # Docker DNS overrides.
+      REDIS_URL: "redis://:${CACHE_PASSWORD}@${REDIS_NAME}:${REDIS_PORT}"
+      SIGNALR_AUTH__AUTHSERVICEBASEURL: "http://${AUTH_SERVICE_NAME}:${AUTH_HTTP_PORT}"
+      # OTel → Alloy.
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_GRPC_PORT}"
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_GRPC_PORT}"
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_GRPC_PORT}"
+    volumes:
+      - ./D2.sln:/src/D2.sln:ro
+      - ./Directory.Build.props:/src/Directory.Build.props:ro
+      - ./stylecop.json:/src/stylecop.json:ro
+      - ./backends/dotnet:/src/backends/dotnet
+      - ./contracts:/src/contracts
+    networks: [d2-network]
+    depends_on:
+      d2-redis:
+        condition: service_healthy
+      d2-auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:${SIGNALR_HTTP_PORT}/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15

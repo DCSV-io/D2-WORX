@@ -16,6 +16,7 @@ function createSampleFile(overrides: Partial<File> = {}): File {
     id: "file-001",
     contextKey: "user_avatar",
     relatedEntityId: "user-123",
+    uploaderUserId: "user-123",
     status: "processing",
     contentType: "image/jpeg",
     displayName: "avatar.jpg",

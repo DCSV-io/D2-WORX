@@ -9,6 +9,7 @@ export function toFile(row: FileRow): File {
     id: row.id,
     contextKey: row.contextKey,
     relatedEntityId: row.relatedEntityId,
+    uploaderUserId: row.uploaderUserId,
     status: row.status as FileStatus,
     contentType: row.contentType,
     displayName: row.displayName,

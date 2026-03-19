@@ -9,6 +9,7 @@ import type {
   IResolveFileAccessHandler,
   ICallOnFileProcessed,
   ICallCanAccess,
+  IPushFileUpdate,
 } from "@d2/files-app";
 import type { DistributedCache } from "@d2/interfaces";
 import type { IFindStaleFilesHandler, IDeleteFileRecordsByIdsHandler } from "@d2/files-app";
@@ -181,6 +182,15 @@ export function createMockCallCanAccess(allowed = true): ICallCanAccess {
   return {
     handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { allowed } })),
   } as unknown as ICallCanAccess;
+}
+
+/**
+ * Creates a mock IPushFileUpdate handler.
+ */
+export function createMockPushFileUpdate(): IPushFileUpdate {
+  return {
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { delivered: true } })),
+  } as unknown as IPushFileUpdate;
 }
 
 /**

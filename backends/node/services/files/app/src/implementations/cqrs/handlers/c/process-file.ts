@@ -13,6 +13,7 @@ import type { FileStorageHandlers } from "../../../../interfaces/providers/stora
 import type { IScanFile } from "../../../../interfaces/providers/scanning/handlers/scan-file.js";
 import type { IProcessVariants } from "../../../../interfaces/providers/image-processing/handlers/process-variants.js";
 import type { INotifyFileProcessedHandler } from "../../../../interfaces/cqrs/handlers/c/notify-file-processed.js";
+import type { IPushFileUpdate } from "../../../../interfaces/realtime/handlers/push-file-update.js";
 import type { ContextKeyConfigMap } from "../../../../context-key-config.js";
 import { buildRawStorageKey, buildVariantStorageKey } from "../../../utils/storage-keys.js";
 
@@ -39,6 +40,7 @@ export class ProcessFile
   private readonly scanFile: IScanFile;
   private readonly processVariants: IProcessVariants;
   private readonly notifier: INotifyFileProcessedHandler;
+  private readonly pushFileUpdate: IPushFileUpdate;
   private readonly configs: ContextKeyConfigMap;
 
   constructor(
@@ -47,6 +49,7 @@ export class ProcessFile
     scanFile: IScanFile,
     processVariants: IProcessVariants,
     notifier: INotifyFileProcessedHandler,
+    pushFileUpdate: IPushFileUpdate,
     configs: ContextKeyConfigMap,
     context: IHandlerContext,
   ) {
@@ -56,6 +59,7 @@ export class ProcessFile
     this.scanFile = scanFile;
     this.processVariants = processVariants;
     this.notifier = notifier;
+    this.pushFileUpdate = pushFileUpdate;
     this.configs = configs;
   }
 
@@ -102,6 +106,19 @@ export class ProcessFile
         relatedEntityId: file.relatedEntityId,
         status: "rejected",
       });
+
+      // Fire-and-forget: push rejection to uploader's browser
+      this.pushFileUpdate
+        .handleAsync({
+          uploaderUserId: file.uploaderUserId,
+          fileId: file.id,
+          contextKey: file.contextKey,
+          status: "rejected",
+          rejectionReason: "content_moderation_failed",
+        })
+        .catch((err) =>
+          this.context.logger.warn("Realtime push failed (rejected)", { fileId: file.id, err }),
+        );
 
       return D2Result.ok({ data: { file: rejectedFile } });
     }
@@ -201,6 +218,19 @@ export class ProcessFile
 
     // Clean up raw upload
     await this.storage.delete.handleAsync({ key: rawKey });
+
+    // Fire-and-forget: push ready status to uploader's browser
+    this.pushFileUpdate
+      .handleAsync({
+        uploaderUserId: file.uploaderUserId,
+        fileId: file.id,
+        contextKey: file.contextKey,
+        status: "ready",
+        variants: fileVariants.map((v) => v.size),
+      })
+      .catch((err) =>
+        this.context.logger.warn("Realtime push failed (ready)", { fileId: file.id, err }),
+      );
 
     return D2Result.ok({ data: { file: readyFile } });
   }

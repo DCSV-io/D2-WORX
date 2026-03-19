@@ -8,6 +8,7 @@ import {
   createMockScanFile,
   createMockProcessVariants,
   createMockNotifier,
+  createMockPushFileUpdate,
   createMockContext,
 } from "../../helpers/mock-handlers.js";
 import { TEST_CONFIG_MAP } from "../../helpers/test-config.js";
@@ -21,6 +22,7 @@ function makeProcessingFile(overrides?: {
   const pending = createFile({
     contextKey: overrides?.contextKey ?? "user_avatar",
     relatedEntityId: "user-123",
+    uploaderUserId: "user-123",
     contentType: overrides?.contentType ?? "image/jpeg",
     displayName: overrides?.displayName ?? "avatar.jpg",
     sizeBytes: 1024,
@@ -36,6 +38,7 @@ function createHandler(
     scanFile?: ReturnType<typeof createMockScanFile>;
     processVariants?: ReturnType<typeof createMockProcessVariants>;
     notifier?: ReturnType<typeof createMockNotifier>;
+    pushFileUpdate?: ReturnType<typeof createMockPushFileUpdate>;
     skipDefaultFindById?: boolean;
   } = {},
 ) {
@@ -44,6 +47,7 @@ function createHandler(
   const scanFile = overrides.scanFile ?? createMockScanFile();
   const processVariants = overrides.processVariants ?? createMockProcessVariants();
   const notifier = overrides.notifier ?? createMockNotifier();
+  const pushFileUpdate = overrides.pushFileUpdate ?? createMockPushFileUpdate();
   const context = createMockContext();
 
   const file = makeProcessingFile();
@@ -58,6 +62,7 @@ function createHandler(
       scanFile,
       processVariants,
       notifier,
+      pushFileUpdate,
       TEST_CONFIG_MAP,
       context,
     ),
@@ -66,6 +71,7 @@ function createHandler(
     scanFile,
     processVariants,
     notifier,
+    pushFileUpdate,
     file,
   };
 }
@@ -169,6 +175,7 @@ describe("ProcessFile", () => {
     const file = createFile({
       contextKey: "unknown_key",
       relatedEntityId: "user-123",
+      uploaderUserId: "user-123",
       contentType: "image/jpeg",
       displayName: "avatar.jpg",
       sizeBytes: 1024,

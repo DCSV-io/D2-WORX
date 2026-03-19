@@ -261,20 +261,22 @@ export {
   FilesJobServiceService,
 } from "./generated/files/v1/files_jobs.js";
 
-// Files service — SignalR Bridge (implemented by SignalR Gateway, called by Files)
+// Realtime Gateway — general-purpose push gateway (channel-based routing)
 export type {
-  PushToUserRequest,
-  PushToUserResponse,
-  SignalRBridgeClient,
-  SignalRBridgeServer,
-} from "./generated/files/v1/signalr_bridge.js";
+  PushToChannelRequest,
+  RemoveFromChannelRequest,
+  PushResponse as RealtimePushResponse,
+  RealtimeGatewayClient,
+  RealtimeGatewayServer,
+} from "./generated/realtime/v1/realtime_gateway.js";
 
 export {
-  SignalRBridgeClient as SignalRBridgeClientCtor,
-  SignalRBridgeService,
-} from "./generated/files/v1/signalr_bridge.js";
+  RealtimeGatewayClient as RealtimeGatewayClientCtor,
+  RealtimeGatewayService,
+} from "./generated/realtime/v1/realtime_gateway.js";
 
 export {
-  PushToUserRequest as PushToUserRequestFns,
-  PushToUserResponse as PushToUserResponseFns,
-} from "./generated/files/v1/signalr_bridge.js";
+  PushToChannelRequest as PushToChannelRequestFns,
+  RemoveFromChannelRequest as RemoveFromChannelRequestFns,
+  PushResponse as RealtimePushResponseFns,
+} from "./generated/realtime/v1/realtime_gateway.js";

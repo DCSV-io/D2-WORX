@@ -6,6 +6,7 @@ export const file = pgTable(
     id: varchar("id", { length: 36 }).primaryKey(),
     contextKey: varchar("context_key", { length: 100 }).notNull(),
     relatedEntityId: varchar("related_entity_id", { length: 255 }).notNull(),
+    uploaderUserId: varchar("uploader_user_id", { length: 36 }).notNull(),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
     contentType: varchar("content_type", { length: 255 }).notNull(),
     displayName: varchar("display_name", { length: 255 }).notNull(),

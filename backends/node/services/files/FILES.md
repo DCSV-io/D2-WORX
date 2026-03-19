@@ -61,7 +61,8 @@ Processing consumer picks up
   -> Store variants in MinIO
   -> Update DB record (ready + variants, or rejected + reason)
   -> gRPC OnFileProcessed callback to owning service
-  -> SignalR push to connected client (real-time status update)
+  -> PushFileUpdate (fire-and-forget) pushes to user:{uploaderUserId}
+     via RealtimeGateway.PushToChannel gRPC on the SignalR Gateway
 ```
 
 ### Status State Machine
@@ -171,6 +172,7 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 | id                | varchar(36)  | PK, UUIDv7                              |
 | context_key       | varchar(100) | Feature context                         |
 | related_entity_id | varchar(255) | Owning entity (userId, orgId, etc.)     |
+| uploader_user_id  | varchar(36)  | JWT userId of the uploader              |
 | status            | varchar(20)  | pending / processing / ready / rejected |
 | content_type      | varchar(255) | MIME type                               |
 | display_name      | varchar(255) | User-provided filename                  |
@@ -192,7 +194,7 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 | `@d2/di`                        | DI container (ServiceKey, ServiceCollection) |
 | `@d2/result`                    | D2Result error handling pattern              |
 | `@d2/messaging`                 | RabbitMQ publish/subscribe                   |
-| `@d2/protos`                    | gRPC FileCallback + SignalR proto stubs      |
+| `@d2/protos`                    | gRPC FileCallback + RealtimeGateway stubs    |
 | `@d2/cache-redis`               | Distributed lock (cleanup job)               |
 | `@aws-sdk/client-s3`            | S3 commands for MinIO                        |
 | `@aws-sdk/s3-request-presigner` | Presigned URL generation                     |

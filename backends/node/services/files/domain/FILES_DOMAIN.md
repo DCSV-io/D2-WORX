@@ -75,9 +75,9 @@ rejected → (terminal)
 
 ## Entities
 
-| Entity | Factory      | Transition             | Key Rules                                                                                                                                                                         |
-| ------ | ------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| File   | `createFile` | `transitionFileStatus` | Starts as `pending`, variants=null until `ready`, rejectionReason=null until `rejected`. All string fields cleaned via `cleanStr()`, sizeBytes validated against configurable max |
+| Entity | Factory      | Transition             | Key Rules                                                                                                                                                                                                                                                         |
+| ------ | ------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File   | `createFile` | `transitionFileStatus` | Starts as `pending`, variants=null until `ready`, rejectionReason=null until `rejected`. `uploaderUserId` tracks who initiated the upload (for realtime push targeting). All string fields cleaned via `cleanStr()`, sizeBytes validated against configurable max |
 
 ## Value Objects
 

@@ -73,6 +73,7 @@ describe("RunCleanup", () => {
     const staleFile = createFile({
       contextKey: "user_avatar",
       relatedEntityId: "user-old",
+      uploaderUserId: "user-123",
       contentType: "image/jpeg",
       displayName: "old.jpg",
       sizeBytes: 512,

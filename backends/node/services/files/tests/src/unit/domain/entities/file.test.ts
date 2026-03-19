@@ -11,6 +11,7 @@ import type { CreateFileInput, FileVariant } from "@d2/files-domain";
 const validInput: CreateFileInput = {
   contextKey: "user_avatar",
   relatedEntityId: "usr_01234567-89ab-cdef-0123-456789abcdef",
+  uploaderUserId: "user-123",
   contentType: "image/png",
   displayName: "avatar.png",
   sizeBytes: 1024,

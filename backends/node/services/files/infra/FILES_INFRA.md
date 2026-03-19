@@ -11,7 +11,7 @@ Provides concrete implementations for:
 - **Scanning** — Direct TCP to ClamAV daemon (INSTREAM protocol)
 - **Image processing** — Sharp (libvips) for resize + WebP conversion
 - **Outbound** — gRPC clients for `FileCallback` service (CanAccess, OnFileProcessed)
-- **Realtime** — gRPC client for SignalR Gateway (`PushToUser`)
+- **Realtime** — gRPC client for SignalR Gateway (`PushToChannel` via `realtime/v1/realtime_gateway.proto`)
 - **Messaging** — RabbitMQ handlers (1 publisher, 2 subscribers) + 2 consumers
 
 ## Package Structure
@@ -107,9 +107,9 @@ gRPC clients for the `FileCallback` proto service. Dynamic connection cache (`Ma
 
 ### Realtime Handlers (1)
 
-| Handler        | Proto Service | RPC        | Notes                                |
-| -------------- | ------------- | ---------- | ------------------------------------ |
-| PushFileUpdate | SignalRBridge | PushToUser | Pushes file status to connected user |
+| Handler        | Proto Service   | RPC           | Notes                                                                                  |
+| -------------- | --------------- | ------------- | -------------------------------------------------------------------------------------- |
+| PushFileUpdate | RealtimeGateway | PushToChannel | Pushes file status to `user:{uploaderUserId}` via `realtime/v1/realtime_gateway.proto` |
 
 ### Messaging Handlers (3)
 
@@ -154,6 +154,7 @@ Single `files` table:
 | id                | varchar(36) PK        | UUIDv7                               |
 | context_key       | varchar(100) NOT NULL |                                      |
 | related_entity_id | varchar(255) NOT NULL |                                      |
+| uploader_user_id  | varchar(36) NOT NULL  | JWT userId of the uploader           |
 | status            | varchar(20) NOT NULL  | Default: `"pending"`                 |
 | content_type      | varchar(255) NOT NULL |                                      |
 | display_name      | varchar(255) NOT NULL |                                      |
@@ -203,22 +204,22 @@ The infra layer requires these services in `docker-compose.yml`:
 
 ## Dependencies
 
-| Package                         | Purpose                           |
-| ------------------------------- | --------------------------------- |
-| `@d2/files-app`                 | Interfaces, service keys          |
-| `@d2/files-domain`              | Entities, enums, constants        |
-| `@d2/handler`                   | BaseHandler, IHandlerContext      |
-| `@d2/di`                        | ServiceCollection, ServiceKey     |
-| `@d2/result`                    | D2Result pattern                  |
-| `@d2/messaging`                 | MessageBus, ConsumerResult        |
-| `@d2/protos`                    | FileCallbackClient, SignalRBridge |
-| `@d2/service-defaults`          | gRPC trace context interceptor    |
-| `@aws-sdk/client-s3`            | S3 commands                       |
-| `@aws-sdk/s3-request-presigner` | Presigned URL generation          |
-| `sharp`                         | Image processing (libvips)        |
-| `drizzle-orm`                   | ORM for PostgreSQL                |
-| `@grpc/grpc-js`                 | gRPC client                       |
-| `zod`                           | Message validation in consumers   |
+| Package                         | Purpose                                   |
+| ------------------------------- | ----------------------------------------- |
+| `@d2/files-app`                 | Interfaces, service keys                  |
+| `@d2/files-domain`              | Entities, enums, constants                |
+| `@d2/handler`                   | BaseHandler, IHandlerContext              |
+| `@d2/di`                        | ServiceCollection, ServiceKey             |
+| `@d2/result`                    | D2Result pattern                          |
+| `@d2/messaging`                 | MessageBus, ConsumerResult                |
+| `@d2/protos`                    | FileCallbackClient, RealtimeGatewayClient |
+| `@d2/service-defaults`          | gRPC trace context interceptor            |
+| `@aws-sdk/client-s3`            | S3 commands                               |
+| `@aws-sdk/s3-request-presigner` | Presigned URL generation                  |
+| `sharp`                         | Image processing (libvips)                |
+| `drizzle-orm`                   | ORM for PostgreSQL                        |
+| `@grpc/grpc-js`                 | gRPC client                               |
+| `zod`                           | Message validation in consumers           |
 
 ## Tests
 

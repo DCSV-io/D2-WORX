@@ -74,10 +74,17 @@ export class UploadFile extends BaseHandler<Input, Output> implements Commands.I
       return D2Result.payloadTooLarge();
     }
 
+    // Authenticated user required — uploaderUserId tracks who initiated the upload
+    const uploaderUserId = this.context.request.userId;
+    if (!uploaderUserId) {
+      return D2Result.unauthorized();
+    }
+
     // Create file entity
     const file = createFile({
       contextKey: input.contextKey,
       relatedEntityId: input.relatedEntityId,
+      uploaderUserId,
       contentType: input.contentType,
       displayName: input.displayName,
       sizeBytes: input.sizeBytes,

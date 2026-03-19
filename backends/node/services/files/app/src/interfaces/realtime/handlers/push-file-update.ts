@@ -1,8 +1,8 @@
 import type { IHandler } from "@d2/handler";
 
 export interface PushFileUpdateInput {
-  /** The user ID to push the update to (connected via SignalR). */
-  readonly userId: string;
+  /** The uploader's user ID — push targets `user:{uploaderUserId}` channel. */
+  readonly uploaderUserId: string;
   /** The file that was processed. */
   readonly fileId: string;
   /** The context key of the file (e.g., "user_avatar", "thread_attachment"). */

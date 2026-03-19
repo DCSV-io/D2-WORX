@@ -17,6 +17,7 @@ export interface File {
   readonly id: string;
   readonly contextKey: string;
   readonly relatedEntityId: string;
+  readonly uploaderUserId: string;
   readonly status: FileStatus;
   readonly contentType: string;
   readonly displayName: string;
@@ -29,6 +30,7 @@ export interface File {
 export interface CreateFileInput {
   readonly contextKey: string;
   readonly relatedEntityId: string;
+  readonly uploaderUserId: string;
   readonly contentType: string;
   readonly displayName: string;
   readonly sizeBytes: number;
@@ -74,6 +76,19 @@ export function createFile(input: CreateFileInput): File {
       "relatedEntityId",
       `(${relatedEntityId.length} chars)`,
       `must not exceed ${FILES_FIELD_LIMITS.MAX_RELATED_ENTITY_ID_LENGTH} characters.`,
+    );
+  }
+
+  const uploaderUserId = cleanStr(input.uploaderUserId);
+  if (!uploaderUserId) {
+    throw new FilesValidationError("File", "uploaderUserId", input.uploaderUserId, "is required.");
+  }
+  if (uploaderUserId.length > 36) {
+    throw new FilesValidationError(
+      "File",
+      "uploaderUserId",
+      `(${uploaderUserId.length} chars)`,
+      "must not exceed 36 characters.",
     );
   }
 
@@ -126,6 +141,7 @@ export function createFile(input: CreateFileInput): File {
     id: input.id ?? generateUuidV7(),
     contextKey,
     relatedEntityId,
+    uploaderUserId,
     status: "pending",
     contentType,
     displayName,

@@ -32,6 +32,7 @@ describe("ListFiles", () => {
     const file = createFile({
       contextKey: "user_avatar",
       relatedEntityId: "user-123",
+      uploaderUserId: "user-123",
       contentType: "image/jpeg",
       displayName: "avatar.jpg",
       sizeBytes: 1024,

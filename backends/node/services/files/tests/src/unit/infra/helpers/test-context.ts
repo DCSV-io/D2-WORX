@@ -73,6 +73,7 @@ export function createSampleFileRow(overrides: Record<string, unknown> = {}) {
     id: "file-001",
     contextKey: "user_avatar",
     relatedEntityId: "user-123",
+    uploaderUserId: "user-123",
     status: "pending",
     contentType: "image/jpeg",
     displayName: "avatar.jpg",

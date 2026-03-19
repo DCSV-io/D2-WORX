@@ -22,6 +22,7 @@ export class CreateFileRecord extends BaseHandler<I, O> implements ICreateFileRe
       id: f.id,
       contextKey: f.contextKey,
       relatedEntityId: f.relatedEntityId,
+      uploaderUserId: f.uploaderUserId,
       status: f.status,
       contentType: f.contentType,
       displayName: f.displayName,

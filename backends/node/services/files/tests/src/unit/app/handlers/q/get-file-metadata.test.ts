@@ -30,6 +30,7 @@ function makeFile() {
   return createFile({
     contextKey: "user_avatar",
     relatedEntityId: "user-123",
+    uploaderUserId: "user-123",
     contentType: "image/jpeg",
     displayName: "avatar.jpg",
     sizeBytes: 1024,
@@ -67,6 +68,7 @@ describe("GetFileMetadata", () => {
     const file = createFile({
       contextKey: "unknown_key",
       relatedEntityId: "user-123",
+      uploaderUserId: "user-123",
       contentType: "image/jpeg",
       displayName: "test.jpg",
       sizeBytes: 512,
