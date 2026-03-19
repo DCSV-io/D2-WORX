@@ -2,24 +2,24 @@ import { describe, it, expect, vi } from "vitest";
 import { D2Result } from "@d2/result";
 import { CheckFileAccess } from "@d2/files-app";
 import type { CheckFileAccessInput } from "@d2/files-app";
-import { createMockOutboundRequest, createMockContext } from "../../helpers/mock-handlers.js";
+import { createMockCallCanAccess, createMockContext } from "../../helpers/mock-handlers.js";
 
 function createHandler(
   overrides: {
-    outbound?: ReturnType<typeof createMockOutboundRequest>;
+    callCanAccess?: ReturnType<typeof createMockCallCanAccess>;
   } = {},
 ) {
-  const outbound = overrides.outbound ?? createMockOutboundRequest({ allowed: true });
+  const callCanAccess = overrides.callCanAccess ?? createMockCallCanAccess(true);
   const context = createMockContext();
 
   return {
-    handler: new CheckFileAccess(outbound, context),
-    outbound,
+    handler: new CheckFileAccess(callCanAccess, context),
+    callCanAccess,
   };
 }
 
 const validInput: CheckFileAccessInput = {
-  url: "http://comms:3200/callbacks/can-access",
+  address: "comms:3200",
   contextKey: "thread_attachment",
   relatedEntityId: "thread-789",
   requestingUserId: "user-123",
@@ -30,28 +30,26 @@ const validInput: CheckFileAccessInput = {
 describe("CheckFileAccess", () => {
   // --- Happy path ---
 
-  it("should return allowed: true when outbound responds with allowed: true", async () => {
-    const { handler, outbound } = createHandler();
+  it("should return allowed: true when gRPC responds with allowed: true", async () => {
+    const { handler, callCanAccess } = createHandler();
 
     const result = await handler.handleAsync(validInput);
 
     expect(result.success).toBe(true);
     expect(result.data?.allowed).toBe(true);
-    expect(outbound.handleAsync).toHaveBeenCalledWith({
-      url: "http://comms:3200/callbacks/can-access",
-      payload: {
-        contextKey: "thread_attachment",
-        relatedEntityId: "thread-789",
-        requestingUserId: "user-123",
-        requestingOrgId: "org-456",
-        action: "read",
-      },
+    expect(callCanAccess.handleAsync).toHaveBeenCalledWith({
+      address: "comms:3200",
+      contextKey: "thread_attachment",
+      relatedEntityId: "thread-789",
+      requestingUserId: "user-123",
+      requestingOrgId: "org-456",
+      action: "read",
     });
   });
 
-  it("should return allowed: false when outbound responds with allowed: false", async () => {
-    const outbound = createMockOutboundRequest({ allowed: false });
-    const { handler } = createHandler({ outbound });
+  it("should return allowed: false when gRPC responds with allowed: false", async () => {
+    const callCanAccess = createMockCallCanAccess(false);
+    const { handler } = createHandler({ callCanAccess });
 
     const result = await handler.handleAsync(validInput);
 
@@ -70,39 +68,10 @@ describe("CheckFileAccess", () => {
 
   // --- Fail-closed behavior ---
 
-  it("should return allowed: false when body is missing", async () => {
-    const outbound = createMockOutboundRequest({});
-    const { handler } = createHandler({ outbound });
-
-    const result = await handler.handleAsync(validInput);
-
-    expect(result.success).toBe(true);
-    expect(result.data?.allowed).toBe(false);
-  });
-
-  it("should return allowed: false when allowed is not boolean true", async () => {
-    const outbound = createMockOutboundRequest({ allowed: "yes" });
-    const { handler } = createHandler({ outbound });
-
-    const result = await handler.handleAsync(validInput);
-
-    expect(result.success).toBe(true);
-    expect(result.data?.allowed).toBe(false);
-  });
-
-  it("should return allowed: false when allowed is null", async () => {
-    const outbound = createMockOutboundRequest({ allowed: null });
-    const { handler } = createHandler({ outbound });
-
-    const result = await handler.handleAsync(validInput);
-
-    expect(result.success).toBe(true);
-    expect(result.data?.allowed).toBe(false);
-  });
-
-  it("should return allowed: false when allowed is 1 (not strict boolean)", async () => {
-    const outbound = createMockOutboundRequest({ allowed: 1 });
-    const { handler } = createHandler({ outbound });
+  it("should return allowed: false when response data is missing", async () => {
+    const callCanAccess = createMockCallCanAccess(true);
+    vi.mocked(callCanAccess.handleAsync).mockResolvedValue(D2Result.ok({ data: undefined }));
+    const { handler } = createHandler({ callCanAccess });
 
     const result = await handler.handleAsync(validInput);
 
@@ -112,10 +81,10 @@ describe("CheckFileAccess", () => {
 
   // --- Error propagation ---
 
-  it("should propagate outbound failure via bubbleFail", async () => {
-    const outbound = createMockOutboundRequest();
-    vi.mocked(outbound.handleAsync).mockResolvedValue(D2Result.serviceUnavailable());
-    const { handler } = createHandler({ outbound });
+  it("should propagate gRPC callback failure via bubbleFail", async () => {
+    const callCanAccess = createMockCallCanAccess();
+    vi.mocked(callCanAccess.handleAsync).mockResolvedValue(D2Result.serviceUnavailable());
+    const { handler } = createHandler({ callCanAccess });
 
     const result = await handler.handleAsync(validInput);
 
@@ -125,9 +94,9 @@ describe("CheckFileAccess", () => {
 
   // --- Validation errors ---
 
-  it("should reject empty url", async () => {
+  it("should reject empty address", async () => {
     const { handler } = createHandler();
-    const result = await handler.handleAsync({ ...validInput, url: "" });
+    const result = await handler.handleAsync({ ...validInput, address: "" });
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(400);
   });
@@ -156,9 +125,9 @@ describe("CheckFileAccess", () => {
     expect(result.statusCode).toBe(400);
   });
 
-  it("should reject url exceeding max length", async () => {
+  it("should reject address exceeding max length", async () => {
     const { handler } = createHandler();
-    const result = await handler.handleAsync({ ...validInput, url: "x".repeat(2049) });
+    const result = await handler.handleAsync({ ...validInput, address: "x".repeat(256) });
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(400);
   });
@@ -175,9 +144,9 @@ describe("CheckFileAccess", () => {
     expect(result.success).toBe(true);
   });
 
-  it("should not call outbound on validation failure", async () => {
-    const { handler, outbound } = createHandler();
+  it("should not call gRPC callback on validation failure", async () => {
+    const { handler, callCanAccess } = createHandler();
     await handler.handleAsync({ ...validInput, contextKey: "" });
-    expect(outbound.handleAsync).not.toHaveBeenCalled();
+    expect(callCanAccess.handleAsync).not.toHaveBeenCalled();
   });
 });

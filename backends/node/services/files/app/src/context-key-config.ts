@@ -6,7 +6,7 @@ import type { VariantConfig } from "@d2/files-domain";
  *
  * - `jwt_owner` — requestContext.userId must match relatedEntityId
  * - `jwt_org` — requestContext.orgId must match relatedEntityId
- * - `callback` — external gRPC access check via accessCheckUrl
+ * - `callback` — gRPC CanAccess check via callbackAddress
  */
 export type UploadResolution = "jwt_owner" | "jwt_org" | "callback";
 
@@ -16,7 +16,7 @@ export type UploadResolution = "jwt_owner" | "jwt_org" | "callback";
  * - `jwt_owner` — requestContext.userId must match relatedEntityId
  * - `jwt_org` — requestContext.orgId must match relatedEntityId
  * - `authenticated` — any authenticated user can read
- * - `callback` — external gRPC access check via accessCheckUrl
+ * - `callback` — gRPC CanAccess check via callbackAddress
  */
 export type ReadResolution = "jwt_owner" | "jwt_org" | "authenticated" | "callback";
 
@@ -24,14 +24,13 @@ export type ReadResolution = "jwt_owner" | "jwt_org" | "authenticated" | "callba
  * Per-context-key runtime configuration for the Files service.
  *
  * Parsed from indexed env vars at startup. Defines access control,
- * allowed content categories, size limits, callback URLs, and variant definitions.
+ * allowed content categories, size limits, gRPC callback address, and variant definitions.
  */
 export interface ContextKeyConfig {
   readonly contextKey: string;
   readonly uploadResolution: UploadResolution;
   readonly readResolution: ReadResolution;
-  readonly accessCheckUrl?: string;
-  readonly onProcessedUrl: string;
+  readonly callbackAddress: string;
   readonly allowedCategories: readonly ContentCategory[];
   readonly maxSizeBytes: number;
   readonly variants: readonly VariantConfig[];
@@ -60,7 +59,7 @@ const VALID_CATEGORIES: readonly string[] = ["image", "document", "video", "audi
  * FILES_CK__0__KEY=user_avatar
  * FILES_CK__0__UPLOAD_RESOLUTION=jwt_owner
  * FILES_CK__0__READ_RESOLUTION=jwt_owner
- * FILES_CK__0__ON_PROCESSED_URL=http://auth:3100/callbacks/file-processed
+ * FILES_CK__0__CALLBACK_ADDR=auth:5101
  * FILES_CK__0__CATEGORY__0=image
  * FILES_CK__0__MAX_SIZE_BYTES=5242880
  * FILES_CK__0__VARIANT__0__NAME=thumb
@@ -82,8 +81,7 @@ export function parseContextKeyConfigs(
 
     const uploadResolution = env[`${prefix}__${i}__UPLOAD_RESOLUTION`];
     const readResolution = env[`${prefix}__${i}__READ_RESOLUTION`];
-    const accessCheckUrl = env[`${prefix}__${i}__ACCESS_CHECK_URL`];
-    const onProcessedUrl = env[`${prefix}__${i}__ON_PROCESSED_URL`];
+    const callbackAddr = env[`${prefix}__${i}__CALLBACK_ADDR`];
     const maxSizeBytesRaw = env[`${prefix}__${i}__MAX_SIZE_BYTES`];
 
     if (!key.trim()) {
@@ -102,17 +100,8 @@ export function parseContextKeyConfigs(
       );
     }
 
-    if (
-      (uploadResolution === "callback" || readResolution === "callback") &&
-      !accessCheckUrl?.trim()
-    ) {
-      throw new Error(
-        `FILES_CK__${i}__ACCESS_CHECK_URL is required when either resolution is 'callback'.`,
-      );
-    }
-
-    if (!onProcessedUrl?.trim()) {
-      throw new Error(`FILES_CK__${i}__ON_PROCESSED_URL is required.`);
+    if (!callbackAddr?.trim()) {
+      throw new Error(`FILES_CK__${i}__CALLBACK_ADDR is required.`);
     }
 
     // Parse indexed categories: FILES_CK__i__CATEGORY__j
@@ -184,8 +173,7 @@ export function parseContextKeyConfigs(
       contextKey: key,
       uploadResolution: uploadResolution as UploadResolution,
       readResolution: readResolution as ReadResolution,
-      accessCheckUrl: accessCheckUrl?.trim() || undefined,
-      onProcessedUrl: onProcessedUrl.trim(),
+      callbackAddress: callbackAddr.trim(),
       allowedCategories: allowedCategories as ContentCategory[],
       maxSizeBytes,
       variants,

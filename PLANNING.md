@@ -185,17 +185,17 @@ Full SvelteKit implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clien
 
 ### File Service + SignalR Gateway Implementation
 
-| Step | Name                                       | Status  | Related ADRs     | Notes                                                                                                                                                                                              |
-| ---- | ------------------------------------------ | ------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| F1   | File domain layer (`@d2/files-domain`)     | Done    | ADR-026          | Entities, enums, rules, VariantConfig, constants. 236 tests. VariantSize = plain string, per-context-key variant config, no hardcoded context keys                                                 |
-| F2   | File app layer (`@d2/files-app`)           | Done    | ADR-026          | 6 C/ + 3 Q/ + 1 U/ CQRS handlers, 3 messaging (1 pub + 2 sub), 4 provider groups (storage 7, image-processing, scanning, outbound), repo bundle, 33 service keys, DI registration. 323 total tests |
-| F3   | File infra layer (`@d2/files-infra`)       | Pending | ADR-026          | MinIO storage handlers, Sharp image-processing, ClamAV scanning, Drizzle schema/migrations, RabbitMQ consumers                                                                                     |
-| F4   | JWT validation middleware (`@d2/jwt-auth`) | Pending | ADR-027          | Shared package: RS256 verification via JWKS, fingerprint check, IRequestContext population from JWT                                                                                                |
-| F5   | File API layer (`@d2/files-api`)           | Pending | ADR-026, ADR-027 | Hono REST (public, purpose-specific endpoints) + gRPC (internal). Composition root                                                                                                                 |
-| F6   | SignalR Gateway                            | Pending | ADR-028          | Separate .NET service, JWT-authed WebSocket, gRPC interface for internal push notifications                                                                                                        |
-| F7   | Owning service gRPC callback               | Pending | ADR-026          | Auth implements `OnFileProcessed` RPC — sets `user.image = fileId` for `auth_user_avatar` context                                                                                                  |
-| F8   | File service tests                         | Pending | ADR-026          | Domain + app + infra + API + E2E. Adversarial upload testing (bad types, oversized, malformed)                                                                                                     |
-| F9   | SvelteKit profile route + avatar upload    | Pending | ADR-026, ADR-028 | User profile page with avatar upload, real-time update via SignalR                                                                                                                                 |
+| Step | Name                                       | Status  | Related ADRs     | Notes                                                                                                                                                                                                                                                                                      |
+| ---- | ------------------------------------------ | ------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F1   | File domain layer (`@d2/files-domain`)     | Done    | ADR-026          | Entities, enums, rules, VariantConfig, constants. 236 tests. VariantSize = plain string, per-context-key variant config, no hardcoded context keys                                                                                                                                         |
+| F2   | File app layer (`@d2/files-app`)           | Done    | ADR-026          | 6 C/ + 3 Q/ + 1 U/ CQRS handlers, 3 messaging (1 pub + 2 sub), 4 provider groups (storage 7, image-processing, scanning, gRPC callback), repo bundle, 33 service keys, DI registration. 323 total tests                                                                                    |
+| F3   | File infra layer (`@d2/files-infra`)       | Done    | ADR-026          | 8 repo handlers (Drizzle/PG), 7 S3 storage handlers, Sharp image-processing (→ WebP), ClamAV scanning (direct TCP clamd), 2 gRPC outbound (FileCallback), SignalR realtime push, 3 messaging handlers (1 pub + 2 sub), 2 consumers (intake + processing), DI registration. 167 infra tests |
+| F4   | JWT validation middleware (`@d2/jwt-auth`) | Pending | ADR-027          | Shared package: RS256 verification via JWKS, fingerprint check, IRequestContext population from JWT                                                                                                                                                                                        |
+| F5   | File API layer (`@d2/files-api`)           | Pending | ADR-026, ADR-027 | Hono REST (public, purpose-specific endpoints) + gRPC (internal). Composition root                                                                                                                                                                                                         |
+| F6   | SignalR Gateway                            | Pending | ADR-028          | Separate .NET service, JWT-authed WebSocket, gRPC interface for internal push notifications                                                                                                                                                                                                |
+| F7   | Owning service gRPC callback               | Pending | ADR-026          | Auth implements `OnFileProcessed` RPC — sets `user.image = fileId` for `auth_user_avatar` context                                                                                                                                                                                          |
+| F8   | File service tests                         | Pending | ADR-026          | Domain + app + infra + API + E2E. Adversarial upload testing (bad types, oversized, malformed)                                                                                                                                                                                             |
+| F9   | SvelteKit profile route + avatar upload    | Pending | ADR-026, ADR-028 | User profile page with avatar upload, real-time update via SignalR                                                                                                                                                                                                                         |
 
 ### SvelteKit Implementation Progress
 
@@ -1994,9 +1994,9 @@ This is the only point where rollback loses data. By Phase 3 you've had days/wee
    - **Step 4 (Async processing)**: Worker validates magic bytes → ClamAV scan → sharp processing → stores variants → delete raw upload
    - **Step 5 (Fail-last finalization)**: gRPC `OnFileProcessed` callback to owning service (e.g., Auth sets `user.image = fileId`) → on SUCCESS: update DB (status: `ready`, variants) → SignalR push to browser. On FAILURE: file stays in `processing` → retry via queue. Nothing changes in consuming service or frontend until everything succeeds.
 
-6. **Two gRPC callback points (both agnostic via `FileCallback` proto)** — The File Service makes two types of gRPC calls to owning services:
+6. **Two gRPC callback points (both agnostic via `FileCallback` proto)** — The File Service makes two types of gRPC calls to owning services. Both use the same `FileCallback` proto service at the context key's `callbackAddress` (single gRPC `host:port` per context key — the owning service implements the full `FileCallback` service):
    - **`CanAccess`** (before presigned URL + on reads): "Can this user upload/read?" Only called when the resolution type is `callback` (e.g., `thread_*`). JWT-resolvable types (`jwt_owner`, `jwt_org`, `authenticated`) are evaluated locally — no gRPC call. Includes `action` field (`"read"` or `"upload"`) so the owning service can differentiate. Responses cached in-memory (configurable TTL, default 5min).
-   - **`OnFileProcessed`** (after processing): "File is done, update your records." Called for ALL context keys — every context key MUST have an `onProcessedUrl`. This is the fail-last gate.
+   - **`OnFileProcessed`** (after processing): "File is done, update your records." Called for ALL context keys — every context key MUST have a `callbackAddress`. This is the fail-last gate.
 
 7. **MinIO behind infra layer only** — App layer works with `IFileStorage` (put/get/delete/presign). Only the infra layer knows about MinIO. No SvelteKit, gateway, or other service ever touches MinIO directly. Provider is swappable (S3, Garage, SeaweedFS) by changing the infra implementation.
 
@@ -2010,16 +2010,16 @@ This is the only point where rollback loses data. By Phase 3 you've had days/wee
 
    **Resolution matrix (initial context keys):**
 
-   | contextKey          | Upload Resolution | Read Resolution | Access Check URL | On Processed URL |
-   | ------------------- | ----------------- | --------------- | ---------------- | ---------------- |
-   | `user_avatar`       | `jwt_owner`       | `jwt_owner`     | —                | `auth:3100`      |
-   | `org_logo`          | `jwt_org`         | `jwt_org`       | —                | `auth:3100`      |
-   | `org_document`      | `jwt_org`         | `jwt_org`       | —                | `auth:3100`      |
-   | `thread_attachment` | `callback`        | `authenticated` | `comms:3200`     | `comms:3200`     |
+   | contextKey          | Upload Resolution | Read Resolution | Callback Address (gRPC) |
+   | ------------------- | ----------------- | --------------- | ----------------------- |
+   | `user_avatar`       | `jwt_owner`       | `jwt_owner`     | `auth:5101`             |
+   | `org_logo`          | `jwt_org`         | `jwt_org`       | `auth:5101`             |
+   | `org_document`      | `jwt_org`         | `jwt_org`       | `auth:5101`             |
+   | `thread_attachment` | `callback`        | `authenticated` | `comms:3200`            |
 
    **Unmapped context keys → deny** (fail-closed). No implicit public access.
 
-   **`CanAccess` callback responses cached in-memory** with configurable TTL (default 5 minutes) to avoid per-request gRPC round-trips for repeated reads (e.g., scrolling through a chat with many images from the same thread). Files never vendors in external logic — it just asks and caches.
+   **`CanAccess` callback responses cached in-memory** with configurable TTL (default 5 minutes) to avoid per-request gRPC round-trips for repeated reads (e.g., scrolling through a chat with many images from the same thread). Files never vendors in external logic — it just asks and caches. Both `CanAccess` and `OnFileProcessed` use the same `callbackAddress` (gRPC `host:port`) per context key — the owning service implements the full `FileCallback` proto service.
 
    **Proto contract (`FileCallback` service)** — both RPCs live in a single service definition. Any owning service implements this:
 
@@ -2065,7 +2065,7 @@ This is the only point where rollback loses data. By Phase 3 you've had days/wee
 
     **`user.image` dual-format**: BetterAuth auto-populates `user.image` with the social provider's profile picture URL on OAuth sign-up (e.g., Google avatar URL). The `OnFileProcessed` callback overwrites it with a fileId (UUID) when the user uploads a custom avatar via the Files service. The frontend handles both formats dynamically — if the value looks like a UUID, resolve via `GET /api/v1/files/{fileId}/{variant}`; if it's a URL, render directly.
 
-11. **MinIO bucket notifications** — MinIO is configured to publish `s3:ObjectCreated:*` events to RabbitMQ via a **direct exchange** (`files.events`) with routing key `file-uploaded`. All Files service instances consume from the same durable queue (`files.processing`) — **competing consumers** ensure each file is processed by exactly one worker (no duplicates under horizontal scaling). MinIO cannot publish to the default exchange (it unconditionally calls `ExchangeDeclare`), so a named direct exchange is required. The Files API itself doesn't know when the upload completes — MinIO tells it.
+11. **MinIO bucket notifications** — MinIO is configured to publish `s3:ObjectCreated:*` events to RabbitMQ via a **direct exchange** (`files.events`) with routing key `file-uploaded`. Two-stage pipeline: (1) MinIO events → `files.intake` queue → intake consumer validates the pending record, then publishes to stage 2; (2) `files.events` exchange (routing key `file-process`) → `files.processing` queue → processing consumer runs scan/transform/notify pipeline. Both queues use **competing consumers** — each message processed by exactly one worker (no duplicates under horizontal scaling). MinIO cannot publish to the default exchange (it unconditionally calls `ExchangeDeclare`), so a named direct exchange is required. The Files API itself doesn't know when the upload completes — MinIO tells it.
 
 12. **Image processing** — `sharp` (libvips) for resize, format conversion (→ webp), EXIF/metadata stripping. **Variant sizes are configured per context key** (not hardcoded) — each context key defines its own variants with `name` (arbitrary string: "thumb", "preview", "banner") and optional `maxDimension` (longest side pixel cap; omit for original pass-through). Sharp is only invoked for image content with resize variants (`maxDimension > 0`); non-image files and original variants skip sharp entirely (raw buffer stored as-is). Video/audio: store-and-serve only (original + thumbnail for video via sharp, graceful degradation if extraction fails). No transcoding — size limit is the guard.
 
@@ -2073,18 +2073,18 @@ This is the only point where rollback loses data. By Phase 3 you've had days/wee
 
 **File metadata schema (conceptual):**
 
-| Column          | Type      | Description                                                                                |
-| --------------- | --------- | ------------------------------------------------------------------------------------------ |
-| id              | uuid (v7) | Primary key                                                                                |
-| contextKey      | text      | Ownership + categorization (`"auth_user_avatar"`, `"org_document"`, `"thread_attachment"`) |
-| relatedEntityId | text      | Entity ID in the owning domain (userId, orgId, threadId)                                   |
-| status          | text      | `"pending"`, `"processing"`, `"ready"`, `"rejected"`                                       |
-| contentType     | text      | Validated MIME type (`"image/webp"`, `"application/pdf"`)                                  |
-| displayName     | text      | User-provided filename (display only, never used for storage paths)                        |
-| sizeBytes       | bigint    | Raw file size                                                                              |
-| variants        | jsonb     | Processed variants `[{size: "thumb", key: "...", width: 64, height: 64}]`                  |
-| createdAt       | timestamp | Upload time (also used for stuck-processing detection: `status + createdAt`)               |
-| updatedAt       | timestamp | Last modification (DB-managed, not on domain entity)                                       |
+| Column          | Type      | Description                                                                           |
+| --------------- | --------- | ------------------------------------------------------------------------------------- |
+| id              | uuid (v7) | Primary key                                                                           |
+| contextKey      | text      | Ownership + categorization (`"user_avatar"`, `"org_document"`, `"thread_attachment"`) |
+| relatedEntityId | text      | Entity ID in the owning domain (userId, orgId, threadId)                              |
+| status          | text      | `"pending"`, `"processing"`, `"ready"`, `"rejected"`                                  |
+| contentType     | text      | Validated MIME type (`"image/webp"`, `"application/pdf"`)                             |
+| displayName     | text      | User-provided filename (display only, never used for storage paths)                   |
+| sizeBytes       | bigint    | Raw file size                                                                         |
+| variants        | jsonb     | Processed variants `[{size: "thumb", key: "...", width: 64, height: 64}]`             |
+| createdAt       | timestamp | Upload time (also used for stuck-processing detection: `status + createdAt`)          |
+| updatedAt       | timestamp | Last modification (DB-managed, not on domain entity)                                  |
 
 **Upload data flow:**
 
@@ -2116,8 +2116,8 @@ File Service (processing worker, triggered by intake)
   ├─ sharp processing (resize, webp convert, strip EXIF/metadata)
   ├─ store variants → MinIO
   ├─ delete raw upload from MinIO (variants replace it)
-  ├─ gRPC callback → owning service (contextKey prefix → endpoint mapping)
-  │     e.g., auth_user_avatar → auth:5100 OnFileProcessed
+  ├─ gRPC callback → owning service (per-context-key callbackAddress → FileCallback.OnFileProcessed)
+  │     e.g., user_avatar → auth:5101 OnFileProcessed
   │     owning service reacts (Auth: sets user.image = fileId)
   │     ├─ SUCCESS → update DB (status: ready, variants: [...])
   │     └─ FAILURE → retry (file stays in processing state)
@@ -2135,7 +2135,7 @@ Browser (reads — any time after file is ready)
     └─ return with Cache-Control headers (browser caches)
 ```
 
-14. **Fail-last `OnFileProcessed` callback** — After processing variants, the File Service calls the owning service via gRPC `OnFileProcessed` BEFORE marking the file as `ready`. Every context key MUST have a callback URL configured (see §18). The owning service reacts (e.g., Auth sets `user.image = fileId`). **Only after the gRPC call succeeds** does the File Service update DB status to `ready`. If the call fails → file stays in `processing` → retry via queue. SignalR push happens LAST (after DB = `ready`) so the frontend always pulls correct state. No limbo files.
+14. **Fail-last `OnFileProcessed` callback** — After processing variants, the File Service calls the owning service via gRPC `OnFileProcessed` (at `callbackAddress`) BEFORE marking the file as `ready`. Every context key MUST have a `CALLBACK_ADDR` configured (see §18). The owning service reacts (e.g., Auth sets `user.image = fileId`). **Only after the gRPC call succeeds** does the File Service update DB status to `ready`. If the call fails → file stays in `processing` → retry via queue. SignalR push happens LAST (after DB = `ready`) so the frontend always pulls correct state. No limbo files.
 
 15. **Consuming services store `fileId` only** — Auth stores `user.image = fileId` (set via the `OnFileProcessed` callback). Frontend resolves to pixels via proxy: `GET /api/v1/files/{fileId}/medium`. No URLs stored in consuming service tables.
 
@@ -2145,17 +2145,16 @@ Browser (reads — any time after file is ready)
 
 18. **Context key configuration (validated at startup)** — Each registered context key is configured via separate indexed env var fields (option B):
 
-| Field                 | Required                            | Description                                                                    |
-| --------------------- | ----------------------------------- | ------------------------------------------------------------------------------ |
-| `KEY`                 | Always                              | Context key string (e.g., `user_avatar`)                                       |
-| `UPLOAD_RESOLUTION`   | Always                              | `jwt_owner`, `jwt_org`, or `callback`                                          |
-| `READ_RESOLUTION`     | Always                              | `jwt_owner`, `jwt_org`, `authenticated`, or `callback`                         |
-| `ACCESS_CHECK_URL`    | When either resolution = `callback` | gRPC endpoint for `CanAccess`                                                  |
-| `ON_PROCESSED_URL`    | Always                              | gRPC endpoint for `OnFileProcessed`                                            |
-| `CATEGORY__n`         | ≥1 required                         | Indexed content categories (e.g., `CATEGORY__0=image`, `CATEGORY__1=document`) |
-| `MAX_SIZE_BYTES`      | Always                              | Max upload size in bytes (e.g., `5242880` for 5 MB)                            |
-| `VARIANT__n__NAME`    | ≥1 variant required                 | Variant identifier (e.g., `thumb`, `preview`, `original`)                      |
-| `VARIANT__n__MAX_DIM` | Optional per variant                | Longest side pixel cap. Omit for original pass-through (no resize)             |
+| Field                 | Required | Description                                                                                                                     |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `KEY`                 | Always   | Context key string (e.g., `user_avatar`)                                                                                        |
+| `UPLOAD_RESOLUTION`   | Always   | `jwt_owner`, `jwt_org`, or `callback`                                                                                           |
+| `READ_RESOLUTION`     | Always   | `jwt_owner`, `jwt_org`, `authenticated`, or `callback`                                                                          |
+| `CALLBACK_ADDR`       | Always   | gRPC address (`host:port`) of the owning service's `FileCallback` service. Used for both `CanAccess` and `OnFileProcessed` RPCs |
+| `CATEGORY__n`         | ≥1       | Indexed content categories (e.g., `CATEGORY__0=image`, `CATEGORY__1=document`)                                                  |
+| `MAX_SIZE_BYTES`      | Always   | Max upload size in bytes (e.g., `5242880` for 5 MB)                                                                             |
+| `VARIANT__n__NAME`    | ≥1       | Variant identifier (e.g., `thumb`, `preview`, `original`)                                                                       |
+| `VARIANT__n__MAX_DIM` | Optional | Longest side pixel cap. Omit for original pass-through (no resize)                                                              |
 
 Example env vars:
 
@@ -2163,7 +2162,7 @@ Example env vars:
 FILES_CK__0__KEY=user_avatar
 FILES_CK__0__UPLOAD_RESOLUTION=jwt_owner
 FILES_CK__0__READ_RESOLUTION=jwt_owner
-FILES_CK__0__ON_PROCESSED_URL=http://auth:3100/callbacks/file-processed
+FILES_CK__0__CALLBACK_ADDR=auth:5101
 FILES_CK__0__CATEGORY__0=image
 FILES_CK__0__MAX_SIZE_BYTES=5242880
 FILES_CK__0__VARIANT__0__NAME=thumb
@@ -2177,7 +2176,7 @@ FILES_CK__0__VARIANT__3__NAME=original
 FILES_CK__1__KEY=org_document
 FILES_CK__1__UPLOAD_RESOLUTION=jwt_org
 FILES_CK__1__READ_RESOLUTION=jwt_org
-FILES_CK__1__ON_PROCESSED_URL=http://auth:3100/callbacks/file-processed
+FILES_CK__1__CALLBACK_ADDR=auth:5101
 FILES_CK__1__CATEGORY__0=document
 FILES_CK__1__MAX_SIZE_BYTES=26214400
 FILES_CK__1__VARIANT__0__NAME=original
@@ -2185,8 +2184,7 @@ FILES_CK__1__VARIANT__0__NAME=original
 FILES_CK__2__KEY=thread_attachment
 FILES_CK__2__UPLOAD_RESOLUTION=callback
 FILES_CK__2__READ_RESOLUTION=authenticated
-FILES_CK__2__ACCESS_CHECK_URL=http://comms:3200/callbacks/can-access
-FILES_CK__2__ON_PROCESSED_URL=http://comms:3200/callbacks/file-processed
+FILES_CK__2__CALLBACK_ADDR=comms:3200
 FILES_CK__2__CATEGORY__0=image
 FILES_CK__2__CATEGORY__1=document
 FILES_CK__2__CATEGORY__2=video
@@ -2201,8 +2199,8 @@ FILES_CK__2__VARIANT__2__NAME=original
 
 **Startup validation** (service panics if any fail):
 
-- Every entry must have `KEY`, `UPLOAD_RESOLUTION`, `READ_RESOLUTION`, `ON_PROCESSED_URL`, ≥1 `CATEGORY__n`, `MAX_SIZE_BYTES`, ≥1 `VARIANT__n__NAME`
-- If either resolution is `callback`, `ACCESS_CHECK_URL` is required
+- Every entry must have `KEY`, `UPLOAD_RESOLUTION`, `READ_RESOLUTION`, `CALLBACK_ADDR`, ≥1 `CATEGORY__n`, `MAX_SIZE_BYTES`, ≥1 `VARIANT__n__NAME`
+- `CALLBACK_ADDR` is always required (gRPC `host:port` — both `CanAccess` and `OnFileProcessed` go to the same owning service)
 - No duplicate `KEY` values
 - Resolution values must be valid enum members
 - `CATEGORY__n` values must be valid `ContentCategory` members (from domain)
@@ -2225,7 +2223,7 @@ FILES_CK__2__VARIANT__2__NAME=original
 - Intake step validates notifications against DB records — orphan uploads (no pending record) are discarded
 - Fail-last pattern: file only marked `ready` after owning service confirms via gRPC — no limbo files
 - Unified cleanup job catches all stuck states (pending, processing, rejected) with configurable thresholds
-- All per-context-key config (resolution, size limits, allowed categories, callback URLs) is runtime-configurable via env vars — no rebuilds for policy changes
+- All per-context-key config (resolution, size limits, allowed categories, callback address) is runtime-configurable via env vars — no rebuilds for policy changes
 - Domain layer contains only pure business rules (entities, enums, MIME mappings, variant dimensions); operational config lives in app layer
 - Requires ADR-027 (JWT validation) and ADR-028 (SignalR Gateway) as prerequisites
 

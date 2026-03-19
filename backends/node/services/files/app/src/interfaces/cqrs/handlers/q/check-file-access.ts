@@ -1,7 +1,7 @@
 import type { IHandler } from "@d2/handler";
 
 export interface CheckFileAccessInput {
-  readonly url: string;
+  readonly address: string;
   readonly contextKey: string;
   readonly relatedEntityId: string;
   readonly requestingUserId: string;

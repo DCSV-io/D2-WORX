@@ -7,10 +7,11 @@ import type {
   ICheckFileAccessHandler,
   INotifyFileProcessedHandler,
   IResolveFileAccessHandler,
+  ICallOnFileProcessed,
+  ICallCanAccess,
 } from "@d2/files-app";
 import type { DistributedCache } from "@d2/interfaces";
 import type { IFindStaleFilesHandler, IDeleteFileRecordsByIdsHandler } from "@d2/files-app";
-import type { IOutboundRequest } from "@d2/files-app";
 import type { IHandlerContext, IRequestContext } from "@d2/handler";
 
 /**
@@ -165,12 +166,21 @@ export function createMockDeleteByIds(): IDeleteFileRecordsByIdsHandler {
 }
 
 /**
- * Creates a mock IOutboundRequest provider.
+ * Creates a mock ICallOnFileProcessed gRPC provider.
  */
-export function createMockOutboundRequest(body: Record<string, unknown> = {}): IOutboundRequest {
+export function createMockCallOnFileProcessed(success = true): ICallOnFileProcessed {
   return {
-    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { body } })),
-  } as unknown as IOutboundRequest;
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { success } })),
+  } as unknown as ICallOnFileProcessed;
+}
+
+/**
+ * Creates a mock ICallCanAccess gRPC provider.
+ */
+export function createMockCallCanAccess(allowed = true): ICallCanAccess {
+  return {
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { allowed } })),
+  } as unknown as ICallCanAccess;
 }
 
 /**

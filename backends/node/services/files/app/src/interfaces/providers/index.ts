@@ -31,9 +31,3 @@ export type {
   ProcessVariantsOutput,
   IProcessVariants,
 } from "./image-processing/handlers/index.js";
-
-export type {
-  OutboundRequestInput,
-  OutboundRequestOutput,
-  IOutboundRequest,
-} from "./outbound/handlers/index.js";

@@ -56,9 +56,11 @@ describe("Files Constants", () => {
       expect(FILES_MESSAGING.EVENTS_EXCHANGE_TYPE).toBe("direct");
     });
 
-    it("should define exchange, routing key, and queue names", () => {
+    it("should define exchange, routing keys, and queue names", () => {
       expect(FILES_MESSAGING.EVENTS_EXCHANGE).toBeTruthy();
-      expect(FILES_MESSAGING.EVENTS_ROUTING_KEY).toBeTruthy();
+      expect(FILES_MESSAGING.UPLOAD_ROUTING_KEY).toBeTruthy();
+      expect(FILES_MESSAGING.PROCESSING_ROUTING_KEY).toBeTruthy();
+      expect(FILES_MESSAGING.INTAKE_QUEUE).toBeTruthy();
       expect(FILES_MESSAGING.PROCESSING_QUEUE).toBeTruthy();
     });
   });

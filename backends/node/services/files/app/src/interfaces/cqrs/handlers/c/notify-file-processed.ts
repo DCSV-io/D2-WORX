@@ -1,13 +1,12 @@
 import type { IHandler } from "@d2/handler";
-import type { FileVariant } from "@d2/files-domain";
 
 export interface NotifyFileProcessedInput {
-  readonly url: string;
+  readonly address: string;
   readonly fileId: string;
   readonly contextKey: string;
   readonly relatedEntityId: string;
   readonly status: "ready" | "rejected";
-  readonly variants?: readonly FileVariant[];
+  readonly variants?: readonly string[];
 }
 
 export interface NotifyFileProcessedOutput {

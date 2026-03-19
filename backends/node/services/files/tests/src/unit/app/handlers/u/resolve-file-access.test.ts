@@ -9,7 +9,7 @@ function makeConfig(overrides: Partial<ContextKeyConfig> = {}): ContextKeyConfig
     contextKey: "user_avatar",
     uploadResolution: "jwt_owner",
     readResolution: "jwt_owner",
-    onProcessedUrl: "http://auth:3100/callbacks/file-processed",
+    callbackAddress: "auth:5101",
     allowedCategories: ["image"],
     maxSizeBytes: 5 * 1024 * 1024,
     variants: [{ name: "original" }],
@@ -141,7 +141,7 @@ describe("ResolveFileAccess", () => {
 
     const config = makeConfig({
       uploadResolution: "callback",
-      accessCheckUrl: "http://comms:3200/callbacks/can-access",
+      callbackAddress: "comms:3200",
       contextKey: "thread_attachment",
     });
 
@@ -153,7 +153,7 @@ describe("ResolveFileAccess", () => {
 
     expect(result.success).toBe(true);
     expect(accessChecker.handleAsync).toHaveBeenCalledWith({
-      url: "http://comms:3200/callbacks/can-access",
+      address: "comms:3200",
       contextKey: "thread_attachment",
       relatedEntityId: "thread-1",
       requestingUserId: "user-123",
@@ -170,7 +170,7 @@ describe("ResolveFileAccess", () => {
     const result = await handler.handleAsync({
       config: makeConfig({
         uploadResolution: "callback",
-        accessCheckUrl: "http://comms:3200/callbacks/can-access",
+        callbackAddress: "comms:3200",
       }),
       action: "upload",
       relatedEntityId: "thread-1",
@@ -187,7 +187,7 @@ describe("ResolveFileAccess", () => {
     const result = await handler.handleAsync({
       config: makeConfig({
         uploadResolution: "callback",
-        accessCheckUrl: "http://comms:3200/callbacks/can-access",
+        callbackAddress: "comms:3200",
       }),
       action: "upload",
       relatedEntityId: "thread-1",
@@ -206,7 +206,7 @@ describe("ResolveFileAccess", () => {
     const result = await handler.handleAsync({
       config: makeConfig({
         uploadResolution: "callback",
-        accessCheckUrl: "http://comms:3200/callbacks/can-access",
+        callbackAddress: "comms:3200",
       }),
       action: "upload",
       relatedEntityId: "thread-1",

@@ -218,3 +218,44 @@ export {
   CommsJobServiceClient as CommsJobServiceClientCtor,
   CommsJobServiceService,
 } from "./generated/comms/v1/comms_jobs.js";
+
+// Files service — FileCallback (implemented by owning services, called by Files)
+export type {
+  CanAccessRequest,
+  CanAccessResponse,
+  FileProcessedRequest,
+  FileProcessedResponse,
+  FileCallbackClient,
+  FileCallbackServer,
+} from "./generated/files/v1/files.js";
+
+export {
+  FileCallbackClient as FileCallbackClientCtor,
+  FileCallbackService,
+} from "./generated/files/v1/files.js";
+
+// Files service — message Fns (encode/decode for roundtrip)
+export {
+  CanAccessRequest as CanAccessRequestFns,
+  CanAccessResponse as CanAccessResponseFns,
+  FileProcessedRequest as FileProcessedRequestFns,
+  FileProcessedResponse as FileProcessedResponseFns,
+} from "./generated/files/v1/files.js";
+
+// Files service — SignalR Bridge (implemented by SignalR Gateway, called by Files)
+export type {
+  PushToUserRequest,
+  PushToUserResponse,
+  SignalRBridgeClient,
+  SignalRBridgeServer,
+} from "./generated/files/v1/signalr_bridge.js";
+
+export {
+  SignalRBridgeClient as SignalRBridgeClientCtor,
+  SignalRBridgeService,
+} from "./generated/files/v1/signalr_bridge.js";
+
+export {
+  PushToUserRequest as PushToUserRequestFns,
+  PushToUserResponse as PushToUserResponseFns,
+} from "./generated/files/v1/signalr_bridge.js";

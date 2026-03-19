@@ -47,17 +47,25 @@ export const ALLOWED_CONTENT_TYPES: Readonly<Record<ContentCategory, readonly st
 /**
  * Messaging topology for the files service.
  *
- * MinIO publishes bucket notification events to the direct exchange.
- * All Files service instances consume from the same durable queue
- * (competing consumers — each file processed by exactly one worker).
+ * Two-stage pipeline:
+ * 1. MinIO → "files.events" exchange (routing key "file-uploaded") → "files.intake" queue
+ *    → IntakeFileUploaded consumer validates the pending record, then publishes to stage 2.
+ * 2. "files.events" exchange (routing key "file-process") → "files.processing" queue
+ *    → ProcessUploadedFile consumer runs scan/transform/notify pipeline.
+ *
+ * Both queues use competing consumers (each message processed by exactly one worker).
  */
 export const FILES_MESSAGING = {
-  /** Direct exchange for MinIO bucket notification events. */
+  /** Direct exchange for all files lifecycle events. */
   EVENTS_EXCHANGE: "files.events",
-  /** Exchange type — direct (competing consumers via shared queue). */
+  /** Exchange type — direct routing. */
   EVENTS_EXCHANGE_TYPE: "direct" as const,
-  /** Routing key for file event messages. */
-  EVENTS_ROUTING_KEY: "file-uploaded",
-  /** Work queue bound to the events exchange (single delivery per message). */
+  /** Routing key for MinIO bucket notification events (upload completed). */
+  UPLOAD_ROUTING_KEY: "file-uploaded",
+  /** Routing key for internal processing dispatch (post-intake). */
+  PROCESSING_ROUTING_KEY: "file-process",
+  /** Queue for MinIO upload notifications → intake handler. */
+  INTAKE_QUEUE: "files.intake",
+  /** Queue for processing dispatch → process handler. */
   PROCESSING_QUEUE: "files.processing",
 } as const;

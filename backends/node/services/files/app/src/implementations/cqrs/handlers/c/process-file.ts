@@ -96,7 +96,7 @@ export class ProcessFile
       await this.repo.update.handleAsync({ file: rejectedFile });
 
       await this.notifier.handleAsync({
-        url: config.onProcessedUrl,
+        address: config.callbackAddress,
         fileId: file.id,
         contextKey: file.contextKey,
         relatedEntityId: file.relatedEntityId,
@@ -185,12 +185,12 @@ export class ProcessFile
 
     // Fail-last: notify callback BEFORE updating DB status
     const notifyResult = await this.notifier.handleAsync({
-      url: config.onProcessedUrl,
+      address: config.callbackAddress,
       fileId: file.id,
       contextKey: file.contextKey,
       relatedEntityId: file.relatedEntityId,
       status: "ready",
-      variants: fileVariants,
+      variants: fileVariants.map((v) => v.size),
     });
     if (!notifyResult.success) return D2Result.bubbleFail(notifyResult);
 

@@ -46,7 +46,7 @@ export class ResolveFileAccess
       case "callback": {
         if (!this.accessChecker) return D2Result.forbidden();
         const result = await this.accessChecker.handleAsync({
-          url: input.config.accessCheckUrl!,
+          address: input.config.callbackAddress,
           contextKey: input.config.contextKey,
           relatedEntityId: input.relatedEntityId,
           requestingUserId: request.userId ?? "",

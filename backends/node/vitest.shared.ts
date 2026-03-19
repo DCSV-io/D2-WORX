@@ -43,6 +43,7 @@ export default defineConfig({
       "@d2/comms-api": resolve(import.meta.dirname, "services/comms/api/src/index.ts"),
       "@d2/files-domain": resolve(import.meta.dirname, "services/files/domain/src/index.ts"),
       "@d2/files-app": resolve(import.meta.dirname, "services/files/app/src/index.ts"),
+      "@d2/files-infra": resolve(import.meta.dirname, "services/files/infra/src/index.ts"),
       "@d2/dkron-mgr": resolve(import.meta.dirname, "services/dkron-mgr/src/index.ts"),
     },
   },

@@ -6,7 +6,7 @@ function makeEnv(index: number, overrides: Record<string, string> = {}): Record<
     [`FILES_CK__${index}__KEY`]: "user_avatar",
     [`FILES_CK__${index}__UPLOAD_RESOLUTION`]: "jwt_owner",
     [`FILES_CK__${index}__READ_RESOLUTION`]: "jwt_owner",
-    [`FILES_CK__${index}__ON_PROCESSED_URL`]: "http://auth:3100/callbacks/file-processed",
+    [`FILES_CK__${index}__CALLBACK_ADDR`]: "auth:5101",
     [`FILES_CK__${index}__CATEGORY__0`]: "image",
     [`FILES_CK__${index}__MAX_SIZE_BYTES`]: "5242880",
     [`FILES_CK__${index}__VARIANT__0__NAME`]: "thumb",
@@ -27,10 +27,9 @@ describe("parseContextKeyConfigs", () => {
     expect(config.contextKey).toBe("user_avatar");
     expect(config.uploadResolution).toBe("jwt_owner");
     expect(config.readResolution).toBe("jwt_owner");
-    expect(config.onProcessedUrl).toBe("http://auth:3100/callbacks/file-processed");
+    expect(config.callbackAddress).toBe("auth:5101");
     expect(config.allowedCategories).toEqual(["image"]);
     expect(config.maxSizeBytes).toBe(5242880);
-    expect(config.accessCheckUrl).toBeUndefined();
     expect(config.variants).toHaveLength(2);
     expect(config.variants[0]).toEqual({ name: "thumb", maxDimension: 64 });
     expect(config.variants[1]).toEqual({ name: "original" });
@@ -43,6 +42,7 @@ describe("parseContextKeyConfigs", () => {
         FILES_CK__1__KEY: "org_logo",
         FILES_CK__1__UPLOAD_RESOLUTION: "jwt_org",
         FILES_CK__1__READ_RESOLUTION: "jwt_org",
+        FILES_CK__1__CALLBACK_ADDR: "auth:5101",
         FILES_CK__1__CATEGORY__0: "image",
         FILES_CK__1__VARIANT__0__NAME: "original",
       }),
@@ -63,18 +63,18 @@ describe("parseContextKeyConfigs", () => {
     expect(map.get("user_avatar")!.allowedCategories).toEqual(["image", "document", "video"]);
   });
 
-  it("should include accessCheckUrl when resolution is callback", () => {
+  it("should parse callback resolution with callbackAddress", () => {
     const env = makeEnv(0, {
       FILES_CK__0__KEY: "thread_attachment",
       FILES_CK__0__UPLOAD_RESOLUTION: "callback",
       FILES_CK__0__READ_RESOLUTION: "authenticated",
-      FILES_CK__0__ACCESS_CHECK_URL: "http://comms:3200/can-access",
+      FILES_CK__0__CALLBACK_ADDR: "comms:3200",
       FILES_CK__0__CATEGORY__0: "image",
       FILES_CK__0__CATEGORY__1: "document",
     });
     const map = parseContextKeyConfigs(env);
     const config = map.get("thread_attachment")!;
-    expect(config.accessCheckUrl).toBe("http://comms:3200/can-access");
+    expect(config.callbackAddress).toBe("comms:3200");
     expect(config.uploadResolution).toBe("callback");
     expect(config.readResolution).toBe("authenticated");
   });
@@ -140,20 +140,12 @@ describe("parseContextKeyConfigs", () => {
     expect(() => parseContextKeyConfigs(env)).toThrow("READ_RESOLUTION");
   });
 
-  it("should throw when callback resolution lacks accessCheckUrl", () => {
-    const env = makeEnv(0, {
-      FILES_CK__0__UPLOAD_RESOLUTION: "callback",
-    });
-    delete (env as Record<string, string | undefined>)[`FILES_CK__0__ACCESS_CHECK_URL`];
-    expect(() => parseContextKeyConfigs(env)).toThrow("ACCESS_CHECK_URL is required");
-  });
+  // --- Validation: callbackAddress ---
 
-  // --- Validation: onProcessedUrl ---
-
-  it("should throw on missing onProcessedUrl", () => {
+  it("should throw on missing callbackAddress", () => {
     const env = makeEnv(0);
-    delete (env as Record<string, string | undefined>)[`FILES_CK__0__ON_PROCESSED_URL`];
-    expect(() => parseContextKeyConfigs(env)).toThrow("ON_PROCESSED_URL is required");
+    delete (env as Record<string, string | undefined>)[`FILES_CK__0__CALLBACK_ADDR`];
+    expect(() => parseContextKeyConfigs(env)).toThrow("CALLBACK_ADDR is required");
   });
 
   // --- Validation: categories ---

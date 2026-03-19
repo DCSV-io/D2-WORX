@@ -75,13 +75,24 @@ export type {
   IProcessVariants,
 } from "./interfaces/providers/image-processing/handlers/index.js";
 
+// --- Interfaces (Outbound Contracts) ---
 export type {
-  OutboundRequestInput,
-  OutboundRequestOutput,
-  IOutboundRequest,
-} from "./interfaces/providers/outbound/handlers/index.js";
+  CallOnFileProcessedInput,
+  CallOnFileProcessedOutput,
+  ICallOnFileProcessed,
+  CallCanAccessInput,
+  CallCanAccessOutput,
+  ICallCanAccess,
+} from "./interfaces/outbound/handlers/index.js";
 
-// --- CQRS Contracts (app-implemented, delegate to IOutboundRequest) ---
+// --- Interfaces (Realtime Contracts) ---
+export type {
+  PushFileUpdateInput,
+  PushFileUpdateOutput,
+  IPushFileUpdate,
+} from "./interfaces/realtime/handlers/index.js";
+
+// --- CQRS Contracts (app-implemented, delegate to gRPC callbacks) ---
 export type {
   NotifyFileProcessedInput,
   NotifyFileProcessedOutput,
@@ -230,13 +241,16 @@ export {
   // Provider keys
   IScanFileKey,
   IProcessVariantsKey,
-  // CQRS outbound keys (app-implemented, delegate to IOutboundRequest)
+  // Outbound keys (infra-implemented)
+  ICallOnFileProcessedKey,
+  ICallCanAccessKey,
+  // Realtime keys (infra-implemented)
+  IPushFileUpdateKey,
+  // CQRS keys (app-implemented)
   INotifyFileProcessedKey,
   ICheckFileAccessKey,
   // Utility handler keys
   IResolveFileAccessKey,
-  // Outbound provider key (infra-implemented)
-  IOutboundRequestKey,
   // App keys
   IUploadFileKey,
   IIntakeFileKey,

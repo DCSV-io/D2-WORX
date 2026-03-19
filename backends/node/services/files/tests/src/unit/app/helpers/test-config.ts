@@ -4,7 +4,7 @@ export const TEST_USER_AVATAR_CONFIG: ContextKeyConfig = {
   contextKey: "user_avatar",
   uploadResolution: "jwt_owner",
   readResolution: "jwt_owner",
-  onProcessedUrl: "http://auth:3100/callbacks/file-processed",
+  callbackAddress: "auth:5101",
   allowedCategories: ["image"],
   maxSizeBytes: 5 * 1024 * 1024, // 5 MB
   variants: [
@@ -19,7 +19,7 @@ export const TEST_ORG_LOGO_CONFIG: ContextKeyConfig = {
   contextKey: "org_logo",
   uploadResolution: "jwt_org",
   readResolution: "jwt_org",
-  onProcessedUrl: "http://auth:3100/callbacks/file-processed",
+  callbackAddress: "auth:5101",
   allowedCategories: ["image"],
   maxSizeBytes: 10 * 1024 * 1024, // 10 MB
   variants: [
@@ -33,8 +33,7 @@ export const TEST_THREAD_ATTACHMENT_CONFIG: ContextKeyConfig = {
   contextKey: "thread_attachment",
   uploadResolution: "callback",
   readResolution: "authenticated",
-  accessCheckUrl: "http://comms:3200/callbacks/can-access",
-  onProcessedUrl: "http://comms:3200/callbacks/file-processed",
+  callbackAddress: "comms:3200",
   allowedCategories: ["image", "document", "video", "audio"],
   maxSizeBytes: 25 * 1024 * 1024, // 25 MB
   variants: [

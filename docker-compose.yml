@@ -42,6 +42,7 @@ volumes:
   d2-redisinsight-data:
   d2-rabbitmq-data:
   d2-dkron-data:
+  d2-clamav-data:
   d2-portainer-data:
   d2-node-modules:
   d2-sveltekit-modules:
@@ -61,10 +62,20 @@ services:
       MINIO_ROOT_USER: ${S3_USERNAME}
       MINIO_ROOT_PASSWORD: ${S3_PASSWORD}
       MINIO_BROWSER: "on"
+      # AMQP notification — file-uploaded events → RabbitMQ
+      MINIO_NOTIFY_AMQP_ENABLE_PRIMARY: "on"
+      MINIO_NOTIFY_AMQP_URL_PRIMARY: "amqp://${MQ_USERNAME}:${MQ_PASSWORD}@${RABBITMQ_NAME}:5672"
+      MINIO_NOTIFY_AMQP_EXCHANGE_PRIMARY: "files.events"
+      MINIO_NOTIFY_AMQP_EXCHANGE_TYPE_PRIMARY: "direct"
+      MINIO_NOTIFY_AMQP_ROUTING_KEY_PRIMARY: "file-uploaded"
+      MINIO_NOTIFY_AMQP_DURABLE_PRIMARY: "on"
     volumes:
       - d2-minio-data:/data
     command: server /data --console-address :9001
     networks: [d2-network]
+    depends_on:
+      d2-rabbitmq:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || exit 1"]
       interval: 10s
@@ -90,6 +101,8 @@ services:
       mc mb --ignore-existing myminio/${MINIO_BUCKET_MIMIR_BLOCKS} &&
       mc mb --ignore-existing myminio/${MINIO_BUCKET_MIMIR_RULER} &&
       mc mb --ignore-existing myminio/${MINIO_BUCKET_UPLOADS} &&
+      mc mb --ignore-existing myminio/${MINIO_BUCKET_FILES} &&
+      mc event add myminio/${MINIO_BUCKET_FILES} arn:minio:sqs::PRIMARY:amqp --event put --ignore-existing &&
       mc admin prometheus generate myminio > /minio-token/prometheus-config.yaml &&
       echo 'MinIO buckets and Prometheus token initialized successfully'
       "
@@ -397,6 +410,26 @@ services:
       d2-redis:
         condition: service_healthy
     # Redis exporter is a distroless image — no shell or health check tools available.
+    restart: unless-stopped
+
+  # ==========================================================================
+  # Malware Scanning
+  # ==========================================================================
+
+  d2-clamav:
+    image: ${CLAMAV_IMAGE}:${CLAMAV_TAG}
+    container_name: ${CLAMAV_NAME}
+    ports:
+      - "${CLAMAV_PORT}:3310"
+    volumes:
+      - d2-clamav-data:/var/lib/clamav
+    networks: [d2-network]
+    healthcheck:
+      test: ["CMD-SHELL", "clamdscan --version || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     restart: unless-stopped
 
   d2-rabbitmq:

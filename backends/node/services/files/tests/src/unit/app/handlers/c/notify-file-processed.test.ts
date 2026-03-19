@@ -2,24 +2,24 @@ import { describe, it, expect, vi } from "vitest";
 import { D2Result } from "@d2/result";
 import { NotifyFileProcessed } from "@d2/files-app";
 import type { NotifyFileProcessedInput } from "@d2/files-app";
-import { createMockOutboundRequest, createMockContext } from "../../helpers/mock-handlers.js";
+import { createMockCallOnFileProcessed, createMockContext } from "../../helpers/mock-handlers.js";
 
 function createHandler(
   overrides: {
-    outbound?: ReturnType<typeof createMockOutboundRequest>;
+    callOnFileProcessed?: ReturnType<typeof createMockCallOnFileProcessed>;
   } = {},
 ) {
-  const outbound = overrides.outbound ?? createMockOutboundRequest();
+  const callOnFileProcessed = overrides.callOnFileProcessed ?? createMockCallOnFileProcessed();
   const context = createMockContext();
 
   return {
-    handler: new NotifyFileProcessed(outbound, context),
-    outbound,
+    handler: new NotifyFileProcessed(callOnFileProcessed, context),
+    callOnFileProcessed,
   };
 }
 
 const validInput: NotifyFileProcessedInput = {
-  url: "http://auth:3100/callbacks/file-processed",
+  address: "auth:5101",
   fileId: "file-001",
   contextKey: "user_avatar",
   relatedEntityId: "user-123",
@@ -29,54 +29,42 @@ const validInput: NotifyFileProcessedInput = {
 describe("NotifyFileProcessed", () => {
   // --- Happy path ---
 
-  it("should call outbound with correct payload and return success", async () => {
-    const { handler, outbound } = createHandler();
+  it("should call gRPC callback with correct input and return success", async () => {
+    const { handler, callOnFileProcessed } = createHandler();
 
     const result = await handler.handleAsync(validInput);
 
     expect(result.success).toBe(true);
     expect(result.data?.success).toBe(true);
-    expect(outbound.handleAsync).toHaveBeenCalledWith({
-      url: "http://auth:3100/callbacks/file-processed",
-      payload: {
-        fileId: "file-001",
-        contextKey: "user_avatar",
-        relatedEntityId: "user-123",
-        status: "ready",
-      },
+    expect(callOnFileProcessed.handleAsync).toHaveBeenCalledWith({
+      address: "auth:5101",
+      fileId: "file-001",
+      contextKey: "user_avatar",
+      relatedEntityId: "user-123",
+      status: "ready",
+      variants: undefined,
     });
   });
 
-  it("should include variants in payload when provided", async () => {
-    const { handler, outbound } = createHandler();
-    const variants = [
-      {
-        size: "original",
-        key: "k",
-        width: 100,
-        height: 100,
-        sizeBytes: 500,
-        contentType: "image/jpeg",
-      },
-    ];
+  it("should pass variants when provided", async () => {
+    const { handler, callOnFileProcessed } = createHandler();
+    const variants = ["original", "thumb", "medium"];
 
     const result = await handler.handleAsync({ ...validInput, variants });
 
     expect(result.success).toBe(true);
-    expect(outbound.handleAsync).toHaveBeenCalledWith(
-      expect.objectContaining({
-        payload: expect.objectContaining({ variants }),
-      }),
+    expect(callOnFileProcessed.handleAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ variants }),
     );
   });
 
-  it("should omit variants from payload when not provided", async () => {
-    const { handler, outbound } = createHandler();
+  it("should omit variants when not provided", async () => {
+    const { handler, callOnFileProcessed } = createHandler();
 
     await handler.handleAsync(validInput);
 
-    const call = vi.mocked(outbound.handleAsync).mock.calls[0]![0];
-    expect(call.payload).not.toHaveProperty("variants");
+    const call = vi.mocked(callOnFileProcessed.handleAsync).mock.calls[0]![0];
+    expect(call.variants).toBeUndefined();
   });
 
   it("should succeed with status rejected", async () => {
@@ -90,10 +78,10 @@ describe("NotifyFileProcessed", () => {
 
   // --- Error propagation ---
 
-  it("should propagate outbound failure via bubbleFail", async () => {
-    const outbound = createMockOutboundRequest();
-    vi.mocked(outbound.handleAsync).mockResolvedValue(D2Result.serviceUnavailable());
-    const { handler } = createHandler({ outbound });
+  it("should propagate gRPC callback failure via bubbleFail", async () => {
+    const callOnFileProcessed = createMockCallOnFileProcessed();
+    vi.mocked(callOnFileProcessed.handleAsync).mockResolvedValue(D2Result.serviceUnavailable());
+    const { handler } = createHandler({ callOnFileProcessed });
 
     const result = await handler.handleAsync(validInput);
 
@@ -103,9 +91,9 @@ describe("NotifyFileProcessed", () => {
 
   // --- Validation errors ---
 
-  it("should reject empty url", async () => {
+  it("should reject empty address", async () => {
     const { handler } = createHandler();
-    const result = await handler.handleAsync({ ...validInput, url: "" });
+    const result = await handler.handleAsync({ ...validInput, address: "" });
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(400);
   });
@@ -141,16 +129,16 @@ describe("NotifyFileProcessed", () => {
     expect(result.statusCode).toBe(400);
   });
 
-  it("should reject url exceeding max length", async () => {
+  it("should reject address exceeding max length", async () => {
     const { handler } = createHandler();
-    const result = await handler.handleAsync({ ...validInput, url: "x".repeat(2049) });
+    const result = await handler.handleAsync({ ...validInput, address: "x".repeat(256) });
     expect(result.success).toBe(false);
     expect(result.statusCode).toBe(400);
   });
 
-  it("should not call outbound on validation failure", async () => {
-    const { handler, outbound } = createHandler();
+  it("should not call gRPC callback on validation failure", async () => {
+    const { handler, callOnFileProcessed } = createHandler();
     await handler.handleAsync({ ...validInput, fileId: "" });
-    expect(outbound.handleAsync).not.toHaveBeenCalled();
+    expect(callOnFileProcessed.handleAsync).not.toHaveBeenCalled();
   });
 });

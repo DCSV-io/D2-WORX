@@ -24,7 +24,8 @@ import {
   IPingStorageKey,
   IScanFileKey,
   IProcessVariantsKey,
-  IOutboundRequestKey,
+  ICallOnFileProcessedKey,
+  ICallCanAccessKey,
   INotifyFileProcessedKey,
   ICheckFileAccessKey,
   IResolveFileAccessKey,
@@ -207,7 +208,7 @@ export function addFilesApp(
   services.addTransient(
     INotifyFileProcessedKey,
     (sp) =>
-      new NotifyFileProcessed(sp.resolve(IOutboundRequestKey), sp.resolve(IHandlerContextKey)),
+      new NotifyFileProcessed(sp.resolve(ICallOnFileProcessedKey), sp.resolve(IHandlerContextKey)),
   );
 
   // --- Query Handlers ---
@@ -268,6 +269,6 @@ export function addFilesApp(
 
   services.addTransient(
     ICheckFileAccessKey,
-    (sp) => new CheckFileAccess(sp.resolve(IOutboundRequestKey), sp.resolve(IHandlerContextKey)),
+    (sp) => new CheckFileAccess(sp.resolve(ICallCanAccessKey), sp.resolve(IHandlerContextKey)),
   );
 }
