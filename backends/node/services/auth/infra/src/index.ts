@@ -81,6 +81,9 @@ export { runMigrations } from "./repository/migrate.js";
 // --- Email Check (pre-auth repo — constructed manually in composition root) ---
 export { CheckEmailAvailability as CheckEmailAvailabilityRepo } from "./repository/handlers/r/check-email-availability.js";
 
+// --- Organization Existence Check ---
+export { CheckOrgExists } from "./repository/handlers/r/check-org-exists.js";
+
 // --- Purge Handlers (used by integration tests) ---
 export { PurgeExpiredSessions } from "./repository/handlers/d/purge-expired-sessions.js";
 export { PurgeSignInEvents } from "./repository/handlers/d/purge-sign-in-events.js";
@@ -113,5 +116,6 @@ export {
   IFindOrgContactsByOrgIdKey,
   IUpdateOrgContactRecordKey,
   IDeleteOrgContactRecordKey,
+  ICheckOrgExistsKey,
   ISignInThrottleStoreKey,
 } from "./service-keys.js";

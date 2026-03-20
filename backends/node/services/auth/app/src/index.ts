@@ -76,6 +76,10 @@ export type {
   CheckEmailAvailabilityInput as CheckEmailAvailabilityRepoInput,
   CheckEmailAvailabilityOutput as CheckEmailAvailabilityRepoOutput,
   ICheckEmailAvailabilityHandler,
+  // Read (R) — Organization Existence
+  CheckOrgExistsInput,
+  CheckOrgExistsOutput,
+  ICheckOrgExistsHandler,
   // Read (R) — PingDb
   PingDbInput,
   PingDbOutput,
@@ -185,6 +189,7 @@ import type {
   SignInEventRepoHandlers,
   EmulationConsentRepoHandlers,
   OrgContactRepoHandlers,
+  ICheckOrgExistsHandler,
 } from "./interfaces/repository/handlers/index.js";
 import type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 import type { InMemoryCache } from "@d2/interfaces";
@@ -234,7 +239,7 @@ export function createSignInEventHandlers(
 export function createEmulationConsentHandlers(
   repo: EmulationConsentRepoHandlers,
   context: IHandlerContext,
-  checkOrgExists: (orgId: string) => Promise<boolean>,
+  checkOrgExists: ICheckOrgExistsHandler,
 ) {
   return {
     create: new CreateEmulationConsent(
@@ -345,7 +350,7 @@ export type { AuthJobOptions } from "./auth-job-options.js";
 export { DEFAULT_AUTH_JOB_OPTIONS } from "./auth-job-options.js";
 
 // --- DI Registration ---
-export { addAuthApp, type AddAuthAppOptions } from "./registration.js";
+export { addAuthApp } from "./registration.js";
 export { IAuthAcquireLockKey, IAuthReleaseLockKey } from "./registration.js";
 export {
   // Infra-layer keys (interfaces defined here, implemented in auth-infra)
@@ -380,6 +385,7 @@ export {
   ICheckSignInThrottleKey,
   ICheckEmailAvailabilityKey,
   ICheckEmailAvailabilityRepoKey,
+  ICheckOrgExistsKey,
   IPingDbKey,
   ICheckHealthKey,
   // Job keys

@@ -13,6 +13,7 @@ import type { SignInEvent } from "@d2/auth-domain";
 import {
   createSignInEventRepoHandlers,
   createEmulationConsentRepoHandlers,
+  CheckOrgExists,
   user as userTable,
   session as sessionTable,
   account as accountTable,
@@ -259,13 +260,7 @@ describe("Emulation consent handlers (integration)", () => {
       ],
     });
 
-    // checkOrgExists: query real DB
-    async function checkOrgExists(orgId: string): Promise<boolean> {
-      const result = await getPool().query("SELECT 1 FROM organization WHERE id = $1 LIMIT 1", [
-        orgId,
-      ]);
-      return result.rows.length > 0;
-    }
+    const checkOrgExists = new CheckOrgExists(getDb(), ctx);
 
     handlers = createEmulationConsentHandlers(repo, ctx, checkOrgExists);
   }, 120_000);

@@ -27,6 +27,7 @@ import type {
 } from "./interfaces/repository/handlers/index.js";
 import type { ISignInThrottleStore } from "./interfaces/repository/sign-in-throttle-store.js";
 import type { ICheckEmailAvailabilityHandler } from "./interfaces/repository/handlers/r/check-email-availability.js";
+import type { ICheckOrgExistsHandler } from "./interfaces/repository/handlers/r/check-org-exists.js";
 import type { Commands, Queries } from "./interfaces/cqrs/handlers/index.js";
 // =============================================================================
 // Infrastructure-layer keys (interfaces defined in auth-app, implemented in auth-infra)
@@ -109,6 +110,12 @@ export const IPurgeExpiredEmulationConsentsKey =
 
 export const ICheckEmailAvailabilityRepoKey = createServiceKey<ICheckEmailAvailabilityHandler>(
   "Auth.Repo.CheckEmailAvailability",
+);
+
+// --- Organization Existence Repository Handler ---
+
+export const ICheckOrgExistsKey = createServiceKey<ICheckOrgExistsHandler>(
+  "Auth.Repo.CheckOrgExists",
 );
 
 // --- Health Check Repository Handler ---

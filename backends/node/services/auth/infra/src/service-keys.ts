@@ -17,5 +17,6 @@ export {
   IFindOrgContactsByOrgIdKey,
   IUpdateOrgContactRecordKey,
   IDeleteOrgContactRecordKey,
+  ICheckOrgExistsKey,
   ISignInThrottleStoreKey,
 } from "@d2/auth-app";

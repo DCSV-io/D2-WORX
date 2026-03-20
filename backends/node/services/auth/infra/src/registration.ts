@@ -25,6 +25,7 @@ import {
   IPurgeExpiredInvitationsKey,
   IPurgeExpiredEmulationConsentsKey,
   ICheckEmailAvailabilityRepoKey,
+  ICheckOrgExistsKey,
 } from "@d2/auth-app";
 import { CreateSignInEvent } from "./repository/handlers/c/create-sign-in-event.js";
 import { FindSignInEventsByUserId } from "./repository/handlers/r/find-sign-in-events-by-user-id.js";
@@ -49,6 +50,7 @@ import { PurgeExpiredInvitations } from "./repository/handlers/d/purge-expired-i
 import { PurgeExpiredEmulationConsents } from "./repository/handlers/d/purge-expired-emulation-consents.js";
 import { PingDb } from "./repository/handlers/r/ping-db.js";
 import { CheckEmailAvailability } from "./repository/handlers/r/check-email-availability.js";
+import { CheckOrgExists } from "./repository/handlers/r/check-org-exists.js";
 
 /**
  * Registers auth infrastructure services (repository handlers) with the DI container.
@@ -64,6 +66,12 @@ export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): v
   services.addTransient(
     ICheckEmailAvailabilityRepoKey,
     (sp) => new CheckEmailAvailability(db, sp.resolve(IHandlerContextKey)),
+  );
+
+  // Organization existence check
+  services.addTransient(
+    ICheckOrgExistsKey,
+    (sp) => new CheckOrgExists(db, sp.resolve(IHandlerContextKey)),
   );
 
   // Sign-in event repo handlers

@@ -42,6 +42,12 @@ export type {
 } from "./r/check-email-availability.js";
 
 export type {
+  CheckOrgExistsInput,
+  CheckOrgExistsOutput,
+  ICheckOrgExistsHandler,
+} from "./r/check-org-exists.js";
+
+export type {
   FindSignInEventsByUserIdInput,
   FindSignInEventsByUserIdOutput,
   IFindSignInEventsByUserIdHandler,

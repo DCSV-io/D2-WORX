@@ -172,9 +172,9 @@ Plus `ISignInThrottleStore` (non-handler interface with 6 methods for Redis key 
 
 ## Service Keys
 
-42 `ServiceKey<T>` tokens organized in two groups:
+43 `ServiceKey<T>` tokens organized in two groups:
 
-- **23 infra-layer keys** — for repository handlers (including `IUpdateUserImageKey`, `IUpdateOrgLogoKey`), PingDb, throttle store, and 4 purge handlers (interfaces defined here, implemented in `@d2/auth-infra`)
+- **24 infra-layer keys** — for repository handlers (including `IUpdateUserImageKey`, `IUpdateOrgLogoKey`, `ICheckOrgExistsKey`), PingDb, throttle store, and 4 purge handlers (interfaces defined here, implemented in `@d2/auth-infra`)
 - **19 app-layer keys** — for CQRS handlers including CheckEmailAvailability, CheckHealth, HandleFileProcessed, and 4 job handlers (typed against handler interfaces, e.g., `Commands.IRecordSignInEventHandler`)
 
 ## AuthJobOptions
@@ -190,10 +190,10 @@ Configuration for scheduled job handlers, provided via `addAuthApp()` (defaults 
 ## DI Registration
 
 ```typescript
-addAuthApp(services: ServiceCollection, options: AddAuthAppOptions, jobOptions?: AuthJobOptions): void
+addAuthApp(services: ServiceCollection, jobOptions?: AuthJobOptions): void
 ```
 
-Registers all 19 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. The `options.checkOrgExists` callback is provided by the composition root. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
+Registers all 19 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. Organization existence checks use the `ICheckOrgExistsHandler` repository handler (registered in auth-infra) via DI. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
 
 ## Handler Implementation Patterns
 

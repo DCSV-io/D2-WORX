@@ -38,6 +38,7 @@ import {
   ICheckSignInThrottleKey,
   ICheckEmailAvailabilityKey,
   ICheckEmailAvailabilityRepoKey,
+  ICheckOrgExistsKey,
   IPingDbKey,
   ICheckHealthKey,
 } from "./service-keys.js";
@@ -91,10 +92,6 @@ export const IAuthAcquireLockKey: ServiceKey<DistributedCache.IAcquireLockHandle
 export const IAuthReleaseLockKey: ServiceKey<DistributedCache.IReleaseLockHandler> =
   createRedisReleaseLockKey("auth");
 
-export interface AddAuthAppOptions {
-  checkOrgExists: (orgId: string) => Promise<boolean>;
-}
-
 /**
  * Registers auth application-layer services (CQRS handlers, notification publishers)
  * with the DI container. Mirrors .NET's `services.AddAuthApp()` pattern.
@@ -103,7 +100,6 @@ export interface AddAuthAppOptions {
  */
 export function addAuthApp(
   services: ServiceCollection,
-  options: AddAuthAppOptions,
   jobOptions: AuthJobOptions = DEFAULT_AUTH_JOB_OPTIONS,
 ): void {
   // --- Command Handlers ---
@@ -127,7 +123,7 @@ export function addAuthApp(
         sp.resolve(ICreateEmulationConsentRecordKey),
         sp.resolve(IFindActiveConsentByUserIdAndOrgKey),
         sp.resolve(IHandlerContextKey),
-        options.checkOrgExists,
+        sp.resolve(ICheckOrgExistsKey),
       ),
   );
 

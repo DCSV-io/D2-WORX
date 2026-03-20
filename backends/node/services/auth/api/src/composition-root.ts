@@ -122,12 +122,6 @@ export async function createApp(
 
   services.addInstance(ISignInThrottleStoreKey, redisSetup.throttleStore);
 
-  // Helper: checks whether an organization exists in BetterAuth's organization table.
-  async function checkOrgExists(orgId: string): Promise<boolean> {
-    const result = await pool.query("SELECT 1 FROM organization WHERE id = $1 LIMIT 1", [orgId]);
-    return result.rows.length > 0;
-  }
-
   // Geo client handlers (gRPC-backed with local caching)
   const geoSetup = addGeoClientHandlers(services, config, serviceContext);
 
@@ -137,7 +131,7 @@ export async function createApp(
 
   // Layer registrations
   addAuthInfra(services, db);
-  addAuthApp(services, { checkOrgExists }, config.jobOptions ?? DEFAULT_AUTH_JOB_OPTIONS);
+  addAuthApp(services, config.jobOptions ?? DEFAULT_AUTH_JOB_OPTIONS);
   addCommsClient(services, { publisher });
 
   // Health check handlers
