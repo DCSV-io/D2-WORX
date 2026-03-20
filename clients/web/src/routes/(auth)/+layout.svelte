@@ -3,6 +3,7 @@
   import ThemeToggle from "$lib/client/components/theme-toggle.svelte";
   import ThemeSelector from "$lib/client/components/theme-selector.svelte";
   import LanguageSelector from "$lib/client/components/layout/language-selector.svelte";
+  import * as m from "$lib/paraglide/messages.js";
 
   let { children } = $props();
 </script>
@@ -25,7 +26,7 @@
         >
           DW
         </div>
-        <span class="text-xl font-semibold">DCSV WORX</span>
+        <span class="text-xl font-semibold">{m.webclient_nav_brand()}</span>
       </a>
     </div>
 

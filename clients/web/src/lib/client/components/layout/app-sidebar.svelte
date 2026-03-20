@@ -5,6 +5,7 @@
   import { resolve } from "$app/paths";
   import * as Sidebar from "$lib/client/components/ui/sidebar/index.js";
   import * as Avatar from "$lib/client/components/ui/avatar/index.js";
+  import * as m from "$lib/paraglide/messages.js";
 
   interface Props {
     orgType?: string;
@@ -13,11 +14,11 @@
 
   let { orgType = "customer", role = "owner" }: Props = $props();
 
-  const navItems = [
-    { label: "Dashboard", href: "/dashboard" as const, icon: LayoutDashboardIcon },
-    { label: "Settings", href: "/settings" as const, icon: SettingsIcon },
-    { label: "Profile", href: "/profile" as const, icon: UserIcon },
-  ];
+  const navItems = $derived([
+    { label: m.common_ui_dashboard(), href: "/dashboard" as const, icon: LayoutDashboardIcon },
+    { label: m.webclient_app_settings_title(), href: "/settings" as const, icon: SettingsIcon },
+    { label: m.webclient_app_profile_title(), href: "/profile" as const, icon: UserIcon },
+  ]);
 </script>
 
 <Sidebar.Sidebar collapsible="icon">
@@ -34,7 +35,7 @@
             DW
           </div>
           <div class="flex flex-col gap-0.5 leading-none">
-            <span class="font-semibold">DCSV WORX</span>
+            <span class="font-semibold">{m.webclient_nav_brand()}</span>
             <span class="text-xs capitalize">{orgType}</span>
           </div>
         </Sidebar.SidebarMenuButton>
@@ -44,7 +45,7 @@
 
   <Sidebar.SidebarContent>
     <Sidebar.SidebarGroup>
-      <Sidebar.SidebarGroupLabel>Navigation</Sidebar.SidebarGroupLabel>
+      <Sidebar.SidebarGroupLabel>{m.webclient_nav_navigation()}</Sidebar.SidebarGroupLabel>
       <Sidebar.SidebarGroupContent>
         <Sidebar.SidebarMenu>
           {#each navItems as item (item.href)}

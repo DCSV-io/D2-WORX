@@ -58,7 +58,7 @@
 </svelte:head>
 
 {#if !dev}
-  <p>Not available in production.</p>
+  <p>{m.webclient_debug_health_not_available()}</p>
 {:else}
   <div class="mx-auto flex max-w-4xl flex-col gap-6 p-6">
     <div class="flex items-center justify-between">
@@ -67,9 +67,9 @@
           <ActivityIcon class="text-muted-foreground size-5" />
         </div>
         <div>
-          <h1 class="text-2xl font-bold">System Health</h1>
+          <h1 class="text-2xl font-bold">{m.webclient_debug_health_title()}</h1>
           <p class="text-muted-foreground text-sm">
-            Dev-only — aggregated health from Gateway &rarr; all services via gRPC
+            {m.webclient_debug_health_dev_description()}
           </p>
         </div>
       </div>
@@ -80,7 +80,7 @@
         disabled={refreshing}
       >
         <RefreshCwIcon class="mr-2 size-4" />
-        {refreshing ? "Refreshing..." : "Refresh"}
+        {refreshing ? m.webclient_debug_health_refreshing() : m.common_ui_refresh()}
       </Button>
     </div>
 
@@ -89,10 +89,10 @@
         <Card.Header>
           <Card.Title class="flex items-center gap-2 text-base text-red-600 dark:text-red-400">
             <CircleXIcon class="size-5" />
-            Gateway Unreachable
+            {m.webclient_debug_health_gateway_unreachable()}
           </Card.Title>
           <Card.Description>
-            Could not connect to the .NET Gateway health endpoint.
+            {m.webclient_debug_health_gateway_unreachable_description()}
           </Card.Description>
         </Card.Header>
         <Card.Content>
@@ -173,7 +173,7 @@
                   {/each}
                 </dl>
               {:else}
-                <p class="text-muted-foreground text-sm italic">No component details</p>
+                <p class="text-muted-foreground text-sm italic">{m.webclient_debug_health_no_component_details()}</p>
               {/if}
             </Card.Content>
           </Card.Root>
@@ -183,7 +183,7 @@
       <!-- Raw JSON -->
       <Card.Root>
         <Card.Header>
-          <Card.Title class="text-base">Raw Response</Card.Title>
+          <Card.Title class="text-base">{m.webclient_debug_health_raw_response()}</Card.Title>
           <Card.Description>
             <code>GET /api/health</code> from .NET Gateway
           </Card.Description>

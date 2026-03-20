@@ -88,21 +88,19 @@
       class="text-muted-foreground hover:text-foreground mb-4 inline-flex items-center gap-1 text-sm"
     >
       <ArrowLeftIcon class="size-4" />
-      Back to Design System
+      {m.webclient_design_back_to_design()}
     </a>
-    <h1 class="text-2xl font-bold tracking-tight">Signup Form</h1>
+    <h1 class="text-2xl font-bold tracking-tight">{m.webclient_design_signup_form_heading()}</h1>
     <p class="text-muted-foreground mt-1 text-sm">
-      Demonstrates password rules, email/password confirmation, show/hide toggle, and async email
-      availability check.
+      {m.webclient_design_signup_form_demo_description()}
     </p>
   </div>
 
   <Card.Root>
     <Card.Header>
-      <Card.Title>Create Account</Card.Title>
+      <Card.Title>{m.auth_sign_up_title()}</Card.Title>
       <Card.Description>
-        Password rules mirror the auth service: min 12 chars, no numeric-only, no date-like
-        patterns.
+        {m.webclient_design_signup_card_description()}
       </Card.Description>
     </Card.Header>
     <Card.Content>
@@ -193,9 +191,9 @@
         <div class="flex justify-end gap-2 pt-2">
           <Button
             variant="outline"
-            type="reset">Reset</Button
+            type="reset">{m.common_ui_reset()}</Button
           >
-          <Button type="submit">Sign Up</Button>
+          <Button type="submit">{m.common_ui_sign_up()}</Button>
         </div>
       </form>
     </Card.Content>

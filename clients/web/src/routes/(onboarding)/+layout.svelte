@@ -56,7 +56,7 @@
         >
           DW
         </div>
-        <span class="text-xl font-semibold">DCSV WORX</span>
+        <span class="text-xl font-semibold">{m.webclient_nav_brand()}</span>
       </a>
     </div>
 

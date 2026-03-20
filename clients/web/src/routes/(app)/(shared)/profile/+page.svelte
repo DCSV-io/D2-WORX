@@ -24,15 +24,15 @@
 </svelte:head>
 
 <div class="space-y-6">
-  <h1 class="text-3xl font-bold tracking-tight">Profile</h1>
+  <h1 class="text-3xl font-bold tracking-tight">{m.webclient_app_profile_title()}</h1>
 
   <Card.Card>
     <Card.CardHeader>
-      <Card.CardTitle>Your Profile</Card.CardTitle>
-      <Card.CardDescription>Manage your personal information.</Card.CardDescription>
+      <Card.CardTitle>{m.webclient_app_profile_your_profile()}</Card.CardTitle>
+      <Card.CardDescription>{m.webclient_app_profile_manage_info()}</Card.CardDescription>
     </Card.CardHeader>
     <Card.CardContent>
-      <p class="text-muted-foreground text-sm">Profile form will be built in Step 10.</p>
+      <p class="text-muted-foreground text-sm">{m.webclient_app_profile_placeholder()}</p>
     </Card.CardContent>
   </Card.Card>
 </div>
