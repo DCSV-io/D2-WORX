@@ -20,8 +20,8 @@ export async function buildGrpcServer(options: GrpcServerOptions): Promise<grpc.
   const { provider, grpcPort, filesApiKeys, logger } = options;
 
   const server = new grpc.Server();
-  const grpcService = createFilesGrpcService(provider);
-  const jobsGrpcService = createFilesJobsGrpcService(provider);
+  const grpcService = createFilesGrpcService(provider, logger);
+  const jobsGrpcService = createFilesJobsGrpcService(provider, logger);
   const publicRpcs = new Set(["checkHealth"]);
 
   if (!filesApiKeys?.length) {

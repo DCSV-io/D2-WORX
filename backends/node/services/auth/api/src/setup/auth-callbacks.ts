@@ -50,7 +50,11 @@ export function createAuthCallbacks(
                 userAgent: data.userAgent,
               },
             )
-            .catch(() => {}); // Fail-open: ipAddress already persisted
+            .catch((err: unknown) =>
+              logger.warn("onSignIn: WhoIs resolution publish failed (fail-open)", {
+                error: err instanceof Error ? err.message : String(err),
+              }),
+            ); // Fail-open: ipAddress already persisted
         }
       } finally {
         scope.dispose();

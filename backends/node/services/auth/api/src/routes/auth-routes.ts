@@ -100,7 +100,11 @@ export function createAuthRoutes(
             identityHash,
             responseStatus: response.status,
           })
-          .catch(() => {});
+          .catch((err: unknown) =>
+            logger?.warn("Throttle record failed (non-blocking)", {
+              error: err instanceof Error ? err.message : String(err),
+            }),
+          );
 
         if (response.status !== 200 && logger) {
           logger.warn("Sign-in attempt failed", {

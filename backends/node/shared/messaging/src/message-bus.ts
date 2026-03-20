@@ -53,7 +53,10 @@ export class MessageBus {
     );
 
     // Prevent unhandled rejection — handler throws are expected (NACK path).
-    consumer.on("error", () => {});
+    // Log consumer errors for operational visibility.
+    consumer.on("error", (err) => {
+      console.error(`[MessageBus] Consumer error on queue "${config.queue}":`, err);
+    });
 
     return {
       ready: new Promise<void>((resolve) => consumer.on("ready", resolve)),
@@ -99,7 +102,10 @@ export class MessageBus {
     );
 
     // Prevent unhandled rejection — handler throws are expected (DROP path with requeue=false).
-    consumer.on("error", () => {});
+    // Log consumer errors for operational visibility.
+    consumer.on("error", (err) => {
+      console.error(`[MessageBus] Enriched consumer error on queue "${config.queue}":`, err);
+    });
 
     return {
       ready: new Promise<void>((resolve) => consumer.on("ready", resolve)),

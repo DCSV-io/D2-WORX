@@ -24,7 +24,7 @@ export async function buildGrpcServer(options: GrpcServerOptions): Promise<grpc.
   const server = new grpc.Server();
   const authGrpcService = createAuthGrpcService(provider);
   const jobsGrpcService = createAuthJobsGrpcService(provider);
-  const fileCallbackService = createFileCallbackGrpcService(provider);
+  const fileCallbackService = createFileCallbackGrpcService(provider, logger);
   const publicRpcs = new Set(["checkHealth"]);
 
   if (!authApiKeys?.length) {

@@ -90,12 +90,14 @@ export class FindWhoIs extends BaseHandler<Input, Output> implements Complex.IFi
             }),
         ),
       );
-    } catch {
+    } catch (err: unknown) {
       // Fail-open: handles gRPC errors AND circuit-open rejections identically.
       // When the circuit is open this returns instantly (no timeout wait).
       // Do not log input.ipAddress directly — it bypasses BaseHandler's redaction.
       if (this.circuitBreaker.state !== CircuitState.OPEN) {
-        this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`);
+        this.context.logger.warn(`gRPC call to Geo service failed. TraceId: ${this.traceId}`, {
+          error: err instanceof Error ? err.message : String(err),
+        });
       }
       return D2Result.ok({ data: { whoIs: undefined } });
     }

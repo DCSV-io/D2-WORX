@@ -83,7 +83,7 @@ async function handleUpload(
   let body: { contentType?: string; displayName?: string; sizeBytes?: number };
   try {
     body = await c.req.json();
-  } catch {
+  } catch (err: unknown) {
     return c.json(
       { success: false, statusCode: 400, messages: ["Invalid JSON body."], data: null },
       400 as ContentfulStatusCode,

@@ -183,10 +183,14 @@ export function createAuth(
                 verificationUrl: rewritten.toString(),
                 token,
               });
-            } catch {
+            } catch (err: unknown) {
               // Fail-open: RabbitMQ down shouldn't crash sign-in/sign-up.
               // BetterAuth awaits this callback — if it throws, the entire flow
               // fails with 500. The user can re-trigger via sign-in (sendOnSignIn: true).
+              // eslint-disable-next-line no-console
+              console.warn("sendVerificationEmail: failed (fail-open)", {
+                error: err instanceof Error ? err.message : String(err),
+              });
             }
           }
         : undefined,
@@ -307,8 +311,13 @@ export function createAuth(
                   [SESSION_FIELDS.ACTIVE_ORG_ROLE]: memberRow?.role ?? null,
                 },
               };
-            } catch {
+            } catch (err: unknown) {
               // DB error — don't block session update. Fields stay null.
+              // eslint-disable-next-line no-console
+              console.warn(
+                "session.update.before: failed to resolve org type/role (fields stay null)",
+                { error: err instanceof Error ? err.message : String(err) },
+              );
               return;
             }
           },
@@ -330,8 +339,12 @@ export function createAuth(
                     userAgent,
                     deviceFingerprint: hooks.getDeviceFingerprintForCurrentRequest?.(),
                   })
-                  .catch(() => {
+                  .catch((err: unknown) => {
                     // Swallow errors — sign-in audit is non-critical
+                    // eslint-disable-next-line no-console
+                    console.warn("session.create.after: onSignIn callback failed (non-critical)", {
+                      error: err instanceof Error ? err.message : String(err),
+                    });
                   });
               }
             }
@@ -393,8 +406,12 @@ export function createAuth(
                   impersonatingEmail = imp.email;
                   impersonatingUsername = imp.username;
                 }
-              } catch {
+              } catch (err: unknown) {
                 // Non-critical — impersonator details are for audit only
+                // eslint-disable-next-line no-console
+                console.debug("definePayload: impersonator lookup failed (non-critical)", {
+                  error: err instanceof Error ? err.message : String(err),
+                });
               }
             }
 

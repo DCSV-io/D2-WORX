@@ -116,7 +116,11 @@ export class GetSignInEvents
           value: { events, total, latestDate: globalLatestDate },
           expirationMs: CACHE_TTL_MS,
         })
-        .catch(() => {});
+        .catch((err: unknown) =>
+          this.context.logger.debug("GetSignInEvents: cache set failed", {
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
     }
 
     return D2Result.ok({ data: { events, total } });

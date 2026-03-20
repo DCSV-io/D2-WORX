@@ -1,6 +1,7 @@
 import * as grpc from "@grpc/grpc-js";
 import type { FileCallbackServer } from "@d2/protos";
 import type { ServiceProvider } from "@d2/di";
+import type { ILogger } from "@d2/logging";
 import { createRpcScope, withTraceContext } from "@d2/service-defaults/grpc";
 import { d2ResultToProto } from "@d2/result-extensions";
 import { IHandleFileProcessedKey } from "@d2/auth-app";
@@ -11,7 +12,10 @@ import { IHandleFileProcessedKey } from "@d2/auth-app";
  *
  * Each RPC creates a DI scope for traceId isolation and fresh handler instances.
  */
-export function createFileCallbackGrpcService(provider: ServiceProvider): FileCallbackServer {
+export function createFileCallbackGrpcService(
+  provider: ServiceProvider,
+  logger: ILogger,
+): FileCallbackServer {
   return {
     onFileProcessed: (call, callback) => {
       return withTraceContext(call, async () => {
@@ -30,7 +34,10 @@ export function createFileCallbackGrpcService(provider: ServiceProvider): FileCa
             result: d2ResultToProto(result),
             success: result.success && (result.data?.success ?? false),
           });
-        } catch {
+        } catch (err: unknown) {
+          logger.error("onFileProcessed RPC failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           callback({
             code: grpc.status.INTERNAL,
             message: "Internal error",

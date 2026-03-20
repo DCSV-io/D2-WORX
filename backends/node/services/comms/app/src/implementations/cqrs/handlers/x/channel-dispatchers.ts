@@ -78,8 +78,12 @@ export function loadEmailWrapper(footerText: string, templatePath?: string): str
   if (templatePath) {
     try {
       return readFileSync(templatePath, "utf-8");
-    } catch {
+    } catch (err: unknown) {
       // File missing or unreadable — fall through to built-in default
+      console.warn(
+        `loadEmailWrapper: failed to read template at "${templatePath}", falling back to default`,
+        { error: err instanceof Error ? err.message : String(err) },
+      );
     }
   }
   return createEmailWrapper(footerText);

@@ -1,6 +1,7 @@
 import * as grpc from "@grpc/grpc-js";
 import type { FilesJobServiceServer } from "@d2/protos";
 import type { ServiceProvider } from "@d2/di";
+import type { ILogger } from "@d2/logging";
 import { createRpcScope, withTraceContext } from "@d2/service-defaults/grpc";
 import { IRunCleanupKey } from "@d2/files-app";
 
@@ -11,7 +12,10 @@ import { IRunCleanupKey } from "@d2/files-app";
  * that doesn't match the standard JobRpcOutput (rowsAffected), so we map
  * the sum of cleaned counts to rowsAffected.
  */
-export function createFilesJobsGrpcService(provider: ServiceProvider): FilesJobServiceServer {
+export function createFilesJobsGrpcService(
+  provider: ServiceProvider,
+  logger: ILogger,
+): FilesJobServiceServer {
   return {
     runCleanup: (call, callback) => {
       return withTraceContext(call, async () => {
@@ -42,7 +46,10 @@ export function createFilesJobsGrpcService(provider: ServiceProvider): FilesJobS
               executedAt: new Date().toISOString(),
             },
           });
-        } catch {
+        } catch (err: unknown) {
+          logger.error("runCleanup RPC failed", {
+            error: err instanceof Error ? err.message : String(err),
+          });
           callback({
             code: grpc.status.INTERNAL,
             message: "Internal error",

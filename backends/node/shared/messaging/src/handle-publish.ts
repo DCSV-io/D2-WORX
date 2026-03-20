@@ -20,9 +20,11 @@ export async function handlePublish<T>(
   try {
     await publisher.send(target, body);
     return D2Result.ok();
-  } catch {
+  } catch (err: unknown) {
     return D2Result.serviceUnavailable({
-      messages: [`Failed to publish to ${target.exchange}/${target.routingKey}.`],
+      messages: [
+        `Failed to publish to ${target.exchange}/${target.routingKey}: ${err instanceof Error ? err.message : String(err)}`,
+      ],
     });
   }
 }

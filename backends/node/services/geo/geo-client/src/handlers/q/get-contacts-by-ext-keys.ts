@@ -92,10 +92,11 @@ export class GetContactsByExtKeys
           },
         );
       });
-    } catch {
+    } catch (err: unknown) {
       // Fail-open: return whatever was cached
       this.context.logger.warn(
         `gRPC call to Geo service failed for GetContactsByExtKeys. TraceId: ${this.traceId}`,
+        { error: err instanceof Error ? err.message : String(err) },
       );
       return D2Result.ok({ data: { data: result } });
     }
