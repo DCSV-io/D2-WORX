@@ -21,6 +21,7 @@
   "common_errors_SERVICE_UNAVAILABLE": "El servicio no está disponible temporalmente. Por favor, inténtalo más tarde.",
   "common_errors_PAYLOAD_TOO_LARGE": "La carga útil de la solicitud es demasiado grande.",
   "common_errors_CANCELLED": "La operación fue cancelada.",
+  "common_errors_SOME_FOUND": "Se encontraron algunos de los elementos solicitados, pero no todos.",
   "common_errors_COULD_NOT_BE_DESERIALIZED": "No se pudo deserializar el valor.",
   "common_errors_COULD_NOT_BE_SERIALIZED": "No se pudo serializar el valor.",
   "comms_errors_DELIVERY_RETRY_SCHEDULED": "La entrega falló en algunos canales. Se ha programado un reintento.",

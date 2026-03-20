@@ -15,6 +15,7 @@ export const TK = {
       PAYLOAD_TOO_LARGE: "common_errors_PAYLOAD_TOO_LARGE",
       REQUEST_FAILED: "common_errors_REQUEST_FAILED",
       SERVICE_UNAVAILABLE: "common_errors_SERVICE_UNAVAILABLE",
+      SOME_FOUND: "common_errors_SOME_FOUND",
       TOO_MANY_REQUESTS: "common_errors_TOO_MANY_REQUESTS",
       UNAUTHORIZED: "common_errors_UNAUTHORIZED",
       UNKNOWN: "common_errors_unknown",

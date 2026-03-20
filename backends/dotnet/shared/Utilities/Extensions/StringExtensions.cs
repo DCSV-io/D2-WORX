@@ -141,25 +141,31 @@ public static partial class StringExtensions
     }
 
     /// <summary>
-    /// Generates a normalized string for hashing by cleaning and lowercasing each part, then
-    /// joining them with a pipe ("|") character.
+    /// Extension methods for string arrays used in hash normalization.
     /// </summary>
     ///
     /// <param name="parts">
     /// The individual values you would like to normalize for hashing.
     /// </param>
-    ///
-    /// <returns>
-    /// A normalized string suitable for hashing.
-    /// </returns>
-    ///
-    /// <example>
-    /// If you enter the values " Test One ", "   ", "TEST3", the resulting string will be
-    /// "testone||test3".
-    /// </example>
-    public static string GetNormalizedStrForHashing(this string?[] parts)
+    extension(string?[] parts)
     {
-        return string.Join("|", parts.Select(x => CleanStr(x)?.ToLowerInvariant() ?? string.Empty));
+        /// <summary>
+        /// Generates a normalized string for hashing by cleaning and lowercasing each part, then
+        /// joining them with a pipe ("|") character.
+        /// </summary>
+        ///
+        /// <returns>
+        /// A normalized string suitable for hashing.
+        /// </returns>
+        ///
+        /// <example>
+        /// If you enter the values " Test One ", "   ", "TEST3", the resulting string will be
+        /// "testone||test3".
+        /// </example>
+        public string GetNormalizedStrForHashing()
+        {
+            return string.Join("|", parts.Select(x => CleanStr(x)?.ToLowerInvariant() ?? string.Empty));
+        }
     }
 
     /// <summary>

@@ -55,6 +55,9 @@ public static class TK
             /// <summary>The operation was cancelled.</summary>
             public const string CANCELLED = "common_errors_CANCELLED";
 
+            /// <summary>Some items were found but not all requested items.</summary>
+            public const string SOME_FOUND = "common_errors_SOME_FOUND";
+
             /// <summary>An unknown or unhandled error occurred.</summary>
             public const string UNKNOWN = "common_errors_unknown";
 

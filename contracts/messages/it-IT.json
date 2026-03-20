@@ -21,6 +21,7 @@
   "common_errors_SERVICE_UNAVAILABLE": "Il servizio è temporaneamente non disponibile. Riprova più tardi.",
   "common_errors_PAYLOAD_TOO_LARGE": "Il payload della richiesta è troppo grande.",
   "common_errors_CANCELLED": "L'operazione è stata annullata.",
+  "common_errors_SOME_FOUND": "Alcuni degli elementi richiesti sono stati trovati, ma non tutti.",
   "common_errors_COULD_NOT_BE_DESERIALIZED": "Il valore non può essere deserializzato.",
   "common_errors_COULD_NOT_BE_SERIALIZED": "Il valore non può essere serializzato.",
   "comms_errors_DELIVERY_RETRY_SCHEDULED": "La consegna non è riuscita su alcuni canali. Un nuovo tentativo è stato programmato.",

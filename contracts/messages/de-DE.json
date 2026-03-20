@@ -21,6 +21,7 @@
   "common_errors_SERVICE_UNAVAILABLE": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuche es später erneut.",
   "common_errors_PAYLOAD_TOO_LARGE": "Die Anfragenutzlast ist zu groß.",
   "common_errors_CANCELLED": "Der Vorgang wurde abgebrochen.",
+  "common_errors_SOME_FOUND": "Einige der angeforderten Elemente wurden gefunden, aber nicht alle.",
   "common_errors_COULD_NOT_BE_DESERIALIZED": "Der Wert konnte nicht deserialisiert werden.",
   "common_errors_COULD_NOT_BE_SERIALIZED": "Der Wert konnte nicht serialisiert werden.",
   "comms_errors_DELIVERY_RETRY_SCHEDULED": "Die Zustellung ist bei einigen Kanälen fehlgeschlagen. Ein erneuter Versuch wurde geplant.",

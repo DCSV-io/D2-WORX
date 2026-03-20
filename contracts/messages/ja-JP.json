@@ -21,6 +21,7 @@
   "common_errors_SERVICE_UNAVAILABLE": "サービスが一時的に利用できません。しばらくしてからもう一度お試しください。",
   "common_errors_PAYLOAD_TOO_LARGE": "リクエストのペイロードが大きすぎます。",
   "common_errors_CANCELLED": "操作がキャンセルされました。",
+  "common_errors_SOME_FOUND": "リクエストされた項目の一部が見つかりましたが、すべてではありません。",
   "common_errors_COULD_NOT_BE_DESERIALIZED": "値をデシリアライズできませんでした。",
   "common_errors_COULD_NOT_BE_SERIALIZED": "値をシリアライズできませんでした。",
   "comms_errors_DELIVERY_RETRY_SCHEDULED": "一部のチャネルで配信に失敗しました。再試行がスケジュールされました。",

@@ -164,11 +164,7 @@ public static partial class ProtoExtensions
                     LogGrpcTransportFailure(logger, ex, ex.StatusCode, traceId);
                 }
 
-                return D2Result<TData>.Fail(
-                    ["Service is unavailable."],
-                    HttpStatusCode.ServiceUnavailable,
-                    errorCode: ErrorCodes.SERVICE_UNAVAILABLE,
-                    traceId: traceId);
+                return D2Result<TData>.ServiceUnavailable(traceId: traceId);
             }
             catch (Exception ex)
             {

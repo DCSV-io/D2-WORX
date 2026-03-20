@@ -411,6 +411,7 @@ public class D2Result<TData> : D2Result
         List<string>? messages = null,
         string? traceId = null)
     {
+        messages ??= ["common_errors_SOME_FOUND"];
         return new(
             false,
             data,

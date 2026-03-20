@@ -21,6 +21,7 @@
   "common_errors_SERVICE_UNAVAILABLE": "Le service est temporairement indisponible. Veuillez réessayer plus tard.",
   "common_errors_PAYLOAD_TOO_LARGE": "La charge utile de la requête est trop volumineuse.",
   "common_errors_CANCELLED": "L'opération a été annulée.",
+  "common_errors_SOME_FOUND": "Certains des éléments demandés ont été trouvés, mais pas tous.",
   "common_errors_COULD_NOT_BE_DESERIALIZED": "La valeur n'a pas pu être désérialisée.",
   "common_errors_COULD_NOT_BE_SERIALIZED": "La valeur n'a pas pu être sérialisée.",
   "comms_errors_DELIVERY_RETRY_SCHEDULED": "La livraison a échoué sur certains canaux. Une nouvelle tentative est programmée.",
