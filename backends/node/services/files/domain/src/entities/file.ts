@@ -83,12 +83,12 @@ export function createFile(input: CreateFileInput): File {
   if (!uploaderUserId) {
     throw new FilesValidationError("File", "uploaderUserId", input.uploaderUserId, "is required.");
   }
-  if (uploaderUserId.length > 36) {
+  if (uploaderUserId.length > FILES_FIELD_LIMITS.MAX_UPLOADER_USER_ID_LENGTH) {
     throw new FilesValidationError(
       "File",
       "uploaderUserId",
       `(${uploaderUserId.length} chars)`,
-      "must not exceed 36 characters.",
+      `must not exceed ${FILES_FIELD_LIMITS.MAX_UPLOADER_USER_ID_LENGTH} characters.`,
     );
   }
 

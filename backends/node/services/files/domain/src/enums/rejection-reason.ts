@@ -12,6 +12,7 @@ export const REJECTION_REASONS = [
   "content_moderation_failed",
   "processing_timeout",
   "corrupt_file",
+  "virus_detected",
 ] as const;
 
 export type RejectionReason = (typeof REJECTION_REASONS)[number];
