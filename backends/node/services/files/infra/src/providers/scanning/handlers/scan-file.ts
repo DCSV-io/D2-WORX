@@ -29,7 +29,9 @@ export class ScanFile extends BaseHandler<I, O> implements IScanFile {
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
     try {
       const response = await this.sendToClam(input.buffer);
-      const responseStr = response.toString("utf8").trim();
+      // ClamAV responses are null-terminated (e.g., "stream: OK\0").
+      // Strip null bytes and whitespace before parsing.
+      const responseStr = response.toString("utf8").replace(/\0/g, "").trim();
 
       if (responseStr.endsWith("OK")) {
         return D2Result.ok({ data: { clean: true } });

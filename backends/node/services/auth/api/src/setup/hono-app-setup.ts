@@ -93,9 +93,18 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
   );
   app.use("*", createRequestEnrichmentMiddleware(findWhoIs, undefined, logger));
   if (config.authApiKeys?.length) {
-    app.use("*", createServiceKeyMiddleware(config.authApiKeys, { require: true }));
+    // BetterAuth routes (/api/auth/*) are public (JWKS, sign-in, sign-up, etc.) —
+    // other services must fetch JWKS without an API key. Only non-auth routes
+    // (custom endpoints: emulation, org contacts, invitations) require S2S trust.
+    const serviceKeyMiddleware = createServiceKeyMiddleware(config.authApiKeys, { require: true });
+    app.use("*", async (c, next) => {
+      if (c.req.path.startsWith("/api/auth/")) {
+        return next();
+      }
+      return serviceKeyMiddleware(c, next);
+    });
     logger.info(
-      `Auth API service key authentication enabled (${config.authApiKeys.length} key(s), required)`,
+      `Auth API service key authentication enabled (${config.authApiKeys.length} key(s), required — /api/auth/* exempt)`,
     );
   } else {
     logger.warn("Auth API started WITHOUT service key requirement — all requests accepted");

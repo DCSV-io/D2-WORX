@@ -688,6 +688,9 @@ importers:
 
   backends/node/services/e2e:
     devDependencies:
+      '@aws-sdk/client-s3':
+        specifier: 3.821.0
+        version: 3.821.0
       '@d2/auth-api':
         specifier: workspace:*
         version: link:../auth/api
@@ -724,12 +727,27 @@ importers:
       '@d2/dkron-mgr':
         specifier: workspace:*
         version: link:../dkron-mgr
+      '@d2/files-api':
+        specifier: workspace:*
+        version: link:../files/api
+      '@d2/files-app':
+        specifier: workspace:*
+        version: link:../files/app
+      '@d2/files-domain':
+        specifier: workspace:*
+        version: link:../files/domain
+      '@d2/files-infra':
+        specifier: workspace:*
+        version: link:../files/infra
       '@d2/geo-client':
         specifier: workspace:*
         version: link:../geo/geo-client
       '@d2/handler':
         specifier: workspace:*
         version: link:../../shared/handler
+      '@d2/jwt-auth':
+        specifier: workspace:*
+        version: link:../../shared/jwt-auth
       '@d2/logging':
         specifier: workspace:*
         version: link:../../shared/logging
@@ -748,6 +766,9 @@ importers:
       '@d2/utilities':
         specifier: workspace:*
         version: link:../../shared/utilities
+      '@grpc/grpc-js':
+        specifier: 1.14.3
+        version: 1.14.3
       '@hono/node-server':
         specifier: 1.19.9
         version: 1.19.9(hono@4.12.3)

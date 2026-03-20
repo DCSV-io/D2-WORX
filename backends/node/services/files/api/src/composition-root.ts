@@ -64,6 +64,8 @@ export interface FilesServiceConfig {
   readonly jwksUrl: string;
   readonly jwtIssuer: string;
   readonly jwtAudience: string;
+  /** Disable fingerprint check for test environments. Default: true. */
+  readonly fingerprintCheck?: boolean;
   // Geo client (for request enrichment + WhoIs)
   readonly geoAddress?: string;
   readonly geoApiKey?: string;
@@ -265,6 +267,7 @@ export async function createFilesApp(
       jwksUrl: config.jwksUrl,
       jwtIssuer: config.jwtIssuer,
       jwtAudience: config.jwtAudience,
+      fingerprintCheck: config.fingerprintCheck,
     },
     contextKeyConfigs,
     findWhoIs,

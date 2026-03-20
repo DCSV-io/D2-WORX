@@ -4,9 +4,16 @@ import { bodyLimit } from "hono/body-limit";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { ServiceProvider } from "@d2/di";
 import type { ILogger } from "@d2/logging";
+import { ILoggerKey } from "@d2/logging";
 import { D2Result } from "@d2/result";
 import { jwtAuth } from "@d2/jwt-auth";
-import { createServiceScope, IRequestContextKey } from "@d2/handler";
+import {
+  HandlerContext,
+  IHandlerContextKey,
+  IRequestContextKey,
+  requestContextStorage,
+  requestLoggerStorage,
+} from "@d2/handler";
 import type { IRequestContext } from "@d2/handler";
 import type { FindWhoIs } from "@d2/geo-client";
 import type { CheckRateLimit } from "@d2/ratelimit";
@@ -28,6 +35,8 @@ export interface HonoAppOptions {
     jwksUrl: string;
     jwtIssuer: string;
     jwtAudience: string;
+    /** Disable fingerprint check for test environments. Default: true. */
+    fingerprintCheck?: boolean;
   };
   contextKeyConfigs: ContextKeyConfigMap;
   findWhoIs?: FindWhoIs;
@@ -130,7 +139,7 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
       jwksUrl: config.jwksUrl,
       issuer: config.jwtIssuer,
       audience: config.jwtAudience,
-      fingerprintCheck: true,
+      fingerprintCheck: config.fingerprintCheck !== false,
     }),
   );
 
@@ -164,8 +173,17 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
       isHosting: enrichedContext?.isHosting,
     };
 
-    const scope = createServiceScope(provider);
+    // Build scope manually (NOT createServiceScope which injects unauthenticated defaults).
+    // The JWT-derived context must be injected BEFORE HandlerContext is created.
+    const scope = provider.createScope();
+    const resolvedLogger = provider.resolve(ILoggerKey);
     scope.setInstance(IRequestContextKey, requestContext);
+    scope.setInstance(IHandlerContextKey, new HandlerContext(requestContext, resolvedLogger));
+
+    // Set ambient scope so pre-auth singletons see per-request context
+    requestContextStorage.enterWith(requestContext);
+    requestLoggerStorage.enterWith(resolvedLogger);
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (c as any).set(SCOPE_KEY, scope);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
