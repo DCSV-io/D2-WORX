@@ -190,7 +190,9 @@
               onclick={addressLines.toggleExtraLines}
               class="text-muted-foreground hover:text-foreground text-sm"
             >
-              {addressLines.showExtraLines ? m.webclient_design_address_fewer() : m.webclient_design_address_more()}
+              {addressLines.showExtraLines
+                ? m.webclient_design_address_fewer()
+                : m.webclient_design_address_more()}
             </button>
           {/snippet}
         </FormInput>

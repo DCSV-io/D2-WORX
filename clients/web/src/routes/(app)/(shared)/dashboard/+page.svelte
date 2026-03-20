@@ -30,30 +30,42 @@
     <Card.Card>
       <Card.CardHeader>
         <Card.CardTitle>{m.webclient_app_dashboard_overview()}</Card.CardTitle>
-        <Card.CardDescription>{m.webclient_app_dashboard_overview_description()}</Card.CardDescription>
+        <Card.CardDescription
+          >{m.webclient_app_dashboard_overview_description()}</Card.CardDescription
+        >
       </Card.CardHeader>
       <Card.CardContent>
-        <p class="text-muted-foreground text-sm">{m.webclient_app_dashboard_overview_placeholder()}</p>
+        <p class="text-muted-foreground text-sm">
+          {m.webclient_app_dashboard_overview_placeholder()}
+        </p>
       </Card.CardContent>
     </Card.Card>
 
     <Card.Card>
       <Card.CardHeader>
         <Card.CardTitle>{m.webclient_app_dashboard_recent_activity()}</Card.CardTitle>
-        <Card.CardDescription>{m.webclient_app_dashboard_recent_activity_description()}</Card.CardDescription>
+        <Card.CardDescription
+          >{m.webclient_app_dashboard_recent_activity_description()}</Card.CardDescription
+        >
       </Card.CardHeader>
       <Card.CardContent>
-        <p class="text-muted-foreground text-sm">{m.webclient_app_dashboard_recent_activity_placeholder()}</p>
+        <p class="text-muted-foreground text-sm">
+          {m.webclient_app_dashboard_recent_activity_placeholder()}
+        </p>
       </Card.CardContent>
     </Card.Card>
 
     <Card.Card>
       <Card.CardHeader>
         <Card.CardTitle>{m.webclient_app_dashboard_quick_actions()}</Card.CardTitle>
-        <Card.CardDescription>{m.webclient_app_dashboard_quick_actions_description()}</Card.CardDescription>
+        <Card.CardDescription
+          >{m.webclient_app_dashboard_quick_actions_description()}</Card.CardDescription
+        >
       </Card.CardHeader>
       <Card.CardContent>
-        <p class="text-muted-foreground text-sm">{m.webclient_app_dashboard_quick_actions_placeholder()}</p>
+        <p class="text-muted-foreground text-sm">
+          {m.webclient_app_dashboard_quick_actions_placeholder()}
+        </p>
       </Card.CardContent>
     </Card.Card>
   </div>

@@ -36,9 +36,7 @@ export async function handleGrpcCall<TResponse, TData>(
       });
     }
     return D2Result.unhandledException<TData>({
-      messages: [
-        `gRPC call failed: ${err instanceof Error ? err.message : String(err)}`,
-      ],
+      messages: [`gRPC call failed: ${err instanceof Error ? err.message : String(err)}`],
     });
   }
 }

@@ -64,14 +64,12 @@ export class CheckEmailAvailability
 
     // 1. Check in-memory cache (fail-open on error)
     if (this.cache) {
-      const cached = await this.cache.get
-        .handleAsync({ key: cacheKey })
-        .catch((err: unknown) => {
-          this.context.logger.debug("CheckEmailAvailability: cache get failed", {
-            error: err instanceof Error ? err.message : String(err),
-          });
-          return undefined;
+      const cached = await this.cache.get.handleAsync({ key: cacheKey }).catch((err: unknown) => {
+        this.context.logger.debug("CheckEmailAvailability: cache get failed", {
+          error: err instanceof Error ? err.message : String(err),
         });
+        return undefined;
+      });
       if (cached?.success && cached.data) {
         return D2Result.ok({ data: { available: cached.data.value } });
       }

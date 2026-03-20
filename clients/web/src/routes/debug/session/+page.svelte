@@ -160,7 +160,9 @@
               </div>
             </dl>
           {:else}
-            <p class="text-muted-foreground text-sm italic">{m.webclient_debug_session_no_session()}</p>
+            <p class="text-muted-foreground text-sm italic">
+              {m.webclient_debug_session_no_session()}
+            </p>
           {/if}
         </Card.Content>
       </Card.Root>
@@ -202,7 +204,9 @@
               </div>
             </dl>
           {:else}
-            <p class="text-muted-foreground text-sm italic">{m.webclient_debug_session_no_user()}</p>
+            <p class="text-muted-foreground text-sm italic">
+              {m.webclient_debug_session_no_user()}
+            </p>
           {/if}
         </Card.Content>
       </Card.Root>
@@ -297,7 +301,9 @@
               </div>
             </dl>
           {:else}
-            <p class="text-muted-foreground text-sm italic">{m.webclient_debug_session_no_request_context()}</p>
+            <p class="text-muted-foreground text-sm italic">
+              {m.webclient_debug_session_no_request_context()}
+            </p>
           {/if}
         </Card.Content>
       </Card.Root>
@@ -385,7 +391,9 @@
               </div>
             </dl>
           {:else}
-            <p class="text-muted-foreground text-sm italic">{m.webclient_debug_session_no_request_context()}</p>
+            <p class="text-muted-foreground text-sm italic">
+              {m.webclient_debug_session_no_request_context()}
+            </p>
           {/if}
         </Card.Content>
       </Card.Root>
@@ -492,7 +500,9 @@
               {/each}
             </ul>
           {:else}
-            <p class="text-muted-foreground text-sm italic">{m.webclient_debug_session_no_cookies()}</p>
+            <p class="text-muted-foreground text-sm italic">
+              {m.webclient_debug_session_no_cookies()}
+            </p>
           {/if}
         </Card.Content>
       </Card.Root>
@@ -522,7 +532,9 @@
                     2,
                   )}</pre>
               {:else}
-                <p class="text-muted-foreground text-sm italic">{m.webclient_debug_session_no_session_returned()}</p>
+                <p class="text-muted-foreground text-sm italic">
+                  {m.webclient_debug_session_no_session_returned()}
+                </p>
               {/if}
             </div>
             <div>

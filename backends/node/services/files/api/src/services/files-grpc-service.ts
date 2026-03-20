@@ -9,7 +9,10 @@ import { ICheckHealthKey } from "@d2/files-app";
  * Creates the FilesServiceServer implementation.
  * Each RPC handler creates a DI scope, resolves its handler(s), and disposes when done.
  */
-export function createFilesGrpcService(provider: ServiceProvider, logger: ILogger): FilesServiceServer {
+export function createFilesGrpcService(
+  provider: ServiceProvider,
+  logger: ILogger,
+): FilesServiceServer {
   return {
     checkHealth: (call, callback) => {
       return withTraceContext(call, async () => {

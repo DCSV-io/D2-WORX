@@ -173,7 +173,9 @@
                   {/each}
                 </dl>
               {:else}
-                <p class="text-muted-foreground text-sm italic">{m.webclient_debug_health_no_component_details()}</p>
+                <p class="text-muted-foreground text-sm italic">
+                  {m.webclient_debug_health_no_component_details()}
+                </p>
               {/if}
             </Card.Content>
           </Card.Root>

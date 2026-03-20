@@ -15,9 +15,8 @@
 
   {#if page.error?.traceId}
     <p class="text-muted-foreground mt-2 text-sm">
-      {m.webclient_error_reference()} <code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs"
-        >{page.error.traceId}</code
-      >
+      {m.webclient_error_reference()}
+      <code class="bg-muted rounded px-1.5 py-0.5 font-mono text-xs">{page.error.traceId}</code>
     </p>
   {/if}
 

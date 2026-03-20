@@ -390,6 +390,7 @@ describe("jwtAuth middleware", () => {
     ctx: {
       req: { header: (name: string) => string | undefined };
       json: (body: unknown, status: number) => Response;
+      get: (key: string) => unknown;
       set: (key: string, value: unknown) => void;
     };
     getSetValues: () => Record<string, unknown>;
@@ -410,6 +411,7 @@ describe("jwtAuth middleware", () => {
           status,
           headers: { "Content-Type": "application/json" },
         }),
+      get: (key: string) => setValues[key],
       set: (key: string, value: unknown) => {
         setValues[key] = value;
       },
@@ -493,7 +495,7 @@ describe("jwtAuth middleware", () => {
     const body = await response!.json();
     expect(body.success).toBe(false);
     expect(body.statusCode).toBe(401);
-    expect(body.messages).toEqual(expect.arrayContaining([expect.stringMatching(/expired/i)]));
+    expect(body.messages).toEqual(expect.arrayContaining([expect.stringContaining("Unauthorized")]));
   });
 
   it("passes and populates requestContext for a valid token", async () => {
@@ -571,6 +573,6 @@ describe("jwtAuth middleware", () => {
     const body = await response!.json();
     expect(body.success).toBe(false);
     expect(body.statusCode).toBe(401);
-    expect(body.messages).toEqual(expect.arrayContaining([expect.stringContaining("Fingerprint")]));
+    expect(body.messages).toEqual(expect.arrayContaining([expect.stringContaining("Unauthorized")]));
   });
 });
