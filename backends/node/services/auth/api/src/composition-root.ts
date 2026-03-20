@@ -97,8 +97,8 @@ export async function createApp(
       isAgentAdmin: false,
       isTargetingStaff: false,
       isTargetingAdmin: false,
-      isOrgEmulating: false,
-      isUserImpersonating: false,
+      isOrgEmulating: null,
+      isUserImpersonating: null,
     },
     logger,
   );
@@ -207,6 +207,7 @@ export async function createApp(
       corsOrigins: config.corsOrigins,
       authApiKeys: config.authApiKeys,
       baseUrl: config.baseUrl,
+      emailBaseUrl: config.emailBaseUrl,
     },
     findWhoIs: preAuth.findWhoIs,
     rateLimitCheck: preAuth.rateLimitCheck,
@@ -216,6 +217,7 @@ export async function createApp(
     fingerprintStorage,
     deviceFingerprintStorage,
     sessionFingerprintMiddleware,
+    translator,
     logger,
     db,
   });

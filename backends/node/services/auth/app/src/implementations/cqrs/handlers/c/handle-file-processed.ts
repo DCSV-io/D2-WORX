@@ -1,6 +1,7 @@
 import { BaseHandler, type IHandlerContext } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { z } from "zod";
+import { AUTH_FILE_CONTEXT_KEYS } from "@d2/auth-domain";
 import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
 import type { IUpdateUserImageHandler } from "../../../../interfaces/repository/handlers/u/update-user-image.js";
 import type { IUpdateOrgLogoHandler } from "../../../../interfaces/repository/handlers/u/update-org-logo.js";
@@ -58,7 +59,7 @@ export class HandleFileProcessed
 
     // Ready files — update the owning entity's image/logo field.
     switch (input.contextKey) {
-      case "user_avatar": {
+      case AUTH_FILE_CONTEXT_KEYS.USER_AVATAR: {
         const result = await this.updateUserImage.handleAsync({
           userId: input.relatedEntityId,
           image: input.fileId,
@@ -67,7 +68,7 @@ export class HandleFileProcessed
         break;
       }
 
-      case "org_logo": {
+      case AUTH_FILE_CONTEXT_KEYS.ORG_LOGO: {
         const result = await this.updateOrgLogo.handleAsync({
           orgId: input.relatedEntityId,
           logo: input.fileId,
@@ -76,11 +77,11 @@ export class HandleFileProcessed
         break;
       }
 
-      case "org_document":
+      case AUTH_FILE_CONTEXT_KEYS.ORG_DOCUMENT:
         // Documents don't have an entity field to update — just ack.
         break;
 
-      case "thread_attachment":
+      case AUTH_FILE_CONTEXT_KEYS.THREAD_ATTACHMENT:
         // Thread attachments are owned by Comms service — Auth has no entity to update.
         this.context.logger.info("Thread attachment callback received — no Auth action needed", {
           fileId: input.fileId,

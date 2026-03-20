@@ -71,7 +71,8 @@ export function createNotificationConsumer(deps: NotificationConsumerDeps) {
       if (!parseResult.success) {
         logger.warn("Invalid notification message — validation failed, dropping", {
           errors: parseResult.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
-          body: msg.body,
+          correlationId: (msg.body as Record<string, unknown>)?.correlationId,
+          senderService: (msg.body as Record<string, unknown>)?.senderService,
         });
         return ConsumerResult.ACK;
       }
@@ -124,7 +125,15 @@ async function scheduleRetry(
   const tierQueue = getRetryTierQueue(retryCount);
 
   if (tierQueue === null) {
-    logger.error("Max retry attempts reached, dropping message", { retryCount, body }, error);
+    logger.error(
+      "Max retry attempts reached, dropping message",
+      {
+        retryCount,
+        correlationId: (body as Record<string, unknown>)?.correlationId,
+        senderService: (body as Record<string, unknown>)?.senderService,
+      },
+      error,
+    );
     return;
   }
 

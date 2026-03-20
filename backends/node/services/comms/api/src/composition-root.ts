@@ -70,8 +70,8 @@ export async function createCommsService(config: CommsServiceConfig) {
       isAgentAdmin: false,
       isTargetingStaff: false,
       isTargetingAdmin: false,
-      isOrgEmulating: false,
-      isUserImpersonating: false,
+      isOrgEmulating: null,
+      isUserImpersonating: null,
     },
     logger,
   );

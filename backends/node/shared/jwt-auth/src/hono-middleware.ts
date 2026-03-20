@@ -1,5 +1,6 @@
 import type { Context, MiddlewareHandler } from "hono";
 import type { JWTVerifyGetKey } from "jose";
+import type { IRequestContext } from "@d2/handler";
 import { createJwksProvider } from "./jwks-provider.js";
 import { verifyToken } from "./verify-token.js";
 import { checkFingerprint } from "./fingerprint-check.js";
@@ -69,9 +70,12 @@ export function jwtAuth(options: JwtAuthOptions): MiddlewareHandler {
       }
     }
 
-    // Populate IRequestContext from JWT claims
-    const requestContext = populateRequestContext(payload);
-    c.set("requestContext", requestContext);
+    // Populate IRequestContext from JWT claims, merging with any upstream context
+    // (e.g., clientIp, traceId, serverFingerprint from request enrichment middleware)
+    const existingContext = c.get("requestContext") as Partial<IRequestContext> | undefined;
+    const jwtContext = populateRequestContext(payload);
+    const mergedContext: IRequestContext = { ...existingContext, ...jwtContext };
+    c.set("requestContext", mergedContext);
 
     await next();
   };

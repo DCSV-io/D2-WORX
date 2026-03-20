@@ -91,6 +91,21 @@ export const GEO_CONTEXT_KEYS = {
   ORG_INVITATION: "auth_org_invitation",
 } as const;
 
+/**
+ * Context keys used by the auth service for file uploads via the Files service.
+ * These must match the context key configs registered on the Files service side.
+ */
+export const AUTH_FILE_CONTEXT_KEYS = {
+  /** User avatar image. */
+  USER_AVATAR: "user_avatar",
+  /** Organization logo image. */
+  ORG_LOGO: "org_logo",
+  /** Organization document. */
+  ORG_DOCUMENT: "org_document",
+  /** Conversational thread attachment (owned by Comms, but callback routed through Auth). */
+  THREAD_ATTACHMENT: "thread_attachment",
+} as const;
+
 export const SIGN_IN_THROTTLE = {
   /** Number of failed attempts before delays begin. */
   FREE_ATTEMPTS: 3,

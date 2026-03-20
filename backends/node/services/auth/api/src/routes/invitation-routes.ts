@@ -2,7 +2,8 @@ import { Hono } from "hono";
 import { eq } from "drizzle-orm";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { D2Result, HttpStatusCode } from "@d2/result";
-import { TK } from "@d2/i18n";
+import { TK, resolveLocale } from "@d2/i18n";
+import type { Translator } from "@d2/i18n";
 import { ILoggerKey } from "@d2/logging";
 import { SESSION_FIELDS, GEO_CONTEXT_KEYS, ROLES, type Role } from "@d2/auth-domain";
 import { INotifyKey } from "@d2/comms-client";
@@ -44,7 +45,17 @@ const MAX_PHONE = 20;
  *   5. Publish invitation email event with inviteeUserId or inviteeContactId
  *   6. Return { invitationId }
  */
-export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: string) {
+export interface InvitationRoutesOptions {
+  auth: Auth;
+  db: NodePgDatabase;
+  baseUrl: string;
+  translator: Translator;
+  /** Public-facing base URL for email links. Falls back to baseUrl if not set. */
+  emailBaseUrl?: string;
+}
+
+export function createInvitationRoutes(options: InvitationRoutesOptions) {
+  const { auth, db, baseUrl, translator, emailBaseUrl } = options;
   const app = new Hono<{ Variables: SessionVariables & ScopeVariables }>();
 
   app.post("/api/invitations", requireOrg(), requireRole("officer"), async (c) => {
@@ -53,9 +64,9 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     // 1. Validate input
     const email = (body.email as string | undefined)?.trim();
     const role = body.role as string | undefined;
-    const firstName = ((body.firstName as string) ?? "").slice(0, MAX_FIRST_NAME);
-    const lastName = ((body.lastName as string) ?? "").slice(0, MAX_LAST_NAME);
-    const phone = ((body.phone as string) ?? "").slice(0, MAX_PHONE);
+    const firstName = ((body.firstName as string) ?? "").trim();
+    const lastName = ((body.lastName as string) ?? "").trim();
+    const phone = ((body.phone as string) ?? "").trim();
 
     if (!email || !role) {
       const inputErrors: [string, ...string[]][] = [];
@@ -70,6 +81,26 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
         }),
         400 as ContentfulStatusCode,
       );
+    }
+
+    // Reject inputs exceeding max length instead of silently truncating
+    {
+      const lengthErrors: [string, ...string[]][] = [];
+      if (firstName.length > MAX_FIRST_NAME) {
+        lengthErrors.push(["firstName", TK.common.errors.VALIDATION_FAILED]);
+      }
+      if (lastName.length > MAX_LAST_NAME) {
+        lengthErrors.push(["lastName", TK.common.errors.VALIDATION_FAILED]);
+      }
+      if (phone.length > MAX_PHONE) {
+        lengthErrors.push(["phone", TK.common.errors.VALIDATION_FAILED]);
+      }
+      if (lengthErrors.length > 0) {
+        return c.json(
+          D2Result.validationFailed({ inputErrors: lengthErrors }),
+          400 as ContentfulStatusCode,
+        );
+      }
     }
 
     const session = c.get(SESSION_KEY)!;
@@ -177,7 +208,9 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     const orgName = orgs[0]?.name ?? "the organization";
 
     // 6. Send invitation notification via comms-client
-    const invitationUrl = `${baseUrl}/api/auth/organization/accept-invitation?invitationId=${invitationId}`;
+    // Use emailBaseUrl for public-facing links (falls back to baseUrl)
+    const linkBase = emailBaseUrl ?? baseUrl;
+    const invitationUrl = `${linkBase}/api/auth/organization/accept-invitation?invitationId=${invitationId}`;
     const inviterName = inviter.name ?? "Someone";
 
     // Resolve the recipient contactId — either from the Geo contact we just created,
@@ -197,11 +230,30 @@ export function createInvitationRoutes(auth: Auth, db: NodePgDatabase, baseUrl: 
     if (recipientContactId) {
       const scope3 = c.get(SCOPE_KEY);
       const notifier = scope3.resolve(INotifyKey);
+      const t = translator.t;
+      const locale = resolveLocale(undefined);
+      const interpolation = {
+        orgName,
+        inviterName,
+        inviterEmail: inviter.email,
+        role: role as string,
+        url: invitationUrl,
+      };
+
       await notifier.handleAsync({
         recipientContactId,
-        title: `You've been invited to join ${orgName}`,
-        content: `Hi,\n\n${inviterName} (${inviter.email}) has invited you to join **${orgName}** as **${role}**.\n\nClick below to accept:\n\n[Accept Invitation](${invitationUrl})`,
-        plaintext: `${inviterName} (${inviter.email}) has invited you to join ${orgName} as ${role}. Accept at: ${invitationUrl}`,
+        title: t(locale, "auth_email_invitation_subject", interpolation),
+        content: [
+          t(locale, "auth_email_invitation_greeting"),
+          "",
+          t(locale, "auth_email_invitation_body", interpolation),
+          "",
+          `[${t(locale, "auth_email_invitation_action")}](${invitationUrl})`,
+          "",
+          t(locale, "auth_email_link_fallback"),
+          invitationUrl,
+        ].join("\n"),
+        plaintext: t(locale, "auth_email_invitation_plaintext", interpolation),
         sensitive: true,
         correlationId: invitationId,
         senderService: "auth",

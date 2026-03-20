@@ -12,6 +12,7 @@ import type {
   RecordSignInOutcome,
   CheckEmailAvailability,
 } from "@d2/auth-app";
+import type { Translator } from "@d2/i18n";
 import type { Auth } from "@d2/auth-infra";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { createCorsMiddleware } from "../middleware/cors.js";
@@ -42,7 +43,9 @@ export interface HonoAppOptions {
     corsOrigins: string[];
     authApiKeys?: string[];
     baseUrl: string;
+    emailBaseUrl?: string;
   };
+  translator: Translator;
   findWhoIs: FindWhoIs;
   rateLimitCheck: CheckRateLimit;
   throttleCheck: CheckSignInThrottle;
@@ -71,6 +74,7 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
     fingerprintStorage,
     deviceFingerprintStorage,
     sessionFingerprintMiddleware,
+    translator,
     logger,
     db,
   } = options;
@@ -148,7 +152,16 @@ export function buildHonoApp(options: HonoAppOptions): Hono {
   protectedRoutes.use("*", createCsrfMiddleware(config.corsOrigins));
   protectedRoutes.route("/", createEmulationRoutes());
   protectedRoutes.route("/", createOrgContactRoutes());
-  protectedRoutes.route("/", createInvitationRoutes(auth, db, config.baseUrl));
+  protectedRoutes.route(
+    "/",
+    createInvitationRoutes({
+      auth,
+      db,
+      baseUrl: config.baseUrl,
+      translator,
+      emailBaseUrl: config.emailBaseUrl,
+    }),
+  );
   app.route("/", protectedRoutes);
 
   return app;
