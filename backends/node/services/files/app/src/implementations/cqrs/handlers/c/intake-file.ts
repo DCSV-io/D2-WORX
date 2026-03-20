@@ -67,13 +67,19 @@ export class IntakeFile extends BaseHandler<Input, Output> implements Commands.I
           declaredSize: file.sizeBytes,
           actualSize,
         });
-        await this.storage.delete.handleAsync({
+        const deleteResult = await this.storage.delete.handleAsync({
           key: buildRawStorageKey(file),
         });
+        if (!deleteResult.success) {
+          this.context.logger.warn("IntakeFile: failed to delete oversized object from storage", {
+            fileId: input.fileId,
+          });
+        }
         const rejectedFile = transitionFileStatus(file, "rejected", {
           rejectionReason: "size_mismatch",
         });
-        await this.repo.update.handleAsync({ file: rejectedFile });
+        const rejectUpdateResult = await this.repo.update.handleAsync({ file: rejectedFile });
+        if (!rejectUpdateResult.success) return D2Result.bubbleFail(rejectUpdateResult);
         return D2Result.ok({ data: { discarded: true, reason: "size_mismatch" } });
       }
     }

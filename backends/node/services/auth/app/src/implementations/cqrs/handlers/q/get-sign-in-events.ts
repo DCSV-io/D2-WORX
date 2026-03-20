@@ -99,8 +99,10 @@ export class GetSignInEvents
       this.getLatestEventDate.handleAsync({ userId: input.userId }),
     ]);
 
-    const events = findResult.success ? (findResult.data?.events ?? []) : [];
-    const total = countResult.success ? (countResult.data?.count ?? 0) : 0;
+    if (!findResult.success) return D2Result.bubbleFail(findResult);
+    if (!countResult.success) return D2Result.bubbleFail(countResult);
+    const events = findResult.data?.events ?? [];
+    const total = countResult.data?.count ?? 0;
 
     // Populate cache with the globally most-recent event date (not the page's first event).
     // This ensures the staleness check works for ALL pages, including those with offset > 0.

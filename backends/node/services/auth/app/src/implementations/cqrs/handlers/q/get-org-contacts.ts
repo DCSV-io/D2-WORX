@@ -53,11 +53,12 @@ export class GetOrgContacts
 
     const findResult = await this.findByOrgId.handleAsync({
       organizationId: input.organizationId,
-      limit: input.limit,
-      offset: input.offset,
+      limit: input.limit ?? 50,
+      offset: input.offset ?? 0,
     });
 
-    const junctions: OrgContact[] = findResult.success ? (findResult.data?.contacts ?? []) : [];
+    if (!findResult.success) return D2Result.bubbleFail(findResult);
+    const junctions: OrgContact[] = findResult.data?.contacts ?? [];
 
     if (junctions.length === 0) {
       return D2Result.ok({ data: { contacts: [] } });

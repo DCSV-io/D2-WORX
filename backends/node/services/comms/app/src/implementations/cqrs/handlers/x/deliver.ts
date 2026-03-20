@@ -239,16 +239,28 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
       }
 
       // Persist attempt
-      await this.attemptRepo.create.handleAsync({ attempt });
+      const createAttemptResult = await this.attemptRepo.create.handleAsync({ attempt });
+      if (!createAttemptResult.success) {
+        this.context.logger.warn("Deliver: failed to persist delivery attempt", {
+          attemptId: attempt.id,
+          channel: attempt.channel,
+        });
+      }
 
       if (attempt.status !== "pending") {
-        await this.attemptRepo.updateStatus.handleAsync({
+        const updateStatusResult = await this.attemptRepo.updateStatus.handleAsync({
           id: attempt.id,
           status: attempt.status,
           providerMessageId: attempt.providerMessageId ?? undefined,
           error: attempt.error ?? undefined,
           nextRetryAt: attempt.nextRetryAt,
         });
+        if (!updateStatusResult.success) {
+          this.context.logger.warn("Deliver: failed to update attempt status", {
+            attemptId: attempt.id,
+            status: attempt.status,
+          });
+        }
       }
 
       attempts.push(attempt);
