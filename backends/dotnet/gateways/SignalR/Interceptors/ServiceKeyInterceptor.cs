@@ -21,6 +21,7 @@ public partial class ServiceKeyInterceptor : Interceptor
 {
     private readonly SignalRServiceKeyOptions r_options;
     private readonly ILogger<ServiceKeyInterceptor> r_logger;
+    private readonly byte[][] r_validKeyBytes;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceKeyInterceptor"/> class.
@@ -33,6 +34,7 @@ public partial class ServiceKeyInterceptor : Interceptor
     {
         r_options = options.Value;
         r_logger = logger;
+        r_validKeyBytes = r_options.ValidKeys.Select(k => Encoding.UTF8.GetBytes(k)).ToArray();
     }
 
     /// <inheritdoc/>
@@ -58,7 +60,7 @@ public partial class ServiceKeyInterceptor : Interceptor
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Missing x-api-key header."));
         }
 
-        if (!ConstantTimeContains(r_options.ValidKeys, apiKey))
+        if (!ConstantTimeContains(r_validKeyBytes, apiKey))
         {
             LogInvalidApiKey(r_logger, context.Method);
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Invalid API key."));
@@ -70,15 +72,15 @@ public partial class ServiceKeyInterceptor : Interceptor
     /// <summary>
     /// Constant-time check for whether a key exists in the valid keys list.
     /// Prevents timing attacks on API key validation.
+    /// Key bytes are pre-computed in the constructor to avoid per-request encoding.
     /// </summary>
-    private static bool ConstantTimeContains(IReadOnlyList<string> validKeys, string candidate)
+    private static bool ConstantTimeContains(byte[][] validKeyBytes, string candidate)
     {
         var candidateBytes = Encoding.UTF8.GetBytes(candidate);
         var found = false;
 
-        foreach (var key in validKeys)
+        foreach (var keyBytes in validKeyBytes)
         {
-            var keyBytes = Encoding.UTF8.GetBytes(key);
             if (keyBytes.Length == candidateBytes.Length &&
                 CryptographicOperations.FixedTimeEquals(keyBytes, candidateBytes))
             {

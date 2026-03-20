@@ -49,7 +49,7 @@ export class RecipientResolver
     const contacts = contact ? [contact] : [];
 
     if (contacts.length === 0) {
-      return D2Result.ok({ data: {} });
+      return D2Result.notFound();
     }
 
     // Extract email and phone from contacts' methods (ContactDTO -> ContactMethodsDTO)

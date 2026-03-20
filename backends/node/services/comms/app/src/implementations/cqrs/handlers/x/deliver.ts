@@ -31,7 +31,7 @@ const deliverSchema = z.object({
   recipientContactId: zodGuid,
   title: z.string().min(1).max(255),
   content: z.string().min(1).max(50_000),
-  plainTextContent: z.string().max(50_000),
+  plainTextContent: z.string().min(1).max(50_000),
   sensitive: z.boolean().optional(),
   urgency: z.enum(["normal", "urgent"]).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),

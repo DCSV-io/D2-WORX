@@ -21,7 +21,7 @@ export interface DeliverOutput {
 
 /** Recommended redaction for Deliver handlers. */
 export const DELIVER_REDACTION: RedactionSpec = {
-  inputFields: ["content", "plainTextContent"],
+  inputFields: ["content", "plainTextContent", "title"],
   suppressOutput: true,
 };
 

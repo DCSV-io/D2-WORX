@@ -21,18 +21,22 @@ public partial class RealtimeGatewayService : RealtimeGateway.RealtimeGatewayBas
 {
     private readonly IHubContext<AuthenticatedHub> r_hubContext;
     private readonly ILogger<RealtimeGatewayService> r_logger;
+    private readonly StackExchange.Redis.IConnectionMultiplexer r_redis;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RealtimeGatewayService"/> class.
     /// </summary>
     /// <param name="hubContext">The SignalR hub context for sending messages.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="redis">The Redis connection multiplexer for health checks.</param>
     public RealtimeGatewayService(
         IHubContext<AuthenticatedHub> hubContext,
-        ILogger<RealtimeGatewayService> logger)
+        ILogger<RealtimeGatewayService> logger,
+        StackExchange.Redis.IConnectionMultiplexer redis)
     {
         r_hubContext = hubContext;
         r_logger = logger;
+        r_redis = redis;
     }
 
     /// <summary>
@@ -46,6 +50,16 @@ public partial class RealtimeGatewayService : RealtimeGateway.RealtimeGatewayBas
         PushToChannelRequest request,
         ServerCallContext context)
     {
+        if (string.IsNullOrWhiteSpace(request.Channel))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Channel is required."));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Event))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Event is required."));
+        }
+
         await r_hubContext.Clients
             .Group(request.Channel)
             .SendAsync("ReceiveEvent", request.Event, request.PayloadJson, context.CancellationToken);
@@ -71,6 +85,16 @@ public partial class RealtimeGatewayService : RealtimeGateway.RealtimeGatewayBas
         RemoveFromChannelRequest request,
         ServerCallContext context)
     {
+        if (string.IsNullOrWhiteSpace(request.ConnectionId))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "ConnectionId is required."));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Channel))
+        {
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "Channel is required."));
+        }
+
         await r_hubContext.Groups.RemoveFromGroupAsync(
             request.ConnectionId,
             request.Channel,
@@ -95,9 +119,10 @@ public partial class RealtimeGatewayService : RealtimeGateway.RealtimeGatewayBas
         CheckHealthRequest request,
         ServerCallContext context)
     {
+        var isConnected = r_redis.IsConnected;
         var response = new CheckHealthResponse
         {
-            Status = "healthy",
+            Status = isConnected ? "healthy" : "degraded",
             Timestamp = DateTime.UtcNow.ToString("o"),
         };
 

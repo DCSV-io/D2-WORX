@@ -54,7 +54,7 @@ export function jwtAuth(options: JwtAuthOptions): MiddlewareHandler {
     });
 
     if (!verifyResult.success) {
-      return unauthorizedResponse(c, verifyResult.messages?.[0] ?? "Token verification failed.");
+      return unauthorizedResponse(c, "Unauthorized");
     }
 
     // Safe: success === true guarantees data is defined
@@ -66,7 +66,7 @@ export function jwtAuth(options: JwtAuthOptions): MiddlewareHandler {
       const accept = c.req.header("accept") ?? "";
       const fpResult = await checkFingerprint(payload, userAgent, accept);
       if (!fpResult.success) {
-        return unauthorizedResponse(c, fpResult.messages?.[0] ?? "Fingerprint validation failed.");
+        return unauthorizedResponse(c, "Unauthorized");
       }
     }
 

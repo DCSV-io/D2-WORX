@@ -178,9 +178,9 @@ public partial class Populate : BaseHandler<Populate, I, O>, H
             {
                 coordinates = Coordinates.Create(lat, lon);
             }
-            catch
+            catch (ArgumentOutOfRangeException)
             {
-                // Invalid coordinates, skip.
+                // Invalid coordinates — skip location association.
             }
         }
 

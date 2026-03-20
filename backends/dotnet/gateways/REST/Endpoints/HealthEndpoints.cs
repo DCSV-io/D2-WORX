@@ -216,7 +216,7 @@ public static class HealthEndpoints
                 latencyMs = sw.ElapsedMilliseconds,
                 components = new Dictionary<string, object>
                 {
-                    ["error"] = new { status = "unhealthy", error = ex.Message },
+                    ["error"] = new { status = "unhealthy", error = "Service check failed" },
                 },
             };
         }
@@ -265,7 +265,7 @@ public static class HealthEndpoints
                 latencyMs = sw.ElapsedMilliseconds,
                 components = new Dictionary<string, object>
                 {
-                    ["error"] = new { status = "unhealthy", error = ex.Message },
+                    ["error"] = new { status = "unhealthy", error = "Service check failed" },
                 },
             };
         }
@@ -314,7 +314,7 @@ public static class HealthEndpoints
                 latencyMs = sw.ElapsedMilliseconds,
                 components = new Dictionary<string, object>
                 {
-                    ["error"] = new { status = "unhealthy", error = ex.Message },
+                    ["error"] = new { status = "unhealthy", error = "Service check failed" },
                 },
             };
         }

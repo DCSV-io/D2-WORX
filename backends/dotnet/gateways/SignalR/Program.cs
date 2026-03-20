@@ -21,6 +21,12 @@ var redisConnectionString = ConnectionStringHelper.GetRedis();
 
 builder.AddServiceDefaults();
 
+// Redis connection multiplexer — shared by SignalR backplane and health checks.
+var redisOptions = StackExchange.Redis.ConfigurationOptions.Parse(redisConnectionString);
+redisOptions.AbortOnConnectFail = false;
+var redisMultiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisOptions);
+builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMultiplexer);
+
 // SignalR with Redis backplane for multi-instance connection tracking.
 builder.Services
     .AddSignalR()
