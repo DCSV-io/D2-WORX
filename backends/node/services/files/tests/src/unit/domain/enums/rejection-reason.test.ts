@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { REJECTION_REASONS, isValidRejectionReason } from "@d2/files-domain";
 
 describe("RejectionReason", () => {
-  it("should have exactly 7 reasons", () => {
-    expect(REJECTION_REASONS).toHaveLength(7);
+  it("should have exactly 8 reasons", () => {
+    expect(REJECTION_REASONS).toHaveLength(8);
   });
 
   it("should contain all expected reasons", () => {
@@ -14,6 +14,7 @@ describe("RejectionReason", () => {
     expect(REJECTION_REASONS).toContain("content_moderation_failed");
     expect(REJECTION_REASONS).toContain("processing_timeout");
     expect(REJECTION_REASONS).toContain("corrupt_file");
+    expect(REJECTION_REASONS).toContain("virus_detected");
   });
 
   describe("isValidRejectionReason", () => {
@@ -25,6 +26,7 @@ describe("RejectionReason", () => {
       "content_moderation_failed",
       "processing_timeout",
       "corrupt_file",
+      "virus_detected",
     ])("should return true for valid reason '%s'", (reason) => {
       expect(isValidRejectionReason(reason)).toBe(true);
     });

@@ -2,12 +2,20 @@ import { describe, it, expect, vi } from "vitest";
 import { PingDb } from "@d2/files-infra";
 import { createTestContext } from "../../helpers/test-context.js";
 
-function createMockDb(executeFn: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(undefined)) {
-  return { execute: executeFn } as never;
+function createMockDb(
+  limitFn: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue([]),
+) {
+  return {
+    select: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        limit: limitFn,
+      }),
+    }),
+  } as never;
 }
 
 describe("PingDb", () => {
-  it("should return healthy:true with latencyMs when db.execute succeeds", async () => {
+  it("should return healthy:true with latencyMs when db query succeeds", async () => {
     const handler = new PingDb(createMockDb(), createTestContext());
 
     const result = await handler.handleAsync({});
@@ -18,9 +26,9 @@ describe("PingDb", () => {
     expect(result.data?.error).toBeUndefined();
   });
 
-  it("should return healthy:false with error message when db.execute throws Error", async () => {
-    const execute = vi.fn().mockRejectedValue(new Error("Connection refused"));
-    const handler = new PingDb(createMockDb(execute), createTestContext());
+  it("should return healthy:false with error message when db query throws Error", async () => {
+    const limit = vi.fn().mockRejectedValue(new Error("Connection refused"));
+    const handler = new PingDb(createMockDb(limit), createTestContext());
 
     const result = await handler.handleAsync({});
 
@@ -30,8 +38,8 @@ describe("PingDb", () => {
   });
 
   it("should return healthy:false with stringified error when non-Error thrown", async () => {
-    const execute = vi.fn().mockRejectedValue("some string error");
-    const handler = new PingDb(createMockDb(execute), createTestContext());
+    const limit = vi.fn().mockRejectedValue("some string error");
+    const handler = new PingDb(createMockDb(limit), createTestContext());
 
     const result = await handler.handleAsync({});
 
@@ -52,8 +60,8 @@ describe("PingDb", () => {
   });
 
   it("should return D2Result.ok even on DB failure (health check never fails)", async () => {
-    const execute = vi.fn().mockRejectedValue(new Error("Database crashed"));
-    const handler = new PingDb(createMockDb(execute), createTestContext());
+    const limit = vi.fn().mockRejectedValue(new Error("Database crashed"));
+    const handler = new PingDb(createMockDb(limit), createTestContext());
 
     const result = await handler.handleAsync({});
 
@@ -65,8 +73,8 @@ describe("PingDb", () => {
   });
 
   it("should return latencyMs on failure path too", async () => {
-    const execute = vi.fn().mockRejectedValue(new Error("timeout"));
-    const handler = new PingDb(createMockDb(execute), createTestContext());
+    const limit = vi.fn().mockRejectedValue(new Error("timeout"));
+    const handler = new PingDb(createMockDb(limit), createTestContext());
 
     const result = await handler.handleAsync({});
 
@@ -75,18 +83,19 @@ describe("PingDb", () => {
     expect(result.data?.latencyMs).toBeGreaterThanOrEqual(0);
   });
 
-  it("should call db.execute exactly once", async () => {
-    const execute = vi.fn().mockResolvedValue(undefined);
-    const handler = new PingDb(createMockDb(execute), createTestContext());
+  it("should call db.select chain exactly once", async () => {
+    const limit = vi.fn().mockResolvedValue([]);
+    const db = createMockDb(limit);
+    const handler = new PingDb(db, createTestContext());
 
     await handler.handleAsync({});
 
-    expect(execute).toHaveBeenCalledTimes(1);
+    expect(limit).toHaveBeenCalledTimes(1);
   });
 
   it("should handle undefined thrown as error", async () => {
-    const execute = vi.fn().mockRejectedValue(undefined);
-    const handler = new PingDb(createMockDb(execute), createTestContext());
+    const limit = vi.fn().mockRejectedValue(undefined);
+    const handler = new PingDb(createMockDb(limit), createTestContext());
 
     const result = await handler.handleAsync({});
 
@@ -96,8 +105,8 @@ describe("PingDb", () => {
   });
 
   it("should handle null thrown as error", async () => {
-    const execute = vi.fn().mockRejectedValue(null);
-    const handler = new PingDb(createMockDb(execute), createTestContext());
+    const limit = vi.fn().mockRejectedValue(null);
+    const handler = new PingDb(createMockDb(limit), createTestContext());
 
     const result = await handler.handleAsync({});
 

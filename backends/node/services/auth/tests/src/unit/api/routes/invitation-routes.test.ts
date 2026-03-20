@@ -4,8 +4,32 @@ import { D2Result, HttpStatusCode } from "@d2/result";
 import { INotifyKey } from "@d2/comms-client";
 import { ICreateContactsKey, IGetContactsByExtKeysKey } from "@d2/geo-client";
 import { createInvitationRoutes, SCOPE_KEY } from "@d2/auth-api";
+import type { Translator } from "@d2/i18n";
 
 // ---------- Mock helpers ----------
+
+/** Mock en-US message catalog — mirrors contracts/messages/en-US.json */
+const MOCK_MESSAGES: Record<string, string> = {
+  auth_email_invitation_subject: "You've been invited to join {orgName}.",
+  auth_email_invitation_greeting: "Hi,",
+  auth_email_invitation_body:
+    "{inviterName} ({inviterEmail}) has invited you to join **{orgName}** as **{role}**.",
+  auth_email_invitation_action: "Accept Invitation.",
+  auth_email_invitation_plaintext:
+    "{inviterName} ({inviterEmail}) has invited you to join {orgName} as {role}. Accept at: {url}.",
+  auth_email_link_fallback:
+    "If the above link does not work, copy and paste this URL into your browser:",
+};
+
+const mockTranslator: Translator = {
+  t(_locale: string, key: string, params?: Record<string, string>): string {
+    const message = MOCK_MESSAGES[key] ?? key;
+    if (!params) return message;
+    return message.replace(/\{(\w+)\}/g, (_, p: string) => params[p] ?? `{${p}}`);
+  },
+  locales: ["en-US"],
+  baseLocale: "en-US",
+};
 
 const mockCreateInvitation = vi.fn();
 const mockAuth = {
@@ -108,7 +132,15 @@ function createTestApp(
     await next();
   });
 
-  app.route("/", createInvitationRoutes(mockAuth, mockDb, "https://app.example.com"));
+  app.route(
+    "/",
+    createInvitationRoutes({
+      auth: mockAuth,
+      db: mockDb,
+      baseUrl: "https://app.example.com",
+      translator: mockTranslator,
+    }),
+  );
   return app;
 }
 
@@ -189,7 +221,15 @@ describe("Invitation routes", () => {
         c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
         await next();
       });
-      app.route("/", createInvitationRoutes(mockAuth, mockDb, "https://app.example.com"));
+      app.route(
+        "/",
+        createInvitationRoutes({
+          auth: mockAuth,
+          db: mockDb,
+          baseUrl: "https://app.example.com",
+          translator: mockTranslator,
+        }),
+      );
 
       const res = await app.request("/api/invitations", {
         method: "POST",
@@ -364,7 +404,7 @@ describe("Invitation routes", () => {
   // -------------------------------------------------------------------------
 
   describe("POST /api/invitations — max-length enforcement", () => {
-    it("should truncate phone to 20 characters", async () => {
+    it("should reject phone over 20 characters", async () => {
       resetDbChain([], [{ name: "Acme" }]);
       const app = createTestApp(handlers);
       const longPhone = "+1" + "5".repeat(50);
@@ -379,9 +419,10 @@ describe("Invitation routes", () => {
         }),
       });
 
-      expect(res.status).toBe(201);
-      const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
-      expect(contactInput.contacts[0].contactMethods.phoneNumbers[0].value).toHaveLength(20);
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { inputErrors?: string[][] };
+      expect(body.inputErrors).toBeDefined();
+      expect(body.inputErrors!.some((e: string[]) => e[0] === "phone")).toBe(true);
     });
 
     it("should accept firstName exactly at max length (255)", async () => {
@@ -448,7 +489,7 @@ describe("Invitation routes", () => {
       expect(handlers.notify.handleAsync).toHaveBeenCalledWith(
         expect.objectContaining({
           recipientContactId: "geo-contact-1",
-          title: "You've been invited to join Acme Corp",
+          title: "You've been invited to join Acme Corp.",
           sensitive: true,
           correlationId: "inv-abc",
           senderService: "auth",
@@ -519,7 +560,7 @@ describe("Invitation routes", () => {
       expect(handlers.notify.handleAsync).toHaveBeenCalledWith(
         expect.objectContaining({
           recipientContactId: "geo-contact-existing",
-          title: "You've been invited to join Acme Corp",
+          title: "You've been invited to join Acme Corp.",
           sensitive: true,
           correlationId: "inv-abc",
           senderService: "auth",
@@ -624,7 +665,7 @@ describe("Invitation routes", () => {
 
       expect(handlers.notify.handleAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          title: "You've been invited to join the organization",
+          title: "You've been invited to join the organization.",
         }),
       );
     });
@@ -675,7 +716,15 @@ describe("Invitation routes", () => {
         c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
         await next();
       });
-      app.route("/", createInvitationRoutes(mockAuth, mockDb, "https://app.example.com"));
+      app.route(
+        "/",
+        createInvitationRoutes({
+          auth: mockAuth,
+          db: mockDb,
+          baseUrl: "https://app.example.com",
+          translator: mockTranslator,
+        }),
+      );
 
       await app.request("/api/invitations", {
         method: "POST",
@@ -701,7 +750,7 @@ describe("Invitation routes", () => {
 
       expect(handlers.notify.handleAsync).toHaveBeenCalledWith({
         recipientContactId: "geo-contact-1",
-        title: "You've been invited to join Test Org",
+        title: "You've been invited to join Test Org.",
         content: expect.stringContaining("The Inviter (inviter@example.com)"),
         plaintext: expect.stringContaining("The Inviter (inviter@example.com)"),
         sensitive: true,
@@ -722,7 +771,7 @@ describe("Invitation routes", () => {
 
       expect(handlers.notify.handleAsync).toHaveBeenCalledWith({
         recipientContactId: "geo-contact-existing",
-        title: "You've been invited to join Test Org",
+        title: "You've been invited to join Test Org.",
         content: expect.stringContaining("as **auditor**"),
         plaintext: expect.stringContaining("as auditor"),
         sensitive: true,
@@ -836,7 +885,15 @@ describe("Invitation routes", () => {
         c.set(SCOPE_KEY as never, createMockScope(handlers) as never);
         await next();
       });
-      app.route("/", createInvitationRoutes(mockAuth, mockDb, "https://app.example.com"));
+      app.route(
+        "/",
+        createInvitationRoutes({
+          auth: mockAuth,
+          db: mockDb,
+          baseUrl: "https://app.example.com",
+          translator: mockTranslator,
+        }),
+      );
 
       const res = await app.request("/api/invitations", {
         method: "POST",
@@ -881,7 +938,7 @@ describe("Invitation routes", () => {
       expect([201, 400]).toContain(res.status);
     });
 
-    it("should truncate very long firstName/lastName to max 255 chars", async () => {
+    it("should reject very long firstName/lastName over max 255 chars", async () => {
       resetDbChain([], [{ name: "Acme" }]);
       const app = createTestApp(handlers);
       const longName = "A".repeat(10_000);
@@ -897,11 +954,12 @@ describe("Invitation routes", () => {
         }),
       });
 
-      // Should not crash the handler — names are truncated before passing to Geo
-      expect(res.status).toBe(201);
-      const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
-      expect(contactInput.contacts[0].personalDetails.firstName).toHaveLength(255);
-      expect(contactInput.contacts[0].personalDetails.lastName).toHaveLength(255);
+      // Should reject with 400 — names exceeding max length are now rejected, not truncated
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { inputErrors?: string[][] };
+      expect(body.inputErrors).toBeDefined();
+      expect(body.inputErrors!.some((e: string[]) => e[0] === "firstName")).toBe(true);
+      expect(body.inputErrors!.some((e: string[]) => e[0] === "lastName")).toBe(true);
     });
 
     it("should not call createContacts when existing user provides contact details", async () => {

@@ -239,7 +239,7 @@ describe("ProcessFile", () => {
     expect(processVariants.handleAsync).not.toHaveBeenCalled();
   });
 
-  it("should store all variants as originals for non-image content", async () => {
+  it("should store single original variant for non-image content", async () => {
     const repo = createMockRepo();
     const storage = createMockStorage();
     const file = makeProcessingFile({
@@ -254,14 +254,12 @@ describe("ProcessFile", () => {
     const result = await handler.handleAsync({ fileId: "file-doc-2" });
 
     expect(result.success).toBe(true);
-    // thread_attachment has 3 variants (thumb, preview, original)
-    // For non-image, ALL are treated as originals (stored raw, no resize)
+    // For non-image content, only a single "original" variant is stored (not all configured variants)
     const variants = result.data?.file.variants;
-    expect(variants).toHaveLength(3);
-    for (const v of variants!) {
-      expect(v.width).toBe(0);
-      expect(v.height).toBe(0);
-    }
+    expect(variants).toHaveLength(1);
+    expect(variants![0].size).toBe("original");
+    expect(variants![0].width).toBe(0);
+    expect(variants![0].height).toBe(0);
   });
 
   it("should call processVariants only for resize variants on images", async () => {
