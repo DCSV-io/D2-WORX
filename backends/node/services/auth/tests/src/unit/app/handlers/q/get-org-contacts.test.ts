@@ -243,14 +243,13 @@ describe("GetOrgContacts", () => {
     expect(result.data?.contacts[0].geoContact).toBeNull();
   });
 
-  it("should return empty contacts when findByOrgId returns failure", async () => {
+  it("should propagate failure when findByOrgId returns failure", async () => {
     findByOrgId.handleAsync = vi.fn().mockResolvedValue(D2Result.fail({ messages: ["DB error"] }));
 
     const result = await handler.handleAsync({ organizationId: VALID_ORG_ID });
 
-    expect(result.success).toBe(true);
-    expect(result.data?.contacts).toHaveLength(0);
-    // Should not call Geo when no junctions were loaded
+    expect(result.success).toBe(false);
+    // Should not call Geo when repo failed
     expect(getContactsByExtKeys.handleAsync).not.toHaveBeenCalled();
   });
 

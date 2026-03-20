@@ -137,7 +137,7 @@ describe("GetSignInEvents", () => {
       expect(repo.countByUserId.handleAsync).toHaveBeenCalledOnce();
     });
 
-    it("should return empty events when findByUserId returns failure", async () => {
+    it("should propagate failure when findByUserId returns failure", async () => {
       repo.findByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.fail({ messages: ["DB error"] }));
@@ -147,12 +147,10 @@ describe("GetSignInEvents", () => {
 
       const result = await handler.handleAsync({ userId: "user-123" });
 
-      expect(result.success).toBe(true);
-      expect(result.data?.events).toHaveLength(0);
-      expect(result.data?.total).toBe(5);
+      expect(result.success).toBe(false);
     });
 
-    it("should return zero total when countByUserId returns failure", async () => {
+    it("should propagate failure when countByUserId returns failure", async () => {
       const events = [createEvent("evt-1")];
       repo.findByUserId.handleAsync = vi.fn().mockResolvedValue(D2Result.ok({ data: { events } }));
       repo.countByUserId.handleAsync = vi
@@ -161,9 +159,7 @@ describe("GetSignInEvents", () => {
 
       const result = await handler.handleAsync({ userId: "user-123" });
 
-      expect(result.success).toBe(true);
-      expect(result.data?.events).toHaveLength(1);
-      expect(result.data?.total).toBe(0);
+      expect(result.success).toBe(false);
     });
 
     it("should cap limit at 100", async () => {
