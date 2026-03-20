@@ -1,5 +1,5 @@
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { isPgUniqueViolation } from "@d2/errors-pg";
 import type {
@@ -18,6 +18,10 @@ export class CreateDeliveryAttemptRecord
   constructor(db: NodePgDatabase, context: IHandlerContext) {
     super(context);
     this.db = db;
+  }
+
+  override get redaction(): RedactionSpec {
+    return { suppressInput: true };
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {

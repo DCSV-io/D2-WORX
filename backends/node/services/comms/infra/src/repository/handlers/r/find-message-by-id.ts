@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type {
   FindMessageByIdInput as I,
@@ -17,6 +17,10 @@ export class FindMessageById extends BaseHandler<I, O> implements IFindMessageBy
   constructor(db: NodePgDatabase, context: IHandlerContext) {
     super(context);
     this.db = db;
+  }
+
+  override get redaction(): RedactionSpec {
+    return { suppressOutput: true };
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {

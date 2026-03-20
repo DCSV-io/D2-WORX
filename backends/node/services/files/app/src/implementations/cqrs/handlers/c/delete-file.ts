@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { z } from "zod";
 import { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
@@ -37,6 +37,10 @@ export class DeleteFile extends BaseHandler<Input, Output> implements Commands.I
     this.storage = storage;
     this.configs = configs;
     this.resolveAccess = resolveAccess;
+  }
+
+  override get redaction(): RedactionSpec {
+    return { suppressOutput: true };
   }
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {

@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type {
   ProcessVariantsInput as I,
@@ -20,6 +20,10 @@ import type {
 export class ProcessVariants extends BaseHandler<I, O> implements IProcessVariants {
   constructor(context: IHandlerContext) {
     super(context);
+  }
+
+  override get redaction(): RedactionSpec {
+    return { suppressInput: true, suppressOutput: true };
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {

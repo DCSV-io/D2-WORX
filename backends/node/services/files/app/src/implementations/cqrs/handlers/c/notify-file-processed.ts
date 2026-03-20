@@ -1,4 +1,4 @@
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import { z } from "zod";
 import type { Commands } from "../../../../interfaces/cqrs/handlers/index.js";
@@ -29,6 +29,10 @@ export class NotifyFileProcessed
   constructor(callOnFileProcessed: ICallOnFileProcessed, context: IHandlerContext) {
     super(context);
     this.callOnFileProcessed = callOnFileProcessed;
+  }
+
+  override get redaction(): RedactionSpec {
+    return { inputFields: ["address"] };
   }
 
   protected async executeAsync(input: Input): Promise<D2Result<Output | undefined>> {

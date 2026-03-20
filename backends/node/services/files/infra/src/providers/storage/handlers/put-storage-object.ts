@@ -1,5 +1,5 @@
 import { PutObjectCommand, type S3Client } from "@aws-sdk/client-s3";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type {
   PutStorageObjectInput as I,
@@ -15,6 +15,10 @@ export class PutStorageObject extends BaseHandler<I, O> implements IPutStorageOb
     super(context);
     this.s3 = s3;
     this.bucket = bucket;
+  }
+
+  override get redaction(): RedactionSpec {
+    return { suppressInput: true };
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {

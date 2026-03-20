@@ -1,5 +1,5 @@
 import { Socket } from "node:net";
-import { BaseHandler, type IHandlerContext } from "@d2/handler";
+import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
 import type { ScanFileInput as I, ScanFileOutput as O, IScanFile } from "@d2/files-app";
 
@@ -24,6 +24,10 @@ export class ScanFile extends BaseHandler<I, O> implements IScanFile {
   constructor(config: ClamdConfig, context: IHandlerContext) {
     super(context);
     this.config = config;
+  }
+
+  override get redaction(): RedactionSpec {
+    return { suppressInput: true };
   }
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
