@@ -64,8 +64,8 @@ export function createInvitationRoutes(options: InvitationRoutesOptions) {
     // 1. Validate input
     const email = (body.email as string | undefined)?.trim();
     const role = body.role as string | undefined;
-    const firstName = ((body.firstName as string) ?? "").trim() || undefined;
-    const lastName = ((body.lastName as string) ?? "").trim() || undefined;
+    const firstName = ((body.firstName as string) ?? "").trim();
+    const lastName = ((body.lastName as string) ?? "").trim();
     const phone = ((body.phone as string) ?? "").trim() || undefined;
 
     if (!email || !role) {
@@ -86,10 +86,10 @@ export function createInvitationRoutes(options: InvitationRoutesOptions) {
     // Reject inputs exceeding max length instead of silently truncating
     {
       const lengthErrors: [string, ...string[]][] = [];
-      if (firstName && firstName.length > MAX_FIRST_NAME) {
+      if (firstName.length > MAX_FIRST_NAME) {
         lengthErrors.push(["firstName", TK.common.errors.VALIDATION_FAILED]);
       }
-      if (lastName && lastName.length > MAX_LAST_NAME) {
+      if (lastName.length > MAX_LAST_NAME) {
         lengthErrors.push(["lastName", TK.common.errors.VALIDATION_FAILED]);
       }
       if (phone && phone.length > MAX_PHONE) {

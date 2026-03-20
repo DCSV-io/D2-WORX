@@ -46,6 +46,7 @@ export function createTranslator(options: {
     } catch (err) {
       throw new Error(
         `Failed to parse locale file ${filePath}: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err },
       );
     }
 

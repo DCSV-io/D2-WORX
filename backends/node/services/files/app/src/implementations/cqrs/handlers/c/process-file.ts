@@ -155,9 +155,13 @@ export class ProcessFile
     // Partition variants: resize (sharp) vs original (pass-through)
     const resizeVariants = isImage ? config.variants.filter(requiresResize) : [];
     // For non-image files, only store a single original variant
+    const originalVariant =
+      config.variants.find((v) => v.name === "original") ?? config.variants[0];
     const originalVariants = isImage
       ? config.variants.filter((v) => !requiresResize(v))
-      : [config.variants.find((v) => v.name === "original") ?? config.variants[0]];
+      : originalVariant
+        ? [originalVariant]
+        : [];
 
     const fileVariants = [];
 
