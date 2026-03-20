@@ -11,7 +11,7 @@ import { file } from "../../schema/tables.js";
 
 export class CreateFileRecord extends BaseHandler<I, O> implements ICreateFileRecordHandler {
   override get redaction(): RedactionSpec {
-    return { suppressOutput: true };
+    return { suppressInput: true, suppressOutput: true };
   }
 
   private readonly db: NodePgDatabase;

@@ -2,11 +2,16 @@ import { describe, it, expect, vi } from "vitest";
 import { D2Result } from "@d2/result";
 import { IntakeFile } from "@d2/files-app";
 import { createFile } from "@d2/files-domain";
-import { createMockRepo, createMockContext } from "../../helpers/mock-handlers.js";
+import {
+  createMockRepo,
+  createMockStorage,
+  createMockContext,
+} from "../../helpers/mock-handlers.js";
 
-function createHandler(repo = createMockRepo()) {
+function createHandler(repo = createMockRepo(), storage = createMockStorage()) {
   const context = createMockContext();
-  return { handler: new IntakeFile(repo, context), repo };
+  const storagePick = { head: storage.head, delete: storage.delete };
+  return { handler: new IntakeFile(repo, storagePick, context), repo, storage };
 }
 
 function makePendingFile() {

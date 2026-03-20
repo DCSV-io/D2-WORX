@@ -2,6 +2,7 @@ import * as grpc from "@grpc/grpc-js";
 import type { FileCallbackServer } from "@d2/protos";
 import type { ServiceProvider } from "@d2/di";
 import { createRpcScope, withTraceContext } from "@d2/service-defaults/grpc";
+import { d2ResultToProto } from "@d2/result-extensions";
 import { IHandleFileProcessedKey } from "@d2/auth-app";
 
 /**
@@ -26,14 +27,7 @@ export function createFileCallbackGrpcService(provider: ServiceProvider): FileCa
           });
 
           callback(null, {
-            result: {
-              success: true,
-              statusCode: 200,
-              messages: [],
-              inputErrors: [],
-              errorCode: "",
-              traceId: "",
-            },
+            result: d2ResultToProto(result),
             success: result.success && (result.data?.success ?? false),
           });
         } catch {

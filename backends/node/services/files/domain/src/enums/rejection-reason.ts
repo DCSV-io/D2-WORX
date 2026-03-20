@@ -6,6 +6,7 @@
 
 export const REJECTION_REASONS = [
   "size_exceeded",
+  "size_mismatch",
   "invalid_content_type",
   "magic_bytes_mismatch",
   "content_moderation_failed",

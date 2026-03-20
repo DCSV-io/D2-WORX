@@ -15,6 +15,10 @@ type Output = Utilities.ResolveFileAccessOutput;
  * - callback — delegates to outbound CheckFileAccess handler
  *
  * Fail-closed: unknown resolution types or missing data → forbidden.
+ *
+ * Note: No Zod validation — this is an internal utility handler called only
+ * by typed app-layer handlers that validate their own inputs. The config
+ * object (ContextKeyConfig) is too complex for meaningful re-validation here.
  */
 export class ResolveFileAccess
   extends BaseHandler<Input, Output>

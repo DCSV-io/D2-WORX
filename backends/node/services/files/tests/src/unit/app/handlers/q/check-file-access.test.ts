@@ -132,16 +132,18 @@ describe("CheckFileAccess", () => {
     expect(result.statusCode).toBe(400);
   });
 
-  it("should allow empty requestingUserId (pre-auth scenario)", async () => {
+  it("should reject empty requestingUserId", async () => {
     const { handler } = createHandler();
     const result = await handler.handleAsync({ ...validInput, requestingUserId: "" });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
   });
 
-  it("should allow empty requestingOrgId (pre-auth scenario)", async () => {
+  it("should reject empty requestingOrgId", async () => {
     const { handler } = createHandler();
     const result = await handler.handleAsync({ ...validInput, requestingOrgId: "" });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.statusCode).toBe(400);
   });
 
   it("should not call gRPC callback on validation failure", async () => {

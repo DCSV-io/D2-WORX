@@ -54,7 +54,12 @@ export interface CommsServiceConfig {
  */
 export async function createCommsService(config: CommsServiceConfig) {
   // 1. Singletons
-  const pool = new pg.Pool({ connectionString: config.databaseUrl });
+  const pool = new pg.Pool({
+    connectionString: config.databaseUrl,
+    max: 20,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+  });
   const logger: ILogger = createLogger({ serviceName: "comms-service" });
 
   const serviceContext = new HandlerContext(

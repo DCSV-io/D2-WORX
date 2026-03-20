@@ -12,8 +12,8 @@ import { SCOPE_KEY, REQUEST_CONTEXT_KEY } from "../context-keys.js";
  * Users never provide contextKeys directly.
  *
  * - `POST /avatar` → `user_avatar`, relatedEntityId = userId
- * - `POST /org/:orgId/logo` → `org_logo`, relatedEntityId = orgId
- * - `POST /org/:orgId/documents` → `org_document`, relatedEntityId = orgId
+ * - `POST /org/logo` → `org_logo`, relatedEntityId = targetOrgId (from JWT)
+ * - `POST /org/documents` → `org_document`, relatedEntityId = targetOrgId (from JWT)
  * - `POST /threads/:threadId/attachments` → `thread_attachment`, relatedEntityId = threadId
  */
 export function createUploadRoutes(contextKeyConfigs: ContextKeyConfigMap): Hono {
@@ -23,12 +23,18 @@ export function createUploadRoutes(contextKeyConfigs: ContextKeyConfigMap): Hono
     return handleUpload(c, contextKeyConfigs, "user_avatar", (rc) => rc.userId);
   });
 
-  app.post("/org/:orgId/logo", async (c) => {
-    return handleUpload(c, contextKeyConfigs, "org_logo", () => c.req.param("orgId"));
+  app.post("/org/logo", async (c) => {
+    return handleUpload(c, contextKeyConfigs, "org_logo", (rc) => rc.targetOrgId, {
+      missingEntityStatus: 401,
+      missingEntityMessage: "No active organization.",
+    });
   });
 
-  app.post("/org/:orgId/documents", async (c) => {
-    return handleUpload(c, contextKeyConfigs, "org_document", () => c.req.param("orgId"));
+  app.post("/org/documents", async (c) => {
+    return handleUpload(c, contextKeyConfigs, "org_document", (rc) => rc.targetOrgId, {
+      missingEntityStatus: 401,
+      missingEntityMessage: "No active organization.",
+    });
   });
 
   app.post("/threads/:threadId/attachments", async (c) => {
@@ -38,11 +44,19 @@ export function createUploadRoutes(contextKeyConfigs: ContextKeyConfigMap): Hono
   return app;
 }
 
+interface MissingEntityOptions {
+  /** HTTP status code when relatedEntityId is missing (default: 400). */
+  readonly missingEntityStatus?: number;
+  /** Error message when relatedEntityId is missing (default: "Missing related entity ID."). */
+  readonly missingEntityMessage?: string;
+}
+
 async function handleUpload(
   c: Context,
   contextKeyConfigs: ContextKeyConfigMap,
   contextKey: string,
   getRelatedEntityId: (rc: IRequestContext) => string | undefined,
+  options?: MissingEntityOptions,
 ): Promise<Response> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const scope = (c as any).get(SCOPE_KEY) as ServiceScope;
@@ -51,9 +65,11 @@ async function handleUpload(
 
   const relatedEntityId = getRelatedEntityId(requestContext);
   if (!relatedEntityId) {
+    const status = options?.missingEntityStatus ?? 400;
+    const message = options?.missingEntityMessage ?? "Missing related entity ID.";
     return c.json(
-      { success: false, statusCode: 400, messages: ["Missing related entity ID."], data: null },
-      400 as ContentfulStatusCode,
+      { success: false, statusCode: status, messages: [message], data: null },
+      status as ContentfulStatusCode,
     );
   }
 

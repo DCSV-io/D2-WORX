@@ -809,9 +809,9 @@ services:
       REDIS_URL: "redis://:${CACHE_PASSWORD}@${REDIS_NAME}:${REDIS_PORT}"
       SIGNALR_AUTH__AUTHSERVICEBASEURL: "http://${AUTH_SERVICE_NAME}:${AUTH_HTTP_PORT}"
       # OTel → Alloy.
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_GRPC_PORT}"
-      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_GRPC_PORT}"
-      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_GRPC_PORT}"
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/traces"
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/logs"
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/metrics"
     volumes:
       - ./D2.sln:/src/D2.sln:ro
       - ./Directory.Build.props:/src/Directory.Build.props:ro

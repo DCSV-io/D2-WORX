@@ -2,12 +2,13 @@ import { describe, it, expect } from "vitest";
 import { REJECTION_REASONS, isValidRejectionReason } from "@d2/files-domain";
 
 describe("RejectionReason", () => {
-  it("should have exactly 6 reasons", () => {
-    expect(REJECTION_REASONS).toHaveLength(6);
+  it("should have exactly 7 reasons", () => {
+    expect(REJECTION_REASONS).toHaveLength(7);
   });
 
   it("should contain all expected reasons", () => {
     expect(REJECTION_REASONS).toContain("size_exceeded");
+    expect(REJECTION_REASONS).toContain("size_mismatch");
     expect(REJECTION_REASONS).toContain("invalid_content_type");
     expect(REJECTION_REASONS).toContain("magic_bytes_mismatch");
     expect(REJECTION_REASONS).toContain("content_moderation_failed");
@@ -18,6 +19,7 @@ describe("RejectionReason", () => {
   describe("isValidRejectionReason", () => {
     it.each([
       "size_exceeded",
+      "size_mismatch",
       "invalid_content_type",
       "magic_bytes_mismatch",
       "content_moderation_failed",

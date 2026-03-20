@@ -14,7 +14,7 @@ src/
   context-key-config.ts       ContextKeyConfig + parseContextKeyConfigs (env var parser)
   files-job-options.ts        FilesJobOptions (cleanup batch size, stale threshold)
   registration.ts             addFilesApp(services, configMap, jobOptions)
-  service-keys.ts             33 ServiceKey<T> DI tokens
+  service-keys.ts             35 ServiceKey<T> DI tokens
   implementations/
     cqrs/handlers/
       c/                      Commands (6 handlers)
@@ -70,7 +70,7 @@ src/
 | Q/       | CheckHealth         | Query   | DB ping + storage ping                                                   |
 | U/       | ResolveFileAccess   | Utility | Dispatches access check by resolution strategy                           |
 
-## Service Keys (33 total)
+## Service Keys (35 total)
 
 | Group      | Count | Key pattern         |
 | ---------- | ----- | ------------------- |
@@ -79,8 +79,9 @@ src/
 | Providers  | 2     | `Files.Provider.*`  |
 | Outbound   | 2     | `Files.Outbound.*`  |
 | Realtime   | 1     | `Files.Realtime.*`  |
-| App (CQRS) | 10    | `Files.App.*`       |
+| App (CQRS) | 11    | `Files.App.*`       |
 | Messaging  | 3     | `Files.Messaging.*` |
+| Config     | 1     | `Files.Config.*`    |
 
 ## Context Key Configuration
 
@@ -93,8 +94,8 @@ Each context key config specifies:
 - `allowedCategories` — which content categories are accepted
 - `maxSizeBytes` — per-key upload size limit (optional, falls back to domain default)
 - `variants` — per-key variant definitions with `name` + `maxDimension`
-- `uploadResolution` — how upload access is checked (`jwt_owner`, `jwt_org`, `callback`)
-- `readResolution` — how read access is checked (`jwt_owner`, `jwt_org`, `callback`, `public`)
+- `uploadResolution` — how upload access is checked (`jwt_owner`, `jwt_org`, `callback`, `authenticated`)
+- `readResolution` — how read access is checked (`jwt_owner`, `jwt_org`, `callback`, `authenticated`)
 
 ## DI Registration
 

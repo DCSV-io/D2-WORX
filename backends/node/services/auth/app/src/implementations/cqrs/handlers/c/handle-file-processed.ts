@@ -80,6 +80,13 @@ export class HandleFileProcessed
         // Documents don't have an entity field to update — just ack.
         break;
 
+      case "thread_attachment":
+        // Thread attachments are owned by Comms service — Auth has no entity to update.
+        this.context.logger.info("Thread attachment callback received — no Auth action needed", {
+          fileId: input.fileId,
+        });
+        break;
+
       default:
         this.context.logger.warn("Unknown context key in file callback", {
           contextKey: input.contextKey,

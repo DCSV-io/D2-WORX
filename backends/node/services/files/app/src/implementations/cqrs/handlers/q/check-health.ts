@@ -30,26 +30,24 @@ export class CheckHealth extends BaseHandler<Input, Output> implements Queries.I
     ]);
 
     // DB
-    if (dbResult.data) {
-      components["db"] = {
-        status: dbResult.data.healthy ? "healthy" : "unhealthy",
-        latencyMs: dbResult.data.latencyMs,
-        error: dbResult.data.error,
-      };
-    } else {
-      components["db"] = { status: "unhealthy", error: "Ping handler returned no data" };
-    }
+    const dbComponent =
+      dbResult.success && dbResult.data
+        ? { status: "healthy" as const, latencyMs: dbResult.data.latencyMs }
+        : {
+            status: "unhealthy" as const,
+            error: !dbResult.success ? "Ping handler failed" : "No data returned",
+          };
+    components["db"] = dbComponent;
 
     // Object storage (MinIO)
-    if (storageResult.data) {
-      components["storage"] = {
-        status: storageResult.data.healthy ? "healthy" : "unhealthy",
-        latencyMs: storageResult.data.latencyMs,
-        error: storageResult.data.error,
-      };
-    } else {
-      components["storage"] = { status: "unhealthy", error: "Ping handler returned no data" };
-    }
+    const storageComponent =
+      storageResult.success && storageResult.data
+        ? { status: "healthy" as const, latencyMs: storageResult.data.latencyMs }
+        : {
+            status: "unhealthy" as const,
+            error: !storageResult.success ? "Ping handler failed" : "No data returned",
+          };
+    components["storage"] = storageComponent;
 
     const allHealthy = Object.values(components).every((c) => c.status === "healthy");
     const status = allHealthy ? "healthy" : "degraded";

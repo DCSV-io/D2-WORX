@@ -1,17 +1,20 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { generateKeyPair, exportJWK, SignJWT } from "jose";
 import type { KeyLike } from "jose";
-import { verifyToken, checkFingerprint, populateRequestContext } from "@d2/jwt-auth";
+import { verifyToken, checkFingerprint, populateRequestContext, jwtAuth } from "@d2/jwt-auth";
 import type { VerifyTokenOptions } from "@d2/jwt-auth";
 import { createLocalJWKSet } from "jose";
 import { subtle } from "node:crypto";
 import { OrgType } from "@d2/handler";
+import { createServer } from "node:http";
+import type { Server } from "node:http";
 
 // ---------------------------------------------------------------------------
 // Test key pair (RS256 — generated once per suite)
 // ---------------------------------------------------------------------------
 
 let privateKey: KeyLike;
+let publicJwkForTests: ReturnType<typeof Object.create>;
 let verifyOptions: VerifyTokenOptions;
 
 const TEST_ISSUER = "d2-worx-test";
@@ -24,6 +27,7 @@ beforeAll(async () => {
   const publicJwk = await exportJWK(publicKey);
   publicJwk.kid = "test-key-1";
   publicJwk.alg = "RS256";
+  publicJwkForTests = publicJwk;
 
   const jwks = createLocalJWKSet({ keys: [publicJwk] });
   verifyOptions = { jwks, issuer: TEST_ISSUER, audience: TEST_AUDIENCE };
@@ -334,5 +338,239 @@ describe("populateRequestContext", () => {
       const ctx = populateRequestContext({ sub: "user-1", orgType });
       expect(ctx.agentOrgType).toBe(orgType);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// jwtAuth (Hono middleware factory)
+// ---------------------------------------------------------------------------
+
+describe("jwtAuth middleware", () => {
+  let jwksServer: Server;
+  let jwksUrl: string;
+
+  /**
+   * Spins up a tiny HTTP server that serves the test public key as a JWKS
+   * endpoint, allowing createRemoteJWKSet (used internally by jwtAuth) to
+   * resolve the key without mocking.
+   */
+  beforeAll(async () => {
+    // Reuse the public JWK already exported in the file-level beforeAll.
+    const jwk = { ...publicJwkForTests, use: "sig" };
+    const jwksJson = JSON.stringify({ keys: [jwk] });
+
+    jwksServer = createServer((req, res) => {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(jwksJson);
+    });
+
+    await new Promise<void>((resolve) => {
+      jwksServer.listen(0, "127.0.0.1", () => resolve());
+    });
+
+    const addr = jwksServer.address();
+    if (!addr || typeof addr === "string") {
+      throw new Error("Failed to get server address");
+    }
+    jwksUrl = `http://127.0.0.1:${addr.port}/.well-known/jwks.json`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve, reject) => {
+      jwksServer.close((err) => (err ? reject(err) : resolve()));
+    });
+  });
+
+  /**
+   * Helper: creates a mock Hono Context object with the minimum surface area
+   * needed by the jwtAuth middleware. Avoids requiring `hono` as a direct
+   * dependency of @d2/shared-tests.
+   */
+  function createMockContext(headers: Record<string, string> = {}): {
+    ctx: {
+      req: { header: (name: string) => string | undefined };
+      json: (body: unknown, status: number) => Response;
+      set: (key: string, value: unknown) => void;
+    };
+    getSetValues: () => Record<string, unknown>;
+  } {
+    const lowerHeaders: Record<string, string> = {};
+    for (const [k, v] of Object.entries(headers)) {
+      lowerHeaders[k.toLowerCase()] = v;
+    }
+
+    const setValues: Record<string, unknown> = {};
+
+    const ctx = {
+      req: {
+        header: (name: string) => lowerHeaders[name.toLowerCase()],
+      },
+      json: (body: unknown, status: number) =>
+        new Response(JSON.stringify(body), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        }),
+      set: (key: string, value: unknown) => {
+        setValues[key] = value;
+      },
+    };
+
+    return { ctx, getSetValues: () => setValues };
+  }
+
+  /**
+   * Helper: invokes the middleware and returns either the short-circuit
+   * Response (on auth failure) or null (if next() was called, meaning auth
+   * passed). Also returns the values set on the context via c.set().
+   */
+  async function callMiddleware(headers: Record<string, string> = {}): Promise<{
+    response: Response | null;
+    setValues: Record<string, unknown>;
+  }> {
+    const middleware = jwtAuth({
+      jwksUrl,
+      issuer: TEST_ISSUER,
+      audience: TEST_AUDIENCE,
+    });
+
+    const { ctx, getSetValues } = createMockContext(headers);
+    let nextCalled = false;
+    const next = async () => {
+      nextCalled = true;
+    };
+
+    const result = await middleware(ctx as never, next);
+
+    if (result instanceof Response) {
+      return { response: result, setValues: getSetValues() };
+    }
+
+    if (nextCalled) {
+      return { response: null, setValues: getSetValues() };
+    }
+
+    // Shouldn't happen — middleware either returns a Response or calls next
+    throw new Error("Middleware neither returned a Response nor called next()");
+  }
+
+  it("returns 401 when Authorization header is missing", async () => {
+    const { response } = await callMiddleware({});
+
+    expect(response).not.toBeNull();
+    expect(response!.status).toBe(401);
+    const body = await response!.json();
+    expect(body.success).toBe(false);
+    expect(body.statusCode).toBe(401);
+    expect(body.messages).toEqual(
+      expect.arrayContaining([expect.stringContaining("Missing Authorization header")]),
+    );
+  });
+
+  it("returns 401 when Authorization header has no Bearer prefix", async () => {
+    const token = await signToken({ sub: "user-1" });
+    const { response } = await callMiddleware({
+      Authorization: `Basic ${token}`,
+    });
+
+    expect(response).not.toBeNull();
+    expect(response!.status).toBe(401);
+    const body = await response!.json();
+    expect(body.success).toBe(false);
+    expect(body.statusCode).toBe(401);
+    expect(body.messages).toEqual(
+      expect.arrayContaining([expect.stringContaining("Invalid Authorization header format")]),
+    );
+  });
+
+  it("returns 401 for an expired token", async () => {
+    const token = await signToken({ sub: "user-1" }, { expiresIn: "-1s" });
+    const { response } = await callMiddleware({
+      Authorization: `Bearer ${token}`,
+    });
+
+    expect(response).not.toBeNull();
+    expect(response!.status).toBe(401);
+    const body = await response!.json();
+    expect(body.success).toBe(false);
+    expect(body.statusCode).toBe(401);
+    expect(body.messages).toEqual(expect.arrayContaining([expect.stringMatching(/expired/i)]));
+  });
+
+  it("passes and populates requestContext for a valid token", async () => {
+    const token = await signToken({
+      sub: "user-42",
+      email: "test@d2.io",
+      orgId: "org-1",
+      orgType: "Customer",
+      role: "member",
+    });
+
+    const { response, setValues } = await callMiddleware({
+      Authorization: `Bearer ${token}`,
+    });
+
+    // next() was called — no error response
+    expect(response).toBeNull();
+
+    // requestContext was populated from JWT claims
+    const reqCtx = setValues["requestContext"] as Record<string, unknown>;
+    expect(reqCtx).toBeDefined();
+    expect(reqCtx.isAuthenticated).toBe(true);
+    expect(reqCtx.userId).toBe("user-42");
+    expect(reqCtx.agentOrgId).toBe("org-1");
+    expect(reqCtx.targetOrgId).toBe("org-1");
+    expect(reqCtx.agentOrgType).toBe(OrgType.Customer);
+    expect(reqCtx.agentOrgRole).toBe("member");
+  });
+
+  it("passes when token has fp claim matching the request fingerprint", async () => {
+    const ua = "Mozilla/5.0 TestBrowser";
+    const accept = "application/json";
+    // Compute the expected fingerprint SHA-256(UA|Accept)
+    const data = new TextEncoder().encode(`${ua}|${accept}`);
+    const hash = await subtle.digest("SHA-256", data);
+    const fp = Array.from(new Uint8Array(hash))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const token = await signToken({ sub: "user-1", fp });
+
+    const { response, setValues } = await callMiddleware({
+      Authorization: `Bearer ${token}`,
+      "User-Agent": ua,
+      Accept: accept,
+    });
+
+    expect(response).toBeNull();
+    const reqCtx = setValues["requestContext"] as Record<string, unknown>;
+    expect(reqCtx).toBeDefined();
+    expect(reqCtx.userId).toBe("user-1");
+  });
+
+  it("returns 401 when token fp claim does not match request fingerprint", async () => {
+    // Token fingerprint was computed with one UA/Accept pair
+    const originalUa = "Mozilla/5.0 OriginalBrowser";
+    const originalAccept = "application/json";
+    const data = new TextEncoder().encode(`${originalUa}|${originalAccept}`);
+    const hash = await subtle.digest("SHA-256", data);
+    const fp = Array.from(new Uint8Array(hash))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const token = await signToken({ sub: "user-1", fp });
+
+    // Request comes from a DIFFERENT client (different UA)
+    const { response } = await callMiddleware({
+      Authorization: `Bearer ${token}`,
+      "User-Agent": "Mozilla/5.0 StolenBrowser",
+      Accept: "text/html",
+    });
+
+    expect(response).not.toBeNull();
+    expect(response!.status).toBe(401);
+    const body = await response!.json();
+    expect(body.success).toBe(false);
+    expect(body.statusCode).toBe(401);
+    expect(body.messages).toEqual(expect.arrayContaining([expect.stringContaining("Fingerprint")]));
   });
 });

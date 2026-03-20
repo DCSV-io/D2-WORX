@@ -141,7 +141,12 @@ export async function createFilesApp(
   messageBus?: MessageBus,
 ) {
   // 1. Singletons
-  const pool = new pg.Pool({ connectionString: config.databaseUrl });
+  const pool = new pg.Pool({
+    connectionString: config.databaseUrl,
+    max: 20,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+  });
   const redis = new Redis(config.redisUrl);
   const logger = createLogger({ serviceName: "files-service" });
 
@@ -311,12 +316,36 @@ export async function createFilesApp(
         });
       });
     }
-    infraDisposable.dispose();
-    s3.destroy();
-    s3Public?.destroy();
-    provider.dispose();
-    redis.disconnect();
-    await pool.end();
+    try {
+      infraDisposable.dispose();
+    } catch (e) {
+      logger.error("Shutdown: infraDisposable.dispose failed", { error: String(e) });
+    }
+    try {
+      s3.destroy();
+    } catch (e) {
+      logger.error("Shutdown: s3.destroy failed", { error: String(e) });
+    }
+    try {
+      s3Public?.destroy();
+    } catch (e) {
+      logger.error("Shutdown: s3Public.destroy failed", { error: String(e) });
+    }
+    try {
+      provider.dispose();
+    } catch (e) {
+      logger.error("Shutdown: provider.dispose failed", { error: String(e) });
+    }
+    try {
+      redis.disconnect();
+    } catch (e) {
+      logger.error("Shutdown: redis.disconnect failed", { error: String(e) });
+    }
+    try {
+      await pool.end();
+    } catch (e) {
+      logger.error("Shutdown: pool.end failed", { error: String(e) });
+    }
   }
 
   return { app, grpcServer, provider, shutdown };

@@ -90,12 +90,14 @@ Each context key is a runtime-configured feature slot. Configuration is loaded f
 
 ### Access Control Strategies
 
-| Strategy    | Upload | Read | How it works                                     |
-| ----------- | ------ | ---- | ------------------------------------------------ |
-| `jwt_owner` | Yes    | Yes  | JWT userId must match relatedEntityId            |
-| `jwt_org`   | Yes    | Yes  | JWT orgId must match relatedEntityId             |
-| `callback`  | Yes    | Yes  | Delegates to owning service via gRPC `CanAccess` |
-| `public`    | No     | Yes  | Anyone can read (e.g., public org logos)         |
+| Strategy        | Upload | Read | How it works                                                 |
+| --------------- | ------ | ---- | ------------------------------------------------------------ |
+| `jwt_owner`     | Yes    | Yes  | JWT userId must match relatedEntityId                        |
+| `jwt_org`       | Yes    | Yes  | JWT orgId must match relatedEntityId                         |
+| `callback`      | Yes    | Yes  | Delegates to owning service via gRPC `CanAccess`             |
+| `authenticated` | Yes    | Yes  | Any authenticated user — no ownership check beyond valid JWT |
+
+Public access (unauthenticated reads) is deferred to a future phase.
 
 ### Variants
 
@@ -209,7 +211,7 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 | Step | Name                            | Status  | Notes                                                                             |
 | ---- | ------------------------------- | ------- | --------------------------------------------------------------------------------- |
 | F1   | Domain layer                    | Done    | 236 tests at commit. Entities, enums, rules, constants                            |
-| F2   | App layer                       | Done    | 323 tests at commit. 11 CQRS handlers, 33 service keys                            |
+| F2   | App layer                       | Done    | 323 tests at commit. 11 CQRS handlers, 35 service keys                            |
 | F3   | Infra layer                     | Done    | 532 tests total. Drizzle, S3, ClamAV, Sharp, gRPC, messaging                      |
 | F4   | JWT middleware (`@d2/jwt-auth`) | Done    | RS256 JWKS verification, fingerprint check, IRequestContext                       |
 | F5   | API layer (`@d2/files-api`)     | Done    | Hono REST + gRPC server, composition root, Docker service                         |
@@ -222,19 +224,19 @@ Single `file` table (Drizzle ORM, PostgreSQL):
 
 ## Resolved Decisions
 
-| Decision                   | Resolution                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------ |
-| Storage backend            | MinIO (S3-compatible). Bucket notifications → RabbitMQ for event-driven intake |
-| Image processing           | Sharp (libvips). WebP output for all raster images. SVG passthrough            |
-| Virus scanning             | ClamAV via direct TCP INSTREAM protocol (no REST wrapper)                      |
-| Access control             | Per-context-key resolution strategy (jwt_owner, jwt_org, callback, public)     |
-| Variant definitions        | Per-context-key runtime config, not hardcoded. Indexed env vars                |
-| Context key naming         | Feature-prefixed: `user_avatar`, `org_logo`, `thread_attachment`               |
-| Public REST API            | Hono (same as Auth). JWT validation via `@d2/jwt-auth` (ADR-027)               |
-| Presigned URL expiry       | 15 minutes (900 seconds)                                                       |
-| Processing pipeline        | Two-stage RabbitMQ (intake → processing). Always-ACK + cleanup job             |
-| Real-time status push      | gRPC → SignalR Gateway (ADR-028)                                               |
-| Owning service integration | gRPC `FileCallback` service with `OnFileProcessed` + `CanAccess` RPCs          |
+| Decision                   | Resolution                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| Storage backend            | MinIO (S3-compatible). Bucket notifications → RabbitMQ for event-driven intake    |
+| Image processing           | Sharp (libvips). WebP output for all raster images. SVG passthrough               |
+| Virus scanning             | ClamAV via direct TCP INSTREAM protocol (no REST wrapper)                         |
+| Access control             | Per-context-key resolution strategy (jwt_owner, jwt_org, callback, authenticated) |
+| Variant definitions        | Per-context-key runtime config, not hardcoded. Indexed env vars                   |
+| Context key naming         | Feature-prefixed: `user_avatar`, `org_logo`, `thread_attachment`                  |
+| Public REST API            | Hono (same as Auth). JWT validation via `@d2/jwt-auth` (ADR-027)                  |
+| Presigned URL expiry       | 15 minutes (900 seconds)                                                          |
+| Processing pipeline        | Two-stage RabbitMQ (intake → processing). Always-ACK + cleanup job                |
+| Real-time status push      | gRPC → SignalR Gateway (ADR-028)                                                  |
+| Owning service integration | gRPC `FileCallback` service with `OnFileProcessed` + `CanAccess` RPCs             |
 
 ---
 

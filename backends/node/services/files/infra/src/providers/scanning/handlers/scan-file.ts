@@ -58,8 +58,14 @@ export class ScanFile extends BaseHandler<I, O> implements IScanFile {
       socket.setTimeout(30_000);
 
       socket.on("data", (chunk) => chunks.push(chunk));
-      socket.on("end", () => resolve(Buffer.concat(chunks)));
-      socket.on("error", reject);
+      socket.on("end", () => {
+        socket.destroy();
+        resolve(Buffer.concat(chunks));
+      });
+      socket.on("error", (err) => {
+        socket.destroy();
+        reject(err);
+      });
       socket.on("timeout", () => {
         socket.destroy(new Error("ClamAV connection timed out"));
       });

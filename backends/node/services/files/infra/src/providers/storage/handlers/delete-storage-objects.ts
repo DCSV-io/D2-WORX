@@ -23,7 +23,7 @@ export class DeleteStorageObjects extends BaseHandler<I, O> implements IDeleteSt
     }
 
     try {
-      await this.s3.send(
+      const response = await this.s3.send(
         new DeleteObjectsCommand({
           Bucket: this.bucket,
           Delete: {
@@ -32,6 +32,15 @@ export class DeleteStorageObjects extends BaseHandler<I, O> implements IDeleteSt
           },
         }),
       );
+      if (response.Errors && response.Errors.length > 0) {
+        this.context.logger.warn("Partial S3 delete failure", {
+          failedCount: response.Errors.length,
+          failedKeys: response.Errors.map((e) => e.Key),
+        });
+        return D2Result.serviceUnavailable({
+          messages: ["Partial storage delete failure"],
+        });
+      }
       return D2Result.ok({ data: {} });
     } catch (err: unknown) {
       this.context.logger.error("DeleteStorageObjects failed", {

@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { BaseHandler, type IHandlerContext, type RedactionSpec } from "@d2/handler";
 import { D2Result } from "@d2/result";
@@ -12,7 +13,7 @@ import { toFile } from "../../mappers/file-mapper.js";
 
 export class UpdateFileRecord extends BaseHandler<I, O> implements IUpdateFileRecordHandler {
   override get redaction(): RedactionSpec {
-    return { suppressOutput: true };
+    return { suppressInput: true, suppressOutput: true };
   }
 
   private readonly db: NodePgDatabase;
@@ -24,6 +25,12 @@ export class UpdateFileRecord extends BaseHandler<I, O> implements IUpdateFileRe
 
   protected async executeAsync(input: I): Promise<D2Result<O | undefined>> {
     const f = input.file;
+
+    const conditions: SQL[] = [eq(file.id, f.id)];
+    if (input.expectedStatus) {
+      conditions.push(eq(file.status, input.expectedStatus));
+    }
+
     const rows = await this.db
       .update(file)
       .set({
@@ -35,7 +42,7 @@ export class UpdateFileRecord extends BaseHandler<I, O> implements IUpdateFileRe
         rejectionReason: f.rejectionReason ?? undefined,
         updatedAt: new Date(),
       })
-      .where(eq(file.id, f.id))
+      .where(and(...conditions))
       .returning();
 
     const row = rows[0];

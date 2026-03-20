@@ -126,6 +126,10 @@ export function addFilesApp(
           delete: sp.resolve(IDeleteFileRecordKey),
           deleteByIds: sp.resolve(IDeleteFileRecordsByIdsKey),
         },
+        {
+          head: sp.resolve(IHeadStorageObjectKey),
+          delete: sp.resolve(IDeleteStorageObjectKey),
+        },
         sp.resolve(IHandlerContextKey),
       ),
   );

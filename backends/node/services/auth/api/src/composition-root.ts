@@ -78,7 +78,12 @@ export async function createApp(
   messageBus?: import("@d2/messaging").MessageBus,
 ) {
   // 1. Singletons (infrastructure)
-  const pool = new pg.Pool({ connectionString: config.databaseUrl });
+  const pool = new pg.Pool({
+    connectionString: config.databaseUrl,
+    max: 20,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 5_000,
+  });
   const redis = new Redis(config.redisUrl);
   const logger = createLogger({
     serviceName: config.appName ?? "auth-service",

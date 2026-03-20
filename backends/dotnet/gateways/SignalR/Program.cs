@@ -11,6 +11,7 @@ using D2.Shared.Auth.Default;
 using D2.Shared.ServiceDefaults;
 using D2.Shared.Utilities.Configuration;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -60,6 +61,14 @@ builder.Services.AddGrpc(options =>
 });
 
 var app = builder.Build();
+
+// Fail fast if no service keys configured.
+var serviceKeyOptions = app.Services.GetRequiredService<IOptions<SignalRServiceKeyOptions>>().Value;
+if (serviceKeyOptions.ValidKeys.Count == 0)
+{
+    throw new InvalidOperationException(
+        "SIGNALR_SERVICEKEY__VALIDKEYS not configured — at least one service key is required for gRPC push API authentication.");
+}
 
 // Security headers.
 app.Use(async (context, next) =>

@@ -89,7 +89,9 @@ export class ProcessFile
     const getResult = await this.storage.get.handleAsync({ key: rawKey });
     if (!getResult.success) return D2Result.bubbleFail(getResult);
 
-    const buffer = getResult.data!.buffer;
+    if (!getResult.data)
+      return D2Result.serviceUnavailable({ messages: ["Handler returned empty data"] });
+    const buffer = getResult.data.buffer;
 
     // ClamAV scan — ALL files, regardless of content type
     const scanResult = await this.scanFile.handleAsync({
@@ -152,12 +154,9 @@ export class ProcessFile
 
     // Partition variants: resize (sharp) vs original (pass-through)
     const resizeVariants = isImage ? config.variants.filter(requiresResize) : [];
-    const originalVariants = config.variants.filter((v) => !requiresResize(v));
-
-    // For non-image content, ALL variants are treated as original (skip sharp)
-    if (!isImage) {
-      originalVariants.push(...config.variants.filter(requiresResize));
-    }
+    const originalVariants = isImage
+      ? config.variants.filter((v) => !requiresResize(v))
+      : [...config.variants];
 
     const fileVariants = [];
 

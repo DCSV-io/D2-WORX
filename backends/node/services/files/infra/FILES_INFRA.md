@@ -236,7 +236,7 @@ src/unit/infra/
                     delete-file-records-by-ids
     mappers/        file-mapper.test.ts
   providers/
-    storage/        storage-handlers.test.ts (30 tests)
+    storage/        storage-handlers.test.ts (29 tests)
     scanning/       scan-file.test.ts
     image-processing/ process-variants.test.ts
   outbound/         outbound-handlers.test.ts

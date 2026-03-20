@@ -11,8 +11,8 @@ const schema = z.object({
   address: z.string().min(1).max(255),
   contextKey: z.string().min(1).max(255),
   relatedEntityId: z.string().min(1).max(255),
-  requestingUserId: z.string().max(255),
-  requestingOrgId: z.string().max(255),
+  requestingUserId: z.string().min(1).max(255),
+  requestingOrgId: z.string().min(1).max(255),
   action: z.enum(["upload", "read"]),
 });
 
