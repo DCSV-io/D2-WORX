@@ -32,7 +32,15 @@ import * as betterAuthSchema from "../../repository/schema/better-auth-tables.js
  * creating the BetterAuth instance, enabling auth-infra to trigger
  * app-layer logic without a circular dependency.
  */
+/** Minimal logger for BetterAuth callback hooks (avoids scope/DI dependency). */
+export interface AuthHooksLogger {
+  warn(msg: string, ...args: unknown[]): void;
+  debug(msg: string, ...args: unknown[]): void;
+}
+
 export interface AuthHooks {
+  /** Structured logger for BetterAuth callback error logging. Falls back to console if not provided. */
+  logger?: AuthHooksLogger;
   /** Called after a successful sign-in to record audit events. */
   onSignIn?: (data: {
     userId: string;
@@ -113,6 +121,8 @@ export function createAuth(
   secondaryStorage?: SecondaryStorage,
   hooks?: AuthHooks,
 ) {
+  // eslint-disable-next-line no-console
+  const log: AuthHooksLogger = hooks?.logger ?? { warn: console.warn, debug: console.debug };
   const sessionExpiresIn = config.sessionExpiresIn ?? AUTH_CONFIG_DEFAULTS.sessionExpiresIn;
   const sessionUpdateAge = config.sessionUpdateAge ?? AUTH_CONFIG_DEFAULTS.sessionUpdateAge;
   const cookieCacheMaxAge = config.cookieCacheMaxAge ?? AUTH_CONFIG_DEFAULTS.cookieCacheMaxAge;
@@ -187,8 +197,7 @@ export function createAuth(
               // Fail-open: RabbitMQ down shouldn't crash sign-in/sign-up.
               // BetterAuth awaits this callback — if it throws, the entire flow
               // fails with 500. The user can re-trigger via sign-in (sendOnSignIn: true).
-              // eslint-disable-next-line no-console
-              console.warn("sendVerificationEmail: failed (fail-open)", {
+              log.warn("sendVerificationEmail: failed (fail-open)", {
                 error: err instanceof Error ? err.message : String(err),
               });
             }
@@ -313,8 +322,7 @@ export function createAuth(
               };
             } catch (err: unknown) {
               // DB error — don't block session update. Fields stay null.
-              // eslint-disable-next-line no-console
-              console.warn(
+              log.warn(
                 "session.update.before: failed to resolve org type/role (fields stay null)",
                 { error: err instanceof Error ? err.message : String(err) },
               );
@@ -341,8 +349,7 @@ export function createAuth(
                   })
                   .catch((err: unknown) => {
                     // Swallow errors — sign-in audit is non-critical
-                    // eslint-disable-next-line no-console
-                    console.warn("session.create.after: onSignIn callback failed (non-critical)", {
+                    log.warn("session.create.after: onSignIn callback failed (non-critical)", {
                       error: err instanceof Error ? err.message : String(err),
                     });
                   });
@@ -408,8 +415,7 @@ export function createAuth(
                 }
               } catch (err: unknown) {
                 // Non-critical — impersonator details are for audit only
-                // eslint-disable-next-line no-console
-                console.debug("definePayload: impersonator lookup failed (non-critical)", {
+                log.debug("definePayload: impersonator lookup failed (non-critical)", {
                   error: err instanceof Error ? err.message : String(err),
                 });
               }

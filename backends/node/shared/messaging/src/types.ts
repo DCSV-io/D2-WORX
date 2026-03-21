@@ -1,6 +1,14 @@
+/** Minimal logger interface for MessageBus (avoids dependency on @d2/logging). */
+export interface MessageBusLogger {
+  warn(msg: string, ...args: unknown[]): void;
+  error(msg: string, ...args: unknown[]): void;
+}
+
 export interface MessageBusOptions {
   url: string;
   connectionName?: string;
+  /** Optional structured logger. Falls back to console if not provided. */
+  logger?: MessageBusLogger;
   /** Pass-through options for the underlying rabbitmq-client Connection (reconnection tuning, etc.). */
   connectionOptions?: {
     retryLow?: number;

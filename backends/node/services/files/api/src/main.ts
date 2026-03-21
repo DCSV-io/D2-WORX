@@ -56,7 +56,11 @@ const config = defineConfig("files-service", {
 });
 
 // RabbitMQ (required — files service needs consumers for the processing pipeline)
-const messageBus = new MessageBus({ url: config.rabbitMqUrl, connectionName: "files-service" });
+const messageBus = new MessageBus({
+  url: config.rabbitMqUrl,
+  connectionName: "files-service",
+  logger,
+});
 await messageBus.waitForConnection();
 logger.info("RabbitMQ connected");
 

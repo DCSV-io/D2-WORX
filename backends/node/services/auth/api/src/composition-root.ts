@@ -178,6 +178,7 @@ export async function createApp(
 
   const auth = createAuth(config, db, redisSetup.secondaryStorage, {
     ...callbacks,
+    logger,
     getFingerprintForCurrentRequest: () => fingerprintStorage.getStore(),
     getDeviceFingerprintForCurrentRequest: () => deviceFingerprintStorage.getStore(),
     passwordFunctions: preAuth.passwordFns,
