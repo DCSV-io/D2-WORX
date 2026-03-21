@@ -69,10 +69,10 @@ public class LocationMapperTests
         dto.HashId.Should().NotBeNullOrEmpty();
         dto.Coordinates.Should().BeNull();
         dto.Address.Should().BeNull();
-        dto.City.Should().BeNull();
-        dto.PostalCode.Should().BeNull();
-        dto.SubdivisionIso31662Code.Should().BeNull();
-        dto.CountryIso31661Alpha2Code.Should().BeNull();
+        dto.HasCity.Should().BeFalse();
+        dto.HasPostalCode.Should().BeFalse();
+        dto.HasSubdivisionIso31662Code.Should().BeFalse();
+        dto.HasCountryIso31661Alpha2Code.Should().BeFalse();
     }
 
     #endregion
