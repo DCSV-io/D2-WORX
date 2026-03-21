@@ -20,7 +20,7 @@ describe("DeliveryRequest", () => {
       expect(req.recipientContactId).toBe("contact-789");
       expect(req.id).toHaveLength(36);
       expect(req.createdAt).toBeInstanceOf(Date);
-      expect(req.processedAt).toBeNull();
+      expect(req.processedAt).toBeUndefined();
     });
 
     it("should generate unique IDs", () => {
@@ -34,9 +34,9 @@ describe("DeliveryRequest", () => {
       expect(req.id).toBe("custom-id");
     });
 
-    it("should default nullable fields to null", () => {
+    it("should default optional fields to undefined", () => {
       const req = createDeliveryRequest(validInput);
-      expect(req.callbackTopic).toBeNull();
+      expect(req.callbackTopic).toBeUndefined();
     });
 
     it("should accept callbackTopic", () => {

@@ -51,18 +51,18 @@ describe("Message", () => {
       expect(msg.sensitive).toBe(false);
     });
 
-    it("should default nullable fields to null", () => {
+    it("should default optional fields to undefined", () => {
       const msg = createMessage(validInput);
-      expect(msg.threadId).toBeNull();
-      expect(msg.parentMessageId).toBeNull();
-      expect(msg.senderContactId).toBeNull();
-      expect(msg.senderService).toBeNull();
-      expect(msg.title).toBeNull();
-      expect(msg.relatedEntityId).toBeNull();
-      expect(msg.relatedEntityType).toBeNull();
-      expect(msg.metadata).toBeNull();
-      expect(msg.editedAt).toBeNull();
-      expect(msg.deletedAt).toBeNull();
+      expect(msg.threadId).toBeUndefined();
+      expect(msg.parentMessageId).toBeUndefined();
+      expect(msg.senderContactId).toBeUndefined();
+      expect(msg.senderService).toBeUndefined();
+      expect(msg.title).toBeUndefined();
+      expect(msg.relatedEntityId).toBeUndefined();
+      expect(msg.relatedEntityType).toBeUndefined();
+      expect(msg.metadata).toBeUndefined();
+      expect(msg.editedAt).toBeUndefined();
+      expect(msg.deletedAt).toBeUndefined();
     });
 
     it("should accept all optional fields", () => {
@@ -226,7 +226,7 @@ describe("Message", () => {
       });
       expect(msg.threadId).toBeNull();
       expect(msg.parentMessageId).toBeNull();
-      expect(msg.title).toBeNull();
+      expect(msg.title).toBeUndefined();
       expect(msg.relatedEntityId).toBeNull();
       expect(msg.relatedEntityType).toBeNull();
       expect(msg.metadata).toBeNull();

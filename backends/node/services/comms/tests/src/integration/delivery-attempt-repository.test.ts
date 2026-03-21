@@ -55,11 +55,11 @@ describe("DeliveryAttemptRepository (integration)", () => {
     expect(found.channel).toBe("email");
     expect(found.recipientAddress).toBe("user@example.com");
     expect(found.status).toBe("pending");
-    expect(found.providerMessageId).toBeNull();
-    expect(found.error).toBeNull();
+    expect(found.providerMessageId).toBeUndefined();
+    expect(found.error).toBeUndefined();
     expect(found.attemptNumber).toBe(1);
     expect(found.createdAt).toBeInstanceOf(Date);
-    expect(found.nextRetryAt).toBeNull();
+    expect(found.nextRetryAt).toBeUndefined();
   });
 
   it("should return empty array when no attempts exist", async () => {
@@ -137,8 +137,8 @@ describe("DeliveryAttemptRepository (integration)", () => {
     const result = await repo.findByRequestId.handleAsync({ requestId: testRequestId });
     const updated = result.data!.attempts[0];
     expect(updated.status).toBe("sent");
-    expect(updated.providerMessageId).toBeNull();
-    expect(updated.error).toBeNull();
+    expect(updated.providerMessageId).toBeUndefined();
+    expect(updated.error).toBeUndefined();
   });
 
   it("should return notFound when updateStatus targets nonexistent id", async () => {

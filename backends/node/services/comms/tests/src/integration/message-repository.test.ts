@@ -52,16 +52,16 @@ describe("MessageRepository (integration)", () => {
     expect(found.contentFormat).toBe("markdown");
     expect(found.urgency).toBe("normal");
     expect(found.sensitive).toBe(false);
-    expect(found.threadId).toBeNull();
-    expect(found.parentMessageId).toBeNull();
-    expect(found.senderUserId).toBeNull();
-    expect(found.senderContactId).toBeNull();
-    expect(found.title).toBeNull();
-    expect(found.relatedEntityId).toBeNull();
-    expect(found.relatedEntityType).toBeNull();
-    expect(found.metadata).toBeNull();
-    expect(found.editedAt).toBeNull();
-    expect(found.deletedAt).toBeNull();
+    expect(found.threadId).toBeUndefined();
+    expect(found.parentMessageId).toBeUndefined();
+    expect(found.senderUserId).toBeUndefined();
+    expect(found.senderContactId).toBeUndefined();
+    expect(found.title).toBeUndefined();
+    expect(found.relatedEntityId).toBeUndefined();
+    expect(found.relatedEntityType).toBeUndefined();
+    expect(found.metadata).toBeUndefined();
+    expect(found.editedAt).toBeUndefined();
+    expect(found.deletedAt).toBeUndefined();
     expect(found.createdAt).toBeInstanceOf(Date);
     expect(found.updatedAt).toBeInstanceOf(Date);
   });
@@ -71,23 +71,23 @@ describe("MessageRepository (integration)", () => {
     expect(result.success).toBe(false);
   });
 
-  it("should store nullable fields as null", async () => {
+  it("should store nullable fields as undefined when read back", async () => {
     const msg = makeMessage({
-      threadId: null,
-      title: null,
-      metadata: null,
-      senderUserId: null,
-      senderContactId: null,
+      threadId: undefined,
+      title: undefined,
+      metadata: undefined,
+      senderUserId: undefined,
+      senderContactId: undefined,
     });
     await repo.create.handleAsync({ message: msg });
 
     const result = await repo.findById.handleAsync({ id: msg.id });
     const found = result.data!.message;
-    expect(found.threadId).toBeNull();
-    expect(found.title).toBeNull();
-    expect(found.metadata).toBeNull();
-    expect(found.senderUserId).toBeNull();
-    expect(found.senderContactId).toBeNull();
+    expect(found.threadId).toBeUndefined();
+    expect(found.title).toBeUndefined();
+    expect(found.metadata).toBeUndefined();
+    expect(found.senderUserId).toBeUndefined();
+    expect(found.senderContactId).toBeUndefined();
   });
 
   it("should store jsonb metadata", async () => {
