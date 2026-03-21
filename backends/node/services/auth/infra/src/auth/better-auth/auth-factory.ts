@@ -255,7 +255,7 @@ export function createAuth(
               await hooks.createUserContact({
                 userId,
                 email: user.email as string,
-                name: (user.name as string) ?? "",
+                name: user.name as string,
                 locale: (user.locale as string) ?? BASE_LOCALE,
               });
             }

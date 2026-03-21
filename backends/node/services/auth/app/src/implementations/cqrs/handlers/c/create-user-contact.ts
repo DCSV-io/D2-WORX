@@ -64,13 +64,7 @@ export class CreateUserContact
       personalDetails: {
         firstName,
         lastName,
-        title: "",
-        preferredName: "",
-        middleName: "",
-        generationalSuffix: "",
         professionalCredentials: [],
-        dateOfBirth: "",
-        biologicalSex: "",
       },
       professionalDetails: undefined,
       location: undefined,

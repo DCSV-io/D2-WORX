@@ -179,20 +179,13 @@ export function createInvitationRoutes(options: InvitationRoutesOptions) {
             personalDetails:
               firstName || lastName
                 ? {
-                    firstName: firstName ?? "",
-                    lastName: lastName ?? "",
-                    title: "",
-                    preferredName: "",
-                    middleName: "",
-                    generationalSuffix: "",
+                    firstName,
+                    lastName,
                     professionalCredentials: [],
-                    dateOfBirth: "",
-                    biologicalSex: "",
                   }
                 : undefined,
             professionalDetails: undefined,
             location: undefined,
-            ietfBcp47Tag: "",
           },
         ],
       });

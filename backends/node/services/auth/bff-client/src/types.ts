@@ -20,9 +20,9 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  username: string;
-  displayUsername: string;
-  image: string | null;
+  username?: string;
+  displayUsername?: string;
+  image?: string;
 }
 
 /** Configuration for the BFF client. */
