@@ -2,9 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { PingDb } from "@d2/files-infra";
 import { createTestContext } from "../../helpers/test-context.js";
 
-function createMockDb(
-  limitFn: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue([]),
-) {
+function createMockDb(limitFn: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue([])) {
   return {
     select: vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({

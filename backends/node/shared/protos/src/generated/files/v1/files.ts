@@ -23,32 +23,38 @@ import { D2ResultProto } from "../../common/v1/d2_result";
 export const protobufPackage = "d2.files.v1";
 
 export interface CanAccessRequest {
-  contextKey: string;
-  relatedEntityId: string;
-  requestingUserId: string;
-  requestingOrgId: string;
+  contextKey?: string | undefined;
+  relatedEntityId?: string | undefined;
+  requestingUserId?: string | undefined;
+  requestingOrgId?:
+    | string
+    | undefined;
   /** "upload" | "read" */
-  action: string;
+  action?: string | undefined;
 }
 
 export interface CanAccessResponse {
-  result: D2ResultProto | undefined;
-  allowed: boolean;
+  result?: D2ResultProto | undefined;
+  allowed?: boolean | undefined;
 }
 
 export interface FileProcessedRequest {
-  fileId: string;
-  contextKey: string;
-  relatedEntityId: string;
+  fileId?: string | undefined;
+  contextKey?: string | undefined;
+  relatedEntityId?:
+    | string
+    | undefined;
   /** "ready" | "rejected" */
-  status: string;
+  status?:
+    | string
+    | undefined;
   /** variant names (e.g., "original", "thumbnail") */
-  variants: string[];
+  variants?: string[] | undefined;
 }
 
 export interface FileProcessedResponse {
-  result: D2ResultProto | undefined;
-  success: boolean;
+  result?: D2ResultProto | undefined;
+  success?: boolean | undefined;
 }
 
 function createBaseCanAccessRequest(): CanAccessRequest {
@@ -57,19 +63,19 @@ function createBaseCanAccessRequest(): CanAccessRequest {
 
 export const CanAccessRequest: MessageFns<CanAccessRequest> = {
   encode(message: CanAccessRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.contextKey !== "") {
+    if (message.contextKey !== undefined && message.contextKey !== "") {
       writer.uint32(10).string(message.contextKey);
     }
-    if (message.relatedEntityId !== "") {
+    if (message.relatedEntityId !== undefined && message.relatedEntityId !== "") {
       writer.uint32(18).string(message.relatedEntityId);
     }
-    if (message.requestingUserId !== "") {
+    if (message.requestingUserId !== undefined && message.requestingUserId !== "") {
       writer.uint32(26).string(message.requestingUserId);
     }
-    if (message.requestingOrgId !== "") {
+    if (message.requestingOrgId !== undefined && message.requestingOrgId !== "") {
       writer.uint32(34).string(message.requestingOrgId);
     }
-    if (message.action !== "") {
+    if (message.action !== undefined && message.action !== "") {
       writer.uint32(42).string(message.action);
     }
     return writer;
@@ -159,19 +165,19 @@ export const CanAccessRequest: MessageFns<CanAccessRequest> = {
 
   toJSON(message: CanAccessRequest): unknown {
     const obj: any = {};
-    if (message.contextKey !== "") {
+    if (message.contextKey !== undefined && message.contextKey !== "") {
       obj.contextKey = message.contextKey;
     }
-    if (message.relatedEntityId !== "") {
+    if (message.relatedEntityId !== undefined && message.relatedEntityId !== "") {
       obj.relatedEntityId = message.relatedEntityId;
     }
-    if (message.requestingUserId !== "") {
+    if (message.requestingUserId !== undefined && message.requestingUserId !== "") {
       obj.requestingUserId = message.requestingUserId;
     }
-    if (message.requestingOrgId !== "") {
+    if (message.requestingOrgId !== undefined && message.requestingOrgId !== "") {
       obj.requestingOrgId = message.requestingOrgId;
     }
-    if (message.action !== "") {
+    if (message.action !== undefined && message.action !== "") {
       obj.action = message.action;
     }
     return obj;
@@ -200,7 +206,7 @@ export const CanAccessResponse: MessageFns<CanAccessResponse> = {
     if (message.result !== undefined) {
       D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
     }
-    if (message.allowed !== false) {
+    if (message.allowed !== undefined && message.allowed !== false) {
       writer.uint32(16).bool(message.allowed);
     }
     return writer;
@@ -250,7 +256,7 @@ export const CanAccessResponse: MessageFns<CanAccessResponse> = {
     if (message.result !== undefined) {
       obj.result = D2ResultProto.toJSON(message.result);
     }
-    if (message.allowed !== false) {
+    if (message.allowed !== undefined && message.allowed !== false) {
       obj.allowed = message.allowed;
     }
     return obj;
@@ -275,20 +281,22 @@ function createBaseFileProcessedRequest(): FileProcessedRequest {
 
 export const FileProcessedRequest: MessageFns<FileProcessedRequest> = {
   encode(message: FileProcessedRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.fileId !== "") {
+    if (message.fileId !== undefined && message.fileId !== "") {
       writer.uint32(10).string(message.fileId);
     }
-    if (message.contextKey !== "") {
+    if (message.contextKey !== undefined && message.contextKey !== "") {
       writer.uint32(18).string(message.contextKey);
     }
-    if (message.relatedEntityId !== "") {
+    if (message.relatedEntityId !== undefined && message.relatedEntityId !== "") {
       writer.uint32(26).string(message.relatedEntityId);
     }
-    if (message.status !== "") {
+    if (message.status !== undefined && message.status !== "") {
       writer.uint32(34).string(message.status);
     }
-    for (const v of message.variants) {
-      writer.uint32(42).string(v!);
+    if (message.variants !== undefined && message.variants.length !== 0) {
+      for (const v of message.variants) {
+        writer.uint32(42).string(v!);
+      }
     }
     return writer;
   },
@@ -337,7 +345,10 @@ export const FileProcessedRequest: MessageFns<FileProcessedRequest> = {
             break;
           }
 
-          message.variants.push(reader.string());
+          const el = reader.string();
+          if (el !== undefined) {
+            message.variants!.push(el);
+          }
           continue;
         }
       }
@@ -373,16 +384,16 @@ export const FileProcessedRequest: MessageFns<FileProcessedRequest> = {
 
   toJSON(message: FileProcessedRequest): unknown {
     const obj: any = {};
-    if (message.fileId !== "") {
+    if (message.fileId !== undefined && message.fileId !== "") {
       obj.fileId = message.fileId;
     }
-    if (message.contextKey !== "") {
+    if (message.contextKey !== undefined && message.contextKey !== "") {
       obj.contextKey = message.contextKey;
     }
-    if (message.relatedEntityId !== "") {
+    if (message.relatedEntityId !== undefined && message.relatedEntityId !== "") {
       obj.relatedEntityId = message.relatedEntityId;
     }
-    if (message.status !== "") {
+    if (message.status !== undefined && message.status !== "") {
       obj.status = message.status;
     }
     if (message.variants?.length) {
@@ -414,7 +425,7 @@ export const FileProcessedResponse: MessageFns<FileProcessedResponse> = {
     if (message.result !== undefined) {
       D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
     }
-    if (message.success !== false) {
+    if (message.success !== undefined && message.success !== false) {
       writer.uint32(16).bool(message.success);
     }
     return writer;
@@ -464,7 +475,7 @@ export const FileProcessedResponse: MessageFns<FileProcessedResponse> = {
     if (message.result !== undefined) {
       obj.result = D2ResultProto.toJSON(message.result);
     }
-    if (message.success !== false) {
+    if (message.success !== undefined && message.success !== false) {
       obj.success = message.success;
     }
     return obj;

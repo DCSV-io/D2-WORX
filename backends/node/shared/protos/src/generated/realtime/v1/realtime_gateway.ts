@@ -25,28 +25,36 @@ export const protobufPackage = "d2.realtime.v1";
 
 export interface PushToChannelRequest {
   /** Target channel name (e.g., "user:abc-123", "org:def-456"). */
-  channel: string;
+  channel?:
+    | string
+    | undefined;
   /** Event type (e.g., "file:ready", "file:rejected", "message:new"). */
-  event: string;
+  event?:
+    | string
+    | undefined;
   /** JSON-serialized event payload. */
-  payloadJson: string;
+  payloadJson?: string | undefined;
 }
 
 export interface RemoveFromChannelRequest {
   /** Target channel name. */
-  channel: string;
+  channel?:
+    | string
+    | undefined;
   /** SignalR connection ID to evict. */
-  connectionId: string;
+  connectionId?: string | undefined;
 }
 
 export interface PushResponse {
-  result:
+  result?:
     | D2ResultProto
     | undefined;
   /** Whether the event was delivered to at least one connection. */
-  delivered: boolean;
+  delivered?:
+    | boolean
+    | undefined;
   /** Number of connections that received the event. */
-  connectionsReached: number;
+  connectionsReached?: number | undefined;
 }
 
 function createBasePushToChannelRequest(): PushToChannelRequest {
@@ -55,13 +63,13 @@ function createBasePushToChannelRequest(): PushToChannelRequest {
 
 export const PushToChannelRequest: MessageFns<PushToChannelRequest> = {
   encode(message: PushToChannelRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.channel !== "") {
+    if (message.channel !== undefined && message.channel !== "") {
       writer.uint32(10).string(message.channel);
     }
-    if (message.event !== "") {
+    if (message.event !== undefined && message.event !== "") {
       writer.uint32(18).string(message.event);
     }
-    if (message.payloadJson !== "") {
+    if (message.payloadJson !== undefined && message.payloadJson !== "") {
       writer.uint32(26).string(message.payloadJson);
     }
     return writer;
@@ -121,13 +129,13 @@ export const PushToChannelRequest: MessageFns<PushToChannelRequest> = {
 
   toJSON(message: PushToChannelRequest): unknown {
     const obj: any = {};
-    if (message.channel !== "") {
+    if (message.channel !== undefined && message.channel !== "") {
       obj.channel = message.channel;
     }
-    if (message.event !== "") {
+    if (message.event !== undefined && message.event !== "") {
       obj.event = message.event;
     }
-    if (message.payloadJson !== "") {
+    if (message.payloadJson !== undefined && message.payloadJson !== "") {
       obj.payloadJson = message.payloadJson;
     }
     return obj;
@@ -151,10 +159,10 @@ function createBaseRemoveFromChannelRequest(): RemoveFromChannelRequest {
 
 export const RemoveFromChannelRequest: MessageFns<RemoveFromChannelRequest> = {
   encode(message: RemoveFromChannelRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.channel !== "") {
+    if (message.channel !== undefined && message.channel !== "") {
       writer.uint32(10).string(message.channel);
     }
-    if (message.connectionId !== "") {
+    if (message.connectionId !== undefined && message.connectionId !== "") {
       writer.uint32(18).string(message.connectionId);
     }
     return writer;
@@ -205,10 +213,10 @@ export const RemoveFromChannelRequest: MessageFns<RemoveFromChannelRequest> = {
 
   toJSON(message: RemoveFromChannelRequest): unknown {
     const obj: any = {};
-    if (message.channel !== "") {
+    if (message.channel !== undefined && message.channel !== "") {
       obj.channel = message.channel;
     }
-    if (message.connectionId !== "") {
+    if (message.connectionId !== undefined && message.connectionId !== "") {
       obj.connectionId = message.connectionId;
     }
     return obj;
@@ -234,10 +242,10 @@ export const PushResponse: MessageFns<PushResponse> = {
     if (message.result !== undefined) {
       D2ResultProto.encode(message.result, writer.uint32(10).fork()).join();
     }
-    if (message.delivered !== false) {
+    if (message.delivered !== undefined && message.delivered !== false) {
       writer.uint32(16).bool(message.delivered);
     }
-    if (message.connectionsReached !== 0) {
+    if (message.connectionsReached !== undefined && message.connectionsReached !== 0) {
       writer.uint32(24).int32(message.connectionsReached);
     }
     return writer;
@@ -300,10 +308,10 @@ export const PushResponse: MessageFns<PushResponse> = {
     if (message.result !== undefined) {
       obj.result = D2ResultProto.toJSON(message.result);
     }
-    if (message.delivered !== false) {
+    if (message.delivered !== undefined && message.delivered !== false) {
       obj.delivered = message.delivered;
     }
-    if (message.connectionsReached !== 0) {
+    if (message.connectionsReached !== undefined && message.connectionsReached !== 0) {
       obj.connectionsReached = Math.round(message.connectionsReached);
     }
     return obj;

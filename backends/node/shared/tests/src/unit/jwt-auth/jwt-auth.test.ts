@@ -495,7 +495,9 @@ describe("jwtAuth middleware", () => {
     const body = await response!.json();
     expect(body.success).toBe(false);
     expect(body.statusCode).toBe(401);
-    expect(body.messages).toEqual(expect.arrayContaining([expect.stringContaining("Unauthorized")]));
+    expect(body.messages).toEqual(
+      expect.arrayContaining([expect.stringContaining("Unauthorized")]),
+    );
   });
 
   it("passes and populates requestContext for a valid token", async () => {
@@ -573,6 +575,8 @@ describe("jwtAuth middleware", () => {
     const body = await response!.json();
     expect(body.success).toBe(false);
     expect(body.statusCode).toBe(401);
-    expect(body.messages).toEqual(expect.arrayContaining([expect.stringContaining("Unauthorized")]));
+    expect(body.messages).toEqual(
+      expect.arrayContaining([expect.stringContaining("Unauthorized")]),
+    );
   });
 });

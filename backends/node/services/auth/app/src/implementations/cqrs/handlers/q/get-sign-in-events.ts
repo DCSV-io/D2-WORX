@@ -80,9 +80,7 @@ export class GetSignInEvents
         const dateResult = await this.getLatestEventDate.handleAsync({
           userId: input.userId,
         });
-        const latestStr = dateResult.success
-          ? dateResult.data?.date?.toISOString()
-          : undefined;
+        const latestStr = dateResult.success ? dateResult.data?.date?.toISOString() : undefined;
 
         if (latestStr === cached.latestDate) {
           return D2Result.ok({

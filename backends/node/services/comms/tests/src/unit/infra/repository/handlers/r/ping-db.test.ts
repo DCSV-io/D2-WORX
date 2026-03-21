@@ -18,9 +18,7 @@ function createTestContext(): HandlerContext {
   return new HandlerContext(request, createLogger({ level: "silent" as never }));
 }
 
-function createMockDb(
-  limitFn: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue([]),
-) {
+function createMockDb(limitFn: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue([])) {
   return {
     select: vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
