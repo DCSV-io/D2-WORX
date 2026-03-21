@@ -40,8 +40,8 @@ public static partial class ProtoExtensions
             {
                 Success = result.Success,
                 StatusCode = (int)result.StatusCode,
-                ErrorCode = result.ErrorCode ?? string.Empty,
-                TraceId = result.TraceId ?? string.Empty,
+                ErrorCode = result.ErrorCode,
+                TraceId = result.TraceId,
             };
 
             // Map messages.

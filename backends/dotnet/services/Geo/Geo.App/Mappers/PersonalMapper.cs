@@ -10,6 +10,7 @@ using System.Globalization;
 using D2.Geo.Domain.Enums;
 using D2.Geo.Domain.ValueObjects;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Mapper for converting between <see cref="Personal"/> and <see cref="PersonalDTO"/>.
@@ -36,14 +37,14 @@ public static class PersonalMapper
         {
             var dto = new PersonalDTO
             {
-                Title = personal.Title?.ToString() ?? string.Empty,
+                Title = personal.Title?.ToString(),
                 FirstName = personal.FirstName,
-                PreferredName = personal.PreferredName ?? string.Empty,
-                MiddleName = personal.MiddleName ?? string.Empty,
-                LastName = personal.LastName ?? string.Empty,
-                GenerationalSuffix = personal.GenerationalSuffix?.ToString() ?? string.Empty,
-                DateOfBirth = personal.DateOfBirth?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty,
-                BiologicalSex = personal.BiologicalSex?.ToString() ?? string.Empty,
+                PreferredName = personal.PreferredName,
+                MiddleName = personal.MiddleName,
+                LastName = personal.LastName,
+                GenerationalSuffix = personal.GenerationalSuffix?.ToString(),
+                DateOfBirth = personal.DateOfBirth?.ToString("O", CultureInfo.InvariantCulture),
+                BiologicalSex = personal.BiologicalSex?.ToString(),
             };
             dto.ProfessionalCredentials.AddRange(personal.ProfessionalCredentials);
             return dto;
@@ -70,14 +71,14 @@ public static class PersonalMapper
         {
             return Personal.Create(
                 personalDTO.FirstName,
-                Enum.TryParse<NameTitle>(personalDTO.Title, out var title) ? title : null,
-                personalDTO.PreferredName,
-                personalDTO.MiddleName,
-                personalDTO.LastName,
-                Enum.TryParse<GenerationalSuffix>(personalDTO.GenerationalSuffix, out var suffix) ? suffix : null,
+                Enum.TryParse<NameTitle>(personalDTO.Title.ToNullIfEmpty(), out var title) ? title : null,
+                personalDTO.PreferredName.ToNullIfEmpty(),
+                personalDTO.MiddleName.ToNullIfEmpty(),
+                personalDTO.LastName.ToNullIfEmpty(),
+                Enum.TryParse<GenerationalSuffix>(personalDTO.GenerationalSuffix.ToNullIfEmpty(), out var suffix) ? suffix : null,
                 personalDTO.ProfessionalCredentials,
-                DateOnly.TryParse(personalDTO.DateOfBirth, out var dob) ? dob : null,
-                Enum.TryParse<BiologicalSex>(personalDTO.BiologicalSex, out var sex) ? sex : null);
+                DateOnly.TryParse(personalDTO.DateOfBirth.ToNullIfEmpty(), out var dob) ? dob : null,
+                Enum.TryParse<BiologicalSex>(personalDTO.BiologicalSex.ToNullIfEmpty(), out var sex) ? sex : null);
         }
     }
 }

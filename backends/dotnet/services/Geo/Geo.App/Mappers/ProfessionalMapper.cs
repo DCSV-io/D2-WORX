@@ -8,6 +8,7 @@ namespace D2.Geo.App.Mappers;
 
 using D2.Geo.Domain.ValueObjects;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Mapper for converting between <see cref="Professional"/> and <see cref="ProfessionalDTO"/>.
@@ -35,9 +36,9 @@ public static class ProfessionalMapper
             return new ProfessionalDTO
             {
                 CompanyName = professional.CompanyName,
-                JobTitle = professional.JobTitle ?? string.Empty,
-                Department = professional.Department ?? string.Empty,
-                CompanyWebsite = professional.CompanyWebsite?.ToString() ?? string.Empty,
+                JobTitle = professional.JobTitle,
+                Department = professional.Department,
+                CompanyWebsite = professional.CompanyWebsite?.ToString(),
             };
         }
     }
@@ -62,9 +63,9 @@ public static class ProfessionalMapper
         {
             return Professional.Create(
                 professionalDTO.CompanyName,
-                professionalDTO.JobTitle,
-                professionalDTO.Department,
-                Uri.TryCreate(professionalDTO.CompanyWebsite, UriKind.Absolute, out var uri) ? uri : null);
+                professionalDTO.JobTitle.ToNullIfEmpty(),
+                professionalDTO.Department.ToNullIfEmpty(),
+                Uri.TryCreate(professionalDTO.CompanyWebsite.ToNullIfEmpty(), UriKind.Absolute, out var uri) ? uri : null);
         }
     }
 }

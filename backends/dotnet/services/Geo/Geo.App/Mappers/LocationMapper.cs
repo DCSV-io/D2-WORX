@@ -8,6 +8,7 @@ namespace D2.Geo.App.Mappers;
 
 using D2.Geo.Domain.Entities;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Mapper for converting between <see cref="Location"/> and <see cref="LocationDTO"/>.
@@ -37,10 +38,10 @@ public static class LocationMapper
                 HashId = location.HashId,
                 Coordinates = location.Coordinates?.ToDTO(),
                 Address = location.Address?.ToDTO(),
-                City = location.City ?? string.Empty,
-                PostalCode = location.PostalCode ?? string.Empty,
-                SubdivisionIso31662Code = location.SubdivisionISO31662Code ?? string.Empty,
-                CountryIso31661Alpha2Code = location.CountryISO31661Alpha2Code ?? string.Empty,
+                City = location.City,
+                PostalCode = location.PostalCode,
+                SubdivisionIso31662Code = location.SubdivisionISO31662Code,
+                CountryIso31661Alpha2Code = location.CountryISO31661Alpha2Code,
             };
         }
     }
@@ -66,10 +67,10 @@ public static class LocationMapper
             return Location.Create(
                 locationDTO.Coordinates?.ToDomain(),
                 locationDTO.Address?.ToDomain(),
-                locationDTO.City,
-                locationDTO.PostalCode,
-                locationDTO.SubdivisionIso31662Code,
-                locationDTO.CountryIso31661Alpha2Code);
+                locationDTO.City.ToNullIfEmpty(),
+                locationDTO.PostalCode.ToNullIfEmpty(),
+                locationDTO.SubdivisionIso31662Code.ToNullIfEmpty(),
+                locationDTO.CountryIso31661Alpha2Code.ToNullIfEmpty());
         }
     }
 }

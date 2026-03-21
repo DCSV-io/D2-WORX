@@ -8,6 +8,7 @@ namespace D2.Geo.App.Mappers;
 
 using D2.Geo.Domain.ValueObjects;
 using D2.Services.Protos.Geo.V1;
+using D2.Shared.Utilities.Extensions;
 
 /// <summary>
 /// Mapper for converting between <see cref="StreetAddress"/> and <see cref="StreetAddressDTO"/>.
@@ -35,8 +36,8 @@ public static class StreetAddressMapper
             return new StreetAddressDTO
             {
                 Line1 = streetAddress.Line1,
-                Line2 = streetAddress.Line2 ?? string.Empty,
-                Line3 = streetAddress.Line3 ?? string.Empty,
+                Line2 = streetAddress.Line2,
+                Line3 = streetAddress.Line3,
             };
         }
     }
@@ -61,8 +62,8 @@ public static class StreetAddressMapper
         {
             return StreetAddress.Create(
                 streetAddressDTO.Line1,
-                streetAddressDTO.Line2,
-                streetAddressDTO.Line3);
+                streetAddressDTO.Line2.ToNullIfEmpty(),
+                streetAddressDTO.Line3.ToNullIfEmpty());
         }
     }
 }
