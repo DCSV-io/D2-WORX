@@ -1,4 +1,4 @@
-import { cleanStr, generateUuidV7 } from "@d2/utilities";
+import { cleanStr, cleanDisplayStr, generateUuidV7 } from "@d2/utilities";
 import type { OrgType } from "../enums/org-type.js";
 import { isValidOrgType } from "../enums/org-type.js";
 import { AuthValidationError } from "../exceptions/auth-validation-error.js";
@@ -30,7 +30,7 @@ export interface UpdateOrganizationInput {
 }
 
 export function createOrganization(input: CreateOrganizationInput): Organization {
-  const name = cleanStr(input.name);
+  const name = cleanDisplayStr(input.name);
   if (!name) {
     throw new AuthValidationError("Organization", "name", input.name, "is required.");
   }
@@ -70,7 +70,7 @@ export function updateOrganization(
 ): Organization {
   let name = org.name;
   if (updates.name !== undefined) {
-    const cleaned = cleanStr(updates.name);
+    const cleaned = cleanDisplayStr(updates.name);
     if (!cleaned) {
       throw new AuthValidationError("Organization", "name", updates.name, "is required.");
     }

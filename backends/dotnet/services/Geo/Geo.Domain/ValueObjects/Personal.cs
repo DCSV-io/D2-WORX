@@ -166,11 +166,11 @@ public record Personal
 
         return new Personal
         {
-            FirstName = firstName.CleanStr()!,
+            FirstName = firstName.CleanDisplayStr()!,
             Title = title,
-            PreferredName = preferredName?.CleanStr(),
-            MiddleName = middleName?.CleanStr(),
-            LastName = lastName?.CleanStr(),
+            PreferredName = preferredName?.CleanDisplayStr(),
+            MiddleName = middleName?.CleanDisplayStr(),
+            LastName = lastName?.CleanDisplayStr(),
             GenerationalSuffix = generationalSuffix,
             ProfessionalCredentials = professionalCredentials?
                 .Clean(x => x.CleanStr())?

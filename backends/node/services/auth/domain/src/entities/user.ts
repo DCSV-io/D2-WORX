@@ -1,4 +1,4 @@
-import { cleanStr, cleanAndValidateEmail, generateUuidV7 } from "@d2/utilities";
+import { cleanDisplayStr, cleanAndValidateEmail, generateUuidV7 } from "@d2/utilities";
 import { AuthValidationError } from "../exceptions/auth-validation-error.js";
 
 export interface User {
@@ -38,7 +38,7 @@ export interface UpdateUserInput {
 export function createUser(input: CreateUserInput): User {
   const email = cleanAndValidateEmail(input.email);
 
-  const name = cleanStr(input.name);
+  const name = cleanDisplayStr(input.name);
   if (!name) {
     throw new AuthValidationError("User", "name", input.name, "is required.");
   }
@@ -72,7 +72,7 @@ export function updateUser(user: User, updates: UpdateUserInput): User {
 
   let name = user.name;
   if (updates.name !== undefined) {
-    const cleaned = cleanStr(updates.name);
+    const cleaned = cleanDisplayStr(updates.name);
     if (!cleaned) {
       throw new AuthValidationError("User", "name", updates.name, "is required.");
     }

@@ -5,6 +5,7 @@ import { D2Result, HttpStatusCode } from "@d2/result";
 import { TK, resolveLocale } from "@d2/i18n";
 import type { Translator } from "@d2/i18n";
 import { ILoggerKey } from "@d2/logging";
+import { cleanDisplayStr } from "@d2/utilities";
 import { SESSION_FIELDS, GEO_CONTEXT_KEYS, ROLES, type Role } from "@d2/auth-domain";
 import { INotifyKey } from "@d2/comms-client";
 import { ICreateContactsKey, IGetContactsByExtKeysKey } from "@d2/geo-client";
@@ -64,8 +65,8 @@ export function createInvitationRoutes(options: InvitationRoutesOptions) {
     // 1. Validate input
     const email = (body.email as string | undefined)?.trim();
     const role = body.role as string | undefined;
-    const firstName = ((body.firstName as string) ?? "").trim() || undefined;
-    const lastName = ((body.lastName as string) ?? "").trim() || undefined;
+    const firstName = cleanDisplayStr((body.firstName as string) ?? undefined);
+    const lastName = cleanDisplayStr((body.lastName as string) ?? undefined);
     const phone = ((body.phone as string) ?? "").trim() || undefined;
 
     if (!email || !role) {

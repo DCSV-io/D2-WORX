@@ -77,6 +77,33 @@ public static partial class StringExtensions
 
             return WhitespaceRegex().Replace(trimmed!, " ");
         }
+
+        /// <summary>
+        /// Cleans a display name by stripping dangerous/unreasonable characters
+        /// (HTML tags, markdown syntax, brackets, quotes, backticks, etc.),
+        /// then trims whitespace and collapses duplicates.
+        /// <para>
+        /// Allowed: letters (any Unicode script), digits, spaces, hyphens,
+        /// apostrophes, periods, commas.
+        /// </para>
+        /// <para>
+        /// Mirrors <c>cleanDisplayStr()</c> in <c>@d2/utilities</c> (TypeScript).
+        /// </para>
+        /// </summary>
+        ///
+        /// <returns>
+        /// The cleaned display name, or null if the result is empty after cleaning.
+        /// </returns>
+        public string? CleanDisplayStr()
+        {
+            if (str.Falsey())
+            {
+                return null;
+            }
+
+            var stripped = DisplayNameInvalidRegex().Replace(str!, string.Empty);
+            return stripped.CleanStr();
+        }
     }
 
     /// <summary>
@@ -206,6 +233,14 @@ public static partial class StringExtensions
     /// </returns>
     [GeneratedRegex(@"\s+", RegexOptions.None, matchTimeoutMilliseconds: 100)]
     private static partial Regex WhitespaceRegex();
+
+    /// <summary>
+    /// Matches characters NOT allowed in display names.
+    /// Allowed: letters (any Unicode script), digits, spaces, hyphens, apostrophes, periods, commas.
+    /// Mirrors <c>DISPLAY_NAME_INVALID_RE</c> in <c>@d2/utilities</c> (TypeScript).
+    /// </summary>
+    [GeneratedRegex(@"[^\p{L}\p{N}\s\-'.,]", RegexOptions.None, matchTimeoutMilliseconds: 100)]
+    private static partial Regex DisplayNameInvalidRegex();
 
     /// <summary>
     /// A regular expression that matches anything that is not a digit.

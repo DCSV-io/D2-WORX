@@ -26,6 +26,7 @@
   import { useCountryState } from "$lib/client/forms/country-state.svelte.js";
   import { useAddressLines } from "$lib/client/forms/address-lines.svelte.js";
   import { useAsyncFieldCheck } from "$lib/client/forms/async-field-check.svelte.js";
+  import { maskDisplayName } from "$lib/client/utils/mask-display-name.js";
   import ArrowLeftIcon from "@lucide/svelte/icons/arrow-left";
   import * as m from "$lib/paraglide/messages.js";
 
@@ -131,11 +132,13 @@
             {form}
             field="firstName"
             {...FIRST_NAME}
+            oninput={maskDisplayName}
           />
           <FormInput
             {form}
             field="lastName"
             {...LAST_NAME}
+            oninput={maskDisplayName}
           />
         </div>
 
@@ -217,6 +220,7 @@
             {form}
             field="city"
             {...CITY}
+            oninput={maskDisplayName}
           />
           <FormInput
             {form}

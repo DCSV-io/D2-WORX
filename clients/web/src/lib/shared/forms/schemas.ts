@@ -16,10 +16,20 @@
 import { z } from "zod";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { postcodeValidator } from "postcode-validator";
+import { DISPLAY_NAME_INVALID_RE } from "@d2/utilities";
 
-/** General name field (first/last name, city, etc.). Geo DB: varchar(255). */
+/**
+ * General name field (first/last name, city, etc.). Geo DB: varchar(255).
+ * Strips invalid display name characters (HTML tags, brackets, backticks, etc.)
+ * via transform, then re-validates min/max after stripping. If the user enters
+ * ONLY invalid chars, the result is empty and fails the min(1) check.
+ */
 export function nameField(max = 255) {
-  return z.string().trim().min(1, "Required").max(max, `Must be ${max} characters or fewer`);
+  return z
+    .string()
+    .trim()
+    .transform((v) => v.replace(DISPLAY_NAME_INVALID_RE, ""))
+    .pipe(z.string().min(1, "Required").max(max, `Must be ${max} characters or fewer`));
 }
 
 /** Email field with format validation. Geo contact-schemas: max 254. Lowercased to match backend normalization. */

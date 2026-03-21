@@ -2,6 +2,8 @@ export { arrayTruthy, arrayFalsey } from "./array-extensions.js";
 export { uuidTruthy, uuidFalsey, EMPTY_UUID, generateUuidV7 } from "./uuid-extensions.js";
 export {
   cleanStr,
+  cleanDisplayStr,
+  DISPLAY_NAME_INVALID_RE,
   cleanAndValidateEmail,
   cleanAndValidatePhoneNumber,
   getNormalizedStrForHashing,

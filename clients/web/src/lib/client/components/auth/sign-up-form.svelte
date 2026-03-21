@@ -19,6 +19,7 @@
     PASSWORD,
     CONFIRM_PASSWORD,
   } from "$lib/shared/forms/field-presets.js";
+  import { maskDisplayName } from "$lib/client/utils/mask-display-name.js";
   import * as m from "$lib/paraglide/messages.js";
   import EyeIcon from "@lucide/svelte/icons/eye";
   import EyeOffIcon from "@lucide/svelte/icons/eye-off";
@@ -108,11 +109,13 @@
       {form}
       field="firstName"
       {...FIRST_NAME}
+      oninput={maskDisplayName}
     />
     <FormInput
       {form}
       field="lastName"
       {...LAST_NAME}
+      oninput={maskDisplayName}
     />
   </div>
 

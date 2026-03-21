@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { marked } from "marked";
-import DOMPurify from "isomorphic-dompurify";
 import type { Channel } from "@d2/comms-domain";
 import type { IEmailProvider, SendEmailInput } from "../../../../interfaces/providers/index.js";
 import type { ISmsProvider } from "../../../../interfaces/providers/index.js";
@@ -118,7 +117,7 @@ export class EmailDispatcher implements IChannelDispatcher {
     const html = renderTemplate(this.emailWrapper, {
       title: input.title,
       body: renderedBody,
-      unsubscribeUrl: "",
+      unsubscribeUrl: "", // TODO: wire unsubscribe URL (PLANNING.md issue #81)
     });
 
     const sendInput: SendEmailInput = {
@@ -162,24 +161,16 @@ export class SmsDispatcher implements IChannelDispatcher {
   }
 }
 
-/** Escapes HTML special characters to prevent XSS in email templates. */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/** Simple {{key}} template interpolation with HTML escaping. */
+/** Simple {{key}} template interpolation — no escaping (callers escape inputs as needed). */
 function renderTemplate(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => escapeHtml(vars[key] ?? ""));
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => vars[key] ?? "");
 }
 
 /**
- * Renders markdown to sanitized HTML using `marked` + `isomorphic-dompurify`.
+ * Renders markdown to HTML using `marked`.
+ * No escaping — callers are responsible for sanitizing user-provided values
+ * before embedding them in the markdown content.
  */
 function renderMarkdownToHtml(markdown: string): string {
-  const rawHtml = marked.parse(markdown, { async: false }) as string;
-  return DOMPurify.sanitize(rawHtml);
+  return marked.parse(markdown, { async: false }) as string;
 }

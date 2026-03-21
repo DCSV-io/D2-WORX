@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { HttpStatusCode } from "@d2/result";
+import { cleanDisplayStr } from "@d2/utilities";
 import { SESSION_FIELDS } from "@d2/auth-domain";
 import {
   ICreateOrgContactKey,
@@ -33,7 +34,7 @@ export function createOrgContactRoutes() {
     const handler = c.get(SCOPE_KEY).resolve(ICreateOrgContactKey);
     const result = await handler.handleAsync({
       organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
-      label: body.label,
+      label: cleanDisplayStr(body.label as string) ?? body.label,
       isPrimary: body.isPrimary,
       contact: body.contact ?? {},
     });
@@ -51,7 +52,12 @@ export function createOrgContactRoutes() {
     const result = await handler.handleAsync({
       id: c.req.param("id"),
       organizationId: c.get(SESSION_KEY)![SESSION_FIELDS.ACTIVE_ORG_ID] as string,
-      updates: { label: body.label, isPrimary: body.isPrimary, contact: body.contact },
+      updates: {
+        label:
+          body.label != null ? (cleanDisplayStr(body.label as string) ?? body.label) : undefined,
+        isPrimary: body.isPrimary,
+        contact: body.contact,
+      },
     });
     const status = (
       result.success ? HttpStatusCode.OK : (result.statusCode ?? HttpStatusCode.BadRequest)
