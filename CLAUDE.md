@@ -304,6 +304,7 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Type imports**: `import type { ... }` for type-only imports.
 - **Error handling**: `@d2/result` (D2Result) — same semantics as .NET.
 - **ESM only**: All packages `"type": "module"`.
+- **Prefer `null`/`undefined` over empty strings** — never use `""` as a default for optional/missing data, especially for values that may be persisted to a database. Empty strings hide missing data and are ambiguous. Use `null` (explicit absence) or `undefined` (property not set). The only acceptable uses of `""` are: initial form field values in UI components, string concatenation/template building, and `string.Empty` parity in cross-platform code. When parsing user input, convert empty-after-trim strings to `undefined`: `input.trim() || undefined`.
 - **After editing**: Check `mcp__cclsp__get_diagnostics`. Fix type errors and missing imports immediately.
 - **After modifying @d2/\* source**: Full `tsc` build (not `--noEmit`) so `dist/` is updated. Stale output = silent runtime failures.
 - **Drizzle UPDATE/DELETE must chain `.returning()`** — check the result array. Empty = row didn't exist → return `notFound()`, not `ok()`. → [AUTH_INFRA.md](backends/node/services/auth/infra/AUTH_INFRA.md) § Repository Handler Patterns
