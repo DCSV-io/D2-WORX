@@ -108,7 +108,11 @@ export async function createCommsService(config: CommsServiceConfig) {
   // 4. MessageBus (connect early so PingMessageBus can be registered)
   let messageBus: MessageBus | undefined;
   if (config.rabbitMqUrl) {
-    messageBus = new MessageBus({ url: config.rabbitMqUrl, connectionName: "comms-service", logger });
+    messageBus = new MessageBus({
+      url: config.rabbitMqUrl,
+      connectionName: "comms-service",
+      logger,
+    });
     await messageBus.waitForConnection();
     logger.info("RabbitMQ connected");
     services.addInstance(IMessageBusPingKey, new PingMessageBus(messageBus, serviceContext));
