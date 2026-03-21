@@ -224,7 +224,7 @@ public class D2Result<TData> : D2Result
     /// <returns>
     /// A not found <see cref="D2Result{TResult}"/> instance containing error details.
     /// </returns>
-    public static D2Result<TData> NotFound(
+    public static new D2Result<TData> NotFound(
         List<string>? messages = null,
         string? traceId = null)
     {
@@ -252,7 +252,7 @@ public class D2Result<TData> : D2Result
     /// <returns>
     /// A forbidden <see cref="D2Result{TResult}"/> instance containing error details.
     /// </returns>
-    public static D2Result<TData> Forbidden(
+    public static new D2Result<TData> Forbidden(
         List<string>? messages = null,
         string? traceId = null)
     {
@@ -342,7 +342,7 @@ public class D2Result<TData> : D2Result
     /// <returns>
     /// A conflict <see cref="D2Result{TResult}"/> instance containing error details.
     /// </returns>
-    public static D2Result<TData> Conflict(
+    public static new D2Result<TData> Conflict(
         List<string>? messages = null,
         string? traceId = null)
     {

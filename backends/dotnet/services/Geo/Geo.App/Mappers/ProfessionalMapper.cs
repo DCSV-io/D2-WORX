@@ -39,9 +39,20 @@ public static class ProfessionalMapper
             };
 
             // Optional fields — only set when non-null to avoid proto CheckNotNull.
-            if (professional.JobTitle != null) dto.JobTitle = professional.JobTitle;
-            if (professional.Department != null) dto.Department = professional.Department;
-            if (professional.CompanyWebsite != null) dto.CompanyWebsite = professional.CompanyWebsite.ToString();
+            if (professional.JobTitle != null)
+            {
+                dto.JobTitle = professional.JobTitle;
+            }
+
+            if (professional.Department != null)
+            {
+                dto.Department = professional.Department;
+            }
+
+            if (professional.CompanyWebsite != null)
+            {
+                dto.CompanyWebsite = professional.CompanyWebsite.ToString();
+            }
 
             return dto;
         }

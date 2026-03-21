@@ -42,8 +42,15 @@ public static partial class ProtoExtensions
                 StatusCode = (int)result.StatusCode,
             };
 
-            if (result.ErrorCode != null) proto.ErrorCode = result.ErrorCode;
-            if (result.TraceId != null) proto.TraceId = result.TraceId;
+            if (result.ErrorCode != null)
+            {
+                proto.ErrorCode = result.ErrorCode;
+            }
+
+            if (result.TraceId != null)
+            {
+                proto.TraceId = result.TraceId;
+            }
 
             // Map messages.
             proto.Messages.AddRange(result.Messages);

@@ -58,15 +58,50 @@ public static class WhoIsMapper
             };
 
             // Optional fields — only set when non-null to avoid proto CheckNotNull.
-            if (whoIs.ASName != null) dto.AsName = whoIs.ASName;
-            if (whoIs.ASDomain != null) dto.AsDomain = whoIs.ASDomain;
-            if (whoIs.ASType != null) dto.AsType = whoIs.ASType;
-            if (whoIs.CarrierName != null) dto.CarrierName = whoIs.CarrierName;
-            if (whoIs.MCC != null) dto.Mcc = whoIs.MCC;
-            if (whoIs.MNC != null) dto.Mnc = whoIs.MNC;
-            if (whoIs.ASChanged != null) dto.AsChanged = whoIs.ASChanged.Value.ToString("O", CultureInfo.InvariantCulture);
-            if (whoIs.GeoChanged != null) dto.GeoChanged = whoIs.GeoChanged.Value.ToString("O", CultureInfo.InvariantCulture);
-            if (whoIs.PrivacyName != null) dto.PrivacyName = whoIs.PrivacyName;
+            if (whoIs.ASName != null)
+            {
+                dto.AsName = whoIs.ASName;
+            }
+
+            if (whoIs.ASDomain != null)
+            {
+                dto.AsDomain = whoIs.ASDomain;
+            }
+
+            if (whoIs.ASType != null)
+            {
+                dto.AsType = whoIs.ASType;
+            }
+
+            if (whoIs.CarrierName != null)
+            {
+                dto.CarrierName = whoIs.CarrierName;
+            }
+
+            if (whoIs.MCC != null)
+            {
+                dto.Mcc = whoIs.MCC;
+            }
+
+            if (whoIs.MNC != null)
+            {
+                dto.Mnc = whoIs.MNC;
+            }
+
+            if (whoIs.ASChanged != null)
+            {
+                dto.AsChanged = whoIs.ASChanged.Value.ToString("O", CultureInfo.InvariantCulture);
+            }
+
+            if (whoIs.GeoChanged != null)
+            {
+                dto.GeoChanged = whoIs.GeoChanged.Value.ToString("O", CultureInfo.InvariantCulture);
+            }
+
+            if (whoIs.PrivacyName != null)
+            {
+                dto.PrivacyName = whoIs.PrivacyName;
+            }
 
             return dto;
         }

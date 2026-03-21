@@ -95,9 +95,21 @@ public class GetReferenceData : BaseHandler<GetReferenceData, I, O>, H
                 };
 
                 // Optional fields — only set when non-null to avoid proto CheckNotNull.
-                if (c.SovereignCode != null) dto.SovereignIso31661Alpha2Code = c.SovereignCode;
-                if (c.PrimaryCurrency != null) dto.PrimaryCurrencyIso4217AlphaCode = c.PrimaryCurrency;
-                if (c.PrimaryLocale != null) dto.PrimaryLocaleIetfBcp47Tag = c.PrimaryLocale;
+                if (c.SovereignCode != null)
+                {
+                    dto.SovereignIso31661Alpha2Code = c.SovereignCode;
+                }
+
+                if (c.PrimaryCurrency != null)
+                {
+                    dto.PrimaryCurrencyIso4217AlphaCode = c.PrimaryCurrency;
+                }
+
+                if (c.PrimaryLocale != null)
+                {
+                    dto.PrimaryLocaleIetfBcp47Tag = c.PrimaryLocale;
+                }
+
                 dto.SubdivisionIso31662Codes.AddRange(c.Subdivisions);
                 dto.CurrencyIso4217AlphaCodes.AddRange(c.Currencies);
                 dto.LocaleIetfBcp47Tags.AddRange(c.Locales);

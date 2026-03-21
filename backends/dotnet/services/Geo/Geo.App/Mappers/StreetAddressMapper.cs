@@ -39,8 +39,15 @@ public static class StreetAddressMapper
             };
 
             // Optional fields — only set when non-null to avoid proto CheckNotNull.
-            if (streetAddress.Line2 != null) dto.Line2 = streetAddress.Line2;
-            if (streetAddress.Line3 != null) dto.Line3 = streetAddress.Line3;
+            if (streetAddress.Line2 != null)
+            {
+                dto.Line2 = streetAddress.Line2;
+            }
+
+            if (streetAddress.Line3 != null)
+            {
+                dto.Line3 = streetAddress.Line3;
+            }
 
             return dto;
         }
