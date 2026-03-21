@@ -33,12 +33,16 @@ public static class StreetAddressMapper
         /// </returns>
         public StreetAddressDTO ToDTO()
         {
-            return new StreetAddressDTO
+            var dto = new StreetAddressDTO
             {
                 Line1 = streetAddress.Line1,
-                Line2 = streetAddress.Line2,
-                Line3 = streetAddress.Line3,
             };
+
+            // Optional fields — only set when non-null to avoid proto CheckNotNull.
+            if (streetAddress.Line2 != null) dto.Line2 = streetAddress.Line2;
+            if (streetAddress.Line3 != null) dto.Line3 = streetAddress.Line3;
+
+            return dto;
         }
     }
 

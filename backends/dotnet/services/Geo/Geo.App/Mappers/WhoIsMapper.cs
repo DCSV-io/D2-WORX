@@ -38,21 +38,13 @@ public static class WhoIsMapper
         /// </returns>
         public WhoIsDTO ToDTO(Location? location = null)
         {
-            return new WhoIsDTO
+            var dto = new WhoIsDTO
             {
                 HashId = whoIs.HashId,
                 IpAddress = whoIs.IPAddress,
                 Year = whoIs.Year,
                 Month = whoIs.Month,
                 Asn = whoIs.ASN ?? 0,
-                AsName = whoIs.ASName,
-                AsDomain = whoIs.ASDomain,
-                AsType = whoIs.ASType,
-                CarrierName = whoIs.CarrierName,
-                Mcc = whoIs.MCC,
-                Mnc = whoIs.MNC,
-                AsChanged = whoIs.ASChanged?.ToString("O", CultureInfo.InvariantCulture),
-                GeoChanged = whoIs.GeoChanged?.ToString("O", CultureInfo.InvariantCulture),
                 IsAnonymous = whoIs.IsAnonymous ?? false,
                 IsAnycast = whoIs.IsAnycast ?? false,
                 IsHosting = whoIs.IsHosting ?? false,
@@ -62,9 +54,21 @@ public static class WhoIsMapper
                 IsRelay = whoIs.IsRelay ?? false,
                 IsTor = whoIs.IsTor ?? false,
                 IsVpn = whoIs.IsVPN ?? false,
-                PrivacyName = whoIs.PrivacyName,
                 Location = location?.ToDTO(),
             };
+
+            // Optional fields — only set when non-null to avoid proto CheckNotNull.
+            if (whoIs.ASName != null) dto.AsName = whoIs.ASName;
+            if (whoIs.ASDomain != null) dto.AsDomain = whoIs.ASDomain;
+            if (whoIs.ASType != null) dto.AsType = whoIs.ASType;
+            if (whoIs.CarrierName != null) dto.CarrierName = whoIs.CarrierName;
+            if (whoIs.MCC != null) dto.Mcc = whoIs.MCC;
+            if (whoIs.MNC != null) dto.Mnc = whoIs.MNC;
+            if (whoIs.ASChanged != null) dto.AsChanged = whoIs.ASChanged.Value.ToString("O", CultureInfo.InvariantCulture);
+            if (whoIs.GeoChanged != null) dto.GeoChanged = whoIs.GeoChanged.Value.ToString("O", CultureInfo.InvariantCulture);
+            if (whoIs.PrivacyName != null) dto.PrivacyName = whoIs.PrivacyName;
+
+            return dto;
         }
     }
 

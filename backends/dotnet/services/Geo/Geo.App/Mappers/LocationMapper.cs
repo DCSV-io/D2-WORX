@@ -33,16 +33,20 @@ public static class LocationMapper
         /// </returns>
         public LocationDTO ToDTO()
         {
-            return new LocationDTO
+            var dto = new LocationDTO
             {
                 HashId = location.HashId,
                 Coordinates = location.Coordinates?.ToDTO(),
                 Address = location.Address?.ToDTO(),
-                City = location.City,
-                PostalCode = location.PostalCode,
-                SubdivisionIso31662Code = location.SubdivisionISO31662Code,
-                CountryIso31661Alpha2Code = location.CountryISO31661Alpha2Code,
             };
+
+            // Optional fields — only set when non-null to avoid proto CheckNotNull.
+            if (location.City != null) dto.City = location.City;
+            if (location.PostalCode != null) dto.PostalCode = location.PostalCode;
+            if (location.SubdivisionISO31662Code != null) dto.SubdivisionIso31662Code = location.SubdivisionISO31662Code;
+            if (location.CountryISO31661Alpha2Code != null) dto.CountryIso31661Alpha2Code = location.CountryISO31661Alpha2Code;
+
+            return dto;
         }
     }
 

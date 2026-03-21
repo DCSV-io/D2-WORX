@@ -37,15 +37,18 @@ public static class PersonalMapper
         {
             var dto = new PersonalDTO
             {
-                Title = personal.Title?.ToString(),
                 FirstName = personal.FirstName,
-                PreferredName = personal.PreferredName,
-                MiddleName = personal.MiddleName,
-                LastName = personal.LastName,
-                GenerationalSuffix = personal.GenerationalSuffix?.ToString(),
-                DateOfBirth = personal.DateOfBirth?.ToString("O", CultureInfo.InvariantCulture),
-                BiologicalSex = personal.BiologicalSex?.ToString(),
             };
+
+            // Optional fields — only set when non-null to avoid proto CheckNotNull.
+            if (personal.Title != null) dto.Title = personal.Title.Value.ToString();
+            if (personal.PreferredName != null) dto.PreferredName = personal.PreferredName;
+            if (personal.MiddleName != null) dto.MiddleName = personal.MiddleName;
+            if (personal.LastName != null) dto.LastName = personal.LastName;
+            if (personal.GenerationalSuffix != null) dto.GenerationalSuffix = personal.GenerationalSuffix.Value.ToString();
+            if (personal.DateOfBirth != null) dto.DateOfBirth = personal.DateOfBirth.Value.ToString("O", CultureInfo.InvariantCulture);
+            if (personal.BiologicalSex != null) dto.BiologicalSex = personal.BiologicalSex.Value.ToString();
+
             dto.ProfessionalCredentials.AddRange(personal.ProfessionalCredentials);
             return dto;
         }
