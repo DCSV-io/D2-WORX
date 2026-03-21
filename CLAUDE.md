@@ -333,7 +333,7 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 
 Full checklist → [AUTH.md](backends/node/services/auth/AUTH.md) § "Secure Endpoint Construction Checklist". Key points:
 
-- **IDOR prevention** — derive org/user scope from session/claims, never from user-supplied input
+- **IDOR prevention** — derive org/user scope from session/claims, never from user-supplied input. Endpoints must NEVER accept userId, orgId, or role as request parameters when those values are available from the session/JWT. User-supplied identifiers for session-resolvable fields = IDOR vulnerability
 - **Pagination limits** — default 50, max 100 on all list queries
 - **DB constraint errors** — catch PG `23505` → 409 Conflict, not 500
 - **Auth middleware visible at route declaration** — Node.js: `requireOrg()`, `requireRole()`. .NET: `RequireAuthorization()`, `RequireServiceKey()`
@@ -434,6 +434,7 @@ All logs and spans MUST include these fields for cross-service correlation:
 9. **Provide options** — When multiple approaches exist, present them for user decision.
 10. **Maximize parallelization** — Spawn as many sub-agents as makes sense to complete tasks as fast as possible. Independent work (file reads, doc updates, code fixes, test runs, audits) should run in parallel, not sequentially. Use background agents for non-blocking work. The user values speed — don't serialize work that can be parallelized.
 11. **Never defer work without explicit permission** — Do NOT unilaterally decide to defer, skip, or deprioritize any planned work. If you think something should be deferred, **ASK the user first** and present the tradeoff. If the user approves deferral, **document it** in PLANNING.md as a tracked issue with rationale. Never silently omit planned work or rationalize skipping it with "not blocking" or "can add later." Any work item that is deferred for any reason MUST appear as a documented issue in PLANNING.md.
+12. **Never commit without explicit permission** — Do NOT create git commits unless the user explicitly asks you to commit. Present changes for review first. Committing without permission is as serious as pushing without permission.
 
 ### Code Intelligence Tools
 

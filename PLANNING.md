@@ -67,13 +67,13 @@
 - **E2E Cross-Service Tests** ✅ — 31 tests (22 API-level + 9 browser E2E: Auth → Geo → Comms delivery pipeline + Dkron job chain + BFF client integration)
 - **Cross-platform Parity** ✅ — `@d2/batch-pg`, `@d2/errors-pg`, .NET `Errors.Pg`, documented in `backends/PARITY.md`
 - **.NET Gateway** ✅ — JWT auth, request enrichment, rate limiting, CORS, service key middleware, translation middleware
-- **Geo Service** ✅ — Complete (.NET), 798 tests
+- **Geo Service** ✅ — Complete (.NET), 795 tests
 - **Production-readiness Sweep** ✅ — 40 items triaged, all high/medium fixed, polish items done
 - **Scheduled Jobs (Dkron)** ✅ — 8 daily maintenance jobs (Auth 4, Geo 2, Comms 2), `@d2/dkron-mgr` reconciler (64 tests), full-chain E2E tested
 - **SvelteKit Web Client Steps 0–9** ✅ — Design system, routing, auth BFF, gateway client, forms, auth pages, fingerprinting, Faro telemetry, three-tier Playwright tests (706 tests: 551 Vitest + 146 mocked Playwright + 9 browser E2E)
 - **Q1 2026 Dependency Update** ✅ — .NET 10.0.103, Node 24.14, pnpm 10.30, auth health gRPC migration (#43)
 - **i18n & BCP 47 Locale Migration** ✅ — 10 BCP 47 locales (en-US, en-CA, en-GB, fr-FR, fr-CA, es-ES, es-MX, de-DE, it-IT, ja-JP) replacing 5 bare language codes. D2.Shared.I18n + @d2/i18n packages, gateway-edge translation middleware, Contact.IETFBCP47Tag field, auth middleware extraction to shared packages
-- **Shared tests** — 1,127 passing
+- **Shared tests** — 1,245 passing
 
 ### Phase 2: Auth Service + SvelteKit Integration
 
@@ -193,108 +193,11 @@ Full SvelteKit implementation plan: [`clients/web/IMPLEMENTATION_PLAN.md`](clien
 | F5   | File API layer (`@d2/files-api`)           | Done    | ADR-026, ADR-027 | Hono REST (upload/download/list/health routes) + gRPC (FilesService + FilesJobsService). Composition root with DI wiring. Dockerfile (`docker/Dockerfile.files`), `d2-files` docker-compose service (ports 5300/5301), `FILES_S3_PUBLIC_ENDPOINT` for browser-reachable presigned URLs via cloudflared tunnel                                                                                                       |
 | F6   | SignalR Gateway                            | Done    | ADR-028          | .NET service: authenticated hub (JWT on WS upgrade), channel-based routing (`user:`, `org:` auto-subscribed from claims), `PushToChannel` gRPC, Redis backplane, health check. Ports 5400/5401. Proto at `realtime/v1/realtime_gateway.proto` (supersedes `files/v1/signalr_bridge.proto`). Files-infra `PushFileUpdate` wired to new proto when built. Public hub + subscription tokens deferred to Comms Stage B. |
 | F7   | Auth FileCallback gRPC server              | Done    | ADR-026          | `FileCallbackService` gRPC server on Auth port 5101 (OnFileProcessed + CanAccess). HandleFileProcessed command handler routes by context key: `user_avatar` → `user.image`, `org_logo` → `organization.logo`, others → ack. CanAccess returns `allowed: false` (fail-closed; Auth CKs use JWT resolution). UpdateUserImage + UpdateOrgLogo repo handlers. Service-key auth via `withApiKeyAuth`                     |
-| F7.5 | Cross-cutting security + logic audit       | Done    | —                | See [F7.5 audit checklist](#f75-cross-cutting-audit-checklist) below. Scope: full `git diff main` — every changed file on `feat/files`. Fix everything found. No new features — pure audit.                                                                                                                                                                                                                         |
-| F8   | File service E2E test                      | Pending | ADR-026          | Full pipeline E2E: sign in → upload avatar → MinIO notification → intake → scan → process variants → gRPC callback to Auth (`OnFileProcessed` sets `user.image`) → SignalR push to browser → verify avatar URL resolves + thumbnail downloaded. Blocked by F7. Also: adversarial upload tests (bad MIME types, oversized, malformed JSON, expired presigned URLs)                                                   |
-| F9   | SvelteKit profile page + avatar upload     | Pending | ADR-026, ADR-028 | User profile page with avatar upload widget. Browser flow: select image → POST /api/v1/avatar → get presigned URL → PUT to MinIO → realtime status update via SignalR → display processed thumbnail. Depends on F7 + F8                                                                                                                                                                                             |
+| F7.5 | Cross-cutting security + logic audit       | Done    | —                | Solution-wide sweep. Reusable checklist: [AUDIT_CHECKLIST.md](AUDIT_CHECKLIST.md)                                                                                                                                                                                                                                                                                                                                   |
+| F8   | File service E2E test                      | Done    | ADR-026          | 8 E2E tests: upload → intake → scan → process → callback → push. Adversarial tests (bad MIME, oversized, malformed).                                                                                                                                                                                                                                                                                                |
+| F9   | SvelteKit profile page + avatar upload     | Pending | ADR-026, ADR-028 | User profile page with avatar upload widget. Browser flow: select image → POST /api/v1/avatar → get presigned URL → PUT to MinIO → realtime status update via SignalR → display processed thumbnail. Ready (F8 complete)                                                                                                                                                                                            |
 
-#### F7: Auth FileCallback Implementation
-
-Auth implements the `FileCallback` gRPC server (`contracts/protos/files/v1/files.proto`) so Files can notify Auth when uploads complete. Proto + types already exist in `@d2/protos`.
-
-**Two RPCs:**
-
-| RPC               | Trigger                                            | Auth action                                                                                                                                                         |
-| ----------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `OnFileProcessed` | Files finishes processing (ready or rejected)      | `user_avatar` + ready → set `user.image = fileId`. `org_logo` + ready → set `organization.logo = fileId`. `org_document` → no-op (just ack). Rejected → log, ack.   |
-| `CanAccess`       | Files checks upload/read permission (callback CKs) | Not needed for `user_avatar`/`org_logo`/`org_document` (they use `jwt_owner`/`jwt_org` resolution, not `callback`). Only `thread_attachment` uses callback → Comms. |
-
-**Since Auth's context keys all use JWT-based resolution** (`jwt_owner` for avatar, `jwt_org` for logo/document), `CanAccess` will never be called for Auth-owned context keys. Auth should still implement it (fail-closed: return `allowed: false` for unknown context keys) but the logic is trivial.
-
-**Implementation scope:**
-
-1. `auth-api`: Register `FileCallbackService` on existing gRPC server alongside `AuthService` + `AuthJobService`
-2. `auth-api`: Create `file-callback-grpc-service.ts` — maps RPCs to handler calls
-3. `auth-app`: Add `OnFileProcessed` command handler — switch on contextKey, update user.image or org.logo
-4. `auth-infra`: Add `UpdateUserImage` + `UpdateOrgLogo` repo handlers (simple UPDATE ... SET image/logo WHERE id)
-5. Tests: handler logic (ready/rejected per context key), repo handlers, gRPC service integration
-6. Env: Files service needs an API key that Auth accepts — add to `AUTH_API_KEYS` + `FILES_AUTH_CALLBACK_API_KEY`
-
-**Existing infrastructure that's reused:**
-
-- `FileCallbackService` proto + types already in `@d2/protos`
-- Auth's `buildGrpcServer()` already sets up gRPC with `withApiKeyAuth`
-- BetterAuth schema already has `user.image` (nullable text) and `organization.logo` (nullable text)
-- Per-RPC DI scope pattern from `createRpcScope` / `withTraceContext`
-
-#### F7.5: Cross-Cutting Audit Checklist
-
-Scope: **every file in `git diff main`** — not just new files. Includes modifications to auth, comms-client, service-defaults, shared tests, docker-compose, env files, protos, etc.
-
-**Security:**
-
-- [ ] IDOR checks on every endpoint/handler that accesses resources by ID
-- [ ] Auth bypass paths — can unauthenticated requests reach protected handlers?
-- [ ] Input validation completeness — every handler has Zod schema at top of `executeAsync`
-- [ ] String max lengths on all Zod string fields
-- [ ] Constant-time comparisons on all secret/key comparisons
-- [ ] Header injection / XSS via user-controlled response data (Content-Disposition, error messages)
-- [ ] gRPC service-key auth on all non-health RPCs (fail-closed when no keys configured)
-- [ ] JWT claim validation — null checks before trusting claims
-- [ ] CORS configuration — allowed origins, headers (incl. X-Client-Fingerprint), methods
-- [ ] No sensitive data in error responses (no stack traces, no internal paths)
-- [ ] API key configuration — Files has keys Auth accepts, Files has keys SignalR accepts
-
-**Logic / Data Integrity:**
-
-- [ ] Pipeline completeness — upload → intake → publish → process → callback → push (no gaps)
-- [ ] Error propagation — no swallowed failures, no `ok()` after unchecked downstream operations
-- [ ] Status state machine adherence — can files get stuck in invalid states?
-- [ ] Fire-and-forget operations properly caught (`.catch()` with logging)
-- [ ] Drizzle UPDATE/DELETE chains `.returning()` and check for empty results → `notFound()`
-- [ ] DI registration completeness — every handler registered, no missing keys, no stale registrations
-- [ ] Race conditions — concurrent uploads, duplicate messages, double-processing
-- [ ] Resource leaks — DI scopes disposed, gRPC clients cleaned up, connections closed
-
-**CLAUDE.md §5 (Code Quality):**
-
-- [ ] RedactionSpec on ALL handlers touching PII (displayName, presignedUrl, email — NOT UUIDs)
-- [ ] Semantic D2Result factories — no raw `fail()` when a factory exists
-- [ ] Auth flags initialize to `null` (pre-auth), not `false`
-- [ ] Validate inputs BEFORE infrastructure calls
-- [ ] RedactionSpec covers auto I/O logging only — manual `logger.*` calls reviewed for PII leaks
-- [ ] Never return `ok()` unconditionally after branching operations
-- [ ] No `!` for silencing warnings (only after Falsey/early return guard)
-- [ ] Build warnings = bugs — zero warnings on `tsc`, `eslint`, `prettier`
-
-**CLAUDE.md §6 (Conventions):**
-
-- [ ] C# file headers on all `.cs` files
-- [ ] C# naming conventions (`r_camelCase` readonly, `_camelCase` mutable, `UPPER_CASE` constants)
-- [ ] TS naming (camelCase functions, PascalCase types, kebab-case files)
-- [ ] Observability fields (traceId, correlationId, userId, orgId, service) on logs/spans
-
-**Cross-Service:**
-
-- [ ] Proto contracts match both caller and implementor
-- [ ] Docker dependency chain — startup order, health checks, port conflicts
-- [ ] Env var completeness — every var read in code exists in `.env.local` + `.env.local.example`
-- [ ] `.env.local.example` placeholder values are realistic (correct ports, hostnames, patterns)
-
-**Test Coverage:**
-
-- [ ] Every new handler has unit tests
-- [ ] Adversarial cases covered (invalid input, missing fields, boundary values)
-- [ ] Access control tested (forbidden/unauthorized paths)
-- [ ] Error propagation tested (downstream failures bubble correctly)
-- [ ] Integration tests for repo handlers (Testcontainers)
-- [ ] All existing tests still pass (zero regressions)
-
-**Documentation:**
-
-- [ ] Every new handler/service/endpoint reflected in `.md` files
-- [ ] PLANNING.md phasing table accurate
-- [ ] CLAUDE.md reference table includes all new docs
-- [ ] No stale "Pending" or "not yet implemented" references for completed work
+Full checklist moved to standalone file: [AUDIT_CHECKLIST.md](AUDIT_CHECKLIST.md)
 
 ### SvelteKit Implementation Progress
 
@@ -327,31 +230,10 @@ Scope: **every file in `git diff main`** — not just new files. Includes modifi
 
 ### Recently Completed
 
-- **BCP 47 locale migration**: Migrated from 5 bare language codes (en, fr, es, de, ja) to 10 IETF BCP 47 locale tags (en-US, en-CA, en-GB, fr-FR, fr-CA, es-ES, es-MX, de-DE, it-IT, ja-JP). `contracts/messages/` files renamed, Paraglide config updated, `@d2/i18n` and `D2.Shared.I18n` packages provide locale validation/resolution on both platforms
-- **Middleware extraction to shared packages**: Auth middleware (service key, session fingerprint, JWT auth) extracted from gateway-local code to `Auth.Default` (.NET) and `@d2/service-key` + `@d2/session-fingerprint` (Node.js). Translation middleware extracted to `Translation.Default` (.NET) and `@d2/translation` (Node.js). CSRF middleware extracted to `@d2/csrf` (Node-only). Gateways and auth-api now delegate to shared packages for framework-agnostic core logic
-- **WhoIs fingerprint removal**: Hash simplified to `SHA256(ip|year|month)` — fingerprint field removed from proto, .NET domain, Node.js geo-client, and request enrichment. Old fingerprint-based records age out naturally via 180-day retention (`PurgeStaleWhoIs` job)
-- **Comms delivery_attempt unique constraint** (#42): Added `uq_delivery_attempt_request_channel_attempt` unique index on `(request_id, channel, attempt_number)`
-- **.NET i18n gateway-edge translation** (#41): `D2.Shared.I18n` package with `Translator` + `TK` constants. `TranslationMiddleware` in REST gateway resolves `D2-Locale` / `Accept-Language` at response time. Geo validators use `TK.*` keys instead of hardcoded English. See ADR-023
-- **Contact.IETFBCP47Tag field**: BCP 47 locale on Geo Contact entity (defaults to `"en-US"`), synced from `User.locale` during `CreateUserContact`. Enables Comms service to deliver notifications in recipient's preferred language
-- **SvelteKit web client merged to main** (PR #44): Steps 0–9 complete — design system (27 shadcn components, 3 OKLCH presets), routing (auth/onboarding/app groups), auth BFF proxy + JWT manager, API gateway client, forms (Superforms + Zod 4), auth pages (10 BCP 47 locales), device fingerprinting, Grafana Faro telemetry, three-tier Playwright tests. 706 SvelteKit tests total (551 Vitest + 146 mocked Playwright + 9 browser E2E)
-- Browser E2E tests (Tier 2): 9 full-stack tests — sign-up, sign-in, sign-out, password reset. Self-contained via Testcontainers (PG, Redis, RabbitMQ) + .NET Geo child process + in-process Auth + SvelteKit dev server
-- Playwright test restructure: Mocked tests moved from `e2e/` to `tests/mocked/` with `D2_MOCK_INFRA` mock injection. 146 mocked tests passing (5 skipped pending authenticated sessions). Three-tier test architecture: mocked CI, local E2E (`tests/e2e/`), true browser E2E (`backends/node/services/e2e/`)
-- PR review fixes (#42–#53): CI job for bff-client tests, 72 new tests (reset-password, forgot-password, form-actions, auth-gateway-client, auth.server, middleware.server), shared `executeFetch()` extraction, schema dedup, .NET CORS multi-origin, empty-message fallback bug fix, CLAUDE.md path fix
-- Singleflight deduplication (#32): `Singleflight` utility on both .NET and Node.js, wired into FindWhoIs to coalesce concurrent gRPC calls for the same cache key
-- Ambient per-request context (#41): AsyncLocalStorage in `@d2/handler` — all Node.js handlers (including pre-auth singletons) automatically see per-request context, matching .NET DI scoping
-- PII redaction verification (#6): No IPs in spans/logs, fingerprints + WhoIs IDs hashed, UAs redacted by handler RedactionSpec
-- API key enforcement: Auth service requires valid `X-Api-Key` on all endpoints. `isOrgEmulating` span attribute guarded behind `isAuthenticated`
-- Circuit breaker (#39): Custom `CircuitBreaker<T>` utility (.NET + Node.js) protecting Geo gRPC calls
-- Client telemetry: Grafana Faro SDK, Alloy faro.receiver pipeline, Web Vitals RUM dashboard (Step 9)
-- Device fingerprinting: cross-cutting SvelteKit + Node.js + .NET, `d2-cfp` cookie (Step 8.7)
-- Debug session page + role audit docs (Step 8.5)
-- Auth pages: sign-in, sign-up, forgot-password, reset-password, verify-email (Step 8)
-- Forms architecture: Superforms + Formsnap + Zod 4, 108 tests (Step 7)
-- Auth-aware public nav, language selector, email branding
-- @d2/auth-bff-client package (ADR-017) — 42 unit + 10 E2E tests (per-session JWT cache fix)
-- API client layer with camelCase normalizer (ADR-005)
-- Design system page + chart showcase (LayerChart 2.0)
-- Scoped debug logging with handler I/O redaction (Loki 30-day retention for debug level)
+- **File Service (F1-F8)**: Complete pipeline — domain, app, infra, API, JWT middleware, Auth FileCallback gRPC, SignalR Gateway, 8 E2E tests. 546 files-tests + 42 bff-client tests
+- **Solution-wide quality sweep**: 79 issues fixed (4 CRITICAL, 22 HIGH, 38 MEDIUM, 15 LOW) — bare catches, unchecked results, RedactionSpec, D2Result factories, auth flags, i18n, PII logging, security fixes
+- **Nullability refactor**: Domain models consolidated to `?: T` (TS) / `T?` (C#). Proto `optional` keyword on 65 fields + `useOptionals=all`. New utilities: `truthyOrUndefined()` (TS), `ToNullIfEmpty()` (C#). Zero empty strings as data
+- **Docker config audit**: 12 fixes — ClamAV env vars, .dockerignore, USER directives, internal port hardcoding, prod overrides for files/signalr/clamav
 
 ---
 
@@ -432,13 +314,13 @@ Scope: **every file in `git diff main`** — not just new files. Includes modifi
 
 ### Services
 
-| Service   | Platform | Status      | Tests       | Notes                                                                                  |
-| --------- | -------- | ----------- | ----------- | -------------------------------------------------------------------------------------- |
-| Geo       | .NET     | ✅ Done     | 798 passing | Geographic reference data, locations, contacts, WHOIS, multi-tier caching              |
-| Auth      | Node.js  | 🚧 Stage C  | 995 passing | Hono + BetterAuth + Drizzle. Stages A-B done, BFF client done, E2E tested              |
-| Comms     | Node.js  | 🚧 Stage B  | 575 passing | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)           |
-| Files     | Node.js  | 🚧 Stage F7 | 591 passing | Domain + app + infra + API + JWT middleware done. Auth FileCallback gRPC done. ADR-026 |
-| dkron-mgr | Node.js  | ✅ Done     | 64 passing  | Declarative Dkron job reconciler — drift detection, orphan cleanup                     |
+| Service   | Platform | Status      | Tests       | Notes                                                                                        |
+| --------- | -------- | ----------- | ----------- | -------------------------------------------------------------------------------------------- |
+| Geo       | .NET     | ✅ Done     | 795 passing | Geographic reference data, locations, contacts, WHOIS, multi-tier caching                    |
+| Auth      | Node.js  | 🚧 Stage C  | 995 passing | Hono + BetterAuth + Drizzle. Stages A-B done, BFF client done, E2E tested                    |
+| Comms     | Node.js  | 🚧 Stage B  | 575 passing | Stage A done (delivery engine). Stage B next (in-app notifications, SignalR)                 |
+| Files     | Node.js  | 🚧 Stage F8 | 546 passing | Domain + app + infra + API + JWT middleware + E2E done. Auth FileCallback gRPC done. ADR-026 |
+| dkron-mgr | Node.js  | ✅ Done     | 64 passing  | Declarative Dkron job reconciler — drift detection, orphan cleanup                           |
 
 ### Gateways
 
