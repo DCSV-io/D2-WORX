@@ -226,7 +226,7 @@ These tables are managed by Drizzle schema declarations in `infra/src/repository
 
 ### Session Extension Fields
 
-BetterAuth sessions carry 4 custom fields (configured via `session.additionalFields`):
+BetterAuth sessions carry 5 custom fields (configured via `session.additionalFields`). Session `ipAddress`/`userAgent` are `?: string` (optional data). Auth-state fields remain `| null` (three-state pre-auth semantics: `null` = "not yet determined", absent = never set):
 
 | Field                      | Constant                           | Type    | Purpose                              |
 | -------------------------- | ---------------------------------- | ------- | ------------------------------------ |
@@ -701,6 +701,8 @@ The composition root builds the pipeline in this exact order:
 ```
 
 **API key requirement**: All auth endpoints require a valid `X-Api-Key` header (`require: true` on service-key middleware). Missing key → 401. Invalid key → 401. Valid key → `IRequestContext.isTrustedService = true`, continues to next middleware.
+
+**Auth flag semantics** (`IRequestContext`): `isAuthenticated`, `isTrustedService`, `isOrgEmulating`, `isUserImpersonating` use `boolean | null` (three-state). `null` = "not yet determined" (pre-auth middleware), `false` = "confirmed not", `true` = "confirmed yes". Service-level contexts (composition roots) initialize emulation/impersonation to `null`, `isAuthenticated` to `false`. Never treat `null` as `false` in logic.
 
 ### .NET Gateway Middleware Order
 

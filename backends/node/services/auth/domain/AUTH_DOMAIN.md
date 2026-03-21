@@ -13,13 +13,14 @@ Defines the public contract for all auth data leaving the service. These types a
 ## Design Decisions
 
 | Decision                          | Rationale                                                                        |
-| --------------------------------- | -------------------------------------------------------------------------------- |
+| --------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | Readonly interfaces + factories   | More idiomatic TS than classes. Better tree-shaking, consistent functional style |
 | Immutable-by-default              | "Mutation" returns new objects via spread+override                               |
 | String literal unions (not enums) | `as const` arrays + derived types. No TS `enum` keyword                          |
 | No navigation properties          | Children loaded separately, composed at app layer (matches .NET Geo pattern)     |
 | BetterAuth entities = type-only   | Account/Session have interfaces but no factories (creation managed by infra)     |
 | Password excluded from Account    | Infra detail that must never leave auth-infra                                    |
+| `?: T` for optional data fields   | Optional entity fields use `?: T` (not `                                         | null`). Factories return `undefined` for absent values. Auth-state fields on Session (`activeOrganizationId`, etc.) remain ` | null` for three-state pre-auth semantics |
 
 ## Package Structure
 
@@ -67,17 +68,17 @@ All "enums" are `as const` arrays with derived union types and type guard functi
 
 ## Entities
 
-| Entity           | Factory         | Update          | Key Rules                                              |
-| ---------------- | --------------- | --------------- | ------------------------------------------------------ |
-| Account          | —               | —               | BetterAuth-managed. Password excluded                  |
-| Session          | —               | —               | BetterAuth-managed. 4 custom extension fields          |
-| User             | `createUser`    | `updateUser`    | Email cleaned+validated, name required, UUIDv7 ID      |
-| Organization     | `createOrg...`  | `updateOrg...`  | Slug lowercased, slug+orgType immutable after creation |
-| Member           | `createMember`  | —               | Valid role required, BetterAuth manages role changes   |
-| Invitation       | `createInv...`  | —               | Status via rules/, always starts as "pending"          |
-| SignInEvent      | `createSign...` | —               | Immutable audit record                                 |
-| EmulationConsent | `createEmu...`  | `revokeEmu...`  | Future expiresAt required, `isConsentActive` helper    |
-| OrgContact       | `createOrgC...` | `updateOrgC...` | Junction to Geo Contact, label required                |
+| Entity           | Factory         | Update          | Key Rules                                                                                                                                                                   |
+| ---------------- | --------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Account          | —               | —               | BetterAuth-managed. Password excluded                                                                                                                                       |
+| Session          | —               | —               | BetterAuth-managed. 5 custom extension fields. `ipAddress`/`userAgent` are `?: string`. Auth-state fields (`activeOrganizationId`, `emulatedOrganizationId`, etc.) remain ` | null` (three-state pre-auth semantics) |
+| User             | `createUser`    | `updateUser`    | Email cleaned+validated, name required, UUIDv7 ID. `image` is `?: string`                                                                                                   |
+| Organization     | `createOrg...`  | `updateOrg...`  | Slug lowercased, slug+orgType immutable after creation. `logo`/`metadata` are `?: string`                                                                                   |
+| Member           | `createMember`  | —               | Valid role required, BetterAuth manages role changes                                                                                                                        |
+| Invitation       | `createInv...`  | —               | Status via rules/, always starts as "pending"                                                                                                                               |
+| SignInEvent      | `createSign...` | —               | Immutable audit record. `whoIsId`/`deviceFingerprint`/`failureReason` are `?: string`                                                                                       |
+| EmulationConsent | `createEmu...`  | `revokeEmu...`  | Future expiresAt required, `isConsentActive` helper. `revokedAt` is `?: Date`                                                                                               |
+| OrgContact       | `createOrgC...` | `updateOrgC...` | Junction to Geo Contact, label required                                                                                                                                     |
 
 ## Business Rules
 

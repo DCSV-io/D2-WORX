@@ -8,17 +8,17 @@ Implements the infrastructure layer for authentication: BetterAuth instance crea
 
 ## Design Decisions
 
-| Decision                          | Rationale                                                                         |
-| --------------------------------- | --------------------------------------------------------------------------------- |
-| BetterAuth is infra, not domain   | BetterAuth internals never leave this package — all data crosses via domain types |
-| Drizzle adapter for BetterAuth    | Single ORM for all 11 tables (ADR-009). `drizzleAdapter(db, { provider: "pg" })`  |
-| AuthHooks callback interface      | Decouples infra from app layer — composition root wires app-layer callbacks in    |
-| No direct ioredis imports         | Secondary storage + throttle use `@d2/interfaces` cache handler abstractions      |
-| Structural typing for throttle    | `SignInThrottleStore` matches `ISignInThrottleStore` shape without importing it   |
-| Repository handlers follow TLC    | Same `c/`, `r/`, `u/`, `d/` folder convention as app-layer and .NET patterns      |
-| Service keys re-exported from app | Keys live alongside interfaces in auth-app; infra re-exports for convenience      |
-| Mappers as plain functions        | `toDomainX(row)` converters — no class overhead, easy to test                     |
-| Password hooks wrap BetterAuth    | Domain validation + HIBP check before BetterAuth's own bcrypt hashing             |
+| Decision                          | Rationale                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| BetterAuth is infra, not domain   | BetterAuth internals never leave this package — all data crosses via domain types                                         |
+| Drizzle adapter for BetterAuth    | Single ORM for all 11 tables (ADR-009). `drizzleAdapter(db, { provider: "pg" })`                                          |
+| AuthHooks callback interface      | Decouples infra from app layer — composition root wires app-layer callbacks in                                            |
+| No direct ioredis imports         | Secondary storage + throttle use `@d2/interfaces` cache handler abstractions                                              |
+| Structural typing for throttle    | `SignInThrottleStore` matches `ISignInThrottleStore` shape without importing it                                           |
+| Repository handlers follow TLC    | Same `c/`, `r/`, `u/`, `d/` folder convention as app-layer and .NET patterns                                              |
+| Service keys re-exported from app | Keys live alongside interfaces in auth-app; infra re-exports for convenience                                              |
+| Mappers as plain functions        | `toDomainX(row)` converters — no class overhead, easy to test. Convert DB `null` → `undefined` for optional domain fields |
+| Password hooks wrap BetterAuth    | Domain validation + HIBP check before BetterAuth's own bcrypt hashing                                                     |
 
 ## Package Structure
 
@@ -69,6 +69,7 @@ src/
         find-active-consent-by-user-id-and-org.ts  Duplicate check for consent creation
         find-org-contact-by-id.ts           Single junction record by ID
         find-org-contacts-by-org-id.ts      Paginated junctions for an org
+        check-org-exists.ts                 Boolean existence check by org ID
       u/
         revoke-emulation-consent-record.ts  Sets revokedAt timestamp
         update-org-contact-record.ts        Updates label/isPrimary + updatedAt
@@ -281,7 +282,7 @@ export function addAuthInfra(services: ServiceCollection, db: NodePgDatabase): v
 addAuthInfra(services: ServiceCollection, db: NodePgDatabase): void
 ```
 
-Registers all 20 repository handlers as **transient** (new instance per resolve). Each handler receives the Drizzle `db` instance and scoped `IHandlerContext` from the container.
+Registers all repository handlers (including `CheckOrgExists` via `ICheckOrgExistsKey`) as **transient** (new instance per resolve). Each handler receives the Drizzle `db` instance and scoped `IHandlerContext` from the container.
 
 ## Dependencies
 

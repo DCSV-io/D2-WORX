@@ -57,12 +57,12 @@ src/
 
 All "enums" are `as const` arrays with derived union types and type guard functions.
 
-| Enum            | Values                                                                                                                 | Extras                                  |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| FileStatus      | pending, processing, ready, rejected                                                                                   | `FILE_STATUS_TRANSITIONS` state machine |
-| ContentCategory | image, document, video, audio                                                                                          | `isValidContentCategory` guard          |
-| RejectionReason | size_exceeded, invalid_content_type, magic_bytes_mismatch, content_moderation_failed, processing_timeout, corrupt_file | `isValidRejectionReason` guard          |
-| VariantSize     | Plain string type (no fixed values — variant names are per-context-key runtime config)                                 | —                                       |
+| Enum            | Values                                                                                                                                 | Extras                                  |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| FileStatus      | pending, processing, ready, rejected                                                                                                   | `FILE_STATUS_TRANSITIONS` state machine |
+| ContentCategory | image, document, video, audio                                                                                                          | `isValidContentCategory` guard          |
+| RejectionReason | size_exceeded, invalid_content_type, magic_bytes_mismatch, content_moderation_failed, processing_timeout, corrupt_file, virus_detected | `isValidRejectionReason` guard          |
+| VariantSize     | Plain string type (no fixed values — variant names are per-context-key runtime config)                                                 | —                                       |
 
 ### File Status State Machine
 
@@ -75,9 +75,9 @@ rejected → (terminal)
 
 ## Entities
 
-| Entity | Factory      | Transition             | Key Rules                                                                                                                                                                                                                                                                   |
-| ------ | ------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| File   | `createFile` | `transitionFileStatus` | Starts as `pending`, variants=undefined until `ready`, rejectionReason=undefined until `rejected`. `uploaderUserId` tracks who initiated the upload (for realtime push targeting). All string fields cleaned via `cleanStr()`, sizeBytes validated against configurable max |
+| Entity | Factory      | Transition             | Key Rules                                                                                                                                                                                                                                                                                                                                  |
+| ------ | ------------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| File   | `createFile` | `transitionFileStatus` | Starts as `pending`, `variants` is `?: readonly FileVariant[]` (undefined until `ready`), `rejectionReason` is `?: RejectionReason` (undefined until `rejected`). `uploaderUserId` tracks who initiated the upload (for realtime push targeting). All string fields cleaned via `cleanStr()`, sizeBytes validated against configurable max |
 
 ## Value Objects
 
@@ -89,8 +89,8 @@ rejected → (terminal)
 ## Business Rules
 
 | Rule                 | Function                                 | Description                                               |
-| -------------------- | ---------------------------------------- | --------------------------------------------------------- |
-| Content category     | `resolveContentCategory(contentType)`    | MIME → category mapping, undefined if unknown             |
+| -------------------- | ---------------------------------------- | --------------------------------------------------------- | --------------------------------- |
+| Content category     | `resolveContentCategory(contentType)`    | MIME → category mapping, returns `ContentCategory         | undefined` (undefined if unknown) |
 | Content type allowed | `isContentTypeAllowed(type, categories)` | Checks MIME type belongs to one of the allowed categories |
 | All allowed types    | `getAllowedContentTypes(categories)`     | Flat array of all MIME types for given categories         |
 | Resize needed        | `requiresResize(config)`                 | True when `maxDimension > 0` (original = no resize)       |
@@ -105,13 +105,14 @@ rejected → (terminal)
 
 ### FILES_FIELD_LIMITS
 
-| Constant                       | Value | Purpose                    |
-| ------------------------------ | ----- | -------------------------- |
-| `MAX_CONTEXT_KEY_LENGTH`       | 100   | Max context key string     |
-| `MAX_RELATED_ENTITY_ID_LENGTH` | 255   | Max related entity ID      |
-| `MAX_CONTENT_TYPE_LENGTH`      | 255   | Max MIME type string       |
-| `MAX_DISPLAY_NAME_LENGTH`      | 255   | Max user-provided filename |
-| `MAX_VARIANT_KEY_LENGTH`       | 512   | Max MinIO storage key      |
+| Constant                       | Value | Purpose                     |
+| ------------------------------ | ----- | --------------------------- |
+| `MAX_CONTEXT_KEY_LENGTH`       | 100   | Max context key string      |
+| `MAX_RELATED_ENTITY_ID_LENGTH` | 255   | Max related entity ID       |
+| `MAX_CONTENT_TYPE_LENGTH`      | 255   | Max MIME type string        |
+| `MAX_DISPLAY_NAME_LENGTH`      | 255   | Max user-provided filename  |
+| `MAX_VARIANT_KEY_LENGTH`       | 512   | Max MinIO storage key       |
+| `MAX_UPLOADER_USER_ID_LENGTH`  | 36    | Max uploader user ID (UUID) |
 
 ### ALLOWED_CONTENT_TYPES
 

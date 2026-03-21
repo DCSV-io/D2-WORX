@@ -74,8 +74,8 @@ Identifies trusted service-to-service requests via the `X-Api-Key` header. Opera
 
 **ServiceKeyMiddleware** (global, runs early in pipeline):
 
-- No `X-Api-Key` header — mark `IsTrustedService = false`, continue (browser request).
-- Valid key — mark `IsTrustedService = true`, continue.
+- No `X-Api-Key` header — mark `IsTrustedService = false` (confirmed not a trusted service), continue (browser request).
+- Valid key — mark `IsTrustedService = true` (confirmed trusted), continue.
 - Invalid key — 401 Unauthorized immediately (`INVALID_SERVICE_KEY`).
 
 **ServiceKeyEndpointFilter** (per-endpoint, applied via `RequireServiceKey()`):
@@ -132,6 +132,25 @@ app.MapGet("/api/internal/data", handler).RequireServiceKey();
 app.MapGet("/api/profile", handler).RequireAuthorization(AuthPolicies.AUTHENTICATED);
 app.MapPost("/api/org/settings", handler).RequireAuthorization(AuthPolicies.HAS_ACTIVE_ORG);
 ```
+
+## Auth Flag Semantics
+
+`IsAuthenticated`, `IsTrustedService`, `IsOrgEmulating`, and `IsUserImpersonating` on `RequestContext` use `bool?` (nullable boolean):
+
+| Value   | Meaning                                                                    |
+| ------- | -------------------------------------------------------------------------- |
+| `null`  | Not yet determined — auth middleware has not run yet (pre-auth)            |
+| `false` | Confirmed not — middleware ran and determined the condition does not apply |
+| `true`  | Confirmed yes — middleware ran and confirmed the condition                 |
+
+**Initialization rules:**
+
+- When `HttpContext` is null (e.g., gRPC service, background job), `IsAuthenticated` defaults to `false` (confirmed not authenticated — there is no HTTP request to authenticate).
+- `IsOrgEmulating` derives from the JWT `isEmulating` claim — absent claim = `false` (not emulating).
+- `IsUserImpersonating` derives from the JWT `isImpersonating` claim — absent claim = `false` (not impersonating).
+- `IsTrustedService` is set by `ServiceKeyMiddleware`: no `X-Api-Key` header = `false`, valid key = `true`, invalid key = 401.
+
+**Usage:** Never treat `null` as `false`. Use explicit checks: `if (ctx.IsAuthenticated != true)` or `if (ctx.IsAuthenticated is null or false)`. See `IRequestContext` field tables in [HANDLER.md](../../../Handler/HANDLER.md).
 
 ## Security Notes
 

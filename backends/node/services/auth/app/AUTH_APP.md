@@ -30,6 +30,7 @@ src/
   auth-job-options.ts       AuthJobOptions interface + DEFAULT_AUTH_JOB_OPTIONS
   service-keys.ts           ServiceKey<T> tokens (21 infra + 18 app)
   cache-keys.ts             AUTH_CACHE_KEYS (email availability, sign-in events, throttle)
+  file-context-keys.ts      AUTH_FILE_CONTEXT_KEYS (user_avatar, org_logo — file callback context key matching)
   interfaces/
     cqrs/
       handlers/
@@ -172,9 +173,9 @@ Plus `ISignInThrottleStore` (non-handler interface with 6 methods for Redis key 
 
 ## Service Keys
 
-43 `ServiceKey<T>` tokens organized in two groups:
+44 `ServiceKey<T>` tokens organized in two groups:
 
-- **24 infra-layer keys** — for repository handlers (including `IUpdateUserImageKey`, `IUpdateOrgLogoKey`, `ICheckOrgExistsKey`), PingDb, throttle store, and 4 purge handlers (interfaces defined here, implemented in `@d2/auth-infra`)
+- **25 infra-layer keys** — for repository handlers (including `IUpdateUserImageKey`, `IUpdateOrgLogoKey`, `ICheckOrgExistsKey`), PingDb, throttle store, and 4 purge handlers (interfaces defined here, implemented in `@d2/auth-infra`)
 - **19 app-layer keys** — for CQRS handlers including CheckEmailAvailability, CheckHealth, HandleFileProcessed, and 4 job handlers (typed against handler interfaces, e.g., `Commands.IRecordSignInEventHandler`)
 
 ## AuthJobOptions
@@ -193,7 +194,7 @@ Configuration for scheduled job handlers, provided via `addAuthApp()` (defaults 
 addAuthApp(services: ServiceCollection, jobOptions?: AuthJobOptions): void
 ```
 
-Registers all 19 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. Organization existence checks use the `ICheckOrgExistsHandler` repository handler (registered in auth-infra) via DI. The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
+Registers all 19 CQRS handlers as **transient** (new instance per resolve). Each handler receives its repository dependencies and `IHandlerContext` from the DI container. Organization existence checks use the `ICheckOrgExistsHandler` repository handler (registered in auth-infra) via DI -- the `AddAuthAppOptions` parameter was removed (org existence is now a DI-resolved repo handler instead of a callback). The optional `jobOptions` parameter (defaults to `DEFAULT_AUTH_JOB_OPTIONS`) configures retention periods and lock TTL for job handlers. Infra-layer purge handlers use `DEFAULT_BATCH_SIZE` (500) from `@d2/batch-pg` internally -- batch size is not passed via handler input.
 
 ## Handler Implementation Patterns
 
@@ -205,14 +206,15 @@ Every handler defines a Zod schema and calls `this.validateInput()` at the TOP o
 
 ```typescript
 // 1. Define Zod schema (file-level constant, not inside the class)
+// Use .optional() (not .nullable() or .nullish()) for domain-aligned optional fields
 const schema = z.object({
   userId: zodGuid,
   successful: z.boolean(),
   ipAddress: z.string().max(45),
   userAgent: z.string().max(512),
-  whoIsId: z.string().max(64).nullish(),
-  deviceFingerprint: z.string().max(64).nullish(),
-  failureReason: z.string().max(100).nullish(),
+  whoIsId: z.string().max(64).optional(),
+  deviceFingerprint: z.string().max(64).optional(),
+  failureReason: z.string().max(100).optional(),
 });
 
 // 2. First lines of executeAsync — validate BEFORE any infrastructure calls

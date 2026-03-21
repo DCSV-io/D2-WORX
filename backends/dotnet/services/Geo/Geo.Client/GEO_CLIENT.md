@@ -402,6 +402,15 @@ WhoIs cache keys use the format `geo:whois:{ip}` — the content-addressable SHA
 
 ---
 
+## Proto Optional Field Handling
+
+Proto responses use `optional` fields (65 fields across all proto definitions). Geo.Client handlers account for this:
+
+- **Array fields**: Use `?? []` or null-coalescing when accessing repeated fields from proto responses to handle cases where the field is absent.
+- **String fields**: Use `?.` optional chaining when reading string properties from proto DTOs (e.g., `whoIs.Location?.City`, `contact.PersonalDetails?.FirstName`).
+- **Cache key construction**: Guards against null/undefined key components — skips the cache entry if required key fields are missing rather than constructing an invalid key.
+- **`.ToNullIfEmpty()`**: Applied at proto→domain boundaries to convert empty strings (proto3 default) to `null` where the domain model expects `string?`.
+
 ## TS Equivalent
 
 `@d2/geo-client` — same interface + handler structure, `RedactionSpec` for logging suppression, field-level masking on `FindWhoIs` inputs. Zod schemas (`contactInputSchema` etc.) exported for the same reuse pattern.

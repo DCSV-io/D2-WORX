@@ -43,3 +43,24 @@ var result = await cb.ExecuteAsync(
 ```
 
 **Fail-open pattern** (used by Geo.Client `FindWhoIs`): Catch both `RpcException` and `CircuitOpenException` — when the circuit is open, `ExecuteAsync` throws `CircuitOpenException` instantly (no timeout wait). Node.js equivalent: `@d2/utilities` `CircuitBreaker` class.
+
+## `ToNullIfEmpty`
+
+```csharp
+extension(string? s)
+{
+    public string? ToNullIfEmpty()
+}
+```
+
+Returns `null` if the string is null, empty, or whitespace-only; otherwise returns the trimmed string. Uses `Falsey()` internally. Use at data boundaries (DB rows, proto mapping, user input) to convert empty strings to `null` before they propagate as "valid" data.
+
+```csharp
+"  hello  ".ToNullIfEmpty()      // "hello"
+"  hello world ".ToNullIfEmpty() // "hello world" (internal space preserved)
+"   ".ToNullIfEmpty()            // null
+"".ToNullIfEmpty()               // null
+((string?)null).ToNullIfEmpty()  // null
+```
+
+**Node.js counterpart:** `truthyOrUndefined()` in `@d2/utilities` (returns `undefined` instead of `null`).
