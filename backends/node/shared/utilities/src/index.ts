@@ -5,6 +5,7 @@ export {
   cleanAndValidateEmail,
   cleanAndValidatePhoneNumber,
   getNormalizedStrForHashing,
+  truthyOrUndefined,
 } from "./string-extensions.js";
 export { GEO_REF_DATA_FILE_NAME } from "./constants.js";
 export { retryAsync, isTransientError, type RetryOptions } from "./retry.js";

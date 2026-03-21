@@ -59,6 +59,22 @@ export function cleanAndValidatePhoneNumber(phoneNumber: string | null | undefin
 }
 
 /**
+ * Returns the trimmed string if non-empty, or `undefined` if the value is
+ * null, undefined, empty, or whitespace-only.
+ *
+ * Use at boundaries (user input, DB rows, proto mapping) to convert
+ * empty strings to `undefined` before they propagate as "valid" data.
+ *
+ * Unlike {@link cleanStr}, this does NOT collapse internal whitespace —
+ * it only trims and checks for emptiness.
+ */
+export function truthyOrUndefined(value: string | null | undefined): string | undefined {
+  if (value == null) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+/**
  * Generates a normalized string for hashing by cleaning and lowercasing each part,
  * then joining them with a pipe ("|") character.
  *

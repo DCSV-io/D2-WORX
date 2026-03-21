@@ -41,6 +41,25 @@ public static partial class StringExtensions
         public bool Falsey() => string.IsNullOrWhiteSpace(str);
 
         /// <summary>
+        /// Returns null if the string is null, empty, or whitespace-only; otherwise
+        /// returns the trimmed string. Use at boundaries (DB rows, proto mapping,
+        /// user input) to convert empty strings to null before they propagate.
+        /// </summary>
+        ///
+        /// <returns>
+        /// The trimmed string, or null if falsey.
+        /// </returns>
+        public string? ToNullIfEmpty()
+        {
+            if (str.Falsey())
+            {
+                return null;
+            }
+
+            return str!.Trim();
+        }
+
+        /// <summary>
         /// Cleans a string by trimming leading/trailing whitespace and replacing duplicate whitespace.
         /// </summary>
         ///
