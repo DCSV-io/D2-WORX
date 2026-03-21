@@ -55,7 +55,7 @@ export class CallCanAccess extends BaseHandler<I, O> implements ICallCanAccess {
           );
         }),
       (res) => res.result!,
-      (res) => ({ allowed: res.allowed }),
+      (res) => ({ allowed: res.allowed ?? false }),
     );
   }
 

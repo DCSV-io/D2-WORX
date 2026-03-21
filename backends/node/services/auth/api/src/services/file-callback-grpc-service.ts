@@ -21,12 +21,20 @@ export function createFileCallbackGrpcService(
       return withTraceContext(call, async () => {
         const scope = createRpcScope(provider, call);
         try {
+          const { fileId, contextKey, relatedEntityId, status } = call.request;
+          if (!fileId || !contextKey || !relatedEntityId || !status) {
+            callback({
+              code: grpc.status.INVALID_ARGUMENT,
+              message: "fileId, contextKey, relatedEntityId, and status are required.",
+            });
+            return;
+          }
           const handler = scope.resolve(IHandleFileProcessedKey);
           const result = await handler.handleAsync({
-            fileId: call.request.fileId,
-            contextKey: call.request.contextKey,
-            relatedEntityId: call.request.relatedEntityId,
-            status: call.request.status as "ready" | "rejected",
+            fileId,
+            contextKey,
+            relatedEntityId,
+            status: status as "ready" | "rejected",
             variants: call.request.variants,
           });
 

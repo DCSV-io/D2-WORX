@@ -55,7 +55,7 @@ export class CallOnFileProcessed extends BaseHandler<I, O> implements ICallOnFil
           );
         }),
       (res) => res.result!,
-      (res) => ({ success: res.success }),
+      (res) => ({ success: res.success ?? false }),
     );
   }
 

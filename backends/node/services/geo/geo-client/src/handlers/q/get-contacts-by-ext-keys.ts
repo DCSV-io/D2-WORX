@@ -104,14 +104,13 @@ export class GetContactsByExtKeys
     if (response.result?.success && response.data) {
       // Cache each fetched result (no TTL — contacts are immutable, LRU evicts)
       for (const entry of response.data) {
-        if (entry.key) {
-          const mapKey = `${entry.key.contextKey}:${entry.key.relatedEntityId}`;
-          const cacheKey = GEO_CACHE_KEYS.contactsByExtKey(
-            entry.key.contextKey,
-            entry.key.relatedEntityId,
-          );
-          this.store.set(cacheKey, entry.contacts);
-          result.set(mapKey, entry.contacts);
+        if (entry.key?.contextKey && entry.key?.relatedEntityId) {
+          const { contextKey, relatedEntityId } = entry.key;
+          const mapKey = `${contextKey}:${relatedEntityId}`;
+          const cacheKey = GEO_CACHE_KEYS.contactsByExtKey(contextKey, relatedEntityId);
+          const contacts = entry.contacts ?? [];
+          this.store.set(cacheKey, contacts);
+          result.set(mapKey, contacts);
         }
       }
     }

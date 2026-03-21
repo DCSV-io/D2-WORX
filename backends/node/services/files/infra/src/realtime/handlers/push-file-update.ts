@@ -65,7 +65,7 @@ export class PushFileUpdate extends BaseHandler<I, O> implements IPushFileUpdate
           );
         }),
       (res) => res.result!,
-      (res) => ({ delivered: res.delivered }),
+      (res) => ({ delivered: res.delivered ?? false }),
     );
   }
 

@@ -60,11 +60,11 @@ export class RecipientResolver
       const methods = c.contactMethods;
       if (!methods) continue;
 
-      const firstEmail = methods.emails[0];
+      const firstEmail = methods.emails?.[0];
       if (!email && firstEmail) {
         email = firstEmail.value;
       }
-      const firstPhone = methods.phoneNumbers[0];
+      const firstPhone = methods.phoneNumbers?.[0];
       if (!phone && firstPhone) {
         phone = firstPhone.value;
       }
