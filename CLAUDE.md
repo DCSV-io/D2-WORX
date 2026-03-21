@@ -280,6 +280,9 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Never return `ok()` after a branching operation unconditionally** — if a nested handler or provider can fail, check its result. Returning `ok()` after a try/catch that swallows failures is almost always a bug. Either `bubbleFail` or explicitly handle the error.
 - **Cross-platform enum/constant changes in one commit** — when renaming `OrgType`, `Role`, or any enum stored as text in the database, update BOTH .NET and Node.js simultaneously. Mismatches are data integrity bugs.
 - **Auth flags initialize to `null`, not `false`** — `isAuthenticated`, `isTrustedService`, `isOrgEmulating`, `isUserImpersonating` on `IRequestContext` use `boolean | null` (.NET: `bool?`). `null` = "not yet determined" (pre-auth). `false` = "confirmed not." Never treat `null` as `false` in logic.
+- **Domain model is source of truth for nullability** — if a domain field is optional, the proto field MUST use the `optional` keyword. Never rely on `""`, `0`, or `false` as "not set" sentinels. See per-platform rules below.
+- **Proto3 `optional` keyword for all nullable fields** — proto3 defaults strings to `""`, numbers to `0`, bools to `false`. Without `optional`, receivers cannot distinguish "not provided" from the zero value. Every field that is nullable in the domain model (`string?` in C#, `field?: string` in TS) MUST be `optional` in the `.proto` definition. Required fields (IDs, keys, status) stay as plain (non-optional).
+- **No empty strings as data** — `""` must NEVER represent absent/missing data. Use `null` (C#) or `undefined` (TS). The ONLY acceptable uses of `""` are: Svelte form field `bind:value` initialization, string concatenation building, `string.Empty` in C# hash/fingerprint computation (where null would break), and OTel span attributes (SDK requires non-null). At all other boundaries (user input, DB, proto mapping), convert empty strings: TS `truthyOrUndefined()`, C# `.ToNullIfEmpty()`.
 - **Don't create patterns**: Follow existing ones (§4). If no pattern fits, ask before inventing.
 - **Don't leave broken things behind**: Fix ALL issues you encounter in the project — not just in files you touched. Every session leaves the codebase cleaner.
 
@@ -287,6 +290,8 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 
 - **Falsey()/Truthy() handle null**: Never `if (value is null || value.Falsey())`. Just `if (value.Falsey())`. After early return, use `value!` — the value is guaranteed non-null. This is one of the few valid uses of `!`.
 - **`string.Empty`**: Always. Never `""`. (StyleCop SA1122)
+- **`ToNullIfEmpty()` at boundaries** — use `.ToNullIfEmpty()` when converting proto/DB/external strings to domain types. Returns `null` if the string is null, empty, or whitespace-only (trims first). Prevents empty strings from polluting domain models. Defined in `D2.Shared.Utilities.Extensions.StringExtensions`.
+- **Nullable types for optional domain fields** — use `string?`, `bool?`, `int?`, `DateTime?` for optional fields. Never `= string.Empty` on optional record properties. `null` = "not provided."
 - **C# 14 extension members**: `extension(T target) { ... }` — NOT old `this T` parameter style.
 - **File headers**: Required on all `.cs` files (see §6).
 - **Record types for entities**: `record`, `required init`, empty collection initializers (`[]`).
@@ -304,7 +309,9 @@ Interfaces are `partial`, split by operation. `ICommands.cs` (base) + `ICommands
 - **Type imports**: `import type { ... }` for type-only imports.
 - **Error handling**: `@d2/result` (D2Result) — same semantics as .NET.
 - **ESM only**: All packages `"type": "module"`.
-- **Prefer `null`/`undefined` over empty strings** — never use `""` as a default for optional/missing data, especially for values that may be persisted to a database. Empty strings hide missing data and are ambiguous. Use `null` (explicit absence) or `undefined` (property not set). The only acceptable uses of `""` are: initial form field values in UI components, string concatenation/template building, and `string.Empty` parity in cross-platform code. When parsing user input, convert empty-after-trim strings to `undefined`: `input.trim() || undefined`.
+- **Prefer `undefined` over `null`** — `undefined` is JS's native "absent" value. Use optional syntax (`field?: string`) instead of `field: string | null` or `field: string | undefined`. The ONLY exception is `IRequestContext` auth flags which use `boolean | null` for three-state pre-auth semantics. Never use `null` for "not provided" in domain entities — use `undefined` (omit the field).
+- **`truthyOrUndefined()` at boundaries** — use `truthyOrUndefined()` from `@d2/utilities` when converting user input, DB rows, or proto values to domain types. Returns `undefined` if the string is null, empty, or whitespace-only (trims first). Prevents empty strings from polluting domain models.
+- **Zod schemas use `.optional()` not `.nullable()`** — since domain types use `?: T` (undefined), Zod schemas must use `.optional()`. Never `.nullable()` or `.nullish()` for domain-aligned validation.
 - **After editing**: Check `mcp__cclsp__get_diagnostics`. Fix type errors and missing imports immediately.
 - **After modifying @d2/\* source**: Full `tsc` build (not `--noEmit`) so `dist/` is updated. Stale output = silent runtime failures.
 - **Drizzle UPDATE/DELETE must chain `.returning()`** — check the result array. Empty = row didn't exist → return `notFound()`, not `ok()`. → [AUTH_INFRA.md](backends/node/services/auth/infra/AUTH_INFRA.md) § Repository Handler Patterns
