@@ -983,7 +983,7 @@ describe("Invitation routes", () => {
       expect(handlers.createContacts.handleAsync).not.toHaveBeenCalled();
     });
 
-    it("should use empty strings as defaults for missing firstName and lastName", async () => {
+    it("should omit personalDetails when neither firstName nor lastName provided", async () => {
       resetDbChain([], [{ name: "Acme" }]);
       const app = createTestApp(handlers);
 
@@ -994,8 +994,7 @@ describe("Invitation routes", () => {
       });
 
       const contactInput = handlers.createContacts.handleAsync.mock.calls[0][0];
-      expect(contactInput.contacts[0].personalDetails.firstName).toBe("");
-      expect(contactInput.contacts[0].personalDetails.lastName).toBe("");
+      expect(contactInput.contacts[0].personalDetails).toBeUndefined();
     });
 
     it("should not create Geo contact when phone is undefined (no phoneNumbers)", async () => {
