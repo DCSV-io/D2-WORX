@@ -12,8 +12,8 @@ export interface Session {
   readonly userId: string;
   readonly token: string;
   readonly expiresAt: Date;
-  readonly ipAddress: string | null;
-  readonly userAgent: string | null;
+  readonly ipAddress?: string;
+  readonly userAgent?: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 

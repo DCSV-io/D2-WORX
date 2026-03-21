@@ -45,7 +45,7 @@ export class SetChannelPreference
     if (!validation.success) return D2Result.bubbleFail(validation);
 
     // Check if existing pref exists
-    let existing: ChannelPreference | null = null;
+    let existing: ChannelPreference | undefined;
     const result = await this.repo.findByContactId.handleAsync({ contactId: input.contactId });
     if (result.success && result.data) existing = result.data.pref;
 

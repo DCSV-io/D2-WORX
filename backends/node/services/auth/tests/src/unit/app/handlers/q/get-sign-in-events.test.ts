@@ -34,7 +34,7 @@ function createMockRepoHandlers() {
       handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { count: 0 } })),
     },
     getLatestEventDate: {
-      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { date: null } })),
+      handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { date: undefined } })),
     },
   };
 }
@@ -57,7 +57,7 @@ function createEvent(id: string, createdAt?: Date): SignInEvent {
     successful: true,
     ipAddress: "192.168.1.1",
     userAgent: "Mozilla/5.0",
-    whoIsId: null,
+    whoIsId: undefined,
     createdAt: createdAt ?? new Date("2026-02-08"),
   };
 }
@@ -353,7 +353,7 @@ describe("GetSignInEvents", () => {
       expect(setCalls.value.latestDate).not.toBe(pageEventDate.toISOString());
     });
 
-    it("should set latestDate to null in cache when no events exist", async () => {
+    it("should set latestDate to undefined in cache when no events exist", async () => {
       cache.get.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { value: undefined } }));
@@ -364,15 +364,15 @@ describe("GetSignInEvents", () => {
       repo.countByUserId.handleAsync = vi
         .fn()
         .mockResolvedValue(D2Result.ok({ data: { count: 0 } }));
-      // getLatestEventDate returns null when no events
+      // getLatestEventDate returns undefined when no events
       repo.getLatestEventDate.handleAsync = vi
         .fn()
-        .mockResolvedValue(D2Result.ok({ data: { date: null } }));
+        .mockResolvedValue(D2Result.ok({ data: { date: undefined } }));
 
       await handler.handleAsync({ userId: "user-123" });
 
       const setCalls = cache.set.handleAsync.mock.calls[0][0];
-      expect(setCalls.value.latestDate).toBeNull();
+      expect(setCalls.value.latestDate).toBeUndefined();
     });
 
     it("should correctly validate cache for page 2 (offset > 0)", async () => {

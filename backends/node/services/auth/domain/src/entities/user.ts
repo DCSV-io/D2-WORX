@@ -8,7 +8,7 @@ export interface User {
   readonly username: string;
   readonly displayUsername: string;
   readonly emailVerified: boolean;
-  readonly image: string | null;
+  readonly image?: string;
   readonly locale: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
@@ -20,7 +20,7 @@ export interface CreateUserInput {
   readonly username: string;
   readonly displayUsername: string;
   readonly id?: string;
-  readonly image?: string | null;
+  readonly image?: string;
   readonly emailVerified?: boolean;
   readonly locale?: string;
 }
@@ -31,7 +31,7 @@ export interface UpdateUserInput {
   readonly username?: string;
   readonly displayUsername?: string;
   readonly emailVerified?: boolean;
-  readonly image?: string | null;
+  readonly image?: string;
   readonly locale?: string;
 }
 
@@ -57,7 +57,7 @@ export function createUser(input: CreateUserInput): User {
     username: input.username,
     displayUsername: input.displayUsername,
     emailVerified: input.emailVerified ?? false,
-    image: input.image ?? null,
+    image: input.image,
     locale: input.locale ?? "en-US",
     createdAt: new Date(),
     updatedAt: new Date(),

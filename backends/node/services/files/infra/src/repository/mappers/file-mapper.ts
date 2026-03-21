@@ -14,8 +14,8 @@ export function toFile(row: FileRow): File {
     contentType: row.contentType,
     displayName: row.displayName,
     sizeBytes: row.sizeBytes,
-    variants: row.variants ? (row.variants as FileVariant[]) : null,
-    rejectionReason: row.rejectionReason ? (row.rejectionReason as RejectionReason) : null,
+    variants: row.variants ? (row.variants as FileVariant[]) : undefined,
+    rejectionReason: row.rejectionReason ? (row.rejectionReason as RejectionReason) : undefined,
     createdAt: row.createdAt,
   };
 }

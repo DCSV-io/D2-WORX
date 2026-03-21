@@ -124,7 +124,7 @@ async function scheduleRetry(
   const retryCount = Number(msg.headers[COMMS_RETRY.RETRY_COUNT_HEADER] ?? 0);
   const tierQueue = getRetryTierQueue(retryCount);
 
-  if (tierQueue === null) {
+  if (tierQueue == null) {
     logger.error(
       "Max retry attempts reached, dropping message",
       {

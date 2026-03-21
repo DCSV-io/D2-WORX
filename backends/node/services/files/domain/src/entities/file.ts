@@ -22,8 +22,8 @@ export interface File {
   readonly contentType: string;
   readonly displayName: string;
   readonly sizeBytes: number;
-  readonly variants: readonly FileVariant[] | null;
-  readonly rejectionReason: RejectionReason | null;
+  readonly variants?: readonly FileVariant[];
+  readonly rejectionReason?: RejectionReason;
   readonly createdAt: Date;
 }
 
@@ -45,7 +45,7 @@ export interface TransitionFileStatusOptions {
 
 /**
  * Creates a new File entity. Validates all fields.
- * Status starts as "pending", variants as null, rejectionReason as null.
+ * Status starts as "pending", variants and rejectionReason are undefined.
  */
 export function createFile(input: CreateFileInput): File {
   const contextKey = cleanStr(input.contextKey);
@@ -146,8 +146,8 @@ export function createFile(input: CreateFileInput): File {
     contentType,
     displayName,
     sizeBytes: input.sizeBytes,
-    variants: null,
-    rejectionReason: null,
+    variants: undefined,
+    rejectionReason: undefined,
     createdAt: new Date(),
   };
 }

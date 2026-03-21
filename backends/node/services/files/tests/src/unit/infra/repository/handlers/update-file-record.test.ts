@@ -21,8 +21,8 @@ function createSampleFile(overrides: Partial<File> = {}): File {
     contentType: "image/jpeg",
     displayName: "avatar.jpg",
     sizeBytes: 2048,
-    variants: null,
-    rejectionReason: null,
+    variants: undefined,
+    rejectionReason: undefined,
     createdAt: new Date("2026-01-15T10:00:00Z"),
     ...overrides,
   };
@@ -92,26 +92,26 @@ describe("UpdateFileRecord", () => {
     expect(setArg.updatedAt).toBeInstanceOf(Date);
   });
 
-  it("should map null variants to undefined in set clause", async () => {
+  it("should map undefined variants to undefined in set clause", async () => {
     const row = createSampleFileRow();
     const { update, set } = createMockDb([row]);
     const db = { update } as never;
     const handler = new UpdateFileRecord(db, createTestContext());
 
-    const file = createSampleFile({ variants: null });
+    const file = createSampleFile({ variants: undefined });
     await handler.handleAsync({ file });
 
     const setArg = set.mock.calls[0][0];
     expect(setArg.variants).toBeUndefined();
   });
 
-  it("should map null rejectionReason to undefined in set clause", async () => {
+  it("should map undefined rejectionReason to undefined in set clause", async () => {
     const row = createSampleFileRow();
     const { update, set } = createMockDb([row]);
     const db = { update } as never;
     const handler = new UpdateFileRecord(db, createTestContext());
 
-    const file = createSampleFile({ rejectionReason: null });
+    const file = createSampleFile({ rejectionReason: undefined });
     await handler.handleAsync({ file });
 
     const setArg = set.mock.calls[0][0];

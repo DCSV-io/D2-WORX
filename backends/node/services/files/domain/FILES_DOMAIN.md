@@ -77,7 +77,7 @@ rejected → (terminal)
 
 | Entity | Factory      | Transition             | Key Rules                                                                                                                                                                                                                                                         |
 | ------ | ------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| File   | `createFile` | `transitionFileStatus` | Starts as `pending`, variants=null until `ready`, rejectionReason=null until `rejected`. `uploaderUserId` tracks who initiated the upload (for realtime push targeting). All string fields cleaned via `cleanStr()`, sizeBytes validated against configurable max |
+| File   | `createFile` | `transitionFileStatus` | Starts as `pending`, variants=undefined until `ready`, rejectionReason=undefined until `rejected`. `uploaderUserId` tracks who initiated the upload (for realtime push targeting). All string fields cleaned via `cleanStr()`, sizeBytes validated against configurable max |
 
 ## Value Objects
 
@@ -90,7 +90,7 @@ rejected → (terminal)
 
 | Rule                 | Function                                 | Description                                               |
 | -------------------- | ---------------------------------------- | --------------------------------------------------------- |
-| Content category     | `resolveContentCategory(contentType)`    | MIME → category mapping, null if unknown                  |
+| Content category     | `resolveContentCategory(contentType)`    | MIME → category mapping, undefined if unknown             |
 | Content type allowed | `isContentTypeAllowed(type, categories)` | Checks MIME type belongs to one of the allowed categories |
 | All allowed types    | `getAllowedContentTypes(categories)`     | Flat array of all MIME types for given categories         |
 | Resize needed        | `requiresResize(config)`                 | True when `maxDimension > 0` (original = no resize)       |

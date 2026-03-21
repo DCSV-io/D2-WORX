@@ -84,8 +84,8 @@ describe("Repository handlers (integration)", () => {
       expect(found.contentType).toBe("image/jpeg");
       expect(found.displayName).toBe("photo.jpg");
       expect(found.sizeBytes).toBe(2048);
-      expect(found.variants).toBeNull();
-      expect(found.rejectionReason).toBeNull();
+      expect(found.variants).toBeUndefined();
+      expect(found.rejectionReason).toBeUndefined();
       expect(found.createdAt).toBeInstanceOf(Date);
     });
 
@@ -121,12 +121,12 @@ describe("Repository handlers (integration)", () => {
       expect(found.variants).toEqual(variants);
     });
 
-    it("should store null variants as null", async () => {
-      const f = makeFile({ variants: null });
+    it("should store undefined variants as undefined", async () => {
+      const f = makeFile({ variants: undefined });
       await createFileRecord.handleAsync({ file: f });
 
       const result = await findFileById.handleAsync({ id: f.id });
-      expect(result.data!.file.variants).toBeNull();
+      expect(result.data!.file.variants).toBeUndefined();
     });
 
     it("should store rejectionReason when provided", async () => {

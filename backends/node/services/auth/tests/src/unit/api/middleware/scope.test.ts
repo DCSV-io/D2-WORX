@@ -17,7 +17,7 @@ function createMockConsentHandler(hasActiveConsent = true) {
     handleAsync: vi.fn(async () =>
       hasActiveConsent
         ? D2Result.ok({ data: { consent: { id: "consent-1" } } })
-        : D2Result.ok({ data: { consent: null } }),
+        : D2Result.ok({ data: { consent: undefined } }),
     ),
   };
 }

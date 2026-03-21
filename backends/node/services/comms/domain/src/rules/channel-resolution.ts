@@ -12,11 +12,11 @@ import type { ResolvedChannels } from "../value-objects/resolved-channels.js";
  * 2. `urgency="urgent"` -> all channels (email + SMS), ignores prefs
  * 3. `urgency="normal"` -> respects all channel preferences
  *
- * @param prefs - Recipient's channel preferences (null = defaults: email+sms enabled)
+ * @param prefs - Recipient's channel preferences (undefined = defaults: email+sms enabled)
  * @param message - The message being delivered (reads sensitive + urgency)
  */
 export function resolveChannels(
-  prefs: ChannelPreference | null,
+  prefs: ChannelPreference | undefined,
   message: Pick<Message, "sensitive" | "urgency">,
 ): ResolvedChannels {
   const emailEnabled = prefs?.emailEnabled ?? true;

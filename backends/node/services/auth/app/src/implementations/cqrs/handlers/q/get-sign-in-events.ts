@@ -17,7 +17,7 @@ type Output = Queries.GetSignInEventsOutput;
 interface CachedEvents {
   events: SignInEvent[];
   total: number;
-  latestDate: string | null;
+  latestDate?: string;
 }
 
 /** Cache TTL: 5 minutes. */
@@ -81,8 +81,8 @@ export class GetSignInEvents
           userId: input.userId,
         });
         const latestStr = dateResult.success
-          ? (dateResult.data?.date?.toISOString() ?? null)
-          : null;
+          ? dateResult.data?.date?.toISOString()
+          : undefined;
 
         if (latestStr === cached.latestDate) {
           return D2Result.ok({
@@ -108,8 +108,8 @@ export class GetSignInEvents
     // This ensures the staleness check works for ALL pages, including those with offset > 0.
     if (this.cache) {
       const globalLatestDate = latestDateResult.success
-        ? (latestDateResult.data?.date?.toISOString() ?? null)
-        : null;
+        ? latestDateResult.data?.date?.toISOString()
+        : undefined;
       const cacheKey = AUTH_CACHE_KEYS.signInEvents(input.userId, limit, offset);
       // Fire-and-forget — don't block response on cache write
       this.cache.set

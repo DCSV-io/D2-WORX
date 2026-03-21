@@ -6,7 +6,7 @@ export interface UpdateDeliveryAttemptStatusInput {
   readonly status: DeliveryStatus;
   readonly providerMessageId?: string;
   readonly error?: string;
-  readonly nextRetryAt?: Date | null;
+  readonly nextRetryAt?: Date;
 }
 
 export interface UpdateDeliveryAttemptStatusOutput {}

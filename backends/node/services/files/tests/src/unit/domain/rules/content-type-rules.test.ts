@@ -48,10 +48,10 @@ describe("Content Type Rules", () => {
       expect(resolveContentCategory(contentType)).toBe(expected);
     });
 
-    it("should return null for unknown content type", () => {
-      expect(resolveContentCategory("application/octet-stream")).toBeNull();
-      expect(resolveContentCategory("text/html")).toBeNull();
-      expect(resolveContentCategory("application/json")).toBeNull();
+    it("should return undefined for unknown content type", () => {
+      expect(resolveContentCategory("application/octet-stream")).toBeUndefined();
+      expect(resolveContentCategory("text/html")).toBeUndefined();
+      expect(resolveContentCategory("application/json")).toBeUndefined();
     });
   });
 

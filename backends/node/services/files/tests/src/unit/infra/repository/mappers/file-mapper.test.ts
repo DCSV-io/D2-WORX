@@ -31,10 +31,10 @@ describe("toFile", () => {
     expect(file.createdAt).toEqual(new Date("2026-01-15T10:00:00Z"));
   });
 
-  it("should map variants as null when row.variants is null", () => {
+  it("should map variants as undefined when row.variants is null", () => {
     const file = toFile(baseRow);
 
-    expect(file.variants).toBeNull();
+    expect(file.variants).toBeUndefined();
   });
 
   it("should map variants as FileVariant[] when present", () => {
@@ -66,10 +66,10 @@ describe("toFile", () => {
     expect(file.variants![1].key).toBe("user_avatar/user-123/file-001/medium.jpg");
   });
 
-  it("should map rejectionReason as null when absent", () => {
+  it("should map rejectionReason as undefined when absent", () => {
     const file = toFile(baseRow);
 
-    expect(file.rejectionReason).toBeNull();
+    expect(file.rejectionReason).toBeUndefined();
   });
 
   it("should map rejectionReason when present", () => {

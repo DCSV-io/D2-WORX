@@ -45,10 +45,10 @@ export function toDeliveryAttempt(row: DeliveryAttemptRow): DeliveryAttempt {
     channel: row.channel as Channel,
     recipientAddress: row.recipientAddress,
     status: row.status as DeliveryStatus,
-    providerMessageId: row.providerMessageId,
-    error: row.error,
+    providerMessageId: row.providerMessageId ?? undefined,
+    error: row.error ?? undefined,
     attemptNumber: row.attemptNumber,
     createdAt: row.createdAt,
-    nextRetryAt: row.nextRetryAt,
+    nextRetryAt: row.nextRetryAt ?? undefined,
   };
 }

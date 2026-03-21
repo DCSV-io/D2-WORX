@@ -13,9 +13,9 @@ export interface DeliveryRequest {
   readonly messageId: string;
   readonly correlationId: string;
   readonly recipientContactId: string;
-  readonly callbackTopic: string | null;
+  readonly callbackTopic?: string;
   readonly createdAt: Date;
-  readonly processedAt: Date | null;
+  readonly processedAt?: Date;
 }
 
 export interface CreateDeliveryRequestInput {
@@ -23,7 +23,7 @@ export interface CreateDeliveryRequestInput {
   readonly correlationId: string;
   readonly recipientContactId: string;
   readonly id?: string;
-  readonly callbackTopic?: string | null;
+  readonly callbackTopic?: string;
 }
 
 /**
@@ -58,9 +58,9 @@ export function createDeliveryRequest(input: CreateDeliveryRequestInput): Delive
     messageId: input.messageId,
     correlationId: input.correlationId,
     recipientContactId: input.recipientContactId,
-    callbackTopic: input.callbackTopic ?? null,
+    callbackTopic: input.callbackTopic,
     createdAt: new Date(),
-    processedAt: null,
+    processedAt: undefined,
   };
 }
 

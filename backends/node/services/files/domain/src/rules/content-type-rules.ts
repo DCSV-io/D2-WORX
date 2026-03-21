@@ -5,15 +5,15 @@ import { ALLOWED_CONTENT_TYPES } from "../constants/files-constants.js";
 /**
  * Resolves a MIME content type to its content category.
  *
- * @returns The matching category, or null if the MIME type is unknown
+ * @returns The matching category, or undefined if the MIME type is unknown
  */
-export function resolveContentCategory(contentType: string): ContentCategory | null {
+export function resolveContentCategory(contentType: string): ContentCategory | undefined {
   for (const category of CONTENT_CATEGORIES) {
     if (ALLOWED_CONTENT_TYPES[category].includes(contentType)) {
       return category;
     }
   }
-  return null;
+  return undefined;
 }
 
 /**

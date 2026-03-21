@@ -38,8 +38,8 @@ describe("File Entity", () => {
       expect(file.contentType).toBe("image/png");
       expect(file.displayName).toBe("avatar.png");
       expect(file.sizeBytes).toBe(1024);
-      expect(file.variants).toBeNull();
-      expect(file.rejectionReason).toBeNull();
+      expect(file.variants).toBeUndefined();
+      expect(file.rejectionReason).toBeUndefined();
       expect(file.createdAt).toBeInstanceOf(Date);
     });
 
@@ -74,14 +74,14 @@ describe("File Entity", () => {
       expect(file.status).toBe("pending");
     });
 
-    it("should default variants to null", () => {
+    it("should default variants to undefined", () => {
       const file = createFile(validInput);
-      expect(file.variants).toBeNull();
+      expect(file.variants).toBeUndefined();
     });
 
-    it("should default rejectionReason to null", () => {
+    it("should default rejectionReason to undefined", () => {
       const file = createFile(validInput);
-      expect(file.rejectionReason).toBeNull();
+      expect(file.rejectionReason).toBeUndefined();
     });
 
     // --- Validation: contextKey ---

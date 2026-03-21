@@ -214,12 +214,12 @@ export function createSignInEventHandlers(
     get: InMemoryCache.IGetHandler<{
       events: SignInEvent[];
       total: number;
-      latestDate: string | null;
+      latestDate?: string;
     }>;
     set: InMemoryCache.ISetHandler<{
       events: SignInEvent[];
       total: number;
-      latestDate: string | null;
+      latestDate?: string;
     }>;
   },
 ) {

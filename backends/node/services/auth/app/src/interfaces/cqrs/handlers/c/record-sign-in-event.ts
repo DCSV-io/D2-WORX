@@ -6,9 +6,9 @@ export interface RecordSignInEventInput {
   readonly successful: boolean;
   readonly ipAddress: string;
   readonly userAgent: string;
-  readonly whoIsId?: string | null;
-  readonly deviceFingerprint?: string | null;
-  readonly failureReason?: string | null;
+  readonly whoIsId?: string;
+  readonly deviceFingerprint?: string;
+  readonly failureReason?: string;
 }
 
 export type RecordSignInEventOutput = { event: SignInEvent };

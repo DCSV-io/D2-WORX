@@ -9,28 +9,28 @@ import { THREAD_CONSTRAINTS } from "../constants/comms-constants.js";
 /**
  * Universal content entity — source of truth for ALL communications.
  *
- * Standalone messages (threadId=null) represent transactional sends (password reset, invoices).
+ * Standalone messages (threadId=undefined) represent transactional sends (password reset, invoices).
  * Threaded messages (threadId set) represent conversational content (chat, support, forum).
  * Notification messages are posted to a per-user system thread with relatedEntityId set.
  */
 export interface Message {
   readonly id: string;
-  readonly threadId: string | null;
-  readonly parentMessageId: string | null;
-  readonly senderUserId: string | null;
-  readonly senderContactId: string | null;
-  readonly senderService: string | null;
-  readonly title: string | null;
+  readonly threadId?: string;
+  readonly parentMessageId?: string;
+  readonly senderUserId?: string;
+  readonly senderContactId?: string;
+  readonly senderService?: string;
+  readonly title?: string;
   readonly content: string;
   readonly plainTextContent: string;
   readonly contentFormat: ContentFormat;
   readonly sensitive: boolean;
   readonly urgency: Urgency;
-  readonly relatedEntityId: string | null;
-  readonly relatedEntityType: string | null;
-  readonly metadata: Record<string, unknown> | null;
-  readonly editedAt: Date | null;
-  readonly deletedAt: Date | null;
+  readonly relatedEntityId?: string;
+  readonly relatedEntityType?: string;
+  readonly metadata?: Record<string, unknown>;
+  readonly editedAt?: Date;
+  readonly deletedAt?: Date;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -39,18 +39,18 @@ export interface CreateMessageInput {
   readonly content: string;
   readonly plainTextContent: string;
   readonly id?: string;
-  readonly threadId?: string | null;
-  readonly parentMessageId?: string | null;
-  readonly senderUserId?: string | null;
-  readonly senderContactId?: string | null;
-  readonly senderService?: string | null;
-  readonly title?: string | null;
+  readonly threadId?: string;
+  readonly parentMessageId?: string;
+  readonly senderUserId?: string;
+  readonly senderContactId?: string;
+  readonly senderService?: string;
+  readonly title?: string;
   readonly contentFormat?: ContentFormat;
   readonly sensitive?: boolean;
   readonly urgency?: Urgency;
-  readonly relatedEntityId?: string | null;
-  readonly relatedEntityType?: string | null;
-  readonly metadata?: Record<string, unknown> | null;
+  readonly relatedEntityId?: string;
+  readonly relatedEntityType?: string;
+  readonly metadata?: Record<string, unknown>;
 }
 
 /**
@@ -103,7 +103,7 @@ export function createMessage(input: CreateMessageInput): Message {
     throw new CommsValidationError("Message", "urgency", urgency, "is not a valid urgency level.");
   }
 
-  const title = input.title != null ? (cleanStr(input.title) ?? null) : null;
+  const title = input.title != null ? (cleanStr(input.title) ?? undefined) : undefined;
   if (title && title.length > THREAD_CONSTRAINTS.MAX_TITLE_LENGTH) {
     throw new CommsValidationError(
       "Message",
@@ -128,22 +128,22 @@ export function createMessage(input: CreateMessageInput): Message {
 
   return {
     id: input.id ?? generateUuidV7(),
-    threadId: input.threadId ?? null,
-    parentMessageId: input.parentMessageId ?? null,
-    senderUserId: input.senderUserId ?? null,
-    senderContactId: input.senderContactId ?? null,
-    senderService: input.senderService ?? null,
+    threadId: input.threadId,
+    parentMessageId: input.parentMessageId,
+    senderUserId: input.senderUserId,
+    senderContactId: input.senderContactId,
+    senderService: input.senderService,
     title,
     content,
     plainTextContent,
     contentFormat,
     sensitive: input.sensitive ?? false,
     urgency,
-    relatedEntityId: input.relatedEntityId ?? null,
-    relatedEntityType: input.relatedEntityType ?? null,
-    metadata: input.metadata ?? null,
-    editedAt: null,
-    deletedAt: null,
+    relatedEntityId: input.relatedEntityId,
+    relatedEntityType: input.relatedEntityType,
+    metadata: input.metadata,
+    editedAt: undefined,
+    deletedAt: undefined,
     createdAt: now,
     updatedAt: now,
   };

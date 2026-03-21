@@ -8,8 +8,8 @@ export interface Organization {
   readonly name: string;
   readonly slug: string;
   readonly orgType: OrgType;
-  readonly logo: string | null;
-  readonly metadata: string | null;
+  readonly logo?: string;
+  readonly metadata?: string;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -19,14 +19,14 @@ export interface CreateOrganizationInput {
   readonly slug: string;
   readonly orgType: OrgType;
   readonly id?: string;
-  readonly logo?: string | null;
-  readonly metadata?: string | null;
+  readonly logo?: string;
+  readonly metadata?: string;
 }
 
 export interface UpdateOrganizationInput {
   readonly name?: string;
-  readonly logo?: string | null;
-  readonly metadata?: string | null;
+  readonly logo?: string;
+  readonly metadata?: string;
 }
 
 export function createOrganization(input: CreateOrganizationInput): Organization {
@@ -54,8 +54,8 @@ export function createOrganization(input: CreateOrganizationInput): Organization
     name,
     slug,
     orgType: input.orgType,
-    logo: input.logo ?? null,
-    metadata: input.metadata ?? null,
+    logo: input.logo,
+    metadata: input.metadata,
     createdAt: new Date(),
     updatedAt: new Date(),
   };

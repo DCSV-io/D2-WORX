@@ -14,7 +14,7 @@ import {
   isMaxAttemptsReached,
   COMMS_RETRY,
 } from "@d2/comms-domain";
-import type { Channel, DeliveryAttempt } from "@d2/comms-domain";
+import type { Channel, ChannelPreference, DeliveryAttempt } from "@d2/comms-domain";
 import type {
   MessageRepoHandlers,
   DeliveryRequestRepoHandlers,
@@ -139,7 +139,7 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
     const { email, phone } = resolved.data;
 
     // Step 5: Resolve channel preferences
-    let prefs = null;
+    let prefs: ChannelPreference | undefined;
     const prefResult = await this.channelPrefRepo.findByContactId.handleAsync({
       contactId: input.recipientContactId,
     });
@@ -220,7 +220,7 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
           });
         } else {
           const nextRetryAt = isMaxAttemptsReached(attempt.attemptNumber)
-            ? null
+            ? undefined
             : computeNextRetryAt(attempt.attemptNumber);
           attempt = transitionDeliveryAttemptStatus(attempt, "failed", {
             error: dispatchResult.error,
@@ -230,7 +230,7 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
       } else {
         // Dispatcher threw — treat as failed with retry
         const nextRetryAt = isMaxAttemptsReached(attempt.attemptNumber)
-          ? null
+          ? undefined
           : computeNextRetryAt(attempt.attemptNumber);
         attempt = transitionDeliveryAttemptStatus(attempt, "failed", {
           error: settled.reason instanceof Error ? settled.reason.message : "Dispatch error",
@@ -251,8 +251,8 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
         const updateStatusResult = await this.attemptRepo.updateStatus.handleAsync({
           id: attempt.id,
           status: attempt.status,
-          providerMessageId: attempt.providerMessageId ?? undefined,
-          error: attempt.error ?? undefined,
+          providerMessageId: attempt.providerMessageId,
+          error: attempt.error,
           nextRetryAt: attempt.nextRetryAt,
         });
         if (!updateStatusResult.success) {
@@ -268,7 +268,7 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
 
     // Step 8b: Check for retryable delivery failures
     const retryableFailures = attempts.filter(
-      (a) => a.status === "failed" && a.nextRetryAt !== null,
+      (a) => a.status === "failed" && a.nextRetryAt != null,
     );
     if (retryableFailures.length > 0) {
       return D2Result.fail({
@@ -281,7 +281,7 @@ export class Deliver extends BaseHandler<Input, Output> implements Complex.IDeli
     // Step 9: If all attempts are terminal, mark request as processed
     const allTerminal = attempts.every((a) => a.status === "sent" || a.status === "failed");
     const allFailed = attempts.every((a) => a.status === "failed");
-    const noRetries = allFailed && attempts.every((a) => a.nextRetryAt === null);
+    const noRetries = allFailed && attempts.every((a) => a.nextRetryAt == null);
 
     if (allTerminal && (!allFailed || noRetries)) {
       const processed = markDeliveryRequestProcessed(request);

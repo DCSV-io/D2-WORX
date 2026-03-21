@@ -55,7 +55,7 @@ describe("RecordSignInEvent", () => {
     expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
-  it("should set whoIsId to null when not provided", async () => {
+  it("should set whoIsId to undefined when not provided", async () => {
     const result = await handler.handleAsync({
       userId: "01234567-89ab-cdef-0123-456789abcdef",
       successful: false,
@@ -64,7 +64,7 @@ describe("RecordSignInEvent", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.data?.event.whoIsId).toBeNull();
+    expect(result.data?.event.whoIsId).toBeUndefined();
   });
 
   it("should record deviceFingerprint when provided", async () => {
@@ -80,7 +80,7 @@ describe("RecordSignInEvent", () => {
     expect(result.data?.event.deviceFingerprint).toBe("a".repeat(64));
   });
 
-  it("should set deviceFingerprint to null when not provided", async () => {
+  it("should set deviceFingerprint to undefined when not provided", async () => {
     const result = await handler.handleAsync({
       userId: "01234567-89ab-cdef-0123-456789abcdef",
       successful: true,
@@ -89,7 +89,7 @@ describe("RecordSignInEvent", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.data?.event.deviceFingerprint).toBeNull();
+    expect(result.data?.event.deviceFingerprint).toBeUndefined();
   });
 
   it("should reject deviceFingerprint exceeding 64 characters", async () => {

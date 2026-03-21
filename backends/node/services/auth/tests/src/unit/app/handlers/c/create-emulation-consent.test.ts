@@ -34,7 +34,7 @@ function createMockCreateRecord() {
 
 function createMockFindActiveByUserIdAndOrg() {
   return {
-    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { consent: null } })),
+    handleAsync: vi.fn().mockResolvedValue(D2Result.ok({ data: { consent: undefined } })),
   };
 }
 
@@ -79,7 +79,7 @@ describe("CreateEmulationConsent", () => {
     expect(result.data?.consent).toBeDefined();
     expect(result.data?.consent.userId).toBe(VALID_USER_ID);
     expect(result.data?.consent.grantedToOrgId).toBe(VALID_ORG_ID);
-    expect(result.data?.consent.revokedAt).toBeNull();
+    expect(result.data?.consent.revokedAt).toBeUndefined();
     expect(createRecord.handleAsync).toHaveBeenCalledOnce();
   });
 
@@ -241,7 +241,7 @@ describe("CreateEmulationConsent", () => {
       userId: VALID_USER_ID,
       grantedToOrgId: VALID_ORG_ID,
       expiresAt: new Date(Date.now() + 86_400_000),
-      revokedAt: null,
+      revokedAt: undefined,
       createdAt: new Date("2026-02-01"),
     };
     findActiveByUserIdAndOrg.handleAsync = vi

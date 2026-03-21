@@ -60,7 +60,7 @@ describe("Sign-in event handlers (integration)", () => {
   let handlers: ReturnType<typeof createSignInEventHandlers>;
   let cacheStore: CacheMemory.MemoryCacheStore;
 
-  type CachedEvents = { events: SignInEvent[]; total: number; latestDate: string | null };
+  type CachedEvents = { events: SignInEvent[]; total: number; latestDate?: string };
 
   beforeAll(async () => {
     await startPostgres();

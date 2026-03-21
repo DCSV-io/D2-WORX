@@ -20,8 +20,8 @@ function createSampleFile(overrides: Partial<File> = {}): File {
     contentType: "image/jpeg",
     displayName: "avatar.jpg",
     sizeBytes: 2048,
-    variants: null,
-    rejectionReason: null,
+    variants: undefined,
+    rejectionReason: undefined,
     createdAt: new Date("2026-01-15T10:00:00Z"),
     ...overrides,
   };
@@ -54,11 +54,11 @@ describe("CreateFileRecord", () => {
     });
   });
 
-  it("should map null variants to undefined for the DB insert", async () => {
+  it("should map undefined variants to undefined for the DB insert", async () => {
     const { insert, values } = createMockDb();
     const db = { insert } as never;
     const handler = new CreateFileRecord(db, createTestContext());
-    const file = createSampleFile({ variants: null });
+    const file = createSampleFile({ variants: undefined });
 
     await handler.handleAsync({ file });
 
@@ -66,11 +66,11 @@ describe("CreateFileRecord", () => {
     expect(insertedValues.variants).toBeUndefined();
   });
 
-  it("should map null rejectionReason to undefined for the DB insert", async () => {
+  it("should map undefined rejectionReason to undefined for the DB insert", async () => {
     const { insert, values } = createMockDb();
     const db = { insert } as never;
     const handler = new CreateFileRecord(db, createTestContext());
-    const file = createSampleFile({ rejectionReason: null });
+    const file = createSampleFile({ rejectionReason: undefined });
 
     await handler.handleAsync({ file });
 
