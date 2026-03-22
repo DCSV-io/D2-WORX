@@ -546,6 +546,7 @@ services:
       - ./backends/dotnet:/src/backends/dotnet
       - ./contracts:/src/contracts
       - ./Directory.Build.props:/src/Directory.Build.props:ro
+      - ./.editorconfig:/src/.editorconfig:ro
       - ./stylecop.json:/src/stylecop.json:ro
     networks: [d2-network]
     depends_on:
@@ -764,6 +765,7 @@ services:
       AUTH_GRPC_ADDRESS: "${AUTH_SERVICE_NAME}:${AUTH_GRPC_PORT}"
       COMMS_GRPC_ADDRESS: "${COMMS_SERVICE_NAME}:${COMMS_GRPC_PORT}"
       FILES_GRPC_ADDRESS: "${FILES_SERVICE_NAME:-d2-files}:${FILES_GRPC_PORT:-5301}"
+      SIGNALR_GRPC_ADDRESS: "${SIGNALR_SERVICE_NAME}:${SIGNALR_GRPC_PORT}"
       GATEWAY_AUTH__AUTHSERVICEBASEURL: "http://${AUTH_SERVICE_NAME}:${AUTH_HTTP_PORT}"
       # OTel → Alloy.
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/traces"
@@ -775,6 +777,7 @@ services:
       - ./backends/dotnet:/src/backends/dotnet
       - ./contracts:/src/contracts
       - ./Directory.Build.props:/src/Directory.Build.props:ro
+      - ./.editorconfig:/src/.editorconfig:ro
       - ./stylecop.json:/src/stylecop.json:ro
     networks: [d2-network]
     depends_on:
@@ -785,6 +788,8 @@ services:
       d2-comms:
         condition: service_healthy
       d2-files:
+        condition: service_healthy
+      d2-signalr:
         condition: service_healthy
       d2-redis:
         condition: service_healthy
@@ -820,6 +825,7 @@ services:
     volumes:
       - ./D2.sln:/src/D2.sln:ro
       - ./Directory.Build.props:/src/Directory.Build.props:ro
+      - ./.editorconfig:/src/.editorconfig:ro
       - ./stylecop.json:/src/stylecop.json:ro
       - ./backends/dotnet:/src/backends/dotnet
       - ./contracts:/src/contracts
@@ -891,6 +897,10 @@ services:
       SVELTEKIT_GATEWAY__URL: "http://${GATEWAY_SERVICE_NAME}:${GATEWAY_PORT}"
       GEO_GRPC_ADDRESS: "${GEO_SERVICE_NAME}:${GEO_PORT}"
       REDIS_URL: "redis://:${CACHE_PASSWORD}@${REDIS_NAME}:6379"
+      # OTel → Alloy (inside Docker network).
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/traces"
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/logs"
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://${ALLOY_NAME}:${OTLP_HTTP_PORT}/v1/metrics"
       # Browser-facing URLs (PUBLIC_GATEWAY_URL, PUBLIC_FARO_COLLECTOR_URL,
       # AUTH_BASE_URL, AUTH_EMAIL_BASE_URL) come from .env.local — they are
       # hit by the user's browser or used in email links, not by containers.

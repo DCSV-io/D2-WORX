@@ -16,6 +16,13 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Kestrel: HTTP port serves HTTP/1.1+2 (SignalR + health), gRPC port serves HTTP/2 only.
+var grpcPort = int.TryParse(Environment.GetEnvironmentVariable("SIGNALR_GRPC_PORT"), out var p) ? p : 5401;
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    kestrel.ListenAnyIP(grpcPort, o => o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+});
+
 // Redis connection string for SignalR backplane.
 var redisConnectionString = ConnectionStringHelper.GetRedis();
 

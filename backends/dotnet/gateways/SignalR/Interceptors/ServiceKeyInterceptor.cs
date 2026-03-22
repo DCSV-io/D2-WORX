@@ -19,7 +19,6 @@ using Microsoft.Extensions.Options;
 /// </summary>
 public partial class ServiceKeyInterceptor : Interceptor
 {
-    private readonly SignalRServiceKeyOptions r_options;
     private readonly ILogger<ServiceKeyInterceptor> r_logger;
     private readonly byte[][] r_validKeyBytes;
 
@@ -32,9 +31,8 @@ public partial class ServiceKeyInterceptor : Interceptor
         IOptions<SignalRServiceKeyOptions> options,
         ILogger<ServiceKeyInterceptor> logger)
     {
-        r_options = options.Value;
         r_logger = logger;
-        r_validKeyBytes = r_options.ValidKeys.Select(k => Encoding.UTF8.GetBytes(k)).ToArray();
+        r_validKeyBytes = options.Value.ValidKeys.Select(k => Encoding.UTF8.GetBytes(k)).ToArray();
     }
 
     /// <inheritdoc/>

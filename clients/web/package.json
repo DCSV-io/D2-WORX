@@ -63,6 +63,7 @@
     "@d2/idempotency": "workspace:*",
     "@d2/interfaces": "workspace:*",
     "@d2/logging": "workspace:*",
+    "pino": "10.3.1",
     "@d2/protos": "workspace:*",
     "@d2/ratelimit": "workspace:*",
     "@d2/request-enrichment": "workspace:*",

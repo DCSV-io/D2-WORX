@@ -115,18 +115,47 @@ public partial class RealtimeGatewayService : RealtimeGateway.RealtimeGatewayBas
     /// <param name="request">The health check request.</param>
     /// <param name="context">The gRPC server call context.</param>
     /// <returns>The health check response.</returns>
-    public override Task<CheckHealthResponse> CheckHealth(
+    public override async Task<CheckHealthResponse> CheckHealth(
         CheckHealthRequest request,
         ServerCallContext context)
     {
-        var isConnected = r_redis.IsConnected;
-        var response = new CheckHealthResponse
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        string cacheStatus;
+        string? cacheError = null;
+
+        try
         {
-            Status = isConnected ? "healthy" : "degraded",
-            Timestamp = DateTime.UtcNow.ToString("o"),
+            var db = r_redis.GetDatabase();
+            await db.PingAsync();
+            sw.Stop();
+            cacheStatus = "healthy";
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            cacheStatus = "unhealthy";
+            cacheError = ex.Message;
+        }
+
+        var cacheComponent = new ComponentHealth
+        {
+            Status = cacheStatus,
+            LatencyMs = sw.ElapsedMilliseconds,
         };
 
-        return Task.FromResult(response);
+        if (cacheError != null)
+        {
+            cacheComponent.Error = cacheError;
+        }
+
+        var response = new CheckHealthResponse
+        {
+            Status = cacheStatus == "healthy" ? "healthy" : "degraded",
+            Timestamp = DateTime.UtcNow.ToString("o"),
+            Components = { ["cache"] = cacheComponent },
+        };
+
+        return response;
     }
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Pushed event {Event} to channel {Channel}")]

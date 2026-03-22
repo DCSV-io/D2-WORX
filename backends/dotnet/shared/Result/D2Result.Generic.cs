@@ -1,4 +1,4 @@
-﻿// -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
 // <copyright file="D2Result.Generic.cs" company="DCSV">
 // Copyright (c) DCSV. All rights reserved.
 // </copyright>

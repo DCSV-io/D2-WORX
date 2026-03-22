@@ -8,9 +8,11 @@ namespace D2.Gateways.REST.Endpoints;
 
 using System.Diagnostics;
 using System.Text.Json;
+using D2.Gateways.Protos.Realtime.V1;
 using D2.Services.Protos.Auth.V1;
 using D2.Services.Protos.Common.V1;
 using D2.Services.Protos.Comms.V1;
+using D2.Services.Protos.Files.V1;
 using D2.Services.Protos.Geo.V1;
 using D2.Shared.Interfaces.Caching.Distributed.Handlers.R;
 using D2.Shared.Utilities.Extensions;
@@ -34,7 +36,8 @@ public static class HealthEndpoints
     {
         /// <summary>
         /// Registers gRPC clients needed for the health endpoint.
-        /// Reads <c>COMMS_GRPC_ADDRESS</c> and <c>AUTH_GRPC_ADDRESS</c> (bare <c>host:port</c>).
+        /// Reads <c>COMMS_GRPC_ADDRESS</c>, <c>AUTH_GRPC_ADDRESS</c>, <c>FILES_GRPC_ADDRESS</c>,
+        /// and <c>SIGNALR_GRPC_ADDRESS</c> (bare <c>host:port</c>).
         /// Geo client is already registered via <see cref="GeoEndpoints.AddGeoGrpcClient"/>.
         /// </summary>
         ///
@@ -67,6 +70,32 @@ public static class HealthEndpoints
             services.AddGrpcClient<AuthService.AuthServiceClient>(o =>
             {
                 o.Address = new Uri($"http://{authGrpcAddress}");
+            });
+
+            // Files gRPC client.
+            var filesGrpcAddress = Environment.GetEnvironmentVariable("FILES_GRPC_ADDRESS");
+            if (filesGrpcAddress.Falsey())
+            {
+                throw new ArgumentException(
+                    "Files gRPC service address not configured. Missing 'FILES_GRPC_ADDRESS' environment variable.");
+            }
+
+            services.AddGrpcClient<FilesService.FilesServiceClient>(o =>
+            {
+                o.Address = new Uri($"http://{filesGrpcAddress}");
+            });
+
+            // SignalR gRPC client.
+            var signalrGrpcAddress = Environment.GetEnvironmentVariable("SIGNALR_GRPC_ADDRESS");
+            if (signalrGrpcAddress.Falsey())
+            {
+                throw new ArgumentException(
+                    "SignalR gRPC service address not configured. Missing 'SIGNALR_GRPC_ADDRESS' environment variable.");
+            }
+
+            services.AddGrpcClient<RealtimeGateway.RealtimeGatewayClient>(o =>
+            {
+                o.Address = new Uri($"http://{signalrGrpcAddress}");
             });
 
             return services;
@@ -110,6 +139,8 @@ public static class HealthEndpoints
         GeoService.GeoServiceClient geoClient,
         CommsService.CommsServiceClient commsClient,
         AuthService.AuthServiceClient authClient,
+        FilesService.FilesServiceClient filesClient,
+        RealtimeGateway.RealtimeGatewayClient signalrClient,
         IRead.IPingHandler cachePingHandler,
         CancellationToken ct)
     {
@@ -120,9 +151,11 @@ public static class HealthEndpoints
         var geoTask = CheckGrpcServiceAsync(geoClient, "geo", ct);
         var commsTask = CheckGrpcServiceAsync(commsClient, "comms", ct);
         var authTask = CheckGrpcServiceAsync(authClient, "auth", ct);
+        var filesTask = CheckGrpcServiceAsync(filesClient, "files", ct);
+        var signalrTask = CheckGrpcServiceAsync(signalrClient, "signalr", ct);
         var cacheTask = CheckGatewayCacheAsync(cachePingHandler, ct);
 
-        await Task.WhenAll(geoTask, authTask, commsTask, cacheTask);
+        await Task.WhenAll(geoTask, authTask, commsTask, filesTask, signalrTask, cacheTask);
         sw.Stop();
 
         // Gateway's own health.
@@ -145,20 +178,26 @@ public static class HealthEndpoints
         services["geo"] = await geoTask;
         services["auth"] = await authTask;
         services["comms"] = await commsTask;
+        services["files"] = await filesTask;
+        services["signalr"] = await signalrTask;
 
         var allHealthy = cacheResult.Status == "healthy"
                          && HasHealthyStatus(await geoTask)
                          && HasHealthyStatus(await authTask)
-                         && HasHealthyStatus(await commsTask);
+                         && HasHealthyStatus(await commsTask)
+                         && HasHealthyStatus(await filesTask)
+                         && HasHealthyStatus(await signalrTask);
 
         var overallStatus = allHealthy ? "healthy" : "degraded";
 
         Log.Information(
-            "Health check completed: {Status} (geo={GeoStatus}, auth={AuthStatus}, comms={CommsStatus}, cache={CacheStatus}) in {ElapsedMs}ms",
+            "Health check completed: {Status} (geo={GeoStatus}, auth={AuthStatus}, comms={CommsStatus}, files={FilesStatus}, signalr={SignalRStatus}, cache={CacheStatus}) in {ElapsedMs}ms",
             overallStatus,
             GetStatus(await geoTask),
             GetStatus(await authTask),
             GetStatus(await commsTask),
+            GetStatus(await filesTask),
+            GetStatus(await signalrTask),
             cacheResult.Status,
             sw.ElapsedMilliseconds);
 
@@ -276,6 +315,104 @@ public static class HealthEndpoints
     /// </summary>
     private static async Task<object> CheckGrpcServiceAsync(
         AuthService.AuthServiceClient client,
+        string serviceName,
+        CancellationToken ct)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var response = await client.CheckHealthAsync(
+                new CheckHealthRequest(),
+                deadline: DateTime.UtcNow.AddSeconds(5),
+                cancellationToken: ct);
+            sw.Stop();
+
+            return MapGrpcHealthResponse(response, sw.ElapsedMilliseconds);
+        }
+        catch (RpcException ex)
+        {
+            sw.Stop();
+            Log.Warning(ex, "gRPC health check to {ServiceName} failed: {StatusCode}", serviceName, ex.StatusCode);
+            return new
+            {
+                status = "unhealthy",
+                latencyMs = sw.ElapsedMilliseconds,
+                components = new Dictionary<string, object>
+                {
+                    ["error"] = new { status = "unhealthy", error = $"gRPC {ex.StatusCode}: {ex.Status.Detail}" },
+                },
+            };
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            Log.Warning(ex, "Health check to {ServiceName} failed", serviceName);
+            return new
+            {
+                status = "unhealthy",
+                latencyMs = sw.ElapsedMilliseconds,
+                components = new Dictionary<string, object>
+                {
+                    ["error"] = new { status = "unhealthy", error = "Service check failed" },
+                },
+            };
+        }
+    }
+
+    /// <summary>
+    /// Calls the Files gRPC service's CheckHealth RPC and returns the mapped response.
+    /// </summary>
+    private static async Task<object> CheckGrpcServiceAsync(
+        FilesService.FilesServiceClient client,
+        string serviceName,
+        CancellationToken ct)
+    {
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var response = await client.CheckHealthAsync(
+                new CheckHealthRequest(),
+                deadline: DateTime.UtcNow.AddSeconds(5),
+                cancellationToken: ct);
+            sw.Stop();
+
+            return MapGrpcHealthResponse(response, sw.ElapsedMilliseconds);
+        }
+        catch (RpcException ex)
+        {
+            sw.Stop();
+            Log.Warning(ex, "gRPC health check to {ServiceName} failed: {StatusCode}", serviceName, ex.StatusCode);
+            return new
+            {
+                status = "unhealthy",
+                latencyMs = sw.ElapsedMilliseconds,
+                components = new Dictionary<string, object>
+                {
+                    ["error"] = new { status = "unhealthy", error = $"gRPC {ex.StatusCode}: {ex.Status.Detail}" },
+                },
+            };
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            Log.Warning(ex, "Health check to {ServiceName} failed", serviceName);
+            return new
+            {
+                status = "unhealthy",
+                latencyMs = sw.ElapsedMilliseconds,
+                components = new Dictionary<string, object>
+                {
+                    ["error"] = new { status = "unhealthy", error = "Service check failed" },
+                },
+            };
+        }
+    }
+
+    /// <summary>
+    /// Calls the SignalR gRPC gateway's CheckHealth RPC and returns the mapped response.
+    /// </summary>
+    private static async Task<object> CheckGrpcServiceAsync(
+        RealtimeGateway.RealtimeGatewayClient client,
         string serviceName,
         CancellationToken ct)
     {
